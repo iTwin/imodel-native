@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/MaterialConverter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -771,19 +771,26 @@ void Converter::ConvertModelMaterials(DgnV8ModelR dgnModel)
             }
 
         Utf8String      utfMaterialName(v8Material.GetName().c_str()), utfPaletteName(v8Material.GetPalette().GetName().c_str());
-        RenderMaterial  material(*definitionModel, utfPaletteName, utfMaterialName);
 
-        material.SetRenderingAsset(renderMaterialJson);
-
-        RenderMaterialCPtr dbMaterial = material.Insert();
-        if (dbMaterial.IsNull())
+        RenderMaterialId materialId;
+        if (IsUpdating())
             {
-            // WIP -- Duplicate material...check same etc.
-            // BeAssert (false);
-            continue;
+            materialId = RenderMaterial::QueryMaterialId(*definitionModel, utfMaterialName);
             }
 
-        AddMaterialMapping(&v8Material, utfMaterialName, utfPaletteName, dbMaterial->GetMaterialId());
+        if (!materialId.IsValid())
+            {
+            RenderMaterial  material(*definitionModel, utfPaletteName, utfMaterialName);
+
+            material.SetRenderingAsset(renderMaterialJson);
+
+            RenderMaterialCPtr dbMaterial = material.Insert();
+            if (!dbMaterial.IsNull())   // could be null if this is a duplicate material
+                materialId = dbMaterial->GetMaterialId();
+            }
+
+        if (materialId.IsValid())
+            AddMaterialMapping(&v8Material, utfMaterialName, utfPaletteName, materialId);
         }
      }
 

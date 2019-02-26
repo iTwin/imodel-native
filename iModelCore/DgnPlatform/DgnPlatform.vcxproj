@@ -349,6 +349,7 @@
     <ClCompile Include="DgnCore\HypermodelingViewController.cpp" />
     <ClCompile Include="DgnCore\ImageResize.cpp" />
     <ClCompile Include="DgnCore\ImageSource.cpp" />
+    <ClCompile Include="DgnCore\IModelTileWriter.cpp" />
     <ClCompile Include="DgnCore\linestyle\DgnLineStyles.cpp" />
     <ClCompile Include="DgnCore\linestyle\LineStyleApi.cpp" />
     <ClCompile Include="DgnCore\linestyle\LsCache.cpp" />

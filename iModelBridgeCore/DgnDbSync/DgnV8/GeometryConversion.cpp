@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/GeometryConversion.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -572,7 +572,7 @@ void Converter::InitLineStyle(Render::GeometryParams& params, DgnModelRefR style
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d, SyncInfo::V8ModelSource v8Model)
+void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d, DgnV8ModelCR v8Model)
     {
     // NOTE: Resolve loses information like WEIGHT_BYLEVEL and we may be called multiple times (ex. disjoint brep)...
     AutoRestore<DgnV8Api::ElemDisplayParams> saveParamsV8(&paramsV8);
@@ -594,7 +594,7 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
 
     DgnSubCategoryId subCategoryId = params.GetSubCategoryId(); // see if the caller wants to specify an override SubCategoryId
     if (!subCategoryId.IsValid()) // if not, look up the SubCategoryId from V8 LevelId
-        subCategoryId = GetSyncInfo().GetSubCategory(v8Level, v8Model, is3d? SyncInfo::Level::Type::Spatial: SyncInfo::Level::Type::Drawing);
+        subCategoryId = GetSyncInfo().GetSubCategory(v8Level, v8Model, is3d? SyncInfo::LevelExternalSourceAspect::Type::Spatial: SyncInfo::LevelExternalSourceAspect::Type::Drawing);
     DgnCategoryId categoryId = DgnSubCategory::QueryCategoryId(GetDgnDb(), subCategoryId);
 
     params = Render::GeometryParams();
@@ -775,7 +775,7 @@ Bentley::Transform          m_currentTransform;
 DgnV8Api::ElemDisplayParams m_currentDisplayParams;
 
 Converter&                  m_converter;
-SyncInfo::V8ModelSource     m_v8Model;
+DgnV8ModelCR                m_v8Model;
 
 bvector<GeometricPrimitivePtr>  m_symbolGeometry;
 bvector<Render::GeometryParams> m_symbolParams;
@@ -907,7 +907,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-V8SymbolGraphicsCollector(Converter& converter, SyncInfo::V8ModelSource v8Model, BentleyApi::TransformCR conversionScale) : m_converter(converter), m_v8Model(v8Model), m_context(nullptr), m_conversionScale(DoInterop(conversionScale)) {}
+V8SymbolGraphicsCollector(Converter& converter, DgnV8ModelCR v8Model, BentleyApi::TransformCR conversionScale) : m_converter(converter), m_v8Model(v8Model), m_context(nullptr), m_conversionScale(DoInterop(conversionScale)) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/15
@@ -928,8 +928,7 @@ void ProcessSymbol(DgnV8Api::IDisplaySymbol& symbol, DgnV8ModelR model) {DgnV8Ap
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnGeometryPartId Converter::QueryGeometryPartId(Utf8StringCR name)
     {
-    SyncInfo::GeomPart sigp;
-    return (BSISUCCESS == SyncInfo::GeomPart::FindByTag(sigp, *m_dgndb, name.c_str()))? sigp.m_id: DgnGeometryPartId();
+    return SyncInfo::GeomPartExternalSourceAspect::GetAspectByTag(*m_dgndb, GetJobDefinitionModel()->GetModeledElementId(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -937,8 +936,14 @@ DgnGeometryPartId Converter::QueryGeometryPartId(Utf8StringCR name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Converter::QueryGeometryPartTag(DgnGeometryPartId partId)
     {
-    SyncInfo::GeomPart sigp;
-    return (BSISUCCESS == SyncInfo::GeomPart::FindById(sigp, *m_dgndb, partId))? sigp.m_tag: "";
+    auto geomPart = m_dgndb->Elements().Get<DgnGeometryPart>(partId);
+    if (!geomPart.IsValid())
+        {
+        BeAssert(false);
+        return "";
+        }
+    auto aspect = SyncInfo::GeomPartExternalSourceAspect::GetAspect(*geomPart);
+    return aspect.IsValid()? aspect.GetIdentifier(): "";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -946,13 +951,10 @@ Utf8String Converter::QueryGeometryPartTag(DgnGeometryPartId partId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::RecordGeometryPartId(DgnGeometryPartId partId, Utf8StringCR partTag)
     {
-    SyncInfo::GeomPart siTag(partId, partTag);
-    auto rc = siTag.Insert(*m_dgndb);
-    if (BeSQLite::BE_SQLITE_DONE == rc)
-        return BSISUCCESS;
-    LOG.errorv("Insert geompart in sync info (%lld, %s) failed with error %x", partId.GetValue(), partTag.c_str(), rc);
-    BeAssert(false && "Caller must check that geompart tag is unique and not empty");
-    return BSIERROR;
+    auto aspect = SyncInfo::GeomPartExternalSourceAspect::CreateAspect(GetJobDefinitionModel()->GetModeledElementId(), partTag, GetDgnDb());
+    auto partElem = GetDgnDb().Elements().GetForEdit<DgnGeometryPart>(partId);
+    aspect.AddAspect(*partElem);
+    return partElem->Update().IsValid()? BSISUCCESS: BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -966,7 +968,7 @@ bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParam
         {
         Utf8String nameStr;
         nameStr.Assign(patternV8.cellName);
-        Utf8PrintfString partTag("PatternV8-%ld-%s-%lld", Converter::GetV8FileSyncInfoIdFromAppData(*context.GetCurrentModel()->GetDgnFileP()), nameStr.c_str(), patternV8.cellId);
+        Utf8PrintfString partTag("PatternV8-%lld-%s-%lld", Converter::GetRepositoryLinkIdFromAppData(*context.GetCurrentModel()->GetDgnFileP()).GetValue(), nameStr.c_str(), patternV8.cellId);
         DgnGeometryPartId partId = QueryGeometryPartId(partTag.c_str());
 
         if (!partId.IsValid())
@@ -980,7 +982,7 @@ bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParam
             double scale = 1.0/uorPerMeter;
             Transform scaleTransform = Transform::FromScaleFactors(scale, scale, scale);
 
-            V8SymbolGraphicsCollector collector(*this, SyncInfo::V8ModelSource(Converter::GetV8FileSyncInfoIdFromAppData(*context.GetCurrentModel()->GetDgnFileP()), SyncInfo::V8ModelId(-1)), scaleTransform);
+            V8SymbolGraphicsCollector collector(*this, context.GetCurrentModel()->GetDgnFileP()->GetDictionaryModel(), scaleTransform);
 
             if (!isPointCell)
                 collector.SetAllowMultiSymb();
@@ -1123,7 +1125,7 @@ LineStyleStatus LineStyleConverter::ConvertPointSymbol(LsComponentId& v10Id, Dgn
     Transform  trans;
     trans.InitFromScaleFactors(lsScale, lsScale, lsScale);
 
-    V8SymbolGraphicsCollector collector(m_converter, SyncInfo::V8ModelSource(Converter::GetV8FileSyncInfoIdFromAppData(v8File), SyncInfo::V8ModelId(-1)), trans /* v8uors_to_mm */);
+    V8SymbolGraphicsCollector collector(m_converter, v8File.GetDictionaryModel(), trans /* v8uors_to_mm */);
 
     collector.SetAllowMultiSymb(); // Symbols can contain color, weight, and line code changes...
     collector.ProcessSymbol(displaySymbol, v8File.GetDictionaryModel());
@@ -1888,7 +1890,7 @@ virtual Bentley::BentleyStatus _ProcessCurveVector(Bentley::CurveVectorCR curves
     DgnV8PathGeom& pathGeom = GetDgnV8PathGeom();
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
 
-    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
+    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8Model());
 
     // NOTE: Need to apply pushed transforms (ex. shared cell scale) to linestyle params...
     //       GeometryBuilder will ignore the linestyle for other types of GeometricPrimitive so it's ok 
@@ -1964,7 +1966,7 @@ virtual Bentley::BentleyStatus _ProcessSolidPrimitive(Bentley::ISolidPrimitiveCR
     DgnV8PathGeom& pathGeom = GetDgnV8PathGeom();
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
 
-    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
+    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8Model());
 
     pathEntry.m_primitive = primitive.Clone();
     pathGeom.AddEntry(pathEntry);
@@ -1980,7 +1982,7 @@ virtual Bentley::BentleyStatus _ProcessSurface(Bentley::MSBsplineSurfaceCR surfa
     DgnV8PathGeom& pathGeom = GetDgnV8PathGeom();
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
 
-    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
+    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8Model());
 
     pathEntry.m_surface = Bentley::MSBsplineSurface::CreatePtr();
     pathEntry.m_surface->CopyFrom(surface);
@@ -2001,7 +2003,7 @@ virtual Bentley::BentleyStatus _ProcessFacets(Bentley::PolyfaceQueryCR meshData,
     getTestAuxData(meshData);
 #endif   
 
-    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
+    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8Model());
 
     BentleyApi::RgbFactor const* rgbColors = (BentleyApi::RgbFactor const*) meshData.GetDoubleColorCP();
     uint32_t const* intColors = meshData.GetIntColorCP();
@@ -2101,7 +2103,7 @@ void ProcessSingleBody(Bentley::ISolidKernelEntityCR entity, Bentley::IFaceMater
     DgnV8PathGeom& pathGeom = GetDgnV8PathGeom();
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
 
-    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
+    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8Model());
 
     if (SUCCESS != DgnV8Api::DgnPlatformLib::GetHost().GetSolidsKernelAdmin()._CopyEntity(pathEntry.m_brep, entity))
         return;
@@ -2154,7 +2156,7 @@ void ProcessSingleBody(Bentley::ISolidKernelEntityCR entity, Bentley::IFaceMater
             Render::GeometryParams faceParamsDb;
 
             foundFaceV8->second.ToElemDisplayParams(faceParamsV8);
-            m_converter.InitGeometryParams(faceParamsDb, faceParamsV8, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
+            m_converter.InitGeometryParams(faceParamsDb, faceParamsV8, *m_context, m_model.Is3d(), m_v8mt.GetV8Model());
 
             size_t attachmentIndex = 0;
             DgnDbApi::T_FaceAttachmentsVec::const_iterator foundAttachmentDb = std::find(faceAttachmentsVecDb.begin(), faceAttachmentsVecDb.end(), faceParamsDb);
@@ -2245,7 +2247,7 @@ virtual Bentley::BentleyStatus _ProcessTextString(Bentley::TextStringCR v8Text)
     DgnV8PathGeom& pathGeom = GetDgnV8PathGeom();
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
 
-    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
+    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8Model());
 
     Bentley::DPoint3d                  lowerLeft = v8Text.GetOrigin();
     Bentley::RotMatrix                 rMatrix = v8Text.GetRotMatrix();
@@ -2511,10 +2513,10 @@ Utf8String GetPartTag(Bentley::ElementRefP instanceElRef, Utf8CP prefix, uint32_
 
     if (sequenceNo > 1)
         { // Note: partScale < 0.0 implies "mirrored" which means a different codeValue must be generated
-        return Utf8PrintfString(partScale < 0.0 ? "%s-%ld-M%lld-%d" : "%s-%ld-%lld-%d", prefix, Converter::GetV8FileSyncInfoIdFromAppData(*instanceElRef->GetDgnModelP()->GetDgnFileP()), instanceElRef->GetElementId(), sequenceNo-1);
+        return Utf8PrintfString(partScale < 0.0 ? "%s-%lld-M%lld-%d" : "%s-%lld-%lld-%d", prefix, Converter::GetRepositoryLinkIdFromAppData(*instanceElRef->GetDgnModelP()->GetDgnFileP()).GetValue(), instanceElRef->GetElementId(), sequenceNo-1);
         }
 
-    return Utf8PrintfString(partScale < 0.0 ? "%s-%ld-M%lld" : "%s-%ld-%lld", prefix, Converter::GetV8FileSyncInfoIdFromAppData(*instanceElRef->GetDgnModelP()->GetDgnFileP()), instanceElRef->GetElementId());
+    return Utf8PrintfString(partScale < 0.0 ? "%s-%lld-M%lld" : "%s-%lld-%lld", prefix, Converter::GetRepositoryLinkIdFromAppData(*instanceElRef->GetDgnModelP()->GetDgnFileP()).GetValue(), instanceElRef->GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2814,7 +2816,7 @@ void ApplySharedCellInstanceOverrides(DgnV8EhCR v8eh, Render::GeometryParamsR ge
 
         if (0 != v8Level && DgnV8Api::LEVEL_BYCELL != v8Level)
             {
-            DgnSubCategoryId subCategoryId = m_converter.GetSyncInfo().GetSubCategory(v8Level, m_v8mt.GetV8ModelSource(), m_model.Is3d() ? SyncInfo::Level::Type::Spatial: SyncInfo::Level::Type::Drawing);
+            DgnSubCategoryId subCategoryId = m_converter.GetSyncInfo().GetSubCategory(v8Level, m_v8mt.GetV8Model(), m_model.Is3d() ? SyncInfo::LevelExternalSourceAspect::Type::Spatial: SyncInfo::LevelExternalSourceAspect::Type::Drawing);
             DgnCategoryId categoryId = DgnSubCategory::QueryCategoryId(m_converter.GetDgnDb(), subCategoryId);
 
             geomParams.SetCategoryId(categoryId, false); // <- Don't clear appearance overrides...
@@ -3042,8 +3044,15 @@ bool IsValidGraphicElement(DgnV8EhCR v8eh)
     // Skip displayable elements marked invisible as well as non-graphic components of cells (ex. type 38/39)...
     if (!v8el.ehdr.isGraphics || v8el.hdr.dhdr.props.b.invisible)
         {
-        Utf8PrintfString info("Ignoring element %s because it is %s.", Converter::IssueReporter::FmtElement(v8eh).c_str(), !v8el.ehdr.isGraphics ? "non-graphical" : "invisible");
-        m_converter.ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), info.c_str());
+        static size_t s_nReported;
+        Utf8String info;
+        ++s_nReported;
+        if (s_nReported <= 1000)
+            info = Utf8PrintfString("Ignoring element %s because it is %s.", Converter::IssueReporter::FmtElement(v8eh).c_str(), !v8el.ehdr.isGraphics ? "non-graphical" : "invisible");
+        else if (s_nReported == 1001)
+            info = "More than 1000 elements have been ignored, either because they are invisible or non-graphical.";
+        if (!info.empty())
+            m_converter.ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), info.c_str());
         return false;
         }
 
@@ -3364,7 +3373,7 @@ void LightWeightConverter::InitGeometryParams(Render::GeometryParams& params, Dg
 
     DgnSubCategoryId subCategoryId = params.GetSubCategoryId(); // see if the caller wants to specify an override SubCategoryId
     if (!subCategoryId.IsValid()) 
-        subCategoryId = GetSubCategory (v8Level,  is3d ? SyncInfo::Level::Type::Spatial : SyncInfo::Level::Type::Drawing);
+        subCategoryId = GetSubCategory (v8Level,  is3d ? SyncInfo::LevelExternalSourceAspect::Type::Spatial : SyncInfo::LevelExternalSourceAspect::Type::Drawing);
 
     DgnCategoryId categoryId = DgnSubCategory::QueryCategoryId(GetDgnDb(), subCategoryId);
 
@@ -4619,7 +4628,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
 
                 if (0 != v8Level && DgnV8Api::LEVEL_BYCELL != v8Level)
                     {
-                    DgnSubCategoryId subCategoryId = m_converter.GetSubCategory(v8Level, m_model.Is3d() ? SyncInfo::Level::Type::Spatial : SyncInfo::Level::Type::Drawing);
+                    DgnSubCategoryId subCategoryId = m_converter.GetSubCategory(v8Level, m_model.Is3d() ? SyncInfo::LevelExternalSourceAspect::Type::Spatial : SyncInfo::LevelExternalSourceAspect::Type::Drawing);
                     DgnCategoryId categoryId = DgnSubCategory::QueryCategoryId(m_converter.GetDgnDb(), subCategoryId);
 
                     geomParams.SetCategoryId(categoryId, false); // <- Don't clear appearance overrides...
@@ -5235,7 +5244,7 @@ void LightWeightConverter::InitLineStyle(Render::GeometryParams& params, DgnMode
 //---------------------------------------------------------------------------------
 // @bsimethod                                                    Vern.Francisco   12/17
 //---------------+---------------+---------------+---------------+---------------+------
-void LightWeightConverter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d, SyncInfo::V8ModelSource v8Model)
+void LightWeightConverter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d, DgnV8ModelCR v8Model)
     {
     // NOTE: Resolve loses information like WEIGHT_BYLEVEL and we may be called multiple times (ex. disjoint brep)...
     AutoRestore<DgnV8Api::ElemDisplayParams> saveParamsV8(&paramsV8);
@@ -5257,7 +5266,7 @@ void LightWeightConverter::InitGeometryParams(Render::GeometryParams& params, Dg
 
     DgnSubCategoryId subCategoryId = params.GetSubCategoryId(); // see if the caller wants to specify an override SubCategoryId
     if (!subCategoryId.IsValid()) // if not, look up the SubCategoryId from V8 LevelId
-        subCategoryId = GetSubCategory(v8Level, v8Model, is3d ? SyncInfo::Level::Type::Spatial : SyncInfo::Level::Type::Drawing);
+        subCategoryId = GetSubCategory(v8Level, v8Model, is3d ? SyncInfo::LevelExternalSourceAspect::Type::Spatial : SyncInfo::LevelExternalSourceAspect::Type::Drawing);
 
     DgnCategoryId categoryId = DgnSubCategory::QueryCategoryId(GetDgnDb(), subCategoryId);
 

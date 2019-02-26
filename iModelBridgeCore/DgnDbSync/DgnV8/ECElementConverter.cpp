@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ECElementConverter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -89,9 +89,12 @@ BECN::IECInstancePtr ElementConverter::Transform(ECObjectsV8::IECInstance const&
 //---------------------------------------------------------------------------------------
 BECN::ECClassCP ElementConverter::GetDgnDbClass(ECObjectsV8::IECInstance const& v8Instance, Utf8CP aspectClassSuffix) const
     {
-    ECObjectsV8::ECClassCR aspectClass = v8Instance.GetClass();
-    Utf8String schemaName(aspectClass.GetSchema().GetName().c_str());
-    Utf8String className(aspectClass.GetName().c_str());
+    ECObjectsV8::ECClassCR elementClass = v8Instance.GetClass();
+    Utf8String schemaName(elementClass.GetSchema().GetName().c_str());
+    if (schemaName.StartsWith("EWR"))
+        schemaName.AssignOrClear("EWR");
+
+    Utf8String className(elementClass.GetName().c_str());
     if (aspectClassSuffix != nullptr)
         className.append(aspectClassSuffix);
 
@@ -122,8 +125,8 @@ bool SchemaRemapper::_ResolveClassName(Utf8StringR serializedClassName, BECN::EC
     {
     BisConversionRule conversionRule;
     bool hasSecondary;
-    if (!V8ECClassInfo::TryFind(conversionRule, m_converter.GetDgnDb(),
-                                ECClassName(ecSchema.GetName().c_str(), serializedClassName.c_str()), hasSecondary))
+    Utf8PrintfString name("%s.%s", ecSchema.GetName().c_str(), serializedClassName.c_str());
+    if (!V8ECClassInfo::TryFind(conversionRule, hasSecondary, m_converter.GetDgnDb(), name))
         {
         BeAssert(false);
         return false;
@@ -292,7 +295,7 @@ BentleyStatus ElementAspectConverter::ConvertToAspect(ElementConversionResults& 
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
 //static
-bmap<SyncInfo::V8FileSyncInfoId, bset<DgnV8Api::ElementId>> V8NamedGroupInfo::s_namedGroupsWithOwnershipHint;
+bmap<RepositoryLinkId, bset<DgnV8Api::ElementId>> V8NamedGroupInfo::s_namedGroupsWithOwnershipHint;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
@@ -300,7 +303,7 @@ bmap<SyncInfo::V8FileSyncInfoId, bset<DgnV8Api::ElementId>> V8NamedGroupInfo::s_
 //static
 void V8NamedGroupInfo::AddNamedGroupWithOwnershipHint(DgnV8EhCR v8eh)
     {
-    s_namedGroupsWithOwnershipHint[Converter::GetV8FileSyncInfoIdFromAppData(*v8eh.GetDgnFileP())].insert(v8eh.GetElementId());
+    s_namedGroupsWithOwnershipHint[Converter::GetRepositoryLinkIdFromAppData(*v8eh.GetDgnFileP())].insert(v8eh.GetElementId());
     }
 
 //---------------------------------------------------------------------------------------
@@ -316,7 +319,7 @@ void V8NamedGroupInfo::Reset()
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
 //static
-bool V8NamedGroupInfo::TryGetNamedGroupsWithOwnershipHint(bset<DgnV8Api::ElementId> const*& namedGroupsWithOwnershipHintPerFile, SyncInfo::V8FileSyncInfoId v8FileId)
+bool V8NamedGroupInfo::TryGetNamedGroupsWithOwnershipHint(bset<DgnV8Api::ElementId> const*& namedGroupsWithOwnershipHintPerFile, RepositoryLinkId v8FileId)
     {
     auto it = s_namedGroupsWithOwnershipHint.find(v8FileId);
     const bool found = it != s_namedGroupsWithOwnershipHint.end();
@@ -332,18 +335,19 @@ bool V8NamedGroupInfo::TryGetNamedGroupsWithOwnershipHint(bset<DgnV8Api::Element
 //****************************************************************************************
 // ECInstanceInfo
 //****************************************************************************************
-#define ECINSTANCE_TABLE SYNCINFO_TABLE("ECInstance")
+#define ECINSTANCE_TABLE "ECInstance"
+#define TEMPTABLE_ATTACH(name) "temp." name
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-ECInstanceKey ECInstanceInfo::Find(bool& isElement, DgnDbR db, SyncInfo::V8FileSyncInfoId fileId, V8ECInstanceKey const& v8Key)
+ECInstanceKey ECInstanceInfo::Find(bool& isElement, DgnDbR db, RepositoryLinkId fileId, V8ECInstanceKey const& v8Key)
     {
     isElement = false;
 
     CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "SELECT ECClassId,ECInstanceId,IsElement FROM " SYNCINFO_ATTACH(ECINSTANCE_TABLE) " WHERE V8SchemaName = ? AND V8ClassName = ? AND V8InstanceId = ? AND V8FileSyncInfoId = ?");
+    auto stat = db.GetCachedStatement(stmt, "SELECT ECClassId,ECInstanceId,IsElement FROM " TEMPTABLE_ATTACH(ECINSTANCE_TABLE) " WHERE V8SchemaName = ? AND V8ClassName = ? AND V8InstanceId = ? AND V8FileSyncInfoId = ?");
     if (stat != BE_SQLITE_OK)
         {
         BeAssert(false && "Could not retrieve cached statement.");
@@ -374,7 +378,7 @@ ECInstanceKey ECInstanceInfo::Find(bool& isElement, DgnDbR db, SyncInfo::V8FileS
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECInstanceInfo::Insert(DgnDbR db, SyncInfo::V8FileSyncInfoId fileId, V8ECInstanceKey const& v8Key, BeSQLite::EC::ECInstanceKey const& key, bool isElement)
+BentleyStatus ECInstanceInfo::Insert(DgnDbR db, RepositoryLinkId fileId, V8ECInstanceKey const& v8Key, BeSQLite::EC::ECInstanceKey const& key, bool isElement)
     {
     if (!v8Key.IsValid() || !key.IsValid())
         {
@@ -383,7 +387,7 @@ BentleyStatus ECInstanceInfo::Insert(DgnDbR db, SyncInfo::V8FileSyncInfoId fileI
         }
 
     CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "INSERT INTO " SYNCINFO_ATTACH(ECINSTANCE_TABLE) " (V8SchemaName,V8ClassName,V8InstanceId, ECClassId,ECInstanceId,IsElement,V8FileSyncInfoId) VALUES (?,?,?,?,?,?,?)");
+    auto stat = db.GetCachedStatement(stmt, "INSERT INTO " TEMPTABLE_ATTACH(ECINSTANCE_TABLE) " (V8SchemaName,V8ClassName,V8InstanceId, ECClassId,ECInstanceId,IsElement,V8FileSyncInfoId) VALUES (?,?,?,?,?,?,?)");
     if (stat != BE_SQLITE_OK)
         {
         BeAssert(false && "Could not retrieve cached statement for ECInstanceInfo::Insert.");
@@ -408,10 +412,7 @@ BentleyStatus ECInstanceInfo::Insert(DgnDbR db, SyncInfo::V8FileSyncInfoId fileI
 //static
 BentleyStatus ECInstanceInfo::CreateTable(DgnDbR db)
     {
-    if (db.TableExists(SYNCINFO_ATTACH(ECINSTANCE_TABLE)))
-        return BSISUCCESS;
-
-    return db.ExecuteSql("CREATE TABLE " SYNCINFO_ATTACH(ECINSTANCE_TABLE) " (V8SchemaName TEXT NOT NULL, V8ClassName TEXT NOT NULL, V8InstanceId TEXT NOT NULL, ECClassId INTEGER NOT NULL, ECInstanceId INTEGER NOT NULL, IsElement BOOL NOT NULL, V8FileSyncInfoId INTEGER NOT NULL,"
+    return db.ExecuteSql("CREATE TABLE " TEMPTABLE_ATTACH(ECINSTANCE_TABLE) " (V8SchemaName TEXT NOT NULL, V8ClassName TEXT NOT NULL, V8InstanceId TEXT NOT NULL, ECClassId INTEGER NOT NULL, ECInstanceId INTEGER NOT NULL, IsElement BOOL NOT NULL, V8FileSyncInfoId INTEGER NOT NULL,"
                          "PRIMARY KEY (V8SchemaName, V8ClassName, V8InstanceId, V8FileSyncInfoId))") == BE_SQLITE_OK ? BSISUCCESS : BSIERROR;
     }
 END_DGNDBSYNC_DGNV8_NAMESPACE

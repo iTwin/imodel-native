@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/UpdateTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -47,7 +47,7 @@ struct UpdateTests : ECPresentationTest
     static BeFileName s_seedProjectPath;
     static bmap<Utf8String, Utf8String> s_registeredSchemaXmls;
     TestRuleSetLocaterPtr m_locater;
-    StubLocalState m_localState;
+    RuntimeJsonLocalState m_localState;
     ConnectionManager m_connections;
     RulesDrivenECPresentationManager* m_manager;
     RefCountedPtr<TestECInstanceChangeEventsSource> m_eventsSource;
@@ -64,7 +64,7 @@ struct UpdateTests : ECPresentationTest
     virtual void SetUp() override
         {
         ECPresentationTest::SetUp();
-        m_localState.GetStubMap().clear();
+        m_localState.GetValues().clear();
         
         BeAssert(s_seedProjectPath.DoesPathExist());
         BeFileName projectPath = BeFileName(s_seedProjectPath)
@@ -209,6 +209,12 @@ struct HierarchyUpdateTests : UpdateTests
         JsonNavNodeCR jsonNode = static_cast<JsonNavNodeCR>(node);
         const_cast<JsonNavNodeR>(jsonNode).SetIsExpanded(true);
         static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache().Update(jsonNode.GetNodeId(), jsonNode);
+        }
+
+    virtual void SetUp() override
+        {
+        UpdateTests::SetUp();
+        m_manager->SetLocalizationProvider(new SQLangLocalizationProvider());
         }
     };
 
@@ -6058,6 +6064,11 @@ TEST_F(HierarchyUpdateTests, UserSettingsTrackedWhenCustomizingChildNodesWithVir
 +===============+===============+===============+===============+===============+======*/
 struct ContentUpdateTests : UpdateTests
     {
+    virtual void SetUp() override
+        {
+        UpdateTests::SetUp();
+        m_manager->SetLocalizationProvider(new SQLangLocalizationProvider());
+        }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -6476,6 +6487,7 @@ struct SelectionUpdateTests : UpdateTests
         UpdateTests::SetUp();
         m_updateHandler = SelectionUpdateRecordsHandler::Create(m_connections, m_selectionManager);
         m_manager->RegisterUpdateRecordsHandler(*m_updateHandler);
+        m_manager->SetLocalizationProvider(new SQLangLocalizationProvider());
         }
     };
 

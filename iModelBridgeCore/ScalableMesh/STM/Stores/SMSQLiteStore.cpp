@@ -19,6 +19,12 @@ template class SMSQLiteNodeDataStore<DPoint3d, DRange3d>;
     
 template class SMStreamedSourceStore<byte, DRange3d>;
 
+template class SMSQLiteNodeDataStore<Utf8String, DRange3d>;
+
+template class SMSQLiteNodeDataStore<MTGGraph, DRange3d>;
+
+template class SMSQLiteNodeDataStore<DifferenceSet, DRange3d>;
+
 SMSQLiteClipDefinitionExtOps::SMSQLiteClipDefinitionExtOps(SMSQLiteFilePtr& smSQLiteFile)
     {
     m_smSQLiteFile = smSQLiteFile;  

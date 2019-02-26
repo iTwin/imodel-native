@@ -3,12 +3,13 @@
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
 
-# A workaround for transitioning from RealDWG2017 to 2018, to allow both work for PRG and developers.
-RDVersion = 2017
-RDVSuffix = 21
-%if exists ($(DgnV8Sdk)Dlls/DwgDgnIO2018.dll)
-RDVersion = 2018
-RDVSuffix = 22
+# Developers may use a PP build containing a different version of RealDWG
+%if exists ($(DgnV8Sdk)Dlls/DwgDgnIO2019.dll)
+    RDVersion = 2019
+    RDVSuffix = 23
+%else
+    RDVersion = 2018
+    RDVSuffix = 22
 %endif
 
 #--------------------------------------------------------------------------------------------------

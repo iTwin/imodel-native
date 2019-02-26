@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Connect/ImsClientTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -21,7 +21,7 @@ struct ImsClientTests : public WSClientBaseTest {};
 TEST_F(ImsClientTests, RequestToken_ProdUrls_RetrievesToken)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
 
     auto client = ImsClient::Create(StubValidClientInfo(), proxy);
@@ -42,7 +42,7 @@ TEST_F(ImsClientTests, RequestToken_ProdUrls_RetrievesToken)
 TEST_F(ImsClientTests, RequestToken_QaUrls_RetrievesToken)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
 
     auto client = ImsClient::Create(StubValidClientInfo(), proxy);
@@ -63,7 +63,7 @@ TEST_F(ImsClientTests, RequestToken_QaUrls_RetrievesToken)
 TEST_F(ImsClientTests, RequestToken_NoLifetimeSpecified_RetrievesTokenWithDefaultLifetime)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
 
     auto client = ImsClient::Create(StubValidClientInfo(), proxy);
@@ -85,7 +85,7 @@ TEST_F(ImsClientTests, RequestToken_NoLifetimeSpecified_RetrievesTokenWithDefaul
 TEST_F(ImsClientTests, RequestToken_LifetimeSpecified_RetrievesTokenWithSpecifiedLifetime)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
 
     auto client = ImsClient::Create(StubValidClientInfo(), proxy);
@@ -107,7 +107,7 @@ TEST_F(ImsClientTests, RequestToken_LifetimeSpecified_RetrievesTokenWithSpecifie
 TEST_F(ImsClientTests, RequestToken_UsingParentTokenAndLifetimeSpecified_RetrievesTokenWithSpecifiedLifetime)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
 
     auto client = ImsClient::Create(StubValidClientInfo(), proxy);
@@ -136,7 +136,7 @@ TEST_F(ImsClientTests, Login_QaImsStsWithOldAppliesTo_RetrievesValidTokensForVal
 
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, BentleyApi::NativeLogging::LOG_TRACE);
 
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
 
     auto client = ImsClient::Create(StubClientInfo(), proxy);
@@ -197,7 +197,7 @@ TEST_F(ImsClientTests, GetA2PUrl)
 
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, BentleyApi::NativeLogging::LOG_TRACE);
 
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState);
 
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -233,7 +233,7 @@ TEST_F(ImsClientTests, Login_DevImsAppliesToTest_RetrievesValidToken)
 
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_TRACE);
 
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Dev, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
 
     auto client = ImsClient::Create(StubClientInfo(), proxy);
@@ -261,7 +261,7 @@ TEST_F(ImsClientTests, Login_QaImsAppliesToTest_RetrievesValidToken)
 
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_TRACE);
 
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
 
     auto client = ImsClient::Create(StubClientInfo(), proxy);
@@ -289,7 +289,7 @@ TEST_F(ImsClientTests, Login_ReleaseImsAppliesToTest_RetrievesValidToken)
 
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_TRACE);
 
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
 
     auto client = ImsClient::Create(StubClientInfo(), proxy);

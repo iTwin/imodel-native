@@ -2130,3 +2130,220 @@ TEST(View,MouseMove)
     Check::KeyinImport ("View.MouseMove");
     Check::ClearKeyins ("View.MouseMove");
     }
+    /*
+    * context for constructing smooth motion between frusta.
+    * Frusta are passed as the 8 customary corners -- LeftLowerRear, RightLowerRear, LeftUpperRear, RightUpperRear, LeftLowerFront etc
+    * The externally interesting calls are
+    *   1) Declare and initialize a context to shift corner0 to corner1, with the (NPC coordinate) point (fractionU, fractionV, fractionW)
+    *             moving along its connecting segment, all other points rotating smoothly from the start orientation to end orientation:
+    *
+    *              SmoothTransformBetweenFrusta context;
+    *              if (context.InitFractionalFrustumTransform (corner0, corner1, fractionU, fractionV, fractionW)) .... 
+    *           (this only fails for flattened frustum -- should not happen)
+    *   2) Get any intermediate 8 corners (at fraction) with
+    */
+    struct SmoothTransformBetweenFrusta
+    {
+    // raw frusta:
+    DPoint3d m_worldFrustum0[8];
+    DPoint3d m_worldFrustum1[8];
+
+    //  frames at initial and final position.
+    //  z axis is (exactly) towards eye
+    //  x axis is in uw plane at that point, and perpendicular to z
+    //  y axis is perpendicular to both.
+    Transform m_rigidFrame0;
+    Transform m_inverseRigidFrame0;
+    Transform m_rigidFrame1;
+    Transform m_inverseRigidFrame1;
+    // Initial and final frusta relative to their local rigid frames.
+    DPoint3d m_localFrustum0[8];
+    DPoint3d m_localFrustum1[8];
+
+    // pieces of the transformation.
+    DVec3d m_vector01;
+    DVec3d m_rotationAxis;
+    double m_rotationRadians;
+
+    //
+    // given a fractional position in a frustum
+    // return the coordinates of the point.  (trilinear interpolation)
+    static DPoint3d FrustumFractionToPoint(DPoint3d * corners, double fractionU, double fractionV, double fractionW)
+        {
+        auto point00W = DPoint3d::FromInterpolate(corners[0], fractionW, corners[4]);
+        auto point10W = DPoint3d::FromInterpolate(corners[1], fractionW, corners[5]);
+        auto point01W = DPoint3d::FromInterpolate(corners[2], fractionW, corners[6]);
+        auto point11W = DPoint3d::FromInterpolate(corners[3], fractionW, corners[7]);
+
+        auto point0VW = DPoint3d::FromInterpolate(point00W, fractionV, point01W);
+        auto point1VW = DPoint3d::FromInterpolate(point10W, fractionV, point11W);
+
+        return DPoint3d::FromInterpolate(point0VW, fractionU, point1VW);
+        }
+
+    //
+    // given a fractional position in a frustum
+    // return a (skewed, non-normalized) transform with
+    //  1) origin at stated fractional point in frustum.
+    //  2) x,y,z axes are (full length) vectors across the frustum at that frustum point
+    static Transform FrustumFractionToSkewFrame (DPoint3d * corners, double fractionU, double fractionV, double fractionW)
+        {
+        auto origin = FrustumFractionToPoint(corners, fractionU, fractionV, fractionW);
+        auto vectorU = DVec3d::FromStartEnd (FrustumFractionToPoint(corners, 0.0, fractionV, fractionW), FrustumFractionToPoint(corners, 1.0, fractionV, fractionW));
+        auto vectorV = DVec3d::FromStartEnd(FrustumFractionToPoint(corners, fractionU, 0.0, fractionW), FrustumFractionToPoint(corners, fractionU, 1.0, fractionW));
+        auto vectorW = DVec3d::FromStartEnd(FrustumFractionToPoint(corners, fractionU, fractionV, 0.0), FrustumFractionToPoint(corners, fractionU, fractionV, 1.0));
+        auto skewAxes = RotMatrix::FromColumnVectors (vectorU, vectorV, vectorW);
+        RotMatrix rigidAxes;
+        rigidAxes.SquareAndNormalizeColumns (skewAxes, 2, 0);
+        return Transform::From (rigidAxes, origin);
+        }
+
+    // Create (in this instance, classic C style)
+    // all the data needed to support subsequent fractional transformation of the frusta.
+    // return false (AND LEAVE GARBAGE DATA) if any step (matrix inversion) fails.
+    bool InitFractionalFrustumTransform(DPoint3d* frustum0, DPoint3d* frustum1, double fractionU = 0.5, double fractionV = 0.5, double fractionW = 0.0)
+        {
+        memcpy (m_worldFrustum0, frustum0, 8 * sizeof (DPoint3d));
+        memcpy (m_worldFrustum1, frustum1, 8 * sizeof(DPoint3d));
+        m_rigidFrame0 = FrustumFractionToSkewFrame (m_worldFrustum0, fractionU, fractionV, fractionW);
+        m_rigidFrame1 = FrustumFractionToSkewFrame(m_worldFrustum1, fractionU, fractionV, fractionW);
+        if (!m_inverseRigidFrame0.InverseOf (m_rigidFrame0))
+            return false;
+        if (!m_inverseRigidFrame1.InverseOf(m_rigidFrame1))
+            return false;
+        // get each frustum relative to its local frame . .
+        m_inverseRigidFrame0.Multiply (m_localFrustum0, m_worldFrustum0, 8);
+        m_inverseRigidFrame1.Multiply(m_localFrustum1, m_worldFrustum1, 8);
+        m_vector01 = DVec3d::FromStartEnd (m_rigidFrame0.Translation (), m_rigidFrame1.Translation ());
+        Transform compositeTransform = m_rigidFrame1 * m_inverseRigidFrame0;
+        auto compositeRotation = RotMatrix::From (compositeTransform);
+        m_rotationRadians= compositeRotation.GetRotationAngleAndVector (m_rotationAxis);
+        return true;
+
+        }
+    // interpolate local corner coordinates at fractional move from m_localFrustum0 to m_localFrustum1
+    void InterpolateFractionalLocalCorners(double fraction, DPoint3d corners[8])
+        {
+        for (int i = 0; i < 8; i++)
+            {
+            corners[i] = DPoint3d::FromInterpolate (m_localFrustum0[i], fraction, m_localFrustum1[i]);
+            }
+        }
+    /*
+    * After initialization, call this for various intermediate fractions.
+    * The returned corner points are in world coordinates "between" start and end positions.
+    */
+    void FractionToWorldFrustum (double fraction, DPoint3d *corners)
+        {
+        InterpolateFractionalLocalCorners (fraction, corners);
+        auto fractionalRotation = RotMatrix::FromVectorAndRotationAngle (m_rotationAxis, m_rotationRadians * fraction);
+        auto axes0 = RotMatrix::From (m_rigidFrame0);
+        auto fractionalAxes = fractionalRotation * axes0;
+        auto fractionalTranslation = DVec3d::FromScale (m_vector01, fraction);
+        auto putdownFrame = Transform::From (fractionalAxes, m_rigidFrame0.Translation () + fractionalTranslation);
+        putdownFrame.Multiply(corners, corners, 8);
+        }
+    };
+
+/* Test support -- save frustum corners as a single linestring */
+    void saveFrustum(DPoint3d corners[8])
+        {
+        // stroke all the edges of the frustum (some twice, so the whole thing is one linestring)
+        Check::SaveTransformed(bvector<DPoint3d>{
+            corners[0], corners[1], corners[3], corners[2], corners[0],  // back retangle
+            corners[4],         // move to front
+            corners[5], corners[1], corners[5], // front edge plus move to same back point and double back to front
+            corners[7], corners[3], corners[7],
+            corners[6], corners[2], corners[6],
+            corners[4],
+            corners[0],
+                DPoint3d::FromInterpolate (corners[4], 0.5, corners[5]),
+                DPoint3d::FromInterpolate (corners[0], 0.5, corners[1]), // some asymetric decoration on lower face
+                DPoint3d::FromInterpolate (corners[0], 0.5, corners[2])
+        });
+        }
+    // construct frustum points for given coordinate frame (probably rigid)
+    // * back plane (half) lengths
+    // * front plane z
+    // * contraction fraction from back to front.
+    void SetupFrustum(DPoint3d corners[8], TransformCR frame, double ax, double ay, double az, double fz)
+        {
+        frame.Multiply (corners[0], -ax, -ay, 0.0);
+        frame.Multiply (corners[1], ax, -ay, 0.0);
+        frame.Multiply (corners[2], -ax, ay, 0.0);
+        frame.Multiply (corners[3], ax, ay, 0.0);
+        frame.Multiply (corners[4], -fz * ax, -fz * ay, az);
+        frame.Multiply (corners[5], fz * ax, -fz * ay, az);
+        frame.Multiply (corners[6], -fz * ax, fz * ay, az);
+        frame.Multiply (corners[7], fz * ax, fz * ay, az);
+        }
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                     Earlin.Lutz  02/19
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    TEST(Frustum, FractionalMove)
+        {
+        // unused - auto frame0 = Transform::FromIdentity ();
+        double c20 = cos (Angle::DegreesToRadians (20));
+        double s20 = sin (Angle::DegreesToRadians (20));
+        for (auto frame0 : {
+            Transform::FromIdentity(),
+            // nonzero origin, goofy position
+            YawPitchRollAngles::FromDegrees (10,5,30).ToTransform (DPoint3d::From (-2,2,-1))
+            })
+            {
+            SaveAndRestoreCheckTransform shifter(0, 400, 0);
+            for (auto frame1 :
+                {
+                // simple translate of center, but with size change along the way
+                Transform::From(DPoint3d::From(1,2,15)),
+                // rotate 90 degrees while shifting along the x axis.
+                Transform::FromRowValues(
+                    c20,-s20,0,40,
+                    s20,c20,0,0,
+                    0,0,1,0),
+                // rotate 90 degrees while shifting along the x axis.
+                Transform::FromRowValues(
+                    0,-1,0,40,
+                    1,0,0,0,
+                    0,0,1,0),
+                // rotate 180 degrees z and around center
+                Transform::FromRowValues(
+                    -1,0,0,0,
+                    0,-1,0,0,
+                    0,0,1,0),
+                // rotate 180 degrees around z while shifting y
+                Transform::FromRowValues(
+                    -1,0,0,0,
+                    0,-1,0,80,
+                    0,0,1,0),
+                // translate the back plane, but repoint the eye vector (SKEW)
+                Transform::FromRowValues(
+                    1,0,1,0,
+                    0,1,2,30,
+                    0,0,3,0)
+                })
+                {
+                SaveAndRestoreCheckTransform shifter(100,0,0);
+                DPoint3d corner0[8];
+                DPoint3d corner1[8];
+                SetupFrustum (corner0, frame0, 4,3, 2, 1.0);
+                SetupFrustum(corner1, frame1, 2, 4, 3, 0.5);
+                SmoothTransformBetweenFrusta context;
+                saveFrustum (corner0);
+                saveFrustum (corner1);
+                Check::Shift (0,100,0);
+                if (Check::True (context.InitFractionalFrustumTransform(corner0, corner1, 0.5, 0.5, 0.5)))
+                    {
+                    DPoint3d cornerF[8];
+                    double g = 0.05;
+                    // tight spacing at start and end, bigger at middle 
+                    for (double f : {0.0, g, 2.0 * g,  0.25, 0.5, 0.75, 1.0 - 2.0 * g, 1.0 - g, 1.0})
+                        {
+                        context.FractionToWorldFrustum (f, cornerF);
+                        saveFrustum(cornerF);
+                        }
+                    }
+                }
+            }
+        Check::ClearGeometry("Frustum.FractionalMove");
+        }

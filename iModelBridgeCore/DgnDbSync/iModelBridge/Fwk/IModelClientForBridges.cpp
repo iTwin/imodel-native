@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/IModelClientForBridges.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/Fwk/IModelClientForBridges.h>
@@ -20,51 +20,14 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_SQLITE
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ServiceLocalState : public IJsonLocalState
-    {
-    private:
-        Json::Value m_map;
-
-    public:
-        JsonValueR GetStubMap()
-            {
-            return m_map;
-            }
-        //! Saves the Utf8String value in the local state.
-        //! @note The nameSpace and key pair must be unique.
-        void _SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override
-            {
-            Utf8PrintfString identifier("%s/%s", nameSpace, key);
-
-            if (value == "null")
-                {
-                m_map.removeMember(identifier);
-                }
-            else
-                {
-                m_map[identifier] = value;
-                }
-            };
-        //! Returns a stored Utf8String from the local state.
-        //! @note The nameSpace and key pair uniquely identifies the value.
-        Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override
-            {
-            Utf8PrintfString identifier("%s/%s", nameSpace, key);
-            return m_map.isMember(identifier) ? m_map[identifier].asCString() : "null";
-            };
-    };
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ServiceLocalState* getLocalState()
+static IJsonLocalState* getLocalState()
     {
     BeSystemMutexHolder threadSafety;
-    static ServiceLocalState* s_localState;
+    static RuntimeJsonLocalState* s_localState;
     if (s_localState == nullptr)
-        s_localState = new ServiceLocalState;
+        s_localState = new RuntimeJsonLocalState;
     return s_localState;
     }
 
@@ -86,9 +49,9 @@ IModelBankClient::IModelBankClient(iModelBridgeFwk::IModelBankArgs const& args, 
     m_iModelId(args.m_iModelId)
     {
     ClientHelper::GetInstance()->SetUrl(args.m_url);
-	m_client = ClientHelper::GetInstance()->SignInWithStaticHeader(args.m_accessToken);
+    m_client = ClientHelper::GetInstance()->SignInWithStaticHeader(args.m_accessToken);
     ClientHelper::GetInstance()->SetUrl("");
-	}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
@@ -98,9 +61,9 @@ IModelHubClient::IModelHubClient(iModelBridgeFwk::IModelHubArgs const& args, Web
     m_args(args)
     {
     Tasks::AsyncError serror;
-    if (nullptr != args.m_tokenProvider)
+    if (!args.m_callBackurl.empty())
         {
-        m_oidcMgr = OidcSignInManagerPtr(new OidcSignInManager(args.m_tokenProvider));
+        m_oidcMgr = OidcSignInManagerPtr(new OidcSignInManager(args.m_callBackurl));
         m_client = ClientHelper::GetInstance()->SignInWithManager(m_oidcMgr);
         }
     else
@@ -409,5 +372,40 @@ StatusInt IModelClientBase::AcquireLocks(LockRequest& req, DgnDbR db)
         }
     while (isTemporaryError(m_lastServerError) && (attempt++ < m_maxRetryCount) && SleepBeforeRetry());
 
+    return ERROR;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       IModelClientBase::RestoreBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName, BeSQLite::BeBriefcaseId briefcaseId)
+    {
+    iModel::Hub::iModelInfoPtr ri = GetIModelInfo();
+    if (ri == nullptr)
+        return BSIERROR;
+
+    auto progress = getHttpProgressMeter();
+    auto result = m_client->RestoreBriefcase(*ri, briefcaseId, bcFileName, true,
+        [](BeFileName baseDirectory, iModelInfoCR iModelInfo, BriefcaseInfoCR briefcaseInfo)
+        {
+        if (baseDirectory.IsDirectory())
+            baseDirectory.AppendToPath(BeFileName(briefcaseInfo.GetFileName()));
+        return baseDirectory;
+        }, progress)->GetResult();
+        
+    if (result.IsSuccess())
+        {
+        auto createdPath = result.GetValue()->GetLocalPath();
+        if (!createdPath.EqualsI(bcFileName))
+            {
+            BeAssert(false);
+            m_lastServerError = Error(Error::Id::InvalidBriefcase);
+            return BSIERROR;
+            }
+        return SUCCESS;
+        }
+
+    m_lastServerError = result.GetError();
     return ERROR;
     }

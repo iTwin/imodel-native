@@ -8,6 +8,11 @@
 
 %include mdl.mki
 
+# Not going to patch old headers to deal with this.
+%if $(BUILD_TOOLSET) == "ANDROID_CLANG")
+    LLVMCppCompOpts + -Wno-cast-qual
+%endif
+
 nameToDefine = __BIM_FROM_DGNDB_BUILD__
 %include cdefapnd.mki
 

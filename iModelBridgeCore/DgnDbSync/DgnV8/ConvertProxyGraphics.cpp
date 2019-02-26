@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ConvertProxyGraphics.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -295,10 +295,14 @@ Converter::V8NamedViewType Converter::GetV8NamedViewTypeOfFirstAttachment(DgnV8M
 * @bsimethod                                    Sam.Wilson                      09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping const& drawingModelMapping, 
-                                                         SyncInfo::V8ElementSource const& attachmentSource,
-                                                         SyncInfo::V8ElementMapping const& originalElementMapping, DgnV8Api::ElementHandle& v8eh,
-                                                         DgnCategoryId categoryId, GeometryBuilder& builder)
+                                                         SyncInfo::V8ElementExternalSourceAspect const& sectionedElementXsa, DgnV8Api::ElementHandle& sectionedV8Element,
+                                                         DgnCategoryId categoryId, GeometryBuilder& builder, 
+                                                         Utf8StringCR v8SectionedElementPath, Utf8StringCR attachmentInfo, ResolvedModelMapping const& rootParentModel)
     {
+    // "sectionedV8Element" is the 3-D element that was sectioned/projected/rendered
+    
+    // Note that sectionedElementXsa may be invalid even if sectionedV8Element is valid. That happens if we did not actually convert the 3-D elements but only drawings that reference them.
+
     DgnModelR model = drawingModelMapping.GetDgnModel();
 
     DgnCode code;
@@ -311,31 +315,31 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
     V8ElementECContent ecContent;
     bool hasPrimaryInstance = false;
     bool hasSecondaryInstances = false;
-    if (v8eh.IsValid())
+    if (sectionedV8Element.IsValid()) // This is the 3-D element that was sectioned/projected/rendered
         {
         bool isNewElement = true;
         if (IsUpdating())
             {
             IChangeDetector::SearchResults changeInfo;
-            if (GetChangeDetector()._IsElementChanged(changeInfo, *this, v8eh, drawingModelMapping) && IChangeDetector::ChangeType::Update == changeInfo.m_changeType)
+            if (GetChangeDetector()._IsElementChanged(changeInfo, *this, sectionedV8Element, drawingModelMapping) && IChangeDetector::ChangeType::Update == changeInfo.m_changeType)
                 isNewElement = false;
             }
-        GetECContentOfElement(ecContent, v8eh, drawingModelMapping, true);
+        GetECContentOfElement(ecContent, sectionedV8Element, drawingModelMapping, true);
         hasPrimaryInstance = ecContent.m_primaryV8Instance != nullptr;
         hasSecondaryInstances = !ecContent.m_secondaryV8Instances.empty();
-        elementClassId = _ComputeElementClass(v8eh, ecContent, drawingModelMapping);
+        elementClassId = _ComputeElementClass(sectionedV8Element, ecContent, drawingModelMapping);
         }
     else
         {
-        SyncInfo::FileById theFile(GetDgnDb(), drawingModelMapping.GetV8FileSyncInfoId());
-        auto i = theFile.begin();
-        Utf8String fileName;
-        if (i == theFile.end())
+#ifdef WIP_EXTERNAL_SOURCE_ASPECT // sectionedElementXsa will almost always be invalid in this case. If we want to report this issue, then the caller will have to pass in the ElementId
+        // Issue a warning about missing sectioned element
+        auto rlink = GetRepositoryLinkElement(drawingModelMapping.GetRepositoryLinkId());
+        if (rlink.IsValid())
             {
-            auto entry = *i;
-            fileName = entry.GetUniqueName();
+            auto aspect = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect(*rlink);
+            ReportIssueV(IssueSeverity::Warning, IssueCategory::Unknown(), Issue::ExtractedGraphicMissingElement(), "", sectionedElementXsa.GetV8ElementId(), model.GetName().c_str(), aspect.GetFileName().c_str());
             }
-        ReportIssueV(IssueSeverity::Warning, IssueCategory::Unknown(), Issue::ExtractedGraphicMissingElement(), "", originalElementMapping.m_v8ElementId, model.GetName().c_str(), fileName.c_str());
+#endif
         }
 
     if (!elementClassId.IsValid())
@@ -363,7 +367,8 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         }
     if (BSISUCCESS != builder.Finish(*drawingGraphic->ToGeometrySourceP()))
         {
-        ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicBuildFailure(), "", originalElementMapping.m_v8ElementId, model.GetName().c_str());
+        if (sectionedElementXsa.IsValid())
+            ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicBuildFailure(), "", sectionedElementXsa.GetV8ElementId(), model.GetName().c_str());
         BeAssert(false);
         return DgnDbStatus::BadRequest;
         }
@@ -385,7 +390,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         results.m_element->SetUserLabel(Utf8String(displayLabel.c_str()).c_str());
 
         if (ecContent.m_v8ElementType == V8ElementType::NamedGroup)
-            OnNamedGroupConverted(v8eh, results.m_element->GetElementClassId());
+            OnNamedGroupConverted(sectionedV8Element, results.m_element->GetElementClassId());
         }
     //item or aspects only if there was an ECInstance on the element at all
     if (hasSecondaryInstances)
@@ -394,14 +399,15 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
             m_elementAspectConverter = new ElementAspectConverter(*this);
         if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(results, ecContent.m_secondaryV8Instances))
             {
-            //ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicBuildFailure(), "", originalElementMapping.m_v8ElementId, model.GetName().c_str());
+            //ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicBuildFailure(), "", sectionedElementXsa.m_v8ElementId, model.GetName().c_str());
 
             }
         }
 
     if (IsUpdating())
         {
-        auto existingDrawingGraphicId = GetSyncInfo().FindExtractedGraphic(attachmentSource, originalElementMapping, categoryId);
+        // See "How ProxyGraphics are tracked"
+        auto existingDrawingGraphicId = SyncInfo::ProxyGraphicExternalSourceAspect::FindDrawingGraphic(rootParentModel.GetDgnModel(), v8SectionedElementPath, categoryId, elementClassId, GetDgnDb());
         if (existingDrawingGraphicId.IsValid())
             {
             // We already have a graphic for this element. Update it.
@@ -419,16 +425,19 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         }
 
     // This is a new graphic for this element.
+
+    // See "How ProxyGraphics are tracked"
+    auto aspect = SyncInfo::ProxyGraphicExternalSourceAspect::CreateAspect(rootParentModel.GetDgnModel(), v8SectionedElementPath, attachmentInfo, GetDgnDb());
+    aspect.AddAspect(*drawingGraphic);
+
     drawingGraphic->Insert(&status);
     if (DgnDbStatus::Success != status)
         return status;
 
-    GetSyncInfo().InsertExtractedGraphic(attachmentSource, originalElementMapping, categoryId, drawingGraphic->GetElementId());
-
-    if (v8eh.IsValid())
+    if (sectionedV8Element.IsValid())
         {
         BeSQLite::EC::ECInstanceKey bisElementKey = drawingGraphic->GetECInstanceKey();
-        SyncInfo::V8FileSyncInfoId fileId = GetV8FileSyncInfoIdFromAppData(*v8eh.GetDgnFileP());
+        RepositoryLinkId fileId = GetRepositoryLinkId(*sectionedV8Element.GetDgnFileP());
         if (results.m_v8PrimaryInstance.IsValid())
             ECInstanceInfo::Insert(GetDgnDb(), fileId, results.m_v8PrimaryInstance, bisElementKey, true);
 
@@ -447,131 +456,14 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         }
 
     //  Create a relationship to the 3d element that it was derived from. (If the relationship already exists, this will be a nop.)
-    auto originalInBim = GetDgnDb().Elements().Get<GeometricElement>(originalElementMapping.m_elementId);
-    if (originalInBim.IsValid())
-        GraphicDerivedFromElement::Insert(*drawingGraphic->ToDrawingGraphic(), *originalInBim);
+    if (sectionedElementXsa.IsValid())
+        {
+        auto originalInBim = GetDgnDb().Elements().Get<GeometricElement>(sectionedElementXsa.GetElementId());
+        if (originalInBim.IsValid())
+            GraphicDerivedFromElement::Insert(*drawingGraphic->ToDrawingGraphic(), *originalInBim);
+        }
 
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Converter::_DetectedDeletedExtractionGraphicsCategories(SyncInfo::V8ElementSource const& attachmentMapping,
-                                                             SyncInfo::V8ElementMapping const& originalElementMapping,
-                                                             bset<DgnCategoryId>& seenCategories)
-    {
-    CachedStatementPtr stmt = nullptr;
-    //                                          0      1                     2                         3
-    m_dgndb->GetCachedStatement(stmt, "SELECT Category,Graphic FROM " 
-                                SYNCINFO_ATTACH(SYNC_TABLE_ExtractedGraphic) 
-                                " WHERE (DrawingV8ModelSyncInfoId=? AND AttachmentV8ElementId=?"
-                                "    AND OriginalV8ModelSyncInfoId=? AND OriginalV8ElementId=?)");
-
-    
-    int col = 1;
-    stmt->BindInt64(col++, attachmentMapping.m_v8ModelSyncInfoId.GetValue());
-    stmt->BindInt64(col++, attachmentMapping.m_v8ElementId);
-    stmt->BindInt64(col++, originalElementMapping.m_v8ModelSyncInfoId.GetValue());
-    stmt->BindInt64(col++, originalElementMapping.m_v8ElementId);
-
-
-    bset<DgnCategoryId>     unseenCategories;
-    bset<DgnElementId>      graphicsToDelete;
-    while (BeSQLite::BE_SQLITE_ROW == stmt->Step())
-        {
-        DgnCategoryId   category    = stmt->GetValueId<DgnCategoryId>(0);
-
-        if (seenCategories.find(category) == seenCategories.end())
-            {
-            unseenCategories.insert(category);
-            graphicsToDelete.insert(stmt->GetValueId<DgnElementId>(1));
-            }
-        }
-    for (auto graphicId : graphicsToDelete)
-        {
-        auto graphic = GetDgnDb().Elements().GetElement(graphicId);
-        if (graphic.IsValid())
-            graphic->Delete();
-        }
-    for (auto unseenCategory : unseenCategories)
-        GetSyncInfo().DeleteExtractedGraphicsCategory(attachmentMapping, originalElementMapping, unseenCategory);
-
-    return !unseenCategories.empty();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Converter::_DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel, 
-                                                 SyncInfo::T_V8ElementMapOfV8ElementSourceSet const& v8OriginalElementsSeen,
-                                                 SyncInfo::T_V8ElementSourceSet const& unchangedV8attachments)
-    {
-    // 'v8OrignalElementsSeen' is the set of all V8 elements that were the source of proxy graphics 
-    // that the caller saw when processing the proxy caches of the attachments to the specified V8 drawing model.
-    // If we find a record in syncinfo that is linked to this V8 drawing model and also to an original element that is 
-    // NOT in v8OriginalElementsSeen, then we know that the caller did not see its and we can conclude that source of the graphic
-    // in V8 has disappeared. We should therefore delete the drawing graphic.
-
-    bset<DgnElementId>                              drawingGraphicsToDelete;
-    SyncInfo::T_V8ElementSourceSet                  attachmentsToDelete;
-    SyncInfo::T_V8ElementMapOfV8ElementSourceSet    recordsToDelete;
-    SyncInfo::V8ElementSource                       attachmentSource;
-
-    attachmentSource.m_v8ModelSyncInfoId = v8DrawingModel.GetV8ModelSyncInfoId();
-
-    CachedStatementPtr stmt = nullptr;
-    //                                          0      1                     2                         3
-    m_dgndb->GetCachedStatement(stmt, "SELECT Graphic,AttachmentV8ElementId,OriginalV8ModelSyncInfoId,OriginalV8ElementId FROM " 
-                                SYNCINFO_ATTACH(SYNC_TABLE_ExtractedGraphic) " WHERE DrawingV8ModelSyncInfoId=?");
-    stmt->BindInt64(1, v8DrawingModel.GetV8ModelSyncInfoId().GetValue());
-    while (BeSQLite::BE_SQLITE_ROW == stmt->Step())
-        {
-        DgnElementId graphic               = stmt->GetValueId<DgnElementId>(0);
-        uint64_t attachmentV8ElementId     = stmt->GetValueInt64(1);
-        uint64_t originalV8ModelSyncInfoId = stmt->GetValueInt64(2);
-        uint64_t originalV8ElementId       = stmt->GetValueInt64(3);
-
-        attachmentSource.m_v8ElementId = attachmentV8ElementId;
-
-        if (unchangedV8attachments.find(attachmentSource) != unchangedV8attachments.end())
-            continue;
-
-        // For changed attachments only....
-        auto attachmentSeen = v8OriginalElementsSeen.find(attachmentSource);
-        if (attachmentSeen == v8OriginalElementsSeen.end())
-            {
-            drawingGraphicsToDelete.insert(graphic);
-            attachmentsToDelete.insert(attachmentSource);
-            continue;
-            }
-
-        SyncInfo::T_V8ElementSourceSet const& originalsSeen = attachmentSeen->second;
-
-        SyncInfo::V8ElementSource originalsSeenSource(originalV8ElementId, SyncInfo::V8ModelSyncInfoId(originalV8ModelSyncInfoId));
-        if (originalsSeen.find(originalsSeenSource) == originalsSeen.end())
-            {
-            drawingGraphicsToDelete.insert(graphic);
-            recordsToDelete[attachmentSource].insert(originalsSeenSource);
-            }
-        }
-
-    for (auto g : drawingGraphicsToDelete)
-        {
-        auto graphic = GetDgnDb().Elements().GetElement(g);
-        if (graphic.IsValid())
-            graphic->Delete();
-        }
-    for (auto const& byattachment : recordsToDelete)
-        {
-        auto const& attachment = byattachment.first;
-        for (auto const& original: byattachment.second)
-            {
-            GetSyncInfo().DeleteExtractedGraphics(attachment, original);
-            }
-        }
-
-    return !drawingGraphicsToDelete.empty() || !recordsToDelete.empty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -676,7 +568,7 @@ static TargetDrawingBoundary getTargetDrawingBoundary(DgnV8EhCR viewEH, Converte
                     if (dbEh != nullptr)
                         {
                         // Note: scope may be holding the V8 model open, and it may close and free all of its V8 ElementRefs when we return.
-                        tdb.m_modelMapping = cvt.FindFirstModelMappedTo(*dbEh->GetDgnModelP());
+                        tdb.m_modelMapping = cvt.FindFirstResolvedModelMapping(*dbEh->GetDgnModelP());
                         tdb.m_eid = dbEh->GetElementId();
                         return tdb;
                         }
@@ -915,7 +807,7 @@ void ConvertDetailingSymbolExtension::Initialize(Converter& converter)
         }
     s_initialized = true;
 
-    DbResult result = converter.GetDgnDb().CreateTable(DETAILINGSYMBOLS_TEMP_TABLE, "SourceV8ModelSyncInfoId INT NOT NULL, SourceV8ElementId BIGINT NOT NULL, TargetV8ModelSyncInfoId INT, TargetV8ElementId BIGINT, DetType INT");
+    DbResult result = converter.GetDgnDb().CreateTable(DETAILINGSYMBOLS_TEMP_TABLE, "SourceModelId BIGINT NOT NULL, SourceV8ElementId BIGINT NOT NULL, TargetModelId BIGINT, TargetV8ElementId BIGINT, DetType INT");
     BeAssert(result == BE_SQLITE_OK);
     UNUSED_VARIABLE(result);
 
@@ -927,7 +819,7 @@ void ConvertDetailingSymbolExtension::Initialize(Converter& converter)
 //---------------------------------------------------------------------------------------
 BeSQLite::CachedStatementPtr ConvertDetailingSymbolExtension::GetInsertStatement(DgnDbR db, DetType dtype)
     {
-    auto stmt = db.GetCachedStatement("INSERT INTO " DETAILINGSYMBOLS_TEMP_TABLE " (SourceV8ModelSyncInfoId,SourceV8ElementId,TargetV8ModelSyncInfoId,TargetV8ElementId,DetType) VALUES(?,?,?,?,?)");
+    auto stmt = db.GetCachedStatement("INSERT INTO " DETAILINGSYMBOLS_TEMP_TABLE " (SourceModelId,SourceV8ElementId,TargetModelId,TargetV8ElementId,DetType) VALUES(?,?,?,?,?)");
     stmt->BindInt(5, (int)dtype);
     return stmt;
     }
@@ -942,7 +834,7 @@ BeSQLite::CachedStatementPtr ConvertDetailingSymbolExtension::GetSelectStatement
         BeAssert(false);
         return nullptr;
         }
-    auto stmt = db.GetCachedStatement("SELECT SourceV8ModelSyncInfoId,SourceV8ElementId,TargetV8ModelSyncInfoId,TargetV8ElementId FROM " DETAILINGSYMBOLS_TEMP_TABLE " WHERE (DetType=?)");
+    auto stmt = db.GetCachedStatement("SELECT SourceModelId,SourceV8ElementId,TargetModelId,TargetV8ElementId FROM " DETAILINGSYMBOLS_TEMP_TABLE " WHERE (DetType=?)");
     stmt->BindInt(1, (int)dtype);
     return stmt;
     }
@@ -957,9 +849,9 @@ void ConvertDetailingSymbolExtension::RecordCalloutDependency(Converter& convert
     //    return;
 
     auto stmt = GetInsertStatement(converter.GetDgnDb(), DetType::Callout);
-    stmt->BindInt   (1, v8mm.GetV8ModelSyncInfoId().GetValue());
+    stmt->BindId    (1, v8mm.GetDgnModel().GetModelId());
     stmt->BindInt64 (2, v8Eh.GetElementId());
-    //stmt->BindInt   (3, tdb.m_modelMapping.GetV8ModelSyncInfoId().GetValue());
+    //stmt->BindInt   (3, tdb.m_modelMapping.GetiModelExternalSourceAspectID().GetValue());
     //stmt->BindInt64 (4, tdb.m_eid);
     auto status = stmt->Step();
     BeAssert(BE_SQLITE_DONE == status);
@@ -976,12 +868,12 @@ void ConvertDetailingSymbolExtension::RecordDrawingBoundaryDependency(Converter&
     if (nullptr == attachment)
         return;
 
-    auto attmm = converter.FindFirstModelMappedTo(*attachment->GetParent().GetDgnModelP());
+    auto attmm = converter.FindFirstResolvedModelMapping(*attachment->GetParent().GetDgnModelP());
 
     auto stmt = GetInsertStatement(converter.GetDgnDb(), DetType::DrawingBoundary);
-    stmt->BindInt   (1, v8mm.GetV8ModelSyncInfoId().GetValue());
+    stmt->BindId    (1, v8mm.GetDgnModel().GetModelId());
     stmt->BindInt64 (2, v8Eh.GetElementId());
-    stmt->BindInt   (3, attmm.GetV8ModelSyncInfoId().GetValue());
+    stmt->BindId    (3, attmm.GetDgnModel().GetModelId());
     stmt->BindInt64 (4, attachment->GetElementId());
     auto status = stmt->Step();
     BeAssert(BE_SQLITE_DONE == status);
@@ -994,14 +886,14 @@ void ConvertDetailingSymbolExtension::RecordDrawingBoundaryDependency(Converter&
 void ConvertDetailingSymbolExtension::RelateViewAttachmentLabelToViewAttachment(Converter& converter,BeSQLite::Statement& select)
     {
     // Read back what RecordDrawingBoundaryDependency stored:
-    SyncInfo::V8ModelSyncInfoId drawingBoundaryModelId    (select.GetValueInt  (0));        // Source=DrawingBoundary
-    DgnV8Api::ElementId         drawingBoundaryElementId = select.GetValueInt64(1);
-    SyncInfo::V8ModelSyncInfoId attachmentParentModelId   (select.GetValueInt  (2));        // Target=DgnAttachment
-    DgnV8Api::ElementId         attachmentElementId      = select.GetValueInt64(3);
+    auto                drawingBoundaryModelId   = select.GetValueId<DgnModelId>(0);         // Source=DrawingBoundary
+    DgnV8Api::ElementId drawingBoundaryElementId = select.GetValueInt64(1);
+    auto                attachmentParentModelId  = select.GetValueId<DgnModelId>(2);         // Target=DgnAttachment
+    DgnV8Api::ElementId attachmentElementId      = select.GetValueInt64(3);
 
     //  Find the ViewAttachmentLabel to which the DrawingBoundary was converted
     //  Note that I'm confident that there is only one syncinfo mapping for a given DrawingBoundary element, so there's no need for a filter
-    auto drawingBoundaryElementMapping = converter.GetFirstElementBySyncInfoId(drawingBoundaryModelId, drawingBoundaryElementId, nullptr);  
+    auto drawingBoundaryElementMapping = converter.FindFirstElementMappedTo(drawingBoundaryModelId, drawingBoundaryElementId, nullptr);  
     auto viewAttachmentLabelPersist = converter.GetDgnDb().Elements().GetElement(drawingBoundaryElementMapping.GetElementId());
     if (!viewAttachmentLabelPersist.IsValid())
         {
@@ -1012,11 +904,11 @@ void ConvertDetailingSymbolExtension::RelateViewAttachmentLabelToViewAttachment(
     //  Find the ViewAttachment that was generated from the DgnAttachment
     //  Note that a given DgnAttachment (on a sheet) is mapped to several different elements. Therefore, I have to supply a filter to find the one that I want.
     IChangeDetector::T_SyncInfoElementFilter detectViewAttachment = 
-        [](SyncInfo::ElementIterator::Entry const& entry, Converter& converter)
+        [](SyncInfo::V8ElementExternalSourceAspectIterator::Entry const& entry, Converter& converter)
             {
-            return converter.GetDgnDb().Elements().Get<Sheet::ViewAttachment>(entry.GetElementId()).IsValid();
+            return converter.GetDgnDb().Elements().Get<Sheet::ViewAttachment>(entry->GetElementId()).IsValid();
             };
-    auto dgnAttachmentElementMapping = converter.GetFirstElementBySyncInfoId(attachmentParentModelId, attachmentElementId, &detectViewAttachment);
+    auto dgnAttachmentElementMapping = converter.FindFirstElementMappedTo(attachmentParentModelId, attachmentElementId, &detectViewAttachment);
     auto viewAttachmentElementId = dgnAttachmentElementMapping.GetElementId();
     if (!viewAttachmentElementId.IsValid())
         {
@@ -1041,11 +933,11 @@ void ConvertDetailingSymbolExtension::RelateViewAttachmentLabelToViewAttachment(
 void ConvertDetailingSymbolExtension::RelateCalloutToDrawing(Converter& converter, BeSQLite::Statement& select)
     {
     // Read back what RecordCalloutDependency stored:
-    SyncInfo::V8ModelSyncInfoId v8CalloutModelId          (select.GetValueInt  (0));      // Source=Callout
-    DgnV8Api::ElementId         v8CalloutElementId       = select.GetValueInt64(1);
-    //SyncInfo::V8ModelSyncInfoId drawingBoundaryModelId    (select.GetValueInt  (2));      // Target=DrawingBoundary
-    //DgnV8Api::ElementId         drawingBoundaryElementId = select.GetValueInt64(3);
-    auto rmm = converter.FindResolvedModelMappingBySyncId(v8CalloutModelId);
+    auto                    v8CalloutModelId        = select.GetValueId<DgnModelId>(0);      // Source=Callout
+    DgnV8Api::ElementId     v8CalloutElementId      = select.GetValueInt64(1);
+    //auto                  drawingBoundaryModelId  = select.GetValueId<DgnModelId>(2);      // Target=DrawingBoundary
+    //DgnV8Api::ElementId   drawingBoundaryElementId = select.GetValueInt64(3);
+    auto rmm = converter.FindResolvedModelMappingByModelId(v8CalloutModelId);
     if (!rmm.IsValid())
         return;
     DgnV8Api::ElementHandle v8Eh(v8CalloutElementId, &rmm.GetV8Model());
@@ -1054,12 +946,12 @@ void ConvertDetailingSymbolExtension::RelateCalloutToDrawing(Converter& converte
     auto tdb = getTargetDrawingBoundary(v8Eh, converter);
     if (!tdb.m_modelMapping.IsValid() || 0 == tdb.m_eid)
         return;
-    SyncInfo::V8ModelSyncInfoId drawingBoundaryModelId = tdb.m_modelMapping.GetV8ModelSyncInfoId();      // Target=DrawingBoundary
-    DgnV8Api::ElementId         drawingBoundaryElementId = tdb.m_eid;
+    auto                    drawingBoundaryModelId = tdb.m_modelMapping.GetDgnModel().GetModelId();      // Target=DrawingBoundary
+    DgnV8Api::ElementId     drawingBoundaryElementId = tdb.m_eid;
 
     //  Find the BIM Callout to which the V8 Callout was converted
     //  I'm confident that there is only one syncinfo mapping for a given V8 Callout element, so there's no need for a filter
-    auto v8CalloutElementMapping = converter.GetFirstElementBySyncInfoId(v8CalloutModelId, v8CalloutElementId, nullptr);
+    auto v8CalloutElementMapping = converter.FindFirstElementMappedTo(v8CalloutModelId, v8CalloutElementId, nullptr);
     auto calloutPersist = converter.GetDgnDb().Elements().GetElement(v8CalloutElementMapping.GetElementId());
     if (!calloutPersist.IsValid())
         {
@@ -1074,7 +966,7 @@ void ConvertDetailingSymbolExtension::RelateCalloutToDrawing(Converter& converte
 
     //  Find the BIM ViewAttachmentLabel to which the DrawingBoundary was converted
     //  I'm confident that there is only one syncinfo mapping for a given DrawingBoundary element, so there's no need for a filter
-    auto drawingBoundaryElementMapping = converter.GetFirstElementBySyncInfoId(drawingBoundaryModelId, drawingBoundaryElementId, nullptr);
+    auto drawingBoundaryElementMapping = converter.FindFirstElementMappedTo(drawingBoundaryModelId, drawingBoundaryElementId, nullptr);
     auto viewAttachmentLabel = converter.GetDgnDb().Elements().GetElement(drawingBoundaryElementMapping.GetElementId());
     if (!viewAttachmentLabel.IsValid())
         return;
@@ -1113,3 +1005,60 @@ void ConvertDetailingSymbolExtension::RelateCalloutToDrawing(Converter& converte
 
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
+
+/*  Proxy Graphics
+
+Background:
+
+A proxy graphic is some part of a section or projection of a 3-D element. (Sectioning a single 3-D element could result in many separate proxy graphics.)
+The 3-D element that was sectioned or projected is called the "v8SectionedElement" in this code.
+The v8SectionedElement may *or may not* be converted by the V8Converter.
+If it is converted, then the converter will create a relationship between it and the generated DrawingGraphic that captures its proxy graphics.
+It will not be converted if it is not in a spatial model that is found by the converter starting from the root spatial model.
+It will not be converted if does not actually exist any more in the source files.
+In either case, the proxy graphics may still exist in the sheet or drawing's attachment element. And in that case, the converter will
+convert the proxy graphics, without the originals.
+Therefore, the code that converts proxy graphics must be careful not to assume that the v8SectionedElement corresponds to anything in the iModel.
+
+In V8, the source of proxy graphics looks like this:
+Sheet Model ---DgnAttachment#1--> Drawing Model --DgnAttachment(SectionView)#2--> 3D Design Model { 3D element#99 }
+or
+Sheet Model ---DgnAttachment#1--> Drawing Model --DgnAttachment(SectionView)#2--> 3D Design Model ---DgnAttachment#3---> 3D DesignModel 2 { 3D element#100 }
+or
+Sheet Model --DgnAttachment(SectionView)#6--------------------------------------> 3D Design Model { 3D element#99 }
+or
+Sheet Model --DgnAttachment(SectionView)#6--------------------------------------> 3D Design Model ---DgnAttachment#3---> 3D DesignModel 2 { 3D element#100 }
+
+Note how the v8SectionedElement may be in a nested reference attachment. In fact the sheet may reference another sheet and/or the drawings may reference other drawings. There is no limit to the levels or combinations of nested references.
+Note that there may or may not be a V8 Drawing Model. The V8 Sheet model may reference the 3D Design Model directly.
+
+In an iModel, proxy graphics are captured as DrawingGraphic elements and are stored in Drawing models. Views of Drawing models are attached to Sheet models.
+That is, reference attachments are collapsed.
+
+"How ProxyGraphics are tracked"
+
+Identity = path
+The ProxyGraphicExternalSourceAspect Identity is the full path from the BIS Sheet to the v8SectionedElement. For example, in the first case described above,
+the path would be: 1/2/99, where 1 and 2 are the ElementIds of the two DgnAttachments, and 99 is the ElementId of the sectioned V8 element in the 3D design model.
+In the last case, the path wouild be: 6/3/100. 
+
+Scope = Sheet
+The Scope of a ProxyGraphicExternalSourceAspect is the BIS Sheet. 
+Note in the examples above how the path begins at the (BIS) Sheet and then identifies the (V8) attachments
+used to reach the final 3D element. This works whether or not there is a drawing model. 
+Note that the BIS Sheet's own ModelExternalSourceAspect identifies the V8 Sheet model.
+
+
+iModel                        DGN
+------------------------      ----------------------
+Sheet
+^ | XSA Identifer-----------> SheetModel
+| |                             DgnAttachment#1
+| |                               DrawingModel?
+| views:                            DgnAttachment#2
+|   Drawing                           DesignModel
+|       DrawingGraphic                  3DElement#3
++---Scope  XSA  Identifier --------------/
+
+
+*/

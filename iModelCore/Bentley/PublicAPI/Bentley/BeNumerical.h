@@ -65,23 +65,35 @@ struct          BeNumerical
         return sv1 < sv2 ? -1 : 1;
         }
 
+    //! Checks if value1 is greater than value2 to the closest tolerance possible.
+    static bool IsGreater (double value1, double value2) { return (Compare(value1, value2) == 1); }
+
+    //! Checks if value1 is greater or equal to value2 to the closest tolerance possible.
+    static bool IsGreaterOrEqual (double value1, double value2) { return (Compare(value1, value2) >= 0); }
+
+    //! Checks if value1 is less than value2 to the closest tolerance possible.
+    static bool IsLess (double value1, double value2) { return (Compare(value1, value2) == -1); }
+
+    //! Checks if value1 is less or equal to value2 to the closest tolerance possible.
+    static bool IsLessOrEqual (double value1, double value2) { return (Compare(value1, value2) <= 0); }
+
     //! Checks if given values are equal to the closest tolerance possible.
     static bool IsEqual (double value1, double value2) { return (Compare(value1, value2) == 0); }
 
     //! Checks if value is equal to zero to the closest tolerance possible.
-    static bool IsEqualToZero (double value) { return (Compare(value, 0.0) == 0); }
+    static bool IsEqualToZero (double value) { return IsEqual(value, 0.0); }
 
     //! Checks if value is greater than zero to the closest tolerance possible.
-    static bool IsGreaterThanZero (double value) { return (Compare(value, 0.0) >= 1); }
+    static bool IsGreaterThanZero (double value) { return IsGreater (value, 0.0); }
 
     //! Checks if value is greater or equal to zero to the closest tolerance possible.
-    static bool IsGreaterOrEqualToZero (double value) { return (Compare(value, 0.0) >= 0); }
+    static bool IsGreaterOrEqualToZero (double value) { return IsGreaterOrEqual (value, 0.0); }
 
     //! Checks if value is less than zero to the closest tolerance possible.
-    static bool IsLessThanZero (double value) { return (Compare(value, 0.0) <= -1); }
+    static bool IsLessThanZero (double value) { return IsLess (value, 0.0); }
 
     //! Checks if value is less or equal to zero to the closest tolerance possible.
-    static bool IsLessOrEqualToZero (double value) { return (Compare(value, 0.0) <= 0); }
+    static bool IsLessOrEqualToZero (double value) { return IsLessOrEqual (value, 0.0); }
 };
 
 END_BENTLEY_NAMESPACE

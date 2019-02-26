@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/BimUpgrader/BimUpgrader.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -208,7 +208,7 @@ BentleyStatus BimUpgrader::_ParseCommandLine(WStringR errmsg, int argc, WCharCP 
             continue;
             }
 
-        if (argv[iArg] == wcsstr(argv[iArg], L"--compress="))
+        if (argv[iArg] == wcsstr(argv[iArg], L"--compress"))
             {
             m_compress = true;
             continue;

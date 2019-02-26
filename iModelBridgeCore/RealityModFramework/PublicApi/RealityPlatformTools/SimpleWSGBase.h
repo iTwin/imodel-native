@@ -1,3 +1,12 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicApi/RealityPlatformTools/SimpleWSGBase.h $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
 #include <RealityPlatform/RealityDataObjects.h>
 #include <RealityPlatformTools/WSGServices.h>
 

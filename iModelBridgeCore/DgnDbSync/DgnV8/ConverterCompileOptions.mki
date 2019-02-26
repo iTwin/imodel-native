@@ -2,7 +2,7 @@
 #
 #     $Source: DgnV8/ConverterCompileOptions.mki $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -29,4 +29,16 @@ nameToDefine = __DGNDBSYNC_BUILD__
 
 %ifdef DGNV8_DGNPLATFORM_SDK
     cDefs +% -DDGNV8_DGNPLATFORM_SDK
+%endif
+
+# Developers may use a PP build containing a different version of RealDWG
+%ifndef RealDwgVersion
+    %if exists(${BuildContext}/SubParts/VersionedDgnV8Libs/acdb23.lib)
+        RealDwgVersion = 2019
+        RDVSuffix = 23
+    %else
+        RealDwgVersion = 2018
+        RDVSuffix = 22
+    %endif
+    cDefs + -DRealDwgVersion=$(RealDwgVersion)
 %endif

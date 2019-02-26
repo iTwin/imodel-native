@@ -9,15 +9,15 @@
 
 COV_REPORTS = $(OutputRootDir)LogFiles/CoverageReports
 always:
-	!~@mkdir $(COV_REPORTS)
+    !~@mkdir $(COV_REPORTS)
 
 always:
-	%if !defined (COMP_NAME)
-		python $(_MakeFilePath)GenerateTIAMap.py --covReports=$(COV_REPORTS) --pushChanges
+    %if !defined (COMP_NAME)
+        python $(_MakeFilePath)GenerateTIAMap.py --covReports=$(COV_REPORTS) --pushChanges
     %else
-		python $(_MakeFilePath)GenerateTIAMap.py --covReports=$(COV_REPORTS) --component=$(COMP_NAME)
-	%endif
-	
+        python $(_MakeFilePath)GenerateTIAMap.py --covReports=$(COV_REPORTS) --component=$(COMP_NAME)
+    %endif
+
 %message ..
 %message The TIA Maps are at: $(COV_REPORTS)
 %message ..

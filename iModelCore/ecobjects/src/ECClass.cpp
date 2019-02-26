@@ -579,6 +579,14 @@ ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP so
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, Utf8CP destPropertyName, ECPropertyCP sourceProperty, bool copyCustomAttributes)
+    {
+    return CopyProperty(destProperty, sourceProperty, destPropertyName, copyCustomAttributes);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECClass::CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty, bool copyReferences)

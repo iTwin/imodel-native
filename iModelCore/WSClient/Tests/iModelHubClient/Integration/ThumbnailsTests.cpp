@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/ThumbnailsTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelTestsBase.h"
@@ -30,8 +30,10 @@ struct ThumbnailsTests : public iModelTestsBase
         behaviourOptions.DisableOption(RequestBehaviorOptionsEnum::DoNotScheduleRenderThumbnailJob);
 
         iModelTestsBase::SetUpTestCase(behaviourOptions);
+        iModelHubHelpers::PushDefaultView(s_client, s_info);
         iModelHubHelpers::AcquireAndAddChangeSets(s_client, s_info, 3);
-        for (int i = 1; i <= 3; i++)
+
+        for (int i = 1; i <= 4; i++)
             {
             VersionInfoPtr version;
             iModelHubHelpers::CreateNamedVersion(version, s_connection, Utf8PrintfString("ThumbnailsTests%d", i), i);

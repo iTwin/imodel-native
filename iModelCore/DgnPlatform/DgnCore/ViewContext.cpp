@@ -679,7 +679,10 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
         }
 
     if (elParams.GetMaterialId().IsValid())
+        {
         m_material = context.GetMaterial(elParams.GetMaterialId());
+        m_materialUVDetail = elParams.GetMaterialUVDetail();
+        }
 
     if (0.0 != netElemTransparency)
         {
@@ -759,6 +762,9 @@ bool GraphicParams::operator==(GraphicParamsCR rhs) const
     if (!(rhs.m_gradient == m_gradient))
         return false;
 
+    if (!rhs.m_materialUVDetail.IsEquivalent(m_materialUVDetail))
+        return false;
+
     return true;
     }
 
@@ -777,6 +783,7 @@ GraphicParams::GraphicParams(GraphicParamsCR rhs)
     m_trueWidthEnd      = rhs.m_trueWidthEnd;
     m_lineTexture       = rhs.m_lineTexture;
     m_material          = rhs.m_material;
+    m_materialUVDetail  = rhs.m_materialUVDetail;
     m_gradient          = rhs.m_gradient;
     }
 
@@ -795,6 +802,7 @@ GraphicParamsR GraphicParams::operator=(GraphicParamsCR rhs)
     m_trueWidthEnd      = rhs.m_trueWidthEnd;
     m_lineTexture       = rhs.m_lineTexture;
     m_material          = rhs.m_material;
+    m_materialUVDetail  = rhs.m_materialUVDetail;
     m_gradient          = rhs.m_gradient;
 
     return *this;
@@ -810,6 +818,7 @@ GeometryParams::GeometryParams(GeometryParamsCR rhs)
     m_categoryId            = rhs.m_categoryId;
     m_subCategoryId         = rhs.m_subCategoryId;
     m_materialId            = rhs.m_materialId;
+    m_materialUVDetail      = rhs.m_materialUVDetail;
     m_elmPriority           = rhs.m_elmPriority;
     m_netPriority           = rhs.m_netPriority;
     m_weight                = rhs.m_weight;       
@@ -837,6 +846,7 @@ GeometryParamsR GeometryParams::operator=(GeometryParamsCR rhs)
     m_categoryId            = rhs.m_categoryId;
     m_subCategoryId         = rhs.m_subCategoryId;
     m_materialId            = rhs.m_materialId;
+    m_materialUVDetail      = rhs.m_materialUVDetail;
     m_elmPriority           = rhs.m_elmPriority;
     m_netPriority           = rhs.m_netPriority;
     m_weight                = rhs.m_weight;
@@ -914,7 +924,11 @@ bool GeometryParams::IsEquivalent(GeometryParamsCR other) const
     if (m_appearanceOverrides.m_material != other.m_appearanceOverrides.m_material)
         return false;
 
+
     if (m_appearanceOverrides.m_material && (m_materialId != other.m_materialId))
+        return false;
+
+    if (!m_materialUVDetail.IsEquivalent(other.m_materialUVDetail))
         return false;
 
     // Don't compare m_styleInfo unless sub-category appearance override is set...

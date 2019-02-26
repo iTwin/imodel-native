@@ -40,9 +40,10 @@ struct CacheWriter : public RefCountedBase, std::mutex, std::condition_variable
         CacheData(const DataSourceURL& url, std::vector<DataSourceBuffer::BufferData>& dest)
             : m_url(url),
             m_size(dest.size()),
-            m_managesData(false)
+            m_managesData(true)
             {
-            m_dest = dest.data();
+            m_dest = new DataSourceBuffer::BufferData[m_size];
+            memcpy(m_dest, dest.data(), m_size);
             }
         ~CacheData()
             { 

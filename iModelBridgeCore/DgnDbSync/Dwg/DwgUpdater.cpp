@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgUpdater.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DwgImportInternal.h"
@@ -562,8 +562,7 @@ void UpdaterChangeDetector::_DetectDeletedModels(DwgImporter& importer, DwgSyncI
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdaterChangeDetector::_DetectDeletedModelsInFile (DwgImporter& importer, DwgDbDatabaseR dwg)
     {
-    DwgSyncInfo::ModelIterator iter (importer.GetDgnDb(), "DwgFileId=?");
-    iter.GetStatement()->BindInt(1, DwgSyncInfo::GetDwgFileId(dwg).GetValue());
+    DwgSyncInfo::ModelIterator iter (importer.GetDgnDb(), nullptr);
     _DetectDeletedModels (importer, iter);
     }
 
@@ -756,6 +755,49 @@ void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_DetectDetachedXrefs (DwgImporter& importer)
+    {
+    auto&   db = importer.GetDgnDb ();
+    auto&   syncInfo = importer.GetSyncInfo ();
+    auto&   loadedXrefs = importer.GetLoadedXrefs ();
+    auto    rootfileId = DwgSyncInfo::DwgFileId::GetFrom (importer.GetDwgDb());
+
+    DwgSyncInfo::FileIterator files(db, nullptr);
+    for (auto file : files)
+        {
+        // skip the root file
+        if (file.GetSyncId() == rootfileId)
+            continue;
+        
+        bool    detached = true;
+        for (auto& xref : loadedXrefs)
+            {
+            auto dwg = xref.GetDatabaseP ();
+            if (nullptr != dwg && DwgSyncInfo::DwgFileId::GetFrom(*dwg) == file.GetSyncId())
+                {
+                uint64_t    savedId = 0;
+                detached = false;
+                break;
+                }
+            }
+
+        if (detached)
+            {
+            BeFileName  filename(file.GetDwgName().c_str());
+
+            LOG.tracev ("Deleting xRef entry %ls from syncInfo", filename.c_str());
+            syncInfo.DeleteFile (file.GetSyncId());
+
+            RepositoryLinkFactory   factory(db, importer.GetOptions());
+            if (factory.DeleteFromDb(filename) == BSISUCCESS)
+                LOG.tracev ("Deleted RepositoryLink %ls from bim", filename.c_str());
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DwgImporter::_DetectDeletedDocuments ()
@@ -778,11 +820,19 @@ BentleyStatus DwgImporter::_DetectDeletedDocuments ()
 
     for (auto file : files)
         {
-        // check the file GUID per PW:
+        // check the file GUID per PW, or check the local file path (when run on command line, VSTS 54783):
+        bool    docExists = false;
         BeGuid  docGuid;
         auto name = file.GetUniqueName ();
-        if (docGuid.FromString(name.c_str()) == BSISUCCESS && this->GetOptions().IsDocumentAssignedToJob(name))
+        if (docGuid.FromString(name.c_str()) == BSISUCCESS)
+            docExists = this->GetOptions().IsDocumentInRegistry(name);
+        else
+            docExists = BeFileName(file.GetDwgName().c_str(), true).DoesPathExist ();
+
+        if (docExists)
             continue;
+
+        LOG.tracev ("Document %s has been detected for deletion.", name.c_str());
 
         // need to delete this file - walk through all model mappings in the sync info:
         DwgSyncInfo::ModelIterator  modelMaps(db, "DwgFileId=?");

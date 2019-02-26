@@ -95,4 +95,13 @@
         </Bindings>
     </Part>
 
+    <Product Name="MstnBridgeTested">
+        <SubProduct ProductName="MstnBridge"/>
+        <SubPart PartName="RunMstnBridgeTests" />
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
+        <Directories DirectoryListName="MstnBridgeDirList"/>
+        <Directories DirectoryListName="DgnV8ConverterDirList"  PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
+        <Directories DirectoryListName="Tests" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
+    </Product>
+
 </BuildContext>

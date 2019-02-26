@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/Bentley/LocalState.h $
  |
- |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,7 +18,8 @@ BEGIN_BENTLEY_NAMESPACE
 //! Interface of the local state store.
 //  @bsiclass                                           Grigas.Petraitis        12/14
 //=======================================================================================
-struct ILocalState 
+typedef std::shared_ptr<struct ILocalState> ILocalStatePtr;
+struct ILocalState
     {
 protected:
     virtual ~ILocalState () {}

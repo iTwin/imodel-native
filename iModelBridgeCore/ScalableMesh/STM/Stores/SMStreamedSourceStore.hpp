@@ -1,17 +1,17 @@
 #include "SMStreamedSourceStore.h"
-#include "..\RasterUtilities.h"
+#include "../RasterUtilities.h"
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <STMInternal/GeoCoords/WKTUtils.h>
 #include <ScalableMesh/GeoCoords/Reprojection.h>
 #include <ImagePP/all/h/HRAClearOptions.h>
 #include <ImagePP/all/h/HRACopyFromOptions.h>
 #include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
-#include "..\ScalableMeshSources.h"
+#include "../ScalableMeshSources.h"
 #include "ISMDataStore.h"
 #include "SMSQLiteSisterFile.h"
 #include "SMStoreUtils.h"
 
-#include "..\ScalableMeshSourcesPersistance.h"
+#include "../ScalableMeshSourcesPersistance.h"
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh/IScalableMeshDocumentEnv.h>
 #include <ScalableMesh/IScalableMeshSourceVisitor.h>
@@ -20,7 +20,7 @@
 
 #include <ScalableMesh/Import/Source.h>
 
-#include <ScalableMesh\IScalableMeshPolicy.h>
+#include <ScalableMesh/IScalableMeshPolicy.h>
 
 template <class DATATYPE, class EXTENT>  SMStreamedSourceStore<DATATYPE, EXTENT>::SMStreamedSourceStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, SMSQLiteFilePtr& smSQLiteFile, DRange3d totalExt, HFCPtr<HRARASTER> source)
     {

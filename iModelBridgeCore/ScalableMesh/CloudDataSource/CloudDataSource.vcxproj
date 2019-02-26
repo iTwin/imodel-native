@@ -88,12 +88,12 @@
     <ClInclude Include="include\stdafx.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\CloudDataSource.mke" />
-  </ItemGroup>
-  <ItemGroup>
     <Xml Include="..\CloudDataSource.PartFile.xml">
       <SubType>Designer</SubType>
     </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\CloudDataSource_DgbDb06.mke" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CD27F277-B4E6-4FDA-A95F-78F4AEBF7EAB}</ProjectGuid>
@@ -154,20 +154,20 @@
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -ax64 -p CloudDataSource -f CloudDataSource -r  ScalableMesh re  CloudDataSource </NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>call BentleyBuild.py -ax64 -p CloudDataSource -f CloudDataSource -r  ScalableMesh re  CloudDataSource -c
-call BentleyBuild.py -ax64 -p CloudDataSource -f CloudDataSource -r  ScalableMesh re  CloudDataSource </NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -ax64 -p CloudDataSource -f CloudDataSource -r  ScalableMesh re  CloudDataSource -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 -p CloudDataSource_DgnDb06 -f CloudDataSource -r  ScalableMesh re  CloudDataSource_DgnDb06 </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>call BentleyBuild.py -ax64 -p CloudDataSource_DgnDb06 -f CloudDataSource -r  ScalableMesh re  CloudDataSource_DgnDb06  -c
+ call BentleyBuild.py -ax64 -p CloudDataSource_DgnDb06 -f CloudDataSource -r  ScalableMesh re  CloudDataSource_DgnDb06 </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -p CloudDataSource_DgnDb06 -f CloudDataSource -r  ScalableMesh re  CloudDataSource_DgnDb06  -c</NMakeCleanCommandLine>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <IncludePath>$(OutRoot)\Winx64\BuildContexts\ScalableMesh\VendorAPI\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <NMakeBuildCommandLine>bb -ax64 -p CloudDataSource -f CloudDataSource -r  ScalableMesh re  CloudDataSource </NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f CloudDataSource -r  ScalableMesh re  CloudDataSource -c
-BentleyBuild.py -ax64 -p CloudDataSource -f CloudDataSource -r  ScalableMesh re  CloudDataSource </NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -ax64 -p CloudDataSource -f CloudDataSource -r  ScalableMesh re  CloudDataSource  -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 -p CloudDataSource_DgnDb06 -f CloudDataSource -r  ScalableMesh re  CloudDataSource_DgnDb06 </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>call BentleyBuild.py -ax64 -p CloudDataSource_DgnDb06 -f CloudDataSource -r  ScalableMesh re  CloudDataSource_DgnDb06  -c
+ call BentleyBuild.py -ax64 -p CloudDataSource_DgnDb06 -f CloudDataSource -r  ScalableMesh re  CloudDataSource_DgnDb06 </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -p CloudDataSource_DgnDb06 -f CloudDataSource -r  ScalableMesh re  CloudDataSource_DgnDb06  -c</NMakeCleanCommandLine>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
   </PropertyGroup>

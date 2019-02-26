@@ -23,6 +23,7 @@
     <Text Include="ignore_list.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Published\SecureLocalStateTests.cpp" />
     <ClCompile Include="Published\SecureStoreTests.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

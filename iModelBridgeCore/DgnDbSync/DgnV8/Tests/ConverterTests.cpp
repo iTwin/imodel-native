@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ConverterTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -19,7 +19,7 @@ struct ConverterTests : public ConverterTestBaseFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConverterTests, ElementCRUD)
     {
-    LineUpFiles(L"ElementCRUD.ibim", L"Test3d.dgn", true); // creates Test1.idgndb from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"ElementCRUD.bim", L"Test3d.dgn", true); // creates Test1.idgndb from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
     TestElementChanges(m_v8FileName, m_v8FileName, 1);
     }
@@ -29,7 +29,7 @@ TEST_F(ConverterTests, ElementCRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConverterTests, ElementCRUDInAttachment)
     {
-    LineUpFiles(L"ElementCRUDInAttachment.ibim", L"Test3d.dgn", true); // creates TestAddRef.idgndb from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"ElementCRUDInAttachment.bim", L"Test3d.dgn", true); // creates TestAddRef.idgndb from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
 
     BentleyApi::BeFileName refV8File;
@@ -44,7 +44,7 @@ TEST_F(ConverterTests, ElementCRUDInAttachment)
 TEST_F(ConverterTests, ElementCRUDTiled)
     {
     m_opts.m_useTiledConverter = true;
-    LineUpFiles(L"ElementCRUDTiled.ibim", L"Test3d.dgn", true); // creates Test1.idgndb from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"ElementCRUDTiled.bim", L"Test3d.dgn", true); // creates Test1.idgndb from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
     TestElementChanges(m_v8FileName, m_v8FileName, 1);
     }
@@ -55,7 +55,7 @@ TEST_F(ConverterTests, ElementCRUDTiled)
 TEST_F(ConverterTests, ElementCRUDInTile)
     {
     m_opts.m_useTiledConverter = true;
-    LineUpFiles(L"ElementCRUDInTile.ibim", L"Test3d.dgn", true); // creates TestAddRef.idgndb from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"ElementCRUDInTile.bim", L"Test3d.dgn", true); // creates TestAddRef.idgndb from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
 
     BentleyApi::BeFileName tileFile;
@@ -72,7 +72,7 @@ TEST_F(ConverterTests, ElementCRUDInTile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConverterTests, DuplicateTile)
     {
-    LineUpFiles(L"tiledMultip.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"tiledMultip.bim", L"Test3d.dgn", false);
 
 
     V8FileEditor v8editor;
@@ -109,7 +109,7 @@ TEST_F(ConverterTests, DuplicateTile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConverterTests, ColorMap)
     {
-    LineUpFiles(L"ProjectProperties.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"ProjectProperties.bim", L"Test3d.dgn", false);
 
     V8FileEditor editor;
     editor.Open(m_v8FileName);
@@ -200,7 +200,7 @@ static DgnV8Api::LightElementPtr createLightElement1(bool setTypeOnly)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(LightTests, LightSetup)
     {
-    LineUpFiles(L"ProjectProperties.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"ProjectProperties.bim", L"Test3d.dgn", false);
 
     if (true)
         {
@@ -226,7 +226,7 @@ TEST_F(LightTests, LightSetup)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(LightTests, CreatePointLightWithECInstance)
     {
-    LineUpFiles(L"PointLight.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"PointLight.bim", L"Test3d.dgn", false);
     DgnV8Api::ElementId eidWithInst;
 
     V8FileEditor v8editor;
@@ -264,16 +264,15 @@ TEST_F(LightTests, CreatePointLightWithECInstance)
 
     if (true)
         {
-        SyncInfoReader syncInfo;
-        syncInfo.AttachToDgnDb(m_dgnDbFileName);
-        SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
-        syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
-        SyncInfo::V8ModelSyncInfoId editV8ModelSyncInfoId;
-        syncInfo.MustFindModelByV8ModelId(editV8ModelSyncInfoId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
-        DgnElementId dgnDbElementId;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editV8ModelSyncInfoId, eidWithInst);
-
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        SyncInfoReader syncInfo(m_params, db);
+        RepositoryLinkId editV8FileSyncInfoId;
+        syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
+        DgnModelId editModelId;
+        syncInfo.MustFindModelByV8ModelId(editModelId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
+        DgnElementId dgnDbElementId;
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editModelId, eidWithInst);
+
         auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);
         ASSERT_TRUE(dgnDbElement.IsValid());
 
@@ -295,7 +294,7 @@ TEST_F(ConverterTests, EmbedDir)
 #define EMBEDDEDFILE  "chkmrk.bmp"
 #define EMBEDDEDFILEW L"chkmrk.bmp"
 
-    LineUpFiles(L"EmbeddDir.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"EmbeddDir.bim", L"Test3d.dgn", false);
     BentleyApi::BeFileName imageFile;
     MakeWritableCopyOf(imageFile, EMBEDDEDFILEW);
     m_wantCleanUp = false;
@@ -360,7 +359,7 @@ static void createFiles(BentleyApi::BeFileNameCR root)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConverterTests, EmbeddDir_SubDir)
     {
-    LineUpFiles(L"EmbeddDir_SubDir.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"EmbeddDir_SubDir.bim", L"Test3d.dgn", false);
     BentleyApi::BeFileName imageFile;
     MakeWritableCopyOf(imageFile, L"chkmrk.bmp");
 
@@ -380,7 +379,7 @@ TEST_F(ConverterTests, EmbeddDir_SubDir)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConverterTests, EmbeddDir_empty)
     {
-    LineUpFiles(L"EmbeddDir_empty.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"EmbeddDir_empty.bim", L"Test3d.dgn", false);
     m_wantCleanUp = false;
 
     BentleyApi::BeFileName embedDir = GetOutputDir();
@@ -399,7 +398,7 @@ TEST_F(ConverterTests, EmbeddDir_empty)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConverterTests, ExpirationDate)
     {
-    LineUpFiles(L"expirationdate.ibim", L"filewithExpiryNotExpired.i.dgn", false);
+    LineUpFiles(L"expirationdate.bim", L"filewithExpiryNotExpired.i.dgn", false);
 
     double actualExpiry = 2553361200000.0000; /* i.e. 30/11/2050 */ // actual value is in unixmilis
     DateTime expirationDate;
@@ -436,7 +435,7 @@ TEST_F(ConverterTests, ExpirationDate)
 TEST_F(ConverterTests, GetCoordinateSystemProperties)
     {
     m_noGcs = true;
-    LineUpFiles(L"GeoCoordinateSystem.ibim", L"GeoCoordinateSystem.i.dgn", true);
+    LineUpFiles(L"GeoCoordinateSystem.bim", L"GeoCoordinateSystem.i.dgn", true);
 
     DgnDbPtr dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
     ASSERT_TRUE(dgnProj->IsDbOpen());
@@ -464,7 +463,7 @@ TEST_F(ConverterTests, GetCoordinateSystemProperties)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ConverterTests, GCSNoChange)
     {
-    LineUpFiles(L"GeoCoordinateSystem.ibim", L"GeoCoordinateSystem.i.dgn", true);
+    LineUpFiles(L"GeoCoordinateSystem.bim", L"GeoCoordinateSystem.i.dgn", true);
     DgnDbPtr dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
     auto originalExtents = dgnProj->GeoLocation().GetProjectExtents();
 
@@ -482,7 +481,7 @@ TEST_F(ConverterTests, GCSNoChange)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ConverterTests, NoGCSNoChange)
     {
-    LineUpFiles(L"NoGCS.ibim", L"Test3d.dgn", true);
+    LineUpFiles(L"NoGCS.bim", L"Test3d.dgn", true);
     DgnDbPtr dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
     auto originalExtents = dgnProj->GeoLocation().GetProjectExtents();
 
@@ -501,7 +500,7 @@ TEST_F(ConverterTests, NoGCSNoChange)
 // Importing DGN file that does not have a GCS. In that case, specify �inputgcs=lat,lng,angle in order to position the input DGN data in the BIM.
 TEST_F(ConverterTests, InputGCS)
     {
-    LineUpFiles(L"inputGCS.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"inputGCS.bim", L"Test3d.dgn", false);
     m_wantCleanUp = false;
     m_noGcs = true;
 
@@ -537,7 +536,7 @@ TEST_F(ConverterTests, InputGCS)
 TEST_F(ConverterTests, OutputGCS)
     {
     m_noGcs = true;
-    LineUpFiles(L"outputGCS.ibim", L"GeoCoordinateSystem.i.dgn", false);
+    LineUpFiles(L"outputGCS.bim", L"GeoCoordinateSystem.i.dgn", false);
 
     iModelBridge::GCSDefinition gcsDef;
     gcsDef.m_isValid = true;
@@ -627,7 +626,7 @@ TEST_F(ConverterTests, GCSMultiFilesGOAndHelmert)
     // Each of the first four files is in Pennsylvania State Plane north with NAD83 Datum. (PA83-N)
     // They each have a block with corners at -75,40 degress to -74,39 degrees.
     // This first one has a helmert transform and a non-centered Global Origin. Model Name WithGOAndHelmert
-    LineUpFiles(L"outputGCS.ibim", L"PennsylvaniaStatePlaneNorthWithGOAndHelmert.dgn", false);
+    LineUpFiles(L"outputGCS.bim", L"PennsylvaniaStatePlaneNorthWithGOAndHelmert.dgn", false);
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
@@ -681,7 +680,7 @@ TEST_F(ConverterTests, GCSMultiFilesReprojectImport)
 
     // ExtonBlock.dgn is a design file that has a block with the Pennsylvania State Plane South GCS, with a block from -75.7, 40.1 to -75.6, 40.0 degrees.
     // We will first convert it.
-    LineUpFiles(L"outputGCS.ibim", L"ExtonBlock.dgn", false);
+    LineUpFiles(L"outputGCS.bim", L"ExtonBlock.dgn", false);
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
@@ -730,7 +729,7 @@ TEST_F(ConverterTests, GCSMultiFilesGCSTransformNoScale)
 
     // ExtonBlock.dgn is a design file that has a block with the Pennsylvania State Plane South GCS, with a block from -75.7, 40.1 to -75.6, 40.0 degrees.
     // We will first convert it.
-    LineUpFiles(L"outputGCS.ibim", L"ExtonBlock.dgn", false);
+    LineUpFiles(L"outputGCS.bim", L"ExtonBlock.dgn", false);
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
@@ -779,7 +778,7 @@ TEST_F(ConverterTests, GCSMultiFilesGCSTransformWithScale)
 
     // ExtonBlock.dgn is a design file that has a block with the Pennsylvania State Plane South GCS, with a block from -75.7, 40.1 to -75.6, 40.0 degrees.
     // We will first convert it.
-    LineUpFiles(L"outputGCS.ibim", L"ExtonBlock.dgn", false);
+    LineUpFiles(L"outputGCS.bim", L"ExtonBlock.dgn", false);
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
@@ -835,29 +834,6 @@ static DgnCategoryCPtr insertSpatialCategory(DgnDbR db, Utf8CP categoryName, Dgn
     {
     SpatialCategory category(db.GetDictionaryModel(), categoryName, rank);
     return category.Insert(appearance);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                           Sam.Wilson             02/17
-//---------------------------------------------------------------------------------------
-static void addCell(V8FileEditor& v8editor, DgnV8ModelR v8model)
-    {
-    BentleyStatus status = ERROR;
-    DgnV8Api::EditElementHandle arcEEH1, arcEEH2;
-    v8editor.CreateArc(arcEEH1, false, &v8model);
-    v8editor.CreateArc(arcEEH2, false, &v8model);
-
-    DgnV8Api::EditElementHandle cellEEH;
-    v8editor.CreateCell(cellEEH, L"UserCell",false,&v8model);
-
-    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cellEEH, arcEEH1);
-    EXPECT_TRUE(SUCCESS == status);
-    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cellEEH, arcEEH2);
-    EXPECT_TRUE(SUCCESS == status);
-    status = DgnV8Api::NormalCellHeaderHandler::AddChildComplete(cellEEH);
-    EXPECT_TRUE(SUCCESS == status);
-
-    EXPECT_TRUE( SUCCESS == cellEEH.AddToModel());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -989,7 +965,7 @@ TEST_F(ConverterTests, UseConverterAsLibrary)
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
     v8editor.AddLine(nullptr, v8editor.m_defaultModel, Bentley::DPoint3d::From(0,0,0));
-    addCell(v8editor, *v8editor.m_defaultModel);
+    v8editor.AddCellWithTwoArcs(nullptr, L"UserCell");
     auto threeDModel = v8editor.m_defaultModel;
 
     if (true)
@@ -1051,6 +1027,8 @@ TEST_F(ConverterTests, UseConverterAsLibrary)
 struct TestXDomain : XDomain
     {
     int m_counts[2] {};
+    bool m_onBeginCalled{};
+    bool m_onFinishCalled{};
 
     void _DetermineElementParams(DgnClassId&, DgnCode& code, DgnCategoryId&, DgnV8EhCR v8eh, Converter& cvt, ECObjectsV8::IECInstance const* primaryV8Instance, ResolvedModelMapping const&) override
         {
@@ -1069,6 +1047,9 @@ struct TestXDomain : XDomain
 
         ++m_counts[1];
         }
+
+    void _OnBeginConversion(Converter&, DgnV8ModelR rootModel) override {m_onBeginCalled=true;}
+    void _OnFinishConversion(Converter&) override {m_onFinishCalled=true;}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1087,6 +1068,8 @@ TEST_F(ConverterTests, XDomainTest)
     XDomain::Register(testXdomain);
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
+    EXPECT_TRUE(testXdomain.m_onBeginCalled);
+    EXPECT_TRUE(testXdomain.m_onFinishCalled);
     EXPECT_EQ(1, testXdomain.m_counts[0]);
     EXPECT_EQ(1, testXdomain.m_counts[1]);
 
@@ -1134,9 +1117,6 @@ TEST_F(ConverterTests, CommonReferences)
     m_dgnDbFileName = GetOutputFileName(L"CommonReferences.bim");
     DeleteExistingDgnDb(m_dgnDbFileName);
     MakeWritableCopyOf(m_dgnDbFileName, m_seedDgnDbFileName, m_dgnDbFileName.GetFileNameAndExtension().c_str());
-    auto syncFile(SyncInfo::GetDbFileName(m_seedDgnDbFileName));
-    BentleyApi::BeFileName outSyncFile;
-    MakeWritableCopyOf(outSyncFile, syncFile, SyncInfo::GetDbFileName(m_dgnDbFileName).GetFileNameAndExtension().c_str());
 
     m_v8FileName = masterPackageFile1;
     DoConvert(m_dgnDbFileName, m_v8FileName);
@@ -1336,7 +1316,7 @@ extern "C" iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey
 +---------------+---------------+---------------+---------------+---------------+------*/
 //TEST_F(ConverterTests, StandAloneAdapterTest)
 //    {
-//    LineUpFiles(L"ElementCRUD.ibim", L"Test3d.dgn", true); // creates Test1.idgndb from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+//    LineUpFiles(L"ElementCRUD.bim", L"Test3d.dgn", true); // creates Test1.idgndb from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 //    //WString testName(BeTest::GetNameOfCurrentTest(), BentleyCharEncoding::Utf8);
 //    //BeFileName outputFileName = GetOutputFileName(testName.c_str());
 //

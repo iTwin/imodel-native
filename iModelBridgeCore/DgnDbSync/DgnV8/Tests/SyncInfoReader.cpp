@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/SyncInfoReader.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "Tests.h"
@@ -10,33 +10,42 @@
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Sam.Wilson                      07/14
 //---------------------------------------------------------------------------------------
-SyncInfoReader::SyncInfoReader()
+SyncInfoReader::SyncInfoReader(Converter::Params& p, DgnDbPtr db) : m_params(&p), m_dgndb(db)
     {
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Sam.Wilson                      07/14
 //---------------------------------------------------------------------------------------
-void SyncInfoReader::AttachToDgnDb(BentleyApi::BeFileNameCR dbName)
+ void SyncInfoReader::MustFindFileByName(RepositoryLinkId& fileid, BentleyApi::BeFileNameCR v8FileNameIn, int expectedCount)
     {
-    m_dgndb = DgnDb::OpenDgnDb(nullptr, dbName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
-    BentleyApi::BeFileName syncInfoFileName = m_dgndb->GetFileName();
-    syncInfoFileName.append(L".syncinfo");
-    ASSERT_EQ( BE_SQLITE_OK , m_dgndb->AttachDb(BentleyApi::Utf8String(syncInfoFileName).c_str(), SYNCINFO_ATTACH_ALIAS) );
-    }
+    BentleyApi::Utf8String v8FileName(v8FileNameIn);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Sam.Wilson                      07/14
-//---------------------------------------------------------------------------------------
- void SyncInfoReader::MustFindFileByName(SyncInfo::V8FileSyncInfoId& fileid, BentleyApi::BeFileNameCR v8FileName, int expectedCount)
-    {
-    SyncInfo::FileIterator files(*m_dgndb, "V8Name=?");
-    files.GetStatement()->BindText(1, BentleyApi::Utf8String(v8FileName), BentleyApi::BeSQLite::Statement::MakeCopy::Yes);
+    SyncInfo::RepositoryLinkExternalSourceAspectIterator files(*m_dgndb);
     int count=0;
-    for (SyncInfo::FileIterator::Entry entry = files.begin(); entry != files.end(); ++entry)
+    for (SyncInfo::RepositoryLinkExternalSourceAspectIterator::Entry entry = files.begin(); entry != files.end(); ++entry)
         {
-        ASSERT_STRCASEEQ( entry.GetV8Name().c_str(), BentleyApi::Utf8String(v8FileName).c_str() ); 
-        fileid = entry.GetV8FileSyncInfoId();
+        if (entry->GetFileName().EqualsI(v8FileName))
+            {
+            fileid = entry->GetRepositoryLinkId();
+            ++count;
+            }
+        }
+    ASSERT_EQ( expectedCount, count );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      07/14
+//---------------------------------------------------------------------------------------
+void SyncInfoReader::MustFindModelByV8ModelId(DgnModelId& fmid, RepositoryLinkId ffid, DgnV8Api::ModelId v8ModelId, int expectedCount)
+    {
+    auto rlink = m_dgndb->Elements().Get<RepositoryLink>(ffid);
+
+    SyncInfo::V8ModelExternalSourceAspectIteratorByV8Id models(*rlink, v8ModelId);
+    int count=0;
+    for (SyncInfo::V8ModelExternalSourceAspectIterator::Entry entry = models.begin(); entry != models.end(); ++entry)
+        {
+        fmid = entry->GetModelId();
         ++count;
         }
     ASSERT_EQ( expectedCount, count );
@@ -45,32 +54,16 @@ void SyncInfoReader::AttachToDgnDb(BentleyApi::BeFileNameCR dbName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Sam.Wilson                      07/14
 //---------------------------------------------------------------------------------------
-void SyncInfoReader::MustFindModelByV8ModelId(SyncInfo::V8ModelSyncInfoId& fmid, SyncInfo::V8FileSyncInfoId ffid, DgnV8Api::ModelId v8ModelId, int expectedCount)
+void SyncInfoReader::MustFindElementByV8ElementId(DgnElementId& eid, DgnModelId fmid, DgnV8Api::ElementId v8ElementId, int expectedCount)
     {
-    SyncInfo::ModelIterator models(*m_dgndb, "WHERE V8FileSyncInfoId=? AND V8Id=?");
-    models.GetStatement()->BindInt(1, ffid.GetValue());
-    models.GetStatement()->BindInt(2, v8ModelId);
+    //Find the element id from aspect.
+    auto model = m_dgndb->Models().GetModel(fmid);
+    SyncInfo::V8ElementExternalSourceAspectIteratorByV8Id elements(*model, v8ElementId);
     int count=0;
-    for (SyncInfo::ModelIterator::Entry entry = models.begin(); entry != models.end(); ++entry)
-        {
-        fmid = entry.GetV8ModelSyncInfoId();
-        ++count;
-        }
-    ASSERT_EQ( expectedCount, count );
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Sam.Wilson                      07/14
-//---------------------------------------------------------------------------------------
-void SyncInfoReader::MustFindElementByV8ElementId(DgnElementId& eid, SyncInfo::V8ModelSyncInfoId fmid, DgnV8Api::ElementId v8ElementId, int expectedCount)
-    {
-    SyncInfo::ByV8ElementIdIter elements(*m_dgndb);
-    elements.Bind(fmid, v8ElementId);
-    int count=0;
-    for (SyncInfo::ByV8ElementIdIter::Entry entry = elements.begin(); entry != elements.end(); ++entry) 
+    for (SyncInfo::V8ElementExternalSourceAspectIteratorByV8Id::Entry entry = elements.begin(); entry != elements.end(); ++entry) 
         {
         ++count;
-        eid = entry.GetElementId();
+        eid = entry->GetElementId();
         }
-    ASSERT_EQ( expectedCount , count );
+    ASSERT_EQ(expectedCount, count);
     }

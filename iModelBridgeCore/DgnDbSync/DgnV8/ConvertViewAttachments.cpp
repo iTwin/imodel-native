@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ConvertViewAttachments.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -135,6 +135,57 @@ void Converter::AddV8ModelToRange(Bentley::DRange3dR range, DgnV8ModelR v8Model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ResolvedModelMappingWithElement Converter::SheetsCreateAndInsertDrawing(DgnAttachmentCR v8Attachment, ResolvedModelMapping const& parentModel)
     {
+    // TRICKY: 
+    //  This code *generates* drawings. It does not convert existing drawings. 
+    //  Keep in mind that `parentModel` is the sheet model that contains the v8Attachment element.
+    //  When we record a new Drawing element in syncinfo, we specify that source element is the v8 attachment element in the v8 sheet model.
+    //  Likewise, when we add an XSA to the new Drawing element, we specify the v8 attachment element's ID as the SourceId and the BIM sheet model as the Scope.
+    //  For the XSA, we have to make sure that we capture the entire *path* to the v8 attachment element in order to handle the case of nested references.
+
+    // iModel                       V8           
+    // ----------------             -----------------------
+    // Sheet (element)                                                         
+    // SheetModel                   DgnSheetModel                                               
+    // Drawing(element)             DgnAttachment (element)         We effectively generate a drawing from the attachment (really, from the attached models)
+    // DrawingModel
+
+    // Here are the XSA's that we create:
+    // SheetModel          ModelXsa DgnSheetModel   (this is created in a separate function, not here.)
+    // DrawingModel        ModelXsa DgnSheetModel
+    // Drawing(element)  ElementXsa DgnAttachment
+
+    if (IsUpdating())
+        {
+        // Find any existing Drawing *element* that we created by generating a drawing for this attachment.
+        SyncInfo::V8ElementExternalSourceAspectIterator elIt(parentModel.GetDgnModel(), "Scope.Id=:scope AND Identifier=:identifier");
+        elIt.GetStatement()->BindId(elIt.GetParameterIndex("scope"), parentModel.GetDgnModel().GetModeledElementId());
+        elIt.GetStatement()->BindText(elIt.GetParameterIndex("identifier"), ComputeV8AttachmentIdPath(v8Attachment).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+        for (auto elemXsaItem : elIt)
+            {
+            auto drawingElementId = elemXsaItem.GetElementId();
+            if (!GetDgnDb().Elements().Get<Drawing>(drawingElementId).IsValid())    // Make sure we only find XSAs on Drawing elements!
+                continue;
+
+            _GetChangeDetector()._OnElementSeen(*this, drawingElementId);
+
+            auto drawing = GetDgnDb().Elements().GetElement(drawingElementId);
+
+            // Now get the XSA for the existing Drawing*Model* that goes with this Drawing element.
+            auto drawingModel = drawing->GetSubModel();
+            SyncInfo::V8ModelExternalSourceAspect modelXsa;
+            DgnElementCPtr modeledElement;
+            std::tie(modeledElement, modelXsa) = SyncInfo::V8ModelExternalSourceAspect::GetAspect(*drawingModel);
+            ResolvedModelMapping rmm(*drawingModel, parentModel.GetV8Model(), modelXsa, &v8Attachment);
+            _GetChangeDetector()._OnModelSeen(*this, rmm);
+            
+            // Return both element and model mappings
+            ResolvedModelMappingWithElement rmme;
+            rmme.SetResolvedModelMapping(rmm);
+            rmme.SetModeledElementMapping(elemXsaItem); 
+            return rmme;
+            }
+        }
+
     // Create a BIM drawing model to put them in.
     auto drawing = CreateDrawing(nullptr, Utf8String(v8Attachment.GetLogicalName()).c_str());
     
@@ -144,20 +195,27 @@ ResolvedModelMappingWithElement Converter::SheetsCreateAndInsertDrawing(DgnAttac
     // Note that InsertConversionResults also inserts the new element mapping into syncinfo
     ElementConversionResults newDrawingElement;
     newDrawingElement.m_element = drawing;
+    
+    newDrawingElement.m_sourceId = ComputeV8AttachmentIdPath(v8Attachment);
+    newDrawingElement.m_scope = parentModel;
+    newDrawingElement.m_jsonProps = ComputeV8AttachmentPathDescriptionAsJson(v8Attachment);
+
     DgnV8Api::EditElementHandle v8eh(v8Attachment.GetElementId(), &parentModel.GetV8Model());
-    InsertConversionResults(newDrawingElement, v8eh, parentModel);
+
+    InsertConversionResults(newDrawingElement, v8eh, parentModel);      // automatically adds a V8ElementExternalSourceAspect to the new Drawing element
     rmme.SetModeledElementMapping(newDrawingElement.m_mapping); 
 
     auto drawingModel = DrawingModel::Create(*drawing);
     drawingModel->Insert();
 
     // Map the PARENT model to this new drawing (since we are going to put the attachment's proxy graphics into the drawing).
-    SyncInfo::V8ModelMapping smapping;
     auto refTrans = ComputeAttachmentTransform(parentModel.GetTransform(), v8Attachment);
-    GetSyncInfo().InsertModel(smapping, drawingModel->GetModelId(), parentModel.GetV8Model(), refTrans);
+    auto drawingModelXsa = SyncInfo::V8ModelExternalSourceAspect::CreateAspect(parentModel.GetV8Model(), refTrans, *this);
+    auto drawingEd = newDrawingElement.m_element->CopyForEdit();
+    drawingModelXsa.AddAspect(*drawingEd);
+    drawingEd->Update();
 
-    rmme.SetResolvedModelMapping(ResolvedModelMapping(*drawingModel, parentModel.GetV8Model(), smapping, &v8Attachment));
-
+    rmme.SetResolvedModelMapping(ResolvedModelMapping(*drawingModel, parentModel.GetV8Model(), drawingModelXsa, &v8Attachment));
     return rmme;
     }
 
@@ -231,7 +289,7 @@ void Converter::SheetsCreateViewAttachment(ElementConversionResults& results,
             }
 
         // Scaled view - THE SHAPE OF A SCALED VIEW ATTACHMENT MUST BE EXACTLY PROPORTIONAL TO THE TARGET VIEW DELTA.
-        auto refModelMapping = FindFirstModelMappedTo(*v8DgnAttachment.GetDgnModelP());
+        auto refModelMapping = FindFirstResolvedModelMapping(*v8DgnAttachment.GetDgnModelP());
         if (!refModelMapping.IsValid())
             {
             BeDataAssert(false && "failed to infer scaled range of sheet attachment");
@@ -288,7 +346,10 @@ void Converter::SheetsCreateViewAttachment(ElementConversionResults& results,
     refClip.Init(v8DgnAttachment, nullptr, /*relativeToImmediateParent*/false);    // false means transform to "world" which in this context means the sheet
 
     if (refClip.HasClips() && refClip.HasViewletClips())
-        clipVector = ConvertClip(refClip.CalculateClip(nullptr), &v8SheetModelMapping.GetTransform());
+        {
+        auto transform = v8SheetModelMapping.GetTransform();
+        clipVector = ConvertClip(refClip.CalculateClip(nullptr), &transform);
+        }
 
     DgnCategoryId attachmentCategoryId = GetOrCreateDrawingCategoryId(*GetJobDefinitionModel(), CATEGORY_NAME_Attachments);
 
@@ -315,7 +376,7 @@ ResolvedModelMapping Converter::SheetsFindModelForAttachment(DgnAttachmentCR v8D
         return ResolvedModelMapping();
         }
 
-    ResolvedModelMapping importedModel = FindFirstModelMappedTo(*attachedV8Model);
+    ResolvedModelMapping importedModel = FindFirstResolvedModelMapping(*attachedV8Model);
     if (importedModel.IsValid())
         return importedModel;
         
@@ -441,7 +502,7 @@ void Converter::SheetsConvertViewAttachments(ResolvedModelMapping const& v8Sheet
 
         auto i = drawingGenerator.m_drawingsForAttachments.find(v8DgnAttachment->GetElementId());
         bool isFromProxyGraphics = (i != drawingGenerator.m_drawingsForAttachments.end());
-        auto proxyModel = isFromProxyGraphics? i->second.GetDgnModel().ToGeometricModelP(): nullptr;
+       auto proxyModel = isFromProxyGraphics? i->second.GetDgnModel().ToGeometricModelP(): nullptr;
 
         auto it = updSeq.find(v8DgnAttachment);
         int seq = it == updSeq.end() ? 0 : it->second;

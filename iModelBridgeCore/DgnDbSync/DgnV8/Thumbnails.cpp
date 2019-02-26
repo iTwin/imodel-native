@@ -2,10 +2,13 @@
 |
 |     $Source: DgnV8/Thumbnails.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
+#if defined(BENTLEY_WIN32)
+    #include <windows.h>
+#endif
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
@@ -180,6 +183,16 @@ BentleyStatus Converter::GenerateThumbnail(ViewDefinition const& view)
     if (IsUpdating() && !ThumbnailUpdateRequired (view))
         return BSISUCCESS;
 
+    // VSTS#54728 - Converter hangs on Windows 7 machines due to a bug in folly, which is used during tile generation.
+    // Rather than spend time trying to workaround that, we're just turning off thumbnail generation for Windows 7 and earlier.
+#if defined(BENTLEY_WIN32)
+    DWORD version = GetVersion();
+    DWORD major = (DWORD) (LOBYTE(LOWORD(version)));
+    DWORD minor = (DWORD) (HIBYTE(LOWORD(version)));
+    if ((major < 6) || ((major == 6) && (minor <= 1)))
+        return BSISUCCESS;
+#endif
+
     ThumbnailConfig thumbnailConfig(m_config);
 
     BeDuration timeout = BeDuration::FromSeconds(m_config.GetOptionValueDouble("ThumbnailTimeout", 30));
@@ -222,13 +235,15 @@ BentleyStatus Converter::GenerateThumbnails()
             {
             AddTasks(DgnV8Api::MAX_VIEWS);
 
+            DgnElementId repositoryLinkId = GetRepositoryLinkId(*mainViewGroup->GetDgnFileP());
+
             for (int iView=0; iView<DgnV8Api::MAX_VIEWS; ++iView)
                 {
                 ReportProgress();
                 DgnViewId viewId;
-                double lmt;
-                Utf8String v8ViewName;
-                if (!GetSyncInfo().TryFindView(viewId, lmt, v8ViewName, mainViewGroup->GetViewInfo(iView)))
+                SyncInfo::ViewDefinitionExternalSourceAspect aspect(nullptr);
+                std::tie(aspect, viewId) = SyncInfo::ViewDefinitionExternalSourceAspect::GetAspectBySourceId(repositoryLinkId, mainViewGroup->GetViewInfo(iView), GetDgnDb());
+                if (!viewId.IsValid())
                     continue;
                 auto view = ViewDefinition::Get(*m_dgndb, viewId);
                 if (!view.IsValid())

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/EventsTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelTestsBase.h"
@@ -150,10 +150,10 @@ TEST_F(EventsTests, SingleCallbackTest)
     WaitForEventsCount(callbackNum, 8, 0, 0);
 
     EXPECT_SUCCESS(briefcase->UnsubscribeEventsCallback(callback)->GetResult());
-    EXPECT_EQ(8, callbackNum);
+    EXPECT_EQ(13, callbackNum);
 
-    EXPECT_EQ(2, codeEventCallbackNum);
-    EXPECT_EQ(2, lockEventCallbackNum);
+    EXPECT_EQ(6, codeEventCallbackNum);
+    EXPECT_EQ(3, lockEventCallbackNum);
     EXPECT_EQ(1, changeSetPrePushEventCallbackNum);
     EXPECT_EQ(1, changeSetPostPushEventCallbackNum);
     EXPECT_EQ(2, versionEventCallbackNum);

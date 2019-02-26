@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/ATP/TiledTriangulation/TiledTriangulatorValidator.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //#include "DcStmCorePCH.h"
@@ -11,7 +11,7 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnCoreAPI.h>
 
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
     USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #else
     USING_NAMESPACE_BENTLEY_DGN

@@ -261,7 +261,7 @@ public:
     BENTLEY_SM_EXPORT void SelectRegions(RegionFilter filter, RegionFilterMode mode);
     BENTLEY_SM_EXPORT void SelectRegions(RegionFilter filter, RegionFilterMode mode, bvector<uint64_t>& idsFilter);
     BENTLEY_SM_EXPORT RegionResult GetSelectedRegion(PolyfaceHeaderPtr& mesh);
-    BENTLEY_SM_EXPORT  bvector<bpair<uint64_t, PolyfaceHeaderPtr>>&& GetSelectedRegions(RegionResult& result);
+    BENTLEY_SM_EXPORT  bvector<bpair<uint64_t, PolyfaceHeaderPtr>> GetSelectedRegions(RegionResult& result);
     BENTLEY_SM_EXPORT void ClearSelection();
 
 };

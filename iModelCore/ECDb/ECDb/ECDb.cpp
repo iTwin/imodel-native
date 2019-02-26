@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDb.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -76,6 +76,15 @@ DbResult ECDb::_OnAfterChangesetApplied(bool hasSchemaChanges) const
     Schemas().UpgradeECInstances();
     return BE_SQLITE_OK;
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                    02/2019
+//---------------+---------------+---------------+---------------+---------------+------
+bool ECDb::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const
+    {
+    return m_pimpl->TryGetSqlFunction(function, name, argCount);
+    }
+
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2012

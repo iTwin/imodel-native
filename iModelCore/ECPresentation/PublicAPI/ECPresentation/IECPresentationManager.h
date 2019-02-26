@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/IECPresentationManager.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,7 +36,6 @@ struct EXPORT_VTABLE_ATTRIBUTE IECPresentationManager : public NonCopyableClass
 private:
     static IECPresentationManager* s_instance;
     static IECPresentationSerializer const* s_serializer;
-    static ILocalizationProvider const* s_localizationProvider;
     
 private:
     folly::Future<NodesPathElement> FindNode(ECDbCR, NavNodeCP, ECInstanceKeyCR, JsonValueCR);
@@ -44,6 +43,7 @@ private:
 //__PUBLISH_SECTION_START__
 private:
     IConnectionManagerR m_connections;
+    ILocalizationProvider const* m_localizationProvider = nullptr;
     
 protected:
 /** @name Navigation  
@@ -118,6 +118,8 @@ protected:
     virtual folly::Future<bvector<ECInstanceChangeResult>> _SaveValueChange(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR) = 0;
 /** @} */
 
+    virtual void _OnLocalizationProviderChanged() {}
+
 public:
 /** @name General */
 /** @{ */
@@ -135,7 +137,7 @@ public:
     IECPresentationManager(IConnectionManagerR connections) : m_connections(connections) {}
 
     //! Virtual destructor.
-    virtual ~IECPresentationManager() {}
+    virtual ~IECPresentationManager() { DELETE_AND_CLEAR(m_localizationProvider); }
 
     //! Get the connection manager used by this presentation manager.
     IConnectionManagerCR GetConnections() const {return m_connections;}
@@ -148,10 +150,10 @@ public:
     static IECPresentationSerializer const& GetSerializer();
     
     //! Set ECPresentation objects serializer
-    ECPRESENTATION_EXPORT static void SetLocalizationProvider(ILocalizationProvider const*);
+    ECPRESENTATION_EXPORT void SetLocalizationProvider(ILocalizationProvider const* provider);
 
     //! Get ECPresentation objects serializer
-    static ILocalizationProvider const& GetLocalizationProvider();
+    ILocalizationProvider const* GetLocalizationProvider();
 /** @} */
 
 /** @name Navigation  

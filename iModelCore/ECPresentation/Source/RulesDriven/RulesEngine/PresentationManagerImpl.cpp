@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/PresentationManagerImpl.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -69,11 +69,10 @@ IUserSettingsManager* RulesDrivenECPresentationManagerDependenciesFactory::_Crea
 * @bsimethod                                    Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManager::Impl::Impl(IRulesDrivenECPresentationManagerDependenciesFactory const& dependenciesFactory, Params const& params)
-    : m_localState(nullptr), m_ecPropertyFormatter(nullptr), m_categorySupplier(nullptr)
+    : m_localState(nullptr), m_ecPropertyFormatter(nullptr), m_categorySupplier(nullptr), m_localizationProvider(nullptr)
     {
     m_locaters = dependenciesFactory._CreateRulesetLocaterManager(params.GetConnections());
     m_userSettings = dependenciesFactory._CreateUserSettingsManager(params.GetPaths().GetTemporaryDirectory());
-    m_userSettings->SetLocalizationProvider(&IECPresentationManager::GetLocalizationProvider());
     m_compositeUpdateRecordsHandler = new CompositeUpdateRecordsHandler();
     m_compositeUpdateRecordsHandler->AddRef();
     }
@@ -86,6 +85,15 @@ RulesDrivenECPresentationManager::Impl::~Impl()
     m_compositeUpdateRecordsHandler->Release();
     DELETE_AND_CLEAR(m_userSettings);
     DELETE_AND_CLEAR(m_locaters);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManager::Impl::SetLocalizationProvider(ILocalizationProvider const * provider)
+    {
+    m_localizationProvider = provider;
+    GetUserSettingsManager().SetLocalizationProvider(provider);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -526,7 +534,11 @@ protected:
             settings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, *m_manager.m_nodesFactory, m_manager.GetNodesCache(),
             *m_manager.m_nodesProviderFactory, m_manager.GetLocalState());
         context->SetQueryContext(m_manager.m_connections, connection, statementsCache, *m_manager.m_customFunctions, m_manager.m_usedClassesListener);
-        context->SetLocalizationContext(IECPresentationManager::GetLocalizationProvider());
+        
+        ILocalizationProvider const* localizationProvider = m_manager.GetLocalizationProvider();
+        if (nullptr != localizationProvider)
+            context->SetLocalizationContext(*localizationProvider);
+
         context->SetIsUpdatesDisabled(disableUpdates);
         context->SetCancelationToken(cancelationToken);
         _l2 = nullptr;
@@ -942,7 +954,11 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
     ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, true, options.GetLocale(), key.GetPreferredDisplayType(), inputKeys, *m_nodesCache,
         GetCategorySupplier(), settings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, *m_nodesFactory, GetLocalState());
     context->SetQueryContext(m_connections, connection, statementsCache, *m_customFunctions);
-    context->SetLocalizationContext(IECPresentationManager::GetLocalizationProvider());
+
+    ILocalizationProvider const* localizationProvider = GetLocalizationProvider();
+    if (nullptr != localizationProvider)
+        context->SetLocalizationContext(*localizationProvider);
+
     context->SetPropertyFormattingContext(GetECPropertyFormatter());
     context->SetCancelationToken(&cancelationToken);
     if (nullptr != selectionInfo)
@@ -1154,7 +1170,7 @@ void RulesDrivenECPresentationManagerImpl::_OnUpdateRecordsHandlerChanged()
 bvector<ECInstanceChangeResult> RulesDrivenECPresentationManagerImpl::_SaveValueChange(IConnectionCR connection, bvector<ChangedECInstanceInfo> const& instances,
     Utf8CP propertyAccessor, ECValueCR value)
     {
-    ECInstanceChangesDirector director(GetECInstanceChangeHandlers());
+    ECInstanceChangesDirector director(GetECInstanceChangeHandlers(), GetLocalizationProvider());
     return director.Handle(connection, instances, propertyAccessor, value);
     }
 

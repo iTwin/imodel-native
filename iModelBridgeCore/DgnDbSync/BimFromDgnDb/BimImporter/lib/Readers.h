@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/BimImporter/lib/Readers.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -50,8 +50,10 @@ static Utf8CP const JSON_TYPE_Plan = "Plan";
 static Utf8CP const JSON_TYPE_WorkBreakdown = "WorkBreakdown";
 static Utf8CP const JSON_TYPE_Activity = "Activity";
 static Utf8CP const JSON_TYPE_Baseline = "Baseline";
+static Utf8CP const JSON_TYPE_TimeSpan = "TimeSpan";
 static Utf8CP const JSON_TYPE_PropertyData = "PropertyData";
-static Utf8CP const JSON_TYPE_GenericElementAspect = "GenericElementAspect";
+static Utf8CP const JSON_TYPE_ElementMultiAspect = "ElementMultiAspect";
+static Utf8CP const JSON_TYPE_ElementUniqueAspect = "ElementUniqueAspect";
 static Utf8CP const JSON_TYPE_TextAnnotationData = "TextAnnotationData";
 static Utf8CP const JSON_TYPE_PointCloudModel = "PointCloudModel";
 static Utf8CP const JSON_TYPE_ThreeMxModel = "ThreeMxModel";
@@ -403,7 +405,6 @@ struct SchemaReader : Reader
         ECN::ECRelationshipClassCP m_elementToElement;
         bvector<ECN::ECRelationshipClassP> m_relationshipsToRemove;
 
-        BentleyStatus ImportSchema(ECN::ECSchemaP schema);
         BentleyStatus ValidateBaseClasses(ECN::ECSchemaP schema);
         void SetBaseClassForRelationship(ECN::ECRelationshipClassP relClass);
         void CheckConstraints(ECN::ECRelationshipClassP relClass);
@@ -528,6 +529,17 @@ struct BaselineReader : Reader
     };
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+struct TimeSpanReader : Reader
+    {
+    protected:
+        BentleyStatus _Read(Json::Value& timeSpan) override;
+    public:
+        using Reader::Reader;
+    };
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 struct PropertyDataReader : Reader
@@ -553,12 +565,14 @@ struct EmbeddedFileReader : Reader
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-struct GenericElementAspectReader : Reader
+struct ElementAspectReader : Reader
     {
+    private:
+        bool m_isUnique = false;
     protected:
         BentleyStatus _Read(Json::Value& object) override;
     public:
-        using Reader::Reader;
+        ElementAspectReader(BimFromJsonImpl* importer, bool isUnique) : Reader(importer), m_isUnique(isUnique) {}
     };
 
 //---------------------------------------------------------------------------------------

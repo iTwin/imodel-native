@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/RealityPlatformTools/RealityConversionToolsTester.cpp $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -1297,14 +1297,14 @@ TEST_F(RealityConversionTestFixture, BadJsonToSpatialEntityMetadata)
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Remi.Charbonneau                         05/2017
 //-------------------------------------------------------------------------------------
-TEST_F(RealityConversionTestFixture, PackageFileToDownloadOrder)
+TEST_F(RealityConversionTestFixture, PackageFileToDownloadOrderWithStreamed)
     {
     WString parseError;
     
     Utf8String samplePath(GetDirectory());
     samplePath.append("..\\TestData\\RealityPlatform\\RealityDataPackageSample.xml");
     BeFileName fileName(samplePath);
-    auto linkFile = RealityConversionTools::PackageFileToDownloadOrder(fileName, &parseError);
+    auto linkFile = RealityConversionTools::PackageFileToDownloadOrder(fileName, &parseError, BeFileName(), false);
 
     //for (RealityDataDownload::mirrorWSistersVector link : linkFile)
     //  {
@@ -1401,6 +1401,105 @@ TEST_F(RealityConversionTestFixture, PackageFileToDownloadOrder)
     EXPECT_EQ(linkFile[6][0][0].m_filePath, L"uri37");
     }
 
+    //-------------------------------------------------------------------------------------
+    // @bsimethod                          Remi.Charbonneau                         05/2017
+    //-------------------------------------------------------------------------------------
+    TEST_F(RealityConversionTestFixture, PackageFileToDownloadOrderNoStreamed)
+    {
+        WString parseError;
+
+        Utf8String samplePath(GetDirectory());
+        samplePath.append("..\\TestData\\RealityPlatform\\RealityDataPackageSample.xml");
+        BeFileName fileName(samplePath);
+        auto linkFile = RealityConversionTools::PackageFileToDownloadOrder(fileName, &parseError, BeFileName(), true);
+
+        //for (RealityDataDownload::mirrorWSistersVector link : linkFile)
+        //  {
+        //  std::wcerr << "[          ] " << "First Level" << "\n";
+        //  for (RealityDataDownload::sisterFileVector sister : link)
+        //      {
+        //      std::wcerr << "[          ] " << "Second Level" << "\n";
+        //      for (RealityDataDownload::url_file_pair filePair : sister)
+        //          {
+        //          WString urlLink = L"";
+        //          BeStringUtilities::CurrentLocaleCharToWChar(urlLink, filePair.first.c_str());
+        //          std::wcerr << "[          ] " << urlLink << "     " << filePair.second << "\n";
+        //          }
+        //      }
+        //  }
+
+
+        // Imagery Group
+        // Imagery Data 1
+        EXPECT_EQ(linkFile[0][0][0].m_url, "http://uri1.com/");
+        EXPECT_EQ(linkFile[0][0][1].m_url, "http://uri1.com/url1.html");
+        EXPECT_EQ(linkFile[0][0][2].m_url, "http://uri1.com/url2.html");
+        EXPECT_EQ(linkFile[0][0][3].m_url, "http://uri1.com/url3.html");
+
+        EXPECT_EQ(linkFile[0][0][0].m_filePath, L"uri1.com");
+        EXPECT_EQ(linkFile[0][0][1].m_filePath, L"url1.html");
+        EXPECT_EQ(linkFile[0][0][2].m_filePath, L"url2.html");
+        EXPECT_EQ(linkFile[0][0][3].m_filePath, L"url3.html");
+
+        // Imagery data 2 Multiband test
+        EXPECT_EQ(linkFile[1][0][0].m_url, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B4.TIF");
+        EXPECT_EQ(linkFile[1][0][1].m_url, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B2.TIF");
+        EXPECT_EQ(linkFile[1][0][2].m_url, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B3.TIF");
+        EXPECT_EQ(linkFile[1][0][3].m_url, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B8.TIF");
+
+        EXPECT_EQ(linkFile[1][0][0].m_filePath, L"LC80130282015007LGN00_B4.TIF");
+        EXPECT_EQ(linkFile[1][0][1].m_filePath, L"LC80130282015007LGN00_B2.TIF");
+        EXPECT_EQ(linkFile[1][0][2].m_filePath, L"LC80130282015007LGN00_B3.TIF");
+        EXPECT_EQ(linkFile[1][0][3].m_filePath, L"LC80130282015007LGN00_B8.TIF");
+
+        // Terrain Group
+        // Terrain data 1
+        EXPECT_EQ(linkFile[2][0][0].m_url, "http://uri28");
+        EXPECT_EQ(linkFile[2][0][1].m_url, "http://uri82");
+
+        EXPECT_EQ(linkFile[2][0][0].m_filePath, L"uri28");
+        EXPECT_EQ(linkFile[2][0][1].m_filePath, L"uri82");
+
+        // Model group
+        // Model data 1
+        EXPECT_EQ(linkFile[3][0][0].m_url, "http://uri10");
+        EXPECT_EQ(linkFile[3][0][1].m_url, "http://uri28");
+
+        EXPECT_EQ(linkFile[3][0][0].m_filePath, L"uri10");
+        EXPECT_EQ(linkFile[3][0][1].m_filePath, L"uri28");
+
+        // Pinned group
+        // Pinned data 1
+        EXPECT_EQ(linkFile[4][0][0].m_url, "http://uri19");
+        EXPECT_EQ(linkFile[4][0][1].m_url, "http://uri55");
+        EXPECT_EQ(linkFile[4][0][2].m_url, "http://uri56");
+        EXPECT_EQ(linkFile[4][0][3].m_url, "http://uri57");
+
+        EXPECT_EQ(linkFile[4][0][0].m_filePath, L"uri19");
+        EXPECT_EQ(linkFile[4][0][1].m_filePath, L"uri55");
+        EXPECT_EQ(linkFile[4][0][2].m_filePath, L"uri56");
+        EXPECT_EQ(linkFile[4][0][3].m_filePath, L"uri57");
+
+        // Pinned data 2 source 1
+        EXPECT_EQ(linkFile[5][0][0].m_url, "http://uri22");
+        EXPECT_EQ(linkFile[5][0][0].m_filePath, L"uri22");
+
+        // Pinned data 2 source 2 is streamed and thus not retained
+
+        // Pinned data 2 source 3
+        EXPECT_EQ(linkFile[5][1][0].m_url, "http://uri24");
+        EXPECT_EQ(linkFile[5][1][1].m_url, "http://uri70");
+        EXPECT_EQ(linkFile[5][1][2].m_url, "http://uri71");
+        EXPECT_EQ(linkFile[5][1][3].m_url, "http://uri72");
+
+        EXPECT_EQ(linkFile[5][1][0].m_filePath, L"uri24");
+        EXPECT_EQ(linkFile[5][1][1].m_filePath, L"uri70");
+        EXPECT_EQ(linkFile[5][1][2].m_filePath, L"uri71");
+        EXPECT_EQ(linkFile[5][1][3].m_filePath, L"uri72");
+
+        // Undefined Group
+        // Undefined data 1 is streamed and thus not retained
+    }
 
 #if 0
 

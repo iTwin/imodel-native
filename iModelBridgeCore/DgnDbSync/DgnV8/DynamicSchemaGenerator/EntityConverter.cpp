@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DynamicSchemaGenerator/EntityConverter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -104,13 +104,12 @@ BentleyStatus BisClassConverter::CheckBaseAndDerivedClassesForBisification(Schem
         {
         ECClassName v8ClassName(*ecClass);
         BisConversionRule existingRule;
-        BECN::ECClassId existingV8ClassId;
         bool hasSecondary;
-        if (V8ECClassInfo::TryFind(existingV8ClassId, existingRule, context.GetDgnDb(), v8ClassName, hasSecondary))
+        if (V8ECClassInfo::TryFind(existingRule, hasSecondary, context.GetDgnDb(), v8ClassName.GetClassFullName()))
             {
             if (BisConversionRule::ToDefaultBisBaseClass == existingRule && BisConversionRule::ToDefaultBisBaseClass != incomingRule)
                 {
-                if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, incomingRule))
+                if (BSISUCCESS != V8ECClassInfo::InsertOrUpdate(converter, v8ClassName, incomingRule, hasSecondary))
                     return BSIERROR;
                 if (BisConversionRule::ToPhysicalElement != incomingRule)
                     if (BSISUCCESS != CheckBaseAndDerivedClassesForBisification(context, ecClass, incomingRule, isBaseClassCheck ? ecClass->GetDerivedClasses() : ecClass->GetBaseClasses(), !isBaseClassCheck))
@@ -119,23 +118,23 @@ BentleyStatus BisClassConverter::CheckBaseAndDerivedClassesForBisification(Schem
             // If a class is using the ToAspectOnly rule, all of its children must also become aspects
             else if (!isBaseClassCheck && BisConversionRule::ToAspectOnly == incomingRule)
                 {
-                if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, incomingRule))
+                if (BSISUCCESS != V8ECClassInfo::InsertOrUpdate(converter, v8ClassName, incomingRule, hasSecondary))
                     return BSIERROR;
                 }
             // If the base is physical and the derived class is drawing, then make the derived class Physical.  We will try to turn any instances into aspects
             else if (BisConversionRule::ToDrawingGraphic == existingRule && BisConversionRule::ToPhysicalElement == incomingRule)
                 {
-                if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, BisConversionRule::ToPhysicalElement, true))
+                if (BSISUCCESS != V8ECClassInfo::InsertOrUpdate(converter, v8ClassName, BisConversionRule::ToPhysicalElement, true))
                     return BSIERROR;
                 }
             else if (BisConversionRule::ToGroup == incomingRule && (BisConversionRule::ToPhysicalElement == existingRule || BisConversionRule::ToDrawingGraphic == existingRule))
                 {
                 BisConversionRule tempRule;
-                BECN::ECClassId incomingV8ClassId;
                 ECClassName incomingV8ClassName(*incomingClass);
-                if (V8ECClassInfo::TryFind(incomingV8ClassId, tempRule, context.GetDgnDb(), incomingV8ClassName, hasSecondary))
+                bool second;
+                if (V8ECClassInfo::TryFind(tempRule, second, context.GetDgnDb(), incomingV8ClassName.GetClassFullName()))
                     {
-                    if (BSISUCCESS != V8ECClassInfo::Update(converter, incomingV8ClassId, existingRule))
+                    if (BSISUCCESS != V8ECClassInfo::InsertOrUpdate(converter, incomingV8ClassName, existingRule, second))
                         return BSIERROR;
                     incomingRule = existingRule;
                     if (BSISUCCESS != CheckBaseAndDerivedClassesForBisification(context, ecClass, incomingRule, ecClass->GetDerivedClasses(), false))
@@ -144,13 +143,13 @@ BentleyStatus BisClassConverter::CheckBaseAndDerivedClassesForBisification(Schem
                 }
             else if (BisConversionRule::ToGroup == existingRule && (BisConversionRule::ToPhysicalElement == incomingRule || BisConversionRule::ToDrawingGraphic == incomingRule))
                 {
-                if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, incomingRule))
+                if (BSISUCCESS != V8ECClassInfo::InsertOrUpdate(converter, v8ClassName, incomingRule, hasSecondary))
                     return BSIERROR;
                 if (BSISUCCESS != CheckBaseAndDerivedClassesForBisification(context, ecClass, incomingRule, ecClass->GetDerivedClasses(), false))
                     return BSIERROR;
                 }
             }
-        else if (BSISUCCESS != V8ECClassInfo::Insert(converter, v8ClassName, incomingRule))
+        else if (BSISUCCESS != V8ECClassInfo::InsertOrUpdate(converter, v8ClassName, incomingRule, false))
             return BSIERROR;
         if (BSISUCCESS != CheckBaseAndDerivedClassesForBisification(context, ecClass, incomingRule, isBaseClassCheck ? ecClass->GetBaseClasses() : ecClass->GetDerivedClasses(), isBaseClassCheck))
             return BSIERROR;
@@ -180,11 +179,16 @@ BentleyStatus BisClassConverter::EnsureBaseClassesAndDerivedClassesAreSet(Schema
             {
             ECClassName v8ClassName(*v8Class);
 
-            BisConversionRule existingRule;
-            BECN::ECClassId existingV8ClassId;
+            BisConversionRule existingRule = BisConversionRule::ToDefaultBisBaseClass;
             bool hasSecondary;
-            const bool alreadyExists = V8ECClassInfo::TryFind(existingV8ClassId, existingRule, context.GetDgnDb(), v8ClassName, hasSecondary);
-            BeAssert(alreadyExists);
+            bool alreadyExists = V8ECClassInfo::TryFind(existingRule, hasSecondary, context.GetDgnDb(), v8ClassName.GetClassFullName());
+
+            if (!alreadyExists)
+                {
+                context.ReportIssue(Converter::IssueSeverity::Error, "Failed to read class info for %s.", v8ClassName.GetClassFullName().c_str());
+                BeAssert(alreadyExists);
+                return BSIERROR;
+                }
             if (BSISUCCESS != CheckBaseAndDerivedClassesForBisification(context, v8Class, existingRule, isBaseClassCheck ? v8Class->GetBaseClasses() : v8Class->GetDerivedClasses(), isBaseClassCheck))
                 return BSIERROR;
             }
@@ -218,9 +222,8 @@ BentleyStatus BisClassConverter::PreprocessConversion(SchemaConversionContext& c
             ECClassName v8ClassName(*v8Class);
 
             BisConversionRule existingRule;
-            BECN::ECClassId existingV8ClassId;
             bool hasSecondary;
-            const bool alreadyExists = V8ECClassInfo::TryFind(existingV8ClassId, existingRule, context.GetDgnDb(), v8ClassName, hasSecondary);
+            const bool alreadyExists = V8ECClassInfo::TryFind(existingRule, hasSecondary, context.GetDgnDb(), v8ClassName.GetClassFullName());
 
             //Determine class based rule. This also evaluates the ConversionRule CA on the class, if it exists
             BisConversionRule rule;
@@ -256,12 +259,12 @@ BentleyStatus BisClassConverter::PreprocessConversion(SchemaConversionContext& c
                 if (alreadyExists)
                     {
                     BeAssert(rule != existingRule);
-                    if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, rule))
+                    if (BSISUCCESS != V8ECClassInfo::InsertOrUpdate(converter, v8ClassName, rule, hasSecondary))
                         return BSIERROR;
                     }
                 else
                     {
-                    if (BSISUCCESS != V8ECClassInfo::Insert(converter, v8ClassName, rule))
+                    if (BSISUCCESS != V8ECClassInfo::InsertOrUpdate(converter, v8ClassName, rule))
                         return BSIERROR;
                     }
                 }
@@ -307,18 +310,15 @@ BentleyStatus BisClassConverter::ConvertECClass(SchemaConversionContext& context
     BisConversionRule conversionRule;
     bool found = false;
     bool hasSecondary;
-    if (!V8ECClassInfo::TryFind(conversionRule, context.GetDgnDb(), v8ClassName, hasSecondary))
+    if (!V8ECClassInfo::TryFind(conversionRule, hasSecondary, context.GetDgnDb(), v8ClassName.GetClassFullName()))
         {
         Utf8String str(v8ClassName.GetClassName());
         if (str.EndsWith(ElementAspectSuffix))
             {
             if (1 == str.ReplaceAll(ElementAspectSuffix, ""))
                 {
-                ECClassName tmp(v8ClassName.GetSchemaName(), str.c_str());
-                if (V8ECClassInfo::TryFind(conversionRule, context.GetDgnDb(), tmp, hasSecondary))
-                    {
-                    found = true;
-                    }
+                Utf8PrintfString name("%s.%s", v8ClassName.GetSchemaName(), str.c_str());
+                found = V8ECClassInfo::TryFind(conversionRule, hasSecondary, context.GetDgnDb(), name);
                 }
             }
         }
@@ -893,11 +893,14 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
     // If we removed any aspect classes as a constraint, then we need to add the base Element class as a constraint.  This is because we are 
     // using the element that owns the aspect as the relationship constraint but we have no way of knowing what class that is.  Therefore, we
     // can only use the most generic class as the constraint.
-    if (constraintsToRemove.size() > 0)
+    if (constraintsToRemove.size() > 0 && firstIsElement)
         {
         constraint.AddClass(*defaultConstraintClass);
         constraint.SetIsPolymorphic(true);
         }
+
+    if (isSource && constraint.IsAbstractConstraintDefined() && !constraint.GetAbstractConstraint()->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
+        constraint.RemoveAbstractConstraint();
 
     constraintsToRemove.clear();
     bvector<ECClassCP> constraintsToAdd;
@@ -967,12 +970,28 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
             {
             ECRelationshipClassCP baseClass = relClass.GetBaseClasses()[0]->GetRelationshipClassCP();
             ECRelationshipConstraintR baseConstraint = (isSource) ? baseClass->GetSource() : baseClass->GetTarget();
-            constraint.AddClass(*(baseConstraint.GetConstraintClasses()[0]->GetEntityClassCP()));
+            ECEntityClassCP baseConstraintClass = baseConstraint.GetConstraintClasses()[0]->GetEntityClassCP();
+            ECObjectsStatus status = constraint.AddClass(*(baseConstraintClass));
+            if (ECObjectsStatus::SchemaNotFound == status)
+                {
+                relClass.GetSchemaR().AddReferencedSchema(const_cast<ECSchemaR>(baseConstraintClass->GetSchema()));
+                constraint.AddClass(*(baseConstraintClass));
+                }
+            else if (ECObjectsStatus::RelationshipConstraintsNotCompatible == status && RelationshipMultiplicity::Compare(constraint.GetMultiplicity(), baseConstraint.GetMultiplicity()) == -1)
+                {
+                constraint.SetMultiplicity(baseConstraint.GetMultiplicity());
+                status = constraint.AddClass(*(baseConstraintClass));
+                }
             }
-        else if (ECObjectsStatus::SchemaNotFound == constraint.AddClass(*defaultConstraintClass))
+        else
             {
-            relClass.GetSchemaR().AddReferencedSchema(defaultConstraintClass->GetSchemaR());
-            constraint.AddClass(*defaultConstraintClass);
+            constraint.RemoveAbstractConstraint();
+            ECObjectsStatus status = constraint.AddClass(*defaultConstraintClass);
+            if (ECObjectsStatus::SchemaNotFound == status)
+                {
+                relClass.GetSchemaR().AddReferencedSchema(defaultConstraintClass->GetSchemaR());
+                constraint.AddClass(*defaultConstraintClass);
+                }
             }
         }
     else if (relClass.HasBaseClasses())

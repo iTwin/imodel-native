@@ -2,7 +2,7 @@
 |
 |     $Source: BimFromDgnDb/BimImporter/lib/BimFromJsonImpl.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -58,6 +58,7 @@ struct BimFromJsonImpl : DgnImportContext
     private:
         DgnDbPtr            m_dgndb;
         DgnProgressMeter*   m_meter;
+        uint32_t            m_counter;
         bmap<Utf8String, ECN::SchemaKey> m_schemaNameToKey;
         ECN::ECClassCP m_orthographicViewClass;
         ECN::ECClassCP m_sheetViewClass;
@@ -103,8 +104,7 @@ struct BimFromJsonImpl : DgnImportContext
         BentleyStatus InitializeSchemas();
         BentleyStatus CreateAndAttachSyncInfo();
         BentleyStatus AttachSyncInfo();
-        BentleyStatus ImportJson(folly::ProducerConsumerQueue<BentleyM0200::Json::Value>& objectQueue, folly::Future<bool>& exporterFuture);
-        void AddToQueue(const char* entry);
+        BentleyStatus ImportJson(folly::ProducerConsumerQueue<BentleyB0200::Json::Value>& objectQueue, folly::Future<bool>& exporterFuture);
         void SetDone() { m_isDone = true; }
         void FinalizeImport();
         void ShowProgress() { if (nullptr != m_meter) m_meter->ShowProgress(); }

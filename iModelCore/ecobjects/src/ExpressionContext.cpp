@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionContext.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -1030,6 +1030,20 @@ MethodSymbolPtr MethodSymbol::Create (Utf8CP name, ExpressionValueListMethod_t m
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus MethodSymbol::_CreateMethodResult(MethodReferencePtr & result, ExpressionMethodType methodType) const 
+    {
+    if ((ExpressionMethodType::Instance == methodType && !m_methodReference->SupportsInstanceMethodCall()) ||
+        (ExpressionMethodType::Static == methodType && !m_methodReference->SupportsStaticMethodCall()) ||
+        (ExpressionMethodType::ValueList == methodType && !m_methodReference->SupportsValueListMethodCall()))
+        return ExpressionStatus::WrongType;
+
+    result = m_methodReference.get(); 
+    return ExpressionStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus MethodSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex)
@@ -1171,20 +1185,20 @@ ExpressionStatus SymbolExpressionContext::_GetReference(EvaluationResultR evalRe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus SymbolExpressionContext::_ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary)
+ExpressionStatus SymbolExpressionContext::_ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary, ExpressionMethodType methodType)
     {
     for (bvector<SymbolPtr>::iterator curr = m_symbols.begin(); curr != m_symbols.end(); curr++)
         {
         SymbolP symbol = (*curr).get();
-        if (0 == strcmp(ident, symbol->GetName()))
-            return symbol->CreateMethodResult(result);
+        if (0 == strcmp(ident, symbol->GetName()) && ExpressionStatus::Success == symbol->CreateMethodResult(result, methodType))
+            return ExpressionStatus::Success;
         }
 
     if (useOuterIfNecessary)
         {
         ExpressionContextP  outer = GetOuterP();
         if (NULL != outer)
-            return outer->ResolveMethod(result, ident, useOuterIfNecessary);
+            return outer->ResolveMethod(result, ident, useOuterIfNecessary, methodType);
         }
 
     return ExpressionStatus::UnknownSymbol;

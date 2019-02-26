@@ -204,7 +204,7 @@ const Node * Branch::getNode( NodeID nodeid ) const
 //-----------------------------------------------------------------------------
 bool Branch::addBlob( NodeID id, uint32 size, const void* data, bool copy/*=false*/, bool del /*= false*/, bool compress/*=false*/ )
 {
-	uint8 *dt = (uint8*)data;
+	uint8 *dt = const_cast<uint8*>((uint8 const*)data);
 
 	if (copy || compress)
 	{

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectAuthenticationPersistenceTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,7 +10,6 @@
 
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include "ConnectTestsHelper.h"
-#include "StubLocalState.h"
 #include "StubSecureStore.h"
 #include "MockLocalState.h"
 
@@ -22,7 +21,7 @@ using namespace ::testing;
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationPersistenceTests, GetShared_CalledTwice_ReturnsSameCredentials)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     auto secureStore = std::make_shared<StubSecureStore>();
     ConnectAuthenticationPersistence::CustomInitialize(&localState, secureStore);
 
@@ -37,7 +36,7 @@ TEST_F(ConnectAuthenticationPersistenceTests, GetShared_CalledTwice_ReturnsSameC
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationPersistenceTests, GetToken_SetTokenCalled_ReturnsSameToken)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     auto secureStore = std::make_shared<StubSecureStore>();
     ConnectAuthenticationPersistence::CustomInitialize(&localState, secureStore);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
@@ -53,7 +52,7 @@ TEST_F(ConnectAuthenticationPersistenceTests, GetToken_SetTokenCalled_ReturnsSam
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationPersistenceTests, SetCredentials_ListenerRegisteredAndCredentialsStored_CallsListenerBeforeSettingNewCredentials)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     auto secureStore = std::make_shared<StubSecureStore>();
     ConnectAuthenticationPersistence::CustomInitialize(&localState, secureStore);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
@@ -80,7 +79,7 @@ TEST_F(ConnectAuthenticationPersistenceTests, SetCredentials_ListenerRegisteredA
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationPersistenceTests, SetCredentials_ListenerRegisteredAndNoCredentialsStored_DoesNotCallListener)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     auto secureStore = std::make_shared<StubSecureStore>();
     ConnectAuthenticationPersistence::CustomInitialize(&localState, secureStore);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
@@ -103,7 +102,7 @@ TEST_F(ConnectAuthenticationPersistenceTests, SetCredentials_ListenerRegisteredA
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationPersistenceTests, SetCredentials_ListenerRegisteredAndAndPasswordChanges_DoesNotCallListener)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     auto secureStore = std::make_shared<StubSecureStore>();
     ConnectAuthenticationPersistence::CustomInitialize(&localState, secureStore);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
@@ -128,7 +127,7 @@ TEST_F(ConnectAuthenticationPersistenceTests, SetCredentials_ListenerRegisteredA
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectAuthenticationPersistenceTests, SetCredentials_ListenerUnregisteredAndCredentialsStored_DoesNotCallUnregisteredListener)
     {
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     auto secureStore = std::make_shared<StubSecureStore>();
     ConnectAuthenticationPersistence::CustomInitialize(&localState, secureStore);
     auto persistence = ConnectAuthenticationPersistence::GetShared();

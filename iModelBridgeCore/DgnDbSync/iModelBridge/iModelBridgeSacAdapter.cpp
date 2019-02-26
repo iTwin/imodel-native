@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/iModelBridgeSacAdapter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined(_WIN32)
@@ -624,6 +624,13 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
         bparams.SetBridgeJobName(iModelBridge::GetArgValue(argv[iArg]).c_str());
         return iModelBridge::CmdLineArgStatus::Success;
         }
+
+    if (argv[iArg] == wcsstr(argv[iArg], L"--xsa"))
+        {
+        bparams.SetWantProvenanceInBim(true);
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
     return iModelBridge::CmdLineArgStatus::NotRecognized;
     }
 
@@ -775,11 +782,11 @@ BentleyStatus iModelBridgeSacAdapter::FixBriefcaseName(iModelBridge::Params& bpa
     if (fixedName.IsDirectory())
         {
         fixedName.AppendToPath(bparams.GetInputFileName().GetFileNameWithoutExtension().c_str());
-        fixedName.AppendExtension(iModelBridge::str_BriefcaseIExt());
+        fixedName.AppendExtension(iModelBridge::str_BriefcaseExt());
         }
     else//If no extension override it
         {
-        //fixedName.OverrideNameParts(L"." str_BriefcaseIExt());
+        //fixedName.OverrideNameParts(L"." str_BriefcaseExt());
         }
 
     bparams.m_briefcaseName = fixedName;

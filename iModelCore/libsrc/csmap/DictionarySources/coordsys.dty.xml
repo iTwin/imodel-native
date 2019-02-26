@@ -6958,30 +6958,6 @@
                     <KeyName>EPSG:3068-1</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:31466</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31467</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31468</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31469</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31466-A</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31467-A</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31468-A</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31469-A</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>EPSG:3396</KeyName>
                   </Member>
                   <Member>
@@ -30908,7 +30884,31 @@
                   </Member>        
                   <Member>
                     <KeyName>EPSG:5653</KeyName>
-                  </Member>                 
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:31466</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:31467</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:31468</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:31469</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:31466-A</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:31467-A</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:31468-A</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:31469-A</KeyName>
+                  </Member>
                 </Members>
               </Group>
               <Group>

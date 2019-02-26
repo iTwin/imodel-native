@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/SchemaVersionTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelTestsBase.h"
@@ -115,8 +115,7 @@ TEST_F(SchemaVersionTests, AcquireBriefcaseWithSchemaChanges)
 TEST_F(SchemaVersionTests, ImportSchemasAndMakeChanges)
     {
     SchemaVersionTestDomain::GetDomain().SetRequired(DgnDomain::Required::No);
-    DgnDbPtr db = CreateTestDb();
-    iModelResult createResult = CreateiModel(db);
+    iModelResult createResult = CreateEmptyiModel(GetTestiModelName());
     ASSERT_SUCCESS(createResult);
     iModelInfoPtr info = createResult.GetValue();
     SchemaVersionTestDomain::GetDomain().SetRequired(DgnDomain::Required::Yes);

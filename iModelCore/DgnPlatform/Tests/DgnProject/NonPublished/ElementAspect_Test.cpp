@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementAspect_Test.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -488,15 +488,15 @@ TEST_F(ElementAspectTests, GenericAspect_CRUD)
         ASSERT_EQ(1, countTmas);
         }
 
-    if (true)
-        {
-        // If an aspect is supposed to have a handler, then we are not allowed to write such aspects using the generic handler
-        auto editEl = persistEl->CopyForEdit();
-        ASSERT_TRUE(nullptr != maspectclassWithHandler);
-        auto maspectWithHandler1 = maspectclassWithHandler->GetDefaultStandaloneEnabler()->CreateInstance();
-        maspectWithHandler1->SetValue("TestMultiAspectProperty", ECN::ECValue("foo"));  
-        ASSERT_NE(DgnDbStatus::Success, DgnElement::GenericMultiAspect::AddAspect(*editEl, *maspectWithHandler1));
-        }
+    //if (true)
+    //    {
+    //    // If an aspect is supposed to have a handler, then we are not allowed to write such aspects using the generic handler
+    //    auto editEl = persistEl->CopyForEdit();
+    //    ASSERT_TRUE(nullptr != maspectclassWithHandler);
+    //    auto maspectWithHandler1 = maspectclassWithHandler->GetDefaultStandaloneEnabler()->CreateInstance();
+    //    maspectWithHandler1->SetValue("TestMultiAspectProperty", ECN::ECValue("foo"));  
+    //    ASSERT_NE(DgnDbStatus::Success, DgnElement::GenericMultiAspect::AddAspect(*editEl, *maspectWithHandler1));
+    //    }
     }
 
 /*---------------------------------------------------------------------------------**//**

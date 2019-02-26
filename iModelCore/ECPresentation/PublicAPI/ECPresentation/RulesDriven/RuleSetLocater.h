@@ -352,7 +352,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RuleSetLocaterManager : IRulesetLocaterManager, I
         bool operator<(CacheKey const& other) const
             {
             return m_connectionId < other.m_connectionId
-                || m_connectionId == other.m_connectionId && m_rulesetId < other.m_rulesetId;
+                || (m_connectionId == other.m_connectionId && m_rulesetId < other.m_rulesetId);
             }
         };
 

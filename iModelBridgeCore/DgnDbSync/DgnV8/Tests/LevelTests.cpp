@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/LevelTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -21,7 +21,7 @@ struct LevelTests : public ConverterTestBaseFixture
 TEST_F(LevelTests, NoLevelChangesInTile)
     {
     m_opts.m_useTiledConverter = true;
-    LineUpFiles(L"NoLevelChangesInTile.ibim", L"Test3d.dgn", true); // creates TestAddRef.ibim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"NoLevelChangesInTile.bim", L"Test3d.dgn", true); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ( 0 , m_count ) << L"The initial V8 file is supposed to be empty!";
 
     BentleyApi::BeFileName tileFile;
@@ -76,7 +76,7 @@ void LevelTests::TestLevelConversion(size_t numGeometricModelsExpected, size_t n
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(LevelTests, LevelMerge1)
     {
-    LineUpFiles(L"LevelMerge1.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"LevelMerge1.bim", L"Test3d.dgn", false);
     TestLevelConversion (2, 1, 1, true);
     }
 
@@ -85,7 +85,7 @@ TEST_F(LevelTests, LevelMerge1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(LevelTests, LevelMergeFromAttachments_CopyIfDifferent1)
     {
-    LineUpFiles(L"LevelMergeFromAttachments_CopyIfDifferent.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"LevelMergeFromAttachments_CopyIfDifferent.bim", L"Test3d.dgn", false);
 
     AddV8Level("Level1"); // Create a level (in addition to the default level)
 
@@ -107,7 +107,7 @@ TEST_F(LevelTests, LevelMergeFromAttachments_CopyIfDifferent1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(LevelTests, LevelMergeFromAttachments_CopyIfDifferent12)
     {
-    LineUpFiles(L"LevelMergeFromAttachments_CopyIfDifferent.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"LevelMergeFromAttachments_CopyIfDifferent.bim", L"Test3d.dgn", false);
 
     AddV8Level("Level1"); // Create a level (in addition to the default level)
 
@@ -142,7 +142,7 @@ TEST_F(LevelTests, LevelMergeFromAttachments_CopyIfDifferent12)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(LevelTests, LevelMergeFromAttachments_CopyIfDifferent2)
     {
-    LineUpFiles(L"LevelMergeFromAttachments_CopyIfDifferent.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"LevelMergeFromAttachments_CopyIfDifferent.bim", L"Test3d.dgn", false);
 
     BentleyApi::BeFileName refV8File;
     CreateAndAddV8Attachment(refV8File,1);
@@ -162,7 +162,7 @@ TEST_F(LevelTests, LevelMergeFromAttachments_CopyIfDifferent2)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(LevelTests, LevelMergeFromAttachments_CopyNever)
     {
-    LineUpFiles(L"LevelMergeFromAttachments_CopyNever.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"LevelMergeFromAttachments_CopyNever.bim", L"Test3d.dgn", false);
 
     BentleyApi::BeFileName refV8File;
     CreateAndAddV8Attachment(refV8File,1);
@@ -178,7 +178,7 @@ TEST_F(LevelTests, LevelMergeFromAttachments_CopyNever)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(LevelTests, LevelMergeFromAttachments_Always)
     {
-    LineUpFiles(L"LevelMergeFromAttachments_Always.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"LevelMergeFromAttachments_Always.bim", L"Test3d.dgn", false);
 
     // Put an element on default level. Note that converter will not make copies of unused levels.
     if (true)
@@ -202,7 +202,7 @@ TEST_F(LevelTests, LevelMergeFromAttachments_Always)
 #ifdef WIP_UPDATER // *** think about level update -- allow or forbid?
 TEST_F(LevelTests, LevelMerge_FailUpdateOnLevelChange)
     {
-    LineUpFiles(L"LevelMerge_FailUpdateOnLevelChange.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"LevelMerge_FailUpdateOnLevelChange.bim", L"Test3d.dgn", false);
 
     AddV8Level("Level1"); // Create a level (in addition to the default level)
 
@@ -218,7 +218,7 @@ TEST_F(LevelTests, LevelMerge_FailUpdateOnLevelChange)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(LevelTests, LevelMaskfromSheetAttachment_toViewAttachment)
     {
-    LineUpFiles(L"LevelMaskfromSheetAttachment_toViewAttachment.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
+    LineUpFiles(L"LevelMaskfromSheetAttachment_toViewAttachment.bim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     AddV8Level("Level1");
     AddV8Level("Level2");
     AddV8Level("Level3");

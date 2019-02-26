@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMPointIndex.hpp $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,6 +10,22 @@
 #include "ScalableMeshProgress.h"
 
 using namespace ISMStore;
+
+
+//=======================================================================================
+// @bsimethod                                                     Mathieu.St-Pierre 10/19
+//=======================================================================================
+SMNodeDataToLoad::SMNodeDataToLoad()
+    {
+    m_pts = true;    
+    };
+
+//=======================================================================================
+// @bsimethod                                                     Mathieu.St-Pierre 10/19
+//=======================================================================================
+SMNodeDataToLoad::~SMNodeDataToLoad()
+    {
+    }
 
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
@@ -737,7 +753,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Unload
             Discard();
             }
 
-        // If there are sub-nodes we must create them
+        // If there are sub-nodes we must stop referencing them.
         if (!UNCONSTTHIS->m_nodeHeader.m_IsLeaf)
             {
             if (UNCONSTTHIS->m_pSubNodeNoSplit != NULL)
@@ -750,11 +766,11 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Unload
                 {
                 for (size_t indexNode = 0 ; indexNode <UNCONSTTHIS->m_apSubNodes.size(); indexNode++)
                     {
-                    if (UNCONSTTHIS->m_apSubNodes[indexNode] != NULL) {
-                        if(UNCONSTTHIS->m_apSubNodes[indexNode]->IsLoaded())
-                            UNCONSTTHIS->m_apSubNodes[indexNode]->SetParentNodePtr(0);
+                    if (UNCONSTTHIS->m_apSubNodes[indexNode] != NULL) 
+                        {                        
+                        UNCONSTTHIS->m_apSubNodes[indexNode]->SetParentNodePtr(0);
                         UNCONSTTHIS->m_apSubNodes[indexNode] = NULL;
-                    }
+                        }
                     }
                 }
             }
@@ -989,6 +1005,9 @@ HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::AddChi
     m_nodeHeader.m_IsLeaf = false;
     m_nodeHeader.m_IsBranched = true;
     m_nodeHeader.m_apSubNodeID.resize(m_nodeHeader.m_numberOfSubNodesOnSplit);
+
+    childNodeP->m_createdNodeMap = m_createdNodeMap;
+    m_createdNodeMap->insert(std::pair<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(childNodeP->GetBlockID().m_integerID, childNodeP));
 
     for (auto& node : m_apSubNodes) this->AdviseSubNodeIDChanged(node);
 
@@ -4033,6 +4052,15 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
     }
 
 //=======================================================================================
+// @bsimethod                                                   Mathieu.St-Pierre   01/19
+//=======================================================================================
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::LoadData(SMNodeDataToLoad* dataToLoad)
+    {
+    if (dataToLoad == nullptr || dataToLoad->m_pts)
+        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr = GetPointsPtr(true);
+    }
+
+//=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::AdviseSubNodeIDChanged(const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& p_subNode)
@@ -6879,7 +6907,7 @@ template<class POINT, class EXTENT> uint32_t SMPointIndexNode<POINT, EXTENT>::Ge
         //std::cout << "node (" << m_nodeHeader.m_id.m_integerID << ") --> count (" << NbObjects << ")" << std::endl;
 
         //Compute the
-        if (((m_filter == NULL) ||(m_filter->IsProgressiveFilter() == true)) && (GetParentNodePtr() != 0))
+        if (((m_filter != NULL) && (m_filter->IsProgressiveFilter() == true)) && (GetParentNodePtr() != 0))
             {
             static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*GetParentNode())->AddNumberObjectsInAncestors(m_nodeHeader.m_nodeExtent, NbObjects);
             }
@@ -7031,7 +7059,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::SaveGr
         {
         doSkip = true;
         }
-    if(GetNbPoints() < 3)
+    if(0 < GetNbPoints() && GetNbPoints() < 3)
         {
         doSkip = true;
         }
@@ -8033,7 +8061,6 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveP
         {
         return ERROR;
         }
-        #ifndef LINUX_SCALABLEMESH_BUILD
     ISMDataStoreTypePtr<Extent3dType> dataStore(
  #ifndef VANCOUVER_API
     new SMStreamingStore<Extent3dType>(pi_pOutputDirPath, pi_pCompress)
@@ -8045,7 +8072,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveP
     this->SaveMasterHeaderToCloud(dataStore);
 
     this->GetRootNode()->SavePointsToCloud(dataStore);
-    #endif
+
 
     return SUCCESS;
     }

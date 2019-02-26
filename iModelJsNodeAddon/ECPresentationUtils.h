@@ -2,7 +2,7 @@
 |
 |     $Source: ECPresentationUtils.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -69,7 +69,7 @@ struct ECPresentationUtils
     static RulesDrivenECPresentationManager* CreatePresentationManager(IConnectionManagerR, Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin&);
 
     static ECPresentationResult SetupRulesetDirectories(RulesDrivenECPresentationManager&, bvector<Utf8String> const&);
-    static ECPresentationResult SetupLocaleDirectories(bvector<Utf8String> const&);
+    static ECPresentationResult SetupLocaleDirectories(RulesDrivenECPresentationManager& manager, bvector<Utf8String> const&);
 
     static ECPresentationResult GetRulesets(SimpleRuleSetLocater&, Utf8StringCR ruleSetId);
     static ECPresentationResult AddRuleset(SimpleRuleSetLocater&, Utf8StringCR rulesetJsonString);

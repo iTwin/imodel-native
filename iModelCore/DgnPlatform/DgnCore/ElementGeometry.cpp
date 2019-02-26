@@ -1676,12 +1676,12 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
     //                          So we need a way to check for that case as we can't call GetMaterial
     //                          when !useMaterial because GeometryParams::Resolve hasn't been called...
     bool useMaterial = is3d && !elParams.IsMaterialFromSubCategoryAppearance();
-
-    if (useMaterial)
+    auto trans2x3 = elParams.GetMaterialUVDetail().GetTransform();
+    if (useMaterial || nullptr != trans2x3)
         {
         FlatBufferBuilder fbb;
 
-        auto mloc = FB::CreateMaterial(fbb, useMaterial, useMaterial && elParams.GetMaterialId().IsValid() ? elParams.GetMaterialId().GetValueUnchecked() : 0, nullptr, nullptr, 0.0, 0.0, 0.0);
+        auto mloc = FB::CreateMaterial(fbb, useMaterial, useMaterial && elParams.GetMaterialId().IsValid() ? elParams.GetMaterialId().GetValueUnchecked() : 0, nullptr, nullptr, 0.0, 0.0, 0.0, reinterpret_cast<FB::Trans2x3 const*>(trans2x3));
         fbb.Finish(mloc);
 
         Append(Operation(OpCode::Material, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
@@ -2230,10 +2230,20 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
             auto ppfb = flatbuffers::GetRoot<FB::Material>(egOp.m_data);
 
             // NEEDSWORK_WIP_MATERIAL - Set geometry specific material settings of GeometryParams...
+            if (ppfb->has_trans2x3())
+                {
+                Render::MaterialUVDetail detail;
+                detail.SetTransform(*reinterpret_cast<Render::TextureMapping::Trans2x3 const*>(ppfb->trans2x3()));
+                if (!detail.IsEquivalent(elParams.GetMaterialUVDetail()))
+                    {
+                    elParams.SetMaterialUVDetail(detail);
+                    changed = true;
+                    }
+                }
+
             if (ppfb->useMaterial())
                 {
                 RenderMaterialId material((uint64_t)ppfb->materialId());
-
                 if (elParams.IsMaterialFromSubCategoryAppearance() || material != elParams.GetMaterialId())
                     {
                     elParams.SetMaterialId(material);
@@ -2568,7 +2578,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                 BeAssert((materialId.IsValid() == remappedMaterialId.IsValid()) && "Unable to deep-copy material");
 
                 FlatBufferBuilder remappedfbb;
-                auto mloc = FB::CreateMaterial(remappedfbb, fbSymb->useMaterial(), remappedMaterialId.GetValueUnchecked(), fbSymb->origin(), fbSymb->size(), fbSymb->yaw(), fbSymb->pitch(), fbSymb->roll());
+                auto mloc = FB::CreateMaterial(remappedfbb, fbSymb->useMaterial(), remappedMaterialId.GetValueUnchecked(), fbSymb->origin(), fbSymb->size(), fbSymb->yaw(), fbSymb->pitch(), fbSymb->roll(), fbSymb->trans2x3());
                 remappedfbb.Finish(mloc);
                 writer.Append(Operation(OpCode::Material, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
                 break;
@@ -4331,6 +4341,10 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                 auto ppfb = flatbuffers::GetRoot<FB::Material>(egOp.m_data);
                 Json::Value value(Json::objectValue);
 
+                // NB: Geometry may override uv detail while still using material from subcategory.
+                if (ppfb->has_trans2x3())
+                    value["trans2x3"] = reinterpret_cast<Render::TextureMapping::Trans2x3 const*>(ppfb->trans2x3())->ToJson();
+
                 if (ppfb->useMaterial())
                     {
                     RenderMaterialId material((uint64_t)ppfb->materialId());
@@ -5966,6 +5980,13 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
 
             RenderMaterialId materialId;
             materialId.FromJson(material["materialId"]);
+
+            if (material["trans2x3"].isArray())
+                {
+                Render::MaterialUVDetail detail;
+                detail.SetTransform(Render::TextureMapping::Trans2x3::FromJson(material["trans2x3"]));
+                params.SetMaterialUVDetail(detail);
+                }
 
             params.SetMaterialId(materialId);
             }

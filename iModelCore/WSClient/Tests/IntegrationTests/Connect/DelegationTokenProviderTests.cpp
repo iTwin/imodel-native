@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Connect/DelegationTokenProviderTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -24,7 +24,7 @@ struct DelegationTokenProviderTests : public WSClientBaseTest {};
 TEST_F(DelegationTokenProviderTests, UpdateToken_ValidParentToken_GetsNewToken)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
 
     auto imsClient = ImsClient::Create(StubValidClientInfo(), proxy);
@@ -55,7 +55,7 @@ TEST_F(DelegationTokenProviderTests, UpdateToken_ValidParentToken_GetsNewToken)
 TEST_F(DelegationTokenProviderTests, UpdateToken_ExpiredParentTokenAndParentTokenIsUpdatable_SuccessAndReturnsNewToken)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
     
     auto imsClient = ImsClient::Create(StubValidClientInfo(), proxy);
@@ -97,7 +97,7 @@ TEST_F(DelegationTokenProviderTests, UpdateToken_ExpiredParentTokenAndParentToke
 TEST_F(DelegationTokenProviderTests, UpdateToken_ExpiredParentTokenAndParentTokenUpdateReturnsInvalid_ReturnsNull)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
 
     auto imsClient = ImsClient::Create(StubValidClientInfo(), proxy);
@@ -133,7 +133,7 @@ TEST_F(DelegationTokenProviderTests, UpdateToken_ExpiredParentTokenAndParentToke
 TEST_F(DelegationTokenProviderTests, UpdateToken_ExpiredParentTokenAndParentTokenIsDoesNotUpdate_ReturnsNull)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    StubLocalState localState;
+    RuntimeJsonLocalState localState;
     UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
 
     auto imsClient = ImsClient::Create(StubValidClientInfo(), proxy);

@@ -2315,8 +2315,16 @@ DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el, BeSQLite::
         return DgnDbStatus::WriteError;
         }
 
+    ECN::ECValue v;
+    GetPropertyValue(v, "Element");
+    DgnClassId relClassId;
+    if (!v.IsNull())
+        relClassId = DgnClassId(v.GetNavigationInfo().GetRelationshipClassId().GetValueUnchecked());
+    if (!relClassId.IsValid())
+        relClassId = el.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects);
+
     if ((ECSqlStatus::Success != stmt->BindId(1, el.GetElementId())) ||
-        (ECSqlStatus::Success != stmt->BindId(2, el.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects)))) // WIP: Need to properly set RelECClassId!!!
+        (ECSqlStatus::Success != stmt->BindId(2, relClassId)))
         return DgnDbStatus::WriteError;
 
     ECInstanceKey key;
@@ -2565,8 +2573,16 @@ DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el, BeSQLite:
     if (!stmt.IsValid())
         return DgnDbStatus::WriteError;
 
+    ECN::ECValue v;
+    GetPropertyValue(v, "Element");
+    DgnClassId relClassId;
+    if (!v.IsNull())
+        relClassId = DgnClassId(v.GetNavigationInfo().GetRelationshipClassId().GetValueUnchecked());
+    if (!relClassId.IsValid())
+        relClassId = el.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect);
+
     if ((ECSqlStatus::Success != stmt->BindId(1, el.GetElementId())) ||
-        (ECSqlStatus::Success != stmt->BindId(2, el.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect)))) // WIP: Need to properly set RelECClassId!!!
+        (ECSqlStatus::Success != stmt->BindId(2, relClassId)))
         return DgnDbStatus::WriteError;
 
     ECInstanceKey key;
@@ -2600,14 +2616,19 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
     {
     // We know the key class and the ID of an instance, if it exists. See if such an instance actually exists.
     // Note that we must use the key class, not the actual class of this (which we might be about to write and which be a different subclass from the existing stored aspect).
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId, ECClassId FROM %s WHERE Element.Id=?", GetFullEcSqlKeyClassName().c_str()).c_str());
+    //CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId, ECClassId FROM %s WHERE Element.Id=?", GetFullEcSqlKeyClassName().c_str()).c_str());
+    CachedStatementPtr stmt = el.GetDgnDb().GetCachedStatement(Utf8PrintfString("SELECT Id, ECClassId from bis_ElementUniqueAspect WHERE ECClassId in ( SELECT ClassId from ec_cache_ClassHierarchy WHERE BaseClassId = ?) AND ElementId =? ").c_str());
     if (stmt == nullptr)
         {
         BeAssert(stmt != nullptr);
         return ECInstanceKey();
         }
 
-    if (ECSqlStatus::Success != stmt->BindId(1, el.GetElementId()))
+    if (DbResult::BE_SQLITE_OK != stmt->BindId(1, GetKeyECClassId(el.GetDgnDb())))
+        return ECInstanceKey();
+
+    //if (ECSqlStatus::Success != stmt->BindId(1, el.GetElementId()))
+    if (DbResult::BE_SQLITE_OK != stmt->BindId(2, el.GetElementId()))
         return ECInstanceKey();
 
     if (BE_SQLITE_ROW != stmt->Step())
@@ -4194,8 +4215,8 @@ DgnDbStatus DgnElement::GenericUniqueAspect::SetAspect(DgnElementR el, ECN::IECI
     {
     BeAssert(!el.IsPersistent());
 
-    if (hasHandler(instance.GetClass()))
-        return DgnDbStatus::MissingHandler;
+    //if (hasHandler(instance.GetClass()))
+    //    return DgnDbStatus::MissingHandler;
     auto newAspect = new GenericUniqueAspect(instance);
     newAspect->SetKeyClass(keyClass);
     auto& db = el.GetDgnDb();
@@ -4211,10 +4232,13 @@ DgnDbStatus DgnElement::GenericUniqueAspect::SetAspect(DgnElementR el, ECN::IECI
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::UniqueAspect::QueryActualClass(ECClassId& classId, Dgn::DgnElementCR el, Utf8CP schemaName, Utf8CP className)
     {
-    auto stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECClassId FROM [%s].[%s] WHERE Element.Id=?", schemaName, className).c_str());
+    //auto stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECClassId FROM [%s].[%s] WHERE Element.Id=?", schemaName, className).c_str());
+    CachedStatementPtr stmt = el.GetDgnDb().GetCachedStatement(Utf8PrintfString("SELECT ECClassId from bis_ElementUniqueAspect WHERE ECClassId in ( SELECT ClassId from ec_cache_ClassHierarchy WHERE BaseClassId = ?) AND ElementId =? ").c_str());
+
     if (!stmt.IsValid())
         return DgnDbStatus::BadSchema;
-    stmt->BindId(1, el.GetElementId());
+    stmt->BindId(1, el.GetDgnDb().Schemas().GetClassId(schemaName, className));
+    stmt->BindId(2, el.GetElementId());
     if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::NotFound;
     classId = stmt->GetValueId<ECClassId>(0);
@@ -4226,7 +4250,9 @@ DgnDbStatus DgnElement::UniqueAspect::QueryActualClass(ECClassId& classId, Dgn::
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::GenericUniqueAspect::_LoadProperties(Dgn::DgnElementCR el)
     {
-    QueryAndSetActualClass(el);
+    DgnDbStatus status = QueryAndSetActualClass(el);
+    if (DgnDbStatus::Success != status)
+        return status;
 
     auto stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT * FROM [%s].[%s] WHERE Element.Id=?", m_ecschemaName.c_str(), m_ecclassName.c_str()).c_str());
     if (!stmt.IsValid())
@@ -4261,7 +4287,10 @@ DgnDbStatus DgnElement::GenericUniqueAspect::_UpdateProperties(Dgn::DgnElementCR
     m_instance->SetInstanceId(ecinstidstr);
 
     // Set the UniqueAspect's "Element" navigation property. This is what links the aspect to its host element. The IDs are not the same.
-    m_instance->SetValue("Element", ECN::ECValue(el.GetElementId(), el.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect)));
+    ECValue v;
+    m_instance->GetValue(v, "Element");
+    if (v.IsNull() || !v.IsNavigation() || !v.GetNavigationInfo().GetRelationshipClassId().IsValid())
+        m_instance->SetValue("Element", ECN::ECValue(el.GetElementId(), el.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect)));
 
     return (BE_SQLITE_OK == updater->Update(*m_instance))? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }
@@ -4373,7 +4402,10 @@ DgnDbStatus DgnElement::GenericMultiAspect::_UpdateProperties(Dgn::DgnElementCR 
         }
 
     // Set the MultiAspect's "Element" navigation property. This is what links the aspect to its host element.
-    m_instance->SetValue("Element", ECN::ECValue(el.GetElementId(), ECN::ECClassId(el.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects).GetValue())));
+    ECN::ECValue v;
+    m_instance->GetValue(v, "Element");
+    if (v.IsNull() || !v.IsNavigation() || !v.GetNavigationInfo().GetRelationshipClassId().IsValid())
+        m_instance->SetValue("Element", ECN::ECValue(el.GetElementId(), ECN::ECClassId(el.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects).GetValue())));
 
     return (BE_SQLITE_OK == updater->Update(*m_instance))? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }
@@ -4455,8 +4487,8 @@ DgnElement::GenericMultiAspect::GenericMultiAspect(ECN::IECInstanceR inst, BeSQL
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::GenericMultiAspect::AddAspect(DgnElementR el, ECN::IECInstanceR properties)
     {
-    if (hasHandler(properties.GetClass()))
-        return DgnDbStatus::MissingHandler;
+    //if (hasHandler(properties.GetClass()))
+    //    return DgnDbStatus::MissingHandler;
     T_Super::AddAspect(el, *new GenericMultiAspect(properties, BeSQLite::EC::ECInstanceId()));
     return DgnDbStatus::Success;
     }

@@ -1,6 +1,6 @@
 //--------------------------------------------------------------------------------------
 //     $Source: DgnCore/ElementGraphics.fbs $
-//  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //--------------------------------------------------------------------------------------
 
 namespace BentleyM0200.Dgn.FB;
@@ -22,6 +22,7 @@ struct DPoint2d {x:double; y:double;}
 struct DVec3d {x:double; y:double; z:double;}
 struct RotMatrix {x00:double; x01:double; x02:double; x10:double; x11:double; x12:double; x20:double; x21:double; x22:double;}
 struct Transform {x00:double; x01:double; x02:double; tx:double; x10:double; x11:double; x12:double; ty:double; x20:double; x21:double; x22:double; tz:double;}
+struct Trans2x3 {x00:double; x01:double; tx:double; y00:double; y01: double; ty: double;}
 struct FaceSymbology {useColor:ubyte; useMaterial:ubyte; color:uint; materialId:long; transparency:double; uv:DPoint2d;}
 struct FaceSymbologyIndex {faceIndex:uint; symbIndex:uint;}
 struct DRange1d {low:double; high:double; }
@@ -146,22 +147,21 @@ table Material
     yaw:double;
     pitch:double;
     roll:double;
+    trans2x3:Trans2x3;
     } // Material
-
 
 //=======================================================================================
 // @bsiclass                                                    
 //=======================================================================================
 table ThematicSettings
     {
-	stepCount:uint;
-	margin:double;
+    stepCount:uint;
+    margin:double;
     marginColor:uint;
     mode:uint;
-	colorScheme:uint;
-	range:DRange1d;
-	}   // ThematicSettings
-
+    colorScheme:uint;
+    range:DRange1d;
+    }
 
 //=======================================================================================
 // @bsiclass                                                    

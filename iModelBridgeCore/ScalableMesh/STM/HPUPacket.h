@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/HPUPacket.h $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -60,8 +60,14 @@ public:
     void            WrapStr                            (const char*             pi_pStr);
 
     // Raw data accessors
-    BENTLEY_SM_EXPORT const_iterator  Begin                              () const;
-    BENTLEY_SM_EXPORT const_iterator  End                                () const;
+    inline const_iterator  Begin                              () const
+    {
+        return BufferBegin();
+    }
+    inline const_iterator  End                                () const
+    {
+        return BufferEnd();
+    }
 
     const byte*     Get                                () const;
     BENTLEY_SM_EXPORT size_t          GetSize                            () const;
@@ -118,8 +124,14 @@ private:
 
     bool                 IsSharedPacket                     () const;
 
-    iterator                    BufferBegin                        () const;
-    iterator                    BufferEnd                          () const;
+    inline iterator                    BufferBegin                        () const
+    {
+        return m_pDataPacket->GetBufferAddress();
+    }
+    iterator                    BufferEnd                          () const
+    {
+        return m_pDataPacket->GetBufferAddress() + m_pDataPacket->GetDataSize();
+    }
 
     void                        Copy                               (const Packet&           pi_rRight);
     bool                        CanBeReadAsStr                     () const;
@@ -135,6 +147,5 @@ void                            swap                               (Packet&     
                                                                     Packet&             pio_rRight);
 
 
-#include "HPUPacket.hpp"
-#endif
 } // End namespace HPU
+#endif

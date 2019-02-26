@@ -865,7 +865,7 @@ TEST_F(SchemaCopyTest, CopyInvertedUnit_CopySchemaSucceedsWhenInvertedUnitIsCopi
 TEST_F(SchemaCopyTest, CopyInvertedUnit_AllReferencesInRefSchema)
     {
     CreateTestSchema();
-    m_sourceSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema(true));
+    m_sourceSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
     ECUnitP unit;
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateInvertedUnit(unit, *ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), "SMOOT", *ECTestFixture::GetUnitsSchema()->GetUnitSystemCP("SI"), "SMOOT", "SMOOT"));
 
@@ -919,7 +919,7 @@ TEST_F(SchemaCopyTest, CopyConstant_AllReferencesInSchema)
 TEST_F(SchemaCopyTest, CopyConstant_AllReferencesInRefSchema)
     {
     CreateTestSchema();
-    m_sourceSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema(true));
+    m_sourceSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
     ECUnitP unit;
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateConstant(unit, "SMOOT", "SMOOT", *ECTestFixture::GetUnitsSchema()->GetPhenomenonCP("LENGTH"), 10.0, 10.0, "SMOOT", "SMOOT"));
 

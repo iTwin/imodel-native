@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/TestHelpers/ECPresentationTest.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECPresentationTest.h"
@@ -20,5 +20,4 @@ bool BeAssertIgnoreContext::s_value = true;
 void ECPresentationTest::SetUp()
     {
     IECPresentationManager::SetSerializer(new DefaultECPresentationSerializer());
-    IECPresentationManager::SetLocalizationProvider(new SQLangLocalizationProvider());
     }

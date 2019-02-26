@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/GeoCoordinationServiceExample.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
     size_t pos = exeDir.find_last_of(L"/\\");
     exeDir = exeDir.substr(0, pos + 1);
 
-    BeFileName baseFile = BeFileName(exeDir);
+    BeFileName baseFile = BeFileName(exeDir.c_str());
     BeFileName packageName = baseFile;
     packageName.AppendToPath(L"GCSExamplePackage.xrdp");
 

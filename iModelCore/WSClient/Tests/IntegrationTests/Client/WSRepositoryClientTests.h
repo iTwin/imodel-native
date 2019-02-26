@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Client/WSRepositoryClientTests.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -12,6 +12,6 @@
 
 struct WSRepositoryClientTests : public WSClientBaseTest
     {
-    StubLocalState m_localState;
+    RuntimeJsonLocalState m_localState;
     void SetUp();
     };

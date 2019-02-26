@@ -94,6 +94,10 @@ SpatialEntityDataSourceNet^ NativeToManagedSpatialEntityDataSource(SpatialEntity
     String^ managedServerOrgPage = ctx.marshal_as<String^>(nativeSource.GetServerCP()->GetOrganisationPage().c_str());
     managedSource->SetServerOrganisationPage(managedServerOrgPage);
 
+    // Visibility.
+    String^ sourceVisibilityTag = ctx.marshal_as<String^>(nativeSource.GetVisibilityTag().c_str());
+    managedSource->SetVisibilityByTag(sourceVisibilityTag);
+
     // Size.
     uint64_t size = (uint64_t)nativeSource.GetSize();
     managedSource->SetSize(size);
@@ -555,7 +559,7 @@ String^ SpatialEntityDataSourceNet::GetVisibilityTag()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain Robert         	    10/2018
 //-------------------------------------------------------------------------------------
-void SpatialEntityDataSourceNet::SetVisibilityTag(String^ visibilityTag)
+void SpatialEntityDataSourceNet::SetVisibilityByTag(String^ visibilityTag)
 {
     Utf8String tagUtf8;
     BeStringUtilities::WCharToUtf8(tagUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(visibilityTag).ToPointer()));

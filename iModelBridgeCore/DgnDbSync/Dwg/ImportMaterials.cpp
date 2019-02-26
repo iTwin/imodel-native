@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportMaterials.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -396,11 +396,11 @@ BentleyStatus   MaterialFactory::CreateTextureFromImageFile (Json::Value& mapJso
 
     // create a DGN texture and added to DB:
     DgnDbStatus     status = DgnDbStatus::Success;
-    DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
+    auto model = m_importer.GetOptions().GetMergeDefinitions() ? &m_importer.GetDgnDb().GetDictionaryModel() : m_importer.GetOrCreateJobDefinitionModel().get();
     if (nullptr == model)
         {
         m_importer.ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "DgnTexture");
-        model = &m_importer.GetDgnDb().GetDictionaryModel ();
+        return  static_cast<BentleyStatus>(DgnDbStatus::BadModel);
         }
     DgnTexture      texture(DgnTexture::CreateParams(*model, utf8Name, imageSource, image.GetWidth(), image.GetHeight()));
 
@@ -755,11 +755,11 @@ BentleyStatus   MaterialFactory::Create (RenderMaterialId& idOut)
     {
     this->Convert ();
 
-    DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
+    auto model = m_importer.GetOptions().GetMergeDefinitions() ? &m_importer.GetDgnDb().GetDictionaryModel() : m_importer.GetOrCreateJobDefinitionModel().get();
     if (nullptr == model)
         {
         m_importer.ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "RenderMaterial");
-        model = &m_importer.GetDgnDb().GetDictionaryModel ();
+        return  static_cast<BentleyStatus>(DgnDbStatus::BadModel);
         }
 
     // create a DGN material
@@ -879,6 +879,13 @@ BentleyStatus   DwgImporter::_ImportMaterialSection ()
     if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
     
+    auto model = this->GetOptions().GetMergeDefinitions() ? &this->GetDgnDb().GetDictionaryModel() : this->GetOrCreateJobDefinitionModel().get();
+    if (nullptr == model)
+        {
+        this->ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "material import");
+        return  BSIERROR;
+        }
+
     this->SetStepName (ProgressMessage::STEP_IMPORTING_MATERIALS());
 
     DwgDbObjectId   materialByLayer = this->GetDwgDb().GetMaterialByLayerId ();
@@ -927,6 +934,15 @@ BentleyStatus   DwgImporter::_ImportMaterialSection ()
                 m_importedMaterials.insert (T_DwgRenderMaterialId(material->GetObjectId(), oldMaterial.m_id));
                 continue;
                 }
+            }
+
+        // if found the material in db, use it (i.e. share with other apps)
+        auto dgnMaterialId = RenderMaterial::QueryMaterialId (*model, materialName);
+        if (dgnMaterialId.IsValid())
+            {
+            this->GetSyncInfo().InsertMaterial (dgnMaterialId, *material.get());
+            m_importedMaterials.insert (T_DwgRenderMaterialId(material->GetObjectId(), dgnMaterialId));
+            continue;
             }
 
         this->_ImportMaterial (material, paletteName, materialName);

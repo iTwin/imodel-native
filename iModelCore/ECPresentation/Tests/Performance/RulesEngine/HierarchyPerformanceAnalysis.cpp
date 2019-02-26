@@ -76,7 +76,7 @@ struct HierarchyPerformanceAnalysis : ECPresentationTest
             bvector<double> m_firstPageLoadDurations;
             bvector<double> m_notFirstPageLoadDurations;
 
-            int m_totalNodes;
+            uint64_t m_totalNodes;
             RulesEnginePerformanceTests::Timer m_timerTotal;
 
             StopWatch m_timerPageLoad;
@@ -86,13 +86,13 @@ struct HierarchyPerformanceAnalysis : ECPresentationTest
             WString ToCSV()
                 {
                 WCharCP csvFormat =
-                    L"%s"   REPORT_FILE_SEPARATOR   /*Dataset*/
-                    L"%s"   REPORT_FILE_SEPARATOR   /*Ruleset ID*/
-                    L"%d"   REPORT_FILE_SEPARATOR   /*Total nodes*/
-                    L"%.4f" REPORT_FILE_SEPARATOR   /*Total time*/
-                    L"%d"   REPORT_FILE_SEPARATOR   /*Pages above threshold count*/
-                    L"%.4f" REPORT_FILE_SEPARATOR   /*Max time for first page*/
-                    L"%.4f";                        /*Max time for not first page*/
+                    L"%s"       REPORT_FILE_SEPARATOR   /*Dataset*/
+                    L"%s"       REPORT_FILE_SEPARATOR   /*Ruleset ID*/
+                    L"%" PRIu64 REPORT_FILE_SEPARATOR   /*Total nodes*/
+                    L"%.4f"     REPORT_FILE_SEPARATOR   /*Total time*/
+                    L"%d"       REPORT_FILE_SEPARATOR   /*Pages above threshold count*/
+                    L"%.4f"     REPORT_FILE_SEPARATOR   /*Max time for first page*/
+                    L"%.4f";                            /*Max time for not first page*/
 
                 WString asCSV = L"";
                 asCSV.Sprintf(csvFormat, WString(m_dataset.c_str(), BentleyCharEncoding::Locale).c_str(),
@@ -100,8 +100,8 @@ struct HierarchyPerformanceAnalysis : ECPresentationTest
                     m_totalNodes,
                     m_timerTotal.GetElapsedSeconds(),
                     m_pagesAboveThreshold.size(),
-                    *std::max_element(m_firstPageLoadDurations.begin(), m_firstPageLoadDurations.end()),
-                    *std::max_element(m_notFirstPageLoadDurations.begin(), m_notFirstPageLoadDurations.end()));
+                    m_firstPageLoadDurations.empty() ? 0 : *std::max_element(m_firstPageLoadDurations.begin(), m_firstPageLoadDurations.end()),
+                    m_notFirstPageLoadDurations.empty() ? 0 : *std::max_element(m_notFirstPageLoadDurations.begin(), m_notFirstPageLoadDurations.end()));
 
                 return asCSV;
                 }
@@ -139,10 +139,10 @@ struct HierarchyPerformanceAnalysis : ECPresentationTest
 
         public:
             HierarchyPerformanceResults() 
-                : m_dataset(L""), m_rulesetId("") {}
+                : m_dataset(L""), m_rulesetId(""), m_totalNodes(0) {}
 
             HierarchyPerformanceResults(WCharCP dataset, Utf8String rulesetId, double threshold) 
-                : m_dataset(Utf8String(dataset)), m_rulesetId(rulesetId), m_threshold(threshold) {}
+                : m_dataset(Utf8String(dataset)), m_rulesetId(rulesetId), m_threshold(threshold), m_totalNodes(0) {}
 
             void StartPageLoad(PageInfo page)
                 {
@@ -175,12 +175,14 @@ struct HierarchyPerformanceAnalysis : ECPresentationTest
             void LogReport()
                 {
                 NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Dataset: %s, Ruleset: %s", m_dataset.c_str(), m_rulesetId.c_str());
-                NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Total nodes: %d", m_totalNodes);
+                NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Total nodes: %" PRIu64, m_totalNodes);
                 NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Total time: %.4f", m_timerTotal.GetElapsedSeconds());
                 NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("First pages loaded: %d", m_firstPageLoadDurations.size());
-                NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Max time to load the first page: %.4f", *std::max_element(m_firstPageLoadDurations.begin(), m_firstPageLoadDurations.end()));
+                if (!m_firstPageLoadDurations.empty())
+                    NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Max time to load the first page: %.4f", *std::max_element(m_firstPageLoadDurations.begin(), m_firstPageLoadDurations.end()));
                 NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Non-first pages loaded: %d", m_notFirstPageLoadDurations.size());
-                NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Max time to load non-first page: %.4f", *std::max_element(m_notFirstPageLoadDurations.begin(), m_notFirstPageLoadDurations.end()));
+                if (!m_notFirstPageLoadDurations.empty())
+                    NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Max time to load non-first page: %.4f", *std::max_element(m_notFirstPageLoadDurations.begin(), m_notFirstPageLoadDurations.end()));
                 NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Pages with load time above %.4f count: %d", m_threshold, m_pagesAboveThreshold.size());
                 NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("==============================================");
                 }
@@ -356,6 +358,7 @@ TEST_F(HierarchyPerformanceAnalysis, AnalyseAllCases)
                 continue;
 
             // Load ruleset
+            // WIP: should be able to load either XML or JSON
             PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromXmlFile(rulesetPath);
             m_locater->AddRuleSet(*ruleset);
 

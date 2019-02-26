@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/V8FileEditor.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "V8FileEditor.h"
@@ -184,6 +184,36 @@ void V8FileEditor::CreateArc(EditElementHandleR eeh, bool addToModel, DgnV8Model
     if (addToModel)
         ASSERT_EQ(BentleyApi::SUCCESS, eeh.AddToModel());
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Sam.Wilson             02/17
+//---------------------------------------------------------------------------------------
+void V8FileEditor::AddCellWithTwoArcs(DgnV8Api::ElementId* cellId, WCharCP cellName, DgnV8ModelP v8model)
+    {
+    if (nullptr == v8model)
+        v8model = m_defaultModel;
+
+    BentleyStatus status = ERROR;
+    DgnV8Api::EditElementHandle arcEEH1, arcEEH2;
+    CreateArc(arcEEH1, false, v8model);
+    CreateArc(arcEEH2, false, v8model);
+
+    DgnV8Api::EditElementHandle cellEEH;
+    CreateCell(cellEEH, cellName, false, v8model);
+
+    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cellEEH, arcEEH1);
+    EXPECT_TRUE(SUCCESS == status);
+    status = DgnV8Api::NormalCellHeaderHandler::AddChildElement(cellEEH, arcEEH2);
+    EXPECT_TRUE(SUCCESS == status);
+    status = DgnV8Api::NormalCellHeaderHandler::AddChildComplete(cellEEH);
+    EXPECT_TRUE(SUCCESS == status);
+
+    EXPECT_TRUE( SUCCESS == cellEEH.AddToModel());
+
+    if (nullptr != cellId)
+        *cellId = cellEEH.GetElementId();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Umar.Hayat                          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/

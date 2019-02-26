@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/MultiBridgeTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*
@@ -100,13 +100,6 @@ static void doConvert(DefinitionModelIds& defids,
     RootModelConverter converter(params);
     converter.SetDgnDb(db);
     converter.SetIsUpdating(isUpdate);
-    
-    //  If I am creating a new local file or if I just acquired a briefcase for an existing repository, then I will have to bootstrap syncinfo.
-    auto syncInfoFileName = SyncInfo::GetDbFileName(db.GetFileName());
-    if (!syncInfoFileName.DoesPathExist())
-        {
-        ASSERT_EQ(BSISUCCESS, SyncInfo::CreateEmptyFile(syncInfoFileName));
-        }
     converter.AttachSyncInfo();
     
     ASSERT_EQ(BentleyApi::SUCCESS, converter.InitRootModel());

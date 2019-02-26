@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECExpressions.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -206,7 +206,15 @@ public:
 //! @addtogroup ECObjectsGroup
 //! @beginGroup
 
-
+/*=================================================================================**//**
+* Type for a Method
++===============+===============+===============+===============+===============+======*/
+enum class ExpressionMethodType
+    {
+    Static,
+    Instance,
+    ValueList,
+    };
 
 /*=================================================================================**//**
 * The context in which an expression is evaluated.
@@ -221,7 +229,7 @@ private:
 protected:
     virtual                     ~ExpressionContext () {}
                                 ExpressionContext(ExpressionContextP outer) : m_outer(outer), m_options (EVALOPT_Legacy) { }
-    virtual ExpressionStatus    _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary) { return ExpressionStatus::UnknownSymbol; }
+    virtual ExpressionStatus    _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary, ExpressionMethodType methodType) { return ExpressionStatus::UnknownSymbol; }
     virtual bool                _IsNamespace() const { return false; }
     //  If we provide this it must be implemented in every class that implements the _GetReference that uses more arguments.
     //  virtual ExpressionStatus    _GetReference(PrimaryListNodeR primaryList, bool useOuterIfNecessary) const { return ExpressionStatus::NotImpl; }
@@ -233,8 +241,8 @@ public:
 #ifndef DOCUMENTATION_GENERATOR
     bool                        IsNamespace () const  { return _IsNamespace(); }
     ExpressionContextP          GetOuterP () const   { return m_outer.get(); }
-    ExpressionStatus            ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary)
-                                    { return _ResolveMethod(result, ident, useOuterIfNecessary); }
+    ExpressionStatus            ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary, ExpressionMethodType methodType)
+                                    { return _ResolveMethod(result, ident, useOuterIfNecessary, methodType); }
 
     ExpressionStatus            GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex = 0)
                                     { return _GetValue(evalResult, primaryList, contextsStack, startIndex); }
@@ -372,7 +380,7 @@ private:
 
 #ifndef DOCUMENTATION_GENERATOR
 protected:
-    ECOBJECTS_EXPORT ExpressionStatus _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary) override;
+    ECOBJECTS_EXPORT ExpressionStatus _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary, ExpressionMethodType methodType) override;
     ECOBJECTS_EXPORT ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override;
     ECOBJECTS_EXPORT ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override;
 
@@ -414,7 +422,7 @@ private:
 protected:
     Symbol (Utf8CP name) : m_name (name) { }
 
-    virtual ExpressionStatus _CreateMethodResult (MethodReferencePtr& result) const {return ExpressionStatus::MethodRequired;}
+    virtual ExpressionStatus _CreateMethodResult (MethodReferencePtr& result, ExpressionMethodType methodType) const {return ExpressionStatus::MethodRequired;}
     virtual ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) = 0;
     virtual ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) = 0;
 
@@ -423,7 +431,7 @@ protected:
 public:
     Utf8CP GetName() const {return m_name.c_str();}
 
-    ExpressionStatus CreateMethodResult (MethodReferencePtr& result) const {return _CreateMethodResult(result);}
+    ExpressionStatus CreateMethodResult (MethodReferencePtr& result, ExpressionMethodType methodType) const {return _CreateMethodResult(result, methodType);}
 
     ExpressionStatus GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex)
                         {return _GetValue(evalResult, primaryList, contextsStack, startIndex);}
@@ -470,7 +478,7 @@ private:
 protected:
     ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override;
     ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override {return ExpressionStatus::NeedsLValue;}
-    ExpressionStatus _CreateMethodResult(MethodReferencePtr& result) const override {result = m_methodReference.get(); return ExpressionStatus::Success;}
+    ExpressionStatus _CreateMethodResult(MethodReferencePtr& result, ExpressionMethodType methodType) const override;
 
     MethodSymbol(Utf8CP name, MethodReferenceR methodReference);
     MethodSymbol(Utf8CP name, ExpressionValueListMethod_t valueListMethod);

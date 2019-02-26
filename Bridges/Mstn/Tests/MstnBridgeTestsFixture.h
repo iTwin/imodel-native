@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/MstnBridgeTestsFixture.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,11 +32,11 @@ struct MstnBridgeTestsFixture : ::testing::Test
 
     void MakeCopyOfFile(BentleyApi::BeFileNameR outFile, BentleyApi::WCharCP filename, BentleyApi::WCharCP suffix);
 
-    void SetUpBridgeProcessingArgs(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP stagingDir = nullptr, WCharCP bridgeRegSubkey = nullptr, bool setCredentials = true);
+    void SetUpBridgeProcessingArgs(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP stagingDir = nullptr, WCharCP bridgeRegSubkey = nullptr, bool setCredentials = true, WCharCP iModelName = nullptr);
 
     void AddAttachment(BentleyApi::BeFileName& inputFile, BentleyApi::BeFileNameR refV8File, int32_t num, bool useOffsetForElement);
 
-    int64_t AddLine(BentleyApi::BeFileName& inputFile);
+    int64_t AddLine(BentleyApi::BeFileName& inputFile, int count = 1);
 
     struct DbFileInfo
         {
@@ -56,7 +56,23 @@ struct MstnBridgeTestsFixture : ::testing::Test
     
     static void TerminateHost();
 
-    static void SetupTestDirectory(BentleyApi::BeFileNameR dirPath,  BentleyApi::WCharCP dirName,
+    static void SetupTestDirectory(BentleyApi::BeFileNameR dirPath,  BentleyApi::WCharCP dirName, BentleyApi::WCharCP iModelName,
                                    BentleyApi::BeFileNameCR input1, BentleyApi::BeSQLite::BeGuidCR inputGuid, 
                                    BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid);
     };
+
+//=======================================================================================
+// @bsistruct                              
+//=======================================================================================
+struct SynchInfoTests : public MstnBridgeTestsFixture, public ::testing::WithParamInterface<WString>
+{
+    int64_t AddModel (BentleyApi::BeFileName& inputFile, BentleyApi::Utf8StringCR modelName);
+    int64_t AddNamedView (BentleyApi::BeFileName& inputFile, BentleyApi::Utf8StringCR viewName);
+    int64_t AddLevel (BentleyApi::BeFileName& inputFile, BentleyApi::Utf8StringCR levelName);
+
+    void ValidateNamedViewSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId);
+    void ValidateElementSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId);
+    void ValidateModelSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId);
+    void ValidateLevelSynchInfo (BentleyApi::BeFileName& dbFile, int64_t srcId);
+};
+

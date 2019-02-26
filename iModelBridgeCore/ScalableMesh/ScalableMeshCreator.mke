@@ -6,6 +6,8 @@
 #
 #----------------------------------------------------------------------------------------
 
++ALLOW_MSVC_PERMISSIVE=1
+
 baseDir         = $(_MakeFilePath)
 
 %include  mdl.mki
@@ -36,7 +38,7 @@ always:
    ~linkfile "$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
 
 
-CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR
+CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR -Zc:twoPhase-
 
 #Uncomment this to allow generating design meshes
 #CCompOpts + -DWIP_MESH_IMPORT 
@@ -73,7 +75,7 @@ CCompOpts + -wd4091
 #----------------------------------------------------------------------
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTMIMPORT_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX 
+PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTMIMPORT_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX -Zc:twoPhase-
 CompileOptionsMki =  $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshPolicy_BimCreator.mki
 %include $(SharedMki)PreCompileHeader.mki
 

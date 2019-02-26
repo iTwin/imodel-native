@@ -2,7 +2,7 @@
 |
 |  $Source: Dwg/Tests/ImporterBaseFixture.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ImporterBaseFixture.h"
@@ -28,7 +28,7 @@ void ImporterTestBaseFixture::SetUp()
 
     // create the seed file
     BentleyApi::BeTest::GetHost().GetTempDir(m_seedDgnDbFileName);
-    m_seedDgnDbFileName.AppendToPath(L"testSeed.ibim");
+    m_seedDgnDbFileName.AppendToPath(L"testSeed.bim");
     static bool s_isSeedCreated;
     if (!s_isSeedCreated)
         {
@@ -106,6 +106,8 @@ void    ImporterTestBaseFixture::DoConvert (DwgImporter* importer, BentleyApi::B
 
     // start a new import job
     ASSERT_EQ(DwgImporter::ImportJobCreateStatus::Success, importer->InitializeJob());
+
+    importer->MakeDefinitionChanges (importer->GetImportJob().GetSubject());
 
     // ready to import DWG into iModel:
     status = importer->Process ();

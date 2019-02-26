@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/DgnV8/Converter.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -259,9 +259,6 @@ PartRangeKey(DRange3dCR range) : m_range(range) {}
 
 //=======================================================================================
 //! A V8->DgnDb model mapping that has been "resolved", that is, with pointers to the loaded source and target models (if found).
-//! This is stored in a multimap, with the V8 model's id as the key. (That is, the key is: V8File SyncInfoId + V8 ModelId.)
-//! Note that the key is NOT the V8 model syncinfoid. We deliberately group all spatial transforms of a given model in a single
-//! multimap node.
 //! Note that an instance of this class refers to a DgnModel and a DgnV8Model that are 
 //! owned by somebody else. Instances of this class do not add references to their target models.
 //! @bsiclass                                                    Sam.Wilson      11/16
@@ -271,27 +268,25 @@ struct ResolvedModelMapping
     protected:
     DgnV8ModelP m_v8model;
     DgnModelP m_model;
-    SyncInfo::V8ModelMapping m_mapping;
+    SyncInfo::V8ModelExternalSourceAspect m_aspect;
     DgnV8Api::DgnAttachment const* m_v8attachment;        // If this model was found via a reference attachment, this is the first such attachment to it.
 
     public:
     //! Construct a ResolvedModelMapping in an invalid state
     ResolvedModelMapping() : m_model(nullptr), m_v8model(nullptr) {}
     //! Construct a ResolvedModelMapping in an valid state
-    ResolvedModelMapping(DgnModelR model, DgnV8ModelR v8Model, SyncInfo::V8ModelMapping const& mapping, DgnV8Api::DgnAttachment const* a) : m_model(&model), m_v8model(&v8Model), m_mapping(mapping), m_v8attachment(a) {}
-    bool IsValid() const {return m_v8model != nullptr && m_mapping.IsValid();}
+    ResolvedModelMapping(DgnModelR model, DgnV8ModelR v8Model, SyncInfo::V8ModelExternalSourceAspect const& aspect, DgnV8Api::DgnAttachment const* a) : m_model(&model), m_v8model(&v8Model), m_aspect(aspect), m_v8attachment(a) {}
+    bool IsValid() const {return m_v8model != nullptr && m_aspect.IsValid();}
     DGNDBSYNC_EXPORT bool operator< (ResolvedModelMapping const &o) const;
 
-    TransformCR GetTransform() const {return m_mapping.GetTransform();}
-    void SetTransform(TransformCR t) {m_mapping.SetTransform(t);}
+    Transform GetTransform() const {return m_aspect.GetTransform();}
+    void SetTransform(TransformCR t) {m_aspect.SetTransform(t);}
     DgnV8ModelR GetV8Model() const {BeAssert(IsValid()); return *m_v8model;}
     DgnV8Api::DgnAttachment const* GetV8Attachment() const {return m_v8attachment;}
     DgnModelR GetDgnModel() const {BeAssert(IsValid()); return *m_model;}
-    SyncInfo::V8ModelId GetV8ModelId() const {BeAssert(IsValid()); return m_mapping.GetV8ModelId();}
-    SyncInfo::V8ModelSyncInfoId GetV8ModelSyncInfoId() const {BeAssert(IsValid()); return m_mapping.GetV8ModelSyncInfoId();}
-    SyncInfo::V8FileSyncInfoId GetV8FileSyncInfoId() const {BeAssert(IsValid()); return m_mapping.GetV8FileSyncInfoId();}
-    SyncInfo::V8ModelSource const& GetV8ModelSource() const {BeAssert(IsValid()); return m_mapping.GetV8ModelSource();}
-    SyncInfo::V8ModelMapping const& GetV8ModelMapping() const {BeAssert(IsValid()); return m_mapping;}
+    DgnV8Api::ModelId GetV8ModelId() const {BeAssert(IsValid()); return m_aspect.GetV8ModelId();}
+    RepositoryLinkId GetRepositoryLinkId() const {BeAssert(IsValid()); return m_aspect.GetRepositoryLinkId();}
+    SyncInfo::V8ModelExternalSourceAspect const& GetAspect() const {BeAssert(IsValid()); return m_aspect;}
 };
 
 //=======================================================================================
@@ -300,31 +295,23 @@ struct ResolvedModelMapping
 //=======================================================================================
 struct ResolvedImportJob
 {
+    enum class ConverterType {RootModel, TiledFile};
 protected:
-    SyncInfo::ImportJob m_mapping;
     SubjectCPtr m_jobSubject;
+    ConverterType m_type;
 public:
+
     ResolvedImportJob() {}
-    ResolvedImportJob(SyncInfo::ImportJob const& j, SubjectCR s) : m_mapping(j), m_jobSubject(&s) {}
-    ResolvedImportJob(SubjectCR s) : m_jobSubject(&s) {}
+    ResolvedImportJob(SubjectCR s, ConverterType t) : m_jobSubject(&s), m_type(t) {}
 
     bool IsValid() const {return m_jobSubject.IsValid();}
 
-    void FromSelect(BeSQLite::Statement& stmt) {m_mapping.FromSelect(stmt); /* WIP_IMPORT_JOB -- resolve the subject */}
-
-    SyncInfo::ImportJob& GetImportJob() {return m_mapping;}
-
-    //! Get the root model for this job
-    SyncInfo::V8ModelSyncInfoId GetV8ModelSyncInfoId() const { return m_mapping.GetV8ModelSyncInfoId(); }
-
-    //! Get the job subject
     SubjectCR GetSubject() const {BeAssert(IsValid()); return *m_jobSubject;}
-
-    //! Get the type of converter that created this job
-    SyncInfo::ImportJob::Type GetConverterType() const {return m_mapping.GetType();}
+    
+    ConverterType GetConverterType() const {return m_type;}
 
     //! Get the name prefix that is used by this job
-    Utf8StringCR GetNamePrefix() const { return m_mapping.GetPrefix(); }
+    Utf8StringCR GetNamePrefix() const { return ""; }
 
 };
 
@@ -338,21 +325,21 @@ struct ResolvedModelMappingWithElement : ResolvedModelMapping
     DEFINE_T_SUPER(ResolvedModelMapping)
 
     protected:
-    SyncInfo::V8ElementMapping m_modeledElementMapping;
+    SyncInfo::V8ElementExternalSourceAspect m_modeledElementMapping;
 
     public:
-    ResolvedModelMappingWithElement(ResolvedModelMapping const& v8mm, SyncInfo::V8ElementMapping const& elm) : T_Super(v8mm), m_modeledElementMapping(elm) {}
+    ResolvedModelMappingWithElement(ResolvedModelMapping const& v8mm, SyncInfo::V8ElementExternalSourceAspect const& elm) : T_Super(v8mm), m_modeledElementMapping(elm) {}
     ResolvedModelMappingWithElement() {}
 
     void SetResolvedModelMapping(ResolvedModelMapping const& rmm)
         {
         m_v8model = &rmm.GetV8Model();
         m_model = &rmm.GetDgnModel();
-        m_mapping = rmm.GetV8ModelMapping();
+        m_aspect= rmm.GetAspect();
         }
 
-    void SetModeledElementMapping(SyncInfo::V8ElementMapping const& em) {m_modeledElementMapping = em;}
-    SyncInfo::V8ElementMapping const& GetModeledElementMapping() const {return m_modeledElementMapping;}
+    void SetModeledElementMapping(SyncInfo::V8ElementExternalSourceAspect const& em) {m_modeledElementMapping = em;}
+    SyncInfo::V8ElementExternalSourceAspect const& GetModeledElementMapping() const {return m_modeledElementMapping;}
 };
 
 //=======================================================================================
@@ -363,14 +350,19 @@ struct ResolvedModelMappingWithElement : ResolvedModelMapping
 //=======================================================================================
 struct ElementConversionResults
 {
+    /* *** For ExternalSourceAspect *** */
+    ResolvedModelMapping m_scope;     //!< INPUT: Optional scope element for ExternalSourceAspect. Defaults to mapping passed to ProcessConversionResults
+    Utf8String m_sourceId;            //!< INPUT: Optional SourceId for ExternalSourceAspect.
+    Utf8String m_jsonProps;           //!< INPUT: Optional JSON properties for ExternalSourceAspect.
     DgnElementPtr m_element;  //!< The DgnDb element created to represent the V8 element -- optional
     V8ECInstanceKey m_v8PrimaryInstance; //!< The primary ECInstance found on the V8 element
     bvector<bpair<V8ECInstanceKey,ECN::IECInstancePtr>> m_v8SecondaryInstanceMappings; //!< The secondary ECInstances found on the v8 element plus their converted IECInstance
+    /* ********************************* */
 
     bvector<ElementConversionResults> m_childElements; //!< Child elements
 
     bool m_wasDiscarded; //!< OUTPUT: Set by SyncInfo 
-    SyncInfo::V8ElementMapping m_mapping;   //!< OUTPUT: Set by SyncInfo after inserting or updating
+    SyncInfo::V8ElementExternalSourceAspect m_mapping;   //!< OUTPUT: Set by SyncInfo after inserting or updating
 
     ElementConversionResults() : m_element(nullptr), m_wasDiscarded(false) {}
 };
@@ -417,10 +409,10 @@ struct IChangeDetector
     {
         ChangeType m_changeType;
         SyncInfo::ElementProvenance m_currentElementProvenance;
-        SyncInfo::V8ElementMapping m_v8ElementMapping;
+        SyncInfo::V8ElementExternalSourceAspect m_v8ElementAspect;
 
         SearchResults() : m_changeType(ChangeType::None) {}
-        DgnElementId GetExistingElementId() const {return m_v8ElementMapping.m_elementId;}
+        DgnElementId GetExistingElementId() const {return m_v8ElementAspect.GetElementId();}
     };
 
     virtual ~IChangeDetector() {}
@@ -447,7 +439,7 @@ struct IChangeDetector
     virtual bool _AreContentsOfModelUnChanged(Converter&, ResolvedModelMapping const&) = 0;
 
     //! Used to choose one of many existing entries in SyncInfo
-    typedef std::function<bool(SyncInfo::ElementIterator::Entry const&, Converter& converter)> T_SyncInfoElementFilter;
+    typedef std::function<bool(SyncInfo::V8ElementExternalSourceAspectIterator::Entry const&, Converter& converter)> T_SyncInfoElementFilter;
 
     //! Called by a converter to detect if an element is changed or new.
     //! @param[out] prov    Information about the element that can be used to decide how or if to update it in the bim and how to record the change in syncinfo
@@ -482,13 +474,13 @@ struct IChangeDetector
 
     //! @name  Inferring Deletions - call these methods after processing all models in a conversion unit. Don't forget to call the ...End function when done.
     //! @{
-    virtual void _DetectDeletedElements(Converter&, SyncInfo::ElementIterator&) = 0;    //!< don't forget to call _DetectDeletedElementsEnd when done
+    virtual void _DetectDeletedElements(Converter&, SyncInfo::V8ElementExternalSourceAspectIterator&) = 0;    //!< don't forget to call _DetectDeletedElementsEnd when done
     virtual void _DetectDeletedElementsInFile(Converter&, DgnV8FileR) = 0;              //!< don't forget to call _DetectDeletedElementsEnd when done
     virtual void _DetectDeletedElementsEnd(Converter&) = 0;
-    virtual void _DetectDeletedModels(Converter&, SyncInfo::ModelIterator&) = 0;        //!< don't forget to call _DetectDeletedModelsEnd when done
+    virtual void _DetectDeletedModels(Converter&, SyncInfo::V8ModelExternalSourceAspectIterator&) = 0;        //!< don't forget to call _DetectDeletedModelsEnd when done
     virtual void _DetectDeletedModelsInFile(Converter&, DgnV8FileR) = 0;                //!< don't forget to call _DetectDeletedModelsEnd when done
     virtual void _DetectDeletedModelsEnd(Converter&) = 0;
-    virtual void _DetectDeletedViews(Converter&, SyncInfo::ViewIterator&) = 0;         //!< don't forget to call _DetectDeletedViewsEnd when done
+    virtual void _DetectDeletedViews(Converter&, SyncInfo::ViewDefinitionExternalSourceAspectIterator&) = 0;         //!< don't forget to call _DetectDeletedViewsEnd when done
     virtual void _DetectDeletedViewsInFile(Converter&, DgnV8FileR) = 0;                //!< don't forget to call _DetectDeletedViewsEnd when done
     virtual void _DetectDeletedViewsEnd(Converter&) = 0;
     //! @}
@@ -593,7 +585,6 @@ struct Converter
 
     private:
         bool m_skipUnchangedFiles;
-        bool m_wantProvenanceInBim;
         bool m_isPowerplatformBased;
         bool m_processAffected;
         bool m_convertViewsOfAllDrawings;
@@ -614,6 +605,7 @@ struct Converter
         Utf8String m_pwDataSource;
         //!private
         bool m_keepHostAlive {};
+        bool m_wantDebugCodes {};
     public:
         Params() : m_v8sdkRelativeDir(L"DgnV8") // it's relative to the library's directory
             {
@@ -621,7 +613,6 @@ struct Converter
             m_time = DateTime::GetCurrentTimeUtc();
             m_skipUnchangedFiles = true;
             m_isPowerplatformBased = false;
-            m_wantProvenanceInBim = false;
             m_processAffected = false;
             m_convertViewsOfAllDrawings = true;
             }
@@ -640,7 +631,7 @@ struct Converter
             m_isPowerplatformBased = isPowerplatformBased;
             }
         void SetSkipUnchangedFiles(bool v) {m_skipUnchangedFiles = v;}
-        void SetWantProvenanceInBim(bool v) {m_wantProvenanceInBim = v;}
+        
         void SetCopyLevel(CopyLevel v) {m_copyLevel = v;}
         void SetProjectWiseExtensionDll(BeFileNameCR pwExtensionDll) {m_pwExtensionDll = pwExtensionDll;}
         void SetProjectWiseWorkDir(BeFileNameCR pwWorkDir) {m_pwWorkDir = pwWorkDir;}
@@ -671,9 +662,10 @@ struct Converter
         Utf8StringCR GetProjectWisePassword() const {return  m_pwPassword;}
         Utf8StringCR GetProjectWiseDataSource() const {return  m_pwDataSource;}
         bool GetIsPowerplatformBased() const {return m_isPowerplatformBased;}
-        bool GetWantProvenanceInBim() const {return m_wantProvenanceInBim;}
         bool GetProcessAffected() const { return m_processAffected; }
         bool GetConvertViewsOfAllDrawings() const {return m_convertViewsOfAllDrawings;}
+        bool GetWantDebugCodes() const { return  m_wantDebugCodes; }
+        void SetWantDebugCodes(bool value) { m_wantDebugCodes = value; }
     };
 
 
@@ -705,7 +697,7 @@ struct Converter
         virtual void _OnModelInserted(ResolvedModelMapping const&) {}
 
         //! Called when a DgnModel is deleted
-        virtual void _OnModelDelete(DgnModelR, SyncInfo::V8ModelMapping const&) {}
+        virtual void _OnModelDelete(DgnModelR, SyncInfo::V8ModelExternalSourceAspect const&) {}
     };
 
     //! The severity of an issue
@@ -835,7 +827,6 @@ struct Converter
         L10N_STRING(InvalidSheetAttachment)      // =="Sheet [%s] - Unsupported sheet attachment: [%s]"==
         L10N_STRING(UnrecognizedDetailingSymbol) // =="[%s] is an unrecognized kind of detailing symbol. Capturing graphics only."==
         L10N_STRING(UnsupportedPrimaryInstance)   // =="[%s] has an unsupported primary ECInstance. Capturing graphics only."==
-        L10N_STRING(WrongBriefcaseManager)        // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
         L10N_STRING(SchemaLockFailed)           // =="Failed to import schemas due to a problem acquiring lock on the schemas"==
         L10N_STRING(CouldNotAcquireLocksOrCodes) // =="Failed to import schemas due to a problem acquiring lock on codes or schemas"==
         L10N_STRING(ImportTargetECSchemas)      // =="Failed to import V8 ECSchemas"==
@@ -843,6 +834,7 @@ struct Converter
         L10N_STRING(FailedToConvertDrawingElement)  // =="Failed to convert drawing element"==
         L10N_STRING(FailedToConvertThumbnails)  // =="Failed to convert thumbnails"==
         L10N_STRING(ProjectExtentsAdjusted)      // =="Project Extents have been adjusted to exclude outlying elements"==
+        L10N_STRING(FailedToCreatePresentationRules)    // =="Failed to create presentation rules"==
             
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
@@ -894,7 +886,14 @@ struct Converter
         L10N_STRING(Drawings)                           // =="Drawings"==
         L10N_STRING(GlobalProperties)                   // =="Global properties"==
         L10N_STRING(SpatialData)                        // =="Spatial data"==
+        L10N_STRING(PhysicalPartitionUserLabel)         // =="Content"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
+
+    static constexpr Utf8CP SubjectPhysicalBreakdownStructureCode =  "Physical";
+    static constexpr Utf8CP SubjectConvertedDrawingsCode =           "Drawings";
+    static constexpr Utf8CP SubjectConvertedSheetsCode =             "Sheets";
+    static constexpr Utf8CP SubjectDefinitionsCode =                 "Definitions";
+    static constexpr Utf8CP SubjectConvertedGroupsCode =             "Groups";
 
     //! Reports conversion issues
     struct IssueReporter
@@ -1012,19 +1011,19 @@ protected:
     DgnModelId          m_jobDefinitionModelId;
     DgnElementId         m_textStyleNoneId;
     bset<DgnModelId>    m_unchangedModels;
-    bmap<DgnModelId, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>>    m_modelsRequiringRealityTiles;
+    bmap<DgnModelId, bpair<Utf8String, RepositoryLinkId>>    m_modelsRequiringRealityTiles;
     bool                m_haveCreatedThumbnails = false;
 
     void CheckForAndSaveChanges();
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();
 
-    DGNDBSYNC_EXPORT virtual SyncInfo::V8ElementMapping _FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, IChangeDetector::T_SyncInfoElementFilter* filter = nullptr);
+    DGNDBSYNC_EXPORT virtual SyncInfo::V8ElementExternalSourceAspect _FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, IChangeDetector::T_SyncInfoElementFilter* filter = nullptr);
     virtual DgnV8Api::ModelInfo const& _GetModelInfo(DgnV8ModelCR v8Model) { return v8Model.GetModelInfo(); }
     virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) { return true; }
     virtual void _OnSheetsConvertViewAttachment(ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) {}
 
-    virtual void _OnFileDiscovered(DgnV8FileR) {;}
+    virtual void _OnFileDiscovered(DgnV8FileCR) const {;}
 
 public:
     virtual Params const& _GetParams() const = 0;
@@ -1043,8 +1042,6 @@ public:
     bool ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model);
     //! @}
 
-    //!Allows a bridge to store element provenance in an iModel
-    BentleyStatus  AddElementSourceInfo(ElementConversionResults& results, DgnV8EhCR v8eh);
     //! This returns false if the V8 file should not be converted by the bridge.
     DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File) const;
 
@@ -1098,7 +1095,7 @@ public:
 
     DGNDBSYNC_EXPORT static void ConvertSolidKernelEntity(IBRepEntityPtr& clone, Bentley::ISolidKernelEntityCR v8Entity);
 
-    DGNDBSYNC_EXPORT void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d, SyncInfo::V8ModelSource v8Model);
+    DGNDBSYNC_EXPORT void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d, DgnV8ModelCR);
 
     void InitLineStyle(Render::GeometryParams& params, DgnModelRefR styleModelRef, int32_t srcLineStyleNum, DgnV8Api::LineStyleParams const* v8lsParams);
 
@@ -1126,11 +1123,6 @@ public:
     DGNDBSYNC_EXPORT static void InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void GetAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,WCharCP affinityLibraryPathStr, WCharCP sourceFileNameStr);
     
-    //! Make sure that the specified V8 file is registered in SyncInfo and then return the ID assigned to it by SyncInfo.
-    //! This function \em caches the result in appdata on the file.
-    //! @see GetV8FileSyncInfoIdFromAppData, GetV8FileSyncInfoId
-    DGNDBSYNC_EXPORT virtual SyncInfo::V8FileProvenance _GetV8FileIntoSyncInfo(DgnV8FileR, StableIdPolicy);
-
     //! Compute the code value and URI that should be used for a RepositoryLink to the specified file
     void ComputeRepositoryLinkCodeValueAndUri(Utf8StringR Code, Utf8StringR uri, DgnV8FileR file);
     
@@ -1140,31 +1132,22 @@ public:
     DGNDBSYNC_EXPORT BeSQLite::BeGuid GetDocumentGUIDforFile(DgnV8FileCR);
 
     //! Create a RepositoryLink to represent this file in the BIM and cache it in memory
-    DgnElementId WriteRepositoryLink(DgnV8FileR file);
+    RepositoryLinkId WriteRepositoryLink(DgnV8FileR);
 
-    //! Look in the in-memory cache for the RepositoryLink that represents this file in the BIM
-    DGNDBSYNC_EXPORT DgnElementId GetRepositoryLinkFromAppData(DgnV8FileCR file);
-
-    void SetRepositoryLinkInAppData(DgnV8FileCR file, DgnElementId rlinkId);
-
-    //! Get the SyncInfoId for a V8 file that was previously registered by a call to _GetV8FileIntoSyncInfo. This is a very fast
-    //! query on the file's appdata. This will return an invalid ID if the file has not yet been queried by _GetV8FileIntoSyncInfo during this session.
-    //! @see _GetV8FileIntoSyncInfo which must be called first, in order for this function to work.
-    //! @see GetV8FileSyncInfoId for a short-cut method
-    DGNDBSYNC_EXPORT static SyncInfo::V8FileSyncInfoId GetV8FileSyncInfoIdFromAppData(DgnV8FileCR);
+    void SetRepositoryLinkInAppData(DgnV8FileCR, RepositoryLinkId) const;
 
     DGNDBSYNC_EXPORT static void DiscardV8FileSyncInfoAppData(DgnV8FileR);
 
-    //! Short cut method that first calls GetV8FileSyncInfoIdFromAppData to see if the file's SyncInfoId is already cached. 
-    //! If not, this function calls _GetV8FileIntoSyncInfo .
-    SyncInfo::V8FileSyncInfoId GetV8FileSyncInfoId(DgnV8FileR);
+    DGNDBSYNC_EXPORT RefCountedCPtr<RepositoryLink> GetRepositoryLinkElement(RepositoryLinkId) const;
+    RefCountedCPtr<RepositoryLink> GetRepositoryLinkElement(DgnV8FileCR file) const {return GetRepositoryLinkElement(GetRepositoryLinkId(file));}
+
+    DGNDBSYNC_EXPORT RepositoryLinkId GetRepositoryLinkId(DgnV8FileCR) const;  // This may in fact add appdata to the file
+    DGNDBSYNC_EXPORT static RepositoryLinkId GetRepositoryLinkIdFromAppData(DgnV8FileCR); // Call this only if you know that the id has already been cached, e.g., by a prior call to GetRepositoryLinkId
 
     //! Open the specified V8File and make sure that it is registered in SyncInfo. 
     //! <em>This function should not be used for spatial models.</em>
     DgnFilePtr OpenAndRegisterV8FileForDrawings(DgnV8Api::DgnFileStatus &, BeFileNameCR);
 
-    //! Short cut to get the StableIdPolicy used for the specified file from info cached in appdata.
-    //! @see _GetV8FileIntoSyncInfo which must be called first, in order for this function to work.
     static StableIdPolicy GetIdPolicyFromAppData(DgnV8FileCR);
 
     //! Test if the specified file is from the V8 generation. If not, it may be from the V7 generation.
@@ -1201,15 +1184,6 @@ public:
     //! Find or create the standard set of job-specific partitions, documentlistmodels, and other definition elements that the converter uses to organize the converted information.
     //! Note that this cannot be done until the ImportJob has been created (when creating a new ImportJob) or read from syncinfo (when updating).
     void GetOrCreateJobPartitions();
-
-    //! Look up the ImportJob that was created by a prior run of the converter for this V8 file, assuming that there is only one. This method
-    //! fails if there is no ImportJob or if there is more than one ImportJob.
-    ResolvedImportJob FindSoleImportJobForFile(DgnV8FileR rootFile);
-
-    //! Look up the ImportJob that was created by a prior run of the converter for this V8 model, if any.
-    ResolvedImportJob FindImportJobForModel(DgnV8ModelR rootModel);
-
-    ResolvedImportJob GetResolvedImportJob(SyncInfo::ImportJob const&);
 
     void ValidateJob();
 
@@ -1267,6 +1241,8 @@ public:
     virtual bool _FilterOutView(DgnV8ViewInfoCR v8View) {return false;}
     virtual Utf8String _ComputeViewName(Utf8StringCR defaultName, DgnV8ViewInfoCR) {return defaultName;}
 
+    void DeleteView(DgnViewId, SyncInfo&);
+
     void HandleLevelAppearanceInconsistency(ViewDefinitionR, DgnAttachmentCR, DgnV8Api::LevelId, DgnCategoryId, DgnSubCategoryId, bool isV8LevelOn);
     //! Interpret the level mask from a V8 view for the specified attachment. The result will be to add the corresponding categories to \a viewDef that are on in the V8 view.
     //! This function may also create a new SubCategory and add an override for it to the view if the on/off status or symbology of the level was modified by the attachment.
@@ -1274,7 +1250,7 @@ public:
     //! @param v8ViewInfo   The V8 view definition
     //! @param v8DgnAttachment The V8 attachment 
     //! @param levelType    Spatial or Drawing
-    void ConvertAttachmentLevelMask(ViewDefinitionR viewDef, DgnV8ViewInfoCR v8ViewInfo, DgnAttachmentCR v8DgnAttachment, SyncInfo::Level::Type levelType);
+    void ConvertAttachmentLevelMask(ViewDefinitionR viewDef, DgnV8ViewInfoCR v8ViewInfo, DgnAttachmentCR v8DgnAttachment, SyncInfo::LevelExternalSourceAspect::Type levelType);
     void ConvertLevelMask(ViewDefinitionR, DgnV8ViewInfoCR, DgnV8ModelRefP);
     void AddAllCategories(DgnCategoryIdSet&);
 
@@ -1409,6 +1385,14 @@ public:
     //! @name Extracted drawing graphics
     //! @{
 
+    DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentDescription(DgnAttachmentCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentPathDescription(DgnAttachmentCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentPathDescriptionAsJson(DgnAttachmentCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeV8AttachmentIdPath(DgnAttachmentCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeV8ElementIdPath(DgnV8EhCR);
+    DGNDBSYNC_EXPORT Utf8String ComputeV8ElementIdPath(DgnV8Api::DisplayPath const&);
+    DGNDBSYNC_EXPORT void ComputeXSAInfo(Utf8StringR idPath, Utf8StringR v8AttachmentJson, DgnV8EhCR eh, DgnAttachmentCP att);
+
     DgnCategoryId GetExtractionCategoryId(V8NamedViewType);
     DGNDBSYNC_EXPORT virtual DgnCategoryId _GetExtractionCategoryId(DgnAttachmentCR);
     DGNDBSYNC_EXPORT virtual DgnSubCategoryId _GetExtractionSubCategoryId(DgnCategoryId, DgnV8Api::ClipVolumePass pass,
@@ -1422,16 +1406,10 @@ public:
     //! @param viewOfParentModel A V8 view of the parent model - determines the visibility and appearance of generated proxy graphics
     //! @praam proxyDetector Helps to detect which attachments should have proxy graphics
     DGNDBSYNC_EXPORT virtual DgnDbStatus _CreateAndInsertExtractionGraphic(ResolvedModelMapping const& drawingModelMapping,
-                                                                           SyncInfo::V8ElementSource const& attachmentMapping,
-                                                                           SyncInfo::V8ElementMapping const& originalElementMapping,
+                                                                           SyncInfo::V8ElementExternalSourceAspect const& originalElementMapping,
                                                                            DgnV8Api::ElementHandle& eh,
-                                                                           DgnCategoryId categoryId, GeometryBuilder& builder);
-    DGNDBSYNC_EXPORT virtual bool _DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel,
-                                                                   SyncInfo::T_V8ElementMapOfV8ElementSourceSet const& v8OriginalElementsSeen,
-                                                                   SyncInfo::T_V8ElementSourceSet const& unchangedV8attachments);
-    DGNDBSYNC_EXPORT virtual bool _DetectedDeletedExtractionGraphicsCategories(SyncInfo::V8ElementSource const& attachmentMapping,
-                                                                               SyncInfo::V8ElementMapping const& originalElementMapping,
-                                                                               bset<DgnCategoryId>& seenCategories);
+                                                                           DgnCategoryId categoryId, GeometryBuilder& builder,
+                                                                           Utf8StringCR sourceIdPath, Utf8StringCR attachmentInfo, ResolvedModelMapping const& masterModel); // <-- Needed by ExternalSourceAspect
 
     // WIP - Simplified drawing conversion.
     void CreateProxyGraphics (DgnModelRefR modelRef, ViewportR viewport);
@@ -1500,7 +1478,7 @@ public:
                                     ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8Attachment, 
                                     DgnViewId attachedViewId, int displayPriority, bool isFromDirectlyAttachedProxyGraphics);
     
-    //! Calls FindModelForDgnV8Model to find the BIM model that corresponds to the attached V8 model
+    //! Calls FindResolvedModelMapping to find the BIM model that corresponds to the attached V8 model
     ResolvedModelMapping SheetsFindModelForAttachment(DgnAttachmentCR);
         
     //! Finds or generates a view of \a geometricModel that can be used as the target for a ViewAttachment that is based on \a v8DgnAttachment
@@ -1558,7 +1536,7 @@ public:
     virtual void _OnDrawingModelFound(DgnV8ModelR) = 0;
 
     //! Callback that is invoked when it is likely that the specified V8 file must be kept alive by adding an explicit ref to it.
-    virtual void _KeepFileAlive(DgnV8FileR) = 0;
+    virtual void _KeepFileAlive(DgnV8FileCR) const = 0;
 
     //! Convert the contents of a drawing model, populating a BIM drawing model, and convert views of this model. The conversion also pulls in proxy graphics from attachments.
     void DrawingsConvertModelAndViews(ResolvedModelMapping const& v8mm);
@@ -1659,21 +1637,18 @@ public:
     //! Compute the scale factor (as a transform) that converts the storage units of the V8 file into meters.
     DGNDBSYNC_EXPORT Transform ComputeUnitsScaleTransform(DgnV8ModelCR v8Model);
 
-    ResolvedModelMapping FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid) {return _FindResolvedModelMappingBySyncId(sid);}
-    virtual ResolvedModelMapping _FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid) = 0;
+    ResolvedModelMapping FindResolvedModelMappingByModelId(DgnModelId mid) {return _FindResolvedModelMappingByModelId(mid);}
+    virtual ResolvedModelMapping _FindResolvedModelMappingByModelId(DgnModelId) = 0;
 
     void CaptureModelDiscard(DgnV8ModelR);
 
-    ResolvedModelMapping GetModelFromSyncInfo(DgnV8ModelRefCR, TransformCR);
-    BentleyStatus FindModelProvenanceEntry(DgnV8ModelProvenance::ModelProvenanceEntry& entryFound, DgnV8ModelR v8Model, TransformCR trans);
-    virtual ResolvedModelMapping _GetModelForDgnV8Model(DgnV8ModelRefCR, TransformCR) = 0;
-    ResolvedModelMapping GetModelForDgnV8Model(DgnV8ModelRefCR v8ModelRef, TransformCR toBim) {return _GetModelForDgnV8Model(v8ModelRef, toBim);}
-    virtual ResolvedModelMapping _FindModelForDgnV8Model(DgnV8ModelR v8Model, TransformCR) = 0;
-    ResolvedModelMapping FindModelForDgnV8Model(DgnV8ModelR v8Model, TransformCR toBim) {return _FindModelForDgnV8Model(v8Model, toBim);}
-    virtual ResolvedModelMapping _FindFirstModelMappedTo(DgnV8ModelR v8Model) = 0;
-    //! Looks up the first \em resolved model mapping for the specified V8 model. 
-    //! @note This function does \em not look in syncinfo, but only in the list of resolved mappings.
-    ResolvedModelMapping FindFirstModelMappedTo(DgnV8ModelR v8Model) {return _FindFirstModelMappedTo(v8Model);}
+    ResolvedModelMapping FindModelByExternalAspect(DgnV8ModelRefCR, TransformCR);   // Look up a previously converted model by querying ExternalSourceAspects
+    virtual ResolvedModelMapping _GetResolvedModelMapping(DgnV8ModelRefCR, TransformCR) = 0;
+    ResolvedModelMapping GetResolvedModelMapping(DgnV8ModelRefCR v8ModelRef, TransformCR toBim) {return _GetResolvedModelMapping(v8ModelRef, toBim);}
+    virtual ResolvedModelMapping _FindResolvedModelMapping(DgnV8ModelR v8Model, TransformCR) = 0;
+    ResolvedModelMapping FindResolvedModelMapping(DgnV8ModelR v8Model, TransformCR toBim) {return _FindResolvedModelMapping(v8Model, toBim);}
+    virtual ResolvedModelMapping _FindFirstResolvedModelMapping(DgnV8ModelR v8Model) = 0;
+    ResolvedModelMapping FindFirstResolvedModelMapping(DgnV8ModelR v8Model) {return _FindFirstResolvedModelMapping(v8Model);}
 
     //! When converting this DgnV8 model to DgnDb, decide what type of model it should become.
     //! May cause attachments to be loaded.
@@ -1777,10 +1752,10 @@ public:
     DGNDBSYNC_EXPORT virtual void _OnElementConverted(DgnElementId elementId, DgnV8EhCP v8eh, ChangeOperation changeOperation);
     DGNDBSYNC_EXPORT virtual void _OnElementBeforeDelete(DgnElementId elementId);
 
-    DgnDbStatus InsertResults(ElementConversionResults&);
-    DgnDbStatus UpdateResultsForOneElement(ElementConversionResults&, DgnElementId existingElementId);
-    DgnDbStatus UpdateResultsForChildren(ElementConversionResults&);
-    DgnDbStatus UpdateResults(ElementConversionResults&, DgnElementId existingElementId);
+    DgnDbStatus InsertResults(ElementConversionResults&, SyncInfo::V8ElementExternalSourceAspectData const&);
+    DgnDbStatus UpdateResultsForOneElement(ElementConversionResults&, DgnElementId existingElementId, SyncInfo::V8ElementExternalSourceAspectData const&);
+    DgnDbStatus UpdateResultsForChildren(ElementConversionResults&, SyncInfo::V8ElementExternalSourceAspectData const&);
+    DgnDbStatus UpdateResults(ElementConversionResults&, DgnElementId existingElementId, SyncInfo::V8ElementExternalSourceAspectData const&);
     //! Writes to the DgnDb and to SyncInfo, as specified by the change type in \a searchResults. The following cases are handled:
     //! -- \a conversionResults.m_element is invalid => records a discard in SyncInfo and sets \a conversionResults.m_wasDiscarded.
     //! -- IChangeDetector::ChangeType::Insert - the (non-persistent!) element in \a conversionResults is inserted into the BIM, and a mapping is 
@@ -1801,24 +1776,21 @@ public:
         ProcessConversionResults(res, newEle, v8eh, v8mm);
         }
     
-    //! Records a mapping in SyncInfo, based on the contents of conversion results. Called by ProcessConversionResults. Rarely called directly. 
-    //! @param[in,out]  conversionResults    On input, the data to be written to the BIM; on output, the result of updating the BIM and syncinfo.
+    //! Announcement that a conversion was done. Called by ProcessConversionResults. Rarely called directly. 
+    //! @param[in,out]  conversionResults    On input, the data to be written to the BIM; on output, the result of updating the BIM, plus the newly assigned or updated ExternalSourceAspect, if successful.
     //! @param[in] v8mm The model that contains the element
-    //! @param[in] updatePlan The element's current syncinfo mapping, if known.
+    //! @param[in] updatePlan An indication of whether this is an insert or an update, plus the element's pre-conversion ExternalSourceAspect, if any.
     //! @param[in] isParentElement Set to true for stand-alone and parent elements, and false for child elements.
-    //! \a updatePlan is the plan for how to update the BIM and syncinfo. It might indicate that the element is new and should be inserted.
-    //! Or, it might contain syncinfo mapping if the element is already in the BIM and should be updated.
-    //! On input, \a conversionResults.m_element should either be invalid, indicating that the element should be discarded, or it 
-    //! should be set to a copy of the element that is to be inserted or updated. On ouput, either \a conversionResults.m_isDiscard is set to true
-    //! if the element was discarded, or \a conversionResults.m_v8Mapping is set to the element's syncinfo mapping. 
-    void RecordConversionResultsInSyncInfo(ElementConversionResults& conversionResults, DgnV8EhCR, ResolvedModelMapping const& v8mm, 
+    void AnnounceConversionResults(ElementConversionResults& conversionResults, DgnV8EhCR, ResolvedModelMapping const& v8mm, 
                                            IChangeDetector::SearchResults const& updatePlan, bool isParentElement = true);
     
-    //! This function can be used to record a mapping from a V8 element to an existing BIM element. Rarely used.
-    SyncInfo::V8ElementMapping RecordMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm);
+    //! Write a new or updated V8ElementExternalSourceAspect to the iModel. This method calls update on the element.
+    //! 'scope' must be the same model that is passed in to _IsElementChanged
+    SyncInfo::V8ElementExternalSourceAspect WriteV8ElementExternalSourceAspect(DgnElementId bimElementId, DgnV8EhCR v8eh, DgnModelId scope, Utf8StringCR sourceIdPath = "", Utf8StringCR propsJson = "");
 
-    //! This function can be used to update the provenance data stored in an existing SyncInfo mapping. Rarely used.
-    SyncInfo::V8ElementMapping UpdateMappingInSyncInfo(DgnElementId bimElementId, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm);
+    //! Add a V8ElementExternalSourceAspect to a new element or update an existing aspect on a previously converted element.
+    //! Note: This method does not call Update on the element
+    SyncInfo::V8ElementExternalSourceAspect AddOrUpdateV8ElementExternalSourceAspect(DgnElementR, SyncInfo::V8ElementExternalSourceAspectData const&);
 
     //! Convenience method to create a new, non-persistent element.
     static DgnElementPtr CreateNewElement(DgnDbApi::DgnModel&, DgnClassId, DgnCategoryId, DgnCode, Utf8CP label = nullptr);
@@ -1828,30 +1800,33 @@ public:
     //! It has special copy logic to produce a copy of \a newEl that includes the ElementId from \a originalEl.
     static DgnElementPtr MakeCopyForUpdate(DgnElementCR newEl, DgnElementCR originalEl);
 
-    //! Look up the specified V8 element in syncinfo.
-    //! @param v8ModelSyncInfoId Identifies the V8 model to look up
+    //! Look up the first element in the iModel that was converted from the specified V8 element.
+    //! @param modelId Identifies the model to look up
     //! @param v8ElementId Identifies the V8 element to look up
     //! @param filter   Optional. Chooses among existing elements in SyncInfo
-    //! @return Mapping information for this element, if found, or an invalid mapping if not.
-    DGNDBSYNC_EXPORT SyncInfo::V8ElementMapping GetFirstElementBySyncInfoId(SyncInfo::V8ModelSyncInfoId v8ModelSyncInfoId, DgnV8Api::ElementId v8ElementId, 
+    SyncInfo::V8ElementExternalSourceAspect FindFirstElementMappedTo(DgnModelId modelId, DgnV8Api::ElementId v8ElementId, 
                                                                             IChangeDetector::T_SyncInfoElementFilter* filter = nullptr);
 
-    //! Convenience method to look up the specified V8 element in syncinfo. This function looks up the V8 model in syncinfo for you. Calls GetFirstElementBySyncInfoId.
+    //! Look up the first element in the iModel that was converted from the specified V8 element.. Calls FindFirstElementMappedTo.
     //! @param v8Model the V8 model to look up
     //! @param v8ElementId Identifies the V8 element to look up
     //! @param filter   Optional. Chooses among existing elements in SyncInfo
     //! @return Mapping information for this element, if found, or an invalid mapping if not.
-    DGNDBSYNC_EXPORT SyncInfo::V8ElementMapping FindFirstElementMappedTo(DgnV8ModelCR v8Model, DgnV8Api::ElementId, 
+    DGNDBSYNC_EXPORT SyncInfo::V8ElementExternalSourceAspect FindFirstElementMappedTo(DgnV8ModelCR v8Model, DgnV8Api::ElementId, 
                                                                          IChangeDetector::T_SyncInfoElementFilter* filter = nullptr);
 
-    //! Convenience method to look up a V8 element in syncinfo. This function works with a V8 displaypath and it looks up the V8 model in syncinfo for you. Calls GetFirstElementBySyncInfoId.
+    //! Convenience method to look up a V8 element in syncinfo. This function works with a V8 displaypath and it looks up the V8 model in syncinfo for you. Calls FindFirstElementMappedTo.
     //! @param db   The DgnDb being converted
     //! @param v8Model the V8 model to look up
     //! @param v8ElementId Identifies the V8 element to look up
     //! @param filter   Optional. Chooses among existing elements in SyncInfo
     //! @return Mapping information for this element, if found, or an invalid mapping if the element is not found in syncinfo or if the display path is empty or invalid.
-    SyncInfo::V8ElementMapping FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, IChangeDetector::T_SyncInfoElementFilter* filter = nullptr) 
+    SyncInfo::V8ElementExternalSourceAspect FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, IChangeDetector::T_SyncInfoElementFilter* filter = nullptr) 
         { return _FindFirstElementMappedTo(proxyPath, tail, filter); }
+
+    //! Convenience method that just calls FindFirstElementMappedTo and packages the results a little differently.
+    //! @deprecated  Callers should be changed to call FindFirstElementMappedTo directly.
+    DGNDBSYNC_EXPORT bool TryFindElement(DgnElementId& elementId, DgnV8EhCR eh);
 
     DGNDBSYNC_EXPORT void InitUncategorizedCategory();
     DGNDBSYNC_EXPORT void InitUncategorizedDrawingCategory();
@@ -2026,6 +2001,7 @@ public:
     DGNDBSYNC_EXPORT void ReportFailedDrawingElementConversion(DgnV8Api::ElementHandle const& inEl);
     DGNDBSYNC_EXPORT void ReportFailedThumbnails();
     DGNDBSYNC_EXPORT void ReportAdjustedProjectExtents(size_t nOutliers, DRange3dCR unadjustedRange, DRange3dCR adjustedRange);
+    DGNDBSYNC_EXPORT void ReportFailedPresentationRules();
 
 
     //! Signal a fatal error
@@ -2061,7 +2037,7 @@ public:
     void ClearV8ProgressMeter();
     
     //! Add model requiring reality tiles.
-    void AddModelRequiringRealityTiles(DgnModelId id, Utf8StringCR sourceFile, SyncInfo::V8FileSyncInfoId fileId) { m_modelsRequiringRealityTiles.Insert(id, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>(sourceFile, fileId)); }
+    void AddModelRequiringRealityTiles(DgnModelId id, Utf8StringCR sourceFile, RepositoryLinkId fileId);
     //! @}
 
     //! @name Change Monitoring
@@ -2097,7 +2073,7 @@ public:
 
     //! Return true if ElementId is not a reliable way to identify elements in the specified file.
     //! @param[in] v8file The file that is being converted.
-    DGNDBSYNC_EXPORT virtual StableIdPolicy _GetIdPolicy(DgnV8FileR v8file) const;
+    DGNDBSYNC_EXPORT virtual StableIdPolicy _GetIdPolicy(DgnV8FileCR v8file) const;
 
     StableIdPolicy GetCurrentIdPolicy() const {return m_currIdPolicy;}
 
@@ -2108,20 +2084,23 @@ public:
     //! \a eeh is a temporary copy of the real DgnV8 element. It is not used to convert the element to DGNDB format.
     DGNDBSYNC_EXPORT virtual void _TweakElementForComparisonAndHashPurposes(DgnV8EehR eeh, DgnV8Api::MSElement const& elementData);
 
-    //! Detect if the specified document still exists.
+    //! Detect if the specified document is in the registry (which implies a) that it exists and b) is still assigned to this job).
     //! If docGuidStr is a valid BeGuid, then the DMS is checked.
     //! Otherwise, localFileName is used to check the local file system.
-    DGNDBSYNC_EXPORT bool DoesDocumentExist(Utf8StringCR docGuidStr, Utf8String localFileName);
+    DGNDBSYNC_EXPORT bool IsDocumentInRegistry(Utf8StringCR docGuidStr, Utf8String localFileName);
 
     //! Delete all content derived from files that were recorded in syncinfo but not longer exist
     DGNDBSYNC_EXPORT virtual void _DetectDeletedDocuments();
 
     //! @private
-    DGNDBSYNC_EXPORT virtual void _DeleteFileAndContents(SyncInfo::V8FileSyncInfoId filesid);
+    DGNDBSYNC_EXPORT virtual void _DeleteFileAndContents(RepositoryLinkId filesid);
     //! @private
-    DGNDBSYNC_EXPORT virtual void _DeleteModel(SyncInfo::V8ModelMapping const&);
+    DGNDBSYNC_EXPORT virtual void _DeleteModel(DgnModelR, SyncInfo::V8ModelExternalSourceAspect const&);
     //! @private
     DGNDBSYNC_EXPORT virtual void _DeleteElement(DgnElementId);
+
+    bool DetectDeletedExtractionGraphics(ResolvedModelMapping const& rootParentModel, bset<Utf8String> const& v8SectionedElementPathsSeen, std::set<DgnAttachmentCP> const& attachmentsUnchanged);
+    bool DetectedDeletedExtractionGraphicsCategories(DgnModelR proxyGraphicScope, Utf8StringCR sectionedV8ElementPath, DgnCategoryIdSet const& seenCategories);
 
     bool HadAnyChanges() const { return m_hadAnyChanges || m_elementsConverted != 0; }
 };
@@ -2134,25 +2113,25 @@ struct ElementFilters
 {
     static IChangeDetector::T_SyncInfoElementFilter GetViewAttachmentElementFiter()
         {
-        return [](SyncInfo::ElementIterator::Entry const& entry, Converter& converter)
+        return [](SyncInfo::V8ElementExternalSourceAspectIterator::Entry const& entry, Converter& converter)
             {
-            return converter.GetDgnDb().Elements().Get<Sheet::ViewAttachment>(entry.GetElementId()).IsValid();
+            return converter.GetDgnDb().Elements().Get<Sheet::ViewAttachment>(entry->GetElementId()).IsValid();
             };
         }
         
     static IChangeDetector::T_SyncInfoElementFilter GetDrawingElementFilter()
         {
-        return [](SyncInfo::ElementIterator::Entry const& entry, Converter& converter)
+        return [](SyncInfo::V8ElementExternalSourceAspectIterator::Entry const& entry, Converter& converter)
             {
-            return converter.GetDgnDb().Elements().Get<Drawing>(entry.GetElementId()).IsValid();
+            return converter.GetDgnDb().Elements().Get<Drawing>(entry->GetElementId()).IsValid();
             };
         }
 
      static IChangeDetector::T_SyncInfoElementFilter GetViewDefinitionElementFiter()
         {
-        return [](SyncInfo::ElementIterator::Entry const& entry, Converter& converter)
+        return [](SyncInfo::V8ElementExternalSourceAspectIterator::Entry const& entry, Converter& converter)
             {
-            return converter.GetDgnDb().Elements().Get<ViewDefinition>(entry.GetElementId()).IsValid();
+            return converter.GetDgnDb().Elements().Get<ViewDefinition>(entry->GetElementId()).IsValid();
             };
          }
 };
@@ -2172,13 +2151,13 @@ struct CreatorChangeDetector : IChangeDetector
     void _OnModelSeen(Converter&, ResolvedModelMapping const&) override {}
     void _OnModelInserted(Converter&, ResolvedModelMapping const&) override {}
     void _OnViewSeen(Converter&, DgnViewId) override {}
-    void _DetectDeletedElements(Converter&, SyncInfo::ElementIterator&) override {}
+    void _DetectDeletedElements(Converter&, SyncInfo::V8ElementExternalSourceAspectIterator&) override {}
     void _DetectDeletedElementsInFile(Converter&, DgnV8FileR) override {}
     void _DetectDeletedElementsEnd(Converter&) override {}
-    void _DetectDeletedModels(Converter&, SyncInfo::ModelIterator&) override {}
+    void _DetectDeletedModels(Converter&, SyncInfo::V8ModelExternalSourceAspectIterator&) override {}
     void _DetectDeletedModelsInFile(Converter&, DgnV8FileR) override {}
     void _DetectDeletedModelsEnd(Converter&) override {}
-    void _DetectDeletedViews(Converter&, SyncInfo::ViewIterator&) override {}
+    void _DetectDeletedViews(Converter&, SyncInfo::ViewDefinitionExternalSourceAspectIterator&) override {}
     void _DetectDeletedViewsInFile(Converter&, DgnV8FileR) override {}
     void _DetectDeletedViewsEnd(Converter&) override {}
     
@@ -2195,16 +2174,14 @@ struct CreatorChangeDetector : IChangeDetector
 //=======================================================================================
 struct ChangeDetector : IChangeDetector
 {
-    SyncInfo::ByV8ElementIdIter* m_byIdIter;
-    SyncInfo::ByHashIter*       m_byHashIter;
     DgnElementIdSet             m_elementsSeen;
     bset<DgnViewId>             m_viewsSeen;
 
-    bset<SyncInfo::V8ModelSyncInfoId> m_v8ModelsSeen;
-    bset<SyncInfo::V8ModelSyncInfoId> m_v8ModelsSkipped;
-    bset<SyncInfo::V8ModelSyncInfoId> m_newlyDiscoveredModels; // models created during this run
+    bset<DgnModelId> m_v8ModelsSeen;
+    bset<DgnModelId> m_v8ModelsSkipped;
+    bset<DgnModelId> m_newlyDiscoveredModels; // models created during this run
 
-    void ReleaseIterators() { DELETE_AND_CLEAR(m_byIdIter); DELETE_AND_CLEAR(m_byHashIter); }
+    void ReleaseIterators() {}
     void PrepareIterators(DgnDbCR db);
 
     DGNDBSYNC_EXPORT bool _ShouldSkipFile(Converter&, DgnV8FileCR) override;
@@ -2221,20 +2198,23 @@ struct ChangeDetector : IChangeDetector
 
     //! @name  Inferring Deletions - call these methods after processing all models in a conversion unit. Don't forget to call the ...End function when done.
     //! @{
-    DGNDBSYNC_EXPORT void _DetectDeletedElements(Converter&, SyncInfo::ElementIterator&) override;    //!< don't forget to call _DetectDeletedElementsEnd when done
+    DGNDBSYNC_EXPORT void _DetectDeletedElements(Converter&, SyncInfo::V8ElementExternalSourceAspectIterator&) override;    //!< don't forget to call _DetectDeletedElementsEnd when done
     DGNDBSYNC_EXPORT void _DetectDeletedElementsInFile(Converter&, DgnV8FileR) override;              //!< don't forget to call _DetectDeletedElementsEnd when done
     DGNDBSYNC_EXPORT void _DetectDeletedElementsEnd(Converter&) override {m_elementsSeen.clear();}
 
-    DGNDBSYNC_EXPORT void _DetectDeletedModels(Converter&, SyncInfo::ModelIterator&) override;        //!< don't forget to call _DetectDeletedModelsEnd when done
+    DGNDBSYNC_EXPORT void _DetectDeletedModels(Converter&, SyncInfo::V8ModelExternalSourceAspectIterator&) override;        //!< don't forget to call _DetectDeletedModelsEnd when done
     DGNDBSYNC_EXPORT void _DetectDeletedModelsInFile(Converter&, DgnV8FileR) override;                //!< don't forget to call _DetectDeletedModelsEnd when done
     DGNDBSYNC_EXPORT void _DetectDeletedModelsEnd(Converter&) override {m_v8ModelsSeen.clear();}
 
-    DGNDBSYNC_EXPORT void _DetectDeletedViews(Converter&, SyncInfo::ViewIterator&) override;          //!< don't forget to call _DetectDeletedViewsEnd when done
+    DGNDBSYNC_EXPORT void _DetectDeletedViews(Converter&, SyncInfo::ViewDefinitionExternalSourceAspectIterator&) override;          //!< don't forget to call _DetectDeletedViewsEnd when done
     DGNDBSYNC_EXPORT void _DetectDeletedViewsInFile(Converter&, DgnV8FileR) override;                 //!< don't forget to call _DetectDeletedViewsEnd when done
     DGNDBSYNC_EXPORT void _DetectDeletedViewsEnd(Converter&) override { m_viewsSeen.clear(); }
     //! @}
 
-    ChangeDetector() : m_byIdIter(nullptr), m_byHashIter(nullptr) {}
+    DGNDBSYNC_EXPORT SyncInfo::V8ElementExternalSourceAspect FindElementAspectById(Converter& converter, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter);
+    DGNDBSYNC_EXPORT SyncInfo::V8ElementExternalSourceAspect FindElementAspectByChecksum(Converter& converter, SyncInfo::ElementHash const& hash, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter);
+
+    ChangeDetector() {}
     DGNDBSYNC_EXPORT ~ChangeDetector();
 };
 
@@ -2331,13 +2311,12 @@ protected:
 
     virtual void _AddResolvedModelMapping(ResolvedModelMapping const&) {}
 
-    BentleyStatus FindRootModelFromImportJob();
-    void ApplyJobTransformToRootTrans();
     void DetectRootTransformChange();
     void CorrectSpatialTransform(ResolvedModelMapping&);
 
     BentleyStatus MakeSchemaChanges(bvector<DgnFileP> const&, bvector<DgnV8ModelP> const&);
 
+    // WIP_EXTERNAL_SOURCE_INFO - stop using so-called model provenance
     void CreateProvenanceTables();
 
     SpatialConverterBase(SpatialParams const& p) : T_Super(p) {}
@@ -2352,7 +2331,7 @@ public:
     void PushChangesForModel(DgnV8ModelRefCR);
 
     //! Sets the Params BridgeJobName property
-    DGNDBSYNC_EXPORT void ComputeDefaultImportJobName();
+    DGNDBSYNC_EXPORT void ComputeDefaultImportJobName(SubjectCR sourceMasterModelSubject);
 
     //! Delete all content derived from files that were recorded in syncinfo but not longer exist
     DGNDBSYNC_EXPORT void _DetectDeletedDocuments() override;
@@ -2393,7 +2372,23 @@ public:
     //! @param comments         Optional description of the job
     //! @param v8ConverterType  type of V8 converter
     protected:
-    DGNDBSYNC_EXPORT ImportJobCreateStatus InitializeJob(Utf8CP comments, SyncInfo::ImportJob::Type v8ConverterType);
+    DGNDBSYNC_EXPORT ImportJobCreateStatus InitializeJob(Utf8CP comments, ResolvedImportJob::ConverterType);
+
+    //! Find or create a "source master model subject", given a known V8 root model.
+    DGNDBSYNC_EXPORT SubjectCPtr CreateAndInsertSourceMasterModelSubject(DgnV8ModelR v8RootModel);
+        
+    void SetRootModelAspectIdInSourceMasterModelSubject(SubjectCR);
+    BeSQLite::EC::ECInstanceId GetRootModelAspectIdFromSourceMasterModelSubject(SubjectCR) const;
+    SyncInfo::V8ModelExternalSourceAspect GetRootModelAspectFromSourceMasterModelSubject(SubjectCR s) {return SyncInfo::V8ModelExternalSourceAspect::GetAspectByAspectId(GetDgnDb(), GetRootModelAspectIdFromSourceMasterModelSubject(s));}
+
+    //! If the current bridge was ever run with this master model, find and return the Job Subject that was recorded.
+    ResolvedImportJob FindSoleJobSubjectForSourceMasterModel(SubjectCR masterModelSubject);
+
+    //! Find an existing "source master model subject", if it exists, for the specified V8 model. If you just want to find the first (or only) one, pass
+    //! the dictionary model of the V8 file.
+    SubjectCPtr FindSourceMasterModelSubject(DgnV8ModelCR);
+
+
     public:
 
     //! Query the job info for this conversion.
@@ -2568,15 +2563,15 @@ private:
 
 protected:
     RootModelSpatialParams& m_params;   // NB: Must store a *reference* to the bridge's Params, as they may change after our constructor is called
-    bvector<DgnV8FileP> m_v8Files;
+    mutable bvector<DgnV8FileP> m_v8Files;
+    mutable bvector<Bentley::DgnFilePtr> m_filesKeepAlive;
     bvector<Bentley::DgnModelPtr> m_drawingModelsKeepAlive;
-    bvector<Bentley::DgnFilePtr> m_filesKeepAlive;
-    DgnV8Api::ViewGroupPtr m_viewGroup;
     bmultiset<ResolvedModelMapping> m_v8ModelMappings; // NB: the V8Model pointer is the key
     bvector<DgnV8ModelP> m_spatialModelsInAttachmentOrder;
     bset<DgnV8ModelP> m_spatialModelsSeen;
     bset<DgnV8ModelP> m_nonSpatialModelsSeen;
     bvector<DgnV8ModelP> m_nonSpatialModelsInModelIndexOrder;
+    DgnV8Api::ViewGroupPtr m_viewGroup;
     std::unique_ptr<IChangeDetector> m_changeDetector;
     bool m_considerNormal2dModelsSpatial;   // Unlike the member in RootModelSpatialParams, this considers the config file, too. It is checked often, so calulated once in the constructor.
 
@@ -2599,15 +2594,15 @@ protected:
     //! @name  Models
     //! @{
     DGNDBSYNC_EXPORT void _AddResolvedModelMapping(ResolvedModelMapping const&) override;
-    DGNDBSYNC_EXPORT ResolvedModelMapping _FindModelForDgnV8Model(DgnV8ModelR v8Model, TransformCR) override;
-    DGNDBSYNC_EXPORT ResolvedModelMapping _FindFirstModelMappedTo(DgnV8ModelR v8Model) override;
-    DGNDBSYNC_EXPORT ResolvedModelMapping _GetModelForDgnV8Model(DgnV8ModelRefCR, TransformCR) override;
-    ResolvedModelMapping GetModelForDgnV8Model(DgnV8ModelRefCR v8Model, TransformCR toBim) {return _GetModelForDgnV8Model(v8Model, toBim);}
-    DGNDBSYNC_EXPORT ResolvedModelMapping MapDgnV8ModelToDgnDbModel(DgnV8ModelR, TransformCR, DgnModelId targetModelId); // Like GetModelForDgnV8Model, except that caller already knows the target model
+    DGNDBSYNC_EXPORT ResolvedModelMapping _GetResolvedModelMapping(DgnV8ModelRefCR, TransformCR) override;
+    DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMapping(DgnV8ModelR v8Model, TransformCR) override;
+    DGNDBSYNC_EXPORT ResolvedModelMapping _FindFirstResolvedModelMapping(DgnV8ModelR v8Model) override;
+    DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMappingByModelId(DgnModelId) override;
+    DGNDBSYNC_EXPORT bvector<ResolvedModelMapping> FindResolvedModelMappings(DgnV8ModelR v8Model);
+    ResolvedModelMapping GetResolvedModelMapping(DgnV8ModelRefCR v8Model, TransformCR toBim) {return _GetResolvedModelMapping(v8Model, toBim);}
+    DGNDBSYNC_EXPORT ResolvedModelMapping MapDgnV8ModelToDgnDbModel(DgnV8ModelR, TransformCR, DgnModelId targetModelId); // Like GetResolvedModelMapping, except that caller already knows the target model
     DGNDBSYNC_EXPORT void _OnDrawingModelFound(DgnV8ModelR v8model) override;
-    DGNDBSYNC_EXPORT void _KeepFileAlive(DgnV8FileR) override;
-    DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid) override;
-    DGNDBSYNC_EXPORT bvector<ResolvedModelMapping> FindMappingsToV8Model(DgnV8ModelR v8Model);
+    DGNDBSYNC_EXPORT void _KeepFileAlive(DgnV8FileCR) const override;
     bool IsLessInMappingOrder(DgnV8ModelP a, DgnV8ModelP b);
     void UnmapModelsNotAssignedToBridge();
 
@@ -2628,7 +2623,7 @@ protected:
     //! @name  V8Files
     //! @{
     //! Override to make sure that all files encountered by the converter are cached in m_v8Files
-    DGNDBSYNC_EXPORT SyncInfo::V8FileProvenance _GetV8FileIntoSyncInfo(DgnV8FileR, StableIdPolicy) override;
+    DGNDBSYNC_EXPORT void _OnFileDiscovered(DgnV8FileCR) const override;
 
     //! @}
 
@@ -2668,6 +2663,7 @@ protected:
     void UpdateCalculatedProperties();
     //! @private
     void CreatePresentationRules();
+    void CreatePresentationRulesWithExceptionHandling();
 
     void FindSpatialV8Models(DgnV8ModelRefR rootModelRef);
     void FindV8DrawingsAndSheets();
@@ -2688,7 +2684,7 @@ public:
     //! Create a new import job and the information that it depends on. Called when FindJob fails, indicating that this is the initial conversion of this data source.
     //! The name of the job is specified by _GetParams().GetBridgeJobName(). This must be a non-empty string that is unique among all job subjects.
     //! @param comments         Optional description of the job
-    ImportJobCreateStatus InitializeJob(Utf8CP comments = nullptr) {return T_Super::InitializeJob(comments, SyncInfo::ImportJob::Type::RootModels);}
+    ImportJobCreateStatus InitializeJob(Utf8CP comments = nullptr) {return T_Super::InitializeJob(comments, ResolvedImportJob::ConverterType::RootModel);}
 
     //! Try to open the root model that is specified in SpatialParams.
     //! When running in update mode, this function looks up the ImportJob from the previous conversion gets the root model from that.
@@ -2746,20 +2742,19 @@ protected:
     DGNDBSYNC_EXPORT virtual void _ConvertSpatialViews();
     DGNDBSYNC_EXPORT virtual void _OnFileComplete(DgnV8FileR v8File);
     virtual bool _FilterTileByName(BeFileNameCR name) {return false;}
-    ResolvedModelMapping _FindResolvedModelMappingBySyncId(SyncInfo::V8ModelSyncInfoId sid) override {BeAssert(false && "TBD"); return ResolvedModelMapping();}
+    ResolvedModelMapping _FindResolvedModelMappingByModelId(DgnModelId) override {BeAssert(false && "TBD"); return ResolvedModelMapping();}
 
     DgnV8Api::ModelId GetDefaultModelId(DgnV8FileR v8File);
-    DGNDBSYNC_EXPORT ResolvedModelMapping _GetModelForDgnV8Model(DgnV8ModelRefCR v8ModelRef, TransformCR) override;
-    ResolvedModelMapping _FindModelForDgnV8Model(DgnV8ModelR v8Model, TransformCR) override {return m_rootModelMapping;}
-    ResolvedModelMapping _FindFirstModelMappedTo(DgnV8ModelR v8Model) override {return m_rootModelMapping;}
+    DGNDBSYNC_EXPORT ResolvedModelMapping _GetResolvedModelMapping(DgnV8ModelRefCR v8ModelRef, TransformCR) override;
+    ResolvedModelMapping _FindResolvedModelMapping(DgnV8ModelR v8Model, TransformCR) override {return m_rootModelMapping;}
+    ResolvedModelMapping _FindFirstResolvedModelMapping(DgnV8ModelR v8Model) override {return m_rootModelMapping;}
     ResolvedModelMapping MapDgnV8ModelToDgnDbModel(DgnV8ModelR v8Model, DgnModelId targetModelId);
     void _OnDrawingModelFound(DgnV8ModelR v8model) override {}
-    void _KeepFileAlive(DgnV8FileR) override {}
+    void _KeepFileAlive(DgnV8FileCR) const override {}
 
     // in the tiled converter, we always consider normal 2d models to be spatial models.
     bool _ConsiderNormal2dModelsSpatial() override {return true;}
 
-    DGNDBSYNC_EXPORT SyncInfo::ImportJob GenerateImportJobInfo();
     DGNDBSYNC_EXPORT void ConvertElements(ResolvedModelMapping const&);
 
 public:
@@ -2768,7 +2763,7 @@ public:
     TiledFileConverter(SpatialParams& p) : T_Super(p), m_params(p) {;}
     //! Create a new import job and the information that it depends on. Called when FindJob fails, indicating that this is the initial conversion of this data source.
     //! @param comments         Optional description of the job
-    ImportJobCreateStatus InitializeJob(Utf8CP comments = nullptr) {return T_Super::InitializeJob(comments, SyncInfo::ImportJob::Type::TiledFile);}
+    ImportJobCreateStatus InitializeJob(Utf8CP comments = nullptr) {return T_Super::InitializeJob(comments, ResolvedImportJob::ConverterType::TiledFile);}
     //! Try to open the root model that is specified in SpatialParams.
     //! When running in update mode, this function looks up the root model from the existing ImportJob.
     //! @return non-zero error status if the root file could not be opened or the root model could not be found.
@@ -2805,7 +2800,7 @@ private:
         {
 private:
         bool                 m_isElement;
-        SyncInfo::V8FileSyncInfoId   m_v8fileId;             //  Foreign file ID or RSC handle
+        RepositoryLinkId   m_v8fileId;             //  Foreign file ID or RSC handle
         DgnV8Api::ElementId  m_v8componentKey;       //  Element ID or RSC ID
         uint32_t             m_v8componentType;      //  LsResourceType or LsElementType
 public:
@@ -2920,6 +2915,11 @@ struct XDomain
     DGNDBSYNC_EXPORT static void Register(XDomain& xd);
     //! Un-Register an XDomain. 
     DGNDBSYNC_EXPORT static void UnRegister(XDomain& xd);
+
+    //! This is invoked just after the V8 root model is opened but before any references are detected or any elements are converted. 
+    virtual void _OnBeginConversion(Converter&, DgnV8ModelR rootModel) {}
+    //! This is invoked by _FinishConversion, after all models and elements (and ECRelationships) have been processed.
+    virtual void _OnFinishConversion(Converter&) = 0;
 };
 
 //=======================================================================================
@@ -3198,7 +3198,7 @@ public:
     //! @return The record of the mapping, which includes the units transform from source to BIM
     //! @note If you called SetRootModelAndSubject up front, then you must supply a transform when recording mappings for all 
     //! attached models. Call #ComputeAttachmentTransform to get this transform.
-    //! @see FindModelForDgnV8Model and FindFirstModelMappedTo
+    //! @see FindResolvedModelMapping and FindFirstResolvedModelMapping
     DGNDBSYNC_EXPORT ResolvedModelMapping RecordModelMapping(DgnV8ModelR sourceV8Model, DgnModelR targetBimModel, BentleyApi::TransformCP transform = nullptr);
 
     //! Record a V8 Level -> BIM DgnSubCategory mapping for elements in a particular model.
@@ -3323,8 +3323,8 @@ private:
     ~ECInstanceInfo ();
 
 public:
-    static BeSQLite::EC::ECInstanceKey Find (bool& isElement, DgnDbR db, SyncInfo::V8FileSyncInfoId fileId, V8ECInstanceKey const& v8Key);
-    static BentleyStatus Insert (DgnDbR db, SyncInfo::V8FileSyncInfoId fileId, V8ECInstanceKey const& v8Key, BeSQLite::EC::ECInstanceKey const& key, bool isElement);
+    static BeSQLite::EC::ECInstanceKey Find (bool& isElement, DgnDbR db, RepositoryLinkId fileId, V8ECInstanceKey const& v8Key);
+    static BentleyStatus Insert (DgnDbR db, RepositoryLinkId fileId, V8ECInstanceKey const& v8Key, BeSQLite::EC::ECInstanceKey const& key, bool isElement);
     static BentleyStatus CreateTable (DgnDbR db);
     };
 
@@ -3334,14 +3334,14 @@ public:
 struct V8NamedGroupInfo : NonCopyableClass
     {
 private:
-    static bmap<SyncInfo::V8FileSyncInfoId, bset<DgnV8Api::ElementId>> s_namedGroupsWithOwnershipHint;
+    static bmap<RepositoryLinkId, bset<DgnV8Api::ElementId>> s_namedGroupsWithOwnershipHint;
 
     V8NamedGroupInfo();
     ~V8NamedGroupInfo();
 
 public:
     static void AddNamedGroupWithOwnershipHint(DgnV8EhCR);
-    static bool TryGetNamedGroupsWithOwnershipHint(bset<DgnV8Api::ElementId> const*&, SyncInfo::V8FileSyncInfoId);
+    static bool TryGetNamedGroupsWithOwnershipHint(bset<DgnV8Api::ElementId> const*&, RepositoryLinkId);
     static void Reset();
     };
 

@@ -2,7 +2,7 @@
 |
 |  $Source: tests/Published/FormattingTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -90,6 +90,34 @@ public:
         ASSERT_TRUE(fps.HasProblem()) << GetFmtStringErrMsg(fmtStr);
         }
     };
+
+struct FormatParseStringTest : FormattingTestFixture
+    {
+    public:
+        
+        void CreateFormatObject(FormatR format, Utf8CP thousandSep = ",", Utf8CP decimalSep = ".")
+            {
+            NumericFormatSpec nfs = NumericFormatSpec();
+            nfs.SetUse1000Separator(true);
+            nfs.SetThousandSeparator(*thousandSep);
+            nfs.SetDecimalSeparator(*decimalSep);
+            format = Format(nfs);
+            ASSERT_FALSE(format.IsProblem()) << "Format Initialization Error: " << format.GetProblemDescription().c_str();
+            }
+
+        void ParseStringToDouble(Utf8CP input, FormatCP expectedFormat, double const expectedMagnitude)
+            {
+            FormatParsingSet fps(input, nullptr, expectedFormat);
+            ASSERT_FALSE(fps.HasProblem()) << fps.GetProblemDescription();
+
+            FormatProblemCode probCode;
+            BEU::Quantity qty = fps.GetQuantity(&probCode, expectedFormat);
+            ASSERT_FALSE(qty.IsNullQuantity()) << "Parsed output of input \"" << input << "\" is unexpectedly null";
+            EXPECT_DOUBLE_EQ(expectedMagnitude, qty.GetMagnitude()) << "Parsed output of input \"" << input << "\" does not match expected value " << expectedMagnitude;
+            }
+
+    };
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Kyle.Abramowitz                06/2018
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -1059,6 +1087,48 @@ TEST_F(FormatParsingSetTest, TestParseToStdSynonyms)
     VerifyQuantity(u8"1 3/13 дюйма", "IN", "real", 1.2307692, "IN");
     VerifyQuantity(u8"3 фута 4 дюйма", "IN", "real", 40.0, "IN");
     VerifyQuantity(u8"1 фут 1 дюйм", "IN", "real", 13.0, "IN");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Aurora.Lane                    01/19
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatParseStringTest, ParseStringsWithPeriodDecimalSeparator)
+    {
+    Format format;
+    CreateFormatObject(format, ",", ".");
+    
+    ParseStringToDouble("1", &format, 1);
+    ParseStringToDouble("1.2", &format, 1.2);
+    ParseStringToDouble("1,234", &format, 1234);
+    ParseStringToDouble("1,234.12", &format, 1234.12);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Aurora.Lane                    01/19
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatParseStringTest, ParseStringsWithCommaDecimalSeparator)
+    {
+    Format format;
+    CreateFormatObject(format, ".", ",");
+
+    ParseStringToDouble("1", &format, 1);
+    ParseStringToDouble("1,2", &format, 1.2);
+    ParseStringToDouble("1.234", &format, 1234);
+    ParseStringToDouble("1.234,12", &format, 1234.12);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Aurora.Lane                    01/19
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatParseStringTest, ParseStringsWithTwoCommaSeparators)
+    {
+    Format format;
+    CreateFormatObject(format, ",", ",");
+
+    ParseStringToDouble("1", &format, 1);
+    ParseStringToDouble("1,2", &format, 1.2);
+    ParseStringToDouble("1,234", &format, 1.234);
+    ParseStringToDouble("1,234,12", &format, 1234.12);
     }
 
 /*---------------------------------------------------------------------------------**//**

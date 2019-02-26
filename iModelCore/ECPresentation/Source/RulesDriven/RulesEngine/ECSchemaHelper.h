@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ECSchemaHelper.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -113,7 +113,6 @@ private:
 private:
     void ParseECSchemaNames(bvector<Utf8String>& schemaNames, bool& exclude, Utf8StringCR commaSeparatedSchemaList) const;
     void ParseECSchemas(ECSchemaSet& schemas, bool& exclude, Utf8StringCR commaSeparatedSchemaList) const;
-    SupportedRelationshipClassInfos GetECRelationshipClasses(Utf8StringCR commaSeparatedClassList) const;
     ECClassSet GetECClasses(ECSchemaSet const& schemas) const;
     ECSchemaSet GetECSchemas(Utf8StringCR supportedSchemasStr) const;
     void GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, 
@@ -135,6 +134,7 @@ public:
     ECPRESENTATION_EXPORT ECClassSet GetECClassesFromSchemaList(Utf8StringCR schemaListStr) const;
     ECPRESENTATION_EXPORT SupportedEntityClassInfos GetECClassesFromClassList(Utf8StringCR classListStr, bool supportExclusion) const;
     ECPRESENTATION_EXPORT bvector<bpair<RelatedClassPath, bool>> GetRelationshipClassPaths(RelationshipClassPathOptions const&) const;
+    SupportedRelationshipClassInfos GetECRelationshipClasses(Utf8StringCR commaSeparatedClassList) const;
     ECPRESENTATION_EXPORT ECRelationshipConstraintClassList GetRelationshipConstraintClasses(ECRelationshipClassCR relationship, 
         ECRelatedInstanceDirection direction, Utf8StringCR supportedSchemas) const;
     ECPRESENTATION_EXPORT bvector<RelatedClassPath> GetPolymorphicallyRelatedClassesWithInstances(ECClassCR sourceClass, Utf8StringCR relationshipName,

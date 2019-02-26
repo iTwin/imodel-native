@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/DgnV8/SyncInfo.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,45 +21,16 @@
 #include <Bentley/md5.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnDbSync/DgnDbSync.h>
+#include <iModelBridge/iModelBridgeSyncInfoFile.h>
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
 #define SYNCINFO_ATTACH_ALIAS "SYNCINFO"
 #define SYNCINFO_TABLE(name)  "v8sync_" name
 #define SYNCINFO_ATTACH(name) SYNCINFO_ATTACH_ALIAS "." name
-
-#define SYNC_TABLE_File         SYNCINFO_TABLE("File")
-#define SYNC_TABLE_Model        SYNCINFO_TABLE("Model")
-#define SYNC_TABLE_Element      SYNCINFO_TABLE("Element")
-#define SYNC_TABLE_ExtractedGraphic SYNCINFO_TABLE("ExtractedGraphic")
-#define SYNC_TABLE_Level        SYNCINFO_TABLE("Level")
-#define SYNC_TABLE_View         SYNCINFO_TABLE("View")
-#define SYNC_TABLE_ECSchema     SYNCINFO_TABLE("ECSchema")
-#define SYNC_TABLE_Discards     SYNCINFO_TABLE("Discards")
-#define SYNC_TABLE_ImportJob    SYNCINFO_TABLE("ImportJob")
-#define SYNC_TABLE_NamedGroups  SYNCINFO_TABLE("NamedGroups")
-#define SYNC_TABLE_Imagery      SYNCINFO_TABLE("Imagery")
-#define SYNC_TABLE_GeomPart     SYNCINFO_TABLE("GeomPart")
-
 struct Converter;
 struct SyncInfo;
 struct ResolvedModelMapping;
-
-//=======================================================================================
-// @bsiclass                                                    Sam.Wilson  07/14
-//=======================================================================================
-struct SyncInfoProperty
-{
-    struct Spec : BeSQLite::PropertySpec
-        {
-        Spec(BentleyApi::Utf8CP name) : PropertySpec(name, "SyncInfo", PropertySpec::Mode::Normal, PropertySpec::Compress::No) {}
-        };
-
-    static Spec ProfileVersion()       {return Spec("SchemaVersion");}
-    static Spec DgnDbGuid()            {return Spec("DgnDbGuid");}
-    static Spec DbProfileVersion()     {return Spec("DbSchemaVersion");}
-    static Spec DgnDbProfileVersion()  {return Spec("DgnDbSchemaVersion");}
-};
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson   09/14
@@ -71,285 +42,156 @@ enum class StableIdPolicy : bool
     };
 
 /*=================================================================================**//**
-* Stores information needed to synchronize data that is created in a DgnDb from source DgnV8 file(s).
-*
-* Converter notes.
-*
-* Syncinfo is set up to support converters, *from* v8 elements *to* DgnDb elements.
-* Thus, the primary key of most syncinfo tables is based on the v8 ids, not the DgnDb identifiers (if any).
-*
-* You might think of syncinfo as a converter's notes to itself. The converter has many options for how it maps v8
-* elements to DgnDb elements. The converter can convert a v8 element to a single corresponding DgnDb entity, it could map many v8 elements
-* to one DgnDb entity, or it could distribute the data from a single v8 element across multiple DgnDb elements. The converter could
-* also decide to discard a v8 element and not create any corresponding data in the DgnDb.
-* Syncinfo is where it keeps a record of what it did.
-*
-* Syncinfo can be used by DgnDb apps to get "provenance" information about DgnDb elements, but it should be understood that
-* the mapping backward from DgnDb elements to v8 elements may be complex.
-*
-* -- File  - 1:1        - a converter should create a File sync info entry for each v8 file that it processes.
-*                           The primary key of the File table in sync info is just an autoincrement integer. It
-*                           does not identify anything in the DgnDb project itself.
-*
-* -- Model              - a converter should create a Model sync info entry for each v8 model that it processes. The converter may:
-*            1:1            -- create a DgnDb model to represent a single v8 model.
-*            0:1            -- decide not to create a DgnDb model for a given v8 model.
-*            1:n            -- "map" many v8 models to a single DgnDb model.
-*            n:1            -- make several (transformed) copies in the DgnDb from a single v8 model.
-*                           Thus, neither the v8 Id (V8FileSyncInfoId,V8Id) nor the DgnDb DgnModelId (NativeId) can be the primary key.
-*                           We index both, and the index can contain dups.
-*
-* -- Element            - the mapping between DgnDb and v8 elements is very loose. A converter may:
-*            1:1            -- convert a v8 element to a DgnDb entity,
-*            0:1            -- reject and discard the v8 element,
-*            0:1            -- convert the v8 element to non-element data in the DgnDb (e.g., convert a 'view' element to a DgnDb view).
-*            n:1            -- distribute the v8 element's data across multiple DgnDb elements
-*            1:n            -- combine the data from multiple v8 elements into a single DgnDb entity (e.g., stitch lines together into a linestring).
-*            1:n            -- map many v8 elements to a single DgnDb entity (e.g., cells with matching name and definition).
-*                           Thus, neither v8 id (V8FileSyncInfoId,V8Model,V8Id nor the DgnDb DgnElementId column can be the primary key.
-*                           We index both, and the index can contain dups.
-*                           We also index the Digest column.
-*
-* -- Level              - the mapping between DgnDb and v8 levels is very loose. A converter may:
-*            1:1            -- convert a v8 level to a new DgnDb level,
-*            0:1            -- reject and discard the v8 level (e.g., because it's unused),
-*            1:n            -- map several v8 levels to a single DgnDb level.
-*            n:1            -- make several (renamed) copies in the DgnDb from a single v8 level. For example, the convert may create model-specific copies of a given level in a file.
-*                           Thus, nether the v8 id (V8FileSyncInfoId,V8Model,V8Id) nor the DgnDb DgnSubCategoryId (Id) column can be the primary key.
-*                           We index both, and the index can contain dups.
-*                           Note: If the V8Model column is not nullptr, then the level is model-specific.
-*                           Note: If the V8Model column is nullptr, then the level is file-wide.
-*
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct SyncInfo
     {
-    struct ModelIterator;
+    //! The V8 provenance of an element in an iModel. May refer to an element, model, or other object in the v8 source files.
+    struct ExternalSourceAspect : iModelExternalSourceAspect
+        {
+      protected:
+        friend struct SyncInfo;
+        ExternalSourceAspect(ECN::IECInstance* i) : iModelExternalSourceAspect(i) {}
+        static Utf8String FormatV8ElementId(DgnV8Api::ElementId v8Id) {char buf[32]; BeStringUtilities::FormatUInt64(buf, v8Id); return buf;}  // DgnV8Api::ElementId is a UInt64
+        static Utf8String FormatV8ModelId(DgnV8Api::ModelId v8Id) {char buf[32]; return itoa(v8Id, buf, 10);}       // DgnV8Api::ModelId is a Int32
+        BeSQLite::EC::ECInstanceId GetSoleAspectIdByKind(DgnElementCR el, Utf8CP kind);
 
-    //! Information about a file on disk. This struct captures the information that can be extracted from the v8 disk file itself.
+      public:
+        struct Kind 
+            {
+            static constexpr Utf8CP RepositoryLink = "DocumentWithBeGuid";  // Keep this consistent with iModelBridgeSyncInfoFile::RecordDocument
+            static constexpr Utf8CP Element = "Element";
+            static constexpr Utf8CP Model = "Model";
+            static constexpr Utf8CP ProxyGraphic = "ProxyGraphic";
+            static constexpr Utf8CP Level = "Level";
+            static constexpr Utf8CP GeomPart = "GeomPart";
+            static constexpr Utf8CP ViewDefinition = "ViewDefinition";
+            static constexpr Utf8CP URI = "URI";
+            };
+        };
+
+    struct V8ModelExternalSourceAspectIterator;
+
+    //! Information about a file on disk. This struct captures the information that can be extracted from the disk file itself.
     struct DiskFileInfo
         {
-        uint64_t m_lastModifiedTime; // (Unix time in seconds)
-        uint64_t m_fileSize;
-        BentleyApi::BentleyStatus GetInfo (BentleyApi::BeFileNameCR);
+        uint64_t m_lastModifiedTime{}; // (Unix time in seconds)
+        uint64_t m_fileSize{};
+        BentleyStatus GetInfo (BentleyApi::BeFileNameCR);
         DiskFileInfo() {m_lastModifiedTime = m_fileSize = 0;}
+        bool IsEqual(DiskFileInfo const& o) {return m_lastModifiedTime == o.m_lastModifiedTime && m_fileSize == o.m_fileSize;}
+        };
+
+    //! Information about a path that might be a disk file or might be a URL
+    struct UriContentInfo : DiskFileInfo
+        {
+        Utf8String m_eTag;    // Set if path is a URI
+        
+        BentleyStatus GetInfo(Utf8StringCR pathOrUrl);
+        bool IsEqual(UriContentInfo const& o) {return DiskFileInfo::IsEqual(o) && m_eTag == o.m_eTag;}
         };
 
     //! Information about a file. This struct captures the information that can be extracted from the v8 file itself.
-    struct FileInfo : DiskFileInfo
+    struct V8FileInfo : DiskFileInfo
     {
         BentleyApi::Utf8String  m_uniqueName;
         BentleyApi::Utf8String  m_v8Name;
-        StableIdPolicy m_idPolicy;
         double      m_lastSaveTime;
-        FileInfo() {m_lastSaveTime = 0.0; m_idPolicy=StableIdPolicy::ById;}
+        V8FileInfo() : m_lastSaveTime(0.0) {}
     };
 
-    struct V8FileSyncInfoId : BeUInt32Id<V8FileSyncInfoId,UINT32_MAX>
-    {
-        V8FileSyncInfoId() {Invalidate();}
-        explicit V8FileSyncInfoId(uint32_t u) : BeUInt32Id(u) {}
-        void CheckValue() const {BeAssert(IsValid());}
-    };
-
-    //! Sync info for a v8 file. The struct includes information assigned to the v8 file by the converter.
-    //! There should be 1 File entry in syncinfo for each v8 file processed by the converter.
-    struct V8FileProvenance : FileInfo
+    //! Aspect stored on a RepositoryLink to capture additional info about the source file
+    struct RepositoryLinkExternalSourceAspect : ExternalSourceAspect
         {
-        friend SyncInfo;
-        SyncInfo*           m_syncInfo;
-        V8FileSyncInfoId    m_syncId;
+        RepositoryLinkExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {} 
+        DGNDBSYNC_EXPORT static RepositoryLinkExternalSourceAspect CreateAspect(DgnDbR, V8FileInfo const&, StableIdPolicy);
+        DGNDBSYNC_EXPORT void Update(V8FileInfo const&);
 
+        DGNDBSYNC_EXPORT static RepositoryLinkExternalSourceAspect FindAspectByIdentifier(DgnDbR, Utf8StringCR identifier);
+        DGNDBSYNC_EXPORT static RepositoryLinkExternalSourceAspect GetAspectForEdit(RepositoryLinkR);
+        DGNDBSYNC_EXPORT static RepositoryLinkExternalSourceAspect GetAspect(RepositoryLinkCR);
+
+        RepositoryLinkId GetRepositoryLinkId() const {return RepositoryLinkId(GetElementId().GetValueUnchecked());}
+        DGNDBSYNC_EXPORT Utf8String GetFileName() const;
+        DGNDBSYNC_EXPORT StableIdPolicy GetStableIdPolicy() const;
+        // WIP_EXTERNAL_SOURCE_ASPECT - combine the following methods into one that fills in a V8FileInfo object
+        DGNDBSYNC_EXPORT uint64_t GetFileSize() const;
+        DGNDBSYNC_EXPORT uint64_t GetLastModifiedTime() const;
+        DGNDBSYNC_EXPORT double GetLastSaveTime() const;
+        };
+
+    struct RepositoryLinkExternalSourceAspectIterator : ExternalSourceAspectIterator<RepositoryLinkExternalSourceAspect>
+        {
+        RepositoryLinkExternalSourceAspectIterator(DgnDbR db, Utf8CP wh = nullptr) : ExternalSourceAspectIterator(db, db.Elements().GetRootSubjectId(), ExternalSourceAspect::Kind::RepositoryLink, wh) {}
+        };
+
+    //! Aspect that tracks the content of a URI. Will also work with a filepath.
+    //! This is a lot like RepositoryLinkExternalSourceAspect. We make it separate just to keep things clear, as apps tend to think of RepostoryLinks as
+    //! corresponding directly to documents in ProjectWise or another DMS. In the case of PW, the document is expected to have document properties, RBAC, etc. 
+    //! UriExternalSourceAspect is for the general/generic case of sourcing data from a URI with nothing implied about what the resource is or if it has metadata or not.
+    struct UriExternalSourceAspect : ExternalSourceAspect
+        {
         private:
-        BeSQLite::DbResult Insert();
-        BeSQLite::DbResult Update(V8FileSyncInfoId, FileInfo const&);
-
-        V8FileProvenance(SyncInfo& s) : m_syncInfo(&s) {} 
-        V8FileProvenance(DgnV8FileCR, SyncInfo&, StableIdPolicy);
-
+        UriExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
         public:
-        bool IsValid() const {return m_syncId.IsValid();}
+        static UriExternalSourceAspect CreateAspect(DgnElementId repositoryLinkId, Utf8CP filename, UriContentInfo const&, Utf8CP rdsId, Converter&);
+        static UriExternalSourceAspect GetAspect(DgnElementCR);
+        static UriExternalSourceAspect GetAspect(DgnElementId eid, DgnDbR db) {auto el = db.Elements().GetElement(eid); return el.IsValid()? GetAspect(*el): UriExternalSourceAspect(nullptr);}
+        static UriExternalSourceAspect GetAspectForEdit(DgnElementR);
+
+        Utf8String GetFilenameOrUrl() const {return GetIdentifier();}
+
+        Utf8String GetSourceGuid() const; // The Source GUID may be empty and can change over time. That is why it is not the Identifier (or incorporated in it).
+        void SetSourceGuid(Utf8StringCR);
+
+        void GetInfo(UriContentInfo&) const;
+        void SetInfo(UriContentInfo const&);
         };
 
-    struct FileIterator : BeSQLite::DbTableIterator
+    //! Aspect stored on a Model element to a) identify the source V8 model and b) store additional qualifying information, such as a transform, that is applied during conversion
+    struct V8ModelExternalSourceAspect : ExternalSourceAspect
         {
-        DGNDBSYNC_EXPORT FileIterator(DgnDbCR db, Utf8CP where);
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct FileIterator;
-            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
-        public:
-            DGNDBSYNC_EXPORT V8FileSyncInfoId GetV8FileSyncInfoId();
-            DGNDBSYNC_EXPORT Utf8String GetUniqueName();
-            DGNDBSYNC_EXPORT Utf8String GetV8Name();
-            DGNDBSYNC_EXPORT bool GetCannotUseElementIds();
-            DGNDBSYNC_EXPORT uint64_t GetLastModifiedTime(); // (Unix time in seconds)
-            DGNDBSYNC_EXPORT uint64_t GetFileSize();
-            DGNDBSYNC_EXPORT double GetLastSaveTime(); // (Unix time in seconds)
-            Entry const& operator* () const {return *this;}
-            V8FileProvenance GetV8FileProvenance(SyncInfo& si);
+        friend struct V8ModelExternalSourceAspectIterator;
+
+      private:
+        V8ModelExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
+      public:
+        V8ModelExternalSourceAspect() : ExternalSourceAspect(nullptr) {}
+
+        static Utf8String FormatSourceId(DgnV8Api::ModelId v8Id) {return FormatV8ModelId(v8Id);}
+        static Utf8String FormatSourceId(DgnV8ModelCR model) {return FormatSourceId(model.GetModelId());}
+
+        //! Create a new aspect in memory. Caller must call AddAspect, passing in the model element that is to have this aspect.
+        DGNDBSYNC_EXPORT static V8ModelExternalSourceAspect CreateAspect(DgnV8ModelCR, TransformCR, Converter&);
+        
+        DGNDBSYNC_EXPORT static std::tuple<DgnElementPtr, V8ModelExternalSourceAspect> GetAspectForEdit(DgnModelR);
+        DGNDBSYNC_EXPORT static std::tuple<DgnElementCPtr, V8ModelExternalSourceAspect> GetAspect(DgnModelCR);
+        DGNDBSYNC_EXPORT static V8ModelExternalSourceAspect GetAspectByAspectId(DgnDbR, BeSQLite::EC::ECInstanceId aspectId);
+
+        RepositoryLinkId GetRepositoryLinkId() const {return RepositoryLinkId(GetScope().GetValueUnchecked());}
+        DgnModelId GetModelId() const {return DgnModelId(GetElementId().GetValueUnchecked());}
+        DGNDBSYNC_EXPORT DgnV8Api::ModelId GetV8ModelId() const;
+        DGNDBSYNC_EXPORT Transform GetTransform() const;
+        DGNDBSYNC_EXPORT void SetTransform(TransformCR);
+        DGNDBSYNC_EXPORT Utf8String GetV8ModelName() const;
         };
 
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNDBSYNC_EXPORT const_iterator begin() const;
-        const_iterator end() const {return Entry (NULL, false);}
+    struct V8ModelExternalSourceAspectIterator : ExternalSourceAspectIterator<V8ModelExternalSourceAspect>
+        {
+        V8ModelExternalSourceAspectIterator(RepositoryLinkCR scope, Utf8CP wh = nullptr) : ExternalSourceAspectIterator(scope.GetDgnDb(), scope.GetElementId(), ExternalSourceAspect::Kind::Model, wh) {}
+        V8ModelExternalSourceAspectIterator(DgnDbR db, RepositoryLinkExternalSourceAspect const& rlxsa, Utf8CP wh)  : ExternalSourceAspectIterator(db, rlxsa.GetElementId(), ExternalSourceAspect::Kind::Model, wh) {}
         };
 
-    //! Find the file with the specified syncinfo id. Use it like this:
-    //! <code>
-    //! FileById theFile(db, theFileId);
-    //! auto i = theFile.begin();
-    //! if (i == theFile.end())
-    //!     return not-found;
-    //! auto entry = *i;
-    //! entry.GetUniqueName(); ...
-    //! </code>
-    //!     
-    struct FileById : FileIterator
+    struct V8ModelExternalSourceAspectIteratorByV8Id : V8ModelExternalSourceAspectIterator
         {
-        FileById(DgnDbCR db, V8FileSyncInfoId sid) : FileIterator(db, "Id=?")
+        V8ModelExternalSourceAspectIteratorByV8Id(RepositoryLinkCR scope, DgnV8ModelCR v8Model) : V8ModelExternalSourceAspectIterator(scope, "Identifier = :identifier")
             {
-            GetStatement()->BindInt(1, sid.GetValue());
+            GetStatement()->BindText(GetParameterIndex("identifier"), V8ModelExternalSourceAspect::FormatSourceId(v8Model).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
             }
-        };
-
-    // A wrapper around the V8 ModelId. This is unique only within a V8 file.
-    struct V8ModelId
-        {
-    private:
-        int m_id;
-        bool m_isValid;
-
-    public:
-        V8ModelId() : m_id(-1), m_isValid(false) {}
-        explicit V8ModelId(int id) : m_id(id), m_isValid(true) {}
-
-        int GetValue() const { return m_id; }
-        bool IsValid() const { return m_isValid; }
-        };
-
-    // A V8 model syncinfo ID is the ROWID in the syncinfo models table for a particular V8 model ATTACHMENT that we have mapped to a distinct model in the BIM.
-    // The same V8 model can show up multiple times in the syncinfo models table. Each occurrence will have a unqiue ROWID/V8ModelSyncInfoId.
-    struct V8ModelSyncInfoId
-        {
-        private:
-            uint64_t m_rowid;
-            bool m_isValid;
-
-        public:
-            V8ModelSyncInfoId() : m_rowid(0), m_isValid(false) {}
-            explicit V8ModelSyncInfoId(uint64_t id) : m_rowid(id), m_isValid(true) {BeAssert(id != 0);}
-
-            uint64_t GetValue() const { return m_rowid; }
-            bool IsValid() const { return m_isValid; }
-
-            bool operator==(V8ModelSyncInfoId const& rhs) const {return m_rowid == rhs.m_rowid;}
-            bool operator!=(V8ModelSyncInfoId const& rhs) const {return !(*this == rhs);}
-            bool operator <(V8ModelSyncInfoId const& rhs) const {return m_rowid < rhs.m_rowid;}
-        };
-
-    // Identifies a model in a V8 file. Note that this identifies a MODEL, not a V8 attachment of a model.
-    struct V8ModelSource
-        {
-        V8FileSyncInfoId    m_v8FileSyncInfoId;
-        V8ModelId   m_modelId;
-        V8ModelSource() {}
-        V8ModelSource(V8FileSyncInfoId id, V8ModelId model) : m_v8FileSyncInfoId(id), m_modelId(model) {}
-        explicit V8ModelSource(DgnV8ModelCR);
-        bool IsValid() const {return m_v8FileSyncInfoId.IsValid();}
-        V8ModelId GetV8ModelId() const { return m_modelId; }
-        V8FileSyncInfoId GetV8FileSyncInfoId() const { return m_v8FileSyncInfoId; }
-        DGNDBSYNC_EXPORT bool operator<(V8ModelSource const& rhs) const;
-        bool operator==(V8ModelSource const& rhs) const { return m_v8FileSyncInfoId == rhs.m_v8FileSyncInfoId && m_modelId.GetValue() == rhs.m_modelId.GetValue(); }
-        bool operator!=(V8ModelSource const& rhs) const { return !(*this == rhs); }
-        };
-
-    //! Sync info for a particular attachment of a model. This struct includes all information needed to map a v8 model to a DgnDb model.
-    //! Note that many v8 models may be mapped into a single DgnDb model, and 1 v8 model may be mapped to multiple DgnDb models.
-    struct V8ModelMapping
-        {
-        private:
-        friend struct ModelIterator;
-        friend struct Converter;
-        mutable V8ModelSyncInfoId m_syncInfoId; //!< The id assigned to this attachment by syncinfo
-        Utf8String  m_v8Name;           //!< The name of the V8 model.
-        V8ModelSource m_source;         //!< The V8 ModelId of the model in the source V8 file
-        Transform   m_transform;        //!< How the contents of the v8 model are transformed to elements in the DgnDb model
-        DgnModelId  m_modelId;          //!< The Id of the DgnDb model to which this v8 model is mapped
-
-        public:
-        DGNDBSYNC_EXPORT V8ModelMapping();
-        DGNDBSYNC_EXPORT V8ModelMapping(DgnModelId mid, DgnV8ModelCR v8model, TransformCR trans);
-        V8ModelMapping(V8ModelMapping const& rhs, TransformCR trans) {*this = rhs; m_transform = trans;}
-
-        bool IsValid() const {return m_syncInfoId.IsValid();}
-        BeSQLite::DbResult Insert (BeSQLite::Db&) const;
-        BeSQLite::DbResult Update (BeSQLite::Db&) const;
-        V8FileSyncInfoId GetV8FileSyncInfoId() const { return m_source.m_v8FileSyncInfoId; }
-        V8ModelSyncInfoId GetV8ModelSyncInfoId() const {return m_syncInfoId;}
-        DgnModelId GetModelId() const { return m_modelId; }
-        V8ModelId GetV8ModelId() const {return m_source.m_modelId;}
-        TransformCR GetTransform() const { return m_transform; }
-        void SetTransform(TransformCR t) { m_transform = t; }
-        V8ModelSource const& GetV8ModelSource() const {return m_source;}
-        Utf8StringCR GetV8Name() const {return m_v8Name;}
-        };
-
-    struct ModelIterator : BeSQLite::DbTableIterator
-        {
-        DGNDBSYNC_EXPORT ModelIterator(DgnDbCR db, Utf8CP where);
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct ModelIterator;
-            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
-
-        public:
-            DGNDBSYNC_EXPORT V8ModelSyncInfoId GetV8ModelSyncInfoId(); // aka ROWID
-            DGNDBSYNC_EXPORT DgnModelId GetModelId();
-            DGNDBSYNC_EXPORT V8FileSyncInfoId GetV8FileSyncInfoId();
-            DGNDBSYNC_EXPORT V8ModelId GetV8ModelId();
-            DGNDBSYNC_EXPORT Utf8CP GetV8Name();
-            DGNDBSYNC_EXPORT Transform GetTransform();
-            Entry const& operator* () const {return *this;}
-
-            V8ModelMapping GetMapping()
-                {
-                V8ModelMapping m;
-                m.m_syncInfoId = GetV8ModelSyncInfoId();
-                m.m_v8Name = GetV8Name();
-                m.m_source = V8ModelSource(GetV8FileSyncInfoId(), GetV8ModelId());
-                m.m_transform = GetTransform();
-                m.m_modelId = GetModelId();
-                return m;
-                }
-        };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNDBSYNC_EXPORT const_iterator begin() const;
-        const_iterator end() const {return Entry (NULL, false);}
-        };
-
-
-    //! Sync info for a level
-    struct Level
-        {
-        enum Type {Spatial=0, Drawing=1}; // *** THESE VALUES ARE PERSISTED IN SYNCINFO. DO NOT CHANGE ***
-
-        DgnSubCategoryId   m_id;
-        V8ModelSource   m_fm;
-        uint32_t        m_v8Id;
-        Type            m_type;
-        Utf8String      m_v8Name;
-
-        Level(DgnSubCategoryId id, Type ltype, V8ModelSource fm, uint32_t fid, Utf8CP name) : m_id(id), m_type(ltype), m_fm(fm), m_v8Id(fid), m_v8Name(name) {}
-        BeSQLite::DbResult Insert (BeSQLite::Db&) const;
-
-        bool IsValid() const {return m_id.IsValid();}
-        bool IsModelSpecific() const {return m_fm.GetV8ModelId().IsValid();}
+        V8ModelExternalSourceAspectIteratorByV8Id(RepositoryLinkCR scope, DgnV8Api::ModelId v8ModelId) : V8ModelExternalSourceAspectIterator(scope, "Identifier = :identifier")
+            {
+            GetStatement()->BindText(GetParameterIndex("identifier"), V8ModelExternalSourceAspect::FormatSourceId(v8ModelId).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+            }
         };
 
     struct ElementHash : BentleyApi::MD5::HashVal
@@ -371,262 +213,174 @@ struct SyncInfo
         bool IsSame(ElementProvenance const& other){return (m_idPolicy==StableIdPolicy::ByHash || m_lastModified==other.m_lastModified) && m_hash.IsSame(other.m_hash);}
     };
 
-    //! Uniquely identifies a V8 element
-    struct V8ElementSource
+    //! Data that uniquely identifies a V8 *element*. This data is used as part of the input when constructing a ExternalSourceAspect.
+    //! This corresponds to V8ElementSource, which it will someday replace.
+    struct V8ElementExternalSourceAspectData
         {
-        V8ModelSyncInfoId m_v8ModelSyncInfoId;
-        uint64_t m_v8ElementId;
+        DgnModelId m_scope;         // The model that was created (earlier) in the iModel from the V8 model that contains this V8 element.
+        DgnV8Api::ElementId m_v8Id {}; // The V8 element's ID
+        Utf8String m_v8IdPath;      // Or, a path of V8 element IDs, in case of elements in nested references.
+        ElementProvenance m_prov;   // The V8 element's state
+        Utf8String m_propsJson;
+        V8ElementExternalSourceAspectData(DgnModelId scope, DgnV8Api::ElementId v8Id, ElementProvenance const& prov, Utf8StringCR propsJson) : m_scope(scope), m_v8Id(v8Id), m_prov(prov), m_propsJson(propsJson) {}
+        V8ElementExternalSourceAspectData(DgnModelId scope, Utf8StringCR idPath, ElementProvenance const& prov, Utf8StringCR propsJson) : m_scope(scope), m_v8IdPath(idPath), m_prov(prov), m_propsJson(propsJson) {}
+        };
+    
+    struct V8ElementExternalSourceAspectIterator;
 
-        V8ElementSource(DgnV8EhCR el, V8ModelSyncInfoId modelsiid) :
-            m_v8ModelSyncInfoId(modelsiid), m_v8ElementId(el.GetElementId())
-            {}
+    //! Identifies the source of an element in an iModel that was created from an element in a V8 model.
+    struct V8ElementExternalSourceAspect : ExternalSourceAspect
+        {
+        friend struct V8ElementExternalSourceAspectIterator;
+      private:
+        V8ElementExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
+      public:
+        V8ElementExternalSourceAspect() : ExternalSourceAspect(nullptr) {}
+        static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return FormatV8ElementId(v8Id);}
+        static Utf8String FormatSourceId(DgnV8EhCR el) {return FormatSourceId(el.GetElementId());}
 
-        V8ElementSource(uint64_t v8elid, V8ModelSyncInfoId modelsiid) :
-            m_v8ModelSyncInfoId(modelsiid), m_v8ElementId(v8elid)
-            {}
+        //! Create a new aspect in memory. Caller must call AddAspect, passing in the element that is to have this aspect.
+        DGNDBSYNC_EXPORT static V8ElementExternalSourceAspect CreateAspect(V8ElementExternalSourceAspectData const&, DgnDbR);
+        
+        //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
+        //! Use this method only in the case where the element is known to have only a single element kind aspect.
+        static V8ElementExternalSourceAspect GetAspectForEdit(DgnElementR, Utf8StringCR);
+        static V8ElementExternalSourceAspect GetAspectForEdit(DgnElementR el, DgnV8Api::ElementId eid) {return GetAspectForEdit(el, FormatSourceId(eid));}
+        //! Get an existing syncinfo aspect from the specified element in the case where we know that it was derived from a V8 *element*.
+        //! Use this method only in the case where the element is known to have only a single element kind aspect.
+        static V8ElementExternalSourceAspect GetAspect(DgnElementCR, Utf8StringCR);
+        static V8ElementExternalSourceAspect GetAspect(DgnElementCR el, DgnV8Api::ElementId eid) {return GetAspect(el, FormatSourceId(eid));}
 
-        V8ElementSource() : m_v8ElementId(0) {}
+        static V8ElementExternalSourceAspect GetAspect(DgnElementCR el, BeSQLite::EC::ECInstanceId aspectId) {return V8ElementExternalSourceAspect(iModelExternalSourceAspect::GetAspect(el, aspectId).m_instance.get());}
 
-        bool IsValid() const { return m_v8ModelSyncInfoId.IsValid() && m_v8ElementId != 0; }
+        //! The scope of an V8ElementExternalSourceAspect is a model (element). This convenience method returns the scope as a DgnModelId
+        DgnModelId GetModelId() const {return DgnModelId(GetScope().GetValueUnchecked());}
+
+        DGNDBSYNC_EXPORT void Update(ElementProvenance const& prov); 
+
+        DGNDBSYNC_EXPORT DgnV8Api::ElementId GetV8ElementId() const;
+
+        DGNDBSYNC_EXPORT bool DoesProvenanceMatch(ElementProvenance const&) const;
         };
 
-    struct CompareV8ElementSource
-        {
-        bool operator()(SyncInfo::V8ElementSource const& lhs, SyncInfo::V8ElementSource const& rhs) const 
-            {
-            if (lhs.m_v8ModelSyncInfoId < rhs.m_v8ModelSyncInfoId)
-                return true;
-            if (lhs.m_v8ModelSyncInfoId != rhs.m_v8ModelSyncInfoId)
-                return false;
-            return lhs.m_v8ElementId < rhs.m_v8ElementId;
+    struct V8ElementExternalSourceAspectIterator : ExternalSourceAspectIterator<V8ElementExternalSourceAspect>
+    {
+        V8ElementExternalSourceAspectIterator(DgnModelCR model, Utf8CP wh = nullptr) : ExternalSourceAspectIterator(model.GetDgnDb(), model.GetModeledElementId(), ExternalSourceAspect::Kind::Element, wh) {}
+    };
+
+    struct V8ElementExternalSourceAspectIteratorByV8Id : V8ElementExternalSourceAspectIterator 
+    {
+    private:
+        void Bind(uint64_t elId) {m_stmt->Reset(); m_stmt->BindText(GetParameterIndex("idparm"), V8ElementExternalSourceAspect::FormatSourceId(elId).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);}
+    public:
+        V8ElementExternalSourceAspectIteratorByV8Id(DgnModelCR model, DgnV8Api::ElementId eid) : V8ElementExternalSourceAspectIterator(model, "Identifier=:idparm") {Bind(eid);}
+        V8ElementExternalSourceAspectIteratorByV8Id(DgnModelCR model, DgnV8EhCR eh) : V8ElementExternalSourceAspectIterator(model, "Identifier=:idparm") {Bind(eh.GetElementId());}
+    };
+
+    struct V8ElementExternalSourceAspectIteratorByChecksum : SyncInfo::V8ElementExternalSourceAspectIterator
+    {
+        private:
+        void Bind(SyncInfo::ElementHash const& hash) {
+            Utf8String provHash;
+            iModelExternalSourceAspect::HexStrFromBytes(provHash, hash.m_buffer);
+            m_stmt->Reset(); 
+            m_stmt->BindText(GetParameterIndex("checksumparm"), provHash.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
             }
-        };
-
-    typedef BentleyApi::bset<V8ElementSource, CompareV8ElementSource> T_V8ElementSourceSet;
-    typedef BentleyApi::bmap<V8ElementSource, T_V8ElementSourceSet, CompareV8ElementSource> T_V8ElementMapOfV8ElementSourceSet;
-
-    //! Full details of how a V8 element is mapped to a BIM element.
-    struct V8ElementMapping : V8ElementSource
-        {
-        DgnElementId m_elementId;
-        ElementProvenance m_provenance;
-
-        V8ElementMapping(DgnElementId id, DgnV8EhCR el, V8ModelSyncInfoId modelsiid, ElementProvenance const& lmt) :
-            V8ElementSource(el, modelsiid),
-            m_elementId(id), m_provenance(lmt)
-            {
-            }
-
-        V8ElementMapping(DgnElementId id, uint64_t v8elid, V8ModelSyncInfoId modelsiid, ElementProvenance const& lmt) :
-            V8ElementSource(v8elid, modelsiid),
-            m_elementId(id), m_provenance(lmt)
-            {}
-
-        V8ElementMapping() {}
-
-        DgnElementId GetElementId() const {return m_elementId;}
-        bool IsValid() const {return V8ElementSource::IsValid() && m_elementId.IsValid();}
-        };
-
-    struct CompareV8ElementMappingByElementId
-        {
-        bool operator()(SyncInfo::V8ElementMapping const& lhs, SyncInfo::V8ElementMapping const& rhs) const { return lhs.m_elementId.GetValueUnchecked() < rhs.m_elementId.GetValueUnchecked(); }
-        };
-
-    //! Sync info for an element holds a mapping between and an entity in DgnDb and an element in a v8 model,
-    //! plus information about the state of the v8 element's data.
-    struct ElementIterator : BeSQLite::DbTableIterator
-    {
-        DGNDBSYNC_EXPORT ElementIterator(DgnDbCR db, Utf8CP where);
-
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-            {
-            private:
-            friend struct ElementIterator;
-            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
-
-            public:
-            DGNDBSYNC_EXPORT DgnElementId GetElementId() const;
-            DGNDBSYNC_EXPORT V8ModelSyncInfoId GetV8ModelSyncInfoId() const;
-            DGNDBSYNC_EXPORT uint64_t GetV8ElementId() const;
-            DGNDBSYNC_EXPORT ElementProvenance GetProvenance() const;
-
-            V8ElementMapping GetV8ElementMapping() const
-                {
-                V8ElementMapping m;
-                m.m_elementId = GetElementId();
-                m.m_v8ModelSyncInfoId = GetV8ModelSyncInfoId();
-                m.m_v8ElementId = GetV8ElementId();
-                m.m_provenance = GetProvenance();
-                return m;
-                }
-
-            Entry const& operator* () const {return *this;}
-            };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNDBSYNC_EXPORT const_iterator begin() const;
-        const_iterator end() const {return Entry (NULL, false);}
+    public:
+        V8ElementExternalSourceAspectIteratorByChecksum(DgnModelCR model, SyncInfo::ElementHash const& hash) : V8ElementExternalSourceAspectIterator(model, "Checksum=:checksumparm") {Bind(hash);}
     };
 
-    struct ByV8ElementIdIter : ElementIterator 
-    {
-        ByV8ElementIdIter(DgnDbCR db) : ElementIterator(db, "V8ModelSyncInfoId=? AND V8ElementId=?") {}
-        void Bind(V8ModelSyncInfoId modelId, uint64_t elId) {m_stmt->Reset(); m_stmt->BindInt64(1, modelId.GetValue()); m_stmt->BindInt64(2, elId);}
-    };
-
-    struct ByHashIter : SyncInfo::ElementIterator
-    {
-        ByHashIter(DgnDbCR db) : ElementIterator(db, "V8ModelSyncInfoId=? AND V8ElementId IS NULL AND Hash=?") {}
-        void Bind(V8ModelSyncInfoId modelId, SyncInfo::ElementHash hash) {m_stmt->Reset(); m_stmt->BindInt64(1, modelId.GetValue()); m_stmt->BindBlob(2, hash.m_buffer, sizeof(hash), BeSQLite::Statement::MakeCopy::No);}
-
-    };
-
-    //! Provenance info for an element that was \em not converted but was discarded instead.
-    struct DiscardedElement
+    struct LevelExternalSourceAspect : ExternalSourceAspect
         {
-        V8ModelSyncInfoId m_fm;
-        uint64_t      m_v8Id;
-        DiscardedElement(V8ModelSyncInfoId fm, uint64_t id) : m_fm(fm), m_v8Id(id){}
-        };
-
-    //! Import "job" definition
-    struct ImportJob
-        {
-        //!< The type of converter used to create the ibim. NB This is persistent data. Do not change.
-        enum class Type {RootModels, TiledFile}; 
+        enum class Type {Spatial, Drawing}; // WARNING: Persistent values - do not change
 
         private:
-        mutable int64_t m_ROWID {};
-        SyncInfo::V8ModelSyncInfoId m_v8RootModel;
-        Type m_type;
-        Utf8String m_prefix;
-        DgnElementId m_subjectId;
-        Transform m_transform;
+        static Utf8String FormatSourceId(DgnV8Api::LevelId v8Id) {return FormatV8ElementId(v8Id);}
+        LevelExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
+        DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnElementId scopeId, DgnV8Api::LevelHandle const&, DgnV8ModelCR, Type, Converter&);
 
         public:
-        static Utf8String GetSelectSql();
-        void FromSelect(BeSQLite::Statement&);
+        //! Create a new aspect in memory. The scope will be the RepositoryLink element that stands for the source file. Caller must call AddAspect, passing in the Category element.
+        DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnV8Api::LevelHandle const&, DgnV8ModelCR, Type, Converter&);
+        DGNDBSYNC_EXPORT static LevelExternalSourceAspect LevelExternalSourceAspect::FindAspectByV8Model(DgnSubCategoryCR, DgnV8ModelCR v8Model);
 
-        BeSQLite::DbResult Insert (BeSQLite::Db&) const;
-        BeSQLite::DbResult Update (BeSQLite::Db&) const;
-        static BentleyStatus FindById(ImportJob&, DgnDbCR, SyncInfo::V8ModelSyncInfoId);
-        static void CreateTable(BeSQLite::Db&);
-
-        SyncInfo::V8ModelSyncInfoId GetV8ModelSyncInfoId() const { return m_v8RootModel; }
-        void SetV8ModelSyncInfoId(SyncInfo::V8ModelSyncInfoId i) {m_v8RootModel=i;}
-        Type GetType() const {return m_type;}
-        void SetType(Type t) {m_type = t;}
-        Utf8StringCR GetPrefix() const { return m_prefix; }
-        void SetPrefix(Utf8StringCR p) {m_prefix = p;}
-        DgnElementId GetSubjectId() const {return m_subjectId;}
-        void SetSubjectId(DgnElementId s) {m_subjectId = s;}
-        void SetTransform(TransformCR t) {m_transform = t;}
-        Transform GetTransform() const {return m_transform;}
+        DGNDBSYNC_EXPORT static BentleyStatus FindFirstSubCategory(DgnSubCategoryId&, DgnV8ModelCR v8Model, uint32_t flid, Type ltype, Converter& converter);
         };
 
-    struct ImportJobIterator : BeSQLite::DbTableIterator
+    //! Identifies a drawing graphic in the V8 source
+    struct ProxyGraphicExternalSourceAspect : ExternalSourceAspect
         {
-        DGNDBSYNC_EXPORT ImportJobIterator(DgnDbCR db, Utf8CP where);
-
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-            {
-            private:
-            friend struct ImportJobIterator;
-            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
-
-            public:
-            DGNDBSYNC_EXPORT ImportJob GetimportJob();
-            Entry const& operator* () const {return *this;}
-            };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNDBSYNC_EXPORT const_iterator begin() const;
-        const_iterator end() const {return Entry (NULL, false);}
+        private:
+        ProxyGraphicExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
+        public:
+        static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return FormatV8ElementId(v8Id);}
+        DGNDBSYNC_EXPORT static ProxyGraphicExternalSourceAspect CreateAspect(DgnModelCR bimDrawingModel, Utf8StringCR idPath, Utf8StringCR propsJson, DgnDbR db);
+        DGNDBSYNC_EXPORT static DgnElementId FindDrawingGraphic(DgnModelCR proxyGraphicScope, Utf8StringCR sectionedV8ElementPath, DgnCategoryId drawingGraphicCategory, DgnClassId drawingGraphicClassId, DgnDbR db);
         };
 
-    //! GeomPart with a converter-generated tag
-    struct GeomPart
+    //! Identifies the source of a ViewDefinition. The source is identified by the ElementId of the V8 view element. 
+    //! This aspect *also* stores a view name as data, not as the primary identifier.
+    struct ViewDefinitionExternalSourceAspect : ExternalSourceAspect
         {
-        DgnGeometryPartId m_id;
-        Utf8String m_tag;
+        private:
+        static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return FormatV8ElementId(v8Id);}
 
-        GeomPart() {}
-        GeomPart(DgnGeometryPartId i, Utf8StringCR t) : m_id(i), m_tag(t) {}
+        public:
+        static constexpr Utf8CP json_v8ViewName = "v8ViewName";
 
-        static Utf8String GetSelectSql();
-        void FromSelect(BeSQLite::Statement&);
+        ViewDefinitionExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
 
-        BeSQLite::DbResult Insert (BeSQLite::Db&) const;
-        static BentleyStatus FindByTag(GeomPart&, DgnDbCR, Utf8CP tag);
-        static BentleyStatus FindById(GeomPart&, DgnDbCR db, DgnGeometryPartId);
-        static void CreateTable(BeSQLite::Db&);
+        //! Create a new aspect in memory. scopeId should be the RepositoryLink element that stands for the source file. Caller must call AddAspect, passing in the ViewDefinition element.
+        DGNDBSYNC_EXPORT static ViewDefinitionExternalSourceAspect CreateAspect(DgnElementId scopeId, Utf8StringCR viewName, DgnV8ViewInfoCR viewInfo, DgnDbR db);
+
+        DGNDBSYNC_EXPORT static ViewDefinitionExternalSourceAspect GetAspectForEdit(ViewDefinitionR el);
+        DGNDBSYNC_EXPORT static ViewDefinitionExternalSourceAspect GetAspect(ViewDefinitionCR el);
+
+        DgnViewId GetViewId() const {return DgnViewId(GetElementId().GetValueUnchecked());}
+
+        //! Look up an existing ViewDefinition, given the scope and V8 ViewId
+        DGNDBSYNC_EXPORT static std::tuple<ViewDefinitionExternalSourceAspect,DgnViewId> GetAspectBySourceId(DgnElementId scopeId, DgnV8ViewInfoCR, DgnDbR db);
+
+        DGNDBSYNC_EXPORT void Update(DgnV8ViewInfoCR const&, Utf8StringCR viewName); 
+
+        //! Get an iterator over all ViewDefinitionExternalSourceAspects with the specified scope (which should be a RepositoryLink element ID).
+        //! The iterator will select Element.Id and ECInstanceId
+        DGNDBSYNC_EXPORT static BeSQLite::EC::CachedECSqlStatementPtr GetIteratorForScope(DgnDbR, DgnElementId scope);
+    
+        // DGNDBSYNC_EXPORT DgnV8Api::ElementId GetV8ViewId() const;
+        DGNDBSYNC_EXPORT Utf8String GetV8ViewName() const;
         };
 
-    struct GeomPartIterator : BeSQLite::DbTableIterator
+    struct ViewDefinitionExternalSourceAspectIterator : ExternalSourceAspectIterator<ViewDefinitionExternalSourceAspect>
         {
-        DGNDBSYNC_EXPORT GeomPartIterator(DgnDbCR db, Utf8CP where);
-
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-            {
-            private:
-            friend struct GeomPartIterator;
-            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
-
-            public:
-            DGNDBSYNC_EXPORT GeomPart GetGeomPart();
-            Entry const& operator* () const {return *this;}
-            };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNDBSYNC_EXPORT const_iterator begin() const;
-        const_iterator end() const {return Entry (NULL, false);}
+        ViewDefinitionExternalSourceAspectIterator(DgnDbR db, DgnElementId scope, Utf8CP wh = "") : ExternalSourceAspectIterator(db, scope, ExternalSourceAspect::Kind::ViewDefinition, wh) {}
         };
 
-    struct ViewIterator : BeSQLite::DbTableIterator
+    //! A GeomPart mapping
+    struct GeomPartExternalSourceAspect : ExternalSourceAspect
         {
-        DGNDBSYNC_EXPORT ViewIterator(DgnDbCR db, Utf8CP where);
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-            {
-            private:
-                friend struct ViewIterator;
-                Entry(BeSQLite::StatementP sql, bool IsValid) : DbTableIterator::Entry(sql, IsValid) {}
-
-            public:
-                DGNDBSYNC_EXPORT DgnViewId GetId();
-                DGNDBSYNC_EXPORT V8FileSyncInfoId GetV8FileSyncInfoId();
-                DGNDBSYNC_EXPORT uint64_t GetV8ElementId();
-
-                Entry const& operator* () const { return *this; }
-            };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNDBSYNC_EXPORT const_iterator begin() const;
-        const_iterator end() const { return Entry(NULL, false); }
+        private:
+        GeomPartExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
+        public:
+        //! Create a new aspect in memory. scopeId should be the bridge's job definition model. Caller must call AddAspect, passing in the DgnGeometryPart element.
+        DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect CreateAspect(DgnElementId scopeId, Utf8StringCR tag, DgnDbR);
+        //! Look up the element that has the GeomPart aspect with the specified tag. Note that this is based on the assumption that GeometryPart "tags" are unique within the specified scope!
+        static DgnGeometryPartId GetAspectByTag(DgnDbR db, DgnElementId scopeId, Utf8StringCR tag) {return DgnGeometryPartId(FindElementBySourceId(db, scopeId, Kind::GeomPart, tag).elementId.GetValueUnchecked());}
+        //! Get an existing GeomPart aspect from the specified DgnGeometryPart
+        DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect GetAspect(DgnGeometryPartCR el);
         };
-
-    enum class ECSchemaMappingType
-        {
-        Identity = 1, //!< Mapped as is
-        Dynamic = 2 //!< if multiple dynamic schemas exist, they will be merged during conversion
-        };
-
 
     //! An Id that is per-file
     template<typename IDTYPE> struct FileBasedId
         {
-        V8FileSyncInfoId m_v8FileSyncInfoId;
+        RepositoryLinkId m_repositoryLinkId;
         IDTYPE m_id;
-        FileBasedId () : m_v8FileSyncInfoId(0), m_id(0) {}
-        FileBasedId (V8FileSyncInfoId ffid, IDTYPE id) : m_v8FileSyncInfoId(ffid), m_id(id) {}
+        FileBasedId () : m_id(0) {}
+        FileBasedId (RepositoryLinkId ffid, IDTYPE id) : m_repositoryLinkId(ffid), m_id(id) {}
         bool operator<(FileBasedId const& rhs) const
             {
-            if (m_v8FileSyncInfoId < rhs.m_v8FileSyncInfoId) return true;
-            if (m_v8FileSyncInfoId > rhs.m_v8FileSyncInfoId) return false;
+            if (m_repositoryLinkId < rhs.m_repositoryLinkId) return true;
+            if (m_repositoryLinkId > rhs.m_repositoryLinkId) return false;
             return m_id < rhs.m_id;
             }
         };
@@ -648,63 +402,30 @@ struct SyncInfo
 
     Converter&          m_converter;
     DgnDb*              m_dgndb;
-    BeSQLite::DbResult  m_lastError;
-    Utf8String          m_lastErrorDescription;
-    bool                m_isValid;
 
 protected:
     bool ComputeHash(BentleyApi::MD5&, DgnV8ModelR, DgnV8Api::MSElement const&, uint32_t offsetToStartOfData);
     void DumpElement (DgnV8Api::ElementHandle const&);
     void DumpXAttribute (DgnV8Api::ElementHandle::XAttributeIter const& ix);
-    //! Optimized for fast look-up
-    BentleyStatus FindFirstSubCategory (DgnSubCategoryId&, BeSQLite::Db&, V8ModelSource, uint32_t flid, Level::Type ltype);
-
-    BentleyStatus PerformVersionChecks();
-
 public:
+    static bvector<BeSQLite::EC::ECInstanceId> GetExternalSourceAspectIds(DgnElementCR el, Utf8CP kind, Utf8StringCR sourceId);
+    static BeSQLite::EC::ECInstanceId GetSoleAspectIdByKind(DgnElementCR el, Utf8CP kind);
+
     BentleyStatus CreateTables();
-    BentleyStatus CreateNamedGroupTable(bool createIndex);
-    void CreateECTables();
+    BentleyStatus CreateNamedGroupTable();
 
     DGNDBSYNC_EXPORT BeSQLite::DbResult InsertFont (DgnFontId newId, V8FontId oldId);
     DGNDBSYNC_EXPORT BeSQLite::DbResult InsertLineStyle (DgnStyleId, double unitsScale, V8StyleId oldId);
 
-    DGNDBSYNC_EXPORT BeSQLite::DbResult SavePropertyString (BeSQLite::PropertySpec const& spec, Utf8CP stringData, uint64_t majorId=0, uint64_t subId=0);
-    DGNDBSYNC_EXPORT BeSQLite::DbResult QueryProperty (Utf8StringR str, BeSQLite::PropertySpec const& spec, uint64_t id=0, uint64_t subId=0) const;
-
     //! Construct a SyncInfo object to use for the specified project.
     SyncInfo(Converter&);
-    DGNDBSYNC_EXPORT ~SyncInfo();
 
     DgnDb* GetDgnDb() {return m_dgndb;}
 
-    //! Get the name of the .syncinfo file
-    DGNDBSYNC_EXPORT static BeFileName GetDbFileName (DgnDb&);
-    DGNDBSYNC_EXPORT static BeFileName GetDbFileName (BeFileName const&);
-
-    //! Call this to attach a synchinfo file to a project.
-    DGNDBSYNC_EXPORT BentleyStatus AttachToProject (DgnDb& targetProject, BeFileNameCR dbName);
-
-    //! This function associates this SyncInfoBase object with the specified project.
-    //! Call this after attaching an existing .syncinfo file to the specified project.
-    //! This function either finishes creating a new syncInfo or it validates an existing syncinfo.
+    //! Creates the temporary tables used during a single conversion.  None of this information is necessary on updates.
     //! @return non-zero if initialization or verification failed.
     //! @param[in] project The project.
-    BentleyStatus OnAttach(DgnDb& project);
-
-    //! Create an empty .syncinfo file. Then attach it to the project.
-    //! @param[in] dbName The name of the syncinfo file
-    //! @param[in] deleteIfExists If true, any existing .syncinfo file with the same name is deleted
-    DGNDBSYNC_EXPORT static BentleyStatus CreateEmptyFile (BeFileNameCR dbName, bool deleteIfExists=true);
-
-    //! Query if the SyncInfo is valid (created or read)
-    bool IsValid() const {return m_isValid;}
-
-    //! Mark the SyncInfo as valid or not.
-    void SetValid (bool b) {m_isValid=b;}
-
-    DGNDBSYNC_EXPORT void SetLastError (BeSQLite::DbResult);
-    DGNDBSYNC_EXPORT void GetLastError (BeSQLite::DbResult&, Utf8String&);
+    DGNDBSYNC_EXPORT BentleyStatus Initialize(DgnDb& project);
 
     //! @name V8 Files
     //! @{
@@ -721,25 +442,12 @@ public:
     //! @param[in] uniqueName       the key that identifies the file in sync info
     DGNDBSYNC_EXPORT bool HasDiskFileChanged(BeFileNameCR v8FileName);
 
-    DGNDBSYNC_EXPORT V8FileProvenance InsertFile(BeSQLite::DbResult*, DgnV8FileCR, StableIdPolicy);
-    DGNDBSYNC_EXPORT V8FileProvenance UpdateFile(BeSQLite::DbResult*, DgnV8FileCR);
-    DGNDBSYNC_EXPORT V8FileProvenance FindFileById(V8FileSyncInfoId);
-    DGNDBSYNC_EXPORT V8FileProvenance FindFile(DgnV8FileCR);
-    DGNDBSYNC_EXPORT V8FileProvenance FindFileByFileName(BeFileNameCR);
-    DGNDBSYNC_EXPORT V8FileProvenance FindFileByUniqueName(Utf8StringCR);
+    DGNDBSYNC_EXPORT V8FileInfo ComputeFileInfo(DgnV8FileCR);
+
+    DGNDBSYNC_EXPORT RepositoryLinkExternalSourceAspect FindFileByFileName(BeFileNameCR);
     
-    //! @private
-    BentleyStatus DeleteFile(V8FileSyncInfoId);
-
     //! @}
 
-    //! @name V8 Models
-    //! @{
-
-    //! Delete all syncinfo for the specified V8 model.
-    DGNDBSYNC_EXPORT BentleyStatus DeleteModel(V8ModelSyncInfoId);
-
-    //! @}
 
     //! @name Elements
     //! @{
@@ -748,45 +456,30 @@ public:
 
     DGNDBSYNC_EXPORT void ComputeHash(BentleyApi::MD5& hasher, DgnV8EhCR v8eh);
 
-    //! Remove sync info for an element. The element is assumed to be in the current v8 file.
-    //! @note This deletes all rows in sync info having the specified native element id in the current model within the current v8 model.
-    //! @param[in] id Identfies the entity in the DgnDb
-    //! @return non-zero error status if no sync info could be found for this element or if the syncinfo file could not be updated
-    DGNDBSYNC_EXPORT BentleyStatus DeleteElement(DgnElementId id);
-
-    //! Mark a v8 element as not converted.
-    //! @param[in] el The element in the DgnV8 file
-    //! @param[in] modelsiid Identifies the V8 attachment through which we found this V8 element
-    DGNDBSYNC_EXPORT void InsertDiscardedElement(DgnV8EhCR el, V8ModelSyncInfoId modelsiid);
-
-    //! Delete a discard record. The updater should call this when it successfully converts an element that was formerly discarded.
-    //! @param[in] v8id  The ID of the element in the v8 repository
-    //! @param[in] modelsiid Identifies the V8 attachment through which we found this V8 element
-    //! @return non-zero error status if the element was NOT found in the discard table
-    DGNDBSYNC_EXPORT BentleyStatus DeleteDiscardedElement (uint64_t v8id, V8ModelSyncInfoId modelsiid);
-
-    //! Query if a v8 element was not converted. The v8 element is assumed to be in the current v8 model in the current v8 file.
-    //! @param[in] v8id  The ID of the element in the v8 repository
-    //! @param[in] modelsiid Identifies the V8 attachment through which we found this V8 element
-    //! @return true if the element was found in the discard table
-    DGNDBSYNC_EXPORT bool WasElementDiscarded (uint64_t v8id, V8ModelSyncInfoId modelsiid);
     //! @}
 
     //! @name Levels, Fonts, Styles, Materials
     //! @{
 
+    DGNDBSYNC_EXPORT LevelExternalSourceAspect InsertLevel(DgnSubCategoryId glevelId, DgnV8ModelCR v8model, DgnV8Api::LevelHandle const& vlevel);
+
     //! Lookup the first native level mapped to the specified v8 level id. Elements using this level are assumed to be in the current v8 model in the current v8 file.
     //! This function checks first for a model-specific version of the level and then falls back to a file-wide version.
     //! This function returns the default category if all else fails
-    DGNDBSYNC_EXPORT DgnSubCategoryId GetSubCategory(uint32_t v8levelid, V8ModelSource, Level::Type ltype);
+    DGNDBSYNC_EXPORT DgnSubCategoryId GetSubCategory(uint32_t v8levelid, DgnV8ModelCR, LevelExternalSourceAspect::Type ltype);
 
     //! Find the category to use for the specified DgnV8 element
     //! This function returns the default category if all else fails
     DGNDBSYNC_EXPORT DgnCategoryId GetCategory(DgnV8EhCR, ResolvedModelMapping const&);
 
-    DGNDBSYNC_EXPORT DgnSubCategoryId FindSubCategory(uint32_t v8levelid, V8ModelSource, Level::Type ltype);
-    DGNDBSYNC_EXPORT DgnSubCategoryId FindSubCategory(uint32_t v8levelId, V8FileSyncInfoId, Level::Type ltype);
-    DGNDBSYNC_EXPORT DgnCategoryId FindCategory(uint32_t v8levelId, V8FileSyncInfoId, Level::Type ltype);
+    DGNDBSYNC_EXPORT DgnSubCategoryId FindSubCategory(uint32_t v8levelid, DgnV8ModelCR, LevelExternalSourceAspect::Type ltype);
+    DGNDBSYNC_EXPORT DgnSubCategoryId FindSubCategory(uint32_t v8levelId, DgnV8FileR, LevelExternalSourceAspect::Type ltype);
+    DGNDBSYNC_EXPORT DgnCategoryId FindCategory(uint32_t v8levelId, DgnV8FileR, LevelExternalSourceAspect::Type ltype);
+
+    BentleyStatus FindFirstSubCategory (DgnSubCategoryId& glid, BeSQLite::Db&, DgnV8ModelCR v8Model, uint32_t flid, LevelExternalSourceAspect::Type ltype)
+        {
+        return LevelExternalSourceAspect::FindFirstSubCategory(glid, v8Model, flid, ltype, m_converter);
+        }
 
     //! Query sync info for a v8 font in the current v8 file.
     DGNDBSYNC_EXPORT DgnFontId FindFont(V8FontId oldId);
@@ -801,169 +494,62 @@ public:
 
     //! @name ECSchemas
     //! @{
-    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertECSchema(ECN::ECSchemaId&, DgnV8FileR, Utf8CP v8SchemaName, uint32_t v8SchemaVersionMajor, uint32_t v8SchemaVersionMinor, bool isDynamic, uint32_t checksum) const;
-    DGNDBSYNC_EXPORT bool TryGetECSchema(ECObjectsV8::SchemaKey&, ECSchemaMappingType&, Utf8CP v8SchemaName, V8FileSyncInfoId fileId) const;
+
+    enum class ECSchemaMappingType
+        {
+        Identity = 1, //!< Mapped as is
+        Dynamic = 2 //!< if multiple dynamic schemas exist, they will be merged during conversion
+        };
+
+    //! Adds an entry for this schema
+    //! @param[in] repositoryId - ElementId of the repository (DgnV8 file) that this schema was found in
+    //! @param[in] schemaName - Name of the schema
+    //! @param[in] v8SchemaVersionMajor - major version of the schema
+    //! @param[in] v8SchemaVersionMinor - minor version of the schema
+    //! @param[in] isDynamic - Whether this is a dynamic schema or not
+    //! @param[in] checksum - (V8) calculated checksum
+    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertSchema(BentleyApi::ECN::ECSchemaId& insertedSchemaId, DgnElementId repositoryId, Utf8StringCR schemaName, uint32_t v8SchemaVersionMajor, uint32_t v8SchemaVersionMinor,
+                                                     bool isDynamic, uint32_t checksum);
+
+    //! Returns information about the given schema.  If a scope (repositoryId representing the V8 file) is given, will only look in that repository.  Otherwise, will just check to see if 
+    //! that schema has been synced and return information about the first found
+    //! @param[out] versionMajor - major schema version of the found schema
+    //! @param[out] versionMinor - minor schema version of the found schema
+    //! @param[out] isDynamic - whether the found schema is dynamic or not
+    //! @param[out] checksum - (V8) calculated checksum of the found schema
+    //! @param[in] schemaName - Schema to look for
+    //! @param[in] scope - limit query to only this scope (optional)
+    DGNDBSYNC_EXPORT bool TryGetECSchema(ECObjectsV8::SchemaKey&, ECSchemaMappingType&, Utf8StringCR schemaName, DgnElementId scope = DgnElementId());
+
     DGNDBSYNC_EXPORT bool ContainsECSchema(Utf8CP v8SchemaName) const;
-    DGNDBSYNC_EXPORT BeSQLite::DbResult RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, V8FileSyncInfoId fileId) const;
+
+    //! For a give file, will return all of the schema names and checksums in that file
+    //! @param[out] syncInfoChecksums - map of schemaname:checksum pairs
+    //! @param[in]  fileId - The file to query
+    DGNDBSYNC_EXPORT BeSQLite::DbResult RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, RepositoryLinkId fileId);
     //! @}
 
     //! @name NamedGroups - The index is dropped on the ElementRefersToElements table while inserting named group members.  This was to allow for fast inserts, but as a result, lookups are slow and so
-    //! the converter can no longer check for an existing entry before calling ElementGroupsElement::Insert.  Therefore, we use an indexed table in SyncInfo for checking whether an element is already a
+    //! the converter can no longer check for an existing entry before calling ElementGroupsElement::Insert.  Therefore, we use a temporary indexed table for checking whether an element is already a
     //! member of the given group.
     //! @{
-
-    //! If doing an update against an older syncinfo table, the NamedGroup table won't exist.  This will check for its existence.  If it doesn't exist, it will create it and populate it from the
-    //! ElementRefersToElements table in the dgndb
-    DGNDBSYNC_EXPORT BentleyStatus CheckNamedGroupTable();
 
     //! Check to see if the given element is already a member of the group
     //! @param[in] sourceId - ElementId of the group owner
     //! @param[in] targetId - ElementId of the potential new member element
     //! @return true if the element is already a member of the group
     DGNDBSYNC_EXPORT bool IsElementInNamedGroup(DgnElementId sourceId, DgnElementId targetId);
-
-    //! Adds the given element to the group.
-    //! @param[in] sourceId - ElementId of the group owner
-    //! @param[in] targetId - ElementId of the new member element
-    DGNDBSYNC_EXPORT BentleyStatus AddNamedGroupEntry(DgnElementId sourceId, DgnElementId targetId);
-
-    //! Insertions are stored in a temporary table.  Upon completion of processing the named groups, the temp table must be merged into the SyncInfo table.
-    DGNDBSYNC_EXPORT BentleyStatus FinalizeNamedGroups();
     //! @}
-
-    //! Checks to see if the View syncinfo table exists.  This is only necessary when updating imodels created early during the EAP process.  Will create the table if it doesn't exist
-    bool EnsureImageryTableExists();
-
-    //! Record the provenance for reality data (raster, PointCloud, ThreeMx, ScalableMesh, etc.  
-    //! @param[in] modeledElementId - ElementId that models this element.  Only one entry per elementId is allowed
-    //! @param[in] filename - Filename (or URL) to the imagery
-    //! @param[in] lastModifiedTime - Time the file was last modified
-    //! @param[in] fileSize - Size of the image file
-    //! @param[in] etag - Unique marker for a file that is changed by the webserver whenever the file is changed
-    //! @param[in] rdsId - Guid from the reality data server
-    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertImageryFile(DgnElementId modeledElementId, V8FileSyncInfoId filesiid, Utf8CP filename, uint64_t lastModifiedTime, uint64_t fileSize, Utf8CP etag, Utf8CP rdsId);
 
     //! Checks to see if the given V8File has any associated image files and if so, checks each one to see if it has changed
     //! @param[in] fileId - SyncInfo id of the V8File
-    DGNDBSYNC_EXPORT bool ModelHasChangedImagery(V8FileSyncInfoId fileId);
+    DGNDBSYNC_EXPORT bool FileHasChangedUriContent(RepositoryLinkId fileId);
 
-    //! Looks for an entry for the given modeledElementId
-    //! @param[in] modeledElementId - ElementId of the model to look for
-    //! @param[out] lastModifiedTime - last modified time of the imagery
-    //! @param[out] fileSize - size of the imagery file
-    //! @param[out] etag - Unique marker for a file that is changed by the webserver whenever the file is changed
-    //! @param[out] rdsId - Guid from the reality data server
-    DGNDBSYNC_EXPORT bool TryFindImageryFile(DgnElementId modeledElementId, Utf8StringR filename, uint64_t& lastModifiedTime, uint64_t &fileSize, Utf8StringR etag, Utf8StringR rdsId);
-
-    //! Updates the entry for an imagery file
-    //! @param[in] modeledElementId - ElementId of the model to look for
-    //! @param[in] lastModifiedTime - last modified time of the imagery
-    //! @param[in] fileSize - size of the imagery file
-    //! @param[in] etag - Unique marker for a file that is changed by the webserver whenever the file is changed
-    //! @param[in] rdsId - Guid from the reality data server
-    DGNDBSYNC_EXPORT BeSQLite::DbResult UpdateImageryFile(DgnElementId modeledElementId, uint64_t lastModifiedTime, uint64_t fileSize, Utf8CP etag, Utf8CP rdsId);
-
-    //! Given a filename, will get the current info about the file
-    //! @param[in] filename - Path to either local file or the URL of the imagery
-    //! @param[in] currentModifiedTime - last modified time if a local file
-    //! @param[in] currentFileSize - file size of a local file
-    //! @param[in] currentEtag - Web server's unique marker for the given URL
-    DGNDBSYNC_EXPORT void GetCurrentImageryInfo(Utf8StringCR filename, uint64_t& currentLastModifiedTime, uint64_t& currentFileSize, Utf8StringR currentEtag);
+    //! Checks to see if the given element a) is based on remote imagery data, and if so b) has the remote data changed.
+    //! Returns false if the element is not based on remote imagery data.
+    DGNDBSYNC_EXPORT bool HasUriContentChanged(DgnElementId eid);
 
     Converter& GetConverter() const {return m_converter;}
-
-    //! Create sync info for a DgnV8 model
-    //! @param[out] minfo   The newly inserted sync info for the model
-    //! @param[in] modelid The model in the DgnDb to which this v8 model is mapped
-    //! @param[in] v8model The "v8" DgnV8 model
-    //! @param[in] transform The transform from the v8 model to the DgnDb model
-    //! @return non-zero error status if the new sync info could not be created
-    //! @note that many DgnV8 models may be mapped into a single DgnDb model.
-    DGNDBSYNC_EXPORT BentleyStatus InsertModel(V8ModelMapping& minfo, DgnModelId modelId, DgnV8ModelCR v8model, TransformCR transform);
-
-    DGNDBSYNC_EXPORT BentleyStatus FindModel(V8ModelMapping* mapping, DgnV8ModelCR v8Model, TransformCP modelTrans, StableIdPolicy idPolicy);
-
-    DGNDBSYNC_EXPORT BentleyStatus GetModelBySyncInfoId(V8ModelMapping& mapping, V8ModelSyncInfoId modelsiid);
-
-    DGNDBSYNC_EXPORT DgnV8Api::ModelId GetV8ModelIdFromV8ModelSyncInfoId(V8ModelSyncInfoId msiid);
-
-    //! Record a mapping between a DgnV8 element and a DgnDb entity
-    //! @param[in] mapping  The mapping to insert
-    //! @return Non-zero error status if the insert fails
-    //! @note You cannot change the mapping between DgnV8 element and BIM element in an update. You must do delete and add.
-    DGNDBSYNC_EXPORT BentleyStatus InsertElement(V8ElementMapping const& mapping);
-
-    //! Update the provenance stored for the specified element in syncinfo
-    //! @param[in] mapping  The element to update, including the new provenance info to write
-    //! @return The V8ElementMapping if the insert to syncinfo succeeds or an invalid mapping if it failed.
-    DGNDBSYNC_EXPORT BentleyStatus UpdateElement(V8ElementMapping const& mapping);
-
-    //! Check if the specified BIM element is mapped to the same V8 element as any element in the specified set.
-    DGNDBSYNC_EXPORT bool IsMappedToSameV8Element(DgnElementId, DgnElementIdSet const&) const;
-
-    // *** NEEDS WORK
-    DGNDBSYNC_EXPORT bool TryFindElement(DgnElementId&, DgnV8EhCR el) const;
-
-    // ExtractedGraphics: 1 DrawingGraphic per (V8 element and CategoryId)
-    //! Record a mapping between a DrawingGraphic and the V8 element that it was derived from. 
-    DGNDBSYNC_EXPORT BentleyStatus InsertExtractedGraphic(V8ElementSource const& attachment,
-                                                          V8ElementSource const& originalElement,
-                                                          DgnCategoryId categoryId, DgnElementId extractedGraphic);
-    //! Delete mappings for all extracted graphics associated with the specified V8 element.
-    DGNDBSYNC_EXPORT BentleyStatus DeleteExtractedGraphics(V8ElementSource const& attachment,
-                                                           V8ElementSource const& originalElement);
-    //! Delete mappings for all extracted graphics associated with the specified V8 element and category.
-    DGNDBSYNC_EXPORT BentleyStatus DeleteExtractedGraphicsCategory(V8ElementSource const& attachment,
-                                                                   V8ElementSource const& originalElement,
-                                                                   DgnCategoryId category);
-    //! Return the DrawingGraphic that was derived from the specified V8 element. 
-    DGNDBSYNC_EXPORT DgnElementId FindExtractedGraphic(V8ElementSource const& attachment,
-                                                       V8ElementSource const& originalElement,
-                                                       DgnCategoryId categoryId);
-
-    //! Record a mapping between a DgnV8 View and a DgnDb ID
-    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewInfo, Utf8CP viewName);
-
-    //! Looks to see if this view has already been converted
-    DGNDBSYNC_EXPORT bool TryFindView(DgnViewId&, double& lastModified, Utf8StringR v8ViewName, DgnV8ViewInfoCR viewInfo) const;
-
-    //! Removes a mapping for a view that has been deleted
-    DGNDBSYNC_EXPORT BeSQLite::DbResult DeleteView(DgnViewId viewId);
-
-    //! Updates the information for a previously recorded view mapping
-    DGNDBSYNC_EXPORT BeSQLite::DbResult UpdateView(DgnViewId viewId, Utf8CP v8ViewName, DgnV8ViewInfoCR viewInfo);
-
-    //! Checks to see if the View syncinfo table exists.
-    DGNDBSYNC_EXPORT void ValidateViewTable();
-
-    //! Record sync info for a level.
-    //! @param[out] info        Sync info for the level
-    //! @param[in]  glevelId    The level's ID in the DgnDb
-    //! @param[in]  fmid        If the level is to be used only by elements in a single model, then \a fmid should identify the model. If the level is to be
-    //! used by elements in any model in the current v8 file, then pass (-1)
-    //! @param[in]  vlevel      The V8 level that was converted
-    //! @return non-zero error status if the level could not be inserted in sync info. This would probably be caused by a non-unique name.
-    //! @note reports an issue in insertion fails.
-    DGNDBSYNC_EXPORT Level InsertLevel(DgnSubCategoryId glevelId, V8ModelSource, DgnV8Api::LevelHandle const& vlevel);
-
-    //! @name ImportJobs - When we convert a DgnV8-based project and store its contents in a DgnDb, that's an "import job".
-    //! A given DgnDb can built up by many import jobs. We keep track of import jobs so that we can find them when doing an update from the source V8 files later.
-    //! @see ImportJobIterator
-    //! @{
-
-    //! Look up a record in the ImportJob table
-    //! @param[out] importJob       The import job data, if found
-    //! @param[in] modelsiid    Identifies the V8 root model in syncinfo
-    DGNDBSYNC_EXPORT BentleyStatus FindImportJobByV8RootModelId(ImportJob& importJob, V8ModelSyncInfoId modelsiid);
-
-    //! Record the fact that the specified importJob has been converted and stored in the DgnDb
-    //! @param importJob    The importJob info to insert
-    DGNDBSYNC_EXPORT BentleyStatus InsertImportJob(ImportJob const& importJob);
-
-    //! Update the import job's transform, prefix, and subjectid.
-    //! @param importJob    The importJob info to update
-    DGNDBSYNC_EXPORT BentleyStatus UpdateImportJob(ImportJob const& importJob);
-    //! @}
     };
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

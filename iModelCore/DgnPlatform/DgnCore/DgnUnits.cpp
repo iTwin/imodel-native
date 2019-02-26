@@ -202,16 +202,18 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
         return;
         }
 
+    m_ecefLocation.m_isValid = !m_extent.IsEmpty() && newExtents.IsEqual(m_extent, 1.e-6);
+
+    if(m_ecefLocation.m_isValid) return;
+
     m_extent = newExtents;
     Json::Value jsonObj;
     JsonUtils::DRange3dToJson(jsonObj, m_extent);
     m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.ToString());
 
-    if (!m_ecefLocation.m_isValid)
-        {
-        GetEcefLocation(); // try to calculate the EcefLocation if it isn't set yet.
-        Save();
-        }
+    // Extent has changed; recompute ecef location
+    GetEcefLocation();
+    Save();
 
     for (auto const& kvp : m_dgndb.Models().GetLoadedModels())
         {

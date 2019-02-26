@@ -99,7 +99,7 @@ namespace RealityPackageNet
 
             //! Get/Set the visibility tag. Tag values are limited. See C++ class for details.
             System::String^ GetVisibilityTag();
-            void SetVisibilityTag(System::String^ visibilityTag);
+            void SetVisibilityByTag(System::String^ visibilityTag);
 
             //! Get/Set the size in kilobytes. Default to 0.
             uint64_t GetSize();
