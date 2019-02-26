@@ -364,6 +364,34 @@ ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IE
     return ECN::ECObjectsStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// CalculatedPropertyConverter                                   Carole.MacDonald            01/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+struct CalculatedPropertyConverter : ECN::IECCustomAttributeConverter
+    {
+    public:
+        ECN::ECObjectsStatus Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance, ECN::ECSchemaReadContextP context);
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+ECN::ECObjectsStatus CalculatedPropertyConverter::Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance, ECN::ECSchemaReadContextP context)
+    {
+    ECN::ECValue v;
+    if (ECN::ECObjectsStatus::Success == instance.GetValue(v, "ECExpression") && !v.IsNull())
+        {
+        Utf8String expression = v.GetUtf8CP();
+        if (!expression.Contains("GetRelatedInstance"))
+            container.RemoveCustomAttribute(instance.GetClass());
+        }
+    else
+        container.RemoveCustomAttribute(instance.GetClass());
+    return ECN::ECObjectsStatus::Success;
+    }
+
+
+
 //****************************************************************************************
 // ECClassName
 //****************************************************************************************
@@ -1350,6 +1378,10 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 
      ECN::IECCustomAttributeConverterPtr extendType = new ExtendTypeConverter(standard, angle);
      ECN::ECSchemaConverter::AddConverter("EditorCustomAttributes", EXTEND_TYPE, extendType);
+
+     ECN::IECCustomAttributeConverterPtr calc = new CalculatedPropertyConverter();
+     ECN::ECSchemaConverter::AddConverter("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification", calc);
+
      ECN::ECSchemaPtr coreSchema = ECN::CoreCustomAttributeHelper::GetSchema();
      for (BECN::ECSchemaP schema : schemas)
          {
