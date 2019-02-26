@@ -20,8 +20,6 @@ struct ORDBridge : Dgn::iModelBridgeWithSyncInfoBase
     DEFINE_T_SUPER(Dgn::iModelBridgeWithSyncInfoBase)
 
 private:    
-    BentleyStatus CreateSyncInfoIfNecessary();
-
     Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams m_params;
     ORDConverter* m_converter;
     bool m_isUnitTesting;
@@ -49,7 +47,6 @@ public:
     virtual Dgn::SubjectCPtr _InitializeJob() override;
     virtual Dgn::SubjectCPtr _FindJob() override;
     virtual void _OnDocumentDeleted(Utf8StringCR documentId, Dgn::iModelBridgeSyncInfoFile::ROWID documentSyncId) override;
-    virtual void _DeleteSyncInfo() override;
 
     virtual BentleyStatus _MakeSchemaChanges() override;
     virtual BentleyStatus _OnOpenBim(Dgn::DgnDbR db) override;

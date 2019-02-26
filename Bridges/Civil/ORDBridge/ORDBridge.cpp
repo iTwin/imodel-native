@@ -318,23 +318,6 @@ BentleyStatus ORDBridge::_MakeSchemaChanges()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ORDBridge::CreateSyncInfoIfNecessary()
-    {
-    //  If I am creating a new local file or if I just acquired a briefcase for an existing repository, then I will have to bootstrap syncinfo.
-    if (!DgnDbSync::DgnV8::SyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()).DoesPathExist())
-        {
-        if (BSISUCCESS != DgnDbSync::DgnV8::SyncInfo::CreateEmptyFile(DgnDbSync::DgnV8::SyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()))) // Bootstrap the V8 converter by pairing an empty syncinfo file with the briefcase
-            return BSIERROR;
-        }
-
-    BeAssert(DgnDbSync::DgnV8::SyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()).DoesPathExist());
-
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ORDBridge::_OnOpenBim(DgnDbR db)
     {
     //if (m_converter != nullptr)
@@ -344,7 +327,6 @@ BentleyStatus ORDBridge::_OnOpenBim(DgnDbR db)
         m_converter = new ORDConverter(m_params);
         }
     m_converter->SetDgnDb(db);
-    CreateSyncInfoIfNecessary();
     if (BentleyStatus::SUCCESS != m_converter->AttachSyncInfo())
         return BentleyStatus::ERROR;
 
@@ -384,20 +366,6 @@ BentleyStatus ORDBridge::_DetectDeletedDocuments()
     m_converter->_DetectDeletedDocuments();
 
     return m_converter->WasAborted() ? BSIERROR : BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carl.Hinkle                      01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ORDBridge::_DeleteSyncInfo()
-    {
-    T_Super::_DeleteSyncInfo();
-
-    BeFileName briefcaseName = _GetParams().GetBriefcaseName();
-    briefcaseName = briefcaseName.AppendExtension(L"syncinfo");
-    if (!briefcaseName.DoesPathExist())
-        return;
-    briefcaseName.BeDeleteFile();
     }
 
 END_ORDBRIDGE_NAMESPACE
