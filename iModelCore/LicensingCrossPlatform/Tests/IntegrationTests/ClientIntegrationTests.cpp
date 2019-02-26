@@ -83,45 +83,68 @@ public:
         }
     };
 
-// BeFileName GetUsageDbPath()
-//     {
-//     BeFileName path;
-//     BeTest::GetHost().GetTempDir(path);
-//     path.AppendToPath(L"License.db");
+ BeFileName GetUsageDbPathIntegration()
+     {
+     BeFileName path;
+     BeTest::GetHost().GetTempDir(path);
+     path.AppendToPath(L"License.db");
 
-//     return path;
-//     }
+     return path;
+     }
 
-// ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider)
-//     {
-//     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-//     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
+ ClientPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+ {
+	 InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+	 UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
-//     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+	 auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
-//     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-//     auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
-//     if (signIn)
-//         {
-//         Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
-//         if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
-//             return nullptr;
-//         }
-//     BeFileName dbPath = GetUsageDbPath();
+	 auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+	 auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
+	 if (signIn)
+	 {
+		 Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
+		 if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
+			 return nullptr;
+	 }
+	 BeFileName dbPath = GetUsageDbPathIntegration();
 
-//     return std::make_shared<ClientImpl>(
-//         manager->GetUserInfo(),
-//         clientInfo,
-//         manager,
-//         dbPath,
-//         true,
-//         buddiProvider,
-//         policyProvider,
-//         ulasProvider,
-//         "",
-//         "",
-//         proxy);
-//     }
+	 auto client = Client::Create(manager->GetUserInfo(),
+		 clientInfo,
+		 manager,
+		 dbPath,
+		 true,
+		 "",
+		 "",
+		 proxy);
+
+	 return std::shared_ptr<Client>(client);
+
+	 //auto client = Client::Create(manager->GetUserInfo(),
+		// clientInfo,
+		// manager,
+		// dbPath,
+		// true,
+		// "",
+		// "",
+		// proxy);
+
+	 //return std::shared_ptr<Client>(client);
+
+	 /*return std::make_shared<Client>(Client::Create(manager->GetUserInfo(),
+		 clientInfo,
+		 manager,
+		 dbPath,
+		 true,
+		 "",
+		 "",
+		 proxy));*/
+ }
+
+ ClientPtr CreateTestClient(bool signIn)
+     {
+	 return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+     }
 
 // FreeClientImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider)
 //     {
@@ -245,10 +268,10 @@ public:
 //     return CreateFreeTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider);
 //     }
 
-// FreeClientPtr CreateFreeTestClientFromFactory(bool signIn)
-//     {
-//     return CreateFreeTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
-//     }
+ //FreeClientPtr CreateFreeTestClientFromFactory(bool signIn)
+ //    {
+ //    return CreateFreeTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+ //    }
 
 // ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IUlasProviderPtr ulasProvider)
 //     {
@@ -260,15 +283,15 @@ public:
 //     return CreateWithKeyTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
 //     }
 
-// /*--------------------------------------------------------------------------------------+
-// * @bsimethod
-// +---------------+---------------+---------------+---------------+---------------+------*/
-// ClientTests::ClientTests() :
-//     m_handler(std::make_shared<MockHttpHandler>()),
-//     m_buddiProviderMock(std::make_shared<BuddiProviderMock>()),
-//     m_policyProviderMock(std::make_shared<PolicyProviderMock>()),
-//     m_ulasProviderMock(std::make_shared<UlasProviderMock>())
-//     {}
+ ///*--------------------------------------------------------------------------------------+
+ //* @bsimethod
+ //+---------------+---------------+---------------+---------------+---------------+------*/
+ //ClientIntegrationTests::ClientIntegrationTests() :
+ //    m_handler(std::make_shared<IHttpHandler>()),
+ //    m_buddiProvider(std::make_shared<IBuddiProvider>()),
+ //    m_policyProvider(std::make_shared<IPolicyProvider>()),
+ //    m_ulasProvider(std::make_shared<IUlasProvider>())
+ //    {}
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -282,61 +305,61 @@ ClientIntegrationTests::ClientIntegrationTests() {}
 //     return *m_handler;
 //     }
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<MockHttpHandler> ClientIntegrationTests::GetHandlerPtr() const
-    {
-    return m_handler;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-BuddiProviderMock&  ClientIntegrationTests::GetBuddiProviderMock() const
-    {
-    return *m_buddiProviderMock;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<BuddiProviderMock> ClientIntegrationTests::GetBuddiProviderMockPtr() const
-    {
-    return m_buddiProviderMock;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-PolicyProviderMock&  ClientIntegrationTests::GetPolicyProviderMock() const
-    {
-    return *m_policyProviderMock;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<PolicyProviderMock> ClientIntegrationTests::GetPolicyProviderMockPtr() const
-    {
-    return m_policyProviderMock;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-UlasProviderMock&  ClientIntegrationTests::GetUlasProviderMock() const
-    {
-    return *m_ulasProviderMock;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<UlasProviderMock> ClientIntegrationTests::GetUlasProviderMockPtr() const
-    {
-    return m_ulasProviderMock;
-    }
+///*--------------------------------------------------------------------------------------+
+//* @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//std::shared_ptr<IHttpHandler> ClientIntegrationTests::GetHandlerPtr() const
+//    {
+//    return m_handler;
+//    }
+//
+///*--------------------------------------------------------------------------------------+
+//* @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//IBuddiProvider&  ClientIntegrationTests::GetBuddiProvider() const
+//    {
+//    return *m_buddiProvider;
+//    }
+//
+///*--------------------------------------------------------------------------------------+
+//* @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//std::shared_ptr<IBuddiProvider> ClientIntegrationTests::GetBuddiProviderPtr() const
+//    {
+//    return m_buddiProvider;
+//    }
+//
+///*--------------------------------------------------------------------------------------+
+//* @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//IPolicyProvider&  ClientIntegrationTests::GetPolicyProvider() const
+//    {
+//    return *m_policyProvider;
+//    }
+//
+///*--------------------------------------------------------------------------------------+
+//* @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//std::shared_ptr<IPolicyProvider> ClientIntegrationTests::GetPolicyProviderPtr() const
+//    {
+//    return m_policyProvider;
+//    }
+//
+///*--------------------------------------------------------------------------------------+
+//* @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//IUlasProvider&  ClientIntegrationTests::GetUlasProvider() const
+//    {
+//    return *m_ulasProvider;
+//    }
+//
+///*--------------------------------------------------------------------------------------+
+//* @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//std::shared_ptr<IUlasProvider> ClientIntegrationTests::GetUlasProviderPtr() const
+//    {
+//    return m_ulasProvider;
+//    }
 
 
 /*--------------------------------------------------------------------------------------+
@@ -352,20 +375,27 @@ void ClientIntegrationTests::SetUpTestCase()
     // This is only an example of how to set logging severity and see info logs. Usually should be set more globally than in TestCase SetUp
     // NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
 
-    // BeFileName asssetsDir;
-    // BeTest::GetHost().GetDgnPlatformAssetsDirectory(asssetsDir);
-    // HttpClient::Initialize(asssetsDir);
+     BeFileName asssetsDir;
+     BeTest::GetHost().GetDgnPlatformAssetsDirectory(asssetsDir);
+     HttpClient::Initialize(asssetsDir);
 
-    // BeFileName tmpDir;
-    // BeTest::GetHost().GetTempDir(tmpDir);
-    // BeSQLiteLib::Initialize(tmpDir);
+     BeFileName tmpDir;
+     BeTest::GetHost().GetTempDir(tmpDir);
+     BeSQLiteLib::Initialize(tmpDir);
 
-    // BeFileName path;
-    // BeTest::GetHost().GetDgnPlatformAssetsDirectory(path);
-    // path.AppendToPath(L"sqlang/DgnClientFx_en.sqlang.db3");
+     BeFileName path;
+     BeTest::GetHost().GetDgnPlatformAssetsDirectory(path);
+     path.AppendToPath(L"sqlang/DgnClientFx_en.sqlang.db3");
 
-    // ASSERT_EQ(SUCCESS, L10N::Initialize(BeSQLite::L10N::SqlangFiles(path)));
+     ASSERT_EQ(SUCCESS, L10N::Initialize(BeSQLite::L10N::SqlangFiles(path)));
     }
+
+TEST_F(ClientIntegrationTests, StartApplication_StopApplication_Success)
+{
+	auto client = CreateTestClient(true);
+	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+	EXPECT_SUCCESS(client->StopApplication());
+}
 
 // Need to fix this to have mock return a valid policy (or reevaluate the logic here...)
 TEST_F(ClientIntegrationTests, Equality_Test)
