@@ -1391,3 +1391,76 @@ TEST_F(iModelBridgeTests, DISABLED_TestMultipleRootsSameSubject_ToyTile) // disa
 		ASSERT_STREQ(jobSubjects[0]->GetCode().GetValueUtf8CP(), "TestMultipleRootsSameSubject_ToyTile");
 		}
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelBridgeTests, LaunchDarklyQa)
+    {
+    auto bridgeRegSubKey = L"iModelBridgeTests_LDarkly_Bridge";
+
+    auto testDir = getiModelBridgeTestsOutputDir(L"LDarkly");
+
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
+
+    // I have to create a file that I represent as the bridge "library", so that the fwk's argument validation logic will see that it exists.
+    // The fwk won't try to load this file, since we will register a fake bridge.
+    BeFileName fakeBridgeName(testDir);
+    fakeBridgeName.AppendToPath(L"iModelBridgeTests-LDarkly");
+    BeFile fakeBridgeFile;
+    ASSERT_EQ(BeFileStatus::Success, fakeBridgeFile.Create(fakeBridgeName, true));
+    fakeBridgeFile.Close();
+
+    bvector<WString> args;
+    args.push_back(L"iModelBridgeTests.LDarkly");                                                 // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir.c_str()));
+    args.push_back(L"--server-environment=Qa");
+    args.push_back(L"--server-repository=iModelBridgeTests_LDarkly");                             // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(L"--server-project-guid=iModelBridgeTests_Project");                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(L"--fwk-create-repository-if-necessary");
+    args.push_back(L"--fwk-revision-comment=\"comment in quotes\"");
+    args.push_back(L"--server-user=username=username");                                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str()));     // must refer to a path that exists! 
+    args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());      // must be consistent with testRegistry.m_bridgeRegSubKey
+    BeFileName platformAssetsDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
+    args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
+    args.push_back(L"--fwk-input=Foo");
+
+    // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
+    TestIModelHubFwkClientForBridges testIModelHubClientForBridges(testDir);
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
+
+    // Register the test bridge that fwk should run
+    iModelBridgeTests_Test1_Bridge testBridge(testIModelHubClientForBridges);
+    iModelBridgeFwk::SetBridgeForTesting(testBridge);
+
+    BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(L"LDarklyAssignments.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
+
+    testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
+    iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
+
+    if (true)
+        {
+        testIModelHubClientForBridges.m_expect.push_back(false);// Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = false;
+        testBridge.m_expect.anyChanges = true;
+        testBridge.m_expect.anyDeleted = false;
+        // Ask the framework to run our test bridge to do the initial conversion and create the repo
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        testIModelHubClientForBridges.m_expect.clear();
+        }
+
+    bool abdTestFlag = testBridge.TestFeatureFlag("abd-bridge-dynamic-schema-style-properties-without-structs");
+    EXPECT_EQ(true, abdTestFlag);
+
+    }
