@@ -3,6 +3,12 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
     >
+        
+    <Part Name="BuildingSpatial" >
+      <SubPart PartName="BuildingSpatialElements"/>
+      <SubPart PartName="BuildingSpatialHandlers"/>
+      <SubPart PartName="BuildingSpatialSchema"/>
+    </Part>
 
     <Part Name="BuildingSpatialSchema" BentleyBuildMakeFile="BuildingSpatialSchema.prewire.mke">
         <SubPart PartName="SpatialCompositionSchema" Repository="DgnDomains-SpatialComposition" PartFile="SpatialComposition" />
@@ -15,6 +21,90 @@
         <SubPart PartName="SpatialCompositionElements" Repository="DgnDomains-SpatialComposition" PartFile="SpatialComposition" />
         <Bindings>
             <PublicAPI Domain="BuildingSpatial"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests/RunTests.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/BuildingSpatial-GtestProduct/BuildingSpatialTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+      <SubProduct ProductName="BuildingSpatial-GtestProduct" />
+      <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+      <Bindings>
+        <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BuildingSpatialTest.log</Files>
+      </Bindings>
+    </Part>
+
+    <Product Name="BuildingSpatial-GtestProduct" >
+      <SubPart PartName="BuildingSpatial-Gtest"/>
+      <Directories DirectoryListName="BuildingSpatialGTestDirectories"/>
+    </Product>
+    <ProductDirectoryList ListName="BuildingSpatialGTestDirectories">
+      <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+      <ProductDirectory Name="Gtest-NativeAssemblies" Path="" LibType="Static"/>
+      <ProductDirectory Name="Assemblies" Path=""/>
+      <ProductDirectory Name="Assemblies" Path="" LibType="Static"/>
+      <ProductDirectory Name="Assets" Path="Assets-g"/>
+      <ProductDirectory Name="Assets" Path="Assets-g" LibType="static"/>
+      <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
+      <ProductDirectory Name="Gtest-Assets" Path="Assets" LibType="Static"/>
+      <ProductDirectory Name="VendorNotices" Deliver="false" />
+      <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+      <ProductDirectory Name="UnitTests-Objects" Path="unittests" />
+    </ProductDirectoryList>
+
+    <Part Name="BuildingSpatial-Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke"
+      BentleyBuildMakeOptions="-dTEST_NAME=BuildingSpatialTest -dTEST_COLLECTION_PRODUCT=BuildingSpatial-TestsProduct -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+      <SubProduct ProductName="BuildingSpatial-TestsProduct"/>
+      <SubPart PartName="DgnClientSdk-TestHelpers" Repository="DgnClientFx" PartFile="DgnClientFx"/>
+      <Bindings>
+        <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/BuildingSpatialTest/Assemblies/*</Files>
+        <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/BuildingSpatialTest/Assets" />
+      </Bindings>
+    </Part>
+
+    <Product Name="BuildingSpatial-TestsProduct">
+      <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+      <SubPart PartName="BuildingSpatial-Tests"/>
+      <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+      <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="BuildingSpatial-Tests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+      <SubPart PartName="BuildSharedTestUtils" PartFile="BuildingShared" Repository="BuildingShared" />
+      <SubPart PartName="PrewireForUnitTests"/>
+      <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
+      <SubPart PartName="BuildingSpatial"/>
+      <SubPart PartName="BuildingSpatialDomain"/>
+      <SubPart PartName="ClassificationSystemsDomain" Repository="DgnDomains-ClassificationSystems" PartFile="ClassificationSystems"/>
+      <Bindings>
+        <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="BuildingSpatial/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+          <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/BuildingSpatial_en.sqlang.db3</Files>
+      </Bindings>
+    </Part>
+
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+      <Bindings>
+        <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="BuildingSpatial">
+          Delivery/UnitTests/ignore_list.txt
+        </Files>
+      </Bindings>
+    </Part>
+    
+    <Part Name="BuildingSpatialHandlers" BentleyBuildMakeFile="Handlers/BuildingSpatialHandlers.mke">
+        <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx"/>
+        <SubPart PartName="BuildingSpatialElements"/>
+        <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingSpatialHandlers$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingSpatialHandlers$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="BuildingSpatialDomain" BentleyBuildMakeFile="Domain/BuildingSpatialDomain.mke">
+        <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx"/>
+        <SubPart PartName="BuildingSpatialSchema" />
+        <SubPart PartName="BuildingSpatialHandlers"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingSpatialDomain$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingSpatialDomain$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
