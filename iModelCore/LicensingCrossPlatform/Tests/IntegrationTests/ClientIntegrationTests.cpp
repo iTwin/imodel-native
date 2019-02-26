@@ -109,36 +109,14 @@ public:
 	 }
 	 BeFileName dbPath = GetUsageDbPathIntegration();
 
-	 auto client = Client::Create(manager->GetUserInfo(),
+	 return std::shared_ptr<Client>(Client::Create(manager->GetUserInfo(),
 		 clientInfo,
 		 manager,
 		 dbPath,
 		 true,
 		 "",
 		 "",
-		 proxy);
-
-	 return std::shared_ptr<Client>(client);
-
-	 //auto client = Client::Create(manager->GetUserInfo(),
-		// clientInfo,
-		// manager,
-		// dbPath,
-		// true,
-		// "",
-		// "",
-		// proxy);
-
-	 //return std::shared_ptr<Client>(client);
-
-	 /*return std::make_shared<Client>(Client::Create(manager->GetUserInfo(),
-		 clientInfo,
-		 manager,
-		 dbPath,
-		 true,
-		 "",
-		 "",
-		 proxy));*/
+		 proxy));
  }
 
  ClientPtr CreateTestClient(bool signIn)
