@@ -103,9 +103,14 @@ def RepoForComp(compToFind):
     for comp in Components:
         if comp.lower() == compToFind.lower():
             if 'repo' in Components[comp].keys():
-                return Components[comp]['repo']
+                repo = Components[comp]['repo']
+                repoPath = os.getenv('SrcRoot')
+                for path in repo:
+                    repoPath = os.path.join(repoPath, path)
+                return repoPath
             else:
-                return  os.path.join(os.getenv('SrcRoot'),'imodel02', 'iModelCore', compToFind)
+                repoPath = os.path.join(os.getenv('SrcRoot'),'imodel02', 'iModelCore', compToFind)
+                return repoPath
     
 def LogPathForComp(compToFind):
     exeName = ExeForComp(compToFind)
@@ -169,20 +174,18 @@ def findstream():
     return streamName
 
 def RepoPathForComp(compToFind):
-    repo = RepoForComp(compToFind)
+    repoPath = RepoForComp(compToFind)
     stream = findstream()
     srcRoot = os.getenv('SrcRoot')
-    if repo is None:
+    if repoPath is None:
         if stream == "imodel02":
             repoPath = os.path.join(srcRoot,'imodel02', 'iModelCore' ,compToFind)
             print "Stream: " + str(stream)
         else:
             repoPath = os.path.join(srcRoot ,compToFind)
     else:
-        repoPath = srcRoot
-        for path in repo:
-            repoPath = os.path.join(repoPath, path)
-            print "Stream: " + str(stream)
+        print "Repository Path = " + str(repoPath)
+        print "Stream: " + str(stream)
     return repoPath
     
 def TiaMapPathForComp(compToFind):
