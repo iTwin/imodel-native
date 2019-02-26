@@ -18,6 +18,7 @@
         <SubPart PartName="MstnBridgeInstallFiles"/>
         <SubPart PartName="DgnV8ConverterExe" PartFile="DgnDbSync" Repository="DgnDbSync"/>
         <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="MakePackages" PartFile="bridge-addon" Repository="DgnDbSync"/>
         <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
         
         <InstallerWixFile SourceFile="Installer/MstnBridgeInstaller"/>
