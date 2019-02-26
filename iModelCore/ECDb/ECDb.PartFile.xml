@@ -70,18 +70,6 @@
         </Bindings>
     </Part>
 
-    <!-- *********************************************************** -->
-    <!-- **** NuGet package creation                            **** -->
-    <!-- *********************************************************** -->
-    <Part Name="NuGetPackage" DeferType="BuildSamples" BentleyBuildMakeFile="BeSQLiteEC.NuGetPackage.mke" OnlyPlatforms="x64">
-        <RequiredRepository>bsitools-nuget</RequiredRepository>
-        <SubPart PartName="ECDbLibrary" />
-        <SubPart PartName="PublishedApi" />
-        <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\BeSQLiteEC\BeSQLiteEC.*.nupkg</Files>
-        </Bindings>
-    </Part>
-    
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <SubPart PartName="ECDb"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>

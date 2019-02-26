@@ -327,33 +327,6 @@
         <ProductDirectory Name="ManagedUtilities" Path="ECSchemaUtility"/>
     </ProductDirectoryList>
 
-    <!-- *********************************************************** -->
-    <!-- **** NuGet package creation                            **** -->
-    <!-- *********************************************************** -->
-    <Part Name="NuGetPackage" DeferType="BuildSamples" BMakeFile="install\ecobjects.NuGetPackage.mke"  OnlyPlatforms="x64">
-        <RequiredRepository>bsitools-nuget</RequiredRepository>
-        <SubProduct ProductName="ECObjects"/>
-        <SubPart PartName="ECObjectsNative" />
-        <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\ecobjects\ecobjects.*.nupkg</Files>
-        </Bindings>
-    </Part>
-
-    <NuGetProduct Name="ECObjectsToolsNuGet" OnlyPlatforms="x64" Description="ECObjects Tools for schema validation, comparison, etc">
-        <SubPart PartName="SchemaConverter" />
-        <SubPart PartName="SchemaResourceGenerator" />
-        <SubPart PartName="SchemaRoundtrip" />
-        <SubPart PartName="SchemaValidator"/>
-        <SubPart PartName="SchemaComparison" />
-        <SubPart PartName="SchemaJsonSerializer" />
-        <SubProduct ProductName="ECObjects"/>
-        <Directories DirectoryListName="ECObjectsToolsNuGet" />
-    </NuGetProduct>
-
-    <Part Name="ECObjectsToolsNuGet-TopLevel" PrgOutputDir="ECObjectsTools">
-        <SubNuGetProduct NuGetProductName="ECObjectsToolsNuGet" />
-    </Part>
-
     <!-- *************** -->
     <!-- **** Tools **** -->
     <!-- *************** -->

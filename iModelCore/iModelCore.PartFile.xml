@@ -121,11 +121,6 @@
     <Part Name="__ParasiteSubParts_DcsX64Parts" OnlyPlatforms="x64">
         <SubProduct ProductName="IModelExtractor" PartFile="iModelCore/BeSQLite/IModelExtractor" Repository="imodel02"/>
         <SubProduct ProductName="iModelConsole" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
-
-        <SubPart PartName="NuGetPackage" PartFile="iModelCore/ecobjects/ecobjects" Repository="imodel02"/>
-        <SubPart PartName="NuGetPackage" PartFile="iModelCore/ECDb/ecdb" Repository="imodel02"/>
-        <SubPart PartName="NuGetPackage" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
-        <SubPart PartName="NuGetPackage" PartFile="iModelCore/DgnPlatform/dgnplatform" Repository="imodel02"/>
     </Part>
 
 </BuildContext>

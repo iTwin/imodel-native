@@ -791,37 +791,4 @@
        <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices" LibType="Static"/>
     </ProductDirectoryList>
 
-    <!-- *********************************************************** -->
-    <!-- **** NuGet package creation                            **** -->
-    <!-- *********************************************************** -->
-    <Part Name="NuGetPackage" BentleyBuildMakeFile="DgnPlatform.NuGetPackage.mke" OnlyPlatforms="x64">
-        <RequiredRepository>bsitools-nuget</RequiredRepository>
-        <SubProduct ProductName="__DgnPlatform-NuGet"/>
-        <SubPart PartName="DgnPlatformDLL" />
-        <SubPart PartName="PublishedAPI"/>
-        <SubPart PartName="DgnPlatformSqlang" />
-        <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\DgnPlatform\DgnPlatform.*.nupkg</Files>
-        </Bindings>
-    </Part>
-
-    <Product Name="__DgnPlatform-NuGet" >
-        <SubPart PartName="DgnPlatformDLL" />
-        <SubPart PartName="PublishedAPI"/>
-        <SubPart PartName="DgnPlatformSqlang" />
-        <Directories DirectoryListName="DgnPlatformDirList"/>
-    </Product>
-    
-    <ProductDirectoryList ListName="DgnPlatformDirList" >
-        <ProductDirectory Name="ApplicationRoot"            Path=""/>
-        <ProductDirectory Name="Assemblies"                                 RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="Assemblies" LibType="Static"                RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="Assets"                     Path="Assets"   RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="Assets"                     Path="Assets"   RelativeTo="ApplicationRoot" LibType="static" />
-        <ProductDirectory Name="Libs"                       Path="libs"/>
-        <ProductDirectory Name="VendorNotices"              Path="Notices"  RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="VendorNotices"              Path="Notices"  RelativeTo="ApplicationRoot" LibType="Static"/>
-        <ProductDirectory Name="PublishedApi"               Path="PublishedApi"/>
-    </ProductDirectoryList>
-
 </BuildContext>

@@ -43,17 +43,6 @@
     </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <!-- // NuGet package creation                                                 // -->
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <Part Name="NuGetPackage" BentleyBuildMakeFile="ECPresentation.NuGetPackage.mke" OnlyPlatforms="x64">
-        <RequiredRepository>bsitools-nuget</RequiredRepository>
-        <SubPart PartName="ECPresentation" />
-        <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\ECPresentation\ECPresentation.*.nupkg</Files>
-        </Bindings>
-    </Part>
-
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // Documentation                                                          // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <Part Name="Docs" DeferType="BuildDocs" BentleyBuildMakeFile="Docs/Prewire.mke">
