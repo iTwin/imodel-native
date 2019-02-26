@@ -547,8 +547,6 @@ Utf8String DgnResourceURI::GetFragment() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus makeElementByProvenance(Utf8StringR uriStr, DgnElementCR el)
     {
-    DgnDbR dgndb = el.GetDgnDb();
-
     /*
      * Notes:
      * A fileName and an ElementId is sufficient to unambiguously refer to a V8 Element. 
