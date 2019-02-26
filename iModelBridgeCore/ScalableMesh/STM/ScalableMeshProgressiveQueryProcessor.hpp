@@ -51,6 +51,28 @@ template <class POINT, class EXTENT>  void ProcessingQuery<POINT,EXTENT>::Run(si
 
     if (nodePtr != 0)
     {
+
+        /* First query a better overview*/
+        /*ProducedNodeContainer<DPoint3d, Extent3dType> producedOverviewNodes;
+        m_nodeQueryProcessorMutexes[threadInd].lock();
+        m_nodeQueryProcessors[threadInd] = NodeQueryProcessor<DPoint3d, Extent3dType>::Create(nodePtr, m_queryObjectP, 0, m_loadTexture, m_scalableMeshPtr->ShouldInvertClips(), &producedOverviewNodes, threadInd, m_clipVisibilities, nodePtr->GetLevel()+i);
+        m_nodeQueryProcessorMutexes[threadInd].unlock();
+        if (!m_isCancel)
+        {
+            m_nodeQueryProcessors[threadInd]->DoQuery();
+            for (auto& node : producedOverviewNodes)
+            {
+
+                IScalableMeshCachedDisplayNodePtr meshNodePtr;
+
+                processor.LoadNodeDisplayData(meshNodePtr, node, m_loadTexture, m_clipVisibilities, m_scalableMeshPtr, m_displayCacheManagerPtr);
+                OnLoadedOverviewNode(meshNodePtr, threadInd);
+            }
+            m_nodeQueryProcessorMutexes[threadInd].lock();
+            m_nodeQueryProcessors[threadInd] = 0;
+            m_nodeQueryProcessorMutexes[threadInd].unlock();
+        }*/
+
         ProducedNodeContainer<DPoint3d, Extent3dType> producedFoundNodes;
         m_nodeQueryProcessorMutexes[threadInd].lock();
 

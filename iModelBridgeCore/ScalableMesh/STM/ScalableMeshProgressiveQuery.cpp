@@ -331,152 +331,6 @@ int threadId)
             if (processingQueryPtr != 0 && m_run)
             {
                 processingQueryPtr->Run(threadId, *this);
-#if 0
-                if (s_preloadInQueryThread)
-                {
-                    bool doPreLoad = (((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get())->GetMainIndexP()->IsTextured() == SMTextureType::Streaming) && processingQueryPtr->m_loadTexture;
-
-                    if (processingQueryPtr->m_toLoadNodes[threadId].size() > 0 && doPreLoad)
-                    {
-                        ScalableMeshProgressiveQueryEngine::PreloadData((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get(), processingQueryPtr->m_toLoadNodes[threadId], false);
-                    }
-                }
-
-                HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> nodePtr;
-
-                //processingQueryPtr->m_searchingNodeMutexes[threadId].lock();
-
-                if (processingQueryPtr->m_searchingNodes[threadId].size() > 0)
-                {
-                    nodePtr = processingQueryPtr->m_searchingNodes[threadId].back();
-                    //processingQueryPtr->m_searchingNodes[threadId].pop_back();                    
-                }
-
-                //processingQueryPtr->m_searchingNodeMutexes[threadId].unlock();
-
-                if (nodePtr != 0)
-                {
-                    ProducedNodeContainer<DPoint3d, Extent3dType> producedFoundNodes;
-                    processingQueryPtr->m_nodeQueryProcessorMutexes[threadId].lock();
-
-                    bool doPreLoad = (((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get())->GetMainIndexP()->IsTextured() == SMTextureType::Streaming) && processingQueryPtr->m_loadTexture;
-
-                    if (doPreLoad)
-                    {
-                        processingQueryPtr->m_nodeQueryProcessors[threadId] = NodeQueryProcessor<DPoint3d, Extent3dType>::Create(nodePtr, processingQueryPtr->m_queryObjectP, 0, processingQueryPtr->m_loadTexture, &producedFoundNodes, threadId);
-                    }
-                    else
-                    {
-                        processingQueryPtr->m_nodeQueryProcessors[threadId] = NodeQueryProcessor<DPoint3d, Extent3dType>::Create(nodePtr, processingQueryPtr->m_queryObjectP, 0, processingQueryPtr->m_loadTexture, &processingQueryPtr->m_producedFoundNodes, threadId);
-                    }
-                    processingQueryPtr->m_nodeQueryProcessorMutexes[threadId].unlock();
-
-                    processingQueryPtr->m_searchingNodeMutexes[threadId].lock();
-                    processingQueryPtr->m_searchingNodes[threadId].pop_back();
-                    processingQueryPtr->m_searchingNodeMutexes[threadId].unlock();
-
-                    if (!processingQueryPtr->m_isCancel)
-                    {
-                        processingQueryPtr->m_nodeQueryProcessors[threadId]->DoQuery();
-
-                        if (producedFoundNodes.GetNodes().size() > 0 && doPreLoad)
-                        {
-                            ScalableMeshProgressiveQueryEngine::PreloadData((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get(), producedFoundNodes.GetNodes(), false);
-
-                            for (auto& node : producedFoundNodes.GetNodes())
-                            {
-                                processingQueryPtr->m_producedFoundNodes.AddNode(node);
-                            }
-                        }
-
-                        processingQueryPtr->m_nodeQueryProcessorMutexes[threadId].lock();
-                        processingQueryPtr->m_nodeQueryProcessors[threadId] = 0;
-                        processingQueryPtr->m_nodeQueryProcessorMutexes[threadId].unlock();
-                    }
-
-                    continue;
-                }
-
-                //Load unloaded node
-                //HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> nodePtr;                
-
-                while (processingQueryPtr->m_toLoadNodes[threadId].size() > 0)
-                {
-                    if (processingQueryPtr->m_toLoadNodes[threadId].size() > 0)
-                    {
-                        nodePtr = processingQueryPtr->m_toLoadNodes[threadId].back();
-                    }
-
-                    if (nodePtr != 0)
-                    {
-                        IScalableMeshCachedDisplayNodePtr meshNodePtr;
-
-                        LoadNodeDisplayData(meshNodePtr, nodePtr, processingQueryPtr->m_loadTexture, processingQueryPtr->m_clipVisibilities, processingQueryPtr->m_scalableMeshPtr, processingQueryPtr->m_displayCacheManagerPtr);
-                        processingQueryPtr->OnLoadedMeshNode(meshNodePtr, threadId);
-#if 0                        
-                        processingQueryPtr->m_foundMeshNodeMutexes[threadId].lock();
-                        processingQueryPtr->m_foundMeshNodes[threadId].push_back(meshNodePtr);
-                        processingQueryPtr->m_foundMeshNodeMutexes[threadId].unlock();
-
-                        processingQueryPtr->m_toLoadNodeMutexes[threadId].lock();
-                        processingQueryPtr->m_toLoadNodes[threadId].pop_back();
-                        processingQueryPtr->m_toLoadNodeMutexes[threadId].unlock();
-#endif
-                    }
-                }
-
-                size_t m_nbMissed = 0;
-                static size_t MAX_MISSED = 5;
-
-                //NEED_WORK_SM : Part of node query processor;
-                while (m_nbMissed < MAX_MISSED && !processingQueryPtr->m_isCancel)
-                {
-                    HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> consumedNodePtr;
-
-                    if (!processingQueryPtr->m_producedFoundNodes.WaitConsumption())
-                    {
-                        m_nbMissed++;
-                        continue;
-                    }
-
-                    processingQueryPtr->m_toLoadNodeMutexes[threadId].lock();
-
-                    bool result = processingQueryPtr->m_producedFoundNodes.ConsumeNode(consumedNodePtr);
-
-                    if (result)
-                    {
-                        processingQueryPtr->m_toLoadNodes[threadId].push_back(consumedNodePtr);
-                        processingQueryPtr->m_toLoadNodeMutexes[threadId].unlock();
-
-#ifdef DISPLAYLOG
-                        fprintf(logger.GetFile(), "Consumed node : %I64d\n", consumedNodePtr->GetBlockID().m_integerID);
-                        fflush(logger.GetFile());
-#endif
-                        //NEED_WORK_SM : Maybe will lead to too much wait for other query when multiples queries
-                        m_nbMissed = 0;
-
-                        IScalableMeshCachedDisplayNodePtr meshNodePtr;
-
-                        processor.LoadNodeDisplayData(meshNodePtr, consumedNodePtr, processingQueryPtr->m_loadTexture, processingQueryPtr->m_clipVisibilities, processingQueryPtr->m_scalableMeshPtr, processingQueryPtr->m_displayCacheManagerPtr);
-
-                        processingQueryPtr->OnLoadedMeshNode(meshNodePtr, threadId);
-#if 0
-                        processingQueryPtr->m_foundMeshNodeMutexes[threadId].lock();
-                        processingQueryPtr->m_foundMeshNodes[threadId].push_back(meshNodePtr);
-                        processingQueryPtr->m_foundMeshNodeMutexes[threadId].unlock();
-
-                        processingQueryPtr->m_toLoadNodeMutexes[threadId].lock();
-                        processingQueryPtr->m_toLoadNodes[threadId].pop_back();
-                        processingQueryPtr->m_toLoadNodeMutexes[threadId].unlock();
-#endif
-                    }
-                    else
-                    {
-                        processingQueryPtr->m_toLoadNodeMutexes[threadId].unlock();
-                    }
-                }
-            
-#endif
             }
 
             } while (m_run);        
@@ -829,6 +683,38 @@ threadId);
                 status = ERROR;
             }
 #endif
+            return status;
+        }
+
+        StatusInt QueryProcessor::GetUpdatedOverviewNodes(bvector<IScalableMeshCachedDisplayNodePtr>& overviewNodes, int queryId)
+        {
+            StatusInt status = ERROR;
+
+            std::list<ProcessingQuery<DPoint3d, Extent3dType>::Ptr>::iterator queryItr(m_processingQueries.begin());
+            std::list<ProcessingQuery<DPoint3d, Extent3dType>::Ptr>::iterator queryItrEnd(m_processingQueries.end());
+
+            while (queryItr != queryItrEnd)
+            {
+                if ((*queryItr)->m_queryId == queryId)
+                {
+                    overviewNodes.clear();
+                    for (size_t threadIter = 0; threadIter < (*queryItr)->m_updatedOverviewNodes.size(); threadIter++)
+                    {
+                        (*queryItr)->m_updatedOverviewNodeMutexes[threadIter].lock();
+#ifdef DISPLAYLOG                 
+                        /*
+                        fprintf(logger.GetFile(), "threadId %i : nb found nodes : %I64d\n", threadIter, (*queryItr)->m_foundMeshNodes[threadIter].size());
+                        fflush(logger.GetFile());
+                        */
+#endif
+                        overviewNodes.insert(overviewNodes.end(), (*queryItr)->m_updatedOverviewNodes[threadIter].begin(), (*queryItr)->m_updatedOverviewNodes[threadIter].end());
+                        (*queryItr)->m_updatedOverviewNodeMutexes[threadIter].unlock();
+                    }
+
+                    status = SUCCESS;
+                }
+                ++queryItr;
+            }
             return status;
         }
 
