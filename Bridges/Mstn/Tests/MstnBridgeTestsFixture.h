@@ -27,6 +27,8 @@ struct MstnBridgeTestsFixture : ::testing::Test
     static BentleyApi::BeFileName GetSeedFile();
 
     static void SetUpTestCase();
+    
+    static void TearDownTestCase();
 
     void MakeCopyOfFile(BentleyApi::BeFileNameR outFile, BentleyApi::WCharCP filename, BentleyApi::WCharCP suffix);
 

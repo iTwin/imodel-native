@@ -115,6 +115,14 @@ void MstnBridgeTestsFixture::SetUpTestCase()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void MstnBridgeTestsFixture::TearDownTestCase()
+    {
+    BentleyApi::BeFileName::EmptyAndRemoveDirectory(GetOutputDir());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MstnBridgeTestsFixture::MakeCopyOfFile(BentleyApi::BeFileNameR outFile, BentleyApi::WCharCP filename, BentleyApi::WCharCP suffix)
@@ -326,8 +334,8 @@ void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir,
                                                 BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid)
     {
     testDir = GetOutputDir();
-
-    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
+    if (!testDir.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
 
     BentleyApi::BeFileName assignDbName(testDir);
     assignDbName.AppendToPath(iModelName);
