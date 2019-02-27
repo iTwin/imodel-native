@@ -277,6 +277,7 @@ void ScalableMeshRDSProvider::UpdateToken()
         // Try again after 50 minutes...
         DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(m_AzureConnection.m_tokenTimer);
         m_AzureConnection.m_tokenTimer += 1000 * 60 * 50;
+        SMRDSPROVIDER_LOG.errorv("UpdateToken() : Request URL: %s", m_AzureConnection.m_handshake->GetHttpRequestString());
         SMRDSPROVIDER_LOG.errorv("UpdateToken() : RealityDataService failed with response code [%d]", rawResponse.responseCode);
         SMRDSPROVIDER_LOG.errorv("UpdateToken() : RealityDataService body: %s", rawResponse.body);
         BeAssert(!"ScalableMeshRDSProvider failed to update token");
