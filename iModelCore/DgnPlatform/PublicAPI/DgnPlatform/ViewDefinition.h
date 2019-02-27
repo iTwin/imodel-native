@@ -154,7 +154,7 @@ public:
     bool GetBackgroundMapDisplayPlane(DPlane3dR);
 
     //! Get the IDs of the elements that should never be drawn for this DisplayStyle
-    DgnElementIdSet GetExcludedElements() const& { return m_excludedElements; }
+    DgnElementIdSet const& GetExcludedElements() const { return m_excludedElements; }
 
     //! Set the IDs of the elements that should never be drawn for this DisplayStyle
     void SetExcludedElements(DgnElementIdSet const& excludedElements) { m_excludedElements = excludedElements; }
