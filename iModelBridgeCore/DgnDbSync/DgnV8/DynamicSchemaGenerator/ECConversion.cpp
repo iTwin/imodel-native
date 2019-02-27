@@ -1225,12 +1225,49 @@ void RemoveDgnV8CustomAttributes(ECN::IECCustomAttributeContainerR container)
     for (ECN::IECInstancePtr instance : container.GetCustomAttributes(false))
         {
         Utf8String v8SchemaName(instance->GetClass().GetSchema().GetName().c_str());
-        auto found = std::find_if(s_dgnV8DeliveredSchemas.begin(), s_dgnV8DeliveredSchemas.end(), [v8SchemaName] (Utf8CP dgnv8) ->bool { return BeStringUtilities::StricmpAscii(v8SchemaName.c_str(), dgnv8) == 0; });
-        if (found == s_dgnV8DeliveredSchemas.end())
+        if (!DynamicSchemaGenerator::IsDgnV8DeliveredSchema(v8SchemaName))
             continue;
         container.RemoveCustomAttribute(instance->GetClass().GetSchema().GetName(), instance->GetClass().GetName());
         container.RemoveSupplementedCustomAttribute(instance->GetClass().GetSchema().GetName(), instance->GetClass().GetName());
         }
+    }
+
+#define DGNDBSYNCV8_ECSCHEMA_NAME "DgnDbSyncV8"
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle     12/2015
+//---------------------------------------------------------------------------------------
+//static
+bool DynamicSchemaGenerator::ExcludeSchemaFromBisification(ECN::ECSchemaCR schema)
+    {
+    if (IsDgnV8DeliveredSchema(schema.GetName()))
+        return true;
+    return schema.IsStandardSchema() || schema.IsSystemSchema() || schema.IsSupplementalSchema() ||
+        schema.GetName().EqualsI(DGNDBSYNCV8_ECSCHEMA_NAME) || schema.GetName().EqualsI(BIS_ECSCHEMA_NAME) ||
+        schema.GetName().EqualsIAscii("Generic") || schema.GetName().EqualsIAscii("Functional") ||
+        schema.GetName().StartsWithI("ecdb") || schema.GetName().EqualsIAscii("ECv3ConversionAttributes");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool DynamicSchemaGenerator::ExcludeSchemaFromBisification(Utf8StringCR schemaName)
+    {
+    if (IsDgnV8DeliveredSchema(schemaName))
+        return true;
+    return ECN::ECSchema::IsStandardSchema(schemaName) ||
+        schemaName.EqualsI(DGNDBSYNCV8_ECSCHEMA_NAME) || schemaName.EqualsI(BIS_ECSCHEMA_NAME) ||
+        schemaName.EqualsIAscii("Generic") || schemaName.EqualsIAscii("Functional") ||
+        schemaName.StartsWithI("ecdb") || schemaName.EqualsIAscii("ECv3ConversionAttributes");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+bool DynamicSchemaGenerator::IsDgnV8DeliveredSchema(BentleyApi::Utf8StringCR schemaName)
+    {
+    auto found = std::find_if(s_dgnV8DeliveredSchemas.begin(), s_dgnV8DeliveredSchemas.end(), [schemaName] (Utf8CP dgnv8) ->bool { return BeStringUtilities::StricmpAscii(schemaName.c_str(), dgnv8) == 0; });
+    return found != s_dgnV8DeliveredSchemas.end();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1387,7 +1424,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
          {
          if (schema->IsSupplementalSchema())
              continue;
-         if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(*schema))
+         if (ExcludeSchemaFromBisification(*schema))
              continue;
          if (!ECN::ECSchemaConverter::Convert(*schema, m_schemaReadContext.get(), false))
              {
@@ -1991,7 +2028,7 @@ void verifyBaseClassAbstract(ECN::ECClassP ecClass)
     // the base classes Abstract, the derived class must be set as non-abstract
     for (ECN::ECClassP baseClass : ecClass->GetBaseClasses())
         {
-        if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(baseClass->GetSchema()))
+        if (DynamicSchemaGenerator::ExcludeSchemaFromBisification(baseClass->GetSchema()))
             continue;
         if (ECN::ECClassModifier::Abstract != baseClass->GetClassModifier() && ECN::ECClassModifier::Abstract == ecClass->GetClassModifier())
             {
@@ -2013,7 +2050,7 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
 
     for (ECN::ECSchemaP sourceSchema : schemas)
         {
-        if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(*sourceSchema))
+        if (ExcludeSchemaFromBisification(*sourceSchema))
             {
             m_flattenedRefs[sourceSchema->GetName()] = sourceSchema;
             continue;
@@ -2209,7 +2246,7 @@ void DynamicSchemaGenerator::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECCla
                 BisClassConverter::AddDroppedDerivedClass(baseClass, ecClass);
                 for (ECN::ECPropertyCP sourceProperty : baseClass->GetProperties(true))
                     {
-                    if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(sourceProperty->GetClass().GetSchema()))
+                    if (ExcludeSchemaFromBisification(sourceProperty->GetClass().GetSchema()))
                         continue;
 
                     if (nullptr != ecClass->GetPropertyP(sourceProperty->GetName().c_str(), true))
@@ -2313,8 +2350,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
         bool isPrimary = ecClassInfo.second;
         
         Utf8String v8SchemaName(ecClass.m_schemaName.c_str());
-        auto found = std::find_if(s_dgnV8DeliveredSchemas.begin(), s_dgnV8DeliveredSchemas.end(), [v8SchemaName] (Utf8CP dgnv8) ->bool { return BeStringUtilities::StricmpAscii(v8SchemaName.c_str(), dgnv8) == 0; });
-        if (found != s_dgnV8DeliveredSchemas.end())
+        if (IsDgnV8DeliveredSchema(v8SchemaName))
             continue;
 
         auto skipped = std::find_if(m_skippedSchemas.begin(), m_skippedSchemas.end(), [v8SchemaName] (Utf8StringCR dgnv8) ->bool { return BeStringUtilities::StricmpAscii(v8SchemaName.c_str(), dgnv8.c_str()) == 0; });
@@ -2381,7 +2417,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConvertToBisBasedECSchemas()
         {
         BECN::ECSchemaP schema = kvpair.second;
         //only interested in the domain schemas, so skip standard, system and supp schemas
-        if (context.ExcludeSchemaFromBisification(*schema))
+        if (ExcludeSchemaFromBisification(*schema))
             continue;
 
         for (BECN::ECClassP ecClass : schema->GetClasses())
@@ -2427,7 +2463,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConvertToBisBasedECSchemas()
     for (bpair<Utf8String, BECN::ECSchemaP> const& kvpair : context.GetSchemas())
         {
         BECN::ECSchemaP schema = kvpair.second;
-        if (context.ExcludeSchemaFromBisification(*schema))
+        if (ExcludeSchemaFromBisification(*schema))
             continue;
 
         if (!schema->Validate(true) || !schema->IsECVersion(ECN::ECVersion::V3_2))
@@ -2599,8 +2635,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
     auto removeDgn = std::remove_if(constSchemas.begin(), constSchemas.end(), [&] (BECN::ECSchemaCP const& arg)
         {
         Utf8String v8SchemaName = arg->GetName();
-        auto found = std::find_if(s_dgnV8DeliveredSchemas.begin(), s_dgnV8DeliveredSchemas.end(), [v8SchemaName] (Utf8CP dgnv8) ->bool { return BeStringUtilities::StricmpAscii(v8SchemaName.c_str(), dgnv8) == 0; });
-        return (found != s_dgnV8DeliveredSchemas.end());
+        return IsDgnV8DeliveredSchema(v8SchemaName);
         });
 
     constSchemas.erase(removeDgn, constSchemas.end());
@@ -3131,8 +3166,7 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             continue;
             }
 
-        auto found = std::find_if(s_dgnV8DeliveredSchemas.begin(), s_dgnV8DeliveredSchemas.end(), [v8SchemaName] (Utf8CP dgnv8) ->bool { return BeStringUtilities::StricmpAscii(v8SchemaName.c_str(), dgnv8) == 0; });
-        if (found != s_dgnV8DeliveredSchemas.end())
+        if (IsDgnV8DeliveredSchema(v8SchemaName))
             continue;
 
         // It is possible we scanned the schema previously, but didn't import it.  Make sure it is actually in the db
@@ -3501,7 +3535,7 @@ Utf8CP findRootRelationshipName(ECN::ECClassCP relClass)
         {
         for (ECN::ECClassCP baseClass : relClass->GetBaseClasses())
             {
-            if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(baseClass->GetSchema()))
+            if (DynamicSchemaGenerator::ExcludeSchemaFromBisification(baseClass->GetSchema()))
                 continue;
             return findRootRelationshipName(baseClass);
             }
@@ -3577,7 +3611,7 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
     for (DgnV8Api::RelationshipEntry const& entry : relationships)
         {
         //schemas not captured in sync info are system schemas which we don't consider during conversion
-        if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(Utf8String(entry.RelationshipSchemaName.c_str())))
+        if (DynamicSchemaGenerator::ExcludeSchemaFromBisification(Utf8String(entry.RelationshipSchemaName.c_str())))
             continue;
 
         V8ECInstanceKey v8SourceKey(ECClassName(Utf8String(entry.SourceSchemaName.c_str()).c_str(), Utf8String(entry.SourceClassName.c_str()).c_str()),

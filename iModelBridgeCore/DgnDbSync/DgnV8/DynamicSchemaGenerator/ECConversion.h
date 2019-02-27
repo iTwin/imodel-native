@@ -168,6 +168,11 @@ struct DynamicSchemaGenerator
 
     void GenerateSchemas(bvector<DgnFileP> const&, bvector<DgnV8ModelP> const&);
 
+    static bool ExcludeSchemaFromBisification(ECN::ECSchemaCR);
+    static bool ExcludeSchemaFromBisification(BentleyApi::Utf8StringCR schemaName);
+    static bool IsDgnV8DeliveredSchema(BentleyApi::Utf8StringCR schemaName);
+
+
     };
 
 //=======================================================================================
@@ -236,9 +241,6 @@ struct BisClassConverter
                 bmap<Utf8String, ECN::ECSchemaP> const& GetSchemas() const { return m_inputSchemaMap; }
                 bmap<ECN::ECClassCP, ECN::ECClassP> const& GetMixinAppliesToMapping() const { return m_mixinAppliesToMap; }
                 MixinContext* GetMixinContext(ECN::ECSchemaCR schema);
-                static bool ExcludeSchemaFromBisification(ECN::ECSchemaCR);
-                static bool ExcludeSchemaFromBisification(BentleyApi::Utf8StringCR schemaName);
-
                 void ReportIssue(Converter::IssueSeverity severity, BentleyApi::Utf8CP message, ...) const;
             };
 
