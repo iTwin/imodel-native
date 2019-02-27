@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <cstdio>
-#include <atlbase.h> 
 #include <json/value.h>
 #include <node-addon-api/napi.h>
 #include <iModelBridge/iModelBridgeFwk.h>
@@ -138,7 +137,7 @@ wchar_t const** argv = argptrs.data();\
 {\
     if(json.isMember(MEMBER)) { \
         Utf8String tempsUtf8String = json.get(MEMBER, "").asString();\
-        LPCTSTR t = static_cast<LPCTSTR> (tempsUtf8String.c_str());\
+        Utf8CP t = tempsUtf8String.c_str();\
         args.push_back(WPrintfString(L"--%s=%S", COMMAND, t));\
     }\
 }
@@ -170,8 +169,7 @@ Napi::Function RequestTokenFunction()
 static void justLogAssertionFailures(WCharCP message, WCharCP file, uint32_t line, BeAssertFunctions::AssertType atype)
     {
     WPrintfString str(L"BridgeAddon.cpp: ASSERT: (%ls) @ %ls:%u\n", message, file, line);
-    // NativeLogging::LoggingManager::GetLogger("BimTeleporter")->errorv(str.c_str());
-    ::OutputDebugStringW (str.c_str());
+    NativeLogging::LoggingManager::GetLogger("iModelBridge")->errorv(str.c_str());
     }    
 
 /*---------------------------------------------------------------------------------**/ /**
