@@ -958,23 +958,29 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
 template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID, SMStoreDataType dataType) const
     {    
     size_t blockDataCount = 0;
-    {
-        SharedTransaction trans(m_smSQLiteFile, true);
+    {                
         switch (dataType)
         {
         case SMStoreDataType::Graph:
             return 1;
             break;
+        case SMStoreDataType::Points:
+            return m_nodeHeader->m_nodeCount;
+            break;
+        case SMStoreDataType::TriPtIndices:
+            return m_nodeHeader->m_nbFaceIndexes;
+            break;
+        }
+
+        SharedTransaction trans(m_smSQLiteFile, true);
+
+        switch (dataType)
+        {
         case SMStoreDataType::LinearFeature:
             assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
             m_smSQLiteFile->GetNumberOfFeaturePoints(blockID.m_integerID);
             break;
-        case SMStoreDataType::Points:
-            blockDataCount = m_nodeHeader->m_nodeCount;
-            break;
-        case SMStoreDataType::TriPtIndices:
-            blockDataCount = m_nodeHeader->m_nbFaceIndexes;
-            break;
+        
         case SMStoreDataType::TriUvIndices:
             assert(m_smSQLiteFile->GetDb() != nullptr && m_smSQLiteFile->GetDb()->IsDbOpen());
             blockDataCount = m_smSQLiteFile->GetNumberOfUVIndices(blockID.m_integerID) / sizeof(DATATYPE);
