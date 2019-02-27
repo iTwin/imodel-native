@@ -281,7 +281,6 @@
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
         <SubProduct ProductName="BeHttp-Gtest" />
     </Part>
- -->
 
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
