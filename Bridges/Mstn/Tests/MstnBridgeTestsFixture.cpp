@@ -266,11 +266,30 @@ int32_t MstnBridgeTestsFixture::DbFileInfo::GetBISClassCount(CharCP className)
 +---------------+---------------+---------------+---------------+---------------+------*/
 int32_t MstnBridgeTestsFixture::DbFileInfo::GetModelProvenanceCount(BentleyApi::BeSQLite::BeGuidCR fileGuid)
     {
-    auto stmt = m_db->GetPreparedECSqlStatement("SELECT COUNT(*) FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE (Kind='Model' AND Scope.Id=?)");
+    Utf8String ecsql("SELECT Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE ( (Scope.Id=?) AND (Kind ='DocumentWithBeGuid') AND (Identifier= ?))");
+    
+    auto stmt = m_db->GetPreparedECSqlStatement(ecsql.c_str());
+
+    if (!stmt.IsValid())
+        return 0;
+
+    stmt->BindId(1, m_db->Elements().GetRootSubjectId());
     BentleyApi::Utf8String guidString = fileGuid.ToString();
-    stmt->BindText(1, guidString.c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    stmt->Step();
-    return  stmt->GetValueInt(0);
+    stmt->BindText(2, guidString.c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+    
+    if (BE_SQLITE_ROW != stmt->Step())
+        return 0;
+    
+    DgnElementId repoLink = stmt->GetValueId<DgnElementId>(0);
+
+    Utf8String modelSQL("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE ( (Scope.Id=?) AND (Kind = 'Model') )");
+
+    auto modelStmt = m_db->GetPreparedECSqlStatement(modelSQL.c_str());
+    modelStmt->BindId(1, repoLink);
+    if (BE_SQLITE_ROW != modelStmt->Step())
+        return 0;
+    
+    return  modelStmt->GetValueInt(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
