@@ -665,6 +665,9 @@ FeatureSymbologyOverrides::FeatureSymbologyOverrides(ViewControllerCR view) : m_
     auto const& undisplayed = view.GetDgnDb().Elements().GetUndisplayedSet();
     m_neverDrawn.insert(undisplayed.begin(), undisplayed.end());
 
+    auto const& excludedElements = view.GetExcludedElements();
+    m_neverDrawn.insert(excludedElements.begin(), excludedElements.end());
+
     ViewFlags vf = view.GetViewFlags();
     m_constructions = vf.ShowConstructions();
     m_dimensions = vf.ShowDimensions();

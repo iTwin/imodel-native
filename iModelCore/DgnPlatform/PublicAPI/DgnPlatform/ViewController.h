@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ViewController.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -301,6 +301,8 @@ public:
 
     //! determine whether this is a 3d template view
     bool IsTemplateView3d() const {return nullptr != _ToTemplateView3d();}
+
+    DgnElementIdSet GetExcludedElements() const {return m_definition->GetDisplayStyle().GetExcludedElements();}
 
     //! Get the ViewFlags from the DisplayStyle of this view
     Render::ViewFlags GetViewFlags() const {return m_definition->GetDisplayStyle().GetViewFlags();}
