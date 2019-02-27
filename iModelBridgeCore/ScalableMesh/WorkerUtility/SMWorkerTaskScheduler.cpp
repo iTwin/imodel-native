@@ -479,7 +479,7 @@ void TaskScheduler::Start()
                     {
                     isThereTaskAvailable = true;
                     continue;
-                    }
+                    }                
 
                 BeDirectoryIterator dirIter(m_taskFolderName);
 
@@ -497,19 +497,31 @@ void TaskScheduler::Start()
                         }
                     }
 
+                //Check if the task plan still exists.
+                if (_wstat(taskPlanFileName.c_str(), &buffer) != 0 || buffer.st_size == 0) 
+                    {
+                    needExecuteTaskPlan = false;
+                    }
+
                 StatusInt status = SUCCESS;
             
                 if (needExecuteTaskPlan)
                     {        
                     status = ExecuteTaskPlanNextTask(taskPlanFileName);
                     }
+
+                if (status == SUCCESS_TASK_PLAN_COMPLETE)
+                    {
+                    while (0 != _wremove(taskPlanFileName))
+                        {                    
+                        }
+                    }
+                else
+                    {
+                    isThereTaskAvailable = true;
+                    }
                    
                 fclose(lockFile);
-            
-                if (status == SUCCESS_TASK_PLAN_COMPLETE)
-                    break;           
-
-                isThereTaskAvailable = true;
                 }
 
             sleeper.Sleep();
