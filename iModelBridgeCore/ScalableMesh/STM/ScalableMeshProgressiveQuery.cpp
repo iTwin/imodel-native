@@ -1497,6 +1497,10 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_GetOverviewNodes(bvector<BENT
             meshNodes.insert(meshNodes.end(), requestedQueryP->m_overviewMeshNodes.begin(), requestedQueryP->m_overviewMeshNodes.end());
             }
 
+        bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr> newPreviewNodes;
+        s_queryProcessor.GetUpdatedOverviewNodes(newPreviewNodes, queryId);
+        meshNodes.insert(meshNodes.end(), newPreviewNodes.begin(), newPreviewNodes.end());
+
         status = SUCCESS;
         }
     else

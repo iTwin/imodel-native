@@ -90,11 +90,11 @@ public:
 
     void DoQuery()
     {
-      //  if (m_useMaxLevel)
-       //     m_pQueryObject->ToggleLimitToLevel(m_useMaxLevel, m_maxLevel);
+        if (m_useMaxLevel)
+            m_pQueryObject->ToggleLimitToLevel(m_useMaxLevel, m_maxLevel);
         if (!m_stopQuery)
             m_queryNode->Query(m_pQueryObject, *m_foundNodesP, this);
-     //   m_pQueryObject->ToggleLimitToLevel(false, m_maxLevel);
+        m_pQueryObject->ToggleLimitToLevel(false, m_maxLevel);
     }
 
     void SetStopQuery(bool stopQuery)
