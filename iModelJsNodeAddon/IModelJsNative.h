@@ -27,6 +27,52 @@ USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_EC
 
+BEGIN_TILE_NAMESPACE
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Result);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(PollResult);
+
+//=======================================================================================
+// The current state of a Tile::Request.
+// @bsistruct                                                   Paul.Connelly   02/19
+//=======================================================================================
+enum class State : uint8_t
+{
+    New, // Request was just created and enqueued
+    Pending, // Request is already queued but not yet being processed
+    Loading, // Request is being processed on worker thread
+    Completed, // Request finished processing
+};
+
+//=======================================================================================
+// The result of a Tile::Request.
+// @bsistruct                                                   Paul.Connelly   02/19
+//=======================================================================================
+struct Result
+{
+    ContentCPtr m_content;
+    DgnDbStatus m_status = DgnDbStatus::BadRequest;
+};
+
+//=======================================================================================
+// The result of polling a request's current state.
+// @bsistruct                                                   Paul.Connelly   02/19
+//=======================================================================================
+struct PollResult : Result
+{
+    State   m_state;
+
+    explicit PollResult(State state) : m_state(state) { }
+    explicit PollResult(Result const& result) : Result(result), m_state(State::Completed) { }
+    explicit PollResult(DgnDbStatus status) : m_state(State::Completed)
+        {
+        m_status = status;
+        BeAssert(DgnDbStatus::Success != status);
+        }
+};
+
+END_TILE_NAMESPACE
+
 namespace IModelJsNative {
 
 void handleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type);
@@ -129,6 +175,7 @@ public:
 
     static void GetTileTree(ICancellationTokenPtr, DgnDbR db, Utf8StringCR id, Napi::Function& callback);
     static void GetTileContent(ICancellationTokenPtr, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId, Napi::Function& callback);
+    static Tile::PollResult PollTileContent(ICancellationTokenPtr, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId);
 
     static void ThrowJsException(Utf8CP msg);
     static Json::Value ExecuteTest(DgnDbR, Utf8StringCR testName, Utf8StringCR params);
@@ -141,7 +188,7 @@ public:
     static intptr_t& MainThreadId() {static intptr_t s_mainThreadId; return s_mainThreadId;}
     static bool IsMainThread() { return BeThreadUtilities::GetCurrentThreadId() == MainThreadId(); }
 
-    static Tile::TreePtr FindTileTree(GeometricModelR, Tile::Tree::Id const&);
+    static Tile::TreePtr GetTileTree(GeometricModelR, Tile::Tree::Id const&, bool createIfNotFound);
 
     static void StepAsync(Napi::Function& callback, Statement& stmt);
     static void StepAsync(Napi::Function& callback, ECSqlStatement& stmt, bool stepForInsert);

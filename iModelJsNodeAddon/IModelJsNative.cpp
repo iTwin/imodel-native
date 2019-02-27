@@ -1254,6 +1254,31 @@ public:
         JsInterop::GetTileContent(m_cancellationToken, GetDgnDb(), treeIdStr, tileIdStr, responseCallback);
         }
 
+    Napi::Value PollTileContent(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, treeIdStr, Napi::Number::New(Env(), static_cast<int>(DgnDbStatus::BadRequest)));
+        REQUIRE_ARGUMENT_STRING(1, tileIdStr, Napi::Number::New(Env(), static_cast<int>(DgnDbStatus::BadRequest)));
+
+        auto result = JsInterop::PollTileContent(m_cancellationToken, GetDgnDb(), treeIdStr, tileIdStr);
+        if (Tile::State::Completed != result.m_state)
+            {
+            return CreateBentleyReturnSuccessObject(Napi::Number::New(Env(), static_cast<int>(result.m_state)));
+            }
+        else if (DgnDbStatus::Success != result.m_status)
+            {
+            return CreateBentleyReturnErrorObject(result.m_status);
+            }
+        else
+            {
+            BeAssert(result.m_content.IsValid());
+            ByteStreamCR geometry = result.m_content->GetBytes();
+            auto blob = Napi::Uint8Array::New(Env(), geometry.size());
+            memcpy(blob.Data(), geometry.data(), geometry.size());
+            return CreateBentleyReturnSuccessObject(blob);
+            }
+        }
+
     Napi::Value InsertLinkTableRelationship(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -1896,6 +1921,7 @@ public:
             InstanceMethod("getSchema", &NativeDgnDb::GetSchema),
             InstanceMethod("getSchemaItem", &NativeDgnDb::GetSchemaItem),
             InstanceMethod("getTileContent", &NativeDgnDb::GetTileContent),
+            InstanceMethod("pollTileContent", &NativeDgnDb::PollTileContent),
             InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
             InstanceMethod("getTxnDescription", &NativeDgnDb::GetTxnDescription),
             InstanceMethod("getUndoString", &NativeDgnDb::GetUndoString),
@@ -3936,7 +3962,7 @@ protected:
 
     virtual Napi::Value GetResult() = 0;
 
-    Tile::TreePtr FindTileTree() { return JsInterop::FindTileTree(*m_model, m_treeId); }
+    Tile::TreePtr GetTileTree() { return JsInterop::GetTileTree(*m_model, m_treeId, true); }
     bool IsCanceled() const { return nullptr != m_cancellationToken && m_cancellationToken->IsCanceled(); }
 
     bool PreExecute()
@@ -3977,7 +4003,7 @@ private:
             return;
 
         // JsInterop::GetLogger().debugv("GetTileTreeWorker::Execute: %s", m_treeId.ToString().c_str());
-        auto tree = FindTileTree();
+        auto tree = GetTileTree();
         if (tree.IsNull())
             {
             m_status = DgnDbStatus::NotFound;
@@ -4018,8 +4044,21 @@ void JsInterop::GetTileTree(ICancellationTokenPtr cancel, DgnDbR db, Utf8StringC
         }
     else
         {
-        auto worker = new GetTileTreeWorker(cancel, callback, *model, treeId);
-        worker->Queue();
+        // If the tree already exists, return it from the main thread rather than sending to thread pool...
+        auto tree = JsInterop::GetTileTree(*model, treeId, false);
+        if (tree.IsValid())
+            {
+            Json::Value json = tree->ToJson();
+            Napi::Value result = NapiUtils::Convert(Env(), json);
+            auto retval = NapiUtils::CreateBentleyReturnSuccessObject(result, Env());
+            callback.Call({retval});
+            }
+        else
+            {
+            // Initialize tree on thread pool.
+            auto worker = new GetTileTreeWorker(cancel, callback, *model, treeId);
+            worker->Queue();
+            }
         }
     }
 
@@ -4041,7 +4080,7 @@ private:
             return;
 
         // JsInterop::GetLogger().debugv("GetTileContentWorker::Execute: %s %s", m_treeId.ToString().c_str(), m_contentId.ToString().c_str());
-        auto tree = FindTileTree();
+        auto tree = GetTileTree();
         m_result = tree.IsValid() ? tree->RequestContent(m_contentId) : nullptr;
         m_status = m_result.IsValid() ? DgnDbStatus::Success : DgnDbStatus::NotFound;
         }

@@ -8,6 +8,8 @@
 #include "IModelJsNative.h"
 #include <DgnPlatform/Tile.h>
 #include <GeomJsonWireFormat/JsonUtils.h> // ###TODO remove...
+#include <folly/BeFolly.h>
+#include <set>
 
 using namespace IModelJsNative;
 namespace Render = Dgn::Render;
@@ -366,69 +368,295 @@ struct JsSystem : Render::System
 JsSystem s_system;
 
 //=======================================================================================
+// This namespace contains types used for tile requests processed on the BeFolly CPU
+// thread pool. This prevents potentially long-running tile requests from blocking the
+// libuv thread pool used by node to process simpler tasks like ECSql queries. It also
+// bypasses the hard-coded (configurable via env var) size of that thread pool.
+//
+// The add-on exposes a polling-style API for these requests. The caller does not await
+// the result; instead it checks back in periodically until the request completes.
+// @bsistruct                                                   Paul.Connelly   02/19
+//=======================================================================================
+BEGIN_TILE_NAMESPACE
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Request);
+DEFINE_REF_COUNTED_PTR(Request);
+
+//=======================================================================================
+// A request for tile content handled by CPU thread pool.
+// A Request is always constructed inside the node event loop and added to the set of
+// active requests stored on the corresponding model's app data.
+// The work of producing the tile content is done on the folly CPU thread pool.
+// The result is picked up inside the node event loop by the polling API.
+// @bsistruct                                                   Paul.Connelly   02/19
+//=======================================================================================
+struct Request : RefCountedBase
+{
+private:
+    GeometricModelPtr       m_model;
+    Tree::Id                m_treeId;
+    ContentId               m_contentId;
+    ICancellationTokenPtr   m_cancellationToken;
+    BeAtomic<State>         m_state;
+    Result                  m_result;
+
+    Request(ICancellationTokenPtr cancel, GeometricModelR model, Tree::Id treeId, ContentId contentId)
+        : m_model(&model), m_treeId(treeId), m_contentId(contentId), m_cancellationToken(cancel), m_state(State::New)
+        {
+        //
+        }
+
+    void SetResult(DgnDbStatus status, ContentCP content)
+        {
+        m_result.m_content = content;
+        m_result.m_status = status;
+        SetState(State::Completed);
+        BeAssert((nullptr == content) == (DgnDbStatus::Success != status));
+        }
+
+    void SetState(State state) { m_state.store(state); }
+
+    // Called on folly thread pool to compute result.
+    void Process();
+public:
+    static RequestPtr Create(ICancellationTokenPtr cancel, GeometricModelR model, Tree::Id treeId, ContentId contentId)
+        {
+        return new Request(cancel, model, treeId, contentId);
+        }
+
+    // Enqueue onto folly thread pool.
+    void Dispatch();
+
+    ContentId GetContentId() const { return m_contentId; }
+    State GetState() const { return m_state.load(); }
+    bool IsCompleted() const { return State::Completed == GetState(); }
+    bool IsCanceled() const { return nullptr != m_cancellationToken && m_cancellationToken->IsCanceled(); }
+
+    void SetContent(ContentCR content) { SetResult(DgnDbStatus::Success, &content); }
+    void SetStatus(DgnDbStatus status) { SetResult(status, nullptr); }
+
+    ResultCR GetResult() const { return m_result; }
+    PollResult Poll() const;
+
+    struct PtrComparator
+    {
+        using is_transparent = std::true_type;
+
+        bool operator()(RequestPtr const& lhs, RequestPtr const& rhs) const { return operator()(lhs->GetContentId(), rhs->GetContentId()); }
+        bool operator()(RequestPtr const& lhs, ContentIdCR rhs) const { return operator()(lhs->GetContentId(), rhs); }
+        bool operator()(ContentIdCR lhs, RequestPtr const& rhs) const { return operator()(lhs, rhs->GetContentId()); }
+        bool operator()(ContentIdCR lhs, ContentIdCR rhs) const { return lhs < rhs; }
+    };
+};
+
+//=======================================================================================
+// Holds all open Requests for tile content for a single tile tree.
+// @bsistruct                                                   Paul.Connelly   02/19
+//=======================================================================================
+using Requests = std::set<RequestPtr, Request::PtrComparator>;
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Requests);
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/18
 //=======================================================================================
-struct TileTreeAppData : DgnModel::AppData
+struct AppData : DgnModel::AppData
 {
-    bmap<Utf8String, Tile::TreePtr>     m_trees;
+    struct Entry
+    {
+        Utf8String  m_id;
+        TreePtr     m_tree;
+        Requests    m_requests;
+
+        Entry() { }
+        explicit Entry(Utf8StringCR id) : m_id(id) { }
+
+        struct Comparator
+        {
+            using is_transparent = std::true_type;
+
+            bool operator()(Entry const& lhs, Entry const& rhs) const { return operator()(lhs.m_id, rhs.m_id); }
+            bool operator()(Entry const& lhs, Utf8StringCR rhs) const { return operator()(lhs.m_id, rhs); }
+            bool operator()(Utf8StringCR lhs, Entry const& rhs) const { return operator()(lhs, rhs.m_id); }
+            bool operator()(Utf8StringCR lhs, Utf8StringCR rhs) const { return lhs < rhs; }
+        };
+    };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Entry);
+
+    // std::set used for 2 reasons: stable pointers to entries, and transparent comparators (compare entry to id string)
+    // std::set is annoying because despite only a subset of the members being used for sorting, all members are treated as const
+    // when accessed via iterator.
+    std::set<Entry, Entry::Comparator>  m_entries;
     mutable BeMutex                     m_mutex;
 
     void _OnUnload(DgnModelR model) override
         {
         BeMutexHolder lock(m_mutex);
-        for (auto& tree : m_trees)
+        for (auto& entry : m_entries)
             {
-            if (tree.second.IsValid())
-                {
-                // JsInterop::GetLogger().debugv("Canceling all tile loads for %s", tree.second->GetId().ToString().c_str());
-                tree.second->CancelAllTileLoads();
-                }
+            if (entry.m_tree.IsValid())
+                entry.m_tree->CancelAllTileLoads();
             }
         }
 
     void _OnUnloaded(DgnModelR model) override
         {
         BeMutexHolder lock(m_mutex);
-        for (auto& tree : m_trees)
+        for (auto const& cEntry : m_entries)
             {
-            if (tree.second.IsValid())
+            auto& entry = const_cast<EntryR>(cEntry); // because std::set...
+            if (entry.m_tree.IsValid())
                 {
-                // JsInterop::GetLogger().debugv("Waiting for all tile loads for %s", tree.second->GetId().ToString().c_str());
                 // just in case somebody request more tiles after _OnUnload()...
-                tree.second->CancelAllTileLoads();
+                entry.m_tree->CancelAllTileLoads();
                 // Wait for them all to finish canceling...
-                tree.second->WaitForAllLoads();
+                entry.m_tree->WaitForAllLoads();
                 // No one else should be holding a pointer to tile tree any more.
-                BeAssert(1 == tree.second->GetRefCount());
-                tree.second = nullptr;
+                BeAssert(1 == entry.m_tree->GetRefCount());
+                entry.m_tree = nullptr;
                 }
+
+            entry.m_requests.clear();
             }
+
+        m_entries.clear();
         }
 
-    static Tile::TreeP FindTileTree(GeometricModelR model, Tile::Tree::Id const& id)
-        {  
-        static Key  s_key;
-        auto appData = model.ObtainAppData(s_key, [&]() { return new TileTreeAppData(); });
+    static TreePtr GetTileTree(GeometricModelR model, Tree::Id const& id, bool createIfNotFound)
+        {
+        auto& entry = GetEntry(model, id, createIfNotFound);
+        return entry.m_tree;
+        }
 
-        Utf8String  idString = id.GetPrefixString();
-    
-        BeMutexHolder lock(appData->m_mutex);
+    static EntryR GetEntry(GeometricModelR model, Tree::Id const& id, bool allocateTree)
+        {
+        auto data = Get(model);
+        Utf8String idString = id.GetPrefixString();
 
-        auto found = appData->m_trees.find(idString);
-        if (found != appData->m_trees.end())
-            return found->second.get();
+        BeMutexHolder lock(data->m_mutex);
+        auto found = data->m_entries.find(idString);
+        if (data->m_entries.end() == found)
+            found = data->m_entries.insert(Entry(idString)).first;
 
-        auto    tree = Tile::Tree::Create(model, s_system, id);
-        appData->m_trees.Insert(idString, tree); 
-        return tree.get();
+        auto& entry = const_cast<EntryR>(*found); // because std::set...
+        if (allocateTree && entry.m_tree.IsNull())
+            entry.m_tree = Tree::Create(model, s_system, id);
+
+        return entry;
+        }
+
+    static PollResult PollContent(ICancellationTokenPtr cancel, GeometricModelR model, Tree::Id const& treeId, ContentIdCR contentId);
+    static PollResult PollContent(ICancellationTokenPtr cancel, DgnDbR db, Utf8StringCR treeIdStr, Utf8StringCR contentIdStr);
+
+    static RefCountedPtr<AppData> Get(GeometricModelR model)
+        {
+        static Key s_key;
+        auto appData = model.ObtainAppData(s_key, [&]() { return new AppData(); });
+        BeAssert(appData.IsValid());
+        return appData;
         }
 };
+
+END_TILE_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::TreePtr JsInterop::FindTileTree(GeometricModelR model, Tile::Tree::Id const& id)
+Tile::TreePtr JsInterop::GetTileTree(GeometricModelR model, Tile::Tree::Id const& id, bool createIfNotFound)
     {
-    return TileTreeAppData::FindTileTree(model, id);
+    return Tile::AppData::GetTileTree(model, id, createIfNotFound);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::Request::Process()
+    {
+    if (IsCanceled())
+        {
+        SetStatus(DgnDbStatus::NotOpen);
+        return;
+        }
+
+    SetState(State::Loading);
+
+    auto tree = JsInterop::GetTileTree(*m_model, m_treeId, true);
+    auto content = tree.IsValid() ? tree->RequestContent(m_contentId) : nullptr;
+    if (content.IsValid())
+        SetContent(*content);
+    else
+        SetStatus(DgnDbStatus::NotFound);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::Request::Dispatch()
+    {
+    SetState(State::Pending);
+    Tile::RequestPtr me(this);
+    folly::via(&BeFolly::ThreadPool::GetCpuPool(), [me]() { me->Process(); });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::PollResult Tile::Request::Poll() const
+    {
+    auto state = GetState();
+    return State::Completed == state ? PollResult(GetResult()) : PollResult(state);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::PollResult Tile::AppData::PollContent(ICancellationTokenPtr cancel, GeometricModelR model, Tree::Id const& treeId, ContentIdCR contentId)
+    {
+    auto& entry = GetEntry(model, treeId, false);
+    auto found = entry.m_requests.find(contentId);
+    if (entry.m_requests.end() == found)
+        found = entry.m_requests.insert(Request::Create(cancel, model, treeId, contentId)).first;
+
+    RequestPtr request = *found;
+    auto result = request->Poll();
+    switch (result.m_state)
+        {
+        case State::New:
+            request->Dispatch();
+            break;
+        case State::Completed:
+            entry.m_requests.erase(found);
+            break;
+        }
+
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::PollResult Tile::AppData::PollContent(ICancellationTokenPtr cancel, DgnDbR db, Utf8StringCR treeIdStr, Utf8StringCR contentIdStr)
+    {
+    if (!db.IsDbOpen())
+        return PollResult(DgnDbStatus::NotOpen);
+
+    ContentId contentId;
+    auto treeId = Tree::Id::FromString(treeIdStr);
+    if (!treeId.IsValid() || !contentId.FromString(contentIdStr.c_str()))
+        return PollResult(DgnDbStatus::InvalidId);
+
+    auto model = db.Models().Get<GeometricModel>(treeId.m_modelId);
+    if (model.IsNull())
+        return PollResult(DgnDbStatus::MissingId);
+
+    return PollContent(cancel, *model, treeId, contentId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::PollResult JsInterop::PollTileContent(ICancellationTokenPtr cancel, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId)
+    {
+    return Tile::AppData::PollContent(cancel, db, treeId, tileId);
     }
 

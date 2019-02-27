@@ -103,6 +103,7 @@
   <!-- This part builds our node native code addon -->
   <Part Name="iModelJsNativeLibCommon">
     <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+    <SubPart PartName="folly" PartFile="iModelCore/libsrc/facebook/facebook" Repository="imodel02"/> 
     <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation"/>
     <SubPart PartName="ECObjectsNative"     PartFile="iModelCore/ecobjects/ECObjects"    />
     <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley"/>
