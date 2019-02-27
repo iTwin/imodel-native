@@ -31,6 +31,7 @@
     <ClInclude Include="Mocks\BuddiProviderMock.h" />
     <ClInclude Include="Mocks\PolicyProviderMock.h" />
     <ClInclude Include="Mocks\UlasProviderMock.h" />
+    <ClInclude Include="Mocks\UsageDbMock.h" />
     <ClInclude Include="PolicyTests.h" />
     <ClInclude Include="TestsHelper.h" />
     <ClInclude Include="UlasProviderTests.h" />

@@ -2,11 +2,13 @@
 |
 |     $Source: Licensing/UsageDb.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
+
+#include "IUsageDb.h"
 
 #include <Licensing/Licensing.h>
 #include <BeSQLite/BeSQLite.h>
@@ -21,7 +23,7 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct UsageDb
+struct UsageDb : IUsageDb
 {
 private:
 	Db m_db;

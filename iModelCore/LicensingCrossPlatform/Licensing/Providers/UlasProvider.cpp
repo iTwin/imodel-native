@@ -30,7 +30,7 @@ UlasProvider::UlasProvider
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UlasProvider::PostUsageLogs(UsageDb& usageDb, std::shared_ptr<Policy> policy)
+BentleyStatus UlasProvider::PostUsageLogs(IUsageDb& usageDb, std::shared_ptr<Policy> policy)
     {
     LOG.debug("UlasProvider::PostUsageLogs");
 
@@ -115,7 +115,7 @@ folly::Future<folly::Unit> UlasProvider::SendUsageLogs(BeFileNameCR usageCSV, Ut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UlasProvider::PostFeatureLogs(UsageDb& usageDb, std::shared_ptr<Policy> policy)
+BentleyStatus UlasProvider::PostFeatureLogs(IUsageDb& usageDb, std::shared_ptr<Policy> policy)
     {
     LOG.debug("UlasProvider::PostFeatureLogs");
 

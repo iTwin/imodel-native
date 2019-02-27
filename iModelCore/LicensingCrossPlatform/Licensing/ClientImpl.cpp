@@ -36,7 +36,8 @@ IPolicyProviderPtr policyProvider,
 IUlasProviderPtr ulasProvider,
 Utf8StringCR projectId,
 Utf8StringCR featureString,
-IHttpHandlerPtr httpHandler
+IHttpHandlerPtr httpHandler,
+IUsageDbPtr usageDb
 ) :
 m_userInfo(userInfo),
 m_clientInfo(clientInfo),
@@ -46,9 +47,12 @@ m_featureString(featureString),
 m_buddiProvider(buddiProvider),
 m_policyProvider(policyProvider),
 m_ulasProvider(ulasProvider),
-m_httpHandler(httpHandler)
+m_httpHandler(httpHandler),
+m_usageDb(usageDb)
     {
-    m_usageDb = std::make_unique<UsageDb>();
+    if(m_usageDb == nullptr) // either pass in a mock, or initialize here
+        m_usageDb = std::make_unique<UsageDb>();
+
     m_correlationId = BeGuid(true).ToString();
     m_timeRetriever = TimeRetriever::Get();
     m_delayedExecutor = DelayedExecutor::Get();
@@ -587,7 +591,7 @@ std::shared_ptr<Policy> ClientImpl::GetPolicyToken()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-UsageDb& ClientImpl::GetUsageDb()
+IUsageDb& ClientImpl::GetUsageDb()
     {
     return *m_usageDb;
     }

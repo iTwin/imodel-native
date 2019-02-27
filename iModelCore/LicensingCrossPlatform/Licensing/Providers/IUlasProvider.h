@@ -22,8 +22,8 @@ typedef std::shared_ptr<struct IUlasProvider> IUlasProviderPtr;
 struct IUlasProvider
     {
 public:
-    virtual BentleyStatus PostUsageLogs(UsageDb& usageDb, std::shared_ptr<Policy> policy) = 0;
-    virtual BentleyStatus PostFeatureLogs(UsageDb& usageDb, std::shared_ptr<Policy> policy) = 0;
+    virtual BentleyStatus PostUsageLogs(IUsageDb& usageDb, std::shared_ptr<Policy> policy) = 0;
+    virtual BentleyStatus PostFeatureLogs(IUsageDb& usageDb, std::shared_ptr<Policy> policy) = 0;
     virtual ~IUlasProvider() {};
     };
 
