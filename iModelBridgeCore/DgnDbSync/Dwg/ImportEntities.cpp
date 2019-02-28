@@ -93,12 +93,18 @@ void CopyFrom (DrawParameters const& params)
     m_layer0Id = params.m_layer0Id;
     }
 
-void Initialize (DwgDbEntityCR ent, DrawParameters const* parentParams = nullptr)
+void Initialize (DwgDbEntityCR ent, DrawParameters const* parentParams = nullptr, DwgDbEntityCP templateEntity = nullptr)
     {
     m_color = ent.GetEntityColor ();
     m_layerId = ent.GetLayerId ();
+    if (!m_layerId.IsValid() && nullptr != templateEntity)
+        m_layerId = templateEntity->GetLayerId ();
     m_linetypeId = ent.GetLinetypeId ();
+    if (!m_linetypeId.IsValid() && nullptr != templateEntity)
+        m_linetypeId = templateEntity->GetLinetypeId ();
     m_materialId = ent.GetMaterialId ();
+    if (!m_materialId.IsValid() && nullptr != templateEntity)
+        m_materialId = templateEntity->GetMaterialId ();
     m_transparency = ent.GetTransparency ();
     m_weight = ent.GetLineweight ();
     m_mappedDgnWeight = m_dwgImporter.GetOptions().GetDgnLineWeight (m_weight);
@@ -110,7 +116,9 @@ void Initialize (DwgDbEntityCR ent, DrawParameters const* parentParams = nullptr
     m_sourceEntity = &ent;
     m_dwgdb = ent.GetDatabase ();
 
-    // if this is a new entity, use master file:
+    // if this is a new entity, use template DWG or fallback to master file:
+    if (m_dwgdb.IsNull() && nullptr != templateEntity)
+        m_dwgdb = templateEntity->GetDatabase ();
     if (m_dwgdb.IsNull())
         m_dwgdb = &m_dwgImporter.GetDwgDb ();
 
@@ -167,15 +175,15 @@ public:
         {
         this->CopyFrom (params);
         }
-    DrawParameters (DwgDbEntityCR ent, DwgImporter& importer, DwgDbEntityCP parent = nullptr) : m_dwgImporter(importer)
+    DrawParameters (DwgDbEntityCR ent, DwgImporter& importer, DwgDbEntityCP parent = nullptr, DwgDbEntityCP templateEntity = nullptr) : m_dwgImporter(importer)
         {
         if (nullptr != parent)
             {
             DrawParameters  parentParams(*parent, importer);
-            this->Initialize (ent, &parentParams);
+            this->Initialize (ent, &parentParams, templateEntity);
             return;
             }
-        this->Initialize (ent);
+        this->Initialize (ent, nullptr, templateEntity);
         }
 
 // methods called from DwgDb
@@ -2976,11 +2984,15 @@ BentleyStatus   DwgImporter::_ImportEntity (ElementImportResults& results, Eleme
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::ImportNewEntity (ElementImportResults& results, ElementImportInputs& inputs, DwgDbObjectIdCR desiredOwnerId, Utf8StringCR desiredCode)
+BentleyStatus   DwgImporter::ImportNewEntity (ElementImportResults& results, ElementImportInputs& inputs, DwgDbObjectIdCR desiredOwnerId)
     {
     DwgDbEntityP    entity = inputs.GetEntityP ();
     if (nullptr == entity)
         return  BSIERROR;
+
+    // the parent entity for ByBlock symbology, and template entity for ID dependent symbology (layer, linetype, etc):
+    DwgDbEntityCP   parentEntity = inputs.GetParentEntity ();
+    DwgDbEntityCP   templateEntity = (entity->GetObjectId().IsValid() || inputs.GetTemplateEntity() == nullptr) ? entity : inputs.GetTemplateEntity();
 
     DwgGiDrawablePtr    drawable = entity->GetDrawable ();
     if (!drawable.IsValid())
@@ -2989,13 +3001,13 @@ BentleyStatus   DwgImporter::ImportNewEntity (ElementImportResults& results, Ele
     // set DgnDbElement creation options
     ElementCreateParams createParams(inputs.GetTargetModelR());
 
-    BentleyStatus   status = this->_GetElementCreateParams (createParams, inputs.GetTransform(), *entity, desiredCode.c_str());
+    BentleyStatus   status = this->_GetElementCreateParams (createParams, inputs.GetTransform(), *templateEntity);
     if (BSISUCCESS != status)
         return  status;
 
     // set DWG entity draw options:
     GeometryOptions     geomOptions = this->_GetCurrentGeometryOptions ();
-    DrawParameters      drawParams (*entity, *this);
+    DrawParameters      drawParams (*entity, *this, parentEntity, templateEntity);
     GeometryFactory     geomFactory(createParams, drawParams, geomOptions, entity);
 
     // prepare for import

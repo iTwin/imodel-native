@@ -321,6 +321,7 @@ public:
         DWG_EXPORT BentleyStatus EvaluateXPath(Utf8StringR value, Utf8CP xpathExpression) const;
         };  // Config
 
+    //! DwgImporter params extended from iModelBridge::Params
     struct Options : iModelBridge::Params
         {
     typedef bmap<DwgDbLineWeight,uint32_t>      T_DwgWeightMap;
@@ -437,6 +438,7 @@ public:
         bool IsRunAsStandaloneApp () const { return m_runAsStandaloneApp; }
         };  // Options : iModelBridge::Params
 
+    //! Options to control object enablers to draw entities that results in desired geometry
     struct GeometryOptions : public IDwgDrawOptions
         {
         private:
@@ -490,6 +492,7 @@ public:
         void            SetViewportRange (DRange2dCR range) { m_viewportRange = range; }
         };  // GeometryOptions
 
+    //! A text font cache for the importer
     struct WorkingFonts
         {
     public:
@@ -529,6 +532,7 @@ public:
         BentleyStatus   LoadOSFonts ();
         }; // WorkingFonts
 
+    //! Default fonts used for texts which have missing fonts
     struct FallbackFonts
         {
         BeFileName          m_shxForText;
@@ -536,6 +540,7 @@ public:
         BeFileName          m_truetype;
         };
 
+    //! Parameters used to create a element in a geometric model
     struct ElementCreateParams
         {
         DgnModelR                       m_targetModel;
@@ -619,6 +624,7 @@ public:
         DwgDbObjectId           m_entityId;
         DwgDbEntityPtr          m_entity;
         DwgDbEntityCP           m_parentEntity;
+        DwgDbEntityCP           m_templateEntity;
         DwgDbSpatialFilterP     m_spatialFilter;
         ResolvedModelMapping    m_modelMapping;
         
@@ -627,7 +633,7 @@ public:
         DWG_EXPORT ElementImportInputs (DgnModelR model);
         //! Constructor to copy from a valid input context to a different valid target model
         //! @param[in] model The target DgnModel in which elements created from the entity will be added
-        //! @param[in] entity The input DWG entity to be acquired by m_entity
+        //! @param[in] entity The input source DWG entity to be acquired by m_entity
         //! @param[in] other The other input context to be copied
         DWG_EXPORT ElementImportInputs (DgnModelR model, DwgDbEntityP entity, ElementImportInputs const& other);
         DgnModelCR              GetTargetModel () const { return m_targetModel; }
@@ -644,6 +650,11 @@ public:
         DwgDbEntityCR           GetEntity () const { return *m_entity.get(); }
         DwgDbEntityCP           GetParentEntity () const { return m_parentEntity; }
         void                    SetParentEntity (DwgDbEntityCP parent) { m_parentEntity = parent; }
+        //! Get the template entity for basic entity properties such as layer, linetype, etc.  Used when the source entity is not a database resident.
+        DwgDbEntityCP           GetTemplateEntity () const { return m_templateEntity; }
+        //! Set a template entity for basic entity properties when they are not available from the source entity.
+        //! @param[in] dbent A DWG database entity as a template for layer, linetype, etc.  Must be a database resident entity, or nullptr.
+        void                    SetTemplateEntity (DwgDbEntityCP dbent) { if(dbent==nullptr || dbent->GetObjectId().IsValid()) m_templateEntity = dbent; else BeAssert(false && "Input entity not a db resident!"); }
         void                    SetSpatialFilter (DwgDbSpatialFilterP filter) { m_spatialFilter = filter; }
         DwgDbSpatialFilterP     GetSpatialFilter () const { return m_spatialFilter; }
         void                    SetModelMapping (ResolvedModelMapping const& m) { m_modelMapping = m; }
@@ -799,6 +810,7 @@ public:
         };  // PresentationRuleContent
     typedef bvector<PresentationRuleContent>    T_PresentationRuleContents;
 
+    //! An ID collection of constant block attribute definitions
     struct ConstantBlockAttrdefs
         {
     private:
@@ -1188,7 +1200,7 @@ protected:
     DWG_EXPORT virtual BentleyStatus  _ImportXReference (ElementImportResults& results, ElementImportInputs& inputs);
     //! Import a normal block reference entity
     DWG_EXPORT virtual BentleyStatus  _ImportBlockReference (ElementImportResults& results, ElementImportInputs& inputs);
-    //! this method is called to setup ElementCreatParams for each entity to be imported by default:
+    //! This method is called to setup ElementCreatParams for each entity to be imported by default:
     DWG_EXPORT virtual BentleyStatus  _GetElementCreateParams (ElementCreateParams& params, TransformCR toDgn, DwgDbEntityCR entity, Utf8CP desiredCode = nullptr);
     //! Determine DgnClassId for an entity by its owner block
     DWG_EXPORT virtual DgnClassId     _GetElementType (DwgDbBlockTableRecordCR block);
@@ -1370,7 +1382,7 @@ public:
     //! Import a database-resident entity
     DWG_EXPORT BentleyStatus    ImportEntity (ElementImportResults& results, ElementImportInputs& inputs);
     //! Import a none database-resident entity in a desired block (must be a valid block)
-    DWG_EXPORT BentleyStatus    ImportNewEntity (ElementImportResults& results, ElementImportInputs& inputs, DwgDbObjectIdCR desiredOwnerId, Utf8StringCR desiredCode);
+    DWG_EXPORT BentleyStatus    ImportNewEntity (ElementImportResults& results, ElementImportInputs& inputs, DwgDbObjectIdCR desiredOwnerId);
     DWG_EXPORT DgnCode          CreateCode (Utf8StringCR value) const;
     DWG_EXPORT uint32_t         GetEntitiesImported () const { return m_entitiesImported; }
     DWG_EXPORT DgnModelId       GetGroupModelId () const { return m_groupModelId; }

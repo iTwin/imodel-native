@@ -247,11 +247,14 @@ BentleyStatus   AttributeFactory::ProcessConstantAttributes (DwgDbObjectIdCR blo
     if (!m_importer.GetConstantAttrdefIdsFor(idArray, blockId))
         return  status;
     
+    auto insertEntity = m_inputContext.GetEntityPtrR().get ();
+
     DwgImporter::ElementImportInputs    childInputs(*m_hostElement.GetModel());
     childInputs.SetClassId (m_hostElement.GetElementClassId());
     childInputs.SetTransform (m_inputContext.GetTransform());
     childInputs.SetModelMapping (m_inputContext.GetModelMapping());
-    childInputs.SetParentEntity (m_inputContext.GetEntityPtrR().get());
+    childInputs.SetParentEntity (insertEntity);
+    childInputs.SetTemplateEntity (insertEntity);
 
     // walk through variable attributes: create a visible text and an ElementAspect from each attribute
     for (auto& id : idArray)
@@ -262,19 +265,24 @@ BentleyStatus   AttributeFactory::ProcessConstantAttributes (DwgDbObjectIdCR blo
             DwgDbAttributeP attrib = nullptr;
             DwgString   defaultValue;
 
-            // 1 - create an PhysicalElement displaying a visible attribute:
+            // 1 - create a PhysicalElement displaying a visible attribute:
             if (!attrdef->IsInvisible() && attrdef->GetValueString(defaultValue) && !defaultValue.IsEmpty() && nullptr != (attrib = DwgDbAttribute::Create()))
                 {
+                // set attribute data from attrdef
                 attrib->SetFrom (attrdef.get(), toBlockRef);
+                // set symbology etc from block reference, but layer & linetype etc shall come from the template entity set above
+                attrib->SetPropertiesFrom (*insertEntity);
 
-                DwgDbEntityP    entity = DwgDbEntity::Cast (attrib);
-                childInputs.m_entity.AcquireObject (entity);
+                DwgDbEntityP    attribEntity = DwgDbEntity::Cast (attrib);
+                childInputs.m_entity.AcquireObject (attribEntity);
 
+#ifdef NEED_UNIQUE_CODE_PER_ELEMENT
                 // make an element code "attrdefID[blockRefId]":
-                Utf8PrintfString                    elementCode("%llx[%llx]", attrdef->GetObjectId().ToUInt64(), blockRefId.ToUInt64());
-                DwgImporter::ElementImportResults   childResults;
+                Utf8PrintfString    elementCode("%llx[%llx]", attrdef->GetObjectId().ToUInt64(), blockRefId.ToUInt64());
+#endif
 
-                status = m_importer.ImportNewEntity (childResults, childInputs, blockId, elementCode);
+                DwgImporter::ElementImportResults   childResults;
+                status = m_importer.ImportNewEntity (childResults, childInputs, blockId);
 
                 // add the new element as a child of the host element, i.e. the insert entity:
                 if (BSISUCCESS == status)
