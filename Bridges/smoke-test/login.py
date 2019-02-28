@@ -7,6 +7,7 @@ import sys
 
 
 loginPass=sys.argv[1]
+version=sys.argv[2]
 
 url=r'https://qa-connect-imodelhubwebsite.bentley.com/Project/0b048e3d-9699-4a6c-82b8-68f79824c810'
 driver = webdriver.Chrome("C:\\bridge\\chromedriver.exe")
@@ -24,9 +25,6 @@ driver.find_element_by_id('submitButton').click()
 driver.find_element_by_id('idSIButton9').click()
 time.sleep(10)
 #if driver.find_element_by_class_name('menu-button'):
-file = open('C:\\bridge\\Version.log', 'r') 
-version=file.read()
-version=version.rstrip("\n\r")
 imodelList=['MS_'+version,'VM_'+version , 'HYB_'+version, 'IFC_'+version ,'BB24_'+version,'FNT_'+version, 'PRN_'+version, 'OFF_'+version, '2D_'+version, 'LVL_'+version, 'SAV_'+version, '3SM_'+version]
 for index,imodel in enumerate(imodelList):
    driver.find_element_by_class_name('create-button').click()
