@@ -1,6 +1,6 @@
 @echo off
 
-set  version=%2
+set  version=%1
 
 set installation_directory=C:\Program Files\
 
