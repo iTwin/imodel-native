@@ -14,6 +14,7 @@
 #include <Licensing/Client.h>
 #include <Licensing/FreeClient.h>
 #include <Licensing/Utils/DateHelper.h>
+#include <Licensing/AuthType.h>
 #include "../../Licensing/Providers/PolicyProvider.h"
 #include "../../PublicAPI/Licensing/Utils/SCVWritter.h"
 
@@ -58,7 +59,7 @@ PolicyProviderTests::PolicyProviderTests() :
 
     EXPECT_CALL(*m_authMock, GetAuthHandler(_, _))
         .WillRepeatedly(Return(m_handlerMock));
-    m_policyProvider = std::make_shared<PolicyProvider>(m_buddiMock, clientInfo, m_authMock);
+    m_policyProvider = std::make_shared<PolicyProvider>(m_buddiMock, clientInfo, m_authMock, AuthType::SAML);
     }
 
 PolicyProvider& PolicyProviderTests::GetPolicyProvider() const {

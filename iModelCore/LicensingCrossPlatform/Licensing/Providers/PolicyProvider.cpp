@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-
 #include "PolicyProvider.h"
 #include "../Logging.h"
 
@@ -17,12 +16,15 @@ PolicyProvider::PolicyProvider
     (
     IBuddiProviderPtr buddiProvider,
     WebServices::ClientInfoPtr clientInfo,
-    std::shared_ptr<IAuthHandlerProvider> authHandlerProvider
+    std::shared_ptr<IAuthHandlerProvider> authHandlerProvider,
+	AuthType authType
     ) :
     m_buddiProvider(buddiProvider),
     m_clientInfo(clientInfo),
     m_authHandlerProvider(authHandlerProvider)
-    {}
+    {
+	m_headerPrefix = GetHeaderPrefix(authType);
+	}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -55,7 +57,7 @@ folly::Future<Utf8String> PolicyProvider::GetCertificate()
 
     LOG.debugv("GetCertificate - EntitlementPolicyService: %s", url.c_str());
 
-    auto authHandler = m_authHandlerProvider->GetAuthHandler(url, IConnectAuthenticationProvider::HeaderPrefix::Saml);
+    auto authHandler = m_authHandlerProvider->GetAuthHandler(url, m_headerPrefix);
 
     HttpClient client(nullptr, authHandler);
     return client.CreateGetRequest(url).Perform().then(
@@ -82,7 +84,7 @@ folly::Future<Utf8String> PolicyProvider::PerformGetPolicyRequest()
 
     LOG.debugv("ClientImpl::PerformGetPolicyRequest - EntitlementPolicyService: %s", url.c_str());
 
-    auto authHandler = m_authHandlerProvider->GetAuthHandler(url, IConnectAuthenticationProvider::HeaderPrefix::Saml);
+    auto authHandler = m_authHandlerProvider->GetAuthHandler(url, m_headerPrefix);
 
     HttpClient client(nullptr, authHandler);
 
@@ -119,4 +121,20 @@ folly::Future<Utf8String> PolicyProvider::PerformGetPolicyRequest()
         return response.GetBody().AsString();
         });
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+IConnectAuthenticationProvider::HeaderPrefix PolicyProvider::GetHeaderPrefix(AuthType authType)
+{
+	switch (authType)
+	{
+	case AuthType::OIDC:
+		return IConnectAuthenticationProvider::HeaderPrefix::Bearer;
+	case AuthType::SAML:
+		return IConnectAuthenticationProvider::HeaderPrefix::Saml;
+	default:
+		return IConnectAuthenticationProvider::HeaderPrefix::Saml;
+	}
+}
 
