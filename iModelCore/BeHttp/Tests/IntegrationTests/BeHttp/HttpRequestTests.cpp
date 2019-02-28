@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/BeHttp/HttpRequestTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define BEHTTP_ENABLE_DUPLICATING_SYMBOLS
@@ -213,6 +213,19 @@ TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasValidCert_Success
 
     EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTests, Perform_CertValidationLeftToDefaultTrueAndSiteHasSelfSignedCert_Fails)
+    {
+    Request request("https://self-signed.badssl.com/");
+
+    Response response = request.Perform().get();
+
+    EXPECT_EQ(ConnectionStatus::CertificateError, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::None, response.GetHttpStatus());
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeHttp/HttpRequest.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,7 +44,7 @@ private:
     Utf8String m_proxyUrl;
     Credentials m_proxyCredentials;
     Credentials m_credentials;
-    bool m_validateCertificate = false;
+    bool m_validateCertificate = true;
     HttpRequestHeaders m_requestHeaders;
     HttpBodyPtr m_requestBody;
     HttpBodyPtr m_responseBody;
