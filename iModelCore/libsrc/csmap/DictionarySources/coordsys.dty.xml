@@ -6079,21 +6079,6 @@
                <Member>
                  <KeyName>EUROP50.SPBA</KeyName>
                </Member>
-               <Member>
-                 <KeyName>ETRF89.UTM-31N/zE-N</KeyName>
-               </Member>
-               <Member>
-                 <KeyName>ETRF89.UTM-33N/zE-N</KeyName>
-               </Member>
-               <Member>
-                 <KeyName>ETRF89.UTM-31N/N-zE</KeyName>
-               </Member>
-               <Member>
-                 <KeyName>ETRF89.UTM-32N/N-zE</KeyName>
-               </Member>
-               <Member>
-                 <KeyName>ETRF89.UTM-33N/N-zE</KeyName>
-               </Member>
             </Members>
             <Groups>
               <Group>
@@ -7025,6 +7010,21 @@
                   </Member>
                   <Member>
                     <KeyName>DB_REF.GK3d-5/EN</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ETRF89.UTM-31N/zE-N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ETRF89.UTM-33N/zE-N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ETRF89.UTM-31N/N-zE</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ETRF89.UTM-32N/N-zE</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ETRF89.UTM-33N/N-zE</KeyName>
                   </Member>
                 </Members>
               </Group>
