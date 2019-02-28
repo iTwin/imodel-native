@@ -992,6 +992,28 @@ void PolyfaceHeader::ClearParameters (bool active)
     }
 
 /*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    MattGooding     02/2019
++--------------------------------------------------------------------------------------*/
+static DVec3d getDefaultNormalForFace(DPoint3dCP xyzIn, int numXYZ)
+    {
+    // Return a default normal for faces collapsed to a single point or edge. Should
+    // only be called if the face has already been determined to have ~zero area.
+    DVec3d zero = DVec3d::FromZero();
+    for (int i = 1; i < numXYZ; ++i)
+        {
+        DVec3d testEdge = DVec3d::FromStartEnd(xyzIn[0], xyzIn[i]);
+        if (DVec3dOps::AlmostEqual(testEdge, zero))
+            continue;
+
+        DVec3d xAxis, yAxis, zAxis;
+        testEdge.GetNormalizedTriad(xAxis, yAxis, zAxis);
+        return yAxis; // x or y is arbitrary, z is original edge
+        }
+
+    return DVec3d::UnitZ(); // face has no real edge, default to unit Z
+    }
+
+/*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
 bool PolyfaceHeader::BuildPerFaceNormals ()
@@ -1017,18 +1039,18 @@ bool PolyfaceHeader::BuildPerFaceNormals ()
     DVec3d zvector;
     for (visitor->Reset (); visitor->AdvanceToNextFace (); )
         {
-        if (visitor->TryGetLocalFrame (localToWorld, worldToLocal, LOCAL_COORDINATE_SCALE_UnitAxesAtStart))
-            {
+        if (!visitor->TryGetLocalFrame (localToWorld, worldToLocal, LOCAL_COORDINATE_SCALE_UnitAxesAtStart))
+            zvector = getDefaultNormalForFace(&(Point())[0], (int)visitor->NumEdgesThisFace());
+        else
             localToWorld.GetMatrixColumn (zvector, 2);
-            size_t newNormalIndex = m_normal.size ();
-            m_normal.push_back (zvector);
-            
-            for (size_t i = 0, n = visitor->NumEdgesThisFace (); i < n; i++)
-                {
-                size_t readPos = indexPosition[i];
-                if (readPos < numIndex)   // really really better be...
-                    m_normalIndex[readPos] = static_cast <int>(newNormalIndex + 1);   // ONE BASED !!!!
-                }
+
+        size_t newNormalIndex = m_normal.size ();
+        m_normal.push_back (zvector);
+        for (size_t i = 0, n = visitor->NumEdgesThisFace (); i < n; i++)
+            {
+            size_t readPos = indexPosition[i];
+            if (readPos < numIndex)   // really really better be...
+                m_normalIndex[readPos] = static_cast <int>(newNormalIndex + 1);   // ONE BASED !!!!
             }
         }
     

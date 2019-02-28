@@ -658,7 +658,11 @@ bool PolyfaceConstruction::AddPolyface_matched (PolyfaceQueryCR source)
     else 
         m_polyfacePtr->SetTwoSided (m_polyfacePtr->GetTwoSided () | source.GetTwoSided ());
 
-    bmap <size_t, size_t>   pointRemap, normalRemap, paramRemap, faceRemap;
+    bvector <size_t>        pointRemap(source.GetPointCount());
+    bvector <size_t>        normalRemap(source.GetNormalCount());
+    bvector <size_t>        paramRemap(source.GetParamCount());
+    bvector <size_t>        faceRemap(source.GetFaceCount());
+
     DPoint3dCP              points = source.GetPointCP();
     DPoint2dCP              params = source.GetParamCP();
     DVec3dCP                normals = source.GetNormalCP();
@@ -700,7 +704,7 @@ bool PolyfaceConstruction::AddPolyface_matched (PolyfaceQueryCR source)
 
     // If we have no params but they've been requested, fill in.
     if (m_polyfacePtr->Param ().Active () && 0 == source.GetParamCount () && 0 == m_polyfacePtr->GetParamCount ())
-        paramRemap[0] = (int) FindOrAddParam (DPoint2d::From (0.0, 0.0));
+        paramRemap.push_back((int)FindOrAddParam (DPoint2d::From (0.0, 0.0)));
 
     for (size_t i=0; i<source.GetNormalCount(); i++)
         normalRemap[i] = (int) FindOrAddNormal (normals[i]);

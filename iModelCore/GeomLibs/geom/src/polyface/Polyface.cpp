@@ -1393,6 +1393,7 @@ void    PolyfaceHeader::SetNewFaceData (FacetFaceData* faceDataP, size_t endInde
         faceData.SetParamDistanceRangeFromNewFaceData (*this, endIndex);
 
     m_faceData.push_back (faceData);
+    m_faceIndex.reserve(endIndex);
     for (size_t i = m_faceIndex.size(); i <endIndex; i++)
         m_faceIndex.push_back (0 == m_pointIndex[i] ? 0 : (int) m_faceData.size());
     }

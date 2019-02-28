@@ -53,6 +53,8 @@ $(o)JsInteropTiles$(oext) : $(baseDir)JsInteropTiles.cpp $(baseDir)IModelJsNativ
 
 $(o)JsInteropBriefcaseManager$(oext) : $(baseDir)JsInteropBriefcaseManager.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 
+$(o)JsInteropExportGraphics$(oext) : $(baseDir)JsInteropExportGraphics.cpp ${MultiCompileDepends}
+
 $(o)ECPresentationUtils$(oext) : $(baseDir)ECPresentationUtils.cpp $(baseDir)ECPresentationUtils.h ${MultiCompileDepends}
 
 $(o)ECSchemaXmlContextUtils$(oext) : $(baseDir)ECSchemaXmlContextUtils.cpp $(baseDir)ECSchemaXmlContextUtils.h ${MultiCompileDepends}

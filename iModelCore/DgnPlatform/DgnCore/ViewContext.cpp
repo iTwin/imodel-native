@@ -468,6 +468,9 @@ bool ViewContext::_AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tole
             return false;
         }
 
+    if (m_ignoreViewRange)
+        return true;
+
     return (FrustumPlanes::Contained::Outside != m_frustumPlanes.Contains(worldPoints, nPts, tolerance));
     }
 

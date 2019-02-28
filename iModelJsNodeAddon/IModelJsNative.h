@@ -124,6 +124,7 @@ public:
     static DgnDbStatus InsertElementAspect(DgnDbR db, JsonValueCR aspectProps);
     static DgnDbStatus UpdateElementAspect(DgnDbR db, JsonValueCR aspectProps);
     static DgnDbStatus DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr);
+    static DgnDbStatus ExportGraphics(DgnDbR db, Napi::Object const& exportProps);
     static DbResult InsertLinkTableRelationship(JsonValueR results, DgnDbR db, Json::Value& props);
     static DbResult UpdateLinkTableRelationship(DgnDbR db, Json::Value& props);
     static DbResult DeleteLinkTableRelationship(DgnDbR db, Json::Value& props);
