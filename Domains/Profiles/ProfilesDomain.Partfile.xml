@@ -73,6 +73,7 @@
     </Part>
 
     <Part Name="ProfilesDoc" BentleyBuildMakeFile="Profiles\Documentation\ProfilesDoc.mke">
+        <RequiredRepository>Bsitools-Doxygen</RequiredRepository>
         <SubPart PartName="BentleyDocConfig" PartFile="DgnPlatform" Repository="DgnPlatform" />
         <Bindings>
             <PublicAPI Domain="Profiles" />
