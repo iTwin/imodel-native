@@ -1284,7 +1284,6 @@ void DisplayStyle::_OnLoadedJsonProperties()
     m_excludedElements.clear();
     for (Json::ArrayIndex i = 0; i < excludedElementsJson.size(); ++i)
         {
-        JsonValueCR val = excludedElementsJson[i];
         m_excludedElements.insert(DgnElementId(excludedElementsJson[i].asUInt64()));
         }
     }
