@@ -2,7 +2,7 @@
 #
 #     $Source: iModelBridge/addon/makePackages.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 %include mdl.mki
@@ -41,11 +41,15 @@ baseDir = $(_MakeFilePath)
 # Never want to do anything in firebug
 # PRG wants to do everything
 #----------------------------------------------------------------------------------------
-%if defined (IMODEL_JS_NODE_ADDON_PUBLISH) || defined (SUBNET_PRG)
-    ACTION=publish
-%else
-    ACTION=print
-%endif
+# Note: I commented out the following because the imodel bridge node addon should not be published.
+#       Later on we should revisit this to see if we want do handle this differently in our builds --John Majerle 2019.02.27
+#%if defined (IMODEL_JS_NODE_ADDON_PUBLISH) || defined (SUBNET_PRG)
+#    ACTION=publish
+#%else
+#    ACTION=print
+#%endif
+
+ACTION=print
 
 always:
     |-- Building iModelJsNodeAddon version $(PACKAGE_VERSION) --
