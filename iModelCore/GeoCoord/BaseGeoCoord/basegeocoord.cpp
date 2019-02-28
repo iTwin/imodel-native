@@ -1204,8 +1204,11 @@ bool FindDatumFromTransformationParams(WString& paramDatumName, const WString& e
         {
         DatumCP indexDatum = Datum::CreateDatum(WString(dtKeyName, false).c_str());
 
+        WString groupName;
+        indexDatum->GetGroup(groupName);
+
         // If the datum is not deprecated, valid and equivalent then we have a match.
-        if (indexDatum->IsValid() && (0 != deprecated.CompareTo(GetDatumGroupName(*indexDatum))) && DatumEquivalent(*(paramDatum->GetCSDatum()), *(indexDatum->GetCSDatum()), false, true))
+        if (indexDatum->IsValid() && (0 != deprecated.CompareTo(groupName)) && DatumEquivalent(*(paramDatum->GetCSDatum()), *(indexDatum->GetCSDatum()), false, true))
             {
             paramDatumName = WString(dtKeyName, false);
             paramDatum->Destroy();
@@ -1240,8 +1243,9 @@ bool FindDatumFromTransformationParams(WString& paramDatumName, const WString& e
     for (index = 0; ((foundIndex < 0) && (0 < CSMap::CS_dtEnum(index, dtKeyName, sizeof(dtKeyName)))); index++)
         {
         DatumCP indexDatum = Datum::CreateDatum(WString(dtKeyName, false).c_str());
-
-        if (indexDatum->IsValid() && (0 != deprecated.CompareTo(GetDatumGroupName(*indexDatum))) && DatumEquivalent(*(paramDatum->GetCSDatum()), *(indexDatum->GetCSDatum()), false, true))
+        WString groupName;
+        indexDatum->GetGroup(groupName);
+        if (indexDatum->IsValid() && (0 != deprecated.CompareTo(groupName)) && DatumEquivalent(*(paramDatum->GetCSDatum()), *(indexDatum->GetCSDatum()), false, true))
             {
             paramDatumName = WString(dtKeyName, false);
             paramDatum->Destroy();
