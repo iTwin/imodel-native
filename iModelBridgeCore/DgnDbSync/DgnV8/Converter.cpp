@@ -3822,7 +3822,10 @@ bool            Converter::IsTransformEqualWithTolerance(TransformCR lhs, Transf
 void Converter::CheckForAndSaveChanges()
     {
     m_hadAnyChanges |= m_dgndb->Txns().HasChanges();
-    iModelBridge::SaveChanges(*m_dgndb);
+    if (BSISUCCESS != iModelBridge::SaveChanges(*m_dgndb))
+        {
+        OnFatalError(IssueCategory::DiskIO(), Issue::Error(), "CheckForAndSaveChanges failed.");
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

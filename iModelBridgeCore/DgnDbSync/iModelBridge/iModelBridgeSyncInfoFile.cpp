@@ -653,6 +653,11 @@ iModelBridgeSyncInfoFile::ConversionResults iModelBridgeWithSyncInfoBase::Record
         return results; 
         }
 
+    //In case of the new syncinfo srcId = repositoryLink element Id
+    bool useAspect = TestFeatureFlag(iModelBridgeFeatureFlag::WantProvenanceInBim);
+    if (useAspect && results.m_element.IsValid() && results.m_element->GetElementId().IsValid())
+        srid = results.m_element->GetElementId().GetValue();
+
     //  Compute the state of the document
     time_t lmt = 0;
     if (sstateIn)
@@ -689,6 +694,13 @@ iModelBridgeSyncInfoFile::ConversionResults iModelBridgeWithSyncInfoBase::Record
 
     auto change = changeDetector._DetectChange(srid, kind, docItem);
     changeDetector._UpdateBimAndSyncInfo(results, change);
+    if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New == change.GetChangeType())
+        {
+        DgnElementId elementId = results.m_element->GetElementId();
+        iModelBridgeSyncInfoFile::SourceIdentity sid(elementId.GetValue(), kind, docItem._GetId());
+        changeDetector.AddProvenanceAspect(sid, sstate, *results.m_element);
+        changeDetector.UpdateResultsInBIM(results, elementId);
+        }
 
     if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged != change.GetChangeType())
         {

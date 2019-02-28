@@ -746,13 +746,17 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         IMODEL_BRIDGE_EXPORT DgnElementPtr MakeCopyForUpdate(DgnElementCR newEl, DgnElementCR originalEl);;
         IMODEL_BRIDGE_EXPORT DgnDbStatus UpdateResultsInBIMForOneElement(ConversionResults& conversionResults, DgnElementId existingElementId);;
         IMODEL_BRIDGE_EXPORT DgnDbStatus UpdateResultsInBIMForChildren(ConversionResults& parentConversionResults);;
-        IMODEL_BRIDGE_EXPORT DgnDbStatus UpdateResultsInBIM(ConversionResults& conversionResults, DgnElementId existingElementId);
+        
 
         //! Invoked just before an an element is deleted
         IMODEL_BRIDGE_EXPORT virtual void _OnItemDelete(Record const&);
 
+     public:
+
+        IMODEL_BRIDGE_EXPORT DgnDbStatus UpdateResultsInBIM(ConversionResults& conversionResults, DgnElementId existingElementId);
+
         DgnDbStatus AddProvenanceAspect(SourceIdentity const& identity, SourceState const &state, DgnElementR element);
-      public:
+      
         //! @private
         //! Construct a change detector object. This will invoke the iModelBridgeSyncInfoFile::_OnNewUpdate method on @a si
         //! @note You should generally call iModelSyncInfoFile::GetChangeDetectorFor to get a change detector.

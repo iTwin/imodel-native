@@ -1641,32 +1641,6 @@ BentleyStatus   iModelBridgeFwk::GetSchemaLock()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::ImportDgnProvenance(bool& madeChanges)
-    {
-    bool needFileProvenance = !m_briefcaseDgnDb->TableExists(DGN_TABLE_ProvenanceFile) && iModelBridge::WantModelProvenanceInBim(*m_briefcaseDgnDb);
-    bool needModelProvenance = !m_briefcaseDgnDb->TableExists(DGN_TABLE_ProvenanceModel) && iModelBridge::WantModelProvenanceInBim(*m_briefcaseDgnDb);
-
-    if (needFileProvenance || needModelProvenance)
-        {
-        if (SUCCESS != GetSchemaLock())
-            {
-            GetLogger().fatal("GetSchemaLock failed after all the retries. Aborting.");
-            return BSIERROR;
-            }
-        if (needFileProvenance)
-            DgnV8FileProvenance::CreateTable(*m_briefcaseDgnDb);
-        if (needModelProvenance)
-            DgnV8ModelProvenance::CreateTable(*m_briefcaseDgnDb);
-        }
-
-    madeChanges = (needFileProvenance || needModelProvenance);
-    return BSISUCCESS;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeFwk::UpdateExistingBimWithExceptionHandling()
@@ -1876,11 +1850,13 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         //Get the schema lock if needed.
         bool hasChanges = false;
-        if (BSISUCCESS != ImportDgnProvenance(hasChanges))
-            return BentleyStatus::ERROR;
-
+        
         if (BSISUCCESS != GetSchemaLock())  // must get schema lock preemptively. This ensures that only one bridge at a time can make schema and definition changes. That then allows me to pull/merge/push between the definition and data steps without closing and reopening
-            return RETURN_STATUS_SERVER_ERROR;                                                   // === SCHEMA LOCK
+            {
+            LOG.fatalv("Bridge cannot obtain schema lock.");
+            return RETURN_STATUS_SERVER_ERROR;                               
+            }
+
         holdsSchemaLock = true;                                                                  // === SCHEMA LOCK
                                                                                                  // === SCHEMA LOCK
         //  Tell the bridge that the briefcase is now open and ask it to open the source file(s).// === SCHEMA LOCK
