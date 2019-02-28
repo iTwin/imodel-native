@@ -2508,9 +2508,19 @@ int CS_wktEleToDt (struct cs_Dtdef_ *dtDef,struct cs_Eldef_ *elDef,
 		dtDef->delta_X = toWgs84->GetFieldDouble (0);
 		dtDef->delta_Y = toWgs84->GetFieldDouble (1);
 		dtDef->delta_Z = toWgs84->GetFieldDouble (2);
+#ifdef GEOCOORD_ENHANCEMENT
+/* Changed to EPSG:9606 rotation sign convention as it is the convention used by GeoTIFF, Apache, PROJ4, OGC though the specs are completely
+   silent concerning the sign convention. Some have abandoned support of the TOWGS84 clause because of this. 
+   ESRI does not use TOWGS84 except with 3 params transforms probably for this reason. I 
+   would recommend not adding this clause but if present it should be EPSG:9606 convention */
+		dtDef->rot_X   = -toWgs84->GetFieldDouble (3);
+		dtDef->rot_Y   = -toWgs84->GetFieldDouble (4);
+		dtDef->rot_Z   = -toWgs84->GetFieldDouble (5);
+#else
 		dtDef->rot_X   = toWgs84->GetFieldDouble (3);
 		dtDef->rot_Y   = toWgs84->GetFieldDouble (4);
 		dtDef->rot_Z   = toWgs84->GetFieldDouble (5);
+#endif
 		dtDef->bwscale = toWgs84->GetFieldDouble (6);
 
 		if (flavor == wktFlvrOracle && dtDef->bwscale != 0.0)
