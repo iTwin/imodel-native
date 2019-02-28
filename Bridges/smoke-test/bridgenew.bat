@@ -1,5 +1,3 @@
-
-setLocal EnableDelayedExpansion
 set  version=%2
 
 set installation_directory=%1
