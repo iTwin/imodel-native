@@ -12,4 +12,4 @@
 [imodel02\imodelcore\besqlite\besqliteprofilemanager.cpp]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.StartWithKeyApplicationFromFactory_Success:ClientTests.StartWithKeyApplication_StopApplication_Success:UsageDbTests.*:
 [imodel02\imodelcore\besqlite\l10n.cpp]
-%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=GenerateSIDTests.*:ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:PolicyTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:

@@ -32,13 +32,13 @@ def fixPath(path):
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Majd.Uddin    02/2019
 #-------------------------------------------------------------------------------------------
-def getChangedTests(comp):
+def getChangedTests(reportPath, comp):
     tl = []
     mapFile = cmp.TiaMapPathForComp(comp)
     if not os.path.exists(mapFile):
         return tl
     timeToCompare = os.path.getmtime(mapFile)
-    tcatalog = TestCatalog(cmp.RepoForComp(comp))
+    tcatalog = TestCatalog(cmp.RepoPathForComp(comp))
     sf = tcatalog.get_files()
     for sfn in sf:
         fileTime = os.path.getmtime(sfn)
@@ -54,7 +54,7 @@ def getChangedTests(comp):
         if test in tl:
             tl.remove(test)
     # Since unwanted tests can get in. Work around is to run tests and get list
-    allTests = getTests(comp)
+    allTests = getTests(reportPath, comp)
     for test in list(tl):
         if test not in allTests:
             print 'removing: ' + test
@@ -63,7 +63,7 @@ def getChangedTests(comp):
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Majd.Uddin    02/2019
 #-------------------------------------------------------------------------------------------
-def getTests(comp):
+def getTests(reportPath, comp):
     testList = []
     testLog = cmp.LogPathForComp(comp)
     print testLog
@@ -92,9 +92,10 @@ def runCoverage(reportPath, comp, forceAll):
     results = {'NotNeeded': [], 'Passed': [], 'Failed': []}
     testExe = cmp.ExePathForComp(comp)
     if forceAll:
-        testList = getTests(comp)
+        testList = getTests(reportPath, comp)
     else: # only run for changed files
-        testList = getChangedTests(comp)
+        testList = getChangedTests(reportPath, comp)
+    print 'Total tests for coverage run: ' + str(len(testList))
     i = 0
     if len(testList) > 0: # we need to run coverage for some tests
         reportDir = os.path.join(reportPath, comp)

@@ -30,29 +30,40 @@ from CoverageReports import runCoverage, printResults
 #-------------------------------------------------------------------------------------------
 def getMapFromFile(fileName):
     tiaMap = {}
-    
-    f = open(fileName, 'r')
-    lines = f.readlines()
-    i = 0
-    for line in lines:
-        if line.strip().startswith('['):
-            sfName = line.strip()[1:-1]
-            if sfName not in tiaMap:
-                tiaMap.setdefault(sfName, {})
-            tests = lines[i+1]
-            testP = tests.split(' ')
-            testP2 = testP[1].split('=')
-            testList = testP2[1].split(':')
-            for t in testList[:-1]:
-                tP = t.split('.')
-                testCase = tP[0]
-                test = tP[1]
-                if testCase not in tiaMap[sfName]:
-                    tiaMap[sfName].setdefault(testCase, [])
-                if test not in tiaMap[sfName][testCase]:
-                    tiaMap[sfName][testCase].append(test)
-        i = i + 1
-            
+    # first get all files
+    files = []
+    fn, fx = os.path.splitext(os.path.basename(fileName))
+    fp = fn.split('_')
+    ff = ''
+    for i in range(0, len(fp) - 1):
+        ff = ff + fp[i] + '_'
+    for f in os.listdir(os.path.dirname(filename)):
+        if f.startswith(ff):
+            files.append(os.path.join(os.path.dirname(filename),f))
+    for fl in files:
+        f = open(fl, 'r')
+        lines = f.readlines()
+        i = 0
+        for line in lines:
+            if line.strip().startswith('['):
+                sfName = line.strip()[1:-1]
+                if sfName not in tiaMap:
+                    tiaMap.setdefault(sfName, {})
+                tests = lines[i+1]
+                testP = tests.split(' ')
+                testP2 = testP[1].split('=')
+                testList = testP2[1].split(':')
+                for t in testList[:-1]:
+                    tP = t.split('.')
+                    testCase = tP[0]
+                    test = tP[1]
+                    if testCase not in tiaMap[sfName]:
+                        tiaMap[sfName].setdefault(testCase, [])
+                    if test not in tiaMap[sfName][testCase]:
+                        tiaMap[sfName][testCase].append(test)
+            i = i + 1
+
+              
     return tiaMap
 #-------------------------------------------------------------------------------------------
 # bsimethod                                    Majd.Uddin    12/2017
@@ -115,7 +126,6 @@ def getTiaMapAll(covRoot, comp, dll=None):
                         if cmp.CompForDll(packName).lower() in sfName.lower() and lineRate > 0.0:
                             sfPath =  os.path.join(drive, sfName)
                             if srcRoot.lower() in sfPath.lower():
-                                print 'yes 3'
                                 sfNtoAdd = sfPath[sfPath.find(srcRoot)+len(srcRoot):]
                                 if sfNtoAdd not in tiaMap:
                                     tiaMap[packName].setdefault(sfNtoAdd, {})
@@ -292,7 +302,7 @@ def main():
             tiaMap = getTiaMapAll(covRoot, component, dll)
             writeMapToFiles(mapDir, tiaMap, component)
             adjustMapFiles(mapDir)
-    copyMapFiles(mapDir)
+    copyMapFiles(mapDir, comps)
     if args.pushChanges:
     #Copy all Map files to source and push changes
         status = pushMapFiles(covRoot, comps)

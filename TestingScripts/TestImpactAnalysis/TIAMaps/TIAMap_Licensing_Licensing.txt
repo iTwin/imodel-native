@@ -1,16 +1,18 @@
 
-[imodel02\imodelcore\licensingcrossplatform\licensing\policy.cpp]
-%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=PolicyTests.Create_JWtokenWithoutPolicyClaim_ReturnsError:PolicyTests.Create_Policy:PolicyTests.Create_PolicyNullInputs:PolicyTests.Validate_ProperRead:ClientTests.StartWithKeyApplicationFromFactory_Success:ClientTests.StartWithKeyApplication_StopApplication_Success:
 [imodel02\imodelcore\licensingcrossplatform\licensing\policy.h]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=PolicyTests.Validate_ProperRead:
+[imodel02\imodelcore\licensingcrossplatform\licensing\utils\inmemoryjsonlocalstate.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
+[imodel02\imodelcore\licensingcrossplatform\licensing\utils\jwtoken.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=PolicyTests.Create_JWtokenWithoutPolicyClaim_ReturnsError:PolicyTests.Create_Policy:PolicyTests.Create_PolicyNullInputs:PolicyTests.Validate_ProperRead:JWTokenTests.*:
 [imodel02\imodelcore\licensingcrossplatform\licensing\clientimpl.cpp]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.GetCertificate_Success:ClientTests.SendFeatureLogs_Success:ClientTests.SendUsageLogs_Success:
 [imodel02\imodelcore\licensingcrossplatform\licensing\clientinterface.h]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
 [imodel02\imodelcore\licensingcrossplatform\licensing\client.cpp]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=PolicyTests.Create_JWtokenWithoutPolicyClaim_ReturnsError:PolicyTests.Create_Policy:PolicyTests.Create_PolicyNullInputs:PolicyTests.Validate_ProperRead:ClientTests.*:
-[imodel02\imodelcore\licensingcrossplatform\licensing\utils\scvwritter.cpp]
-%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.SendFeatureLogs_Success:ClientTests.SendUsageLogs_Success:UsageDbTests.WriteFeatureToCSVFile_MultipleRecords_CreatesCorrectFile:UsageDbTests.WriteUsageToCSVFile_MultipleRecords_CreatesCorrectFile:SCVWritterTests.*:
+[imodel02\imodelcore\licensingcrossplatform\licensing\clientimpl.h]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
 [imodel02\imodelcore\licensingcrossplatform\licensing\generatesid.cpp]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=GenerateSIDTests.*:
 [imodel02\imodelcore\licensingcrossplatform\predefined c++ types (compiler internal)]
@@ -19,21 +21,19 @@
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
 [imodel02\imodelcore\licensingcrossplatform\licensing\clientfreeimpl.cpp]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
-[imodel02\imodelcore\licensingcrossplatform\licensing\clientwithkeyimpl.cpp]
-%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.StartWithKeyApplicationFromFactory_Success:ClientTests.StartWithKeyApplication_StopApplication_Success:
+[imodel02\imodelcore\licensingcrossplatform\licensing\policy.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=PolicyTests.Create_JWtokenWithoutPolicyClaim_ReturnsError:PolicyTests.Create_Policy:PolicyTests.Create_PolicyNullInputs:PolicyTests.Validate_ProperRead:ClientTests.StartWithKeyApplicationFromFactory_Success:ClientTests.StartWithKeyApplication_StopApplication_Success:
 [imodel02\imodelcore\licensingcrossplatform\licensing\utils\featureuserdatamap.cpp]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=FeatureUserDataMapTests.*:
 [imodel02\imodelcore\licensingcrossplatform\licensing\utils\logfilehelper.cpp]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=LogFileHelperTests.*:
-[imodel02\imodelcore\licensingcrossplatform\licensing\usagedb.cpp]
-%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.StartWithKeyApplicationFromFactory_Success:ClientTests.StartWithKeyApplication_StopApplication_Success:UsageDbTests.*:
-[imodel02\imodelcore\licensingcrossplatform\licensing\utils\jwtoken.cpp]
-%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=PolicyTests.Create_JWtokenWithoutPolicyClaim_ReturnsError:PolicyTests.Create_Policy:PolicyTests.Create_PolicyNullInputs:PolicyTests.Validate_ProperRead:JWTokenTests.*:
-[imodel02\imodelcore\licensingcrossplatform\licensing\utils\inmemoryjsonlocalstate.cpp]
-%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
-[imodel02\imodelcore\licensingcrossplatform\licensing\clientimpl.h]
-%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
+[imodel02\imodelcore\licensingcrossplatform\licensing\clientwithkeyimpl.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.StartWithKeyApplicationFromFactory_Success:ClientTests.StartWithKeyApplication_StopApplication_Success:
+[imodel02\imodelcore\licensingcrossplatform\licensing\utils\scvwritter.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.SendFeatureLogs_Success:ClientTests.SendUsageLogs_Success:UsageDbTests.WriteFeatureToCSVFile_MultipleRecords_CreatesCorrectFile:UsageDbTests.WriteUsageToCSVFile_MultipleRecords_CreatesCorrectFile:SCVWritterTests.*:
 [imodel02\imodelcore\licensingcrossplatform\licensing\utils\urlsafebase64utilities.cpp]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=PolicyTests.Create_Policy:PolicyTests.Validate_ProperRead:JWTokenTests.Create_ValidCertificateAndInvalidSignaturePassed_ValidationFails:JWTokenTests.Create_ValidCertificateAndSignaturePassed_CreatesAndValidatesSuccesfully:UrlSafeBase64UtilitiesTests.*:
 [imodel02\imodelcore\licensingcrossplatform\licensing\freeapplicationpolicyhelper.h]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.StartWithKeyApplicationFromFactory_Success:ClientTests.StartWithKeyApplication_StopApplication_Success:
+[imodel02\imodelcore\licensingcrossplatform\licensing\usagedb.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.StartWithKeyApplicationFromFactory_Success:ClientTests.StartWithKeyApplication_StopApplication_Success:UsageDbTests.*:

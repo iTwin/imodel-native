@@ -6,19 +6,19 @@
 [imodel02\imodelcore\behttp\behttp\applicationevents.cpp]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
 [imodel02\imodelcore\behttp\behttp\beuri.cpp]
-%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:PolicyTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=GenerateSIDTests.*:ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:PolicyTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
 [imodel02\imodelcore\behttp\behttp\httpresponse.cpp]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
 [imodel02\imodelcore\behttp\behttp\httpproxy.cpp]
-%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:PolicyTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=GenerateSIDTests.*:ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:PolicyTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
 [imodel02\imodelcore\behttp\behttp\curl\curltaskrunner.h]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
 [imodel02\imodelcore\behttp\behttp\httpstatushelper.cpp]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.GetCertificate_Success:ClientTests.SendUsageLogs_Success:
 [imodel02\imodelcore\behttp\behttp\curl\curlhttprequest.cpp]
-%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:PolicyTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=GenerateSIDTests.*:ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:PolicyTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
 [imodel02\imodelcore\behttp\behttp\credentials.cpp]
-%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:PolicyTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=GenerateSIDTests.*:ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:PolicyTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
 [imodel02\imodelcore\behttp\behttp\simplepackagedasynctask.h]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
 [imodel02\imodelcore\behttp\behttp\curl\notificationpipe.cpp]
@@ -32,16 +32,16 @@
 [imodel02\imodelcore\behttp\behttp\httperror.cpp]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.SendFeatureLogs_Success:
 [imodel02\imodelcore\behttp\behttp\httpclient.cpp]
-%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:PolicyTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=GenerateSIDTests.*:ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:PolicyTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
 [imodel02\imodelcore\behttp\behttp\proxyhttphandler.cpp]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
 [imodel02\imodelcore\behttp\behttp\curl\threadcurlhttphandler.cpp]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
 [imodel02\imodelcore\behttp\behttp\curl\curltaskrunner.cpp]
-%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:PolicyTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=GenerateSIDTests.*:ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:PolicyTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
 [imodel02\imodelcore\behttp\behttp\httpheaders.cpp]
 %OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.GetCertificate_Success:ClientTests.SendFeatureLogs_Success:ClientTests.SendUsageLogs_Success:
 [imodel02\imodelcore\behttp\behttp\curl\curlhttphandler.cpp]
-%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:PolicyTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=GenerateSIDTests.*:ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:PolicyTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
 [imodel02\imodelcore\behttp\behttp\authenticationhandler.cpp]
-%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:PolicyTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=GenerateSIDTests.*:ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:PolicyTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:SCVWritterTests.*:
