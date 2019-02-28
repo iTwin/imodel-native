@@ -1233,6 +1233,9 @@ bool FindDatumFromTransformationParams(WString& paramDatumName, const WString& e
 
     paramDatum->Destroy();
 
+    // If rotation and scaling are null then the problem probably comes from the fact we should expect a GEOCENTRIC datum
+    if (doubleSame(rotX, 0.0) && doubleSame(rotY, 0.0) && doubleSame(rotZ, 0.0) && doubleSame(scalePPM, 0.0))
+        datumDef.to84_via = cs_DTCTYP_GEOCTR;
 
     // If we get here then we have not found the correct datum. This may be due to the fact the rotations signs refer to EPSG:9607 convention though it should not.
     // We inverse rotations signs and start over.
