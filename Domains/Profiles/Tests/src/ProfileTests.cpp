@@ -70,6 +70,124 @@ TEST_F (ProfileTestCase, Insert_StandardCatalogCodeSet_Success)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ProfileTestCase, Update_UpdatedProfile_UpdatedCardinalPoints)
+    {
+    LShapeProfilePtr profilePtr = CreateProfile("P");
+    profilePtr->SetWidth(2.0);
+    profilePtr->SetDepth(2.0);
+    profilePtr->Insert();
+
+    bvector<CardinalPoint> cardinalPoints = profilePtr->GetCardinalPoints();
+    ASSERT_EQ(19, cardinalPoints.size()) << "Inserted profile should have 19 standard cardinal points";
+
+    // Basic bounding box points
+    EXPECT_DOUBLE_EQ(-1.0, cardinalPoints[0].location.x);
+    EXPECT_DOUBLE_EQ(-1.0, cardinalPoints[0].location.y);
+    EXPECT_DOUBLE_EQ(0.0, cardinalPoints[1].location.x);
+    EXPECT_DOUBLE_EQ(-1.0, cardinalPoints[1].location.y);
+    EXPECT_DOUBLE_EQ(1.0, cardinalPoints[2].location.x);
+    EXPECT_DOUBLE_EQ(-1.0, cardinalPoints[2].location.y);
+    EXPECT_DOUBLE_EQ(-1.0, cardinalPoints[3].location.x);
+    EXPECT_DOUBLE_EQ(0.0, cardinalPoints[3].location.y);
+    EXPECT_DOUBLE_EQ(0.0, cardinalPoints[4].location.x);
+    EXPECT_DOUBLE_EQ(0.0, cardinalPoints[4].location.y);
+    EXPECT_DOUBLE_EQ(1.0, cardinalPoints[5].location.x);
+    EXPECT_DOUBLE_EQ(0.0, cardinalPoints[5].location.y);
+    EXPECT_DOUBLE_EQ(-1.0, cardinalPoints[6].location.x);
+    EXPECT_DOUBLE_EQ(1.0, cardinalPoints[6].location.y);
+    EXPECT_DOUBLE_EQ(0.0, cardinalPoints[7].location.x);
+    EXPECT_DOUBLE_EQ(1.0, cardinalPoints[7].location.y);
+    EXPECT_DOUBLE_EQ(1.0, cardinalPoints[8].location.x);
+    EXPECT_DOUBLE_EQ(1.0, cardinalPoints[8].location.y);
+
+    DPoint3d centroid;
+    double area;
+    ASSERT_TRUE(profilePtr->GetShape()->GetAsCurveVector()->CentroidAreaXY(centroid, area));
+
+    // Geometric centroid points
+    EXPECT_DOUBLE_EQ(centroid.x, cardinalPoints[9].location.x);
+    EXPECT_DOUBLE_EQ(centroid.y, cardinalPoints[9].location.y);
+    EXPECT_DOUBLE_EQ(centroid.x, cardinalPoints[10].location.x);
+    EXPECT_DOUBLE_EQ(-1.0, cardinalPoints[10].location.y);
+    EXPECT_DOUBLE_EQ(-1.0, cardinalPoints[11].location.x);
+    EXPECT_DOUBLE_EQ(centroid.y, cardinalPoints[11].location.y);
+    EXPECT_DOUBLE_EQ(1.0, cardinalPoints[12].location.x);
+    EXPECT_DOUBLE_EQ(centroid.y, cardinalPoints[12].location.y);
+    EXPECT_DOUBLE_EQ(centroid.x, cardinalPoints[13].location.x);
+    EXPECT_DOUBLE_EQ(1.0, cardinalPoints[13].location.y);
+
+    // Shear points
+    for (int i = 14; i < 19; ++i)
+        {
+        EXPECT_DOUBLE_EQ(0.0, cardinalPoints[i].location.x);
+        EXPECT_DOUBLE_EQ(0.0, cardinalPoints[i].location.y);
+        }
+
+    // Update profile and check if profile points have updated
+    profilePtr->SetWidth(4.0);
+    profilePtr->SetDepth(4.0);
+    profilePtr->Update();
+
+    cardinalPoints = profilePtr->GetCardinalPoints();
+    ASSERT_EQ(19, cardinalPoints.size()) << "Updated profile should have 19 standard cardinal points";
+
+    // Basic bounding box points
+    EXPECT_DOUBLE_EQ(-2.0, cardinalPoints[0].location.x);
+    EXPECT_DOUBLE_EQ(-2.0, cardinalPoints[0].location.y);
+
+    EXPECT_DOUBLE_EQ(0.0, cardinalPoints[1].location.x);
+    EXPECT_DOUBLE_EQ(-2.0, cardinalPoints[1].location.y);
+
+    EXPECT_DOUBLE_EQ(2.0, cardinalPoints[2].location.x);
+    EXPECT_DOUBLE_EQ(-2.0, cardinalPoints[2].location.y);
+
+    EXPECT_DOUBLE_EQ(-2.0, cardinalPoints[3].location.x);
+    EXPECT_DOUBLE_EQ(0.0, cardinalPoints[3].location.y);
+
+    EXPECT_DOUBLE_EQ(0.0, cardinalPoints[4].location.x);
+    EXPECT_DOUBLE_EQ(0.0, cardinalPoints[4].location.y);
+
+    EXPECT_DOUBLE_EQ(2.0, cardinalPoints[5].location.x);
+    EXPECT_DOUBLE_EQ(0.0, cardinalPoints[5].location.y);
+
+    EXPECT_DOUBLE_EQ(-2.0, cardinalPoints[6].location.x);
+    EXPECT_DOUBLE_EQ(2.0, cardinalPoints[6].location.y);
+
+    EXPECT_DOUBLE_EQ(0.0, cardinalPoints[7].location.x);
+    EXPECT_DOUBLE_EQ(2.0, cardinalPoints[7].location.y);
+
+    EXPECT_DOUBLE_EQ(2.0, cardinalPoints[8].location.x);
+    EXPECT_DOUBLE_EQ(2.0, cardinalPoints[8].location.y);
+
+    ASSERT_TRUE(profilePtr->GetShape()->GetAsCurveVector()->CentroidAreaXY(centroid, area));
+
+    // Geometric centroid points
+    EXPECT_DOUBLE_EQ(centroid.x, cardinalPoints[9].location.x);
+    EXPECT_DOUBLE_EQ(centroid.y, cardinalPoints[9].location.y);
+
+    EXPECT_DOUBLE_EQ(centroid.x, cardinalPoints[10].location.x);
+    EXPECT_DOUBLE_EQ(-2.0, cardinalPoints[10].location.y);
+
+    EXPECT_DOUBLE_EQ(-2.0, cardinalPoints[11].location.x);
+    EXPECT_DOUBLE_EQ(centroid.y, cardinalPoints[11].location.y);
+
+    EXPECT_DOUBLE_EQ(2.0, cardinalPoints[12].location.x);
+    EXPECT_DOUBLE_EQ(centroid.y, cardinalPoints[12].location.y);
+
+    EXPECT_DOUBLE_EQ(centroid.x, cardinalPoints[13].location.x);
+    EXPECT_DOUBLE_EQ(2.0, cardinalPoints[13].location.y);
+
+    // Shear points
+    for (int i = 14; i < 19; ++i)
+        {
+        EXPECT_DOUBLE_EQ(0.0, cardinalPoints[i].location.x);
+        EXPECT_DOUBLE_EQ(0.0, cardinalPoints[i].location.y);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ProfileTestCase, SetStandardCatalogCode_NullPointer_RemovedCode)
     {
     ProfilePtr profilePtr = CreateProfile();

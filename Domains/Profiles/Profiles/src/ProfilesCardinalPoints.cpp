@@ -163,6 +163,41 @@ static DPoint2d getGeometricCentroid (IGeometry const& geometry)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Get location for standard CardinalPoint struct by enumeration.
+* NOTE: ShearPoint and GeometricCentroid cardinal point locations are currently not supported.
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static DPoint2d getCardinalPointLocation(StandardCardinalPoint type, IGeometryPtr profileShapePtr)
+    {
+    DRange3d shapeRange = { 0 };
+    if (!profileShapePtr->TryGetRange(shapeRange))
+        shapeRange = DRange3d{ 0 };
+
+    double const halfWidth = shapeRange.XLength() / 2.0;
+    double const halfDepth = shapeRange.YLength() / 2.0;
+
+    switch (type)
+        {
+        case StandardCardinalPoint::BottomLeft:                         return DPoint2d::From(-halfWidth, -halfDepth);
+        case StandardCardinalPoint::BottomCenter:                       return DPoint2d::From(0.0, -halfDepth);
+        case StandardCardinalPoint::BottomRight:                        return DPoint2d::From(halfWidth, -halfDepth);
+        case StandardCardinalPoint::MidDepthLeft:                       return DPoint2d::From(-halfWidth, 0.0);
+        case StandardCardinalPoint::MidDepthCenter:                     return DPoint2d::From(0.0, 0.0);
+        case StandardCardinalPoint::MidDepthRight:                      return DPoint2d::From(halfWidth, 0.0);
+        case StandardCardinalPoint::TopLeft:                            return DPoint2d::From(-halfWidth, halfDepth);
+        case StandardCardinalPoint::TopCenter:                          return DPoint2d::From(0.0, halfDepth);
+        case StandardCardinalPoint::TopRight:                           return DPoint2d::From(halfWidth, halfDepth);
+        case StandardCardinalPoint::GeometricCentroid:                  return getGeometricCentroid(*profileShapePtr);
+        case StandardCardinalPoint::BottomInLineWithGeometricCentroid:  return DPoint2d::From(getGeometricCentroid(*profileShapePtr).x, -halfDepth);
+        case StandardCardinalPoint::LeftInLineWithGeometricCentroid:    return DPoint2d::From(-halfWidth, getGeometricCentroid(*profileShapePtr).y);
+        case StandardCardinalPoint::RightInLineWithGeometricCentroid:   return DPoint2d::From(halfWidth, getGeometricCentroid(*profileShapePtr).y);
+        case StandardCardinalPoint::TopInLineWithGeometricCentroid:     return DPoint2d::From(getGeometricCentroid(*profileShapePtr).x, halfDepth);
+            // ShearPoint cardinal point locations are currently not supported.
+        default:                                                        return DPoint2d::From(0.0, 0.0);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Construct standard CardinalPoint struct by enumeration.
 * NOTE: ShearPoint and GeometricCentroid cardinal point locations are currently not supported.
 * @bsimethod                                                                     02/2019
@@ -172,39 +207,9 @@ static CardinalPoint createStandardCardinalPoint (StandardCardinalPoint type, Pr
     IGeometryPtr shapePtr = profile.GetShape();
     BeAssert (shapePtr.IsValid());
 
-    DRange3d shapeRange = {0};
-    if (!shapePtr->TryGetRange (shapeRange))
-        shapeRange = DRange3d {0};
-
-    double const halfWidth = shapeRange.XLength() / 2.0;
-    double const halfDepth = shapeRange.YLength() / 2.0;
     Utf8CP pName = s_standardCardinalPointNames[static_cast<int> (type)];
 
-    switch (type)
-        {
-        case StandardCardinalPoint::BottomLeft:     return CardinalPoint (pName, DPoint2d::From (-halfWidth, -halfDepth));
-        case StandardCardinalPoint::BottomCenter:   return CardinalPoint (pName, DPoint2d::From (0.0, -halfDepth));
-        case StandardCardinalPoint::BottomRight:    return CardinalPoint (pName, DPoint2d::From (halfWidth, -halfDepth));
-        case StandardCardinalPoint::MidDepthLeft:   return CardinalPoint (pName, DPoint2d::From (-halfWidth, 0.0));
-        case StandardCardinalPoint::MidDepthCenter: return CardinalPoint (pName, DPoint2d::From (0.0, 0.0));
-        case StandardCardinalPoint::MidDepthRight:  return CardinalPoint (pName, DPoint2d::From (halfWidth, 0.0));
-        case StandardCardinalPoint::TopLeft:        return CardinalPoint (pName, DPoint2d::From (-halfWidth, halfDepth));
-        case StandardCardinalPoint::TopCenter:      return CardinalPoint (pName, DPoint2d::From (0.0, halfDepth));
-        case StandardCardinalPoint::TopRight:       return CardinalPoint (pName, DPoint2d::From (halfWidth, halfDepth));
-        case StandardCardinalPoint::GeometricCentroid:
-            return CardinalPoint (pName, getGeometricCentroid (*shapePtr));
-        case StandardCardinalPoint::BottomInLineWithGeometricCentroid:
-            return CardinalPoint (pName, DPoint2d::From (getGeometricCentroid (*shapePtr).x, -halfDepth));
-        case StandardCardinalPoint::LeftInLineWithGeometricCentroid:
-            return CardinalPoint (pName, DPoint2d::From (-halfWidth, getGeometricCentroid (*shapePtr).y));
-        case StandardCardinalPoint::RightInLineWithGeometricCentroid:
-            return CardinalPoint (pName, DPoint2d::From (halfWidth, getGeometricCentroid (*shapePtr).y));
-        case StandardCardinalPoint::TopInLineWithGeometricCentroid:
-            return CardinalPoint (pName, DPoint2d::From (getGeometricCentroid (*shapePtr).x, halfDepth));
-        // ShearPoint cardinal point locations are currently not supported.
-        default:
-            return CardinalPoint (pName, DPoint2d::From (0.0, 0.0));
-        }
+    return CardinalPoint (pName, getCardinalPointLocation (type, shapePtr));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -229,6 +234,37 @@ DgnDbStatus ProfilesCardinalPoints::AddStandardCardinalPoints (Profile& profile)
     for (int i = 0; i < s_standardCardinalPointCount; ++i)
         {
         CardinalPoint cardinalPoint = createStandardCardinalPoint (static_cast<StandardCardinalPoint> (i), profile);
+
+        status = setCardinalPoint (profile, cardinalPoint, i, enablerPtr.get());
+        if (status != DgnDbStatus::Success)
+            return status;
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Update all standard CardinalPoints for the Profile.CardinalPoints array. 
+* @bsimethod                                                                     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ProfilesCardinalPoints::UpdateStandardCardinalPoints (Profile& profile)
+    {
+    IGeometryPtr shapePtr = profile.GetShape();
+    BeAssert (shapePtr.IsValid());
+
+    StandaloneECEnablerPtr enablerPtr = getCardinalPointECEnabler (profile);
+    if (enablerPtr.IsNull())
+        return DgnDbStatus::WrongClass;
+
+    for (int i = 0; i < s_standardCardinalPointCount; ++i)
+        {
+        ECValue structValue;
+
+        DgnDbStatus status = profile.GetPropertyValue (structValue, PRF_PROP_Profile_CardinalPoints, i);
+        BeAssert (DgnDbStatus::Success == status);
+
+        CardinalPoint cardinalPoint = cardinalPointFromECValue (structValue);
+        cardinalPoint.location = getCardinalPointLocation (static_cast<StandardCardinalPoint> (i), shapePtr);
 
         status = setCardinalPoint (profile, cardinalPoint, i, enablerPtr.get());
         if (status != DgnDbStatus::Success)

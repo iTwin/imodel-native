@@ -81,6 +81,10 @@ DgnDbStatus Profile::_OnUpdate (DgnElement const& original)
     if (!_CreateGeometry())
         return DgnDbStatus::NoGeometry;
 
+    DgnDbStatus status = ProfilesCardinalPoints::UpdateStandardCardinalPoints (*this);
+    if (status != DgnDbStatus::Success)
+        return status;
+
     return T_Super::_OnUpdate (original);
     }
 

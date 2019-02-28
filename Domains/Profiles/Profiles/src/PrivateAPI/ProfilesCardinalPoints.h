@@ -20,6 +20,7 @@ public:
     ProfilesCardinalPoints() = delete;
 
     static Dgn::DgnDbStatus AddStandardCardinalPoints (Profile& profile);
+    static Dgn::DgnDbStatus UpdateStandardCardinalPoints (Profile& profile);
     static Dgn::DgnDbStatus AddCustomCardinalPoint (Profile& profile, CardinalPoint const& customCardinalPoint);
     static Dgn::DgnDbStatus RemoveCustomCardinalPoint (Profile& profile, Utf8String const& name);
 
