@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/DwgDbInternal.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -650,6 +650,7 @@ END_DWGDB_NAMESPACE
     DwgDbStatus DwgDb##_classSuffix_##::SetLayer (DwgDbObjectId id, bool s, bool h) { return ToDwgDbStatus(T_Super::setLayer(DWGDB_DOWNWARDCAST(ObjectId)(id), s, h)); } \
     DwgDbStatus DwgDb##_classSuffix_##::SetMaterial (DwgDbObjectId id, bool s) { return ToDwgDbStatus(T_Super::setMaterial(DWGDB_DOWNWARDCAST(ObjectId)(id), s)); } \
     DwgDbStatus DwgDb##_classSuffix_##::SetTransparency (DwgTransparencyCR t, bool s) { return ToDwgDbStatus(T_Super::setTransparency(static_cast<DWGCM_TypeCR(Transparency)>(t), s)); } \
+    DwgDbStatus DwgDb##_classSuffix_##::SetPropertiesFrom (DwgDbEntityCR e, bool s) { DwgDbStatus r=DwgDbStatus::Success; DWGDB_CALLSDKMETHOD(T_Super::setPropertiesFrom(OdDbEntity::cast(&e), s), r=ToDwgDbStatus(T_Super::setPropertiesFrom(AcDbEntity::cast(&e), s))); return r; } \
     void DwgDb##_classSuffix_##::SetDatabaseDefaults (DwgDbDatabaseP dwg) { T_Super::setDatabaseDefaults(dwg); } \
     void DwgDb##_classSuffix_##::SetCastShadows (bool c) { T_Super::setCastShadows(c); } \
     void DwgDb##_classSuffix_##::SetReceiveShadows (bool r) { T_Super::setReceiveShadows(r); } \

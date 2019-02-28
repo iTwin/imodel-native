@@ -122,6 +122,11 @@ BEGIN_DWGDB_NAMESPACE
     /*! @param[in] t The new transparency for the entity. */                            \
     /*! @param[in] subents True to propagte the changes of sub-entities. */             \
     DWGDB_EXPORT DwgDbStatus SetTransparency (DwgTransparencyCR t, bool subents=false); \
+    /*! Set basic properties for a template entity. */                                  \
+    /*! @param[in] ent A template entity from which the basic properties will be copied. */ \
+    /*! @param[in] subents True to propagte the changes of sub-entities. */             \
+    /*! @note The basic properties are color, layer, linetype, linetype scale and visibility. */ \
+    DWGDB_EXPORT DwgDbStatus SetPropertiesFrom (DwgDbEntityCR ent, bool subents=false); \
     /*! Set the entity to use default color, line type, line type scale, layer, weight, plot style, and visibility per database. */ \
     /*! @param[in] dwg Source DWG database, nullptr for current database.*/             \
     DWGDB_EXPORT void        SetDatabaseDefaults (DwgDbDatabaseP dwg = nullptr);        \
