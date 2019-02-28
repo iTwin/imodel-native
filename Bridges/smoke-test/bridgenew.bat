@@ -1,3 +1,5 @@
+@echo off
+
 set  version=%2
 
 set installation_directory=%1
