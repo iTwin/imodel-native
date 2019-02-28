@@ -2,11 +2,13 @@
 |
 |     $Source: Licensing/UsageDb.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
+
+#include "IUsageDb.h"
 
 #include <Licensing/Licensing.h>
 #include <BeSQLite/BeSQLite.h>
@@ -21,18 +23,18 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct UsageDb
+struct UsageDb : IUsageDb
 {
 private:
-	Db m_db;
+    Db m_db;
 
-	const Utf8String GRACESTART = "GRACESTART";
+    const Utf8String GRACESTART = "GRACESTART";
 
-	BentleyStatus OpenDb(BeFileNameCR filePath);
+    BentleyStatus OpenDb(BeFileNameCR filePath);
 
-	BentleyStatus CreateDb(BeFileNameCR filePath);
+    BentleyStatus CreateDb(BeFileNameCR filePath);
 
-	BentleyStatus SetUpOfflineGraceTable();
+    BentleyStatus SetUpOfflineGraceTable();
     BentleyStatus SetUpTables();
 
     BentleyStatus SetEimVersion();
@@ -43,7 +45,7 @@ private:
     int64_t GetLastFeatureRowId();
 
 public:
-	LICENSING_EXPORT BentleyStatus OpenOrCreate(BeFileNameCR filePath);
+    LICENSING_EXPORT BentleyStatus OpenOrCreate(BeFileNameCR filePath);
 
     LICENSING_EXPORT void Close();
 
@@ -52,18 +54,18 @@ public:
     LICENSING_EXPORT BentleyStatus WriteUsageToCSVFile(BeFileNameCR path);
     LICENSING_EXPORT BentleyStatus WriteFeatureToCSVFile(BeFileNameCR path);
 
-	LICENSING_EXPORT std::list<Json::Value> GetPolicyFiles();
-	LICENSING_EXPORT std::list<Json::Value> GetPolicyFiles(Utf8String userId);
+    LICENSING_EXPORT std::list<Json::Value> GetPolicyFiles();
+    LICENSING_EXPORT std::list<Json::Value> GetPolicyFiles(Utf8String userId);
     LICENSING_EXPORT BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken);
-	LICENSING_EXPORT BentleyStatus DeletePolicyFile(Utf8StringCR policyId);
-	LICENSING_EXPORT BentleyStatus DeleteAllOtherUserPolicyFiles(Utf8StringCR policyId, Utf8StringCR userId);
+    LICENSING_EXPORT BentleyStatus DeletePolicyFile(Utf8StringCR policyId);
+    LICENSING_EXPORT BentleyStatus DeleteAllOtherUserPolicyFiles(Utf8StringCR policyId, Utf8StringCR userId);
 
     LICENSING_EXPORT Json::Value GetPolicyFile();
-	LICENSING_EXPORT Json::Value GetPolicyFile(Utf8StringCR policyId);
+    LICENSING_EXPORT Json::Value GetPolicyFile(Utf8StringCR policyId);
 
-	LICENSING_EXPORT BentleyStatus SetOfflineGracePeriodStart(Utf8StringCR startTime);
-	LICENSING_EXPORT Utf8String GetOfflineGracePeriodStart();
-	LICENSING_EXPORT BentleyStatus ResetOfflineGracePeriod();
+    LICENSING_EXPORT BentleyStatus SetOfflineGracePeriodStart(Utf8StringCR startTime);
+    LICENSING_EXPORT Utf8String GetOfflineGracePeriodStart();
+    LICENSING_EXPORT BentleyStatus ResetOfflineGracePeriod();
 
     LICENSING_EXPORT Utf8String GetLastUsageRecordedTime();
     LICENSING_EXPORT int64_t GetUsageRecordCount();

@@ -16,6 +16,7 @@ Headers + $(SourceDir)FreeClientImpl.h
 Headers + $(SourceDir)ClientWithKeyImpl.h
 Headers + $(SourceDir)GenerateSID.h
 Headers + $(SourceDir)Policy.h
+Headers + $(SourceDir)IUsageDb.h
 Headers + $(SourceDir)UsageDb.h
 Headers + $(SourceDir)FreeApplicationPolicyHelper.h
 Headers + $(PublicApiDir)Client.h

@@ -29,6 +29,7 @@
 #include "Providers/IBuddiProvider.h"
 #include "Providers/IPolicyProvider.h"
 #include "Providers/IUlasProvider.h"
+#include "IUsageDb.h"
 
 // Log Posting Sources
 #define LOGPOSTINGSOURCE_REALTIME           "RealTime"
@@ -63,7 +64,7 @@ protected:
     IHttpHandlerPtr m_httpHandler;
     ITimeRetrieverPtr m_timeRetriever;
     IDelayedExecutorPtr m_delayedExecutor;
-    std::unique_ptr<UsageDb> m_usageDb;
+    IUsageDbPtr m_usageDb;
     Utf8String m_featureString;
     Utf8String m_projectId;
     Utf8String m_correlationId;
@@ -132,7 +133,8 @@ public:
         IUlasProviderPtr ulasProvider,
         Utf8StringCR projectId,
         Utf8StringCR featureString,
-        IHttpHandlerPtr httpHandler
+        IHttpHandlerPtr httpHandler,
+        IUsageDbPtr usageDb
         );
 
     // Usages
@@ -151,7 +153,7 @@ public:
     LICENSING_EXPORT LicenseStatus GetProductStatus(int requestedProductId = -1);
 
     // Used in tests
-    LICENSING_EXPORT UsageDb& GetUsageDb();
+    LICENSING_EXPORT IUsageDb& GetUsageDb();
 	LICENSING_EXPORT void AddPolicyToDb(std::shared_ptr<Policy> policy) { StorePolicyInUsageDb(policy); };
 	LICENSING_EXPORT std::shared_ptr<Policy> GetPolicyWithId(Utf8StringCR policyId);
 

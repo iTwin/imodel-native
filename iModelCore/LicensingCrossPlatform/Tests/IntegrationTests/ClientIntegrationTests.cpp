@@ -381,3 +381,31 @@ TEST_F(ClientIntegrationTests, Equality_Test)
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
     ASSERT_EQ((int)1, (int)1); // Mock policy should result in NotEntitled
     }
+
+// Below are "start from factory tests", some might be redundant since the client is already made from the factory here
+
+//TEST_F(ClientTests, StartApplicationFromFactory_Success)
+//    {
+//    // Note: cannot use mocks with the factory-created clients
+//    auto client = CreateTestClientFromFactory(true);
+//    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+//    client->StopApplication();
+//    }
+//
+//TEST_F(ClientTests, DISABLED_TrackUsage_FreeApplicationFromFactory_Success)
+//    {
+//    // Note: cannot use mocks with the factory-created clients
+//    auto client = CreateFreeTestClientFromFactory(true);
+//    Utf8String tokenstring = "0cd2c3d2b0b813ce8c8e1b297f173f9e42f775ca32a2ee32a27b0a55daff1db9";
+//    auto version = BeVersion(1, 0);
+//    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
+//    EXPECT_SUCCESS(client->TrackUsage(tokenstring, version, projectId).get());
+//    }
+//
+//TEST_F(ClientTests, StartWithKeyApplicationFromFactory_Success)
+//    {
+//    // Note: cannot use mocks with the factory-created clients
+//    auto client = CreateWithKeyTestClientFromFactory(true);
+//    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+//    client->StopApplication();
+//    }

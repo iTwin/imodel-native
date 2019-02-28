@@ -14,11 +14,11 @@
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
 struct IFreeClient
-{
+    {
 public:
     virtual folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId) { return BentleyStatus::SUCCESS; };
     virtual ~IFreeClient() {};
-};
+    };
 
 
 END_BENTLEY_LICENSING_NAMESPACE

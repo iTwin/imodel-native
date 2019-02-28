@@ -13,6 +13,7 @@
 #include "Mocks/BuddiProviderMock.h"
 #include "Mocks/PolicyProviderMock.h"
 #include "Mocks/UlasProviderMock.h"
+#include "Mocks/UsageDbMock.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS
 
@@ -23,19 +24,21 @@ class ClientTests : public ::testing::Test
         std::shared_ptr<BuddiProviderMock>  m_buddiProviderMock;
         std::shared_ptr<PolicyProviderMock> m_policyProviderMock;
         std::shared_ptr<UlasProviderMock>   m_ulasProviderMock;
+        std::shared_ptr<UsageDbMock>        m_usageDbMock;
     public:
         ClientTests();
         static void SetUpTestCase();
 
-        MockHttpHandler& GetHandler() const;
-        std::shared_ptr<MockHttpHandler> GetHandlerPtr() const;
-
-        BuddiProviderMock& GetBuddiProviderMock() const;
+        MockHttpHandler&                    GetHandler() const;
+        std::shared_ptr<MockHttpHandler>    GetHandlerPtr() const;
+        BuddiProviderMock&                  GetBuddiProviderMock() const;
         std::shared_ptr<BuddiProviderMock>  GetBuddiProviderMockPtr() const;
-        PolicyProviderMock& GetPolicyProviderMock() const;
+        PolicyProviderMock&                 GetPolicyProviderMock() const;
         std::shared_ptr<PolicyProviderMock> GetPolicyProviderMockPtr() const;
-        UlasProviderMock& GetUlasProviderMock() const;
+        UlasProviderMock&                   GetUlasProviderMock() const;
         std::shared_ptr<UlasProviderMock>   GetUlasProviderMockPtr() const;
+        UsageDbMock&                        GetUsageDbMock() const;
+        std::shared_ptr<UsageDbMock>        GetUsageDbMockPtr() const;
 
         void TearDown();
     };

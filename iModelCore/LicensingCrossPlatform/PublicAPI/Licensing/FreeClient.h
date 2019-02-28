@@ -29,14 +29,14 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 typedef std::shared_ptr<struct FreeClient> FreeClientPtr;
 
 struct FreeClient
-{
+    {
 private:
     std::shared_ptr<struct IFreeClient> m_impl;
 
     FreeClient
-    (
+        (
         std::shared_ptr<struct IFreeClient> implementation
-    );
+        );
 
 public:
     //! Client Creator
@@ -46,15 +46,15 @@ public:
     *
     */
     LICENSING_EXPORT static FreeClientPtr Create
-    (
+        (
         Utf8StringCR featureString = "", /** FeatureString, defaults to an empty string */
         IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
-    );
+        );
 
     /*!
     * Send real time usage
     */
     LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
-};
+    };
 
 END_BENTLEY_LICENSING_NAMESPACE

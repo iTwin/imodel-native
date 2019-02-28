@@ -34,6 +34,7 @@
     <ClInclude Include="Licensing\IClient.h" />
     <ClInclude Include="Licensing\ClientWithKeyImpl.h" />
     <ClInclude Include="Licensing\IFreeClient.h" />
+    <ClInclude Include="Licensing\IUsageDb.h" />
     <ClInclude Include="Licensing\Providers\AuthHandlerProvider.h" />
     <ClInclude Include="Licensing\Providers\BuddiProvider.h" />
     <ClInclude Include="Licensing\Providers\IAuthHandlerProvider.h" />

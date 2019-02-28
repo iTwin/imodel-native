@@ -22,24 +22,25 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_LICENSING
 
 FreeClientImpl::FreeClientImpl
-(
-	Utf8StringCR featureString,
+    (
+    Utf8StringCR featureString,
     IHttpHandlerPtr httpHandler,
     IBuddiProviderPtr buddiProvider
-)
-	{
-	m_userInfo = ConnectSignInManager::UserInfo();
+    )
+    {
+    m_userInfo = ConnectSignInManager::UserInfo();
 
-	Utf8String deviceInfo = BeSystemInfo::GetDeviceId();
-	if (deviceInfo.Equals("")) deviceInfo = "DefaultDevice";
-	m_clientInfo = std::make_shared<ClientInfo>("FreeApplication",BeVersion(1,0),"FreeGUID",deviceInfo,"FreeDescriptor");
-	m_featureString = featureString;
-	m_httpHandler = httpHandler;
+    Utf8String deviceInfo = BeSystemInfo::GetDeviceId();
+    if (deviceInfo.Equals("")) 
+        deviceInfo = "DefaultDevice";
+    m_clientInfo = std::make_shared<ClientInfo>("FreeApplication",BeVersion(1,0),"FreeGUID",deviceInfo,"FreeDescriptor");
+    m_featureString = featureString;
+    m_httpHandler = httpHandler;
     m_buddiProvider = buddiProvider;
-	m_correlationId = BeGuid(true).ToString();
-	m_timeRetriever = TimeRetriever::Get();
-	m_delayedExecutor = DelayedExecutor::Get();
-	}
+    m_correlationId = BeGuid(true).ToString();
+    m_timeRetriever = TimeRetriever::Get();
+    m_delayedExecutor = DelayedExecutor::Get();
+    }
 
 
 /*--------------------------------------------------------------------------------------+
@@ -82,51 +83,51 @@ folly::Future<BentleyStatus> FreeClientImpl::TrackUsage(Utf8StringCR accessToken
 
 /*
 folly::Future<Utf8String> FreeClientImpl::PerformGetUserInfo()
-	{
-	LOG.info("PerformGetUserInfo");
+    {
+    LOG.info("PerformGetUserInfo");
 
-	auto requestEndpointUrl = UrlProvider::Urls::IMSOpenID.Get(); 
-	requestEndpointUrl += "/.well-known/openid-configuration"; // Change this to match actual endpoint for getting userInfo endpoint
+    auto requestEndpointUrl = UrlProvider::Urls::IMSOpenID.Get(); 
+    requestEndpointUrl += "/.well-known/openid-configuration"; // Change this to match actual endpoint for getting userInfo endpoint
 
-	HttpClient client(nullptr, m_httpHandler);
+    HttpClient client(nullptr, m_httpHandler);
 
-	// request Json containing URLs to OIDC endpoints
-	Json::Value endpointJson = client.CreateGetRequest(requestEndpointUrl).Perform().then(
-		[=](Response response)
-		{
-		std::ofstream logfile("D:/performgetuserinfo.txt");
-		if (!response.IsSuccess())
-			{
-			logfile << (int)response.GetHttpStatus() << std::endl;
-			logfile.close();
-			throw HttpError(response);
-			}
-		logfile << response.GetBody().AsString() << std::endl;
-		logfile.close();
-		return Json::Value::From(response.GetBody().AsString());
-		}).get();
+    // request Json containing URLs to OIDC endpoints
+    Json::Value endpointJson = client.CreateGetRequest(requestEndpointUrl).Perform().then(
+        [=](Response response)
+        {
+        std::ofstream logfile("D:/performgetuserinfo.txt");
+        if (!response.IsSuccess())
+            {
+            logfile << (int)response.GetHttpStatus() << std::endl;
+            logfile.close();
+            throw HttpError(response);
+            }
+        logfile << response.GetBody().AsString() << std::endl;
+        logfile.close();
+        return Json::Value::From(response.GetBody().AsString());
+        }).get();
 
-	std::ofstream logfile("D:/performgIntrospectionEndpoint.txt");
-	// parse Json to get Introspection endpoint
-	auto introspectionUrl = endpointJson["introspection_endpoint"].asString();
-	logfile << introspectionUrl << std::endl;
-	logfile << m_accessTokenString << std::endl;
-	logfile.close();
-	// submit token to Introspection endpoint and get user info
-	return "";
-	/*return client.CreatePostRequest(introspectionUrl).Perform().then(
-		[=](Response response)
-		{
-		std::ofstream logfile("D:/performPostIntrospection.txt");
-		if (!response.IsSuccess())
-			{
-			logfile << (int)response.GetHttpStatus() << std::endl;
-			logfile.close();
-			throw HttpError(response);
-			}
-		logfile << response.GetBody().AsString() << std::endl;
-		logfile.close();
-		return response.GetBody().AsString();
-		});
-	}
+    std::ofstream logfile("D:/performgIntrospectionEndpoint.txt");
+    // parse Json to get Introspection endpoint
+    auto introspectionUrl = endpointJson["introspection_endpoint"].asString();
+    logfile << introspectionUrl << std::endl;
+    logfile << m_accessTokenString << std::endl;
+    logfile.close();
+    // submit token to Introspection endpoint and get user info
+    return "";
+    /*return client.CreatePostRequest(introspectionUrl).Perform().then(
+        [=](Response response)
+        {
+        std::ofstream logfile("D:/performPostIntrospection.txt");
+        if (!response.IsSuccess())
+            {
+            logfile << (int)response.GetHttpStatus() << std::endl;
+            logfile.close();
+            throw HttpError(response);
+            }
+        logfile << response.GetBody().AsString() << std::endl;
+        logfile.close();
+        return response.GetBody().AsString();
+        });
+    }
 */
