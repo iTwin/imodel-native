@@ -72,7 +72,7 @@
     </Part>
 
     <!--
-        These are "parasites" because they aren't strictly required for the iModelJsNodeAddon
+        These are "parasites" because they aren't strictly required for the this library
         library itself. However, they may be required for its non-library parts of the build (e.g.
         testing, which we'd normally exclude from our build), or for other downstream builds
         pulling LKGs.
@@ -90,12 +90,6 @@
         <SubPart PartName="BentleyDocConfig" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="DgnPlatformExtractions" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="Docs" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
-
-        <SubPart PartName="PerformanceTests" PartFile="iModelCore/ecobjects/ECObjects" Repository="imodel02"/>
-        <SubPart PartName="UnitTests-Performance" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
-        <SubPart PartName="UnitTests-Performance" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
-        <SubPart PartName="UnitTests-Performance" PartFile="iModelCore/ECDb/ECDb" Repository="imodel02"/>
-        <SubPart PartName="UnitTests-PerformanceTest" PartFile="iModelCore/GeomLibs/geomlibs" Repository="imodel02"/>
 
         <SubPart PartName="__ParasiteSubParts_DcsX64Parts"/>
     </Part>
