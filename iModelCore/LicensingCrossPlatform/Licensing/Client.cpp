@@ -19,27 +19,27 @@ USING_NAMESPACE_BENTLEY_LICENSING
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Client::Client
-(
+    (
     std::shared_ptr<struct IClient> implementation
-)
-{
-	m_impl = implementation;
-}
+    )
+    {
+    m_impl = implementation;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr Client::Create
-(
-const ConnectSignInManager::UserInfo& userInfo,
-ClientInfoPtr clientInfo,
-std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
-BeFileNameCR dbPath,
-bool offlineMode,
-Utf8StringCR projectId,
-Utf8StringCR featureString,
-IHttpHandlerPtr httpHandler
-)
+    (
+    const ConnectSignInManager::UserInfo& userInfo,
+    ClientInfoPtr clientInfo,
+    std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+    BeFileNameCR dbPath,
+    bool offlineMode,
+    Utf8StringCR projectId,
+    Utf8StringCR featureString,
+    IHttpHandlerPtr httpHandler
+    )
     {
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
     IAuthHandlerProviderPtr authHandlerProvider = std::make_shared<AuthHandlerProvider>(authenticationProvider, httpHandler);
@@ -52,20 +52,20 @@ IHttpHandlerPtr httpHandler
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr Client::CreateWithKey
-(
-	Utf8StringCR accessKey,
-	ClientInfoPtr clientInfo,
-	BeFileNameCR dbPath,
-	bool offlineMode,
-	Utf8StringCR projectId,
-	Utf8StringCR featureString,
-	IHttpHandlerPtr httpHandler
-)
-{
+    (
+    Utf8StringCR accessKey,
+    ClientInfoPtr clientInfo,
+    BeFileNameCR dbPath,
+    bool offlineMode,
+    Utf8StringCR projectId,
+    Utf8StringCR featureString,
+    IHttpHandlerPtr httpHandler
+    )
+    {
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
     IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, clientInfo, dbPath, httpHandler);
     return std::shared_ptr<Client>(new Client(std::make_shared<ClientWithKeyImpl>(accessKey, clientInfo, dbPath, offlineMode, buddiProvider, ulasProvider, projectId, featureString, httpHandler)));
-}
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod

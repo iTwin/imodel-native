@@ -27,7 +27,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 typedef std::shared_ptr<struct FreeClientImpl> FreeClientImplPtr;
 
 struct FreeClientImpl : IFreeClient
-{
+    {
 protected:
     ClientInfoPtr m_clientInfo;
     ConnectSignInManager::UserInfo m_userInfo;
@@ -46,6 +46,6 @@ public:
         IBuddiProviderPtr buddiProvider
         );
     LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
-};
+    };
 
 END_BENTLEY_LICENSING_NAMESPACE

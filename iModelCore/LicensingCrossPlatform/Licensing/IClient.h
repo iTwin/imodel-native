@@ -17,7 +17,7 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 
 struct IClient
     {
-    public:
+public:
         virtual LicenseStatus StartApplication() = 0;
         virtual BentleyStatus StopApplication() = 0;
         virtual BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData) = 0;

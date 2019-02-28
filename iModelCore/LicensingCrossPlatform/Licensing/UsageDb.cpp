@@ -166,9 +166,9 @@ BentleyStatus UsageDb::SetUpTables()
         return ERROR;
         }
 
-	// Create Offline Grace Period table
-	if (SetUpOfflineGraceTable() != SUCCESS)
-		{
+    // Create Offline Grace Period table
+    if (SetUpOfflineGraceTable() != SUCCESS)
+        {
         return ERROR;
         }
 
@@ -179,17 +179,17 @@ BentleyStatus UsageDb::SetUpTables()
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::SetUpOfflineGraceTable()
-	{
-	if (m_db.CreateTable("OfflineGrace",
-		"GraceId NVARCHAR(20) PRIMARY KEY, "
-		"OfflineGracePeriodStart NVARCHAR(20)") != DbResult::BE_SQLITE_OK)
-	    {
+    {
+    if (m_db.CreateTable("OfflineGrace",
+        "GraceId NVARCHAR(20) PRIMARY KEY, "
+        "OfflineGracePeriodStart NVARCHAR(20)") != DbResult::BE_SQLITE_OK)
+        {
         LOG.error("Failed to create OfflineGrace table.");
-		return ERROR;
-	    }
+        return ERROR;
+        }
 
-	return ResetOfflineGracePeriod();
-	}
+    return ResetOfflineGracePeriod();
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -392,63 +392,63 @@ BentleyStatus UsageDb::WriteFeatureToCSVFile(BeFileNameCR path)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::list<Json::Value> UsageDb::GetPolicyFiles()
-	{
+    {
     LOG.info("GetPolicyFiles");
 
-	std::list<Json::Value> policyList;
+    std::list<Json::Value> policyList;
 
-	Statement stmt;
-	stmt.Prepare(m_db, "SELECT PolicyFile FROM Policy");
-	bool isDone = false;
-	while (!isDone)
-		{
-		DbResult result = stmt.Step();
-		if (result == DbResult::BE_SQLITE_ROW)
-			{
-			Utf8String policyUtf8 = stmt.GetValueText(0);
-			auto policyJson = Json::Reader::DoParse(policyUtf8);
-			policyList.push_back(policyJson);
-			}
-		else
-			{
-			isDone = true;
-			}
-		}
-	return policyList;
-	}
+    Statement stmt;
+    stmt.Prepare(m_db, "SELECT PolicyFile FROM Policy");
+    bool isDone = false;
+    while (!isDone)
+        {
+        DbResult result = stmt.Step();
+        if (result == DbResult::BE_SQLITE_ROW)
+            {
+            Utf8String policyUtf8 = stmt.GetValueText(0);
+            auto policyJson = Json::Reader::DoParse(policyUtf8);
+            policyList.push_back(policyJson);
+            }
+        else
+            {
+            isDone = true;
+            }
+        }
+    return policyList;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::list<Json::Value> UsageDb::GetPolicyFiles(Utf8String userId)
-	{
+    {
     LOG.info("GetPolicyFiles (userid)");
     
     std::list<Json::Value> policyList;
 
-	Statement stmt;
-	if (m_db.IsDbOpen())
-		{
-		stmt.Prepare(m_db, "SELECT PolicyFile FROM Policy WHERE UserID = ?");
-		stmt.BindText(1, userId, Statement::MakeCopy::No);
-		bool isDone = false;
-		while (!isDone)
-			{
-			DbResult result = stmt.Step();
-			if (result == DbResult::BE_SQLITE_ROW)
-				{
-				Utf8String policyUtf8 = stmt.GetValueText(0);
-				auto policyJson = Json::Reader::DoParse(policyUtf8);
-				policyList.push_back(policyJson);
-				}
-			else
-				{
-				isDone = true;
-				}
-			}
-		}
-	return policyList;
-	}
+    Statement stmt;
+    if (m_db.IsDbOpen())
+        {
+        stmt.Prepare(m_db, "SELECT PolicyFile FROM Policy WHERE UserID = ?");
+        stmt.BindText(1, userId, Statement::MakeCopy::No);
+        bool isDone = false;
+        while (!isDone)
+            {
+            DbResult result = stmt.Step();
+            if (result == DbResult::BE_SQLITE_ROW)
+                {
+                Utf8String policyUtf8 = stmt.GetValueText(0);
+                auto policyJson = Json::Reader::DoParse(policyUtf8);
+                policyList.push_back(policyJson);
+                }
+            else
+                {
+                isDone = true;
+                }
+            }
+        }
+    return policyList;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -464,7 +464,7 @@ BentleyStatus UsageDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR
         Utf8String stringToken = Json::FastWriter::ToString(policyToken);
         stmt.Prepare(m_db, "INSERT INTO Policy VALUES (?, ?, ?, ?, ?)");
         stmt.BindText(1, policyId, Statement::MakeCopy::No);
-		stmt.BindText(2, userId, Statement::MakeCopy::No);
+        stmt.BindText(2, userId, Statement::MakeCopy::No);
         stmt.BindText(3, expirationDate, Statement::MakeCopy::No);
         stmt.BindText(4, lastUpdateTime, Statement::MakeCopy::No);
         stmt.BindText(5, stringToken, Statement::MakeCopy::No);
@@ -479,42 +479,42 @@ BentleyStatus UsageDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::DeletePolicyFile(Utf8StringCR policyId)
-	{
+    {
     LOG.debug("DeletePolicyFile");
 
-	Statement stmt;
+    Statement stmt;
 
-	if (m_db.IsDbOpen())
-		{
-		stmt.Prepare(m_db, "DELETE FROM Policy WHERE PolicyId = ?");
-		stmt.BindText(1, policyId, Statement::MakeCopy::No);
-		DbResult result = stmt.Step();
-		if (result == DbResult::BE_SQLITE_DONE)
-			return SUCCESS;
-		}
-	return ERROR;
-	}
+    if (m_db.IsDbOpen())
+        {
+        stmt.Prepare(m_db, "DELETE FROM Policy WHERE PolicyId = ?");
+        stmt.BindText(1, policyId, Statement::MakeCopy::No);
+        DbResult result = stmt.Step();
+        if (result == DbResult::BE_SQLITE_DONE)
+            return SUCCESS;
+        }
+    return ERROR;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::DeleteAllOtherUserPolicyFiles(Utf8StringCR policyId, Utf8StringCR userId)
-	{
+    {
     LOG.debug("DeleteAllOtherUserPolicyFiles");
 
-	Statement stmt;
+    Statement stmt;
 
-	if (m_db.IsDbOpen())
-		{
-		stmt.Prepare(m_db, "DELETE FROM Policy WHERE UserId = ? AND PolicyId != ?");
-		stmt.BindText(1, userId, Statement::MakeCopy::No);
-		stmt.BindText(2, policyId, Statement::MakeCopy::No);
-		DbResult result = stmt.Step();
-		if (result == DbResult::BE_SQLITE_DONE)
-			return SUCCESS;
-		}
-	return ERROR;
-	}
+    if (m_db.IsDbOpen())
+        {
+        stmt.Prepare(m_db, "DELETE FROM Policy WHERE UserId = ? AND PolicyId != ?");
+        stmt.BindText(1, userId, Statement::MakeCopy::No);
+        stmt.BindText(2, policyId, Statement::MakeCopy::No);
+        DbResult result = stmt.Step();
+        if (result == DbResult::BE_SQLITE_DONE)
+            return SUCCESS;
+        }
+    return ERROR;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -531,9 +531,9 @@ Json::Value UsageDb::GetPolicyFile()
 
     if (result != DbResult::BE_SQLITE_ROW)
         return Json::Value::GetNull();
-    
+
     Utf8CP policy = stmt.GetValueText(0);
-    
+
     auto jv = Json::Value(policy);
 
     return jv;
@@ -543,86 +543,86 @@ Json::Value UsageDb::GetPolicyFile()
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value UsageDb::GetPolicyFile(Utf8StringCR policyId)
-	{
+    {
     LOG.debug("GetPolicyFile (policyId)");
-    
+
     Statement stmt;
 
-	if (m_db.IsDbOpen())
-		{
-		stmt.Prepare(m_db, "SELECT PolicyFile FROM Policy WHERE PolicyId = ?");
-		stmt.BindText(1, policyId, Statement::MakeCopy::No);
-		DbResult result = stmt.Step();
-		if (result == DbResult::BE_SQLITE_ROW)
-			{
-			Utf8String policyUtf8 = stmt.GetValueText(0);
-			Json::Value policyJson = Json::Reader::DoParse(policyUtf8);
-			return policyJson;
-			}
-		}
-	return Json::Value::GetNull();
-	}
+    if (m_db.IsDbOpen())
+        {
+        stmt.Prepare(m_db, "SELECT PolicyFile FROM Policy WHERE PolicyId = ?");
+        stmt.BindText(1, policyId, Statement::MakeCopy::No);
+        DbResult result = stmt.Step();
+        if (result == DbResult::BE_SQLITE_ROW)
+            {
+            Utf8String policyUtf8 = stmt.GetValueText(0);
+            Json::Value policyJson = Json::Reader::DoParse(policyUtf8);
+            return policyJson;
+            }
+        }
+    return Json::Value::GetNull();
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::SetOfflineGracePeriodStart(Utf8StringCR startTime)
-	{
+    {
     LOG.debug("SetOfflineGracePeriodStart");
 
-	Statement stmt;
+    Statement stmt;
     
     if (m_db.IsDbOpen())
-		{
-		stmt.Prepare(m_db, "INSERT OR REPLACE INTO OfflineGrace VALUES (?, ?)");
-		stmt.BindText(1, GRACESTART, Statement::MakeCopy::No);
-		stmt.BindText(2, startTime, Statement::MakeCopy::No);
-		DbResult result = stmt.Step();
-		if (result == DbResult::BE_SQLITE_DONE)
-			{
-			return SUCCESS;
-			}
+        {
+        stmt.Prepare(m_db, "INSERT OR REPLACE INTO OfflineGrace VALUES (?, ?)");
+        stmt.BindText(1, GRACESTART, Statement::MakeCopy::No);
+        stmt.BindText(2, startTime, Statement::MakeCopy::No);
+        DbResult result = stmt.Step();
+        if (result == DbResult::BE_SQLITE_DONE)
+            {
+            return SUCCESS;
+            }
         LOG.errorv("SetOfflineGracePeriodStart - Failed to set offline grace period. BE_SQLITE error %d", result);
         }
-	return ERROR;
-	}
+    return ERROR;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UsageDb::GetOfflineGracePeriodStart()
-	{
+    {
     LOG.debug("GetOfflineGracePeriodStart");
 
-	// Return empty string if no grace period (nothing returned)
-	Utf8String returnString = "";
-	Statement stmt;
-	if (m_db.IsDbOpen())
-		{
-		stmt.Prepare(m_db, "SELECT OfflineGracePeriodStart FROM OfflineGrace WHERE GraceId = ?");
-		stmt.BindText(1, GRACESTART, Statement::MakeCopy::No);
-		DbResult result = stmt.Step();
-		if (result == DbResult::BE_SQLITE_ROW)
-			{
-			return stmt.GetValueText(0);
-			}
-		}
-	return returnString;
-	}
+    // Return empty string if no grace period (nothing returned)
+    Utf8String returnString = "";
+    Statement stmt;
+    if (m_db.IsDbOpen())
+        {
+        stmt.Prepare(m_db, "SELECT OfflineGracePeriodStart FROM OfflineGrace WHERE GraceId = ?");
+        stmt.BindText(1, GRACESTART, Statement::MakeCopy::No);
+        DbResult result = stmt.Step();
+        if (result == DbResult::BE_SQLITE_ROW)
+            {
+            return stmt.GetValueText(0);
+            }
+        }
+    return returnString;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::ResetOfflineGracePeriod()
-	{
+    {
     LOG.debug("ResetOfflineGracePeriod");
 
-	if (m_db.IsDbOpen())
-		{
-		return SetOfflineGracePeriodStart("");
-		}
-	return ERROR;
-	}
+    if (m_db.IsDbOpen())
+        {
+        return SetOfflineGracePeriodStart("");
+        }
+    return ERROR;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -854,7 +854,7 @@ BentleyStatus UsageDb::UpdateDb()
                 }
             }
         }
-    
+
     return SUCCESS;
     }
 
