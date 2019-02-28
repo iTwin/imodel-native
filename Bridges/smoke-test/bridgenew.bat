@@ -1,6 +1,6 @@
 @echo off
 setLocal EnableDelayedExpansion
-set /p version=<C:\bridge\Version.log
+set  version=%2
 
 set installation_directory=%1
 
