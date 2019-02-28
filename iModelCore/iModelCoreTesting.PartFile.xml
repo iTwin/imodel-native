@@ -12,16 +12,17 @@
         <SubPart PartName="Base" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
 
         <SubPart PartName="RunGtest" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
-        <SubPart PartName="RunGtest" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02"/>
+        <SubPart PartName="RunGtest" PartFile="iModelCore/BeHttp/BeHttp" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/BeSecurity/BeSecurity" Repository="imodel02"/>
+        <SubPart PartName="RunGtest" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/ECDb/ECDb" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/ecobjects/ECObjects" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/GeomLibs/geomlibs" Repository="imodel02"/>
+        <SubPart PartName="RunGtest" PartFile="iModelCore/LicensingCrossPlatform/LicensingCrossPlatform" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/Units/Units" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02"/>
-        <SubPart PartName="RunGtest" PartFile="iModelCore/LicensingCrossPlatform/LicensingCrossPlatform" Repository="imodel02"/>
 
         <!-- These are built, but not run. -->
         <SubProduct ProductName="GeoCoord-Gtest" PartFile="iModelCore/GeoCoord/GeoCoord" Repository="imodel02"/>
@@ -34,6 +35,7 @@
         <SubPart PartName="Base" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
 
         <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/BeHttp/BeHttp" Repository="imodel02"/>
         <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02"/>
         <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="RunAndroidJUnitTest" PartFile="iModelCore/ECDb/ECDb" Repository="imodel02"/>
@@ -51,6 +53,7 @@
         <SubPart PartName="Base" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
 
         <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
+        <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/BeHttp/BeHttp" Repository="imodel02"/>
         <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02"/>
         <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="RuniOSXCTest" PartFile="iModelCore/ECDb/ECDb" Repository="imodel02"/>
@@ -68,6 +71,7 @@
         <SubPart PartName="Base" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
 
         <SubPart PartName="RunUwpTest" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
+        <SubPart PartName="RunUwpTest" PartFile="iModelCore/BeHttp/BeHttp" Repository="imodel02"/>
         <SubPart PartName="RunUwpTest" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02"/>
         <SubPart PartName="RunUwpTest" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="RunUwpTest" PartFile="iModelCore/ECDb/ECDb" Repository="imodel02"/>
