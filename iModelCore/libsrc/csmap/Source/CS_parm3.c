@@ -136,7 +136,9 @@ int EXP_LVL9 CSparm3I3 (struct csParm3_ *parm3,double* trgLl,Const double* srcLl
 {
 	int status;
 
+#ifndef GEOCOORD_ENHANCEMENT
 	double xx, yy, zz;
+#endif
 	double xyz [3];
 
 	/* Convert the geographic coordinates to geocentric XYZ coordinates. */
