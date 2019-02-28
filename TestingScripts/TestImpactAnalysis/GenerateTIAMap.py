@@ -280,10 +280,10 @@ def main():
         print('\n Script requires to get a folder where Coverage reports are stored. Error.')
         exit(-1)
     if not os.path.exists(covRoot):
-        print('\n The report path is not valid: ' + covRoot + '\n')
-        exit(-1)
+        os.mkdir(covRoot)
     if comp == None:
         comps = cmp.AllComps()
+        comps.remove('behttp')
 
     else:
         comps.append(comp)
@@ -302,7 +302,7 @@ def main():
             tiaMap = getTiaMapAll(covRoot, component, dll)
             writeMapToFiles(mapDir, tiaMap, component)
             adjustMapFiles(mapDir)
-    copyMapFiles(mapDir, comps)
+            copyMapFiles(mapDir, comps)
     if args.pushChanges:
     #Copy all Map files to source and push changes
         status = pushMapFiles(covRoot, comps)
