@@ -1,4 +1,4 @@
-@echo off
+
 setLocal EnableDelayedExpansion
 set  version=%2
 
