@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/CCBlend.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -936,7 +936,7 @@ double offsetB
                   + curveB.GetCurveVector ()->FastMaxAbs ();
 
     double abstol = reltol * bignum;
-    NewtonIterationsRRToRR newton (abstol, reltol);
+    NewtonIterationsRRToRR newton (abstol, reltol, 20, 2, 1.0e-6);
     TaperFilletTaperBlendConstructionObject blendBuilder (setbackA, taperA, filletRadius, setbackB, taperB, offsetA, offsetB);
     ParameterToPointEvaluator::CurveVectorWithDistanceIndexEvaluator evaluatorA (curveA);
     ParameterToPointEvaluator::CurveVectorWithDistanceIndexEvaluator evaluatorB (curveB);
