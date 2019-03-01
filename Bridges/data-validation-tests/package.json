@@ -17,7 +17,7 @@
     "copy:config": "cpx \"./src/config/**/*\" ./lib/config"
   },
   "dependencies": {
-    "@bentley/data-validation-api": "~0.0.12"
+    "@bentley/data-validation-api": "~0"
   },
   "devDependencies": {
     "@bentley/build-tools": "~0.163.0",
