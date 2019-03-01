@@ -20,24 +20,32 @@ struct GeometryTestCase : ProfilesTestCase
 private:
     Dgn::PhysicalModelPtr m_physicalModelPtr;
     DgnCategoryId m_categoryId;
+    DgnSubCategoryId m_cardinalPointsSubCategoryId;
     Render::GeometryParams m_shapeGeometryParams;
     Render::GeometryParams m_centerLineGeometryParams;
+    Render::GeometryParams m_controlPointsGeometryParams;
+    IGeometryPtr m_basePointGeometry;
 protected:
     GeometryTestCase();
 
+    template<typename T>
+    RefCountedPtr<T> InsertProfile (typename T::CreateParams const& createParams);
     template<typename T>
     RefCountedPtr<T> InsertProfileGeometry (typename T::CreateParams const& createParams, bool placeInNewRow = false);
     template<typename T>
     void InsertCenterlineProfileGeometry (typename T::CreateParams const& createParams, bool placeInNewRow = false);
     DgnCategoryId GetCategoryId() { return m_categoryId; }
+    DgnSubCategoryId GetCardinalPointsSubcategoryId() { return m_cardinalPointsSubCategoryId; }
     PhysicalModel& GetPhysicalModel() { return *m_physicalModelPtr; }
+    IGeometryPtr GetCardinalPointGeometry();
 
 private:
-    void InsertPhysicalElement (ProfilePtr profilePtr, bool placeInNewRow);
-    void InsertPhysicalElementForCenterLineProfile (ProfilePtr profilePtr, IGeometryPtr centerLineGeom, bool placeInNewRow);
+    void InsertPhysicalElement (ProfilePtr profilePtr, IGeometryPtr centerLineGeomPtr, bool placeInNewRow);
+    void InsertCardinalPoint (CardinalPoint const& point, StandardCardinalPoint type, IGeometry const& profileGeometry, Placement3d const& profilePlacement, Utf8CP profileName);
 
     Render::GeometryParams const& GetGeometryParams() const { return m_shapeGeometryParams; }
     Render::GeometryParams const& GetGeometryParamsForCenterLine() const { return m_centerLineGeometryParams; }
+    Render::GeometryParams const& GetGeometryParamsForControlPoints (StandardCardinalPoint type);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -60,6 +68,11 @@ GeometryTestCase::GeometryTestCase()
     BeAssert (status == DgnDbStatus::Success);
     m_categoryId = categoryPtr->GetCategoryId();
 
+    DgnSubCategory cardinalPointsCategory (DgnSubCategory::CreateParams (GetDb(), m_categoryId, "Cardinal Points", DgnSubCategory::Appearance()));
+    DgnSubCategoryCPtr cardinalPointsSubCategoryPtr = cardinalPointsCategory.Insert (&status);
+    BeAssert (status == DgnDbStatus::Success);
+    m_cardinalPointsSubCategoryId = cardinalPointsSubCategoryPtr->GetSubCategoryId();
+
     // Setup view and render related structures
     m_shapeGeometryParams.SetCategoryId (m_categoryId);
     m_shapeGeometryParams.SetFillDisplay (Render::FillDisplay::Always);
@@ -70,6 +83,11 @@ GeometryTestCase::GeometryTestCase()
     m_centerLineGeometryParams.SetCategoryId (m_categoryId);
     m_centerLineGeometryParams.SetLineColor (ColorDef::Green());
     m_centerLineGeometryParams.SetWeight (1);
+
+    m_controlPointsGeometryParams.SetCategoryId (m_categoryId);
+    m_controlPointsGeometryParams.SetSubCategoryId (m_cardinalPointsSubCategoryId);
+    m_controlPointsGeometryParams.SetLineColor (ColorDef::Red());
+    m_controlPointsGeometryParams.SetWeight (1);
 
     DefinitionModelR dictionaryModel = GetDb().GetDictionaryModel();
     CategorySelectorPtr categorySelectorPtr = new CategorySelector (dictionaryModel, "ProfilesTest");
@@ -97,12 +115,11 @@ GeometryTestCase::GeometryTestCase()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Creates a Profile from given CreateParams and creates a PhysicalElement with profiles
-* geometry assigned to it for visual testing.
-* @bsiclass                                                                      12/2018
+* Creates a Profile from given CreateParams and inserts it.
+* @bsiclass                                                                      03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
-RefCountedPtr<T> GeometryTestCase::InsertProfileGeometry (typename T::CreateParams const& createParams, bool placeInNewRow)
+RefCountedPtr<T> GeometryTestCase::InsertProfile (typename T::CreateParams const& createParams)
     {
     RefCountedPtr<T> profilePtr = typename T::Create (createParams);
     BeAssert (profilePtr.IsValid());
@@ -111,7 +128,19 @@ RefCountedPtr<T> GeometryTestCase::InsertProfileGeometry (typename T::CreatePara
     profilePtr->Insert (&status);
     BeAssert (status == DgnDbStatus::Success && "Failed to insert Profile");
 
-    InsertPhysicalElement (profilePtr, placeInNewRow);
+    return profilePtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Creates a Profile from given CreateParams and creates a PhysicalElement with profiles
+* geometry assigned to it for visual testing.
+* @bsiclass                                                                      12/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T>
+RefCountedPtr<T> GeometryTestCase::InsertProfileGeometry (typename T::CreateParams const& createParams, bool placeInNewRow)
+    {
+    RefCountedPtr<T> profilePtr = InsertProfile<T> (createParams);
+    InsertPhysicalElement (profilePtr, nullptr, placeInNewRow);
 
     return profilePtr;
     }
@@ -124,15 +153,8 @@ RefCountedPtr<T> GeometryTestCase::InsertProfileGeometry (typename T::CreatePara
 template<typename T>
 void GeometryTestCase::InsertCenterlineProfileGeometry (typename T::CreateParams const& createParams, bool placeInNewRow)
     {
-    RefCountedPtr<T> profilePtr = typename T::Create (createParams);
-
-    BeAssert (profilePtr.IsValid());
-
-    DgnDbStatus status;
-    profilePtr->Insert (&status);
-    BeAssert (status == DgnDbStatus::Success && "Failed to insert Profile");
-
-    InsertPhysicalElementForCenterLineProfile (profilePtr, profilePtr->GetCenterLine(), placeInNewRow);
+    RefCountedPtr<T> profilePtr = InsertProfile<T> (createParams);
+    InsertPhysicalElement (profilePtr, profilePtr->GetCenterLine(), placeInNewRow);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -174,70 +196,138 @@ static DPoint3d offsetProfilePlacement (IGeometryPtr& geometryPtr, bool placeInN
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Creates a PhysicalElement, assings Profile geometry to it and offsets it in world
-* space.
-* @bsiclass                                                                      12/2018
+* Retrieved basic geometry for a cardinal point
+* @bsiclass                                                                      02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryTestCase::InsertPhysicalElement (ProfilePtr profilePtr, bool placeInNewRow)
+IGeometryPtr GeometryTestCase::GetCardinalPointGeometry()
     {
-    PhysicalElementPtr physicaleElementPtr = GenericPhysicalObject::Create (GetPhysicalModel(), GetCategoryId());
-    physicaleElementPtr->SetUserLabel (profilePtr->GetName().c_str());
+    if (m_basePointGeometry.IsNull())
+        {
+        DEllipse3d point = DEllipse3d::FromCenterRadiusXY (DPoint3d::FromZero(), 0.1);
+        ICurvePrimitivePtr circle = ICurvePrimitive::CreateArc (point);
+        m_basePointGeometry = IGeometry::Create (circle);
+        }
 
-    GeometrySource* pGeometrySource = physicaleElementPtr->ToGeometrySourceP();
-    pGeometrySource->SetCategoryId(GetCategoryId());
+    return m_basePointGeometry->Clone();
+    }
 
-    IGeometryPtr profileGeometryPtr = profilePtr->GetShape();
+/*---------------------------------------------------------------------------------**//**
+* Creates a geometry for a cardinal point and appends it to geometry stream.
+* @bsiclass                                                                      02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryTestCase::InsertCardinalPoint (CardinalPoint const& point, StandardCardinalPoint type, IGeometry const& profileGeometry, Placement3d const& profilePlacement, Utf8CP profileName)
+    {
+    IGeometryPtr pointGeometry = GetCardinalPointGeometry();
+    
+    DRange3d range;
+    BeAssert (profileGeometry.TryGetRange (range));
+    double const width = range.XLength();
+    double const height = range.YLength();
 
-    Placement3d elementPlacement;
-    elementPlacement.GetOriginR() = offsetProfilePlacement (profileGeometryPtr, placeInNewRow);
-    physicaleElementPtr->SetPlacement (elementPlacement);
+    GenericSpatialLocationPtr spatialLocationElementPtr = GenericSpatialLocation::Create (GetPhysicalModel(), GetCategoryId());
+    Utf8CP label = Utf8String (point.name).append (": ").append (profileName).c_str();
+    spatialLocationElementPtr->SetUserLabel (label);
+
+    GeometrySource* pGeometrySource = spatialLocationElementPtr->ToGeometrySourceP();
+    pGeometrySource->SetCategoryId (GetCategoryId());
+
+    Placement3d placement;
+    placement.GetOriginR() = DPoint3d::From(point.location);
+    placement.GetOriginR().Add (DPoint3d::From (range.low.x + width / 2.0, range.low.y + height / 2.0, 0.01));
+    placement.TryApplyTransform (profilePlacement.GetTransform ());
+    spatialLocationElementPtr->SetPlacement (placement);
 
     GeometryBuilderPtr builder = GeometryBuilder::Create (*pGeometrySource);
-    builder->Append (GetGeometryParams());
-    builder->Append (*profileGeometryPtr);
+    builder->Append (GetGeometryParamsForControlPoints (type));
+    builder->Append (*pointGeometry);
     builder->Finish (*pGeometrySource);
 
     DgnDbStatus insertStatus;
-    physicaleElementPtr->Insert (&insertStatus);
+    spatialLocationElementPtr->Insert (&insertStatus);
     ASSERT_TRUE (insertStatus == DgnDbStatus::Success);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Creates a PhysicalElement, assings CenterLine Profile geometry to it and offsets it in world
+* Retrieves Geometry params for Control Points based on control point type
+* @bsiclass                                                                      02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::GeometryParams const & GeometryTestCase::GetGeometryParamsForControlPoints (StandardCardinalPoint type)
+    {
+    ColorDef lineColor;
+    switch (type)
+        {
+        case StandardCardinalPoint::BottomLeft:
+        case StandardCardinalPoint::BottomCenter:
+        case StandardCardinalPoint::BottomRight:
+        case StandardCardinalPoint::MidDepthLeft:
+        case StandardCardinalPoint::MidDepthCenter:
+        case StandardCardinalPoint::MidDepthRight:
+        case StandardCardinalPoint::TopLeft:
+        case StandardCardinalPoint::TopCenter:
+        case StandardCardinalPoint::TopRight:
+            lineColor = ColorDef::DarkRed();
+            break;
+        case StandardCardinalPoint::GeometricCentroid:;
+        case StandardCardinalPoint::BottomInLineWithGeometricCentroid:
+        case StandardCardinalPoint::LeftInLineWithGeometricCentroid:
+        case StandardCardinalPoint::RightInLineWithGeometricCentroid:
+        case StandardCardinalPoint::TopInLineWithGeometricCentroid:
+            lineColor = ColorDef::Red();
+            break;
+        case StandardCardinalPoint::ShearCenter:
+        case StandardCardinalPoint::BottomInLineWithShearCenter:
+        case StandardCardinalPoint::LeftInLineWithShearCenter:
+        case StandardCardinalPoint::RightInLineWithShearCenter:
+        case StandardCardinalPoint::TopInLineWithShearCenter:
+        default:
+            lineColor = ColorDef::Orange();
+            break;
+        }
+    m_controlPointsGeometryParams.SetLineColor (lineColor);
+    return m_controlPointsGeometryParams; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Creates a PhysicalElement, assings Profile geometry to it and offsets it in world
 * space.
 * @bsiclass                                                                      12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryTestCase::InsertPhysicalElementForCenterLineProfile (ProfilePtr profilePtr, IGeometryPtr centerLineGeom, bool placeInNewRow)
+void GeometryTestCase::InsertPhysicalElement (ProfilePtr profilePtr, IGeometryPtr centerLineGeomPtr, bool placeInNewRow)
     {
-    PhysicalElementPtr physicaleElementPtr = GenericPhysicalObject::Create (GetPhysicalModel(), GetCategoryId());
-    physicaleElementPtr->SetUserLabel (profilePtr->GetName().c_str());
+    PhysicalElementPtr physicalElementPtr = GenericPhysicalObject::Create (GetPhysicalModel(), GetCategoryId());
+    physicalElementPtr->SetUserLabel (profilePtr->GetName().c_str());
 
-    GeometrySource* pGeometrySource = physicaleElementPtr->ToGeometrySourceP();
+    GeometrySource* pGeometrySource = physicalElementPtr->ToGeometrySourceP();
     IGeometryPtr profileGeometryPtr = profilePtr->GetShape();
+
     DRange3d range = {0};
     BeAssert (profileGeometryPtr->TryGetRange (range));
 
     Placement3d elementPlacement;
     elementPlacement.GetOriginR() = offsetProfilePlacement (profileGeometryPtr, placeInNewRow);
-    physicaleElementPtr->SetPlacement (elementPlacement);
+    physicalElementPtr->SetPlacement (elementPlacement);
 
     GeometryBuilderPtr builder = GeometryBuilder::Create (*pGeometrySource);
     builder->Append (GetGeometryParams());
     builder->Append (*profileGeometryPtr);
 
-    if (centerLineGeom.IsValid())
+    if (centerLineGeomPtr.IsValid ())
         {
         Transform translation = Transform::From (DPoint3d::From (range.low.x * -1.0, range.low.y * -1.0, 0.01));
-        BeAssert (centerLineGeom->TryTransformInPlace (translation));
+        BeAssert (centerLineGeomPtr->TryTransformInPlace (translation));
 
         builder->Append (GetGeometryParamsForCenterLine());
-        builder->Append (*centerLineGeom);
+        builder->Append (*centerLineGeomPtr);
         }
+
+    bvector<CardinalPoint> cardinalPoints = profilePtr->GetCardinalPoints();
+    for (size_t i = 0; i < cardinalPoints.size(); ++i)
+        InsertCardinalPoint (cardinalPoints[i], static_cast<StandardCardinalPoint>(i), *profileGeometryPtr, elementPlacement, profilePtr->GetName ().c_str ());
 
     builder->Finish (*pGeometrySource);
 
     DgnDbStatus insertStatus;
-    physicaleElementPtr->Insert (&insertStatus);
+    physicalElementPtr->Insert (&insertStatus);
     ASSERT_TRUE (insertStatus == DgnDbStatus::Success);
     }
 
