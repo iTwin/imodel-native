@@ -1250,7 +1250,6 @@ bool  setExtendedPath = false   // false forces new logic to use tangent extensi
             {
             auto cvA = gA->GetAsCurveVector ();
             auto cvB = gB->GetAsCurveVector ();
-
             if (cvA.IsValid () && cvB.IsValid ())
                 {
                 PathLocationDetail startA, endA, startB, endB;
@@ -3364,3 +3363,114 @@ TEST(ThickenPathToRegion, openPolylines)
         }
     Check::ClearGeometry("ThickenPathToRegion.openPolylines");
     }
+
+
+CurveVectorPtr CurveVector19Feb00()
+    {
+    auto cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+
+
+    cv->push_back(ICurvePrimitive::CreateLine(
+        DSegment3d::From(
+            DPoint3d::From(226818.62784515313, 68416.728429918381, 0.0),
+            DPoint3d::From(226818.45465399697, 68416.753526201544, 0.0))));
+
+    return cv;
+    }
+CurveVectorPtr CurveVector19Feb01()
+    {
+    auto cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+
+    cv->push_back(ICurvePrimitive::CreateArc(
+        DEllipse3d::FromScaledRotMatrix(
+            DPoint3d::From(226917.43056137353, 68710.221406539262, 0.0),
+            RotMatrix::FromColumnVectors(
+                DVec3d::From(0.11039277888089406, -0.99388803915277812, 0.0),
+                DVec3d::FromCrossProduct(DVec3d::From(0.0, -0.0, -1.0), DVec3d::From(0.11039277888089406, -0.99388803915277812, 0.0)),
+                DVec3d::From(0.0, -0.0, -1.0)),
+            309.67741935489840, 309.67741935489840,
+            Angle::DegreesToRadians(24.943467150543480), Angle::DegreesToRadians(-24.943467150543480))));
+
+
+    cv->push_back(ICurvePrimitive::CreateLine(
+        DSegment3d::From(
+            DPoint3d::From(226951.61671225278, 68402.436723446735, 0.0),
+            DPoint3d::From(227237.84239773938, 68434.228281009811, 0.0))));
+
+    return cv;
+    }
+
+TEST(CurveCurve, TaperFilletTaperSmallRadius)
+    {
+    char const *subAStr = R"({"DgnCurveVector":{"Member":[{"LineSegment":{"endPoint":[226818.45465399697,68416.753526201544,0.0],"startPoint":[226818.62784515313,68416.728429918381,0.0]}}],"boundaryType":1}})";
+    char const *subBStr = R"({"DgnCurveVector":{"Member":[{"CircularArc":{"placement":{"origin":[226917.43056137353,68710.221406539262,0.0],"vectorX":[0.11039277888089406,-0.99388803915277812,0.0],"vectorZ":[0.0,-0.0,-1.0]},"radius":309.67741935489840,"startAngle":24.943467150543480,"sweepAngle":-24.943467150543480}},{"LineSegment":{"endPoint":[227237.84239773938,68434.228281009811,0.0],"startPoint":[226951.61671225278,68402.436723446735,0.0]}}],"boundaryType":1}})";
+    for (double radius : { 0.5, 0.1 })
+        {
+        SaveAndRestoreCheckTransform shifter(0, 40, 0);
+        for (double distanceFactor : {0.2, 0.5, 1.0, 2.0, 5.0})
+            {
+            SaveAndRestoreCheckTransform shifter(0, 2, 0);
+            double distanceA = 0.0090659115617812997 * distanceFactor;
+            double distanceB = 0.0090659115681263475 * distanceFactor;
+            RunTaperFilletTaper(subAStr, subBStr,
+                        0, 0,
+                        radius,
+                        0.0, 0.0,
+                        distanceA, distanceB,
+                        0.0, 0.0);
+            }
+        }
+
+#ifdef abc
+    void RunTaperFilletTaper(char const * jsonA, char const * jsonB,
+        double setbackA,
+        double taperA,
+        double filletRadius,
+        double setbackB,
+        double taperB,
+        double &distanceA,
+        double &distanceB,
+        double offsetA,
+        double offsetB,
+        bool  setExtendedPath = false   // false forces new logic to use tangent extension
+
+
+
+    CurveVectorPtr subA = GeometryHelper::DeserializeCurveVector(subAStr);
+    CurveVectorPtr subB = GeometryHelper::DeserializeCurveVector(subBStr);
+
+    auto pathA = CurveVectorWithDistanceIndex::Create();
+    pathA->SetPath(*subA);
+    auto pathB = CurveVectorWithDistanceIndex::Create();
+    pathB->SetPath(*subB);
+
+    double distanceA = 0.0090659115617812997;
+    double distanceB = 0.0090659115681263475;
+    for (double radius : { 0.5, 0.1 })
+        {
+        SaveAndRestoreCheckTransform shifter (0, 20, 0);
+        Check::SaveTransformed (*subA);
+        Check::SaveTransformed (*subB);
+        auto filletPath = GeometryHelper::ConstructTaperFilletTaperEx(*pathA, *pathB, 0.0, 0.0, .1, 0.0, 0.0, distanceA, distanceB);
+        if (filletPath.IsValid ())
+            Check::SaveTransformed (*filletPath);
+        }
+#endif
+    Check::ClearGeometry ("CurveCurve.TaperFilletTaperSmallRadius");
+    }
+#ifdef abc
+double distanceA = 0.0090659115617812997;
+double distanceB = 0.0090659115681263475;
+auto filletPath = GeometryHelper::ConstructTaperFilletTaperEx(*pathA, *pathB, 0.0, 0.0, .1, 0.0, 0.0, distanceA, distanceB);
+
+ICurvePrimitiveR curveA,
+ICurvePrimitiveR curveB,
+double fractionA,
+double fractionB,
+double setbackA,            //!< [in] setback distance from vectorA
+double taperA,              //!< [in] taper distance along vectorA
+double filletRadius,        //!< [in] fillet radius
+double setbackB,            //!< [in] setback distance from vectorB
+double taperB
+
+#endif
