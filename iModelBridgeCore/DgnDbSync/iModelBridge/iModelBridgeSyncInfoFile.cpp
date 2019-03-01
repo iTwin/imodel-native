@@ -654,8 +654,7 @@ iModelBridgeSyncInfoFile::ConversionResults iModelBridgeWithSyncInfoBase::Record
         }
 
     //In case of the new syncinfo srcId = repositoryLink element Id
-    bool useAspect = TestFeatureFlag(iModelBridgeFeatureFlag::WantProvenanceInBim);
-    if (useAspect && results.m_element.IsValid() && results.m_element->GetElementId().IsValid())
+    if (results.m_element.IsValid() && results.m_element->GetElementId().IsValid())
         srid = results.m_element->GetElementId().GetValue();
 
     //  Compute the state of the document
