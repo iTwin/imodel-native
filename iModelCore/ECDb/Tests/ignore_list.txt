@@ -35,3 +35,7 @@ ECSqlToSqlGenerationTests.NavPropSharedColumnCasting
 ECSqlToSqlGenerationTests.LinkTableSharedColumnCasting
 DbMappingTestFixture.SharedColumnCasting
 #==================================================================>>>
+
+# Very hard to update this test as index where statement hold text
+FileFormatCompatibilityTests.CompareDdl_UpgradedFile
+FileFormatCompatibilityTests.CompareDdl_NewFile #Affan

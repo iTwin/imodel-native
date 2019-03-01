@@ -1554,8 +1554,9 @@ TEST_F(IndexTests, UserDefinedIndexesOnTph)
         "    </ECEntityClass>"
         "</ECSchema>")));
 
+    ECClassId sub1Id = m_ecdb.Schemas().GetClassId("TestSchema", "Sub1");
     indexName = "ix_sub1_prop";
-    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts2_Base", "Sub1_Prop").ToDdl().c_str(),
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts2_Base", "Sub1_Prop", IndexInfo::WhereClause(sub1Id)).ToDdl().c_str(),
                      GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
 
@@ -2436,9 +2437,9 @@ TEST_F(IndexTests, UserDefinedIndexWhenClassModifierIsUpgraded)
                 <ECProperty propertyName="Code" typeName="int" />
             </ECEntityClass>
         </ECSchema>)xml"))) << "index on sealed subclass (TPH)";
-
+            ECClassId fooId = m_ecdb.Schemas().GetClassId("TestSchema", "Foo");
             EXPECT_TRUE(GetHelper().TableExists("ts_Base"));
-            EXPECT_STRCASEEQ(IndexInfo("ix_foo", false, "ts_Base", "Code").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo").c_str()) << "index on sealed class";
+            EXPECT_STRCASEEQ(IndexInfo("ix_foo", false, "ts_Base", "Code", IndexInfo::WhereClause(fooId)).ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo").c_str()) << "index on sealed class";
 
 
             EXPECT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -2471,7 +2472,7 @@ TEST_F(IndexTests, UserDefinedIndexWhenClassModifierIsUpgraded)
             </ECEntityClass>
             </ECSchema>)xml"))) << "Unsealed subclass (TPH) -> index still valid";
             EXPECT_TRUE(GetHelper().TableExists("ts_Base"));
-            EXPECT_STRCASEEQ(IndexInfo("ix_foo", false, "ts_Base", "Code").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo").c_str()) << "index on sealed class";
+            EXPECT_STRCASEEQ(IndexInfo("ix_foo", false, "ts_Base", "Code", IndexInfo::WhereClause(fooId)).ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo").c_str()) << "index on sealed class";
 
             }
             {
@@ -2601,7 +2602,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnSharedColumns)
             Utf8CP expectedIndexName = "ix_Base_Prop2";
             ASSERT_STRCASEEQ(IndexInfo(expectedIndexName, false, "ts_Base", "ps2").ToDdl().c_str(), GetHelper().GetIndexDdl(expectedIndexName).c_str());
             expectedIndexName = "ix_Sub1_Prop1";
-            ASSERT_STRCASEEQ(IndexInfo(expectedIndexName, false, "ts_Base", "ps3").ToDdl().c_str(), GetHelper().GetIndexDdl(expectedIndexName).c_str());
+            ASSERT_STRCASEEQ(IndexInfo(expectedIndexName, false, "ts_Base", "ps3", IndexInfo::WhereClause(baseClassId, true)).ToDdl().c_str(), GetHelper().GetIndexDdl(expectedIndexName).c_str());
             expectedIndexName = "uix_Sub1_Prop2";
             ASSERT_STRCASEEQ(IndexInfo(expectedIndexName, true, "ts_Base", "ps4", IndexInfo::WhereClause(baseClassId, true)).ToDdl().c_str(),
                              GetHelper().GetIndexDdl(expectedIndexName).c_str());
