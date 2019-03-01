@@ -48,17 +48,18 @@ def getChangedTests(reportPath, comp):
             for test in tests:
                 if test not in tl:
                     tl.append(test)
-    # remove tests that are ignored
-    ignored = getIgnoredTests(comp)
-    for test in ignored:
-        if test in tl:
-            tl.remove(test)
-    # Since unwanted tests can get in. Work around is to run tests and get list
-    allTests = getTests(reportPath, comp)
-    for test in list(tl):
-        if test not in allTests:
-            print 'removing: ' + test
-            tl.remove(test)
+    if len(tl) > 0 :
+        # remove tests that are ignored
+        ignored = getIgnoredTests(comp)
+        for test in ignored:
+            if test in tl:
+                tl.remove(test)
+        # Since unwanted tests can get in. Work around is to run tests and get list
+        allTests = getTests(reportPath, comp)
+        for test in list(tl):
+            if test not in allTests:
+                print 'removing: ' + test
+                tl.remove(test)
     return tl
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Majd.Uddin    02/2019

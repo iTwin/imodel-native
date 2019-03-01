@@ -9,6 +9,7 @@ import os, sys, shutil
 import xml.etree.ElementTree as ET
 import argparse
 import time
+import subprocess
 
 #Common Scripts to be used by any task
 scriptsDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -37,9 +38,9 @@ def getMapFromFile(fileName):
     ff = ''
     for i in range(0, len(fp) - 1):
         ff = ff + fp[i] + '_'
-    for f in os.listdir(os.path.dirname(filename)):
+    for f in os.listdir(os.path.dirname(fileName)):
         if f.startswith(ff):
-            files.append(os.path.join(os.path.dirname(filename),f))
+            files.append(os.path.join(os.path.dirname(fileName),f))
     for fl in files:
         f = open(fl, 'r')
         lines = f.readlines()
@@ -199,7 +200,10 @@ def adjustMapFiles(map_dir):
                     start = i*partlines - 1
                 end = (i+1)*partlines - 1
                 last = end
-                f_name = os.path.join(map_dir, os.path.basename(filename) + '_' + str(i) + file_extension)
+                if i = 0:
+                    f_name = os.path.join(map_dir, os.path.basename(filename) + file_extension)
+                else:
+                    f_name = os.path.join(map_dir, os.path.basename(filename) + '_' + str(i) + file_extension)
                 f2 = open(f_name, 'w')
                 print 'writing to file: ' + str(f_name)
                 for line in lines[start:end]:
@@ -228,37 +232,41 @@ def copyMapFiles(mapDir, comps):
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Majd.Uddin    10/2017
 #-------------------------------------------------------------------------------------------
-def pushMapFiles(mapDir, comps):
-    print 'Push disabled.'
-##    #Determine which files to commit and push
-##    filesToAdd = []
-##    filesToCommit = []
-##    os.chdir(srcDir)
-##    hgOutFile = os.path.join(os.path.expanduser('~'), 'Documents', 'hgstatus.txt')
-##    os.system('hg status > ' + hgOutFile)
-##    statFile = open(hgOutFile,'r')
-##    for line in statFile.readlines():
-##        if 'TIAMap' in line and '.txt' in line:
-##            fileName = os.path.basename(line.strip().split(' ')[1])
-##            if line.startswith('?'):
-##                filesToAdd.append(fileName)
-##            filesToCommit.append(fileName)
-##    if len(filesToAdd) > 0:
-##        for file in filesToAdd:
-##            hgCmd = 'hg add ' + file
-##            print hgCmd
-##            status = os.system('hg add ' + file)
-##            print status
-##    else:
-##        print("\n No files to add. ")
-##    if len(filesToCommit) > 0:
-##        commitMessage = 'Updated TIAMaps.'
-##        status = cm.CommitAndPushMultipleFiles(srcDir, filesToCommit, commitMessage, 'Majd.Uddin')
-##        print status
-##        return status
-##    else:
-##        print("\n No files to commit. ")
-##        return 0
+def pushMapFiles():
+    os.chdir(os.path.dirname(os.path.realpath(__file__)))
+    # First pull any new changes
+    gitCmd = 'git pull'
+    try:
+        result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
+        return False
+
+    # Now create a branch
+    gitCmd = 'git checkout -b pushmaps2'
+    try:
+        result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
+        return False
+
+    # Now commit changes
+    gitCmd = 'git commit -a -m "Update TIA Map files."'
+    try:
+        result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
+        return False
+
+    # Now push changes
+    gitCmd = 'git push origin pushmaps2'
+    try:
+        result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
+        return False
+
+    return True
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Majd.Uddin    09/2017
@@ -304,12 +312,11 @@ def main():
             adjustMapFiles(mapDir)
             copyMapFiles(mapDir, comps)
     if args.pushChanges:
-    #Copy all Map files to source and push changes
-        status = pushMapFiles(covRoot, comps)
-        if status != 0: #Do another round if first one fails.
-            status2 = pushMapFiles(covRoot, comps)
-            if status2!=0: #Commit/push still failed
-                print('\n Map files were generated but could not be pushed to the server \n')
-                exit(-1)
+        status = pushMapFiles()
+        if not status: #Do another round if first one fails.
+            print('\n Map files were generated but could not be pushed to the server \n')
+            exit(-1)
+        else:
+            print 'Map files pushed successfully.'
     
 main()
