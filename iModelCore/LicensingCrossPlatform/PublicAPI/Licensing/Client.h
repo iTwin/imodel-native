@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <Licensing/Licensing.h>
+#include <Licensing/AuthType.h>
 
 #include "LicenseStatus.h"
 
@@ -52,7 +53,8 @@ public:
         bool offlineMode, /** If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream */
         Utf8StringCR projectId = "", /** ProjectID string, defaults to an empty string */
         Utf8StringCR featureString = "", /** FeatureString, defaults to an empty string */
-        IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
+        IHttpHandlerPtr customHttpHandler = nullptr, /** CustomHttpHandler, defaults to a nullptr */
+		AuthType authType = AuthType::SAML
         );
 
     LICENSING_EXPORT static ClientPtr CreateWithKey

@@ -9,6 +9,7 @@
 
 #include <Licensing/Licensing.h>
 #include <Licensing/LicenseStatus.h>
+#include <Licensing/AuthType.h>
 
 #include "IBuddiProvider.h"
 #include "IPolicyProvider.h"
@@ -26,17 +27,22 @@ protected:
     ClientInfoPtr m_clientInfo;
     IBuddiProviderPtr m_buddiProvider;
     std::shared_ptr<IAuthHandlerProvider> m_authHandlerProvider;
+	IConnectAuthenticationProvider::HeaderPrefix m_headerPrefix;
 
 public:
     LICENSING_EXPORT PolicyProvider
         (
         IBuddiProviderPtr buddiProvider,
         ClientInfoPtr clientInfo,
-        std::shared_ptr<IAuthHandlerProvider> authHandlerProvider
+        std::shared_ptr<IAuthHandlerProvider> authHandlerProvider,
+		AuthType authType
         );
     LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicy();
     LICENSING_EXPORT folly::Future<Utf8String> GetCertificate();
     LICENSING_EXPORT folly::Future<Utf8String> PerformGetPolicyRequest();
+
+private:
+	IConnectAuthenticationProvider::HeaderPrefix GetHeaderPrefix(AuthType authType);
     };
 
 END_BENTLEY_LICENSING_NAMESPACE
