@@ -10,7 +10,7 @@
 #include <Licensing/Utils/DateHelper.h>
 
 #include <Bentley/Base64Utilities.h>
-
+#include "Logging.h"
 #include <Licensing/Licensing.h>
 #include <Licensing/Utils/JWToken.h>
 #include <list>

@@ -87,7 +87,7 @@ BentleyStatus UsageDb::SetUpTables()
     // Create Policy table
     if (m_db.CreateTable("Policy",
                          "PolicyId NVARCHAR(20) PRIMARY KEY, "
-                         "UserId NVARCHAR(20), "
+                         "UserId NVARCHAR(40), "
                          "ExpirationDate NVARCHAR(20), "
                          "LastUpdateTime NVARCHAR(20), "
                          "PolicyFile NVARCHAR(900)") != DbResult::BE_SQLITE_OK)
