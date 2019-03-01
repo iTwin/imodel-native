@@ -724,6 +724,7 @@ TEST_F(ConverterTests, GCSMultiFilesReprojectImport)
 TEST_F(ConverterTests, GCSMultiFilesGCSTransformNoScale)
     {
     m_noGcs       = true;
+    m_wantCleanUp = false;
 
     // Note: The root model is converted to a BIM Spatial model because it has a GCS, which the converter treats as evidence that it is not a drawing model, even though it is 2D.
 
