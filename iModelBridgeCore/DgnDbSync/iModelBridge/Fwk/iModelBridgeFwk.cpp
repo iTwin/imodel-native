@@ -1624,7 +1624,11 @@ BentleyStatus   iModelBridgeFwk::GetSchemaLock()
     do
         {
         if (retryAttempt > 0)
+            {
             GetLogger().infov("GetSchemaLock failed. Retrying.");
+            if (0 != PullMergeAndPushChange("GetSchemaLock", false))  // pullmergepush + re-open
+                return BSIERROR;
+            }
         status = m_briefcaseDgnDb->BriefcaseManager().LockSchemas().Result();
         } while ((RepositoryStatus::Success != status) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry());
 
