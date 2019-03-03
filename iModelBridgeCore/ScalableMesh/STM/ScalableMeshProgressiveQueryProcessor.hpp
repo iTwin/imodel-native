@@ -95,7 +95,7 @@ template <class POINT, class EXTENT>  void ProcessingQuery<POINT,EXTENT>::Run(si
     //Load unloaded node
     //HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> nodePtr;                
 
-    while (m_toLoadNodes[threadInd].size() > 0)
+    while (m_toLoadNodes[threadInd].size() > 0 && !m_isCancel)
     {
         if (m_toLoadNodes[threadInd].size() > 0)
         {
