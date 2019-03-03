@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -116,6 +116,11 @@ StatusInt IScalableMeshGroundExtractor::SetExtractionArea(const bvector<DPoint3d
     {
     return _SetExtractionArea(area);
     }  
+
+StatusInt IScalableMeshGroundExtractor::SetReprojectElevation(bool doReproject) 
+    {
+    return _SetReprojectElevation(doReproject);
+    }
 
 StatusInt IScalableMeshGroundExtractor::SetLimitTextureResolution(bool limitTextureResolution)
 {
@@ -276,6 +281,7 @@ ScalableMeshGroundExtractor::ScalableMeshGroundExtractor(const WString& smTerrai
     m_scalableMesh = scalableMesh;
     m_smTerrainPath = smTerrainPath;
 	m_limitTextureResolution = false;
+    m_reprojectElevation = false;
 
     const GeoCoords::GCS& gcs(m_scalableMesh->GetGCS());    
     m_smGcsRatioToMeter = m_scalableMesh->IsCesium3DTiles() ? 1.0 : gcs.GetUnit().GetRatioToBase();
@@ -614,6 +620,12 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
         if (!m_scalableMesh->GetGCS().IsNull() && m_destinationGcs.IsValid() && !m_scalableMesh->IsCesium3DTiles())
             {
             sourceGcs = BaseGCS::CreateGCS(*m_scalableMesh->GetGCS().GetGeoRef().GetBasePtr());
+
+            if (m_reprojectElevation)
+                {
+                sourceGcs->SetReprojectElevation(true);
+                m_destinationGcs->SetReprojectElevation(true);
+                }
             }
             
         for (int ptInd = 0; ptInd < dtmPtr->GetPointCount(); ptInd++)
@@ -715,6 +727,12 @@ SMStatus ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverag
         {
         BaseGCSPtr sourceGcs(BaseGCS::CreateGCS(*m_scalableMesh->GetGCS().GetGeoRef().GetBasePtr()));
 
+        if (m_reprojectElevation)
+            {
+            sourceGcs->SetReprojectElevation(true);
+            }
+        
+
         auto coordInterp = m_scalableMesh->IsCesium3DTiles() ? GeoCoordInterpretation::XYZ : GeoCoordInterpretation::Cartesian;
 
         smPtsProviderCreator = ScalableMeshPointsProviderCreator::Create(m_scalableMesh, sourceGcs, m_destinationGcs, coordInterp);
@@ -748,6 +766,11 @@ SMStatus ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverag
         auto coordInterp = m_scalableMesh->IsCesium3DTiles() ? GeoCoordInterpretation::XYZ : GeoCoordInterpretation::Cartesian;
 
         BaseGCSPtr sourceGcs(BaseGCS::CreateGCS(*m_scalableMesh->GetGCS().GetGeoRef().GetBasePtr()));
+
+        if (m_reprojectElevation)
+            {
+            sourceGcs->SetReprojectElevation(true);
+            }
         
         ((ScalableMeshPointsAccumulator*)accumPtr.get())->SetReprojGCS(coordInterp, sourceGcs, m_destinationGcs);
         }
@@ -881,6 +904,12 @@ StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d
 */
         }
 
+    return SUCCESS;
+    }
+
+StatusInt ScalableMeshGroundExtractor::_SetReprojectElevation(bool doReproject)
+    {
+    m_reprojectElevation = doReproject;
     return SUCCESS;
     }
 

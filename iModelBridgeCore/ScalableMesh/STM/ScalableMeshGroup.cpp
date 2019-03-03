@@ -570,7 +570,7 @@ Transform                          ScalableMeshGroup::_GetReprojectionTransform(
     return m_members.front()->GetReprojectionTransform();
     }
 
-SMStatus                      ScalableMeshGroup::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution)
+SMStatus                      ScalableMeshGroup::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution, bool reprojectElevation)
     {
     for (auto& member : m_members)
         {
