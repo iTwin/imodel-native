@@ -47,6 +47,7 @@ public:
         IBuddiProviderPtr buddiProvider
         );
     LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
+    LICENSING_EXPORT folly::Future<BentleyStatus> MarkFeature(Utf8StringCR accessToken, Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId);
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

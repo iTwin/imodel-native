@@ -20,6 +20,7 @@ public:
     Utf8String UlasLocationBaseUrl();
     Utf8String EntitlementPolicyBaseUrl();
     Utf8String UlasRealtimeLoggingBaseUrl();
+    Utf8String UlasRealtimeFeatureUrl();
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

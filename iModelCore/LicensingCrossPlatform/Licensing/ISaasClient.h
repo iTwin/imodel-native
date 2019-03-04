@@ -17,6 +17,7 @@ struct ISaasClient
     {
 public:
     virtual folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId) { return BentleyStatus::SUCCESS; };
+    virtual folly::Future<BentleyStatus> MarkFeature(Utf8StringCR accessToken, Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId) { return BentleyStatus::SUCCESS; };
     virtual ~ISaasClient() {};
     };
 

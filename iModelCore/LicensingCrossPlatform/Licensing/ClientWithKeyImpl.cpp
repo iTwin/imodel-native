@@ -160,7 +160,7 @@ LicenseStatus ClientWithKeyImpl::GetProductStatus(int requestedProductId)
     
     //auto policy = SearchForPolicy(productId);
     auto policy = GetPolicyToken(); // for now: get from entitlements instead of caching
-
+    
     // if null, NotEntitled
     if (policy == nullptr)
         {
@@ -248,7 +248,8 @@ LicenseStatus ClientWithKeyImpl::GetProductStatus(int requestedProductId)
 //        m_clientInfo->GetDeviceId(),
 //        m_featureString,
 //        m_clientInfo->GetApplicationVersion(),
-//        m_projectId
+//        m_projectId,
+//        std::stoi(m_clientInfo->GetApplicationProductId().c_str())
 //        );
 //
 //    uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));

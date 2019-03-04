@@ -20,6 +20,7 @@ public:
     MOCK_METHOD0(UlasLocationBaseUrl, Utf8String());
     MOCK_METHOD0(EntitlementPolicyBaseUrl, Utf8String());
     MOCK_METHOD0(UlasRealtimeLoggingBaseUrl, Utf8String());
+    MOCK_METHOD0(UlasRealtimeFeatureUrl, Utf8String());
 };
 
 END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
