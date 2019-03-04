@@ -55,7 +55,7 @@ DgnDbStatus iModelBridgeSyncInfoFile::ChangeDetector::InsertResultsIntoBIM(Conve
         if (DgnDbStatus::Success != status)
             return status;
         }
-        
+    conversionResults.m_syncInfoRecord.m_ROWID = conversionResults.m_element->GetElementId().GetValue();
     return DgnDbStatus::Success;
     }
 
@@ -248,126 +248,6 @@ DgnDbStatus     iModelBridgeSyncInfoFile::ChangeDetector::AddProvenanceAspect(iM
     return aspect.AddAspect(element);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(ConversionResults& conversionResults, 
-                                                                              ChangeDetector::Results const& changeDetectorResults)
-    {
-    if (ChangeDetector::ChangeType::Unchanged == changeDetectorResults.GetChangeType())
-        {
-        _OnElementSeen(changeDetectorResults.GetSyncInfoRecord().GetDgnElementId());
-        conversionResults.m_syncInfoRecord = changeDetectorResults.GetSyncInfoRecord();
-        return BentleyStatus::SUCCESS;
-        }
-    
-    if (conversionResults.m_element.IsValid())
-        {
-        DgnDbStatus status;
-        
-        DgnElementId eid;
-        if (changeDetectorResults.GetSyncInfoRecord().IsValid())
-            eid = changeDetectorResults.GetSyncInfoRecord().GetDgnElementId();
-
-        if (!eid.IsValid())
-            {
-            // The element is not recorded in syncinfo, and so this would normally be handled as an insert.
-            // But double-check. It could be that the element already exists in the BIM. (That happens in hybrid
-            // bridges that use multiple converters at once. One converter will insert an element, such as a 
-            // RepositoryLink, and then another converter within the same bridge will try to do the same.)
-            // If so, this is really an update.
-            if (conversionResults.m_element->GetElementId().IsValid() && GetDgnDb().Elements().GetElement(conversionResults.m_element->GetElementId()).IsValid())
-                eid = conversionResults.m_element->GetElementId();
-            }
-
-        if (!eid.IsValid())
-            {
-            AddProvenanceAspect(changeDetectorResults.GetSourceIdentity(), changeDetectorResults.GetCurrentState(),*conversionResults.m_element);
-            
-            status = InsertResultsIntoBIM(conversionResults);
-            }
-        else
-            {
-            ECN::ECClassCP aspectClass = iModelExternalSourceAspect::GetAspectClass(conversionResults.m_element->GetDgnDb());
-
-            if (nullptr != aspectClass)
-                {
-                iModelExternalSourceAspect aspect = iModelExternalSourceAspect::GetAspectForEdit(*conversionResults.m_element, BeSQLite::EC::ECInstanceId(), aspectClass); // NEEDS WORK: This valid only if you know that element will have just one aspect
-                if (aspect.IsValid())
-                    aspect.SetSourceState(changeDetectorResults.GetCurrentState().GetAspectState());
-                else
-                    AddProvenanceAspect(changeDetectorResults.GetSourceIdentity(), changeDetectorResults.GetCurrentState(), *conversionResults.m_element);
-                }
-            status = UpdateResultsInBIM(conversionResults, eid);
-            }
-
-        if (DgnDbStatus::Success != status)
-            return BentleyStatus::ERROR;
-        }
-
-    BentleyStatus sistatus = m_si->WriteResults(changeDetectorResults.GetSyncInfoRecord().GetROWID(), conversionResults, 
-                             changeDetectorResults.GetSourceIdentity(), changeDetectorResults.GetCurrentState(), *this);
-
-    if (BSISUCCESS != sistatus)
-        return sistatus;
-
-    return iModelBridge::SaveChangesToConserveMemory(GetDgnDb());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::ChangeDetector::_DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter, bool forceChange)
-    {
-    Results res;
-
-    auto sid = SourceIdentity(scope, kind, item._GetId());
-
-    if (sid.GetId().empty())
-        {
-        // --------------------------------
-        // Look up by hash.
-        // --------------------------------
-        SourceState currentState(item._GetLastModifiedTime(), item._GetHash());
-
-        auto byhash = m_si->MakeIteratorByHash(sid.GetScopeROWID(), sid.GetKind(), currentState.GetHash());
-        auto i = byhash.begin();
-        if (i == byhash.end())
-            return Results(sid, currentState);    // It's new
-
-        Record rec = i.GetRecord();
-        if ((nullptr != filter) && !(*filter)(rec, *m_si))
-            return Results(sid, currentState);    // We have it, but the filter rejected it. We have to treat it as new
-
-        // We found it because its content hash matches a stored record. So, we report that this item is the same as this record.
-        return Results(forceChange? ChangeType::Changed: ChangeType::Unchanged, rec, currentState);
-        }
-        
-    // --------------------------------
-    // Look up by source id
-    // --------------------------------
-    auto byid = m_si->MakeIteratorBySourceId(sid);
-
-    for (auto i = byid.begin(); i != byid.end(); ++i)
-        {
-        Record rec = i.GetRecord();
-        if ((nullptr != filter) && !(*filter)(rec, *m_si))
-            continue;
-
-        double lmt = item._GetLastModifiedTime();
-        if (!forceChange && (0 != lmt) && (rec.GetSourceState().GetLastModifiedTime() == lmt))
-            return Results(ChangeType::Unchanged, rec, SourceState(lmt,""));
-
-        SourceState currentState(lmt, item._GetHash());
-        ChangeType ch = (rec.GetSourceState().GetHash() == currentState.GetHash())? ChangeType::Unchanged: ChangeType::Changed;
-        if (forceChange)
-            ch = ChangeType::Changed;
-        return Results(ch, rec, currentState);
-        }
-    
-    SourceState currentState(item._GetLastModifiedTime(), item._GetHash());
-    return Results(sid, currentState); // it's new
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
@@ -379,47 +259,6 @@ iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::Init
     SourceState currentState(item._GetLastModifiedTime(), item._GetHash());
     return Results(sid, currentState);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeSyncInfoFile::ChangeDetector::_DeleteElementsNotSeenInScopes(bvector<ROWID> const& onlyInScopes)
-    {
-    // *** NB: This alogorithm *infers* that an element was deleted in the source repository if we did not see it during the conversion.
-    //          This inference is valid only if we know that we saw all items in the source and that they were all added to m_elementsSeen or m_scopesSkipped.
-
-    // iterate over all of records of the previous conversion.
-    auto iter = m_si->MakeIterator();
-    for (auto elementInSyncInfo=iter.begin(); elementInSyncInfo!=iter.end(); ++elementInSyncInfo)
-        {
-        if (std::find(onlyInScopes.begin(), onlyInScopes.end(), elementInSyncInfo.GetSourceIdentity().GetScopeROWID()) == onlyInScopes.end())
-            continue;   // consider only items in the specified scopes
-
-        auto previousConversion = elementInSyncInfo.GetRecord();
-        if (!previousConversion.GetDgnElementId().IsValid())
-            continue;   // ignore discards and records created for organization purposes
-
-        if (m_elementsSeen.Contains(previousConversion.GetDgnElementId())) // if update encountered at least one V8 element that was mapped to this BIM element,
-            continue;   // keep this BIM element alive
-
-        if (m_scopesSkipped.find(previousConversion.GetSourceIdentity().GetScopeROWID()) != m_scopesSkipped.end()) // if we skipped this whole scope in the source (e.g., because it was unchanged),
-            continue;   // we don't expect any element from it to be in m_elementsSeen. Keep them all alive.
-
-        if (m_si->IsSourceItemMappedToAnElementThatWasSeen(elementInSyncInfo, m_elementsSeen)) // if update mapped this one source item to multiple elements and if we did see one of those elements,
-            continue;   // infer that this is a child of an assembly, and the assembly parent is in m_elementsSeen (probably unchanged).
-
-        // We did not encounter the source item that was mapped to this BIM element. We infer that the item
-        // was deleted. Therefore, the update to the BIM is to delete the corresponding BIM element.
-        LOG.tracev("Delete element %lld", previousConversion.GetDgnElementId().GetValue());
-
-        _OnItemDelete(previousConversion);
-        GetDgnDb().Elements().Delete(previousConversion.GetDgnElementId());
-        m_si->DeleteAllItemsMappedToElement(previousConversion.GetDgnElementId());
-
-        _OnItemConverted(previousConversion, ChangeOperation::Delete);
-        }
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -452,8 +291,8 @@ void iModelBridgeSyncInfoFile::ChangeDetector::_OnScopeSkipped(ROWID srid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelBridgeSyncInfoFile::ChangeDetector::ChangeDetector(iModelBridgeSyncInfoFile* si)
-    : m_si(si)
+iModelBridgeSyncInfoFile::ChangeDetector::ChangeDetector(DgnDbR db)
+    : m_dgnDb(db)
     {
 
     }
@@ -461,7 +300,7 @@ iModelBridgeSyncInfoFile::ChangeDetector::ChangeDetector(iModelBridgeSyncInfoFil
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeSyncInfoFile::iModelBasedChangeDetector::_UpdateBimAndSyncInfo(ConversionResults& conversionResults,
+BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(ConversionResults& conversionResults,
                                                                               ChangeDetector::Results const& changeDetectorResults)
     {
     if (ChangeDetector::ChangeType::Unchanged == changeDetectorResults.GetChangeType())
@@ -532,15 +371,15 @@ BentleyStatus iModelBridgeSyncInfoFile::iModelBasedChangeDetector::_UpdateBimAnd
 iModelBridgeSyncInfoFile::ChangeDetectorPtr iModelBridgeSyncInfoFile::GetChangeDetectorFor(iModelBridge& bridge)
     {
     if (!bridge.GetParamsCR().IsUpdating())
-        return new InitialConversionChangeDetector(this);
+        return new InitialConversionChangeDetector(*m_bim);
 
-    return new iModelBasedChangeDetector(*m_bim);
+    return new ChangeDetector(*m_bim);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::iModelBasedChangeDetector::_DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter, bool forceChange)
+iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::ChangeDetector::_DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter, bool forceChange)
     {
     auto sid = SourceIdentity(scope, kind, item._GetId());
 
@@ -583,12 +422,18 @@ iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::iMod
         auto idVals = iModelExternalSourceAspect::FindElementByHash(GetDgnDb(), DgnElementId(scope), kind, item._GetHash());
         if (idVals.elementId.IsValid())
             {
-            //Record rec = i.GetRecord();
-            //if ((nullptr != filter) && !(*filter)(rec, m_si))
-            //    return Results(sid, currentState);    // We have it, but the filter rejected it. We have to treat it as new
-            Record rec(ROWID(scope), idVals.elementId, sid, aspect.GetSourceState());
-            return Results(forceChange ? ChangeType::Changed : ChangeType::Unchanged, rec, currentState);
-            }//Fall through it is new
+            DgnElementCPtr element = GetDgnDb().Elements().GetElement(idVals.elementId);
+            aspect = iModelExternalSourceAspect::GetAspect(*element, idVals.aspectId, nullptr);
+            if (aspect.IsValid())
+                {
+
+                //Record rec = i.GetRecord();
+                //if ((nullptr != filter) && !(*filter)(rec, m_si))
+                //    return Results(sid, currentState);    // We have it, but the filter rejected it. We have to treat it as new
+                Record rec(ROWID(scope), idVals.elementId, sid, aspect.GetSourceState());
+                return Results(forceChange ? ChangeType::Changed : ChangeType::Unchanged, rec, currentState);
+                }//Fall through it is new
+            }
         }
     
     SourceState currentState(item._GetLastModifiedTime(), item._GetHash());
@@ -618,12 +463,12 @@ struct IdHashSet : VirtualSet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeSyncInfoFile::iModelBasedChangeDetector::_DeleteElementsNotSeenInScopes(bvector<ROWID> const& onlyInScopes)
+void iModelBridgeSyncInfoFile::ChangeDetector::_DeleteElementsNotSeenInScopes(bvector<ROWID> const& onlyInScopes)
     {
     // *** NB: This alogorithm *infers* that an element was deleted in the source repository if we did not see it during the conversion.
     //          This inference is valid only if we know that we saw all items in the source and that they were all added to m_elementsSeen or m_scopesSkipped.
 
-    auto sel = GetDgnDb().GetPreparedECSqlStatement("SELECT Element.Id, Scope  from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE InVirtualSet(? , Scope.Id) AND NOT InVirtualSet(?, Element.Id)");
+    auto sel = GetDgnDb().GetPreparedECSqlStatement("SELECT Element.Id, Scope.Id  from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE InVirtualSet(? , Scope.Id) AND NOT InVirtualSet(?, Element.Id) AND Kind != 'DocumentWithBeGuid' ");
     IdSet<DgnElementId> idSet(m_elementsSeen);
     IdHashSet<ROWID> scopeSet(onlyInScopes);
     sel->BindVirtualSet(1, scopeSet);

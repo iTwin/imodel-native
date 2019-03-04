@@ -123,7 +123,7 @@ struct iModelBridgeTests : ::testing::Test
 //=======================================================================================
 // @bsistruct                                                   Sam.Wilson   04/17
 //=======================================================================================
-struct iModelBridgeSyncInfoFileTester : iModelBridgeBase
+struct iModelBridgeSyncInfoFileTester : iModelBridgeWithSyncInfoBase
 {
     WString _SupplySqlangRelPath() override {return L"sqlang/DgnPlatform_en.sqlang.db3";}
     BentleyStatus _Initialize(int argc, WCharCP argv[]) override {return BSISUCCESS;}
@@ -134,7 +134,30 @@ struct iModelBridgeSyncInfoFileTester : iModelBridgeBase
 
     void DoTests(SubjectCR jobSubject);
 
-    iModelBridgeSyncInfoFileTester() : iModelBridgeBase() {}
+    iModelBridgeSyncInfoFileTester() : iModelBridgeWithSyncInfoBase() {}
+
+    void _OnDocumentDeleted(Utf8StringCR docId, iModelBridgeSyncInfoFile::ROWID docrid) override
+        {
+        Utf8String ecsql("SELECT ECInstanceId, Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE (Scope.Id=?)");
+
+        auto stmt = GetDgnDbR().GetPreparedECSqlStatement(ecsql.c_str());
+
+        if (!stmt.IsValid())
+            return;
+
+        stmt->BindId(1, BeInt64Id(docrid));
+       
+        while  (BeSQLite::BE_SQLITE_ROW == stmt->Step())
+            {
+            DgnElementId id = stmt->GetValueId<DgnElementId>(1);
+            if (!id.IsValid())
+                continue; // not every record in syncinfo is an element
+            auto el = GetDgnDbR().Elements().GetElement(id);
+            ASSERT_TRUE(el.IsValid());
+            el->Delete();
+            }
+        }
+
 };
 
 //=======================================================================================
@@ -192,12 +215,21 @@ static bpair<size_t,size_t> countItemsInSyncInfo(iModelBridgeSyncInfoFile& syncI
     {
     size_t count = 0;
     size_t countThoseWithIds = 0;
-    for (auto i : syncInfo.MakeIterator())
+
+    Utf8String ecsql("SELECT ECInstanceId, Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect));
+    auto stmt = syncInfo.GetDgnDb().GetPreparedECSqlStatement(ecsql.c_str());
+    if (!stmt.IsValid())
+        return make_bpair(count, countThoseWithIds);
+
+    while (BeSQLite::BE_SQLITE_ROW == stmt->Step())
         {
         ++count;
-        if (!i.GetSourceIdentity().GetId().empty())
-            ++countThoseWithIds;
+        DgnElementId id = stmt->GetValueId<DgnElementId>(1);
+        if (!id.IsValid())
+            continue; // not every record in syncinfo is an element
+        ++countThoseWithIds;
         }
+
     return make_bpair(count, countThoseWithIds);
     }
 
@@ -207,8 +239,7 @@ static bpair<size_t,size_t> countItemsInSyncInfo(iModelBridgeSyncInfoFile& syncI
 void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
     {
     DgnDbR db = *m_db;
-    iModelBridgeSyncInfoFile syncInfo;
-    ASSERT_EQ(BentleyStatus::SUCCESS, syncInfo.AttachToBIM(db));
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_syncInfo.AttachToBIM(db));
 
     // Items in scope1
     iModelBridgeSyncInfoFile::ROWID scope1;
@@ -224,17 +255,18 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
 
     if (true)
         {
-        iModelBridgeSyncInfoFile::ChangeDetector nullChangeDetector(&syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector nullChangeDetector(db);
         // put the two scope items into syncinfo to start with.
         // Note that I don't have to create elements in order to put records into syncinfo. These records will
         // just serve as "scopes" to partition the items that I will "convert" below.
-        iModelBridgeSyncInfoFile::SourceState noState(0.0, "");
-        iModelBridgeSyncInfoFile::ConversionResults noElem;
-        syncInfo.WriteResults(iModelBridgeSyncInfoFile::ROWID(), noElem, iModelBridgeSyncInfoFile::SourceIdentity(0, "Scope", "1"), noState, nullChangeDetector);
-        scope1 = noElem.m_syncInfoRecord.GetROWID();
-        noElem = iModelBridgeSyncInfoFile::ConversionResults(); // clear the previous results
-        syncInfo.WriteResults(iModelBridgeSyncInfoFile::ROWID(), noElem, iModelBridgeSyncInfoFile::SourceIdentity(0, "Scope", "2"), noState, nullChangeDetector);
-        scope2 = noElem.m_syncInfoRecord.GetROWID();
+        iModelBridgeSyncInfoFile::SourceState noState(0.0, "");;
+        iModelBridgeSyncInfoFile::ConversionResults docLink1 = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), BeFileName( L"First One"), nullptr,
+            "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID(jobSubject.GetElementId().GetValue()));
+        
+        scope1 = docLink1.m_syncInfoRecord.GetROWID();
+        iModelBridgeSyncInfoFile::ConversionResults docLink2 = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), BeFileName(L"Second One"), nullptr,
+            "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID(jobSubject.GetElementId().GetValue()));
+        scope2 = docLink2.m_syncInfoRecord.GetROWID();
         }
 
     bvector<iModelBridgeSyncInfoFile::ROWID> scopes = {scope1, scope2};
@@ -243,7 +275,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
 
     if (true)
         {
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(db);
 
         // verify that the item does not exist in the BIM or in syncinfo
         iModelBridgeSyncInfoFile::ChangeDetector::Results change = changeDetector._DetectChange(scope1, itemKind, i0NoId);
@@ -253,16 +285,8 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         change = changeDetector._DetectChange(scope1, itemKind, i0NoId);
         ASSERT_EQ(iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New, change.GetChangeType());
 
-        ASSERT_EQ(expected_counts, countItemsInSyncInfo(syncInfo));
+        ASSERT_EQ(expected_counts, countItemsInSyncInfo(m_syncInfo));
         ASSERT_EQ(expected_counts.first-2, countElementsOfClass(iModelBridgeTests::GetGenericPhysicalObjectClassId(db), db));
-
-        // Do the same thing, only with a direct query on syncinfo
-        if (true)
-            {
-            auto elems = syncInfo.MakeIteratorByHash(scope1, itemKind, i0NoId._GetHash());
-            auto foundi0 = elems.begin();
-            ASSERT_TRUE(foundi0 == elems.end());
-            }
 
         // Write item and the element to which it was "converted"
         if (true)
@@ -276,19 +300,16 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         change = changeDetector._DetectChange(scope1, itemKind, i0NoId);
         ASSERT_EQ(iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged, change.GetChangeType());
 
-        // Do the same thing, only with a direct query on syncinfo
-        if (true)
-            {
-            auto elems = syncInfo.MakeIteratorByHash(scope1, itemKind, i0NoId._GetHash());
-            auto foundi0 = elems.begin();
-            ASSERT_TRUE(foundi0 != elems.end());
-            ASSERT_TRUE(foundi0.GetSourceState().GetHash().Equals(i0NoId._GetHash()));
-            }
-
         ASSERT_EQ(1, changeDetector.GetElementsConverted());
 
+        //  Now tell syncinfo to garbage-collect the elements that were abandoned.
+        changeDetector._DeleteElementsNotSeenInScopes(scopes);
+
+        ASSERT_EQ(1, changeDetector.GetElementsConverted()) << "conversion count should be 1 insert";
+
         ++expected_counts.first;
-        ASSERT_EQ(expected_counts, countItemsInSyncInfo(syncInfo));
+        ++expected_counts.second;
+        ASSERT_EQ(expected_counts, countItemsInSyncInfo(m_syncInfo));
         ASSERT_EQ(expected_counts.first-2, countElementsOfClass(iModelBridgeTests::GetGenericPhysicalObjectClassId(db), db));
         }
 
@@ -298,7 +319,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
     // Now update the BIM, based on this new input
     if (true)
         {
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(db);
 
         // Verify that change detector sees the change and updates the bim and syncinfo
         // Note that, since this item has no ID, it will look like it's new.
@@ -319,7 +340,8 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         // We have actually added a new element and syncinfo record for the original item and abandoned the first. 
         // It will get cleaned up when we call DeleteElementsNotSeenInScope later on.
         ++expected_counts.first;
-        ASSERT_EQ(expected_counts, countItemsInSyncInfo(syncInfo));
+        ++expected_counts.second;
+        ASSERT_EQ(expected_counts, countItemsInSyncInfo(m_syncInfo));
         ASSERT_EQ(expected_counts.first-2, countElementsOfClass(iModelBridgeTests::GetGenericPhysicalObjectClassId(db), db));
 
         //  Now tell syncinfo to garbage-collect the elements that were abandoned.
@@ -329,15 +351,16 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
 
         //  That should have dropped the count back down to 1 item and 1 element
         --expected_counts.first;
+        --expected_counts.second;
         }
 
-    ASSERT_EQ(expected_counts, countItemsInSyncInfo(syncInfo));
+    ASSERT_EQ(expected_counts, countItemsInSyncInfo(m_syncInfo));
     ASSERT_EQ(expected_counts.first-2, countElementsOfClass(iModelBridgeTests::GetGenericPhysicalObjectClassId(db), db));
 
     if (true)
         {
         // verify that a second item does not exist in the BIM or in syncinfo
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(db);
         iModelBridgeSyncInfoFile::ChangeDetector::Results change = changeDetector._DetectChange(scope1, itemKind, i1NoId);
         ASSERT_EQ(iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New, change.GetChangeType());
         }
@@ -349,7 +372,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
 
     if (true)
         {
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(db);
         changeDetector._OnScopeSkipped(scope1);
 
         // verify that the item does not exist in the BIM or in syncinfo
@@ -385,7 +408,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         ASSERT_EQ(1, changeDetector.GetElementsConverted());
         }
 
-    ASSERT_EQ(expected_counts, countItemsInSyncInfo(syncInfo));
+    ASSERT_EQ(expected_counts, countItemsInSyncInfo(m_syncInfo));
     ASSERT_EQ(expected_counts.first-2, countElementsOfClass(iModelBridgeTests::GetGenericPhysicalObjectClassId(db), db));
 
     // Now "change" the input ...
@@ -394,7 +417,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
     // Now update the BIM, based on this new input
     if (true)
         {
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(db);
         changeDetector._OnScopeSkipped(scope1);
 
         // Verify that change detector sees the change and updates the bim and syncinfo
@@ -416,13 +439,13 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         // The update should NOT have added a new item or element, so the total should be unchanged.
         }
 
-    ASSERT_EQ(expected_counts, countItemsInSyncInfo(syncInfo));
+    ASSERT_EQ(expected_counts, countItemsInSyncInfo(m_syncInfo));
     ASSERT_EQ(expected_counts.first-2, countElementsOfClass(iModelBridgeTests::GetGenericPhysicalObjectClassId(db), db));
 
     if (true)
         {
         // verify that a second item does not exist in the BIM or in syncinfo
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(db);
         changeDetector._OnScopeSkipped(scope1);
         iModelBridgeSyncInfoFile::ChangeDetector::Results change = changeDetector._DetectChange(scope2, itemKind, i1WithId);
         ASSERT_EQ(iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New, change.GetChangeType());
@@ -562,16 +585,26 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
         {
         ASSERT_TRUE(std::find(m_expect.docsDeleted.begin(), m_expect.docsDeleted.end(), docId) != m_expect.docsDeleted.end());
 
-        for (auto rec : m_syncInfo.MakeIteratorByScope(docrid))
+        Utf8String ecsql("SELECT ECInstanceId, Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE (Scope.Id=?)");
+
+        auto stmt = GetDgnDbR().GetPreparedECSqlStatement(ecsql.c_str());
+
+        if (!stmt.IsValid())
+            return;
+
+        stmt->BindId(1, BeInt64Id(docrid));
+       
+        while  (BeSQLite::BE_SQLITE_ROW == stmt->Step())
             {
             ASSERT_TRUE(m_expect.anyDeleted);
-            if (!rec.GetDgnElementId().IsValid())
+            DgnElementId id = stmt->GetValueId<DgnElementId>(1);
+            if (!id.IsValid())
                 continue; // not every record in syncinfo is an element
-            auto el = GetDgnDbR().Elements().GetElement(rec.GetDgnElementId());
+            auto el = GetDgnDbR().Elements().GetElement(id);
             ASSERT_TRUE(el.IsValid());
             el->Delete();
             }
-
+    
         m_testIModelHubClientForBridges.m_expect.push_back(m_expect.anyDeleted);
         }
 

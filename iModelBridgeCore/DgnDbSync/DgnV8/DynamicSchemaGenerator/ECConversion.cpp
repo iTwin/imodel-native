@@ -3461,6 +3461,9 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
         }
 
     CheckForAndSaveChanges();
+    if (WasAborted())
+        return BSIERROR;
+
     return BSISUCCESS;
     }
 

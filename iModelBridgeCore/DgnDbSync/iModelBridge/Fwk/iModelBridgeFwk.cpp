@@ -1624,7 +1624,11 @@ BentleyStatus   iModelBridgeFwk::GetSchemaLock()
     do
         {
         if (retryAttempt > 0)
+            {
             GetLogger().infov("GetSchemaLock failed. Retrying.");
+            if (0 != PullMergeAndPushChange("GetSchemaLock", false))  // pullmergepush + re-open
+                return BSIERROR;
+            }
         status = m_briefcaseDgnDb->BriefcaseManager().LockSchemas().Result();
         } while ((RepositoryStatus::Success != status) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry());
 
@@ -1841,9 +1845,13 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         //Get the schema lock if needed.
         bool hasChanges = false;
-
+        
         if (BSISUCCESS != GetSchemaLock())  // must get schema lock preemptively. This ensures that only one bridge at a time can make schema and definition changes. That then allows me to pull/merge/push between the definition and data steps without closing and reopening
-            return RETURN_STATUS_SERVER_ERROR;                                                   // === SCHEMA LOCK
+            {
+            LOG.fatalv("Bridge cannot obtain schema lock.");
+            return RETURN_STATUS_SERVER_ERROR;                               
+            }
+
         holdsSchemaLock = true;                                                                  // === SCHEMA LOCK
                                                                                                  // === SCHEMA LOCK
         //  Tell the bridge that the briefcase is now open and ask it to open the source file(s).// === SCHEMA LOCK

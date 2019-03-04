@@ -22,9 +22,12 @@
             <If name="3D Imperial Design">
                 <Then newName="%file"/>
             </If>
-           <If name="3D Metric Design">
-             <Then newName="%file"/>
-           </If>
+            <If name="3D Metric Design">
+                <Then newName="%file"/>
+            </If>
+            <If name="3D Model">
+                <Then newName="%file"/>
+            </If>        
         </ImportRules>
     </Models>
 
