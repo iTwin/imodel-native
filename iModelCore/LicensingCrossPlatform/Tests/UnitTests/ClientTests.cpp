@@ -37,6 +37,7 @@ using ::testing::A;
 using ::testing::_;
 
 #define TEST_PRODUCT_ID     "2545"
+#define TEST_PRODUCT_ID_INT 2545
 
 USING_NAMESPACE_BENTLEY_LICENSING
 USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS
@@ -128,19 +129,20 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
         );
     }
 
-SaasClientImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider)
+SaasClientImplPtr CreateTestSaasClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, int productId, IBuddiProviderPtr buddiProvider)
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     return std::make_shared<SaasClientImpl>(
+        productId,
         "",
         proxy,
         buddiProvider);
     }
 
-ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IUlasProviderPtr ulasProvider)
+ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, IUsageDbPtr usageDb)
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
@@ -162,10 +164,12 @@ ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInte
         dbPath,
         true,
         buddiProvider,
+        policyProvider,
         ulasProvider,
         "",
         "",
-        proxy);
+        proxy,
+        usageDb);
     }
 
 // Note: cannot use BuddiProvider mocks with clients created with the factory
@@ -197,7 +201,7 @@ ClientPtr CreateTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, I
         proxy);
     }
 
-SaasClientPtr CreateFreeTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+SaasClientPtr CreateTestSaasClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, int productId)
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
@@ -205,6 +209,7 @@ SaasClientPtr CreateFreeTestClientFromFactory(bool signIn, uint64_t heartbeatInt
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     return SaasClient::Create(
+        productId,
         "",
         proxy);
     }
@@ -245,19 +250,19 @@ ClientPtr CreateTestClientFromFactory(bool signIn)
     return CreateTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
     }
 
-SaasClientImplPtr CreateFreeTestClient(bool signIn, IBuddiProviderPtr buddiProvider)
+SaasClientImplPtr CreateTestSaasClient(bool signIn, IBuddiProviderPtr buddiProvider)
     {
-    return CreateFreeTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider);
+    return CreateTestSaasClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID_INT, buddiProvider);
     }
 
-SaasClientPtr CreateFreeTestClientFromFactory(bool signIn)
+SaasClientPtr CreateTestSaasClientFromFactory(bool signIn)
     {
-    return CreateFreeTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+    return CreateTestSaasClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID_INT);
     }
 
-ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IUlasProviderPtr ulasProvider)
+ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, IUsageDbPtr usageDb)
     {
-    return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, ulasProvider);
+    return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, policyProvider, ulasProvider, usageDb);
     }
 
 ClientPtr CreateWithKeyTestClientFromFactory(bool signIn)
@@ -485,7 +490,7 @@ TEST_F(ClientTests, DISABLED_TrackUsage_FreeApplication_Success)
     EXPECT_CALL(GetBuddiProviderMock(), UlasRealtimeLoggingBaseUrl()) // called on TrackUsage()
         .Times(1)
         .WillRepeatedly(Return("https://qa-connect-ulastm.bentley.com/Bentley.ULAS.PostingService/PostingSvcWebApi/"));
-    auto client = CreateFreeTestClient(true, GetBuddiProviderMockPtr());
+    auto client = CreateTestSaasClient(true, GetBuddiProviderMockPtr());
     Utf8String tokenstring = "b683fe041bfd1ef554599e69253271f5f6775eb7106514fa56e512040d635d4a";
     auto version = BeVersion(1, 0);
     Utf8String projectId = "00000000-0000-0000-0000-000000000000";
@@ -498,7 +503,7 @@ TEST_F(ClientTests, DISABLED_StartWithKeyApplication_StopApplication_Success)
         //.Times(AtLeast(1))
         .WillRepeatedly(Return("https://qa-connect-ulastm.bentley.com/Bentley.ULAS.PostingService/PostingSvcWebApi/"));
 
-    auto client = CreateWithKeyTestClient(true, GetBuddiProviderMockPtr(), GetUlasProviderMockPtr());
+    auto client = CreateWithKeyTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetUsageDbMockPtr());
     EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
     EXPECT_SUCCESS(client->StopApplication());
     }
