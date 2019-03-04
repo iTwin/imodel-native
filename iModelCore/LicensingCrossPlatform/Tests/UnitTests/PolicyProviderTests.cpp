@@ -12,7 +12,7 @@
 #include "DummyPolicyHelper.h"
 
 #include <Licensing/Client.h>
-#include <Licensing/FreeClient.h>
+#include <Licensing/SaasClient.h>
 #include <Licensing/Utils/DateHelper.h>
 #include <Licensing/AuthType.h>
 #include "../../Licensing/Providers/PolicyProvider.h"

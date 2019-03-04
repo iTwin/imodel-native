@@ -256,7 +256,7 @@ void ClientImpl::PolicyHeartbeat(int64_t currentTime)
             // check if offline grace period should start
             if (policyToken == nullptr)
                 {
-                m_policy = policyToken;
+                m_policy = policyToken; // TODO this doesn't seem right
                 if (!HasOfflineGracePeriodStarted())
                     m_usageDb->SetOfflineGracePeriodStart(DateHelper::GetCurrentTime());
                 }

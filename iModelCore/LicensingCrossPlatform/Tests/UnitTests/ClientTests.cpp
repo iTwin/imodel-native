@@ -12,10 +12,10 @@
 #include "DummyPolicyHelper.h"
 
 #include <Licensing/Client.h>
-#include <Licensing/FreeClient.h>
+#include <Licensing/SaasClient.h>
 #include <Licensing/Utils/DateHelper.h>
 #include "../../Licensing/ClientImpl.h"
-#include "../../Licensing/FreeClientImpl.h"
+#include "../../Licensing/SaasClientImpl.h"
 #include "../../Licensing/ClientWithKeyImpl.h"
 #include "../../Licensing/UsageDb.h"
 #include "../../PublicAPI/Licensing/Utils/SCVWritter.h"
@@ -128,13 +128,13 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
         );
     }
 
-FreeClientImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider)
+SaasClientImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider)
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    return std::make_shared<FreeClientImpl>(
+    return std::make_shared<SaasClientImpl>(
         "",
         proxy,
         buddiProvider);
@@ -197,14 +197,14 @@ ClientPtr CreateTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, I
         proxy);
     }
 
-FreeClientPtr CreateFreeTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+SaasClientPtr CreateFreeTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    return FreeClient::Create(
+    return SaasClient::Create(
         "",
         proxy);
     }
@@ -245,12 +245,12 @@ ClientPtr CreateTestClientFromFactory(bool signIn)
     return CreateTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
     }
 
-FreeClientImplPtr CreateFreeTestClient(bool signIn, IBuddiProviderPtr buddiProvider)
+SaasClientImplPtr CreateFreeTestClient(bool signIn, IBuddiProviderPtr buddiProvider)
     {
     return CreateFreeTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider);
     }
 
-FreeClientPtr CreateFreeTestClientFromFactory(bool signIn)
+SaasClientPtr CreateFreeTestClientFromFactory(bool signIn)
     {
     return CreateFreeTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
     }

@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/FreeClientImpl.cpp $
+|     $Source: Licensing/SaasClientImpl.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "FreeClientImpl.h"
+#include "SaasClientImpl.h"
 #include "GenerateSID.h"
 #include "Logging.h"
 #include "UsageDb.h"
@@ -21,19 +21,18 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_LICENSING
 
-FreeClientImpl::FreeClientImpl
+SaasClientImpl::SaasClientImpl
     (
+    int productId,
     Utf8StringCR featureString,
     IHttpHandlerPtr httpHandler,
     IBuddiProviderPtr buddiProvider
     )
     {
-    m_userInfo = ConnectSignInManager::UserInfo();
-
-    Utf8String deviceInfo = BeSystemInfo::GetDeviceId();
-    if (deviceInfo.Equals("")) 
-        deviceInfo = "DefaultDevice";
-    m_clientInfo = std::make_shared<ClientInfo>("FreeApplication",BeVersion(1,0),"FreeGUID",deviceInfo,"FreeDescriptor");
+    m_deviceId = BeSystemInfo::GetDeviceId();
+    if (m_deviceId.Equals(""))
+        m_deviceId = "DefaultDevice";
+    m_productId = productId;
     m_featureString = featureString;
     m_httpHandler = httpHandler;
     m_buddiProvider = buddiProvider;
@@ -46,7 +45,7 @@ FreeClientImpl::FreeClientImpl
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Jason.Wichert           2/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> FreeClientImpl::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
+folly::Future<BentleyStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
     {
     // Send real time usage
     LOG.trace("TrackUsage");
@@ -61,10 +60,11 @@ folly::Future<BentleyStatus> FreeClientImpl::TrackUsage(Utf8StringCR accessToken
     // create Json body
     auto jsonBody = UsageJsonHelper::CreateJsonRandomGuids
         (
-        m_clientInfo->GetDeviceId(),
+        m_deviceId,
         m_featureString,
         version,
-        projectId
+        projectId,
+        m_productId
         );
 
     uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
@@ -74,7 +74,7 @@ folly::Future<BentleyStatus> FreeClientImpl::TrackUsage(Utf8StringCR accessToken
         {
         if (!response.IsSuccess())
             {
-            LOG.errorv("FreeClientImpl::TrackUsage ERROR: Unable to post %s - %s", jsonBody.c_str(), response.GetBody().AsString().c_str());
+            LOG.errorv("SaasClientImpl::TrackUsage ERROR: Unable to post %s - %s", jsonBody.c_str(), response.GetBody().AsString().c_str());
             return BentleyStatus::ERROR;
             }
         return BentleyStatus::SUCCESS;
@@ -82,7 +82,7 @@ folly::Future<BentleyStatus> FreeClientImpl::TrackUsage(Utf8StringCR accessToken
     }
 
 /*
-folly::Future<Utf8String> FreeClientImpl::PerformGetUserInfo()
+folly::Future<Utf8String> SaasClientImpl::PerformGetUserInfo()
     {
     LOG.info("PerformGetUserInfo");
 

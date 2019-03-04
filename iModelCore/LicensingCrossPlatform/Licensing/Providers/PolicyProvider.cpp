@@ -37,10 +37,10 @@ folly::Future<std::shared_ptr<Policy>> PolicyProvider::GetPolicy()
         [](const std::tuple<folly::Try<Utf8String>, folly::Try<Utf8String>>& tup)
         {
         Utf8String cert = std::get<0>(tup).value();
-        cert.ReplaceAll("\"", "");
+        cert.ReplaceAll("\"", ""); // TODO move to the function
 
         Utf8String policyToken = std::get<1>(tup).value();
-        policyToken.ReplaceAll("\"", "");
+        policyToken.ReplaceAll("\"", ""); // TODO move to the function
 
         return Policy::Create(JWToken::Create(policyToken, cert));
         });

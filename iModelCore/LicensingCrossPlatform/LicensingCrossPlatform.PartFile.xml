@@ -44,7 +44,7 @@
         <SubPart PartName="LicensingNativeLib" LibType="Static" />
     </Part>
 
-	<Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="Licensing" SubPartDirectory="UnitTests/Licensing">Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
@@ -67,14 +67,14 @@
         </Bindings>
     </Part>
 
-	<Product Name="Licensing-Tests">
+    <Product Name="Licensing-Tests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="UnitTests"/>
         <SubPart PartName="IntegrationTests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-	<Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingTest -dTEST_COLLECTION_PRODUCT=Licensing-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*,Android*">
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingTest -dTEST_COLLECTION_PRODUCT=Licensing-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="Licensing-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
 
@@ -108,7 +108,7 @@
         </Bindings>
     </Part>-->
 
-	<Product Name="Licensing-Gtest" >
+    <Product Name="Licensing-Gtest" >
         <SubPart PartName="Gtest"/>
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
