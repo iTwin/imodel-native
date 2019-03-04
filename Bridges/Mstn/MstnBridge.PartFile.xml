@@ -8,10 +8,11 @@
         <SubProduct ProductName="MstnBridge"/>
         <SubProduct ProductName="MstnBridgeTests"/>
         
-        <!-- Because we rebuild these from source, need to re-test. -->
+        <!-- Because we rebuild these from source, need to re-test. 
         <SubProduct ProductName="DgnV8ConverterTests" PartFile="DgnDbSync" Repository="DgnDbSync"/>
         <SubProduct ProductName="iModelBridge-Gtest" PartFile="iModelBridge" Repository="DgnDbSync"/>
-
+-->
+    
     </Part>
 
     <Product Name="MstnBridge" SaveProduct="true" BuildInstallSet="true">
