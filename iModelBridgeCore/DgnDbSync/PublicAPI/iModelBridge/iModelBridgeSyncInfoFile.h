@@ -532,22 +532,6 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
     enum class ChangeOperation {Create, Update, Delete};
 
     //=======================================================================================
-    // @bsiclass                                                    Sam.Wilson  07/14
-    //=======================================================================================
-    struct SyncInfoProperty
-    {
-        struct Spec : BeSQLite::PropertySpec
-            {
-            Spec(Utf8CP name) : PropertySpec(name, "SyncInfo", PropertySpec::Mode::Normal, PropertySpec::Compress::No) {}
-            };
-
-        static Spec ProfileVersion()       {return Spec("SchemaVersion");}
-        static Spec DgnDbGuid()            {return Spec("DgnDbGuid");}
-        static Spec DbProfileVersion()     {return Spec("DbSchemaVersion");}
-        static Spec DgnDbProfileVersion()  {return Spec("DgnDbSchemaVersion");}
-    };
-
-    //=======================================================================================
     //! The identity of an item in the source repository
     //! - scope ROWID.    The ROWID in syncinfo of the item that is the scope/container/parent of the item. This is optional. 
     //! - kind.          A mark that is assigned to the item by the caller that helps the caller differentiate different kinds of items and to make IDs unique. This value is specific to this one syncinfo file. This value is meaninful only to the source repository. This is optional. 
@@ -656,42 +640,6 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         };
 
     //=======================================================================================
-    //! Iterates the syncinfo file's records
-    // @bsiclass                                    BentleySystems 
-    //=======================================================================================
-    struct EXPORT_VTABLE_ATTRIBUTE Iterator : BeSQLite::DbTableIterator
-        {
-        Iterator(DgnDbCR db, Utf8CP where);
-
-        //! Information about an item that is stored in syncinfo
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-            {
-          private:
-            friend struct Iterator;
-            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
-
-          public:
-            //! Item's ROWID in SyncInfo
-            IMODEL_BRIDGE_EXPORT ROWID GetROWID() const;
-            //! The element to which this record is mapped
-            IMODEL_BRIDGE_EXPORT DgnElementId GetDgnElementId() const;
-            //! SourceIdentity
-            IMODEL_BRIDGE_EXPORT SourceIdentity GetSourceIdentity() const;
-            //! SourceState
-            IMODEL_BRIDGE_EXPORT SourceState GetSourceState() const;
-            //! Get the item Record as a whole
-            Record GetRecord() const {return Record(GetROWID(), GetDgnElementId(), GetSourceIdentity(), GetSourceState());}
-
-            Entry const& operator* () const {return *this;}
-            };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        IMODEL_BRIDGE_EXPORT const_iterator begin() const;
-        const_iterator end() const {return Entry (NULL, false);}
-        };
-
-    //=======================================================================================
     //! The result of converting an Item to a DgnElement (possibly an assembly)
     // @bsiclass                                    BentleySystems 
     //=======================================================================================
@@ -710,6 +658,8 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
     struct EXPORT_VTABLE_ATTRIBUTE ChangeDetector : RefCountedBase
         {
         enum class ChangeType {Unchanged, New, Changed};
+
+        DgnDbR m_dgnDb;
 
         struct Results
             {
@@ -734,8 +684,6 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
             SourceState const& GetCurrentState() const {return m_currentState;}
             };
 
-      private:
-        iModelBridgeSyncInfoFile* m_si;
       protected:
         uint32_t            m_elementsConverted = 0;
         
@@ -761,12 +709,11 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         //! Construct a change detector object. This will invoke the iModelBridgeSyncInfoFile::_OnNewUpdate method on @a si
         //! @note You should generally call iModelSyncInfoFile::GetChangeDetectorFor to get a change detector.
         //! @note You should use the same change detector object for an entire update.
-        IMODEL_BRIDGE_EXPORT ChangeDetector(iModelBridgeSyncInfoFile* si);
+        IMODEL_BRIDGE_EXPORT ChangeDetector(DgnDbR db);
 
         //! Get a reference to the BIM
-        virtual DgnDbR GetDgnDb() {return m_si->GetDgnDb();}
+        virtual DgnDbR GetDgnDb() {return m_dgnDb;}
 
-        iModelBridgeSyncInfoFile& GetSyncInfo() {return *m_si;}
 
         //! Used to choose one of many existing entries in SyncInfo
         typedef std::function<bool(Record const&, iModelBridgeSyncInfoFile& bridge)> T_Filter;
@@ -824,35 +771,9 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
         //! Construct a change detector that can be used efficiently by a converter that is doing an initial conversion, such that all items are new to the BIM.
         //! @note You should generally call iModelSyncInfoFile::GetChangeDetectorFor to get a change detector.
-        InitialConversionChangeDetector(iModelBridgeSyncInfoFile* si) : ChangeDetector(si) {}
+        InitialConversionChangeDetector(DgnDbR db) : ChangeDetector(db) {}
         };
 
-    struct iModelBasedChangeDetector : ChangeDetector
-        {
-        DgnDbR m_dgnDb;
-        virtual DgnDbR GetDgnDb() override { return m_dgnDb; }
-        iModelBasedChangeDetector(DgnDbR dgnDb) : ChangeDetector(NULL) , m_dgnDb(dgnDb){}
-        //! Detect if the item has changed or is new.
-        //! @param scope The scoping item
-        //! @param kind the kind of source item
-        //! @param item the source item
-        //! @param filter Optional. How to choose among many records for the same item
-        //! @param forceChange Optional. If the item exists in syncinfo, then always report it as changed.
-        //! return the results of looking in syncinfo and comparing the existing syncinfo record, if any, with the item's current state.
-        IMODEL_BRIDGE_EXPORT virtual Results _DetectChange(ROWID scope, Utf8CP kind, ISourceItem& item, T_Filter* filter = nullptr, bool forceChange = false);
-
-        //! Update the BIM and syncinfo with the results of converting an item to one or more DgnElements.
-        //! If changeDetectorResults indicates that the item is new or changed, the conversion writes are written to the BIM and syncinfo is updated.
-        //! If changeDetectorResults indicates that the item is known and unchanged, then the BIM is not updated.
-        //! In either case, this function will call _OnElementSeen on the DgnElementIds in conversionResults.m_element and its children.
-        //! @note If you decide not to call this function to process unchanged items, then you must call _OnElementSeen or _OnScopeSkipped directly.
-        IMODEL_BRIDGE_EXPORT virtual BentleyStatus _UpdateBimAndSyncInfo(ConversionResults& conversionResults, ChangeDetector::Results const& changeDetectorResults);
-
-        //! Delete all elements in the BIM that are recorded in syncinfo but are not in the set of elements seen and are not the targets of mappings
-        //! in scopes that were skipped as unchanged.
-        //! @param onlyInScopes The scopes to consider. Items in all other scopes are left intact.
-        IMODEL_BRIDGE_EXPORT virtual void _DeleteElementsNotSeenInScopes(bvector<ROWID> const& onlyInScopes);
-        };
     typedef RefCountedPtr<ChangeDetector> ChangeDetectorPtr;
 
   protected:
@@ -861,17 +782,8 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
     Utf8String          m_lastErrorDescription;
     DgnDbPtr            m_bim;
 
-    IMODEL_BRIDGE_EXPORT BeSQLite::DbResult SavePropertyString (BeSQLite::PropertySpec const& spec, Utf8CP stringData, uint64_t majorId=0, uint64_t subId=0);
-    IMODEL_BRIDGE_EXPORT BeSQLite::DbResult QueryProperty (Utf8StringR str, BeSQLite::PropertySpec const& spec, uint64_t id=0, uint64_t subId=0) const;
-    IMODEL_BRIDGE_EXPORT BentleyStatus PerformVersionChecks();
-    IMODEL_BRIDGE_EXPORT BentleyStatus OnAttach();
-    IMODEL_BRIDGE_EXPORT BentleyStatus CreateTables();
-    IMODEL_BRIDGE_EXPORT Record FindFirstByElementId(DgnElementId eid);
-
+    
     IMODEL_BRIDGE_EXPORT void SetLastError(BeSQLite::DbResult rc);
-
-    IMODEL_BRIDGE_EXPORT bool IsSourceItemMappedToAnElementThatWasSeen(Iterator::Entry const&, DgnElementIdSet const&);
-    IMODEL_BRIDGE_EXPORT BeSQLite::DbResult WriteRecord(Record&);
 
   public:
     //! Construct a syncinfo object. @see AttachToBIM
@@ -882,16 +794,6 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
     //! @note iModelBridgeWithSyncInfoBase will construct and manage a syncinfo file for you automatically.
     IMODEL_BRIDGE_EXPORT ~iModelBridgeSyncInfoFile();
     
-    //! Compute the filepath that a syncinfo file should have
-    //! @param bimName   The filepath of the BIM
-    IMODEL_BRIDGE_EXPORT static BeFileName ComputeSyncInfoFileName(BeFileNameCR bimName);
-
-    //! Delete the existing syncinfo file for the specified BIM, if it exists.
-    IMODEL_BRIDGE_EXPORT static BentleyStatus DeleteSyncInfoFileFor(BeFileNameCR BIMName);
-
-    //! Create a new, empty syncinfo file. This should be called <em>only once</em> immediately after acquiring a new BIM.
-    IMODEL_BRIDGE_EXPORT static BentleyStatus CreateEmptyFile(BeFileNameCR fileName, bool deleteIfExists);
-
     //! Open the syncinfo file and attach it to a BIM
     //! @param bim  The BIM
     //! @param createIfNecessary create an empty syncinfo file if it does not exist?
@@ -907,38 +809,6 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
     DgnDbR GetDgnDb() const {return *m_bim;}
 
     IMODEL_BRIDGE_EXPORT void GetLastError (BeSQLite::DbResult&, Utf8String&);
-
-    //! Iterate all records in syncinfo
-    IMODEL_BRIDGE_EXPORT Iterator MakeIterator(Utf8CP where = nullptr);
-
-    //! Iterate all records in syncinfo that pertain to the specified BIM element
-    IMODEL_BRIDGE_EXPORT Iterator MakeIteratorByElementId(DgnElementId id);
-
-    //! Iterate all records in syncinfo that pertain to the source item that is identified by the specified scope, kind, and id
-    IMODEL_BRIDGE_EXPORT Iterator MakeIteratorBySourceId(SourceIdentity const&);
-
-    //! Iterate all records in syncinfo that pertain to the the source item that is identified by the specified hash value.
-    IMODEL_BRIDGE_EXPORT Iterator MakeIteratorByHash(ROWID scopeRowId, Utf8StringCR kind, Utf8StringCR hash);
-    
-    //! Iterate all records in syncinfo that have the specified scope ROWID
-    IMODEL_BRIDGE_EXPORT Iterator MakeIteratorByScope(ROWID scopeRowId);
-
-    //! Look up the ROWID of an item by its SourceId
-    IMODEL_BRIDGE_EXPORT ROWID FindRowidBySourceId(SourceIdentity const&);
-
-    //! Write item records to syncinfo
-    IMODEL_BRIDGE_EXPORT BentleyStatus WriteResults(ROWID rid, ConversionResults&, SourceIdentity const& sid, SourceState const& sstate, ChangeDetector&);
-
-    //! Remove item records from syncinfo that are mapped to the specified element
-    IMODEL_BRIDGE_EXPORT BentleyStatus DeleteAllItemsMappedToElement(DgnElementId);
-
-    //! Remove item records from syncinfo that are in the specified scope
-    //! @param srid The ROWID of a scope item
-    IMODEL_BRIDGE_EXPORT BentleyStatus DeleteAllItemsInScope(ROWID srid);
-
-    //! Remove the specific record.
-    //! @param itemrid  The ROWID of the item to delete
-    IMODEL_BRIDGE_EXPORT BentleyStatus DeleteItem(ROWID itemrid);
 
     //! Return the ChangeDetector that this bridge should use.
     IMODEL_BRIDGE_EXPORT ChangeDetectorPtr GetChangeDetectorFor(iModelBridge& bridge);
@@ -969,8 +839,6 @@ public:
 
     void _Terminate(BentleyStatus) override {}
 
-    //! Deletes the syncinfo file
-    IMODEL_BRIDGE_EXPORT void _DeleteSyncInfo() override;
     //! Detects and cleans up after deleted documents
     IMODEL_BRIDGE_EXPORT BentleyStatus _DetectDeletedDocuments() override {return DetectDeletedDocuments();}
 
