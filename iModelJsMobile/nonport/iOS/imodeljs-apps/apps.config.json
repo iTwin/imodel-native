@@ -1,0 +1,31 @@
+{
+  "auto-run" : "",
+  "apps" : [
+    {
+      "app-id" : "simple-viewer-app",
+      "title" : "Simple Viewer",
+      "backend" : "main",
+      "frontend" : "webresources/index.html",
+      "env" : {
+        }
+    },
+    {
+      "app-id" : "ninezone-sample-app",
+      "title" : "Ninezone Sample",
+      "backend" : "main",
+      "frontend" : "webresources/index.html",
+      "env" : {
+        }
+    },
+    {
+      "app-id" : "display-test-app",
+      "title" : "Display Test",
+      "backend" : "main",
+      "frontend" : "webresources/index.html",
+      "env" : {
+        "standalone" : true,
+        "iModelName" :"H3.bim"
+        }
+    }
+  ]
+}

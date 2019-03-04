@@ -8,8 +8,8 @@
 SrcRoot = /Users/Affan.Khan/imodel02/src/
 OutRoot = /Users/Affan.Khan/imodel02/out/debug/
 //AssetRoot = /Users/Affan.Khan/ui-test-app/
-AssetRoot = /Users/Affan.Khan/simple-viewer-app
+// AssetRoot = /Users/Affan.Khan/simple-viewer-app
 //AssetRoot = /Users/Affan.Khan/mobile
-
+AssetRoot = /Users/Affan.Khan/imodeljs-apps
 BuildArchitecture = iOSARM64
 

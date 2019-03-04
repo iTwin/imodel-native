@@ -18,7 +18,9 @@
 	<key>NSAppleScriptEnabled</key>
 	<true/>
 	<key>NSHighResolutionCapable</key>
-	<false/>
+	<true/>
+	<key>CFBundleDocumentTypes</key>
+	<array/>
 	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -50,6 +52,11 @@
 	<string>Main</string>
 	<key>UIRequiresPersistentWiFi</key>
 	<true/>
+	<key>LSEnvironment</key>
+	<dict>
+		<key>imodeljs</key>
+		<string>1</string>
+	</dict>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
 		<string>armv7</string>

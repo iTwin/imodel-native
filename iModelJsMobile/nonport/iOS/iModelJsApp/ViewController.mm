@@ -10,7 +10,7 @@
 #import  <IModelJsHost/IModelJsHost.h>
 #import "AssetHandler.h"
 #import "AppDelegate.h"
-
+#import "AppRegistry.h"
 /*! @brief The OIDC issuer from which the configuration will be discovered.
  */
 static NSString *const kIssuer = @"https://qa-imsoidc.bentley.com";
@@ -31,12 +31,13 @@ static NSArray  *const kScopes = @[OIDScopeOpenID,
                                    @"visible-api-scope",
                                    @"offline_access"];
 
-@interface ViewController () <OIDAuthStateChangeDelegate, OIDAuthStateErrorDelegate, WKScriptMessageHandler>
+@interface ViewController () <OIDAuthStateChangeDelegate, OIDAuthStateErrorDelegate, WKScriptMessageHandler, WKUIDelegate>
 - (void)performTokenExchange: (OIDAuthState*) authState :(NSError *) error;
 @end
 
 @implementation ViewController
 WKWebView* _appWebView;
+AppInfo* _appInfo;
 /*! @brief setup view
  @remarks Setup view and configure it
  */
@@ -45,26 +46,65 @@ WKWebView* _appWebView;
     
     // Setup message handler for javascript side OIDC client
     WKUserContentController* contentController = [WKUserContentController new];
+    [contentController addScriptMessageHandler:self name:@"launchApp"];
+    [webConfiguration setUserContentController:contentController];
+    _appWebView  = [[WKWebView alloc] initWithFrame:CGRectZero configuration:webConfiguration];
+    [self setView:_appWebView ];
+}
+- (void)webView:(WKWebView *)webView runOpenPanelWithParameters:(WKOpenPanelParameters *)parameters
+                                               initiatedByFrame:(WKFrameInfo *)frame
+                                              completionHandler:(void (^)(NSArray<NSURL *> *URLs))completionHandler {
+    UIDocumentBrowserViewController* cont = [[UIDocumentBrowserViewController alloc] initForOpeningFilesWithContentTypes:@[@""]];
+    [self presentViewController:cont animated:YES completion:^{
+    
+    }];
+}
+- (WKUserScript*) getEnvScript {
+    NSMutableString* str = [NSMutableString new];
+    [str appendFormat:@"window.localStorage.setItem(\"%@\", JSON.stringify(", @"imodeljs:env"];
+    NSError *error;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:_appInfo.env options:0 error:&error];
+    if (error) {
+        NSLog(@"Fail to create json");
+        return nil;
+    }
+    NSString* jsonStr = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    [str appendString:jsonStr];
+    [str appendString:@"));"];
+    return [[WKUserScript alloc] initWithSource:str injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES];
+}
+- (void) setupWebViewForApp {
+    WKWebViewConfiguration* webConfiguration = [[WKWebViewConfiguration alloc] init];
+    
+    // Setup message handler for javascript side OIDC client
+    WKUserContentController* contentController = [WKUserContentController new];
     [contentController addScriptMessageHandler:self name:@"signIn"];
     [contentController addScriptMessageHandler:self name:@"signOut"];
     [contentController addScriptMessageHandler:self name:@"refreshToken"];
+    [contentController addUserScript:[self getEnvScript]];
     [webConfiguration setUserContentController:contentController];
-
+    
     // Allow local file access
     @try {[webConfiguration.preferences setValue:@YES forKey:@"allowFileAccessFromFileURLs"];} @catch (NSException *exception) {}
     @try {[webConfiguration setValue:@YES forKey:@"allowUniversalAccessFromFileURLs"];} @catch (NSException *exception) {}
     
+    NSURL* path = [[NSURL alloc] initWithString:[[@"Assets" stringByAppendingPathComponent:_appInfo.appId] stringByAppendingPathComponent:_appInfo.frontend]];
+    NSURL* backendFolder = path.URLByDeletingLastPathComponent;
+    NSString* indexHtml = path.lastPathComponent;
     // Initialize assest handler and view
-    AssetHandler* handler = [[AssetHandler alloc] initWithAssetPathAndDefaultPage:@"Assets/webresources" :@"index.html"];
+    AssetHandler* handler = [[AssetHandler alloc] initWithAssetPathAndDefaultPage:backendFolder.absoluteString :indexHtml];
     [webConfiguration setURLSchemeHandler:handler forURLScheme:@"imodeljs"];
     _appWebView  = [[WKWebView alloc] initWithFrame:CGRectZero configuration:webConfiguration];
     [_appWebView  setUIDelegate:self];
     [_appWebView  setNavigationDelegate:self];
     [_appWebView .scrollView.pinchGestureRecognizer setEnabled:NO];
     [_appWebView .scrollView setScrollEnabled:NO];
+    NSString* customURL = [NSString stringWithFormat:@"imodeljs://app#%u", [[IModelJsHost sharedInstance] getPort]];
+    NSURL* indexURL = [[NSURL alloc] initWithString:customURL];
+    NSURLRequest* request = [NSURLRequest requestWithURL:indexURL];
+    [_appWebView loadRequest:request];
     [self setView:_appWebView ];
 }
-
 /*! @brief OIDC auth state change event
  @remarks Send the token to webview
  */
@@ -83,10 +123,14 @@ WKWebView* _appWebView;
  @remarks Frontend of the app is loaded into webview with the port
  */
 - (void) clearLoginAndLoadApp {
-    NSString* customURL = [NSString stringWithFormat:@"imodeljs://app#%u", [[IModelJsHost sharedInstance] getPort]];
-    NSURL* indexURL = [[NSURL alloc] initWithString:customURL];
-    NSURLRequest* request = [NSURLRequest requestWithURL:indexURL];
-    [_appWebView loadRequest:request];
+    NSString* html = [self buildBootstrapHtml];
+    [_appWebView loadHTMLString:html baseURL:nil];
+    
+    //NSString* customURL = [NSString stringWithFormat:@"imodeljs://app#%u", [[IModelJsHost sharedInstance] getPort]];
+    //NSURL* indexURL = [[NSURL alloc] initWithString:customURL];
+    //NSURLRequest* request = [NSURLRequest requestWithURL:indexURL];
+    //[_appWebView loadRequest:request];
+    
 }
 /*! @brief OidcIosClient handle this event
  @remarks This will propagate the login event back to javascript base frontend in webview
@@ -293,8 +337,28 @@ didReceiveServerRedirectForProvisionalNavigation:(WKNavigation *)navigation {
             [self discoverConfigAndInitiateSigin];
         }
     } else if ([message.name compare:@"signOut" options:NSCaseInsensitiveSearch] == NSOrderedSame) {
-            
+        
+    } else if ([message.name compare:@"launchApp" options:NSCaseInsensitiveSearch] == NSOrderedSame) {
+        
+        //launch backend
+        NSString* appIdArg = message.body;
+        _appInfo = [[AppRegistry sharedInstance] find: appIdArg];
+        //NSMutableDictionary<NSString*, NSString*>* envs = [[NSMutableDictionary<NSString*, NSString*> alloc] initWithDictionary:[[NSProcessInfo processInfo] environment]];
+        //for( NSString* key in _appInfo.env.allKeys) {
+         //   setenv(key.UTF8String, [_appInfo.env objectForKey:key].UTF8String , 1);
+        //}
+ 
+        NSString* appRoot =  [@"Assets" stringByAppendingPathComponent:appIdArg];
+        NSURL* mainJS = [[NSURL alloc] initWithString:_appInfo.backend];
+        [[IModelJsHost sharedInstance] loadBackend:mainJS
+                                                  :@[appRoot] // directory containing the mainJS
+                                                  :appRoot]; // allow presentation rules to load
+        
+        dispatch_async(dispatch_get_main_queue(), ^() {
+            [self setupWebViewForApp];
+        });
     }
+    
 }
 
 /*! @brief get userinfo from user endpoint
@@ -390,5 +454,52 @@ didReceiveServerRedirectForProvisionalNavigation:(WKNavigation *)navigation {
         [postDataTask resume];
     }];
 }
-
+- (NSString*) buildBootstrapHtml {
+    NSString* html = @""
+        "<!DOCTYPE html>"
+        "<html lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\">"
+        "<style>"
+        "    table {"
+        "        table-layout: fixed;"
+        "        width: 200px;"
+        "        margin: 0px auto;"
+        "    }"
+        "    button {"
+        "        width: 100%%;"
+        "        padding: 20px 10px;"
+        "        background-color: #4CAF50;"
+        "        color: ghostwhite;"
+        "        text-shadow: 1px 1px 0 #444;"
+        "        border: 0;"
+        "        font-size: medium;"
+        "        box-shadow: none;"
+        "        border-radius: 0px;"
+        "    }"
+        "    div {"
+        "        vertical-align: central;"
+        "        text-align: center;"
+        "    }"
+        "</style>"
+        "<head>"
+        "    <meta charset=\"utf-8\" />"
+        "    <title>iModelJS Apps</title>"
+        "</head>"
+        "<body>"
+        "    <div>"
+        "        <h2>iModelJs Apps</h2>"
+        "        <table>"
+        "        %@"
+        "        </table>"
+        "    </div>"
+        "</body>"
+        "</html>"
+        ;
+    
+    NSMutableString* appButtons = [NSMutableString new];
+    for( AppInfo* appInfo in [AppRegistry.sharedInstance apps] ) {
+        [appButtons appendFormat:@"<tr><th><button type='button' onclick=\"window.webkit.messageHandlers.launchApp.postMessage('%@');\">%@</button></th></tr>\n", appInfo.appId, appInfo.title];
+    }
+    
+    return [NSString stringWithFormat:html, appButtons];
+}
 @end

@@ -95,7 +95,7 @@ NSString* _mainPage;
     
 }
 - (void)webView:(WKWebView *)webView startURLSchemeTask:(id<WKURLSchemeTask>)urlSchemeTask {
-     NSLog(@"REQ [%@]", urlSchemeTask.request.URL.absoluteString );
+    NSLog(@"REQ [%@]", urlSchemeTask.request.URL.absoluteString );
     NSURL* fileUrl = [self tryGetFileUrl: urlSchemeTask];
     if (fileUrl != nil) {
         [self respondWithDiskFile:urlSchemeTask :fileUrl];
