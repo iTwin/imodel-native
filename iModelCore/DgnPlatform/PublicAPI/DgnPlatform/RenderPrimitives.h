@@ -93,6 +93,7 @@ struct GeometryOptions
 enum class ComparePurpose
 {
     Merge,  //!< ignores category, subcategory, class, and considers colors equivalent if both have or both lack transparency
+    Instance, //!< like merge, but also discriminates on SurfaceMaterial (different UV transforms prohibit batching for instancing)
     Strict  //!< compares all members
 };
 
@@ -433,6 +434,7 @@ private:
     bool                            m_isPlanar;
     PolyfaceAuxData::Channels       m_auxChannels;
     size_t                          m_nodeIndex;
+    GeomPartCPtr                    m_part;
 
     Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, size_t nodeIndex)
         : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_is2d(is2d), m_isPlanar(isPlanar), m_nodeIndex(nodeIndex) { }
@@ -489,6 +491,9 @@ public:
     void AddAuxData(PolyfaceAuxDataCR auxData, size_t index);
 
     GraphicPtr GetGraphics (MeshGraphicArgs& args, Dgn::Render::SystemCR system, DgnDbR db) const;
+
+    void SetPart(GeomPartCR part) { m_part = &part; }
+    GeomPartCP GetPart() const { return m_part.get(); }
 };
 
 //=======================================================================================
@@ -572,6 +577,7 @@ public:
 
     DRange3dCR GetRange() const { return m_range; }
     void SetRange(DRange3dCR range) { BeAssert(empty()); m_range = range; }
+    void SetFeatureTable(FeatureTableR table) { m_featureTable = &table; }
     void SetMaxFeatures(uint32_t maxFeatures) { if (nullptr != m_featureTable) m_featureTable->SetMaxFeatures(maxFeatures); }
     FeatureTableP GetFeatureTable() { return m_featureTable; }
 };
@@ -850,27 +856,103 @@ public:
 //=======================================================================================
 struct GeomPart : RefCountedBase
 {
+    struct Key
+    {
+        DgnGeometryPartId   m_partId;
+        double              m_tolerance = 0.0;
+        DisplayParamsCPtr   m_displayParams;
+
+        Key() { } // Chiefly for use in collection types...
+        Key(DgnGeometryPartId partId, double tolerance, DisplayParamsCR displayParams)
+            : m_partId(partId), m_tolerance(tolerance), m_displayParams(&displayParams) { }
+
+        bool IsLessThan(Key const& rhs, bool ignoreTolerance) const;
+    };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Key);
+
+    struct Instance
+    {
+    private:
+        Transform           m_transform;
+        DisplayParamsCPtr   m_displayParams;
+        DgnElementId        m_elementId;
+    public:
+        Instance() { } // purely for compatibility with collection classes.
+        Instance(TransformCR tf, DisplayParamsCR displayParams, DgnElementId elemId) : m_transform(tf), m_displayParams(&displayParams), m_elementId(elemId) { }
+
+        DisplayParamsCR GetDisplayParams() const { return *m_displayParams; }
+        TransformCR GetTransform() const { return m_transform; }
+        DgnElementId GetElementId() const { return m_elementId; }
+        Feature GetFeature() const { return Feature(GetElementId(), GetDisplayParams().GetSubCategoryId(), GetDisplayParams().GetClass()); }
+    };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Instance);
+
+    using InstanceList = bvector<Instance>;
+
+    // IMPORTANT: These values MUST match OvrFlags in iModel.js frontend (RenderFlags.ts)!!!
+    enum class SymbologyOverrides : uint8_t
+    {
+        None = 0,
+        Rgb = 1 << 1,
+        Alpha = 1 << 2,
+        LineWidth = 1 << 3,
+        LinePixels = 1 << 6,
+    };
 private:
-    DRange3d                m_range;
-    GeometryList            m_geometries;
-    mutable size_t          m_facetCount;
+    DRange3d            m_range;
+    mutable size_t      m_facetCount;
+    Key                 m_key;
+    GeometryList        m_geometries;
+    InstanceList        m_instances;
+    bool                m_hasSymbologyChanges;
+    SymbologyOverrides  m_symbology = SymbologyOverrides::None;
 
     uint32_t _GetExcessiveRefCountThreshold() const  override {return 100000;}
 
 protected:
-    GeomPart(DRange3dCR range, GeometryList const& geometry);
+    GeomPart(KeyCR key, DRange3dCR range, GeometryList const& geometry, bool hasSymbologyChanges);
 
-    double ComputeTolerance(GeometryCP instance, double tolerance) const;
+    static double ComputeTolerance(GeometryCP instance, double tolerance);
+    DisplayParamsCR GetInstanceDisplayParams(GeometryCP instance, DisplayParamsCR geomParams) const;
 public:
-    static GeomPartPtr Create(DRange3dCR range, GeometryList const& geometry) { return new GeomPart(range, geometry); }
+    static GeomPartPtr Create(KeyCR key, DRange3dCR range, GeometryList const& geometry, bool hasSymbologyChanges) { return new GeomPart(key, range, geometry, hasSymbologyChanges); }
+
     PolyfaceList GetPolyfaces(double chordTolerance, NormalMode, GeometryCP instance, ViewContextR);
     StrokesList GetStrokes(double chordTolerance, GeometryCP instance, ViewContextR);
     size_t GetFacetCount(FacetCounter& counter, GeometryCR instance) const;
+
     bool IsCurved() const;
+    bool IsComplete() const { return m_geometries.IsComplete(); }
+    bool IgnoresTolerance() const { return IsComplete() && !IsCurved(); }
+
+    KeyCR GetKey() const { return m_key; }
+    DisplayParamsCR GetDisplayParams() const { return *m_key.m_displayParams; }
+    bool HasSymbologyChanges() const { return m_hasSymbologyChanges; }
     GeometryList const& GetGeometries() const { return m_geometries; }
     DRange3d GetRange() const { return m_range; };
+
+    SymbologyOverrides GetSymbologyOverrides() const { return m_symbology; }
+    InstanceList const& GetInstances() const { return m_instances; }
+    size_t GetInstanceCount() const { return GetInstances().size(); }
+    void AddInstance(TransformCR tf, DisplayParamsCR dispParams, DgnElementId elemId);
+
     void SetInCache(bool inCache);
+
+    static double ComputeTolerance(TransformCR transform, double baseTolerance);
+
+    struct PtrComparator
+    {
+        using is_transparent = std::true_type;
+
+        bool operator()(GeomPartPtr const& lhs, GeomPartPtr const& rhs) const { return lhs->GetKey().IsLessThan(rhs->GetKey(), lhs->IgnoresTolerance()); }
+        bool operator()(GeomPartPtr const& lhs, KeyCR rhs) const { return lhs->GetKey().IsLessThan(rhs, lhs->IgnoresTolerance()); }
+        bool operator()(KeyCR lhs, GeomPartPtr const& rhs) const { return lhs.IsLessThan(rhs->GetKey(), rhs->IgnoresTolerance()); }
+    };
 };
+
+ENUM_IS_FLAGS(GeomPart::SymbologyOverrides);
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16

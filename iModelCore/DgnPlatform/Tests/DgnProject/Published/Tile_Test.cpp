@@ -213,9 +213,9 @@ TEST(NodeId, Subdivision)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ContentId, ToFromString)
+TEST(ContentId, ToFromV1String)
     {
-    ContentId id(NodeId::RootId(), 0);
+    ContentId id(NodeId::RootId(), 0, 1, ContentId::Flags::None);
     EXPECT_EQ(id.GetSizeMultiplier(), 1.0);
     EXPECT_EQ(0, id.GetDepth());
 
@@ -226,7 +226,7 @@ TEST(ContentId, ToFromString)
     EXPECT_TRUE(rtId.FromString(str.c_str()));
     EXPECT_EQ(rtId, id);
 
-    id = ContentId(1, 0, 0, 0, 5);
+    id = ContentId(1, 0, 0, 0, 5, 1, ContentId::Flags::None);
     EXPECT_EQ(id.GetSizeMultiplier(), 5.0);
     EXPECT_EQ(1, id.GetDepth());
 

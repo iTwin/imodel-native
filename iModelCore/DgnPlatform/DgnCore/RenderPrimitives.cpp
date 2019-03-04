@@ -223,7 +223,7 @@ public:
     size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetFacetCount (counter, *this); }
     GeomPartCPtr _GetPart() const override { return m_part; }
 
-};  // GeomPartInstanceTileGeometry 
+};
 
 //=======================================================================================
 //! Text is frequently used for decorations, which are regenerated constantly; and
@@ -779,11 +779,6 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     if (&rhs == this)
         return false;
 
-#if defined(DEBUG_DISPLAY_PARAMS_CACHE)
-    if (ComparePurpose::Merge == purpose)
-        printf("Comparing:%s\n       to:%s\n", ToDebugString().c_str(), rhs.ToDebugString().c_str());
-#endif
-
     TEST_LESS_THAN(GetType());
     TEST_LESS_THAN(IgnoresLighting());
     TEST_LESS_THAN(GetLineWidth());
@@ -796,7 +791,7 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     // Region outline produces a polyline which is considered an edge of a region surface
     TEST_LESS_THAN(WantRegionOutline());
 
-    if (ComparePurpose::Merge == purpose)
+    if (ComparePurpose::Strict != purpose)
         {
         TEST_LESS_THAN(HasFillTransparency());
         TEST_LESS_THAN(HasLineTransparency());
@@ -804,9 +799,6 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
         if (GetSurfaceMaterial().GetTextureMapping().IsValid())
             TEST_LESS_THAN(GetFillColor());     // Textures may use color so they can't be merged. (could test if texture actually uses color).
 
-#if defined(DEBUG_DISPLAY_PARAMS_CACHE)
-        printf ("Equal.\n");
-#endif
         return false;
         }
 
@@ -830,6 +822,8 @@ bool SurfaceMaterial::IsLessThan(SurfaceMaterialCR rhs, ComparePurpose purpose) 
 
     TEST_LESS_THAN(GetMaterial());
     TEST_LESS_THAN(GetTextureMapping().GetTexture());
+
+    // NB: ComparePurpose::Instance requires equal UV transform.
     if (ComparePurpose::Merge == purpose)
         return true;
 
@@ -867,7 +861,7 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     // Region outline produces a polyline which is considered an edge of a region surface
     TEST_EQUAL(WantRegionOutline());
 
-    if (ComparePurpose::Merge == purpose)
+    if (ComparePurpose::Strict != purpose)
         {
         TEST_EQUAL(HasFillTransparency());
         TEST_EQUAL(HasLineTransparency());
@@ -898,6 +892,7 @@ bool SurfaceMaterial::IsEqualTo(SurfaceMaterialCR rhs, ComparePurpose purpose) c
     TEST_EQUAL(GetMaterial());
     TEST_EQUAL(GetTextureMapping().GetTexture());
 
+    // NB: ComparePurpose::Instance requires equal UV transform
     return ComparePurpose::Merge == purpose || GetTextureMapping().GetParams().m_textureMat2x3.AlmostEqual(rhs.GetTextureMapping().GetParams().m_textureMat2x3);
     }
 
@@ -1491,9 +1486,31 @@ uint32_t MeshBuilder::AddVertex(VertexMap& verts, VertexKey const& vertex)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeomPart::Key::IsLessThan(GeomPart::KeyCR rhs, bool ignoreTolerance) const
+    {
+    TEST_LESS_THAN(m_partId.GetValueUnchecked());
+    if (!ignoreTolerance && m_tolerance != rhs.m_tolerance)
+        {
+        // If two instances of a part have different scales, only treat them as incompatible for instancing if the
+        // ratio of their scales meets or exceeds this threshold.
+        static constexpr double s_maxPartToleranceRatio = 2.0;
+        BeAssert(m_tolerance > 0.0 || rhs.m_tolerance > 0.0);
+        double ratio = std::min(m_tolerance, rhs.m_tolerance) / std::max(m_tolerance, rhs.m_tolerance);
+        if (ratio >= s_maxPartToleranceRatio)
+            return m_tolerance < rhs.m_tolerance;
+        }
+
+    // NB: ComparePurpose::Instance because we can't instance the same mesh if each instance wants different UV params generated.
+    return m_displayParams->IsLessThan(*rhs.m_displayParams, ComparePurpose::Instance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeomPart::GeomPart(DRange3dCR range, GeometryList const& geometries) : m_range (range), m_facetCount(0), m_geometries(geometries)
+GeomPart::GeomPart(GeomPart::KeyCR key, DRange3dCR range, GeometryList const& geometries, bool hasSymbologyChanges)
+    : m_key(key), m_range (range), m_facetCount(0), m_geometries(geometries), m_hasSymbologyChanges(hasSymbologyChanges)
     { 
     }                
 
@@ -1507,23 +1524,38 @@ bool GeomPart::IsCurved() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Adjust tolerance to account for transform scale.
 * @bsimethod                                                    Paul.Connelly   10/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-double GeomPart::ComputeTolerance(GeometryCP instance, double tolerance) const
+double GeomPart::ComputeTolerance(TransformCR transform, double baseTolerance)
     {
-    if (nullptr != instance)
-        {
-        DPoint3d tempPt;
-        Transform invTrans;
+    DPoint3d tempPt;
+    Transform invTrans;
 
-        tempPt.Init(tolerance, 0.0, 0.0);
-        invTrans.InverseOf(instance->GetTransform());
+    tempPt.Init(baseTolerance, 0.0, 0.0);
+    invTrans.InverseOf(transform);
 
-        invTrans.MultiplyMatrixOnly(tempPt);
-        tolerance = tempPt.Magnitude();
-        }
+    invTrans.MultiplyMatrixOnly(tempPt);
+    return tempPt.Magnitude();
+    }
 
-    return tolerance;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+double GeomPart::ComputeTolerance(GeometryCP instance, double tolerance)
+    {
+    return nullptr != instance ? ComputeTolerance(instance->GetTransform(), tolerance) : tolerance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParamsCR GeomPart::GetInstanceDisplayParams(GeometryCP instance, DisplayParamsCR geomParams) const
+    {
+    if (HasSymbologyChanges())
+        return geomParams;
+    else
+        return nullptr != instance ? instance->GetDisplayParams() : GetDisplayParams();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1531,7 +1563,7 @@ double GeomPart::ComputeTolerance(GeometryCP instance, double tolerance) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceList GeomPart::GetPolyfaces(double chordTolerance, NormalMode normalMode, GeometryCP instance, ViewContextR context)
     {
-    chordTolerance = ComputeTolerance(instance, chordTolerance);
+    chordTolerance = m_key.m_tolerance;
     PolyfaceList polyfaces;
     for (auto& geometry : m_geometries) 
         {
@@ -1540,7 +1572,11 @@ PolyfaceList GeomPart::GetPolyfaces(double chordTolerance, NormalMode normalMode
 
         for (auto const& thisPolyface : thisPolyfaces)
             {
-            Polyface polyface(*thisPolyface.m_displayParams, *thisPolyface.m_polyface->Clone());
+            // ###TODO_INSTANCING: Do we expect to encounter multiple geometries with differing symbologies?
+            // Polyface polyface(*thisPolyface.m_displayParams, *thisPolyface.m_polyface->Clone());
+            // auto const& displayParams = nullptr != instance ? instance->GetDisplayParams() : *m_key.m_displayParams;
+            auto const& displayParams = GetInstanceDisplayParams(instance, *thisPolyface.m_displayParams);
+            Polyface polyface(displayParams, *thisPolyface.m_polyface->Clone());
             if (nullptr != instance)
                 polyface.Transform(instance->GetTransform());
 
@@ -1565,7 +1601,7 @@ void GeomPart::SetInCache(bool inCache)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StrokesList GeomPart::GetStrokes(double chordTolerance, GeometryCP instance, ViewContextR context)
     {
-    chordTolerance = ComputeTolerance(instance, chordTolerance);
+    chordTolerance = m_key.m_tolerance;
     StrokesList strokes;
 
     for (auto& geometry : m_geometries) 
@@ -1579,7 +1615,11 @@ StrokesList GeomPart::GetStrokes(double chordTolerance, GeometryCP instance, Vie
     if (nullptr != instance)
         {
         for (auto& stroke : strokes)
+            {
+            // stroke.m_displayParams = &instance->GetDisplayParams();
+            stroke.m_displayParams = &GetInstanceDisplayParams(instance, *stroke.m_displayParams);
             stroke.Transform(instance->GetTransform());
+            }
         }
 
     return strokes;
@@ -1595,6 +1635,29 @@ size_t GeomPart::GetFacetCount(FacetCounter& counter, GeometryCR instance) const
             m_facetCount += geometry->GetFacetCount(counter);
             
     return m_facetCount;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeomPart::AddInstance(TransformCR tf, DisplayParamsCR params, DgnElementId elemId)
+    {
+    m_instances.push_back(Instance(tf, params, elemId));
+
+    auto myColor = GetDisplayParams().GetFillColorDef(),
+         dpColor = params.GetFillColorDef();
+
+    if (myColor.GetValueNoAlpha() != dpColor.GetValueNoAlpha())
+        m_symbology |= SymbologyOverrides::Rgb;
+
+    if (myColor.GetAlpha() != dpColor.GetAlpha())
+        m_symbology |= SymbologyOverrides::Alpha;
+
+    if (GetDisplayParams().GetLineWidth() != params.GetLineWidth())
+        m_symbology |= SymbologyOverrides::LineWidth;
+
+    if (GetDisplayParams().GetLinePixels() != params.GetLinePixels())
+        m_symbology |= SymbologyOverrides::LinePixels;
     }
 
 /*---------------------------------------------------------------------------------**//**

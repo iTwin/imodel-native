@@ -341,6 +341,15 @@ ENUM_IS_FLAGS(DgnTile::Flags);
 // IModel tiles are tiles with glTF-like structure (JSON with binary data) - but optimized
 // for deserialization and display in imodeljs front-end.
 // Specifically, geometry is stored in a format more or less ready for submission to WebGL.
+//
+// Version history:
+//  Major version 1:
+//      1.1: Introduction of major-minor versioning.
+//      1.2: Added animation group IDs.
+//      1.3: Moved aux channels from vertex table to separate table.
+//      1.4: Fixed duplication of polyline and simple edges.
+//  Major version 2:
+//      2.0: Introduction of major version 2
 // @bsistruct                                                   Paul.Connelly   09/18
 //=======================================================================================
 struct IModelTile
@@ -361,18 +370,17 @@ struct IModelTile
         uint32_t ToUint32() const { return (m_major << 0x10) | m_minor; }
         Utf8String ToString() const { return Utf8PrintfString("%08x", ToUint32()); }
 
-        // Version history:
-        //  1: Introduction of major-minor versioning.
-        static constexpr uint16_t CurrentMajor() { return 1; }
+        static constexpr Version Invalid() { return Version(0, 0); }
+        static constexpr Version V1() { return Version(1, 4); }
+        static constexpr Version V2() { return Version(2, 0); }
+        static constexpr Version Current() { return V2(); }
 
-        // Version history:
-        //  1: Introduction of major-minor versioning.
-        //  2: Added animation group IDs.
-        //  3: Moved aux channels from vertex table to separate table.
-        //  4: Fixed duplication of polyline and simple edges.
-        static constexpr uint16_t CurrentMinor() { return 4; }
+        static Version FromMajorVersion(uint16_t major);
 
-        static constexpr Version Current() { return Version(CurrentMajor(), CurrentMinor()); }
+        constexpr bool IsValid() const { return 0 != m_major; }
+        constexpr bool IsKnownMajorVersion() const { return IsKnownMajorVersion(m_major); }
+        constexpr bool IsKnown() const { return IsKnownMajorVersion() && m_minor <= Current().m_minor; }
+        static constexpr bool IsKnownMajorVersion(uint16_t major) { return major <= Current().m_major; }
     };
 
     enum class WriteStatus { Success, Error, Aborted };

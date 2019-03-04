@@ -109,22 +109,35 @@ public:
 //=======================================================================================
 struct ContentId : NodeId
 {
+    enum class Flags : uint32_t
+    {
+        None = 0,
+        AllowInstancing = 1 << 0,
+        All = AllowInstancing,
+    };
 private:
     DEFINE_T_SUPER(NodeId);
 
-    uint8_t     m_mult;
-public:
-    ContentId(NodeIdCR nodeId, uint8_t mult) : T_Super(nodeId), m_mult(0 == mult ? 1 : mult) { }
-    ContentId(uint8_t depth, uint64_t i, uint64_t j, uint64_t k, uint8_t mult) : ContentId(NodeId(depth, i, j, k), mult) { }
-    ContentId() : ContentId(0, 0, 0, 0, 1) { }
+    uint32_t    m_mult;
+    Flags       m_flags;
+    uint16_t    m_majorVersion;
 
-    bool operator==(ContentIdCR other) const { return T_Super::operator==(other) && m_mult == other.m_mult; }
+    Utf8String Format(uint64_t const* parts, size_t numParts) const;
+    bool FromV1String(Utf8CP);
+public:
+    ContentId(NodeIdCR nodeId, uint32_t mult, uint16_t version, Flags flags) : T_Super(nodeId), m_mult(0 == mult ? 1 : mult), m_majorVersion(version), m_flags(flags) { }
+    ContentId(uint8_t depth, uint64_t i, uint64_t j, uint64_t k, uint32_t mult, uint16_t version, Flags flags) : ContentId(NodeId(depth, i, j, k), mult, version, flags) { }
+    ContentId() : ContentId(0, 0, 0, 0, 1, 1, Flags::None) { }
+
+    bool operator==(ContentIdCR other) const { return T_Super::operator==(other) && m_mult == other.m_mult && m_majorVersion == other.m_majorVersion && m_flags == other.m_flags; }
     bool operator!=(ContentIdCR other) const { return !(*this == other); }
     bool operator<(ContentIdCR rhs) const
         {
         auto compId = Compare(*this, rhs);
         if (0 != compId) return compId < 0;
         else if (m_mult != rhs.m_mult) return m_mult < rhs.m_mult;
+        else if (m_majorVersion != rhs.m_majorVersion) return m_majorVersion < rhs.m_majorVersion;
+        else if (m_flags != rhs.m_flags) return m_flags < rhs.m_flags;
         else return false;
         }
 
@@ -132,7 +145,13 @@ public:
     DGNPLATFORM_EXPORT bool FromString(Utf8CP str);
 
     double GetSizeMultiplier() const { BeAssert(0 != m_mult); return static_cast<double>(m_mult); }
+    uint16_t GetMajorVersion() const { BeAssert(0 < m_majorVersion); return m_majorVersion; }
+    Flags GetFlags() const { return m_flags; }
+
+    bool AllowInstancing() const;
 };
+
+ENUM_IS_FLAGS(ContentId::Flags);
 
 //=======================================================================================
 //! Representation of geometry contained within a tile.
@@ -150,6 +169,20 @@ struct Content : RefCountedBase
         Incomplete = 1 << 2, // Some geometry was excluded from this tile's content.
     };
 
+    // Bitfield wherein each bit corresponds to a sub-volume of a tile's volume.
+    enum class SubRange : uint32_t
+    {
+        None = 0,
+        k000 = 1 << 0,
+        k100 = 1 << 1,
+        k010 = 1 << 2,
+        k110 = 1 << 3,
+        k001 = 1 << 4,
+        k101 = 1 << 5,
+        k011 = 1 << 6,
+        k111 = 1<< 7,
+    };
+
     //=======================================================================================
     //! Describes aspects of tile Content. Used by front-end to make decisions about tile
     //! subdivision, among other things. The metadata is encoded into the header within the
@@ -163,6 +196,7 @@ struct Content : RefCountedBase
         uint32_t m_numElementsIncluded = 0; // Number of elements whose geometry (or a subset thereof) is included in this content.
         uint32_t m_numElementsExcluded = 0; // Number of elements within the tile's range which contributed no geometry to this content.
         Flags m_flags = Flags::None;
+        SubRange m_emptySubRanges = SubRange::None; // Bitfield wherein a 1 bit indicates an empty sub-volume.
     };
 
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Metadata);
@@ -175,6 +209,7 @@ public:
 };
 
 ENUM_IS_FLAGS(Content::Flags);
+ENUM_IS_FLAGS(Content::SubRange);
 
 //=======================================================================================
 //! Loads tile content from cache, or generates it from geometry and adds to cache.
@@ -228,6 +263,7 @@ public:
     bool IsInvalid() const { return State::Invalid == GetState(); }
 
     ContentIdCR GetContentId() const { return m_contentId; }
+    bool AllowInstancing() const { return GetContentId().AllowInstancing(); }
     ContentCP GetContent() const { return m_content.get(); }
     TreeR GetTree() const { return m_tree; }
 
