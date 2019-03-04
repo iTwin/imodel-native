@@ -200,7 +200,7 @@ def adjustMapFiles(map_dir):
                     start = i*partlines - 1
                 end = (i+1)*partlines - 1
                 last = end
-                if i = 0:
+                if i == 0:
                     f_name = os.path.join(map_dir, os.path.basename(filename) + file_extension)
                 else:
                     f_name = os.path.join(map_dir, os.path.basename(filename) + '_' + str(i) + file_extension)
