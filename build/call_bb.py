@@ -14,13 +14,14 @@ def doubleToTimeString(start, end):
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 def getBBCmd():
-    if os.name == 'nt':
-        return 'bb'
-    elif os.name == 'posix':
-        return 'bash $SRCROOT/bsicommon/BuildAgentScripts/unix_runBB.sh'
-        
-    sys.stderr.write('Unknown OS name "' + os.name + '".\n')
-    sys.exit(1)
+    # VSTS pushes variables into the environment CAPITALIZED. Unix environment variables are case-sensitive; remap what we know we care about.
+    if os.name != 'nt':
+        if not 'SrcRoot' in os.environ:
+            os.environ['SrcRoot'] = os.environ['SRCROOT']
+        if not 'OutRoot' in os.environ:
+            os.environ['OutRoot'] = os.environ['OUTROOT']
+
+    return 'python ' + os.path.join(os.environ['SrcRoot'], 'BentleyBuild', 'BentleyBuild.py')
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 def callForPull(args, config):
@@ -54,11 +55,8 @@ def callForPull(args, config):
 
         allStrats.append(strat)
 
-    cmd = getBBCmd() + ' -v {0} -a "{1}" -s "{2}" pull'.format(
-        args.verbosity,
-        '+'.join(allArchs),
-        '+'.join(allStrats))
-    
+    cmd = getBBCmd() + ' -v {0} -a "{1}" -s "{2}" pull'.format(args.verbosity, '+'.join(allArchs), '+'.join(allStrats))
+
     if args.bdfdir:
         # BDF names must be lower-case because BentleyBootstrap.py always lower-cases its input, which affects case-sensitive file systems.
         cmd += ' -r ' + os.path.join(args.bdfdir, stratConfig['name'].lower() + '.xml')
@@ -77,11 +75,13 @@ def callForPull(args, config):
     return (callTimes, status)
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
-def callEachStrategy(args, config):
+def callEachStrategy(args, config, verData):
     callTimes = {}
     status = 0
 
     for stratConfig in config['strategies']:
+        print('Processing ' + stratConfig['name'] + '...')
+        
         if args.arch and not args.arch.lower() in stratConfig['archs'].lower().split('+'):
             continue
 
@@ -89,13 +89,16 @@ def callEachStrategy(args, config):
         if stratConfig['augments']:
             bbStrats += ';' + stratConfig['augments']
 
-        if 'version_env' in stratConfig and stratConfig['version_env'] in os.environ:
-            version = os.environ[stratConfig['version_env']].split('.')
-            print('Using version ' + '.'.join(version) + ' from ' + stratConfig['version_env'])
-            os.environ['REL_V'] = version[0].rjust(2, '0')
-            os.environ['MAJ_V'] = version[1].rjust(2, '0')
-            os.environ['MIN_V'] = version[2].rjust(2, '0')
-            os.environ['SUBMIN_V'] = version[3].rjust(2, '0')
+        version = None
+        if stratConfig['name'] in verData:
+            version = str(verData[stratConfig['name']])
+            print('Using version ' + version)
+            
+            versionSplit = version.split('.')
+            os.environ['REL_V'] = versionSplit[0].rjust(2, '0')
+            os.environ['MAJ_V'] = versionSplit[1].rjust(2, '0')
+            os.environ['MIN_V'] = versionSplit[2].rjust(2, '0')
+            os.environ['SUBMIN_V'] = versionSplit[3].rjust(2, '0')
 
         noArch = False
         bbEnv = None
@@ -107,19 +110,19 @@ def callEachStrategy(args, config):
         elif 'build' == args.action:
             action = 'build'
         elif 'checkunused' == args.action:
-            if not 'version_env' in stratConfig:
-                print('WARNING: {0} has no version_env value, so will NOT be validated.'.format(stratConfig['name']))
+            if not version or '99.99.99.99' == version:
+                print('WARNING: No valid version was computed for {0}, so it will NOT be validated.'.format(stratConfig['name']))
                 continue
 
-            if not stratConfig['version_env'] in os.environ:
-                print('WARNING: {0} is NOT in the environment for {1}, so will NOT be validated.'.format(stratConfig['version_env'], stratConfig['name']))
-                continue
-
-            action = 'prodversion -p ' + stratConfig['name'] + ' -u ' + os.environ[stratConfig['version_env']]
+            action = 'prodversion -p ' + stratConfig['name'] + ' -u ' + version
             noArch = True
         elif 'createnugets' == args.action:
             action = 'savenuget --noStream'
         elif 'createinstallers' == args.action:
+            if os.name != 'nt':
+                print('INFO: Not creating installers on this non-Windows platform.')
+                return ([], 0)
+
             # Build agents are non-admin services... not sure how to support WIX ICE validators yet...
             print("WARNING: SKIPPING WIX INSTALLER ICE VALIDATION")
             bbEnv = os.environ.copy()
@@ -129,11 +132,7 @@ def callEachStrategy(args, config):
         
         archArg = ('-a ' + (args.arch if args.arch else stratConfig['archs'])) if not noArch else ''
 
-        cmd = getBBCmd() + ' -v {0} -s "{1}" {2} {3}'.format(
-            args.verbosity,
-            bbStrats,
-            archArg,
-            action)
+        cmd = getBBCmd() + ' -v {0} -s "{1}" {2} {3}'.format(args.verbosity, bbStrats, archArg, action)
         
         print(cmd)
         cmdStartTime = time.time()
@@ -151,21 +150,51 @@ def callEachStrategy(args, config):
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 def main():
-    defaultConfigFile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ci_build_config.json')
+    defaultConfigFile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.json')
+    defaultVersionsFile = os.path.join(os.environ['SYSTEM_ARTIFACTSDIRECTORY'], 'bdf', 'versions.json')
 
     argParser = argparse.ArgumentParser(description="Runs BB commands based on a JSON config file.")
-    argParser.add_argument("action",                                    help='One of pull|build|bdf|checkunused|createnugets|createinstallers')
-    argParser.add_argument("-c", "--config", default=defaultConfigFile, help='Path to configuration file')
-    argParser.add_argument("-s", "--strat",                             help='Overrides configuration to use a specific build strategy')
-    argParser.add_argument("-a", "--arch",                              help='Limits actions to strategies enabled for given arch')
-    argParser.add_argument("-b", "--bdfdir",                            help='(bdf) Directory to write BDF files to -or- (pull) Directory where BDF files are stored')
+    argParser.add_argument("action",                                        help='One of pull|build|bdf|checkunused|createnugets|createinstallers')
+    argParser.add_argument("-c", "--config", default=defaultConfigFile,     help='Path to configuration file')
+    argParser.add_argument("-r", "--versions", default=defaultVersionsFile, help='(!pull) Path to versions file')
+    argParser.add_argument("-s", "--strat",                                 help='Overrides configuration to use a specific build strategy')
+    argParser.add_argument("-a", "--arch",                                  help='Limits actions to strategies enabled for given arch')
+    argParser.add_argument("-b", "--bdfdir",                                help='(bdf) Directory to write BDF files to -or- (pull) Directory where BDF files are stored')
     argParser.add_argument("-v", "--verbosity", default='3')
 
     args = argParser.parse_args()
+
+    print('==================================================')
+    print('call_bb.py args:')
+    print('    action = ' + (args.action if args.action else '<None>'))
+    print('    config = ' + (args.config if args.config else '<None>'))
+    print('    versions = ' + (args.versions if args.versions else '<None>'))
+    print('    strat = ' + (args.strat if args.strat else '<None>'))
+    print('    arch = ' + (args.arch if args.arch else '<None>'))
+    print('    bdfdir = ' + (args.bdfdir if args.bdfdir else '<None>'))
+    print('    verbosity = ' + (args.verbosity if args.verbosity else '<None>'))
+    print('==================================================')
+
     args.action = args.action.lower()
 
     with open(args.config, 'r') as configFile:
         config = json.load(configFile)
+
+    print('Parsed configurations for:')
+    for stratConfig in config['strategies']:
+        print('    ' + stratConfig['name'])
+    print('==================================================')
+
+    if os.path.exists(args.versions):
+        with open(args.versions, 'r') as verDataFile:
+            verData = json.load(verDataFile)
+    else:
+        verData = {}
+
+    print('Parsed version data for:')
+    for k, v in verData.iteritems():
+        print('    ' + k + ' = ' + v)
+    print('==================================================')
 
     if args.strat:
         if not args.arch:
@@ -180,13 +209,16 @@ def main():
             "version_seed": "0.0.0"
         }]
 
+        print('Overriding configuration with startegy ' + args.strat + ' and architecture ' + args.arch + '.')
+        print('==================================================')
+
     totalTimeStart = time.time()
 
     # Utilize BB's multi-strategy/architecture optimizations during a pull.
     if 'pull' == args.action:
         (callTimes, status) = callForPull(args, config)
     else:
-        (callTimes, status) = callEachStrategy(args, config)
+        (callTimes, status) = callEachStrategy(args, config, verData)
     
     print('--------------------------------------------------')
     for cmd in callTimes:
