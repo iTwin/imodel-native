@@ -59,7 +59,7 @@ PolicyProviderTests::PolicyProviderTests() :
 
     EXPECT_CALL(*m_authMock, GetAuthHandler(_, _))
         .WillRepeatedly(Return(m_handlerMock));
-    m_policyProvider = std::make_shared<PolicyProvider>(m_buddiMock, clientInfo, m_authMock, AuthType::SAML);
+    m_policyProvider = std::make_shared<PolicyProvider>(m_buddiMock, clientInfo, m_handlerMock, AuthType::SAML, m_authMock);
     }
 
 PolicyProvider& PolicyProviderTests::GetPolicyProvider() const {

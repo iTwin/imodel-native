@@ -12,6 +12,7 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 
 enum class AuthType
     {
+    None = 0,
     SAML = 1,
     OIDC = 2
     };

@@ -18,6 +18,7 @@ struct PolicyProviderMock : IPolicyProvider
 {
 public:
     MOCK_METHOD0(GetPolicy, folly::Future<std::shared_ptr<Policy>>());
+    MOCK_METHOD1(GetPolicyWithKey, folly::Future<std::shared_ptr<Policy>>(Utf8StringCR accessKey));
 };
 
 END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE

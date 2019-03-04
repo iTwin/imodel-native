@@ -205,31 +205,32 @@ public:
 //         proxy);
 //     }
 
-// ClientPtr CreateWithKeyTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
-//     {
-//     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-//     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
+ ClientPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+    {
+    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+    //RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
+    UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
-//     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
-//     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
+    auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
 
-//     auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
+    BeFileName dbPath = GetUsageDbPathIntegration();
 
-//     BeFileName dbPath = GetUsageDbPath();
+    //Utf8String accesskey = "somekey"; // need a real one?
+    Utf8String accesskey = "3469AD8D095A53F3CBC9A905A8FF8926"; // this should work -> luke just made it
 
-//     Utf8String accesskey = "somekey";
-
-//     return Client::CreateWithKey(
-//         accesskey,
-//         clientInfo,
-//         dbPath,
-//         true,
-//         "",
-//         "",
-//         proxy);
-//     }
+    return Client::CreateWithKey(
+        accesskey,
+        clientInfo,
+        dbPath,
+        true,
+        "",
+        "",
+        proxy);
+    }
 
 // ClientImplPtr CreateTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider)
 //     {
@@ -256,10 +257,11 @@ public:
 //     return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, ulasProvider);
 //     }
 
-// ClientPtr CreateWithKeyTestClientFromFactory(bool signIn)
-//     {
-//     return CreateWithKeyTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
-//     }
+ClientPtr CreateWithKeyTestClient(bool signIn)
+    {
+    //return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+    return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, "1000");
+    }
 
  ///*--------------------------------------------------------------------------------------+
  //* @bsimethod
@@ -381,6 +383,14 @@ TEST_F(ClientIntegrationTests, Equality_Test)
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
     ASSERT_EQ((int)1, (int)1); // Mock policy should result in NotEntitled
     }
+
+TEST_F(ClientIntegrationTests, ClientWithKeyStartApplicationStopApplication_Success)
+    {
+    auto client = CreateWithKeyTestClient(true);
+    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+    client->StopApplication();
+    }
+
 
 // Below are "start from factory tests", some might be redundant since the client is already made from the factory here
 
