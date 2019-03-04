@@ -1671,6 +1671,7 @@ TEST_P(HttpRequestTestsTls, PerformAsync_TlsServerConnectionRequest_GetsExpected
     {
     TlsRequestSettings tslRequestSettings = GetParam();
     Request request(MakeServerUrl(tslRequestSettings.tlsVersion));
+    request.SetValidateCertificate(false); // Internal server
     Response response = request.Perform().get();
     EXPECT_EQ(tslRequestSettings.expectedConnectionStatus, response.GetConnectionStatus());
     }
