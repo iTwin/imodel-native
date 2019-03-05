@@ -233,6 +233,7 @@ def copyMapFiles(mapDir, comps):
 # bsimethod                                     Majd.Uddin    10/2017
 #-------------------------------------------------------------------------------------------
 def pushMapFiles():
+    success = True
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
     # First pull any new changes
     gitCmd = 'git pull'
@@ -241,7 +242,7 @@ def pushMapFiles():
         result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
-        return False
+        success = False
     # Now create a branch
     branchName = 'pushmaps'
     gitCmd = 'git branch'
@@ -250,7 +251,7 @@ def pushMapFiles():
         result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
-        return False
+        success = False
     brExists = False
     lines = result.split('\n')
     for line in lines:
@@ -266,7 +267,7 @@ def pushMapFiles():
         result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
-        return False
+        success = False
     # Now commit changes
     gitCmd = 'git commit -a -m "Update TIA Map files."'
     print 'running command: ' + gitCmd
@@ -274,7 +275,7 @@ def pushMapFiles():
         result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
-        return False
+        success = False
     # Now push changes
     gitCmd = 'git push origin pushmaps'
     print 'running command: ' + gitCmd  
@@ -282,7 +283,7 @@ def pushMapFiles():
         result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
-        return False
+        success = False
     # Back to master branch
     gitCmd = 'git checkout master'
     print 'running command: ' + gitCmd 
@@ -290,9 +291,9 @@ def pushMapFiles():
         result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
-        return False
+        success = False
 
-    return True
+    return success
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Majd.Uddin    09/2017
