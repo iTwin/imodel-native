@@ -35,9 +35,9 @@ public:
         IHttpHandlerPtr httpHandler
         );
 
-    LICENSING_EXPORT BentleyStatus PostUsageLogs(ILicensingDb& usageDb, std::shared_ptr<Policy> policy);
+    LICENSING_EXPORT BentleyStatus PostUsageLogs(ILicensingDb& licensingDb, std::shared_ptr<Policy> policy);
     LICENSING_EXPORT folly::Future<folly::Unit> SendUsageLogs(BeFileNameCR usageCSV, Utf8StringCR ultId);
-    LICENSING_EXPORT BentleyStatus PostFeatureLogs(ILicensingDb& usageDb, std::shared_ptr<Policy> policy);
+    LICENSING_EXPORT BentleyStatus PostFeatureLogs(ILicensingDb& licensingDb, std::shared_ptr<Policy> policy);
     LICENSING_EXPORT folly::Future<folly::Unit> SendFeatureLogs(BeFileNameCR featureCSV, Utf8StringCR ultId);
     };
 

@@ -30,7 +30,7 @@ UlasProvider::UlasProvider
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UlasProvider::PostUsageLogs(ILicensingDb& usageDb, std::shared_ptr<Policy> policy)
+BentleyStatus UlasProvider::PostUsageLogs(ILicensingDb& licensingDb, std::shared_ptr<Policy> policy)
     {
     LOG.debug("UlasProvider::PostUsageLogs");
 
@@ -42,13 +42,13 @@ BentleyStatus UlasProvider::PostUsageLogs(ILicensingDb& usageDb, std::shared_ptr
 
     logPath.AppendToPath(BeFileName(fileName));
 
-    if (SUCCESS != usageDb.WriteUsageToCSVFile(logPath))
+    if (SUCCESS != licensingDb.WriteUsageToCSVFile(logPath))
         {
         LOG.error("UlasProvider::PostLogs - ERROR: Unable to write usage records to usage log.");
         return ERROR;
         }
 
-    usageDb.CleanUpUsages();
+    licensingDb.CleanUpUsages();
 
     Utf8String ultimateId;
     ultimateId.Sprintf("%ld", policy->GetUltimateSAPId());
@@ -115,7 +115,7 @@ folly::Future<folly::Unit> UlasProvider::SendUsageLogs(BeFileNameCR usageCSV, Ut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UlasProvider::PostFeatureLogs(ILicensingDb& usageDb, std::shared_ptr<Policy> policy)
+BentleyStatus UlasProvider::PostFeatureLogs(ILicensingDb& licensingDb, std::shared_ptr<Policy> policy)
     {
     LOG.debug("UlasProvider::PostFeatureLogs");
 
@@ -127,13 +127,13 @@ BentleyStatus UlasProvider::PostFeatureLogs(ILicensingDb& usageDb, std::shared_p
 
     featureLogPath.AppendToPath(BeFileName(fileName));
 
-    if (SUCCESS != usageDb.WriteFeatureToCSVFile(featureLogPath))
+    if (SUCCESS != licensingDb.WriteFeatureToCSVFile(featureLogPath))
         {
         LOG.error("UlasProvider::PostFeatureLogs ERROR: Unable to write feature usage records to features log.");
         return ERROR;
         }
 
-    usageDb.CleanUpFeatures();
+    licensingDb.CleanUpFeatures();
 
     Utf8String ultimateId;
     ultimateId.Sprintf("%ld", policy->GetUltimateSAPId());

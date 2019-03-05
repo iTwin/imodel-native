@@ -17,9 +17,9 @@ BEGIN_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
 struct UlasProviderMock : IUlasProvider
     {
 public:
-    MOCK_METHOD2(PostUsageLogs, BentleyStatus(ILicensingDb& usageDb, std::shared_ptr<Policy> policy));
+    MOCK_METHOD2(PostUsageLogs, BentleyStatus(ILicensingDb& licensingDb, std::shared_ptr<Policy> policy));
     MOCK_METHOD2(SendUsageLogs, BentleyStatus(BeFileNameCR usageCSV, Utf8StringCR ultId));
-    MOCK_METHOD2(PostFeatureLogs, BentleyStatus(ILicensingDb& usageDb, std::shared_ptr<Policy> policy));
+    MOCK_METHOD2(PostFeatureLogs, BentleyStatus(ILicensingDb& licensingDb, std::shared_ptr<Policy> policy));
     MOCK_METHOD2(SendFeatureLogs, BentleyStatus(BeFileNameCR featureCSV, Utf8StringCR ultId));
     };
 

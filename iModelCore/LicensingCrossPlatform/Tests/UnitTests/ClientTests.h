@@ -24,7 +24,7 @@ class ClientTests : public ::testing::Test
         std::shared_ptr<BuddiProviderMock>  m_buddiProviderMock;
         std::shared_ptr<PolicyProviderMock> m_policyProviderMock;
         std::shared_ptr<UlasProviderMock>   m_ulasProviderMock;
-        std::shared_ptr<LicensingDbMock>        m_usageDbMock;
+        std::shared_ptr<LicensingDbMock>        m_licensingDbMock;
     public:
         ClientTests();
         static void SetUpTestCase();

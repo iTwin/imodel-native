@@ -95,7 +95,7 @@ BeFileName GetLicensingDbPath()
     return path;
     }
 
-ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr usageDb)
+ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
@@ -125,7 +125,7 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
         "",
         "",
         proxy,
-        usageDb
+        licensingDb
         );
     }
 
@@ -142,7 +142,7 @@ SaasClientImplPtr CreateTestSaasClient(bool signIn, uint64_t heartbeatInterval, 
         buddiProvider);
     }
 
-ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr usageDb)
+ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
@@ -169,7 +169,7 @@ ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInte
         "",
         "",
         proxy,
-        usageDb);
+        licensingDb);
     }
 
 // Note: cannot use BuddiProvider mocks with clients created with the factory
@@ -240,9 +240,9 @@ ClientPtr CreateWithKeyTestClientFromFactory(bool signIn, uint64_t heartbeatInte
         proxy);
     }
 
-ClientImplPtr CreateTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr usageDb)
+ClientImplPtr CreateTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
     {
-    return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, policyProvider, ulasProvider, usageDb);
+    return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, policyProvider, ulasProvider, licensingDb);
     }
 
 ClientPtr CreateTestClientFromFactory(bool signIn)
@@ -260,9 +260,9 @@ SaasClientPtr CreateTestSaasClientFromFactory(bool signIn)
     return CreateTestSaasClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID_INT);
     }
 
-ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr usageDb)
+ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
     {
-    return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, policyProvider, ulasProvider, usageDb);
+    return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, policyProvider, ulasProvider, licensingDb);
     }
 
 ClientPtr CreateWithKeyTestClientFromFactory(bool signIn)
@@ -278,7 +278,7 @@ ClientTests::ClientTests() :
     m_buddiProviderMock(std::make_shared<BuddiProviderMock>()),
     m_policyProviderMock(std::make_shared<PolicyProviderMock>()),
     m_ulasProviderMock(std::make_shared<UlasProviderMock>()),
-    m_usageDbMock(std::make_shared<LicensingDbMock>())
+    m_licensingDbMock(std::make_shared<LicensingDbMock>())
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -350,7 +350,7 @@ std::shared_ptr<UlasProviderMock> ClientTests::GetUlasProviderMockPtr() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 LicensingDbMock&  ClientTests::GetLicensingDbMock() const
     {
-    return *m_usageDbMock;
+    return *m_licensingDbMock;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -358,7 +358,7 @@ LicensingDbMock&  ClientTests::GetLicensingDbMock() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<LicensingDbMock> ClientTests::GetLicensingDbMockPtr() const
     {
-    return m_usageDbMock;
+    return m_licensingDbMock;
     }
 
 /*--------------------------------------------------------------------------------------+
