@@ -1,0 +1,16 @@
+{
+  "name": "@bentley/imodel-bank-${NODE_OS}-${NODE_CPU}",
+  "os": ["${NODE_OS}"],
+  "cpu":  ["${NODE_CPU}"],
+  ${NODE_ENGINES}
+  "license": "UNLICENSED",
+  "version": "${PACKAGE_VERSION}",
+  "keywords": [
+    "Bentley",
+    "iModel"
+  ],
+  "author": {
+    "name": "Bentley Systems, Inc.",
+    "url": "www.bentley.com"
+  }
+}

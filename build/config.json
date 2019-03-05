@@ -18,6 +18,15 @@
             ]
         },
         {
+            "name": "iModelBankAddon",
+            "archs": "x64+linuxx64",
+            "augments": "BuildAll",
+            "version_file": "$SRCROOT/iModel02/iModelBankAddon/package_version.txt",
+            "depends" : [
+                "iModelCore"
+            ]
+        },
+        {
             "name": "iModelBridgeCore",
             "archs": "x64",
             "augments": "BuildAll",
