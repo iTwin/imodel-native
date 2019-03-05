@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaWriter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -2516,6 +2516,33 @@ BentleyStatus SchemaWriter::UpdateSchemaReferences(Context& ctx, SchemaReference
                                           oldSchema.GetFullSchemaName().c_str(), oldRef.GetFullSchemaName().c_str());
                 return ERROR;
                 }
+            }
+        else if (change.GetOpCode() == ECChange::OpCode::Modified)
+            {
+            SchemaKey newRef, existingRef;
+            if (SchemaKey::ParseSchemaFullName(newRef, change.GetNew().Value().c_str()) != ECObjectsStatus::Success)
+                {
+                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Failed to parse new ECSchema reference.",
+                                     oldSchema.GetFullSchemaName().c_str());
+                return ERROR;
+                }
+
+            if (!SchemaPersistenceHelper::TryGetSchemaKey(existingRef, ctx.GetECDb(), DbTableSpace::Main(), newRef.GetName().c_str()))
+                {
+                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Referenced ECSchema %s does not exist in the file.",
+                                     oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
+                return ERROR;
+                }
+
+            
+            if (oldSchema.GetSchemaKey().LessThan(newSchema.GetSchemaKey(), SchemaMatchType::Exact))
+                {
+                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Referenced ECSchema %s that has newer version than one present in ECDb.",
+                                     oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
+                return ERROR;
+                }
+            
+            // no action is taken.
             }
         else if (change.GetOpCode() == ECChange::OpCode::New)
             {
