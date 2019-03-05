@@ -1227,6 +1227,11 @@ static bool s_checkHybridNodeState = false;
 template <class POINT> int ScalableMesh<POINT>::Open()
     {
 
+#if TRACE_ON
+    CachedDataEventTracer::GetInstance()->setLogDirectory("e:\\Elenie\\traceLogs\\");
+    CachedDataEventTracer::GetInstance()->start();
+#endif
+
     try 
         {
         bool isSingleFile = m_smSQLitePtr != nullptr ? m_smSQLitePtr->IsSingleFile() : false;
@@ -1395,6 +1400,10 @@ template <class POINT> int ScalableMesh<POINT>::Close
 (
 )
     {
+
+#ifdef TRACE_ON
+    CachedDataEventTracer::GetInstance()->analyze(-1);
+#endif
     WString path = m_path;
     if (this->IsCesium3DTiles() && !this->IsStubFile())
         {

@@ -28,6 +28,8 @@
 #include "SMExternalProviderDataStore.h"
 #include "../InternalUtilityFunctions.h"
 
+#include "../Tracer.h"
+
 
 #define SMSTREAMINGSTORELOGNAME L"ScalableMesh::SMStreamingStore"
 #define SMSTREAMINGSTORE_LOG (*NativeLogging::LoggingManager::GetLogger(SMSTREAMINGSTORELOGNAME))
@@ -2492,8 +2494,15 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
             block->SetTransform(m_transform);
             block->SetDecompressTexture(m_decompressTexture);
             block->SetGltfUpAxis(m_nodeGroup->GetGltfUpAxis());
-            block->Load(m_dataSourceAccount, m_dataSourceSessionName, m_dataType, m_nodeHeader->GetBlockSize((short)m_dataType));
+#ifdef TRACE_ON
+            clock_t startT = clock();
+#endif
+            block->Load(m_dataSourceAccount, m_dataSourceSessionName, m_dataType, m_nodeHeader->GetBlockSize((short)m_dataType));            
+#ifdef TRACE_ON
+            double elapsed = ((double)clock() - startT) / CLOCKS_PER_SEC;
 
+            TRACEPOINT(THREAD_ID(), EventType::CLOUDDATASOURCE_LOAD, blockID.m_integerID, (uint64_t)-1, -1, -1, elapsed*1000.0, 0)
+#endif
             }
         }
     //assert(block->GetID() == blockID.m_integerID);
