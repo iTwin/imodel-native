@@ -1227,6 +1227,11 @@ static bool s_checkHybridNodeState = false;
 template <class POINT> int ScalableMesh<POINT>::Open()
     {
 
+#if TRACE_ON
+    CachedDataEventTracer::GetInstance()->setLogDirectory("e:\\Elenie\\traceLogs\\");
+    CachedDataEventTracer::GetInstance()->start();
+#endif
+
     try 
         {
         bool isSingleFile = m_smSQLitePtr != nullptr ? m_smSQLitePtr->IsSingleFile() : false;
@@ -1395,6 +1400,10 @@ template <class POINT> int ScalableMesh<POINT>::Close
 (
 )
     {
+
+#ifdef TRACE_ON
+    CachedDataEventTracer::GetInstance()->analyze(-1);
+#endif
     WString path = m_path;
     if (this->IsCesium3DTiles() && !this->IsStubFile())
         {
@@ -3663,7 +3672,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
 
     //auto coordInterp = this->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
     auto coordInterp = GeoCoordinates::GeoCoordInterpretation::Cartesian;
-       #ifndef LINUX_SCALABLEMESH_BUILD
+
     if (this->IsCesium3DTiles())
         {
         auto tileToDb = m_streamingSettings->GetTileToDbTransform();
@@ -3683,7 +3692,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
             coordInterp = GeoCoordinates::GeoCoordInterpretation::XYZ;
             }
         }
-        #endif
+	
 
     if (targetCS == nullptr || !gcs.HasGeoRef())
         {

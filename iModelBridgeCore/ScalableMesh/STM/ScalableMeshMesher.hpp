@@ -60,13 +60,13 @@ template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXT
         //PrintGraph(LOG_PATH_STR, std::to_string(node->GetBlockID().m_integerID).c_str(), node->GetGraphPtr());
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> linearFeaturesPtr = node->GetLinearFeaturesPtr();        
 
-        bvector<bvector<int32_t>> featureDefs;
+ /*       bvector<bvector<int32_t>> featureDefs;
 
         if (linearFeaturesPtr->size() > 0) node->GetFeatureDefinitions(featureDefs, &*linearFeaturesPtr->begin(), linearFeaturesPtr->size());
         for (size_t i = 0; i < featureDefs.size(); ++i)
             {
             TagFeatureEdges(newGraph, (const DTMFeatureType)featureDefs[i][0], featureDefs[i].size() - 1, &featureDefs[i][1]);
-            }
+            }*/
         graphPtr->SetData(newGraph);
         graphPtr->SetDirty();
         }

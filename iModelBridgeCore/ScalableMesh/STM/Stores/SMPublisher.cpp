@@ -65,11 +65,14 @@ IScalableMeshNodeEditPtr SaveAsNodeCreator::FindParentNodeFor(IScalableMeshNodeP
         {
         childToInsert.push_back({ currentNode->GetNodeId(), currentNode->GetNodeExtent() });
         currentNode = currentNode->GetParentNode();
-        foundNode = currentNode != nullptr ? m_pDataIndex->FindLoadedNode(currentNode->GetNodeId()) : nullptr;
+        if(currentNode == nullptr) 
+            break; // we have reached root node
+        foundNode = m_pDataIndex->FindLoadedNode(currentNode->GetNodeId());
         }
 
     if(!foundNode)
         {
+        BeAssert(false); // Parent node could not be found! This shouldn't happen, dangling nodes are not possible...
         status = ERROR;
         return nullptr;
         }
@@ -232,9 +235,6 @@ StatusInt SM3SMPublisher::_Publish(IScalableMeshPublishParamsPtr params)
         progress->ProgressStepIndex() = 1;
         progress->Progress() = 0.0f;
         }
-
-    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
-    NativeLogging::LoggingConfig::SetSeverity(L"SMPublisher", NativeLogging::LOG_TRACE);
 
     m_publishThreadPool = GetPublishThreadPool();
 

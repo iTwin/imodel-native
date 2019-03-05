@@ -146,6 +146,9 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path, GCSCPTR targetCS, DR
     return LoadRaster(rasterFile, path, targetCS, extentInTargetCS, false, replacementGcsPtr);
     }
 
+
+static bool s_allowForceProjective = true;
+
 HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile, WString path, GCSCPTR targetCS, DRange2d extentInTargetCS, bool forceProjective, GCSCPTR replacementGcsPtr)
     {
     if (s_rasterMemPool == nullptr)
@@ -246,7 +249,7 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
 
         //Increase the error so that a simplifed model is always returned by CreateAdaptedModel. This is for avoiding some problem that the grid transsfo model is having with BingMap 
         //(TFS 760210) and considering that 3SM only uses a transfo matrix when reprojecting.
-        if (forceProjective)
+        if (s_allowForceProjective && forceProjective)
             {
             ExpectedMeanError = 50000000;
             ExpectedMaxError = 50000000;

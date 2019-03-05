@@ -6,6 +6,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
 extern bool s_preloadInQueryThread;
+extern bool s_useIntermediateOverviews;
 
 template <class POINT, class EXTENT>  RefCountedPtr<ProcessingQuery<POINT, EXTENT>> ProcessingQuery<POINT, EXTENT>::Create(int                                               queryId,
     int                                               nbWorkingThreads,
@@ -51,6 +52,33 @@ template <class POINT, class EXTENT>  void ProcessingQuery<POINT,EXTENT>::Run(si
 
     if (nodePtr != 0)
     {
+
+        if (s_useIntermediateOverviews)
+        {
+            /* First query a better overview*/
+            ProducedNodeContainer<DPoint3d, Extent3dType> producedOverviewNodes;
+            m_nodeQueryProcessorMutexes[threadInd].lock();
+            m_nodeQueryProcessors[threadInd] = NodeQueryProcessor<DPoint3d, Extent3dType>::Create(nodePtr, m_queryObjectP, 0, m_loadTexture, m_scalableMeshPtr->ShouldInvertClips(), &producedOverviewNodes, threadInd, m_clipVisibilities, nodePtr->GetLevel() + 2);
+            m_nodeQueryProcessorMutexes[threadInd].unlock();
+            if (!m_isCancel)
+            {
+                m_nodeQueryProcessors[threadInd]->DoQuery();
+                HFCPtr<SMPointIndexNode<POINT, EXTENT>> node = 0;
+                while (producedOverviewNodes.ConsumeNode(node))
+                {
+
+                    IScalableMeshCachedDisplayNodePtr meshNodePtr;
+
+                    processor.LoadNodeDisplayData(meshNodePtr, node, m_loadTexture, m_clipVisibilities, m_scalableMeshPtr, m_displayCacheManagerPtr);
+                    OnLoadedOverviewNode(meshNodePtr, threadInd);
+                    node = 0;
+                }
+                m_nodeQueryProcessorMutexes[threadInd].lock();
+                m_nodeQueryProcessors[threadInd] = 0;
+                m_nodeQueryProcessorMutexes[threadInd].unlock();
+            }
+        }
+
         ProducedNodeContainer<DPoint3d, Extent3dType> producedFoundNodes;
         m_nodeQueryProcessorMutexes[threadInd].lock();
 
@@ -95,6 +123,8 @@ template <class POINT, class EXTENT>  void ProcessingQuery<POINT,EXTENT>::Run(si
     //Load unloaded node
     //HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> nodePtr;                
 
+    clock_t startT = clock();
+    size_t nNodes = m_toLoadNodes[threadInd].size();
     while (m_toLoadNodes[threadInd].size() > 0)
     {
         if (m_toLoadNodes[threadInd].size() > 0)
@@ -110,6 +140,8 @@ template <class POINT, class EXTENT>  void ProcessingQuery<POINT,EXTENT>::Run(si
             OnLoadedMeshNode(meshNodePtr, threadInd);
         }
     }
+    double elapsed = ((double)clock() - startT) / CLOCKS_PER_SEC * 1000.0;
+    TRACEPOINT(THREAD_ID(), EventType::QUERY_LOADNODELIST, threadInd, (uint64_t)-1, -1, -1, elapsed, (uint32_t)nNodes)
 
     size_t m_nbMissed = 0;
     static size_t MAX_MISSED = 5;

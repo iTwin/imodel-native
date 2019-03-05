@@ -8,10 +8,18 @@
 #include <Bentley/BeFileName.h>
 #include "include/DataSourceAccountCURL.h"
 #include "include/DataSourceCURL.h"
+#include <Logging/bentleylogging.h>
+
 
 #ifdef LOG_CURL
 #include <Bentley/BeFile.h>
 #endif
+
+#define DATASOURCEACCOUNTCURLLOGNAME L"ScalableMesh::CloudDataSourceAccountCURL"
+#define DATASOURCEACCOUNTCURL_LOG (*NativeLogging::LoggingManager::GetLogger(DATASOURCEACCOUNTCURLLOGNAME))
+
+#pragma warning(disable:4840)
+
 
 #ifdef VANCOUVER_API
 #define ISURL(filename) BeFileName::IsUrl(filename)
@@ -261,32 +269,13 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
     auto res = curl_easy_perform(curl);
     if (CURLE_OK != res)
         {
-        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-        //assert(!"cURL error, download failed");
+        DATASOURCEACCOUNTCURL_LOG.errorv("downloadBlobSync() : CURL failed with response [%s], while trying to download %ls", curl_easy_strerror(res), url.c_str());
         status = DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
         }
     else if (ISURL(url.c_str()) && !IsResponseOK(response_header))
         {
-        //assert(!"HTTP error, download failed or resource not found");
         status = DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
         }
-
-#ifdef LOG_CURL
-    {
-    BeFile file;
-    uint32_t NbCharsWritten = 0;
-    if (BeFileStatus::Success == file.Open(L"C:\\cds_log.txt", BeFileAccess::Write, BeFileSharing::None) || BeFileStatus::Success == file.Create(L"C:\\cds_log.txt"))
-        {
-        utf8URL += "\r\n";
-        file.Write(&NbCharsWritten, utf8URL.c_str(), (uint32_t)utf8URL.size());
-        char message[10000];
-        sprintf(message, "Date: %s\r\nServer: %s\r\ncurl_easy_perform() result message: %s\r\nHTTP result code: %s\r\n",
-            response_header.data["Date"].c_str(), response_header.data["Server"].c_str(), curl_easy_strerror(res), response_header.data["HTTP"].c_str());
-        std::string curl_message(message);
-        file.Write(&NbCharsWritten, curl_message.c_str(), (uint32_t)curl_message.size());
-        }
-    }
-#endif
 
     if (!response_header.data.empty()) response_header.data.clear();
 
@@ -297,12 +286,21 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
 
 bool DataSourceAccountCURL::IsResponseOK(const CURLHandle::CURLDataResponseHeader& response)
     {
-    if (response.data.empty())
-        return false; // no data
-    if (response.data.count("Content-Length") == 0 && response.data.count("content-length") == 0)
-        return false; // empty response
-    if (response.data.count("HTTP") == 1 && response.data.at("HTTP") != "1.1 200 OK")
-        return false; // http error
+    if(response.data.empty())
+        {
+        DATASOURCEACCOUNTCURL_LOG.error("IsResponseOK() : No data");
+        return false;
+        }
+    if(response.data.count("Content-Length") == 0 && response.data.count("content-length") == 0)
+        {
+        DATASOURCEACCOUNTCURL_LOG.error("IsResponseOK() : Empty response");
+        return false;
+        }
+    if(response.data.count("HTTP") == 1 && response.data.at("HTTP") != "1.1 200 OK")
+        {
+        DATASOURCEACCOUNTCURL_LOG.errorv("IsResponseOK() : HTTP error %s", response.data.at("HTTP"));
+        return false;
+        }
     return true;
     }
 void DataSourceAccountCURL::setupProxyToCurl(CURL* curl)

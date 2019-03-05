@@ -511,9 +511,9 @@ template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SM
     public:
         
 #ifdef VANCOUVER_API
-        static SMStoredMemoryPoolGenericBlobItem<DataType>* CreateItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& store, SMStoreDataType dataType, uint64_t smId)
+        static SMStoredMemoryPoolGenericBlobItem<DataType>* CreateItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& store, SMStoreDataType dataType, uint64_t smId, bool loadBlock = true)
             {
-            return new SMStoredMemoryPoolGenericBlobItem<DataType>(nodeId, store, dataType, smId);
+            return new SMStoredMemoryPoolGenericBlobItem<DataType>(nodeId, store, dataType, smId, loadBlock);
             }
 #endif
 
