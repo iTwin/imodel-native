@@ -40,6 +40,7 @@ Headers + $(SourceDir)Providers/IAuthHandlerProvider.h
 Headers + $(SourceDir)Providers/AuthHandlerProvider.h
 Headers + $(SourceDir)Providers/IUlasProvider.h
 Headers + $(SourceDir)Providers/UlasProvider.h
+Headers + $(SourceDir)Utils/FeatureEvent.h
 
 
 #---------------------------------------------------------------------------------------+
@@ -82,5 +83,7 @@ $(o)AuthHandlerProvider$(oext)       : $(SourceDir)Providers/AuthHandlerProvider
 $(o)PolicyProvider$(oext)            : $(SourceDir)Providers/PolicyProvider.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)UlasProvider$(oext)              : $(SourceDir)Providers/UlasProvider.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)FeatureEvent$(oext)             : $(SourceDir)Utils/FeatureEvent.cpp $(Headers) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki

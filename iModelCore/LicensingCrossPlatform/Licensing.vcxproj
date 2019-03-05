@@ -20,6 +20,7 @@
     <ClCompile Include="Licensing\Providers\BuddiProvider.cpp" />
     <ClCompile Include="Licensing\Utils\DelayedExecutor.cpp" />
     <ClCompile Include="Licensing\GenerateSID.cpp" />
+    <ClCompile Include="Licensing\Utils\FeatureEvent.cpp" />
     <ClCompile Include="Licensing\Utils\FeatureUserDataMap.cpp" />
     <ClCompile Include="Licensing\Utils\InMemoryJsonLocalState.cpp" />
     <ClCompile Include="Licensing\Utils\JWToken.cpp" />
