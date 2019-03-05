@@ -125,7 +125,7 @@ template <class POINT, class EXTENT>  void ProcessingQuery<POINT,EXTENT>::Run(si
 
     clock_t startT = clock();
     size_t nNodes = m_toLoadNodes[threadInd].size();
-    while (m_toLoadNodes[threadInd].size() > 0)
+    while (m_toLoadNodes[threadInd].size() > 0 && !m_isCancel)
     {
         if (m_toLoadNodes[threadInd].size() > 0)
         {
