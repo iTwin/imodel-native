@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/IUsageDb.h $
+|     $Source: Licensing/ILicensingDb.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,12 +13,12 @@
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
-typedef std::shared_ptr<struct IUsageDb> IUsageDbPtr;
+typedef std::shared_ptr<struct ILicensingDb> ILicensingDbPtr;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct IUsageDb
+struct ILicensingDb
     {
 public:
     virtual BentleyStatus OpenOrCreate(BeFileNameCR filePath) = 0;
@@ -63,7 +63,7 @@ public:
         Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType, Utf8StringCR featureId,
         Utf8StringCR startDate, Utf8String endDate, Utf8String userData) = 0;
 
-    virtual ~IUsageDb() {};
+    virtual ~ILicensingDb() {};
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

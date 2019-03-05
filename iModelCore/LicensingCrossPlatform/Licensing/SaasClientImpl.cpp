@@ -8,7 +8,7 @@
 #include "SaasClientImpl.h"
 #include "GenerateSID.h"
 #include "Logging.h"
-#include "UsageDb.h"
+#include "LicensingDb.h"
 #include "FreeApplicationPolicyHelper.h"
 #include "Utils/FeatureEvent.h"
 

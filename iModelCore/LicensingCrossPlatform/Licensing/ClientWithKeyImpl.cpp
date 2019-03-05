@@ -8,7 +8,7 @@
 #include "ClientWithKeyImpl.h"
 #include "GenerateSID.h"
 #include "Logging.h"
-#include "UsageDb.h"
+#include "LicensingDb.h"
 #include "FreeApplicationPolicyHelper.h"
 
 #include <Licensing/Utils/LogFileHelper.h>
@@ -33,7 +33,7 @@ ClientWithKeyImpl::ClientWithKeyImpl
     Utf8StringCR projectId,
     Utf8StringCR featureString,
     IHttpHandlerPtr httpHandler,
-    IUsageDbPtr usageDb
+    ILicensingDbPtr usageDb
     )
     {
     m_userInfo = ConnectSignInManager::UserInfo();
@@ -50,7 +50,7 @@ ClientWithKeyImpl::ClientWithKeyImpl
     m_httpHandler = httpHandler;
 
     if(m_usageDb == nullptr) // either pass in a mock, or initialize here
-        m_usageDb = std::make_unique<UsageDb>(); // should this be make shared?
+        m_usageDb = std::make_unique<LicensingDb>(); // should this be make shared?
 
     m_correlationId = BeGuid(true).ToString();
     m_timeRetriever = TimeRetriever::Get();
@@ -76,7 +76,7 @@ LicenseStatus ClientWithKeyImpl::StartApplication()
         return LicenseStatus::Error;
         }
 
-    // TODO: implement UsageDb caching, for now just get each time
+    // TODO: implement LicensingDb caching, for now just get each time
     m_policy = GetPolicyToken();
 
     if (m_policy == nullptr)
@@ -138,7 +138,7 @@ std::shared_ptr<Policy> ClientWithKeyImpl::GetPolicyToken()
     // TODO: implement usageDb for policies for accessKey (right now uses UserId)
     if (policy != nullptr)
         {
-        StorePolicyInUsageDb(policy);
+        StorePolicyInLicensingDb(policy);
         DeleteAllOtherPoliciesByKey(policy);
         }
 

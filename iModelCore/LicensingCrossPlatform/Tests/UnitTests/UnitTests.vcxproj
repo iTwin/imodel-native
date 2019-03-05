@@ -13,7 +13,7 @@
     <ClCompile Include="PolicyTests.cpp" />
     <ClCompile Include="TestsHelper.cpp" />
     <ClCompile Include="UlasProviderTests.cpp" />
-    <ClCompile Include="UsageDbTests.cpp" />
+    <ClCompile Include="LicensingDbTests.cpp" />
     <ClCompile Include="PolicyProviderTests.cpp" />
     <ClCompile Include="Utils\DelayedExecutorTests.cpp" />
     <ClCompile Include="Utils\FeatureUserDataMapTests.cpp" />
@@ -31,11 +31,11 @@
     <ClInclude Include="Mocks\BuddiProviderMock.h" />
     <ClInclude Include="Mocks\PolicyProviderMock.h" />
     <ClInclude Include="Mocks\UlasProviderMock.h" />
-    <ClInclude Include="Mocks\UsageDbMock.h" />
+    <ClInclude Include="Mocks\LicensingDbMock.h" />
     <ClInclude Include="PolicyTests.h" />
     <ClInclude Include="TestsHelper.h" />
     <ClInclude Include="UlasProviderTests.h" />
-    <ClInclude Include="UsageDbTests.h" />
+    <ClInclude Include="LicensingDbTests.h" />
     <ClInclude Include="PolicyProviderTests.h" />
     <ClInclude Include="Utils\DelayedExecutorTests.h" />
     <ClInclude Include="Utils\FeatureUserDataMapTests.h" />

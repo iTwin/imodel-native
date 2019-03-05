@@ -17,7 +17,7 @@
 #include "../../Licensing/ClientImpl.h"
 #include "../../Licensing/SaasClientImpl.h"
 #include "../../Licensing/ClientWithKeyImpl.h"
-#include "../../Licensing/UsageDb.h"
+#include "../../Licensing/LicensingDb.h"
 #include "../../PublicAPI/Licensing/Utils/SCVWritter.h"
 
 #include <BeHttp/HttpClient.h>
@@ -86,7 +86,7 @@ public:
         }
     };
 
-BeFileName GetUsageDbPath()
+BeFileName GetLicensingDbPath()
     {
     BeFileName path;
     BeTest::GetHost().GetTempDir(path);
@@ -95,7 +95,7 @@ BeFileName GetUsageDbPath()
     return path;
     }
 
-ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, IUsageDbPtr usageDb)
+ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr usageDb)
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
@@ -110,7 +110,7 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
         if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
             return nullptr;
         }
-    BeFileName dbPath = GetUsageDbPath();
+    BeFileName dbPath = GetLicensingDbPath();
 
     return std::make_shared<ClientImpl>
         (
@@ -142,7 +142,7 @@ SaasClientImplPtr CreateTestSaasClient(bool signIn, uint64_t heartbeatInterval, 
         buddiProvider);
     }
 
-ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, IUsageDbPtr usageDb)
+ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr usageDb)
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
@@ -154,7 +154,7 @@ ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInte
 
     auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
 
-    BeFileName dbPath = GetUsageDbPath();
+    BeFileName dbPath = GetLicensingDbPath();
 
     Utf8String accesskey = "somekey";
 
@@ -188,7 +188,7 @@ ClientPtr CreateTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, I
         if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
             return nullptr;
     }
-    BeFileName dbPath = GetUsageDbPath();
+    BeFileName dbPath = GetLicensingDbPath();
 
     return Client::Create(
         manager->GetUserInfo(),
@@ -226,7 +226,7 @@ ClientPtr CreateWithKeyTestClientFromFactory(bool signIn, uint64_t heartbeatInte
 
     auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
 
-    BeFileName dbPath = GetUsageDbPath();
+    BeFileName dbPath = GetLicensingDbPath();
 
     Utf8String accesskey = "somekey";
 
@@ -240,7 +240,7 @@ ClientPtr CreateWithKeyTestClientFromFactory(bool signIn, uint64_t heartbeatInte
         proxy);
     }
 
-ClientImplPtr CreateTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, IUsageDbPtr usageDb)
+ClientImplPtr CreateTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr usageDb)
     {
     return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, policyProvider, ulasProvider, usageDb);
     }
@@ -260,7 +260,7 @@ SaasClientPtr CreateTestSaasClientFromFactory(bool signIn)
     return CreateTestSaasClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID_INT);
     }
 
-ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, IUsageDbPtr usageDb)
+ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr usageDb)
     {
     return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, policyProvider, ulasProvider, usageDb);
     }
@@ -278,7 +278,7 @@ ClientTests::ClientTests() :
     m_buddiProviderMock(std::make_shared<BuddiProviderMock>()),
     m_policyProviderMock(std::make_shared<PolicyProviderMock>()),
     m_ulasProviderMock(std::make_shared<UlasProviderMock>()),
-    m_usageDbMock(std::make_shared<UsageDbMock>())
+    m_usageDbMock(std::make_shared<LicensingDbMock>())
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -348,7 +348,7 @@ std::shared_ptr<UlasProviderMock> ClientTests::GetUlasProviderMockPtr() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-UsageDbMock&  ClientTests::GetUsageDbMock() const
+LicensingDbMock&  ClientTests::GetLicensingDbMock() const
     {
     return *m_usageDbMock;
     }
@@ -356,7 +356,7 @@ UsageDbMock&  ClientTests::GetUsageDbMock() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<UsageDbMock> ClientTests::GetUsageDbMockPtr() const
+std::shared_ptr<LicensingDbMock> ClientTests::GetLicensingDbMockPtr() const
     {
     return m_usageDbMock;
     }
@@ -391,9 +391,9 @@ void ClientTests::SetUpTestCase()
 
 TEST_F(ClientTests, StartApplication_Error)
     {
-    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetUsageDbMockPtr());
+    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
-    EXPECT_CALL(GetUsageDbMock(), OpenOrCreate(A<BeFileNameCR>()))
+    EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
         .Times(1)
         .WillOnce(Return(BentleyStatus::ERROR));
 
@@ -402,9 +402,9 @@ TEST_F(ClientTests, StartApplication_Error)
 
 TEST_F(ClientTests, StartApplicationNoHeartbeat_Success)
     {
-    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetUsageDbMockPtr());
+    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
-    EXPECT_CALL(GetUsageDbMock(), OpenOrCreate(A<BeFileNameCR>()))
+    EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
         .Times(1)
         .WillOnce(Return(BentleyStatus::SUCCESS));
 
@@ -419,13 +419,13 @@ TEST_F(ClientTests, StartApplicationNoHeartbeat_Success)
         .Times(1)
         .WillOnce(Return(ByMove(folly::makeFuture(validPolicy)))); // need ByMove since this calls the copy constructor for folly::Future, which is deleted
 
-    EXPECT_CALL(GetUsageDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
+    EXPECT_CALL(GetLicensingDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
         .Times(AtLeast(1));
 
-    EXPECT_CALL(GetUsageDbMock(), DeleteAllOtherPolicyFilesByUser(A<Utf8StringCR>(), A<Utf8StringCR>()))
+    EXPECT_CALL(GetLicensingDbMock(), DeleteAllOtherPolicyFilesByUser(A<Utf8StringCR>(), A<Utf8StringCR>()))
         .Times(AtLeast(1));
 
-    EXPECT_CALL(GetUsageDbMock(), GetPolicyFilesByUser(A<Utf8StringCR>()))
+    EXPECT_CALL(GetLicensingDbMock(), GetPolicyFilesByUser(A<Utf8StringCR>()))
         .Times(1)
         .WillOnce(Return(validPolicyList));
 
@@ -435,9 +435,9 @@ TEST_F(ClientTests, StartApplicationNoHeartbeat_Success)
 
 TEST_F(ClientTests, StartApplicationStopApplication_Success)
     {
-    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetUsageDbMockPtr());
+    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
-    EXPECT_CALL(GetUsageDbMock(), OpenOrCreate(A<BeFileNameCR>()))
+    EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
         .Times(1)
         .WillOnce(Return(BentleyStatus::SUCCESS));
 
@@ -451,35 +451,35 @@ TEST_F(ClientTests, StartApplicationStopApplication_Success)
     EXPECT_CALL(GetPolicyProviderMock(), GetPolicy())
         .WillRepeatedly(Return(ByMove(folly::makeFuture(validPolicy)))); // need ByMove since this calls the copy constructor for folly::Future, which is deleted
 
-    EXPECT_CALL(GetUsageDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
+    EXPECT_CALL(GetLicensingDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
         .Times(AtLeast(1));
 
-    EXPECT_CALL(GetUsageDbMock(), DeleteAllOtherPolicyFilesByUser(A<Utf8StringCR>(), A<Utf8StringCR>()))
+    EXPECT_CALL(GetLicensingDbMock(), DeleteAllOtherPolicyFilesByUser(A<Utf8StringCR>(), A<Utf8StringCR>()))
         .Times(AtLeast(1));
 
-    EXPECT_CALL(GetUsageDbMock(), GetPolicyFilesByUser(A<Utf8StringCR>()))
+    EXPECT_CALL(GetLicensingDbMock(), GetPolicyFilesByUser(A<Utf8StringCR>()))
         .Times(AtLeast(1))
         .WillRepeatedly(Return(validPolicyList));
 
     // called in Usage heartbeat
-    EXPECT_CALL(GetUsageDbMock(), IsDbOpen())
+    EXPECT_CALL(GetLicensingDbMock(), IsDbOpen())
         .WillRepeatedly(Return(true));
-    EXPECT_CALL(GetUsageDbMock(), RecordUsageMock())
+    EXPECT_CALL(GetLicensingDbMock(), RecordUsageMock())
         .WillRepeatedly(Return(BentleyStatus::SUCCESS));
 
     // LogPosting heartbeat
-    EXPECT_CALL(GetUsageDbMock(), GetUsageRecordCount())
+    EXPECT_CALL(GetLicensingDbMock(), GetUsageRecordCount())
         .WillRepeatedly(Return(1)); // will get PostUsageLogs() called
-    EXPECT_CALL(GetUsageDbMock(), GetFeatureRecordCount())
+    EXPECT_CALL(GetLicensingDbMock(), GetFeatureRecordCount())
         .WillRepeatedly(Return(1)); // will get PostFeatureLogs() called
     EXPECT_CALL(GetUlasProviderMock(), PostUsageLogs(_, _));
     EXPECT_CALL(GetUlasProviderMock(), PostFeatureLogs(_, _));
 
     // called in Policy heartbeat
-    EXPECT_CALL(GetUsageDbMock(), GetOfflineGracePeriodStart())
+    EXPECT_CALL(GetLicensingDbMock(), GetOfflineGracePeriodStart())
         .WillRepeatedly(Return(""));
 
-    EXPECT_CALL(GetUsageDbMock(), Close());
+    EXPECT_CALL(GetLicensingDbMock(), Close());
 
     EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
     EXPECT_SUCCESS(client->StopApplication());
@@ -503,7 +503,7 @@ TEST_F(ClientTests, DISABLED_StartWithKeyApplication_StopApplication_Success)
         //.Times(AtLeast(1))
         .WillRepeatedly(Return("https://qa-connect-ulastm.bentley.com/Bentley.ULAS.PostingService/PostingSvcWebApi/"));
 
-    auto client = CreateWithKeyTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetUsageDbMockPtr());
+    auto client = CreateWithKeyTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
     EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
     EXPECT_SUCCESS(client->StopApplication());
     }
@@ -518,7 +518,7 @@ TEST_F(ClientTests, GetPolicy_Success)
         .Times(1)
         .WillOnce(Return(ByMove(folly::makeFuture(policy)))); // need ByMove since this calls the copy constructor for Future, which is deleted
 
-    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetUsageDbMockPtr());
+    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     auto policyToken = client->GetPolicy().get();
     EXPECT_NE(policyToken, nullptr); //not testing the policy token here, just that GetPolicy is called
@@ -541,7 +541,7 @@ TEST_F(ClientTests, GetCertificate_Success_HttpMock)
 
 TEST_F(ClientTests, GetProductStatusNoGracePeriod_Test)
     {
-    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetUsageDbMockPtr());
+    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     Utf8String userIdBad = "00000000-0000-0000-0000-000000000000";
@@ -588,7 +588,7 @@ TEST_F(ClientTests, GetProductStatusNoGracePeriod_Test)
     std::list<Json::Value> offlineNotAllowedPolicyList;
     offlineNotAllowedPolicyList.push_back(jsonPolicyOfflineNotAllowed);
 
-    EXPECT_CALL(GetUsageDbMock(), GetPolicyFilesByUser(A<Utf8StringCR>()))
+    EXPECT_CALL(GetLicensingDbMock(), GetPolicyFilesByUser(A<Utf8StringCR>()))
         .Times(12)
         .WillOnce(Return(emptyPolicyList))
         .WillOnce(Return(validPolicyList))
@@ -603,7 +603,7 @@ TEST_F(ClientTests, GetProductStatusNoGracePeriod_Test)
         .WillOnce(Return(emptyPolicyList))
         .WillOnce(Return(offlineNotAllowedPolicyList));
 
-    EXPECT_CALL(GetUsageDbMock(), GetOfflineGracePeriodStart())
+    EXPECT_CALL(GetLicensingDbMock(), GetOfflineGracePeriodStart())
         .WillRepeatedly(Return(""));
 
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
@@ -623,7 +623,7 @@ TEST_F(ClientTests, GetProductStatusNoGracePeriod_Test)
 
 TEST_F(ClientTests, GetProductStatusStartedGracePeriod_Test)
     {
-    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetUsageDbMockPtr());
+    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
 
@@ -637,12 +637,12 @@ TEST_F(ClientTests, GetProductStatusStartedGracePeriod_Test)
 
     auto timestamp = DateHelper::GetCurrentTime();
 
-    EXPECT_CALL(GetUsageDbMock(), GetPolicyFilesByUser(A<Utf8StringCR>()))
+    EXPECT_CALL(GetLicensingDbMock(), GetPolicyFilesByUser(A<Utf8StringCR>()))
         .Times(2)
         .WillOnce(Return(validPolicyList))
         .WillOnce(Return(offlineNotAllowedPolicyList));
 
-    EXPECT_CALL(GetUsageDbMock(), GetOfflineGracePeriodStart())
+    EXPECT_CALL(GetLicensingDbMock(), GetOfflineGracePeriodStart())
         .WillRepeatedly(Return(timestamp));
 
     ASSERT_EQ((int)client->GetProductStatus(9900), (int)LicenseStatus::Offline); // Valid status should be Offline now
@@ -651,7 +651,7 @@ TEST_F(ClientTests, GetProductStatusStartedGracePeriod_Test)
 
 TEST_F(ClientTests, GetProductStatusExpiredGracePeriod_Test)
     {
-    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetUsageDbMockPtr());
+    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
 
@@ -661,11 +661,11 @@ TEST_F(ClientTests, GetProductStatusExpiredGracePeriod_Test)
 
     auto timestampPast = DateHelper::AddDaysToCurrentTime(-14); // Two weeks ago; default offline period allowed is only 1 week
 
-    EXPECT_CALL(GetUsageDbMock(), GetPolicyFilesByUser(A<Utf8StringCR>()))
+    EXPECT_CALL(GetLicensingDbMock(), GetPolicyFilesByUser(A<Utf8StringCR>()))
         .Times(1)
         .WillOnce(Return(validPolicyList));
 
-    EXPECT_CALL(GetUsageDbMock(), GetOfflineGracePeriodStart())
+    EXPECT_CALL(GetLicensingDbMock(), GetOfflineGracePeriodStart())
         .WillRepeatedly(Return(timestampPast));
 
     ASSERT_EQ((int)client->GetProductStatus(9900), (int)LicenseStatus::Expired); // Valid status should be Expired now, since offline grace period has expired
@@ -673,7 +673,7 @@ TEST_F(ClientTests, GetProductStatusExpiredGracePeriod_Test)
 
 TEST_F(ClientTests, CleanUpPolicies_Success)
     {
-    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetUsageDbMockPtr());
+    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
 
@@ -681,10 +681,10 @@ TEST_F(ClientTests, CleanUpPolicies_Success)
     std::list<Json::Value> expiredPolicyList;
     expiredPolicyList.push_back(jsonPolicyExpired);
 
-    EXPECT_CALL(GetUsageDbMock(), GetPolicyFiles())
+    EXPECT_CALL(GetLicensingDbMock(), GetPolicyFiles())
         .WillRepeatedly(Return(expiredPolicyList));
 
-    EXPECT_CALL(GetUsageDbMock(), DeletePolicyFile(A<Utf8StringCR>()))
+    EXPECT_CALL(GetLicensingDbMock(), DeletePolicyFile(A<Utf8StringCR>()))
         .Times(AtLeast(1));
 
     client->CleanUpPolicies();
@@ -692,14 +692,14 @@ TEST_F(ClientTests, CleanUpPolicies_Success)
 
 TEST_F(ClientTests, DeleteAllOtherPoliciesByUser_Success)
     {
-    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetUsageDbMockPtr());
+    auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
 
     auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false);
     auto validPolicy = Policy::Create(jsonPolicyValid);
 
-    EXPECT_CALL(GetUsageDbMock(), DeleteAllOtherPolicyFilesByUser(A<Utf8StringCR>(), A<Utf8StringCR>()))
+    EXPECT_CALL(GetLicensingDbMock(), DeleteAllOtherPolicyFilesByUser(A<Utf8StringCR>(), A<Utf8StringCR>()))
         .Times(AtLeast(1));
 
     client->DeleteAllOtherPoliciesByUser(validPolicy);

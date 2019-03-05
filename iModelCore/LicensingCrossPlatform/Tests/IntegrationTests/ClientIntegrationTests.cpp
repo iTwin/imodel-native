@@ -15,7 +15,7 @@
 #include "../../Licensing/ClientImpl.h"
 #include "../../Licensing/SaasClientImpl.h"
 #include "../../Licensing/ClientWithKeyImpl.h"
-#include "../../Licensing/UsageDb.h"
+#include "../../Licensing/LicensingDb.h"
 #include "../../PublicAPI/Licensing/Utils/SCVWritter.h"
 
 #include <BeHttp/HttpClient.h>
@@ -83,7 +83,7 @@ public:
         }
     };
 
- BeFileName GetUsageDbPathIntegration()
+ BeFileName GetLicensingDbPathIntegration()
      {
      BeFileName path;
      BeTest::GetHost().GetTempDir(path);
@@ -107,7 +107,7 @@ public:
 		 if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
 			 return nullptr;
 	 }
-	 BeFileName dbPath = GetUsageDbPathIntegration();
+	 BeFileName dbPath = GetLicensingDbPathIntegration();
 
 	 return std::shared_ptr<Client>(Client::Create(manager->GetUserInfo(),
 		 clientInfo,
@@ -148,7 +148,7 @@ public:
 
 //     auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
 
-//     BeFileName dbPath = GetUsageDbPath();
+//     BeFileName dbPath = GetLicensingDbPath();
 
 //     Utf8String accesskey = "somekey";
 
@@ -180,7 +180,7 @@ public:
 //         if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
 //             return nullptr;
 //     }
-//     BeFileName dbPath = GetUsageDbPath();
+//     BeFileName dbPath = GetLicensingDbPath();
 
 //     return Client::Create(
 //         manager->GetUserInfo(),
@@ -217,7 +217,7 @@ public:
 
     auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
 
-    BeFileName dbPath = GetUsageDbPathIntegration();
+    BeFileName dbPath = GetLicensingDbPathIntegration();
 
     //Utf8String accesskey = "somekey"; // need a real one?
     Utf8String accesskey = "3469AD8D095A53F3CBC9A905A8FF8926"; // this should work -> luke just made it

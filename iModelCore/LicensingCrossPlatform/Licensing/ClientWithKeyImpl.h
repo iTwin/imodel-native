@@ -37,7 +37,7 @@ public:
         Utf8StringCR projectId,
         Utf8StringCR featureString,
         IHttpHandlerPtr httpHandler,
-        IUsageDbPtr usageDb
+        ILicensingDbPtr usageDb
         );
     LICENSING_EXPORT LicenseStatus StartApplication();
     LICENSING_EXPORT BentleyStatus StopApplication();

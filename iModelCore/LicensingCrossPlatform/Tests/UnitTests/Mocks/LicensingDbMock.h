@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Mocks/UsageDbMock.h $
+|     $Source: Tests/UnitTests/Mocks/LicensingDbMock.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,13 +8,13 @@
 #pragma once
 
 #include <Licensing/Licensing.h>
-#include "../../../Licensing/IUsageDb.h"
+#include "../../../Licensing/ILicensingDb.h"
 
 #include "../TestsHelper.h"
 
 BEGIN_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
 
-struct UsageDbMock : IUsageDb
+struct LicensingDbMock : ILicensingDb
     {
 public:
     MOCK_METHOD1(OpenOrCreate, BentleyStatus(BeFileNameCR filePath));

@@ -10,7 +10,7 @@
 #include <Licensing/Licensing.h>
 #include <Licensing/LicenseStatus.h>
 
-#include "../UsageDb.h"
+#include "../LicensingDb.h"
 #include "../Policy.h"
 
 #include <memory>
@@ -22,8 +22,8 @@ typedef std::shared_ptr<struct IUlasProvider> IUlasProviderPtr;
 struct IUlasProvider
     {
 public:
-    virtual BentleyStatus PostUsageLogs(IUsageDb& usageDb, std::shared_ptr<Policy> policy) = 0;
-    virtual BentleyStatus PostFeatureLogs(IUsageDb& usageDb, std::shared_ptr<Policy> policy) = 0;
+    virtual BentleyStatus PostUsageLogs(ILicensingDb& usageDb, std::shared_ptr<Policy> policy) = 0;
+    virtual BentleyStatus PostFeatureLogs(ILicensingDb& usageDb, std::shared_ptr<Policy> policy) = 0;
     virtual ~IUlasProvider() {};
     };
 

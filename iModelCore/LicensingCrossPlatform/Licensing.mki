@@ -16,8 +16,8 @@ Headers + $(SourceDir)SaasClientImpl.h
 Headers + $(SourceDir)ClientWithKeyImpl.h
 Headers + $(SourceDir)GenerateSID.h
 Headers + $(SourceDir)Policy.h
-Headers + $(SourceDir)IUsageDb.h
-Headers + $(SourceDir)UsageDb.h
+Headers + $(SourceDir)ILicensingDb.h
+Headers + $(SourceDir)LicensingDb.h
 Headers + $(SourceDir)FreeApplicationPolicyHelper.h
 Headers + $(PublicApiDir)Client.h
 Headers + $(PublicApiDir)SaasClient.h
@@ -55,7 +55,7 @@ $(o)SaasClientImpl$(oext)            : $(SourceDir)SaasClientImpl.cpp $(Headers)
 
 $(o)ClientWithKeyImpl$(oext)         : $(SourceDir)ClientWithKeyImpl.cpp $(Headers) ${MultiCompileDepends}
 
-$(o)UsageDb$(oext)                   : $(SourceDir)UsageDb.cpp $(Headers) ${MultiCompileDepends}
+$(o)LicensingDb$(oext)               : $(SourceDir)LicensingDb.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)Policy$(oext)                    : $(SourceDir)Policy.cpp $(Headers) ${MultiCompileDepends}
 

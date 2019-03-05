@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/UsageDb.h $
+|     $Source: Licensing/LicensingDb.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include "IUsageDb.h"
+#include "ILicensingDb.h"
 
 #include <Licensing/Licensing.h>
 #include <BeSQLite/BeSQLite.h>
@@ -23,7 +23,7 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct UsageDb : IUsageDb
+struct LicensingDb : ILicensingDb
 {
 private:
     Db m_db;

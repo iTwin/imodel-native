@@ -13,7 +13,7 @@
 #include "Mocks/BuddiProviderMock.h"
 #include "Mocks/PolicyProviderMock.h"
 #include "Mocks/UlasProviderMock.h"
-#include "Mocks/UsageDbMock.h"
+#include "Mocks/LicensingDbMock.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS
 
@@ -24,7 +24,7 @@ class ClientTests : public ::testing::Test
         std::shared_ptr<BuddiProviderMock>  m_buddiProviderMock;
         std::shared_ptr<PolicyProviderMock> m_policyProviderMock;
         std::shared_ptr<UlasProviderMock>   m_ulasProviderMock;
-        std::shared_ptr<UsageDbMock>        m_usageDbMock;
+        std::shared_ptr<LicensingDbMock>        m_usageDbMock;
     public:
         ClientTests();
         static void SetUpTestCase();
@@ -37,8 +37,8 @@ class ClientTests : public ::testing::Test
         std::shared_ptr<PolicyProviderMock> GetPolicyProviderMockPtr() const;
         UlasProviderMock&                   GetUlasProviderMock() const;
         std::shared_ptr<UlasProviderMock>   GetUlasProviderMockPtr() const;
-        UsageDbMock&                        GetUsageDbMock() const;
-        std::shared_ptr<UsageDbMock>        GetUsageDbMockPtr() const;
+        LicensingDbMock&                        GetLicensingDbMock() const;
+        std::shared_ptr<LicensingDbMock>        GetLicensingDbMockPtr() const;
 
         void TearDown();
     };

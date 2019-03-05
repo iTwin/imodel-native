@@ -16,7 +16,7 @@
     <ClCompile Include="Licensing\PolicyToken.cpp" />
     <ClCompile Include="Licensing\Providers\AuthHandlerProvider.cpp" />
     <ClCompile Include="Licensing\Providers\UlasProvider.cpp" />
-    <ClCompile Include="Licensing\UsageDb.cpp" />
+    <ClCompile Include="Licensing\LicensingDb.cpp" />
     <ClCompile Include="Licensing\Providers\BuddiProvider.cpp" />
     <ClCompile Include="Licensing\Utils\DelayedExecutor.cpp" />
     <ClCompile Include="Licensing\GenerateSID.cpp" />
@@ -34,7 +34,7 @@
     <ClInclude Include="Licensing\IClient.h" />
     <ClInclude Include="Licensing\ClientWithKeyImpl.h" />
     <ClInclude Include="Licensing\ISaasClient.h" />
-    <ClInclude Include="Licensing\IUsageDb.h" />
+    <ClInclude Include="Licensing\ILicensingDb.h" />
     <ClInclude Include="Licensing\Providers\AuthHandlerProvider.h" />
     <ClInclude Include="Licensing\Providers\BuddiProvider.h" />
     <ClInclude Include="Licensing\Providers\IAuthHandlerProvider.h" />
@@ -50,7 +50,7 @@
     <ClInclude Include="Licensing\Policy.h" />
     <ClInclude Include="Licensing\PolicyHelper.h" />
     <ClInclude Include="Licensing\PolicyToken.h" />
-    <ClInclude Include="Licensing\UsageDb.h" />
+    <ClInclude Include="Licensing\LicensingDb.h" />
     <ClInclude Include="Licensing\Providers\IPolicyProvider.h" />
     <ClInclude Include="Licensing\Providers\PolicyProvider.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\UsageJsonHelper.h" />

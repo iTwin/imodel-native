@@ -10,7 +10,7 @@
 #include <Licensing/Utils/LogFileHelper.h>
 #include <Licensing/Utils/UsageJsonHelper.h>
 #include "Logging.h"
-#include "UsageDb.h"
+#include "LicensingDb.h"
 #include <BeHttp/HttpError.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
@@ -37,7 +37,7 @@ IUlasProviderPtr ulasProvider,
 Utf8StringCR projectId,
 Utf8StringCR featureString,
 IHttpHandlerPtr httpHandler,
-IUsageDbPtr usageDb
+ILicensingDbPtr usageDb
 ) :
 m_userInfo(userInfo),
 m_clientInfo(clientInfo),
@@ -51,7 +51,7 @@ m_httpHandler(httpHandler),
 m_usageDb(usageDb)
     {
     if(m_usageDb == nullptr) // either pass in a mock, or initialize here
-        m_usageDb = std::make_unique<UsageDb>();
+        m_usageDb = std::make_unique<LicensingDb>();
 
     m_correlationId = BeGuid(true).ToString();
     m_timeRetriever = TimeRetriever::Get();
@@ -581,7 +581,7 @@ std::shared_ptr<Policy> ClientImpl::GetPolicyToken()
     auto policy = m_policyProvider->GetPolicy().get();
     if (policy != nullptr)
         {
-        StorePolicyInUsageDb(policy);
+        StorePolicyInLicensingDb(policy);
         DeleteAllOtherPoliciesByUser(policy);
         }
 
@@ -591,7 +591,7 @@ std::shared_ptr<Policy> ClientImpl::GetPolicyToken()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-IUsageDb& ClientImpl::GetUsageDb()
+ILicensingDb& ClientImpl::GetLicensingDb()
     {
     return *m_usageDb;
     }
@@ -741,9 +741,9 @@ void ClientImpl::DeleteAllOtherPoliciesByUser(std::shared_ptr<Policy> policy)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientImpl::StorePolicyInUsageDb(std::shared_ptr<Policy> policy)
+void ClientImpl::StorePolicyInLicensingDb(std::shared_ptr<Policy> policy)
 	{
-    LOG.debug("ClientImpl::StorePolicyInUsageDb");
+    LOG.debug("ClientImpl::StorePolicyInLicensingDb");
 
     auto expiration = policy->GetPolicyExpiresOn();
 	auto lastUpdate = policy->GetRequestData()->GetClientDateTime();
