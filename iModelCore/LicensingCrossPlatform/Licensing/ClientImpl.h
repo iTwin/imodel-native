@@ -77,10 +77,10 @@ protected:
     // Policy
 	std::shared_ptr<Policy> m_policy;
     void StorePolicyInUsageDb(std::shared_ptr<Policy> policy);
-    std::shared_ptr<Policy> GetPolicyToken();
+    virtual std::shared_ptr<Policy> GetPolicyToken();
 
     std::list<std::shared_ptr<Policy>> GetPolicies();
-    std::list<std::shared_ptr<Policy>> GetUserPolicies();
+    virtual std::list<std::shared_ptr<Policy>> GetUserPolicies();
     std::shared_ptr<Policy> SearchForPolicy(Utf8String requestedProductId="");
     bool HasOfflineGracePeriodStarted();
     int64_t GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString);
@@ -159,7 +159,7 @@ public:
 
 	// clean up policies; used internally, but also used in unit tests
 	LICENSING_EXPORT void CleanUpPolicies();
-	LICENSING_EXPORT void DeleteAllOtherUserPolicies(std::shared_ptr<Policy> policy);
+	LICENSING_EXPORT void DeleteAllOtherPoliciesByUser(std::shared_ptr<Policy> policy);
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

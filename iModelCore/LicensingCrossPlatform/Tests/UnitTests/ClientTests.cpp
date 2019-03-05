@@ -419,13 +419,13 @@ TEST_F(ClientTests, StartApplicationNoHeartbeat_Success)
         .Times(1)
         .WillOnce(Return(ByMove(folly::makeFuture(validPolicy)))); // need ByMove since this calls the copy constructor for folly::Future, which is deleted
 
-    EXPECT_CALL(GetUsageDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
+    EXPECT_CALL(GetUsageDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
         .Times(AtLeast(1));
 
-    EXPECT_CALL(GetUsageDbMock(), DeleteAllOtherUserPolicyFiles(A<Utf8StringCR>(), A<Utf8StringCR>()))
+    EXPECT_CALL(GetUsageDbMock(), DeleteAllOtherPolicyFilesByUser(A<Utf8StringCR>(), A<Utf8StringCR>()))
         .Times(AtLeast(1));
 
-    EXPECT_CALL(GetUsageDbMock(), GetPolicyFiles(A<Utf8String>()))
+    EXPECT_CALL(GetUsageDbMock(), GetPolicyFilesByUser(A<Utf8StringCR>()))
         .Times(1)
         .WillOnce(Return(validPolicyList));
 
@@ -451,13 +451,13 @@ TEST_F(ClientTests, StartApplicationStopApplication_Success)
     EXPECT_CALL(GetPolicyProviderMock(), GetPolicy())
         .WillRepeatedly(Return(ByMove(folly::makeFuture(validPolicy)))); // need ByMove since this calls the copy constructor for folly::Future, which is deleted
 
-    EXPECT_CALL(GetUsageDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
+    EXPECT_CALL(GetUsageDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
         .Times(AtLeast(1));
 
-    EXPECT_CALL(GetUsageDbMock(), DeleteAllOtherUserPolicyFiles(A<Utf8StringCR>(), A<Utf8StringCR>()))
+    EXPECT_CALL(GetUsageDbMock(), DeleteAllOtherPolicyFilesByUser(A<Utf8StringCR>(), A<Utf8StringCR>()))
         .Times(AtLeast(1));
 
-    EXPECT_CALL(GetUsageDbMock(), GetPolicyFiles(A<Utf8String>()))
+    EXPECT_CALL(GetUsageDbMock(), GetPolicyFilesByUser(A<Utf8StringCR>()))
         .Times(AtLeast(1))
         .WillRepeatedly(Return(validPolicyList));
 
@@ -588,7 +588,7 @@ TEST_F(ClientTests, GetProductStatusNoGracePeriod_Test)
     std::list<Json::Value> offlineNotAllowedPolicyList;
     offlineNotAllowedPolicyList.push_back(jsonPolicyOfflineNotAllowed);
 
-    EXPECT_CALL(GetUsageDbMock(), GetPolicyFiles(A<Utf8String>()))
+    EXPECT_CALL(GetUsageDbMock(), GetPolicyFilesByUser(A<Utf8StringCR>()))
         .Times(12)
         .WillOnce(Return(emptyPolicyList))
         .WillOnce(Return(validPolicyList))
@@ -637,7 +637,7 @@ TEST_F(ClientTests, GetProductStatusStartedGracePeriod_Test)
 
     auto timestamp = DateHelper::GetCurrentTime();
 
-    EXPECT_CALL(GetUsageDbMock(), GetPolicyFiles(A<Utf8String>()))
+    EXPECT_CALL(GetUsageDbMock(), GetPolicyFilesByUser(A<Utf8StringCR>()))
         .Times(2)
         .WillOnce(Return(validPolicyList))
         .WillOnce(Return(offlineNotAllowedPolicyList));
@@ -661,7 +661,7 @@ TEST_F(ClientTests, GetProductStatusExpiredGracePeriod_Test)
 
     auto timestampPast = DateHelper::AddDaysToCurrentTime(-14); // Two weeks ago; default offline period allowed is only 1 week
 
-    EXPECT_CALL(GetUsageDbMock(), GetPolicyFiles(A<Utf8String>()))
+    EXPECT_CALL(GetUsageDbMock(), GetPolicyFilesByUser(A<Utf8StringCR>()))
         .Times(1)
         .WillOnce(Return(validPolicyList));
 
@@ -690,7 +690,7 @@ TEST_F(ClientTests, CleanUpPolicies_Success)
     client->CleanUpPolicies();
     }
 
-TEST_F(ClientTests, DeleteAllOtherUserPolicies_Success)
+TEST_F(ClientTests, DeleteAllOtherPoliciesByUser_Success)
     {
     auto client = CreateTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetUsageDbMockPtr());
 
@@ -699,8 +699,8 @@ TEST_F(ClientTests, DeleteAllOtherUserPolicies_Success)
     auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false);
     auto validPolicy = Policy::Create(jsonPolicyValid);
 
-    EXPECT_CALL(GetUsageDbMock(), DeleteAllOtherUserPolicyFiles(A<Utf8StringCR>(), A<Utf8StringCR>()))
+    EXPECT_CALL(GetUsageDbMock(), DeleteAllOtherPolicyFilesByUser(A<Utf8StringCR>(), A<Utf8StringCR>()))
         .Times(AtLeast(1));
 
-    client->DeleteAllOtherUserPolicies(validPolicy);
+    client->DeleteAllOtherPoliciesByUser(validPolicy);
     }

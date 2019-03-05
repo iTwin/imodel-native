@@ -294,7 +294,7 @@ TEST_F(UsageDbTests, OfflineGracePeriod_Success)
 	EXPECT_EQ(db.GetOfflineGracePeriodStart(), "");
 	}
 
-TEST_F(UsageDbTests, DeleteAllOtherUserPolicies_Success)
+TEST_F(UsageDbTests, DeleteAllOtherPoliciesByUser_Success)
 	{
 	UsageDb db;
 
@@ -303,14 +303,14 @@ TEST_F(UsageDbTests, DeleteAllOtherUserPolicies_Success)
 	Utf8String userId = "userA";
 	Utf8String policyIdToKeep = "3";
 	// Put in some dummy policies for user
-	db.AddOrUpdatePolicyFile("1", userId, "", "", "");
-	db.AddOrUpdatePolicyFile("2", userId, "", "", "");
-	db.AddOrUpdatePolicyFile(policyIdToKeep, userId, "", "", "");
+	db.AddOrUpdatePolicyFile("1", userId, "", "", "", "");
+	db.AddOrUpdatePolicyFile("2", userId, "", "", "", "");
+	db.AddOrUpdatePolicyFile(policyIdToKeep, userId, "", "", "", "");
 	// Put in a policy for a different user
-	db.AddOrUpdatePolicyFile("4", "userB", "", "", "");
+	db.AddOrUpdatePolicyFile("4", "userB", "", "", "", "");
 
 	// attempt to delete all other user's policies
-	db.DeleteAllOtherUserPolicyFiles(policyIdToKeep, userId);
+	db.DeleteAllOtherPolicyFilesByUser(policyIdToKeep, userId);
 
 	// Ids 1-2 should no longer exist
 	ASSERT_EQ(db.GetPolicyFile("1"), Json::Value::GetNull());

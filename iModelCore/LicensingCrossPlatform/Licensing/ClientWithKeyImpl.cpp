@@ -136,94 +136,47 @@ std::shared_ptr<Policy> ClientWithKeyImpl::GetPolicyToken()
     auto policy = m_policyProvider->GetPolicyWithKey(m_accessKey).get();
 
     // TODO: implement usageDb for policies for accessKey (right now uses UserId)
-    //if (policy != nullptr)
-    //    {
-    //    StorePolicyInUsageDb(policy);
-    //    DeleteAllOtherUserPolicies(policy);
-    //    }
+    if (policy != nullptr)
+        {
+        StorePolicyInUsageDb(policy);
+        DeleteAllOtherPoliciesByKey(policy);
+        }
 
     return policy;
     }
 
-LicenseStatus ClientWithKeyImpl::GetProductStatus(int requestedProductId)
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClientWithKeyImpl::DeleteAllOtherPoliciesByKey(std::shared_ptr<Policy> policy)
     {
-    // NOTE: This override is temporary, we will implement DB caching soon
-    LOG.debug("ClientWithKeyImpl::GetProductStatus");
+    LOG.debug("ClientWithKeyImpl::DeleteAllOtherPoliciesByKey");
 
-    // productId to look for; allow custom product to be searched for (for testing purposes)
-    Utf8String productId;
-    if (requestedProductId < 0)
-        productId = m_clientInfo->GetApplicationProductId();
-    else
-        productId = Utf8String(std::to_string(requestedProductId).c_str());
-    // get valid policy for user
-    
-    //auto policy = SearchForPolicy(productId);
-    auto policy = GetPolicyToken(); // for now: get from entitlements instead of caching
-    
-    // if null, NotEntitled
-    if (policy == nullptr)
-        {
-        return LicenseStatus::NotEntitled;
-        }
-    // get PolicyStatus
-    auto policyStatus = policy->GetPolicyStatus();
-    // if not valid, return LicenseStatus::DisabledByPolicy
-    if (policyStatus != Policy::PolicyStatus::Valid)
-        {
-        return LicenseStatus::DisabledByPolicy;
-        }
-    // get GetProductLicenseStatus
-    auto productStatus = policy->GetProductStatus(productId, m_featureString);
-    // if prodStatus is TrialExpired, return LicenseStatus::Expired
-    if (productStatus == Policy::ProductStatus::TrialExpired)
-        {
-        return LicenseStatus::Expired;
-        }
-    // if prodStatus is Denied, return LicenseStatus::AccessDenied
-    if (productStatus == Policy::ProductStatus::Denied)
-        {
-        return LicenseStatus::AccessDenied;
-        }
-    // if prodStatus is NoLicense, return LicenseStatus::NotEntitled
-    if (productStatus == Policy::ProductStatus::NoLicense)
-        {
-        return LicenseStatus::NotEntitled;
-        }
-    // if prodStatus is Allowed
-    if (productStatus == Policy::ProductStatus::Allowed)
-        {
-        // if (IsTrial) return LicenseStatus::Trial
-        if (policy->IsTrial(productId, m_featureString))
-            {
-            return LicenseStatus::Trial;
-            }
-        // if (hasOfflineGracePeriodStarted && daysLeftInOfflineGracePeriod > 0
-        if (HasOfflineGracePeriodStarted())
-            {
-            // if not allowed to use offline, return LicenseStatus::DisabledByPolicy
-            if (!policy->IsAllowedOfflineUsage(productId, m_featureString))
-                {
-                return LicenseStatus::DisabledByPolicy;
-                }
-            // if still has time left for offline usage, return LicenseStatus::Offline
-            if (GetDaysLeftInOfflineGracePeriod(policy, productId, m_featureString) > 0)
-                {
-                return LicenseStatus::Offline;
-                }
-            // else offline grace period has expired, return LicenseStatus::Expired
-            else
-                {
-                return LicenseStatus::Expired;
-                }
-            }
-        // else return LicenseStatus::Ok
-        return LicenseStatus::Ok;
-        }
-    // return DisabledByPolicy
-    return LicenseStatus::DisabledByPolicy;
+    m_usageDb->DeleteAllOtherPolicyFilesByKey(policy->GetPolicyId(),
+        policy->GetRequestData()->GetAccessKey());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::list<std::shared_ptr<Policy>> ClientWithKeyImpl::GetUserPolicies()
+    {
+    LOG.debug("ClientWithKeyImpl::GetUserPolicies");
+
+    std::list<std::shared_ptr<Policy>> policyList;
+    auto jsonpolicies = m_usageDb->GetPolicyFilesByKey(m_accessKey);
+    for (auto json : jsonpolicies)
+        {
+        auto policy = Policy::Create(json);
+        if (!policy->IsValid())
+            continue;
+        if (policy->GetRequestData()->GetAccessKey().Equals(m_accessKey))
+            {
+            policyList.push_back(policy);
+            }
+        }
+    return policyList;
+    }
 
 //folly::Future<folly::Unit> ClientWithKeyImpl::SendUsageRealtimeWithKey()
 //    {

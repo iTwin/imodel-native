@@ -582,7 +582,7 @@ std::shared_ptr<Policy> ClientImpl::GetPolicyToken()
     if (policy != nullptr)
         {
         StorePolicyInUsageDb(policy);
-		DeleteAllOtherUserPolicies(policy);
+        DeleteAllOtherPoliciesByUser(policy);
         }
 
     return policy;
@@ -678,7 +678,7 @@ std::list<std::shared_ptr<Policy>> ClientImpl::GetUserPolicies()
     LOG.debug("ClientImpl::GetUserPolicies");
 
     std::list<std::shared_ptr<Policy>> policyList;
-	auto jsonpolicies = m_usageDb->GetPolicyFiles(m_userInfo.userId);
+	auto jsonpolicies = m_usageDb->GetPolicyFilesByUser(m_userInfo.userId);
 	for (auto json : jsonpolicies)
 		{
 		auto policy = Policy::Create(json);
@@ -730,11 +730,11 @@ std::shared_ptr<Policy> ClientImpl::SearchForPolicy(Utf8String requestedProductI
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientImpl::DeleteAllOtherUserPolicies(std::shared_ptr<Policy> policy)
+void ClientImpl::DeleteAllOtherPoliciesByUser(std::shared_ptr<Policy> policy)
 	{
-    LOG.debug("ClientImpl::DeleteAllOtherUserPolicies");
+    LOG.debug("ClientImpl::DeleteAllOtherPoliciesByUser");
 
-	m_usageDb->DeleteAllOtherUserPolicyFiles(policy->GetPolicyId(),
+	m_usageDb->DeleteAllOtherPolicyFilesByUser(policy->GetPolicyId(),
 		policy->GetUserData()->GetUserId());
 	}
 
@@ -747,8 +747,10 @@ void ClientImpl::StorePolicyInUsageDb(std::shared_ptr<Policy> policy)
 
     auto expiration = policy->GetPolicyExpiresOn();
 	auto lastUpdate = policy->GetRequestData()->GetClientDateTime();
-	m_usageDb->AddOrUpdatePolicyFile(policy->GetPolicyId(),
-		policy->GetAppliesToUserId(),
+    auto accessKey = policy->GetRequestData()->GetAccessKey();
+    m_usageDb->AddOrUpdatePolicyFile(policy->GetPolicyId(),
+        policy->GetAppliesToUserId(),
+        accessKey,
 		expiration,
 		lastUpdate,
 		policy->GetJson());

@@ -22,6 +22,8 @@ struct ClientWithKeyImpl : ClientImpl
 protected:
     Utf8String m_accessKey;
     std::shared_ptr<Policy> GetPolicyToken();
+    std::list<std::shared_ptr<Policy>> GetUserPolicies();
+
 public:
     LICENSING_EXPORT ClientWithKeyImpl
         (
@@ -40,8 +42,9 @@ public:
     LICENSING_EXPORT LicenseStatus StartApplication();
     LICENSING_EXPORT BentleyStatus StopApplication();
 
-    LICENSING_EXPORT LicenseStatus GetProductStatus(int requestedProductId = -1);
+    LICENSING_EXPORT void DeleteAllOtherPoliciesByKey(std::shared_ptr<Policy> policy);
 
+    //LICENSING_EXPORT LicenseStatus GetProductStatus(int requestedProductId = -1);
     //LICENSING_EXPORT folly::Future<folly::Unit> SendUsageRealtimeWithKey();
     };
 
