@@ -2535,7 +2535,7 @@ BentleyStatus SchemaWriter::UpdateSchemaReferences(Context& ctx, SchemaReference
                 }
 
             
-            if (oldSchema.GetSchemaKey().LessThan(newSchema.GetSchemaKey(), SchemaMatchType::Exact))
+            if (existingRef.LessThan(newRef, SchemaMatchType::Exact))
                 {
                 ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Referenced ECSchema %s that has newer version than one present in ECDb.",
                                      oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
