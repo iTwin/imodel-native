@@ -236,30 +236,56 @@ def pushMapFiles():
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
     # First pull any new changes
     gitCmd = 'git pull'
+    print 'running command: ' + gitCmd
     try:
         result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
         return False
-
     # Now create a branch
-    gitCmd = 'git checkout -b pushmaps2'
+    branchName = 'pushmaps'
+    gitCmd = 'git branch'
+    print 'running command: ' + gitCmd    
     try:
         result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
         return False
-
+    brExists = False
+    lines = result.split('\n')
+    for line in lines:
+        for lp in line.split(' '):
+            if branchName in lp:
+                brExists = True
+    if brExists:
+        gitCmd = 'git checkout ' + branchName
+    else:
+        gitCmd = 'git checkout -b ' + branchName
+    print 'running command: ' + gitCmd  
+    try:
+        result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
+        return False
     # Now commit changes
     gitCmd = 'git commit -a -m "Update TIA Map files."'
+    print 'running command: ' + gitCmd
     try:
         result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
         return False
-
     # Now push changes
-    gitCmd = 'git push origin pushmaps2'
+    gitCmd = 'git push origin pushmaps'
+    print 'running command: ' + gitCmd  
+    try:
+        result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
+        return False
+    # Back to master branch
+    gitCmd = 'git checkout master'
+    print 'running command: ' + gitCmd 
     try:
         result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
