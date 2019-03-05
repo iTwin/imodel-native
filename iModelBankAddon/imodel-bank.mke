@@ -1,0 +1,116 @@
+#----------------------------------------------------------------------
+#
+#     $Source: IModelJsNative.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+CLANG_ALLOW_UNDEFINED=1
+%include mdl.mki
+
+appName     = imodel-bank
+
+# I get the impression that node addons names should be all lower case. At least, that's what I see out there.
+
+baseDir     = $(_MakeFilePath)
+
+cDefs + -DBUILDING_NODE_EXTENSION -DEXTERNAL_NAPI
+
+%if $(TARGET_PLATFORM) == "MacOS"
+  cDefs + -D_DARWIN_USE_64_BIT_INODE=1
+%endif
+
+o = $(OutputRootDir)Build/imodel-bank/
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Compile
+#----------------------------------------------------------------------
+#
+# Burn the package version # into the code
+#
+PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
+
+$(o)imodel-bank-package-version.h: $(baseDir)/imodel-bank-package-version.h $(baseDir)/package_version.txt
+    $(msg)
+    $(copyCmd) "$<" $@
+    python $(baseDir)makePackgeVersionHeaderFile.py $@ $(baseDir)/package_version.txt
+    ~time
+
+cIncs + -I$(o)
+
+# DLM_NAME and CCompPDBName must be the same.
+CCompPDBName    =% $(appName)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)IModelBank$(oext) : $(baseDir)IModelBank.cpp $(baseDir)IModelBank.h ${MultiCompileDepends}
+
+$(o)IModelBankLoggingInterop$(oext) : $(baseDir)IModelBankLoggingInterop.cpp $(baseDir)IModelBank.h ${MultiCompileDepends}
+
+$(o)DgnSqlFuncsForTriggers$(oext) : $(baseDir)DgnSqlFuncsForTriggers.cpp $(baseDir)DgnSqlFuncsForTriggers.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the shared library (.node) file
+#----------------------------------------------------------------------
+# DLM_NAME and CCompPDBName must be the same.
+DLM_NAME            =% $(appName)
+DLM_DEST            = $(o)
+DLM_OBJECT_DEST     = $(o)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_NOENTRY         = 1
+DLM_NO_CONTEXT_LINK = 1
+
+%include $(baseDir)imodel-bank-input-libs.mki
+
+%ifdef __unix
+
+    THIN_ARCHIVE_INPUTS = $(IMODEL_BANK_LIBS)
+
+    THIN_ARCHIVE_NAME = libIModelBank.inputs.a
+
+    %include $(sharedMki)rollUpSubPartsLibsThin.mki
+
+    DLM_OBJECT_FILES + $(THIN_ARCHIVE_PATH)
+
+    %ifdef __apple
+        # OSX Specific library
+        LINKER_LIBRARIES  + -framework CoreFoundation
+        LINKER_LIBRARIES  + -framework CFNetwork
+        BENTLEY_TOOLCONTEXT_LINK_OUT_NAME = $(DLM_OUT_NAME)
+    %endif
+
+    # Always produce a .SO (even though this is a static build)
+    %undef CREATE_STATIC_LIBRARIES
+    %include dlmlink.mki
+
+%else
+
+    DLM_OBJECT_FILES  + $(IMODEL_BANK_LIBS)
+
+    DLM_SPECIAL_LINKOPT = -delayload:node.exe
+    LINKER_LIBRARIES = DelayImp.lib $(BuildContext)SubParts\nodelib\node.lib
+
+    # Always produce a .SO (even though this is a static build)
+    %undef CREATE_STATIC_LIBRARIES
+    %include dlmlink.mki
+
+%endif
+
+#----------------------------------------------------------------------
+#   Deliver the shared library using the .node extension
+#----------------------------------------------------------------------
+$(BuildContext)Delivery/imodel-bank/imodel-bank.node : $(BENTLEY_TOOLCONTEXT_LINK_OUT_NAME)
+    $(LinkFirstDepToFirstTarget)
+
+#----------------------------------------------------------------------
+#   Extract xliffs
+#----------------------------------------------------------------------
+SQLANG_CHeader      = $(baseDir)imodel-bank.messages.h
+SQLANG_Xliff        = $(o)xliffs/imodel-bank.l10n.xliff
+
+%include $(sharedMki)CHeaderToXliff.mki

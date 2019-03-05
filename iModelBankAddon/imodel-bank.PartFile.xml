@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+  <Part Name="imodel-bank.Dev" PrgOutputDir="imodelbankaddon">
+    <SubPart PartName="MakePackages"/>
+  </Part>
+
+  <Part Name="MakePackages" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,linuxX64,MacOSx64" PrgOutputDir="imodel-bank">
+    <SubProduct ProductName="imodel-bank"/>
+  </Part>
+
+  <Product Name="imodel-bank">
+    <SubProduct ProductName="imodel-bank-Windows" />
+    <SubProduct ProductName="imodel-bank-Linux" />
+    <SubProduct ProductName="imodel-bank-Darwin" />
+  </Product>
+
+  <Product Name="imodel-bank-Windows" OnlyPlatforms="x64">
+    <SubPart PartName="imodel-bank-lib" LibType="Static" />
+    <SubPart PartName="imodel-sqlang" LibType="Static" />
+    <Directories DirectoryListName="imodel-bank-delivery-list" />
+  </Product>
+
+  <Product Name="imodel-bank-Linux" OnlyPlatforms="Linux*">
+    <SubPart PartName="imodel-bank-lib" LibType="Static" />
+    <SubPart PartName="imodel-sqlang" LibType="Static" />
+    <Directories DirectoryListName="imodel-bank-delivery-list" />
+  </Product>
+
+  <Product Name="imodel-bank-Darwin" OnlyPlatforms="MacOSX64">
+    <SubPart PartName="imodel-bank-lib" LibType="Static" />
+    <SubPart PartName="imodel-sqlang" LibType="Static" />
+    <Directories DirectoryListName="imodel-bank-delivery-list" />
+  </Product>
+
+  <ProductDirectoryList ListName="imodel-bank-delivery-list">
+    <ProductDirectory Name="AddonRoot" Path="" />
+    <ProductDirectory Name="AddonRoot" Path="" LibType="Static" />
+    <ProductDirectory Name="Assemblies" Path="" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="Assemblies" Deliver="false" LibType="Static"/>
+    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonRoot" LibType="Static"/>
+    <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="AddonRoot" LibType="Static"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="AddonRoot" Path="Notices"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="AddonRoot" Path="Notices" LibType="static"/>
+  </ProductDirectoryList>
+
+  <Part Name="imodel-bank-lib" BentleyBuildMakeFile="imodel-bank.mke" >
+    <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api" Repository="imodel02"/>
+    <SubPart PartName="BeSQLite" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02"/>
+    <SubPart PartName="GeomDlls" PartFile="iModelCore/GeomLibs/geomlibs" Repository="imodel02"/>
+    <Bindings>
+      <Files ProductDirectoryName="AddonRoot">
+        Delivery/imodel-bank/imodel-bank.node
+      </Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="imodel-sqlang" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
+    BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/imodel-bank/imodel-bank_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)Delivery/xliffs/*.xliff">
+    <SubPart PartName="imodel-bank-lib" />
+    <Bindings>
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/sqlang/imodel-bank_en.sqlang.db3</Files>
+    </Bindings>
+  </Part>
+
+</BuildContext>
