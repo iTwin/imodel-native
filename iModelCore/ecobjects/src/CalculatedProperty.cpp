@@ -2,7 +2,7 @@
 |
 |     $Source: src/CalculatedProperty.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -301,6 +301,46 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (ECPr
         }
 
     return new CalculatedPropertySpecification (expression.c_str(), *node, parserRegex, *customAttr, primitiveType, failureValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+CalculatedPropertySpecification::CalculatedPropertySpecification(Utf8CP exprStr, NodeR expr, ParserRegexP regex, PrimitiveType primType, ECValueCR failureValue)
+    : m_expression(&expr), m_expressionStr(exprStr), m_parserRegex(regex), m_failureValue(failureValue), m_isDefaultOnly(false), m_useLastValidOnFailure(false), m_propertyType(primType), m_evaluationOptions(EVALOPT_Legacy)
+    {
+    bvector<Utf8String> requiredSymbolSets;
+    InstanceExpressionContextPtr thisContext = InstanceExpressionContext::Create(NULL);
+    ContextSymbolPtr thisSymbol = ContextSymbol::CreateContextSymbol("this", *thisContext);
+    SymbolExpressionContextPtr symbolContext = SymbolExpressionContext::Create(requiredSymbolSets);
+    symbolContext->AddSymbol(*thisSymbol);
+
+    m_context = symbolContext.get();
+    m_thisContext = thisContext.get();
+    m_thisContext->SetEvaluationOptions(m_evaluationOptions);
+    m_context->SetEvaluationOptions(m_evaluationOptions);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create(Utf8String expression, PrimitiveType primitiveType)
+    {
+    if (expression.empty())
+        {
+        BeAssert(false && "CalculatedECPropertySpecification must contain an ECExpression"); return NULL;
+        }
+
+    NodePtr node = ECEvaluator::ParseValueExpressionAndCreateTree(expression.c_str());
+    if (node.IsNull())
+        {
+        BeAssert(false && "Could not parse ECExpression for CalculatedECPropertySpecification"); return NULL;
+        }
+
+    ECValue failureValue;
+    failureValue.SetToNull();
+    return new CalculatedPropertySpecification(expression.c_str(), *node, NULL, primitiveType, failureValue);
+
     }
 
 /*---------------------------------------------------------------------------------**//**
