@@ -33,7 +33,7 @@ ClientWithKeyImpl::ClientWithKeyImpl
     Utf8StringCR projectId,
     Utf8StringCR featureString,
     IHttpHandlerPtr httpHandler,
-    ILicensingDbPtr usageDb
+    ILicensingDbPtr licensingDb
     )
     {
     m_userInfo = ConnectSignInManager::UserInfo();
@@ -49,8 +49,8 @@ ClientWithKeyImpl::ClientWithKeyImpl
     m_featureString = featureString;
     m_httpHandler = httpHandler;
 
-    if(m_usageDb == nullptr) // either pass in a mock, or initialize here
-        m_usageDb = std::make_unique<LicensingDb>(); // should this be make shared?
+    if(m_licensingDb == nullptr) // either pass in a mock, or initialize here
+        m_licensingDb = std::make_unique<LicensingDb>(); // should this be make shared?
 
     m_correlationId = BeGuid(true).ToString();
     m_timeRetriever = TimeRetriever::Get();
@@ -70,13 +70,12 @@ LicenseStatus ClientWithKeyImpl::StartApplication()
     {
     LOG.trace("ClientWithKey::StartApplication");
 
-    if (SUCCESS != m_usageDb->OpenOrCreate(m_dbPath))
+    if (SUCCESS != m_licensingDb->OpenOrCreate(m_dbPath))
         {
         LOG.error("ClientWithKeyImpl::StartApplication ERROR - Database creation failed.");
         return LicenseStatus::Error;
         }
 
-    // TODO: implement LicensingDb caching, for now just get each time
     m_policy = GetPolicyToken();
 
     if (m_policy == nullptr)
@@ -114,13 +113,13 @@ BentleyStatus ClientWithKeyImpl::StopApplication()
     m_lastRunningUsageheartbeatStartTime = 0;       // This will stop Usage heartbeat
     m_lastRunningLogPostingheartbeatStartTime = 0;  // This will stop log posting heartbeat
 
-    if (m_usageDb->GetUsageRecordCount() > 0)
-        m_ulasProvider->PostUsageLogs(*m_usageDb, m_policy);
+    if (m_licensingDb->GetUsageRecordCount() > 0)
+        m_ulasProvider->PostUsageLogs(*m_licensingDb, m_policy);
 
-    if (m_usageDb->GetFeatureRecordCount() > 0)
-        m_ulasProvider->PostFeatureLogs(*m_usageDb, m_policy);
+    if (m_licensingDb->GetFeatureRecordCount() > 0)
+        m_ulasProvider->PostFeatureLogs(*m_licensingDb, m_policy);
 
-    m_usageDb->Close();
+    m_licensingDb->Close();
 
     return SUCCESS;
     }
@@ -133,9 +132,10 @@ std::shared_ptr<Policy> ClientWithKeyImpl::GetPolicyToken()
     // TODO: rename this method? (and ClientImpl::GetPolicyToken) we are getting policy, not the token, and are storing the policy in the db...
     LOG.debug("ClientWithKeyImpl::GetPolicyToken");
 
+    // validate access key here
+
     auto policy = m_policyProvider->GetPolicyWithKey(m_accessKey).get();
 
-    // TODO: implement usageDb for policies for accessKey (right now uses UserId)
     if (policy != nullptr)
         {
         StorePolicyInLicensingDb(policy);
@@ -152,7 +152,7 @@ void ClientWithKeyImpl::DeleteAllOtherPoliciesByKey(std::shared_ptr<Policy> poli
     {
     LOG.debug("ClientWithKeyImpl::DeleteAllOtherPoliciesByKey");
 
-    m_usageDb->DeleteAllOtherPolicyFilesByKey(policy->GetPolicyId(),
+    m_licensingDb->DeleteAllOtherPolicyFilesByKey(policy->GetPolicyId(),
         policy->GetRequestData()->GetAccessKey());
     }
 
@@ -164,7 +164,7 @@ std::list<std::shared_ptr<Policy>> ClientWithKeyImpl::GetUserPolicies()
     LOG.debug("ClientWithKeyImpl::GetUserPolicies");
 
     std::list<std::shared_ptr<Policy>> policyList;
-    auto jsonpolicies = m_usageDb->GetPolicyFilesByKey(m_accessKey);
+    auto jsonpolicies = m_licensingDb->GetPolicyFilesByKey(m_accessKey);
     for (auto json : jsonpolicies)
         {
         auto policy = Policy::Create(json);

@@ -64,7 +64,7 @@ protected:
     IHttpHandlerPtr m_httpHandler;
     ITimeRetrieverPtr m_timeRetriever;
     IDelayedExecutorPtr m_delayedExecutor;
-    ILicensingDbPtr m_usageDb;
+    ILicensingDbPtr m_licensingDb;
     Utf8String m_featureString;
     Utf8String m_projectId;
     Utf8String m_correlationId;
@@ -134,7 +134,7 @@ public:
         Utf8StringCR projectId,
         Utf8StringCR featureString,
         IHttpHandlerPtr httpHandler,
-        ILicensingDbPtr usageDb
+        ILicensingDbPtr licensingDb
         );
 
     // Usages
