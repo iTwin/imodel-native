@@ -56,6 +56,7 @@
   <ItemGroup>
     <ClCompile Include="src\ArbitraryCenterLineProfileTests.cpp" />
     <ClCompile Include="src\ArbitraryCompositeProfileTests.cpp" />
+    <ClCompile Include="src\ArbitraryShapeProfileTests.cpp" />
     <ClCompile Include="src\AsymmetricIShapeProfileTests.cpp" />
     <ClCompile Include="src\BentPlateProfileTests.cpp" />
     <ClCompile Include="src\CapsuleProfileTests.cpp" />

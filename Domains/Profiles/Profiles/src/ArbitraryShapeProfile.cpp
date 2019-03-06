@@ -6,12 +6,263 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesPch.h"
+#include <ProfilesInternal\ProfilesProperty.h>
 #include <ProfilesInternal\ProfilesLogging.h>
 #include <Profiles\ArbitraryShapeProfile.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS (ArbitraryShapeProfileHandler)
+
+#define SINGLE_PERIMETER_TEST_SCALE 1.01
+static bool validateCurveVectorGeometry (CurveVector const& curveVector);
+static bool validateCurveVectorClosed (CurveVector const& curveVector);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool validateRange (IGeometry const& geometry)
+    {
+    DRange3d range;
+    if (!geometry.TryGetRange (range))
+        {
+        ProfilesLog::FailedValidate_InvalidGeometry (PRF_CLASS_ArbitraryShapeProfile);
+        return false;
+        }
+
+    if (!ProfilesProperty::IsEqual (0, range.ZLength()))
+        {
+        ProfilesLog::FailedValidate_InvalidRange_Not2d (PRF_CLASS_ArbitraryShapeProfile);
+        return false;
+        }
+    
+    if (!ProfilesProperty::IsEqual (0, range.low.z)) // Area may be negative is Z dimension of normal is negative
+        {
+        ProfilesLog::FailedValidate_InvalidRange_ZNon0 (PRF_CLASS_ArbitraryShapeProfile);
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool validateCurveVectorArea (CurveVector const& curve)
+    {
+    DPoint3d centroid;
+    double area;
+    curve.CentroidAreaXY (centroid, area);
+    if (ProfilesProperty::IsEqual (0, area))
+        {
+        ProfilesLog::FailedValidate_InvalidArea (PRF_CLASS_ArbitraryShapeProfile);
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool validateCurvePrimitiveArea (ICurvePrimitive const& primitive)
+    {
+    ICurvePrimitivePtr testPrimitive = primitive.Clone();
+    CurveVectorPtr testCurve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer, testPrimitive);
+    return validateCurveVectorArea (*testCurve);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool validateCurvePrimitiveClosed (ICurvePrimitive const& primitive)
+    {
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == primitive.GetCurvePrimitiveType())
+        return validateCurveVectorClosed (*primitive.GetChildCurveVectorCP());
+
+    DPoint3d start, end;
+    primitive.GetStartEnd (start, end);
+    if (!start.AlmostEqual (end))
+        {
+        ProfilesLog::FailedValidate_NotClosed (PRF_CLASS_ArbitraryShapeProfile);
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool validateCurveVectorClosed (CurveVector const& curve)
+    {
+    if (1 == curve.size())
+        return validateCurvePrimitiveClosed (*curve[0]);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool checkIfCurveVectorIsContinious (CurveVector const& curveVector)
+    {
+    DPoint3d start, end, tempStart, tempEnd;
+
+    for (size_t i = 0; i < curveVector.size(); ++i)
+        {
+        ICurvePrimitivePtr const& primitive = curveVector[i];
+
+        if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == primitive->GetCurvePrimitiveType() &&
+            !checkIfCurveVectorIsContinious (*primitive->GetChildCurveVectorCP()))
+            {
+            ProfilesLog::FailedValidate_NotContinious (PRF_CLASS_ArbitraryShapeProfile);
+            return false;
+            }
+
+        primitive->GetStartEnd (tempStart, tempEnd);
+        if (0 == i)
+            {
+            start = tempStart;
+            end = tempEnd;
+            continue;
+            }
+
+        if (!end.AlmostEqual (tempStart))
+            {
+            ProfilesLog::FailedValidate_NotContinious (PRF_CLASS_ArbitraryShapeProfile);
+            return false;
+            }
+
+        end = tempEnd;
+        }
+
+    if (!start.AlmostEqual (end))
+        {
+        ProfilesLog::FailedValidate_NotContinious (PRF_CLASS_ArbitraryShapeProfile);
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool groupCurvePrimitives (CurveVectorPtr& resultCurves, CurveVector const& source)
+    {
+    resultCurves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
+    DPoint3d start, end, tempStart, tempEnd;
+    bool shapeStarted = false;
+    CurveVectorPtr tempCurves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+    for (size_t i = 0; i < source.size(); ++i)
+        {
+        ICurvePrimitivePtr const& primitive = source[i];
+        if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == primitive->GetCurvePrimitiveType() && !shapeStarted)
+            {
+            CurveVector::BoundaryType type;
+            if (!source.GetChildBoundaryType (i, type) || CurveVector::BOUNDARY_TYPE_Inner != type)
+                resultCurves->Add (primitive);
+            continue;
+            }
+
+        primitive->GetStartEnd (tempStart, tempEnd);
+        if (!shapeStarted)
+            {
+            start = tempStart;
+            end = tempEnd;
+            shapeStarted = true;
+            }
+        else
+            {
+            end = tempEnd;
+            }
+
+        tempCurves->Add (primitive);
+        if (start.AlmostEqual (end))
+            {
+            resultCurves->Add (tempCurves);
+            tempCurves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+            shapeStarted = false;
+            }
+        }
+
+    return !shapeStarted && !resultCurves->empty();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool checkIfSinglePerimeterShape (CurveVector const& curveVector)
+    {
+    CurveVectorPtr groupedCurves;
+    if (!groupCurvePrimitives (groupedCurves, curveVector))
+        {
+        ProfilesLog::FailedValidate_NotSinglePerimeter (PRF_CLASS_ArbitraryShapeProfile);
+        return false;
+        }
+
+    return checkIfCurveVectorIsContinious (*groupedCurves);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool validateCurvePrimitiveGeometry (ICurvePrimitive const& curvePrimitive)
+    {
+    if (!validateCurvePrimitiveArea (curvePrimitive))
+        return false;
+
+    if (!validateCurvePrimitiveClosed (curvePrimitive))
+        return false;
+
+    switch (curvePrimitive.GetCurvePrimitiveType())
+        {
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+            return true;
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
+            return validateCurveVectorGeometry (*curvePrimitive.GetChildCurveVectorCP());
+        }
+
+    ProfilesLog::FailedValidate_UnhandledShape (PRF_CLASS_ArbitraryShapeProfile);
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool validateCurveVectorGeometry (CurveVector const& curveVector)
+    {    
+    if (0 == curveVector.size())
+        return false;
+
+    if (1 == curveVector.size() && ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == curveVector[0]->GetCurvePrimitiveType())
+        return validateCurveVectorGeometry (*curveVector[0]->GetChildCurveVectorCP());
+    
+    for (ICurvePrimitivePtr const& primitive : curveVector)
+        {
+        switch (primitive->GetCurvePrimitiveType())
+            {
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
+                continue;
+            default:
+                ProfilesLog::FailedValidate_UnhandledShape (PRF_CLASS_ArbitraryShapeProfile);
+                return false;
+            }
+        }
+
+    if (!curveVector.IsAnyRegionType())
+        {
+        ProfilesLog::FailedValidate_ShapeIsNotRegion (PRF_CLASS_ArbitraryShapeProfile);
+        return false;
+        }
+
+    return  validateCurveVectorArea(curveVector) && validateCurveVectorClosed(curveVector) && checkIfSinglePerimeterShape(curveVector);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
@@ -55,12 +306,27 @@ bool ArbitraryShapeProfile::_Validate() const
     if (m_geometryPtr.IsNull())
         return false;
 
-    // TODO Karolis: Validate geometry:
-    // - it must be a 2d geometry (bounding box with z == 0)
-    // - it must lie on XY plane
-    // - it must be of single perimeter
-
-    return true;
+    if (!validateRange (*m_geometryPtr))
+        return false;
+    
+    switch (m_geometryPtr->GetGeometryType())
+        {
+        case IGeometry::GeometryType::CurveVector:
+          {
+          CurveVectorPtr asCurveVector = m_geometryPtr->GetAsCurveVector();
+          BeAssert (asCurveVector.IsValid());
+          return validateCurveVectorGeometry (*asCurveVector);
+          }
+        case IGeometry::GeometryType::CurvePrimitive:
+          {
+          ICurvePrimitivePtr asCurvePrimitive = m_geometryPtr->GetAsICurvePrimitive();
+          BeAssert (asCurvePrimitive.IsValid());
+          return validateCurvePrimitiveGeometry (*asCurvePrimitive);
+          }
+        default:
+            ProfilesLog::FailedValidate_UnhandledShape (PRF_CLASS_ArbitraryShapeProfile);
+            return false;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

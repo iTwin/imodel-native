@@ -52,4 +52,84 @@ struct ProfilesLog
         PROFILES_LOG.errorv (errorString.c_str(), profileIdBuffer, sourceElementIdBuffer);
         }
 
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                                     03/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void FailedValidate_InvalidGeometry (Utf8CP pProfileClassName)
+        {
+        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile geometry is invalid.";
+        PROFILES_LOG.errorv (errorString.c_str ());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                                     03/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void FailedValidate_InvalidRange_Not2d (Utf8CP pProfileClassName)
+        {
+        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile is not 2D.";
+        PROFILES_LOG.errorv (errorString.c_str ());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                                     03/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void FailedValidate_InvalidRange_ZNon0 (Utf8CP pProfileClassName)
+        {
+        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile is elevated above XY plane.";
+        PROFILES_LOG.errorv (errorString.c_str ());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                                     03/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void FailedValidate_InvalidArea (Utf8CP pProfileClassName)
+        {
+        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile has no area.";
+        PROFILES_LOG.errorv (errorString.c_str ());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                                     03/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void FailedValidate_NotClosed (Utf8CP pProfileClassName)
+        {
+        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile is not closed.";
+        PROFILES_LOG.errorv (errorString.c_str ());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                                     03/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void FailedValidate_NotContinious (Utf8CP pProfileClassName)
+        {
+        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile is not of continious perimeter.";
+        PROFILES_LOG.errorv (errorString.c_str ());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                                     03/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void FailedValidate_NotSinglePerimeter (Utf8CP pProfileClassName)
+        {
+        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile is not of single perimeter.";
+        PROFILES_LOG.errorv (errorString.c_str ());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                                     03/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void FailedValidate_UnhandledShape (Utf8CP pProfileClassName)
+        {
+        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile's shape is not supported.";
+        PROFILES_LOG.errorv (errorString.c_str ());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                                     03/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static void FailedValidate_ShapeIsNotRegion (Utf8CP pProfileClassName)
+        {
+        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile's shape is not a region type.";
+        PROFILES_LOG.errorv (errorString.c_str ());
+        }
     };

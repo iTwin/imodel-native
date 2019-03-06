@@ -39,7 +39,7 @@ ArbitraryCenterLineProfile::ArbitraryCenterLineProfile (CreateParams const& para
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ArbitraryCenterLineProfile::_Validate() const
     {
-    if (!T_Super::_Validate())
+    if (!SinglePerimeterProfile::_Validate()) // Skip ArbitraryShapeProfile::_Validate because geometry hasn't been created yet
         return false;
 
     BeAssert (m_geometryPtr.IsValid() && "Null geometry should be handled in T_Super::_Validate()");

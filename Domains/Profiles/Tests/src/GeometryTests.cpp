@@ -502,7 +502,7 @@ TEST_F(GeometryTestCase, ProfilesGeometry)
             {
             DPoint3d::From (-4.0, -0.5), DPoint3d::From (-4.0, 0.5), DPoint3d::From (-0.5, 0.5), DPoint3d::From (-0.5, 4.0),
             DPoint3d::From (0.5, 4.0), DPoint3d::From (0.5, 0.5), DPoint3d::From (4.0, 0.5), DPoint3d::From (4.0, -0.5),
-            DPoint3d::From (0.5, -0.5), DPoint3d::From (0.5, -4.0), DPoint3d::From (-0.5, -4.0), DPoint3d::From (-0.5, -0.5)
+            DPoint3d::From (0.5, -0.5), DPoint3d::From (0.5, -4.0), DPoint3d::From (-0.5, -4.0), DPoint3d::From (-0.5, -0.5), DPoint3d::From (-4.0, -0.5)
             };
         CurveVectorPtr curveVectorPtr = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString (points));
         IGeometryPtr geometryPtr = IGeometry::Create (curveVectorPtr);
