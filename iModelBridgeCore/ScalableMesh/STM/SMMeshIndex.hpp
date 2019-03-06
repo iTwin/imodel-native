@@ -5186,7 +5186,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
 
 
     ICurvePrimitivePtr curvePtr;
-    if((sign == 0 && indices.size() == 1) || indices.empty())
+    if(indices.size() < 3)
         curvePtr = ICurvePrimitive::CreateLineString(polyPts);
     else
     {
