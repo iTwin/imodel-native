@@ -25,6 +25,7 @@ sys.path.append(commonScriptsDir)
 from TestResults import TestResults
 import Components as cmp
 from CoverageReports import runCoverage, printResults
+from GitCommands import GitCommand
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                    Majd.Uddin    12/2017
@@ -233,67 +234,45 @@ def copyMapFiles(mapDir, comps):
 # bsimethod                                     Majd.Uddin    10/2017
 #-------------------------------------------------------------------------------------------
 def pushMapFiles():
-    success = True
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
-    # First pull any new changes
-    gitCmd = 'git pull'
-    print 'running command: ' + gitCmd
-    try:
-        result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
-        success = False
-    # Now create a branch
-    branchName = 'pushmaps'
-    gitCmd = 'git branch'
-    print 'running command: ' + gitCmd    
-    try:
-        result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
-        success = False
-    brExists = False
-    lines = result.split('\n')
-    for line in lines:
-        for lp in line.split(' '):
-            if branchName in lp:
-                brExists = True
-    if brExists:
-        gitCmd = 'git checkout ' + branchName
+    gc = GitCommand()
+    success = gc.execute('git pull')
+    if not success:
+        return False
+    # Now move to branch
+    bn = 'pushmaps'
+    success = gc.switch_branch(bn)
+    if not success:
+        return False
+    # Check status
+    fs = []
+    success = git.status()
+    if not success:
+        return False
+    for f in git.stats:
+        fp = f.split(' ')
+        if len(fp) > 0:
+            print fp[0]
+            fn = os.path.basename(fp[1])
+            if (fn.startswith('TIAMap')):
+                fs.append(fp[1])
+    # If there are files. Add, commit and push them
+    if len(fs) > 0:
+        for f1 in fs:
+            git.execute('git add ' + f1)
+        success = gc.execute('git commit -m "Update TIA Map files."')
+        if not success:
+            return False
+        success = gc.execute('git push origin ' + bn)
+        if not success:
+            return False
     else:
-        gitCmd = 'git checkout -b ' + branchName
-    print 'running command: ' + gitCmd  
-    try:
-        result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
-        success = False
-    # Now commit changes
-    gitCmd = 'git commit -a -m "Update TIA Map files."'
-    print 'running command: ' + gitCmd
-    try:
-        result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
-        success = False
-    # Now push changes
-    gitCmd = 'git push origin pushmaps'
-    print 'running command: ' + gitCmd  
-    try:
-        result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
-        success = False
+        print 'No Map files were changed, hence no push.'
     # Back to master branch
-    gitCmd = 'git checkout master'
-    print 'running command: ' + gitCmd 
-    try:
-        result = subprocess.check_output(gitCmd, stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        print 'Error for git command: ' + gitCmd + '. The error is: ' + e.output
-        success = False
-
-    return success
+    success = gc.switch_branch('master')
+    if not success:
+        return False
+    return True
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Majd.Uddin    09/2017
@@ -340,7 +319,7 @@ def main():
             copyMapFiles(mapDir, comps)
     if args.pushChanges:
         status = pushMapFiles()
-        if not status: #Do another round if first one fails.
+        if not status:
             print('\n Map files were generated but could not be pushed to the server \n')
             exit(-1)
         else:

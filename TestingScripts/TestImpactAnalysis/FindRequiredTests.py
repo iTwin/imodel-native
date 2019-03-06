@@ -18,7 +18,7 @@ scriptsDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 commonScriptsDir = os.path.join(scriptsDir, 'CommonTasks')
 sys.path.append(commonScriptsDir)
 
-from GetSourceFiles import getFilesGit, getFilesGitBranches
+from GitCommands import GitCommand
 from TestResults import TestResults
 import Components as cmp
 
@@ -191,7 +191,8 @@ def main():
     for repo in repos:
         print 'Checking files at path: ' + repo
         os.chdir(cmp.RepoPathForComp(repo))
-        sf = getFilesGitBranches(src_branch, tgt_branch)
+        gc = GitCommand()
+        sf = gc.files_branches(src_branch, tgt_branch)
         if len(sf) > 0:
             with open(sfLog, 'a') as f:
                 for sfile in sf:
