@@ -48,7 +48,7 @@ def callForPull(args, config):
 
         strat = stratConfig['name']
         
-        if stratConfig['augments']:
+        if ('augments' in stratConfig) and stratConfig['augments']:
             strat += ';' + stratConfig['augments']
         
         strat += ';' + config['pull_augment']
@@ -86,7 +86,7 @@ def callEachStrategy(args, config, verData):
             continue
 
         bbStrats = stratConfig['name']
-        if stratConfig['augments']:
+        if ('augments' in stratConfig) and stratConfig['augments']:
             bbStrats += ';' + stratConfig['augments']
 
         version = None
