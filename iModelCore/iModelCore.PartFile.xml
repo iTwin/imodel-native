@@ -31,26 +31,26 @@
         <SubPart PartName="RunUnitCppTest" PartFile="iModelCore/iModelCoreTesting" Repository="imodel02"/>
     </Part>
 
-    <Product Name="iModelCoreSDK" OnlyPlatforms="x64,linuxx64">
-        <Directories DirectoryListName="iModelCoreSDKDirs"/>
+    <NuGetProduct Name="iModelCoreNuget" Description="iModel Core SDK" OnlyPlatforms="x64,linuxx64">
+        <Directories DirectoryListName="iModelCoreNugetDirs"/>
         <SubPart PartName="iModelCore"/>
-    </Product>
+    </NuGetProduct>
 
-    <ProductDirectoryList ListName="iModelCoreSDKDirs">
-        <ProductDirectory Name="Root" Path=""/>
+    <ProductDirectoryList ListName="iModelCoreNugetDirs">
+        <ProductDirectory Name="Root" Path="native"/>
 
-        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
-        <ProductDirectory Name="Assemblies" RelativeTo="Root" Path="bin"/>
-        <ProductDirectory Name="Assets" LibType="static" RelativeTo="Root" Path="assets"/>
-        <ProductDirectory Name="Assets" RelativeTo="Root" Path="assets"/>
-        <ProductDirectory Name="Libs" LibType="Static" RelativeTo="Root" Path="lib"/>
-        <ProductDirectory Name="Libs" RelativeTo="Root" Path="lib"/>
-        <ProductDirectory Name="PublicApi" LibType="Static" RelativeTo="Root" Path="include"/>
-        <ProductDirectory Name="PublicApi" RelativeTo="Root" Path="include"/>
-        <ProductDirectory Name="VendorApi" LibType="Static" RelativeTo="Root" Path="include"/>
-        <ProductDirectory Name="VendorApi" RelativeTo="Root" Path="include"/>
-        <ProductDirectory Name="VendorNotices" LibType="Static" RelativeTo="Root" Path="notices"/>
-        <ProductDirectory Name="VendorNotices" RelativeTo="Root" Path="notices"/>
+        <ProductDirectory Name="Assemblies"     LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="Assemblies"                         RelativeTo="Root" Path="bin"/>
+        <ProductDirectory Name="Assets"         LibType="static"    RelativeTo="Root" Path="assets"/>
+        <ProductDirectory Name="Assets"                             RelativeTo="Root" Path="assets"/>
+        <ProductDirectory Name="Libs"           LibType="Static"    RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="Libs"                               RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="PublicApi"      LibType="Static"    RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="PublicApi"                          RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="VendorApi"      LibType="Static"    RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="VendorApi"                          RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="VendorNotices"  LibType="Static"    RelativeTo="Root" Path="notices"/>
+        <ProductDirectory Name="VendorNotices"                      RelativeTo="Root" Path="notices"/>
     </ProductDirectoryList>
 
     <!-- ======================================================================================================================================== -->
@@ -61,14 +61,14 @@
         <SubPart PartName="iModelCore" LibType="Dynamic"/>
         <SubPart PartName="RunUnitTests" LibType="Dynamic"/>
         <SubPart PartName="__ParasiteSubParts" LibType="Dynamic"/>
-        <SubProduct ProductName="iModelCoreSDK"/>
+        <SubNuGetProduct NuGetProductName="iModelCoreNuget"/>
     </Part>
 
     <Part Name="__iModelCorePRG-Static" OnlyPlatforms="android*,ios*,macos*,linux*">
         <SubPart PartName="iModelCore" LibType="Static"/>
         <SubPart PartName="RunUnitTests" LibType="Static"/>
         <SubPart PartName="__ParasiteSubParts" LibType="Static"/>
-        <SubProduct ProductName="iModelCoreSDK" LibType="Static"/>
+        <SubNuGetProduct NuGetProductName="iModelCoreNuget" LibType="Static"/>
     </Part>
 
     <!--
