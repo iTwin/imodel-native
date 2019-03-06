@@ -700,7 +700,22 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
     if (cifAlignmentPtr.IsValid () && cifAlignmentPtr->IsFinalElement())
         {
         ORDAlignmentsConverter::CifAlignmentSourceItem alignmentItem(*cifAlignmentPtr);
-        iModelBridgeSyncInfoFile::SourceIdentity sourceIdentity(params.fileScopeId, alignmentItem.Kind(), alignmentItem._GetId());
+
+        iModelExternalSourceAspect::ElementAndAspectId elementAndAspectId =
+            iModelExternalSourceAspect::FindElementBySourceId(m_converter.GetDgnDb(), DgnElementId(params.fileScopeId), alignmentItem.Kind(), alignmentItem._GetId());
+        if (elementAndAspectId.elementId.IsValid())
+            {
+            bimMainAlignmentPtr = AlignmentBim::Alignment::GetForEdit(m_converter.GetPhysicalNetworkModel().GetDgnDb(), elementAndAspectId.elementId);
+            if (bimMainAlignmentPtr.IsValid())
+                {
+                if (bimMainAlignmentPtr->GetILinearElementSource().IsValid())
+                    return BentleyStatus::ERROR; // Alignment already associated with another Corridor
+
+                corridorPtr->SetMainLinearElement(bimMainAlignmentPtr.get());
+                }
+            }
+
+        /*iModelBridgeSyncInfoFile::SourceIdentity sourceIdentity(params.fileScopeId, alignmentItem.Kind(), alignmentItem._GetId());
         auto iterator = params.syncInfo.MakeIteratorBySourceId(sourceIdentity);
         auto iterEntry = iterator.begin();
         if (iterEntry != iterator.end())
@@ -713,7 +728,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
 
                 corridorPtr->SetMainLinearElement(bimMainAlignmentPtr.get());
                 }
-            }
+            }*/
         }
 
     if (BentleyStatus::SUCCESS != AssignCorridorGeomStream(cifCorridor, *corridorPtr))
@@ -1386,12 +1401,11 @@ void ORDConverter::AssociateGeneratedAlignments()
         auto cifAlignmentPtr = cifGenLine3d->GetAlignment();
 
         ORDAlignmentsConverter::CifAlignmentSourceItem alignmentItem(*cifAlignmentPtr);
-        iModelBridgeSyncInfoFile::SourceIdentity sourceIdentity(m_ordParams->fileScopeId, alignmentItem.Kind(), alignmentItem._GetId());
-        auto algIterator = m_ordParams->syncInfo.MakeIteratorBySourceId(sourceIdentity);
-        auto iterEntry = algIterator.begin();
-        if (iterEntry != algIterator.end())
+        iModelExternalSourceAspect::ElementAndAspectId elementAndAspectId =
+            iModelExternalSourceAspect::FindElementBySourceId(GetDgnDb(), DgnElementId(m_ordParams->fileScopeId), alignmentItem.Kind(), alignmentItem._GetId());
+        if (elementAndAspectId.elementId.IsValid())
             {
-            bimAlignmentCPtr = AlignmentBim::Alignment::Get(GetDgnDb(), iterEntry.GetDgnElementId());
+            bimAlignmentCPtr = AlignmentBim::Alignment::Get(GetDgnDb(), elementAndAspectId.elementId);
             if (bimAlignmentCPtr.IsNull())
                 continue;
             }
@@ -1400,12 +1414,12 @@ void ORDConverter::AssociateGeneratedAlignments()
         auto cifCorridorPtr = cifGenLine3d->GetCorridor();
 
         ORDCorridorsConverter::CifCorridorSourceItem corridorItem(*cifCorridorPtr);
-        sourceIdentity = iModelBridgeSyncInfoFile::SourceIdentity(m_ordParams->fileScopeId, corridorItem.Kind(), corridorItem._GetId());
-        auto corrIterator = m_ordParams->syncInfo.MakeIteratorBySourceId(sourceIdentity);
-        iterEntry = corrIterator.begin();
-        if (iterEntry != corrIterator.end())
+
+        elementAndAspectId =
+            iModelExternalSourceAspect::FindElementBySourceId(GetDgnDb(), DgnElementId(m_ordParams->fileScopeId), corridorItem.Kind(), corridorItem._GetId());
+        if (elementAndAspectId.aspectId.IsValid() && elementAndAspectId.elementId.IsValid())
             {
-            corridorCPtr = RoadRailBim::Corridor::Get(GetDgnDb(), iterEntry.GetDgnElementId());
+            corridorCPtr = RoadRailBim::Corridor::Get(GetDgnDb(), elementAndAspectId.elementId);
             if (corridorCPtr.IsNull())
                 continue;
             }
