@@ -138,7 +138,9 @@ def callEachStrategy(args, config, verData):
             bbEnv['INSTALLER_SKIP_VALIDATION'] = '1'
 
             action = 'buildinstallset'
-        
+        else:
+            action = args.action
+
         archArg = ('-a ' + (args.arch if args.arch else stratConfig['archs'])) if not noArch else ''
 
         cmd = getBBCmd() + ' -v {0} -s "{1}" {2} {3}'.format(args.verbosity, bbStrats, archArg, action)
@@ -160,7 +162,7 @@ def callEachStrategy(args, config, verData):
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 def main():
     defaultConfigFile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.json')
-    defaultVersionsFile = os.path.join(os.environ['SYSTEM_ARTIFACTSDIRECTORY'], 'bdf', 'versions.json')
+    defaultVersionsFile = os.path.join(os.environ['SYSTEM_ARTIFACTSDIRECTORY'], 'bdf', 'versions.json') if 'SYSTEM_ARTIFACTSDIRECTORY' in os.environ else ''
 
     argParser = argparse.ArgumentParser(description="Runs BB commands based on a JSON config file.")
     argParser.add_argument("action",                                        help='One of pull|build|bdf|checkunused|createnugets|createinstallers')
