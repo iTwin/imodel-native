@@ -11,9 +11,9 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 static RelationshipMultiplicity s_zeroOneMultiplicity(0, 1);
-static RelationshipMultiplicity s_zeroManyMultiplicity(0, UINT_MAX);
+static RelationshipMultiplicity s_zeroManyMultiplicity(0, INT_MAX);
 static RelationshipMultiplicity s_oneOneMultiplicity(1, 1);
-static RelationshipMultiplicity s_oneManyMultiplicity(1, UINT_MAX);
+static RelationshipMultiplicity s_oneManyMultiplicity(1, INT_MAX);
 
 extern ECObjectsStatus ResolveStructType(ECStructClassCP& structClass, Utf8StringCR typeName, ECClassCR ecClass, bool doLogging);
 
@@ -2857,7 +2857,7 @@ Utf8String RelationshipMultiplicity::ToString() const
     {
     Utf8Char multiplicityString[32];
     
-    if (UINT_MAX == m_upperLimit)
+    if (INT_MAX == m_upperLimit)
         BeStringUtilities::Snprintf(multiplicityString, "(%d..*)", m_lowerLimit);
     else
         BeStringUtilities::Snprintf(multiplicityString, "(%d..%d)", m_lowerLimit, m_upperLimit);
@@ -3772,11 +3772,11 @@ ECObjectsStatus ECRelationshipConstraint::SetMultiplicity (uint32_t& lowerLimit,
     {
     if (lowerLimit == 0 && upperLimit == 1)
         m_multiplicity = &s_zeroOneMultiplicity;
-    else if (lowerLimit == 0 && upperLimit == UINT_MAX)
+    else if (lowerLimit == 0 && upperLimit == INT_MAX)
         m_multiplicity = &s_zeroManyMultiplicity;
     else if (lowerLimit == 1 && upperLimit == 1)
         m_multiplicity = &s_oneOneMultiplicity;
-    else if (lowerLimit == 1 && upperLimit == UINT_MAX)
+    else if (lowerLimit == 1 && upperLimit == INT_MAX)
         m_multiplicity = &s_oneManyMultiplicity;
     else
         m_multiplicity = new RelationshipMultiplicity(lowerLimit, upperLimit);
