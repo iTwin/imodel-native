@@ -15,7 +15,7 @@ def logWarning(msg):
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 def main():
-    if 'STRATS_TO_RELEASE' in os.environ and os.environ['STRATS_TO_RELEASE']:
+    if ('STRATS_TO_RELEASE' in os.environ) and os.environ['STRATS_TO_RELEASE']:
         if (os.name == 'nt') and ('SUBNET_PRG' not in os.environ):
             logError('Release builds must run in a PRG agent queue.')
             return 1

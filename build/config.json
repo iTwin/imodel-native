@@ -40,6 +40,7 @@
             "archs": "x64",
             "augments": "BuildAll",
             "version_seed": "2.1.0",
+            "has_installers": "true",
             "depends" : [
                 "iModelBridgeCore"
             ]

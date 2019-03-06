@@ -123,6 +123,15 @@ def callEachStrategy(args, config, verData):
                 print('INFO: Not creating installers on this non-Windows platform.')
                 return ([], 0)
 
+            # Installers are expensive... try to short-circuit.
+            if ('has_installers' not in stratConfig) or (stratConfig['has_installers'] != 'true'):
+                print('INFO: Not creating installers for ' + stratConfig['name'] + ' because configuration does not indicate it creates any.')
+                return ([], 0)                
+            
+            if ('STRATS_TO_RELEASE' not in os.environ) or ((stratConfig['name'] not in os.environ['STRATS_TO_RELEASE']) and (os.environ['STRATS_TO_RELEASE'] != '*')):
+                print('INFO: Not creating installers for ' + stratConfig['name'] + ' because it is not in STRATS_TO_RELEASE (' + os.environ['STRATS_TO_RELEASE'] + ').')
+                return ([], 0)                
+
             # Build agents are non-admin services... not sure how to support WIX ICE validators yet...
             print("WARNING: SKIPPING WIX INSTALLER ICE VALIDATION")
             bbEnv = os.environ.copy()
