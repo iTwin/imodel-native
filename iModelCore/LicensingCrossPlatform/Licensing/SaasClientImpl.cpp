@@ -85,9 +85,9 @@ folly::Future<BentleyStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Luke.Lindsey             3/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> SaasClientImpl::MarkFeature(Utf8StringCR accessToken, Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId)
+folly::Future<BentleyStatus> SaasClientImpl::MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent)
     {
-    LOG.tracev("MarkFeature - Called with featureId: %s, version: %s, projectId: %s", featureId.c_str(), version.ToString().c_str(), projectId.c_str());
+    LOG.tracev("MarkFeature - Called with featureId: %s, version: %s, projectId: %s", featureEvent.m_featureId.c_str(), featureEvent.m_version.ToString().c_str(), featureEvent.m_projectId.c_str());
 
     // TODO put this in a feature posting sender
     auto url = m_buddiProvider->UlasRealtimeFeatureUrl();
@@ -97,14 +97,11 @@ folly::Future<BentleyStatus> SaasClientImpl::MarkFeature(Utf8StringCR accessToke
     uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + accessToken);
     uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
 
-    auto jsonBody = FeatureEvent::ToJson
+    auto jsonBody = featureEvent.ToJson
     (
-        featureId,
         m_productId,
         m_featureString,
-        version,
-        m_deviceId,
-        projectId
+        m_deviceId
     );
 
     uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
@@ -117,7 +114,7 @@ folly::Future<BentleyStatus> SaasClientImpl::MarkFeature(Utf8StringCR accessToke
             LOG.errorv("SaasClientImpl::MarkFeature ERROR: Unable to post %s - %s", jsonBody.c_str(), response.GetBody().AsString().c_str());
             return BentleyStatus::ERROR;
             }
-        LOG.tracev("MarkFeature - Successfully marked featureId: %s, version: %s, projectId: %s", featureId.c_str(), version.ToString().c_str(), projectId.c_str());
+        LOG.tracev("MarkFeature - Successfully marked featureId: %s, version: %s, projectId: %s", featureEvent.m_featureId.c_str(), featureEvent.m_version.ToString().c_str(), featureEvent.m_projectId.c_str());
         return BentleyStatus::SUCCESS;
         });
     }
