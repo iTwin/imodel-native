@@ -28,6 +28,9 @@ struct ECConversionTests : public ConverterTestBaseFixture
         void VerifyElement(DgnDbR db, DgnV8Api::ElementId&, Utf8CP className, bool isPrimaryInstance);
         void ECConversionTests::LoadECXAttributes(ECObjectsV8::StandaloneECInstanceR instance , ECObjectsV8::ECClassCP elementClass);
         void ECConversionTests::VerifyECXAttributes(BentleyApi::Dgn::DgnElementCPtr bimel);
+
+        void ImportInstanceWithReadOnlyCalculatedSpec(bool asSecondary);
+        void ImportInstanceWithCalculatedSpecUsingRelated(bool asSecondary);
     };
 
 END_UNNAMED_NAMESPACE
@@ -712,7 +715,7 @@ TEST_F(ECConversionTests, UpdateWithSecondaryInstances)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            01/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECConversionTests, CreateSecondaryInstanceWithProperties)
+TEST_F(ECConversionTests, CreateAndUpdateSecondaryInstanceWithProperties)
     {
     LineUpFiles(L"UpdateUsingSecondary.bim", L"Test3d.dgn", false);
 
@@ -730,8 +733,10 @@ TEST_F(ECConversionTests, CreateSecondaryInstanceWithProperties)
     DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
     DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
     DgnV8Api::DgnElementECInstancePtr createdDgnECInstance2;
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance3;
     EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"TestClass"));
     EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance2, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"DerivedClass"));
+    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance3, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"DerivedClass"));
 
     ECObjectsV8::ECValue v;
     v.SetString(L"String");
@@ -740,9 +745,16 @@ TEST_F(ECConversionTests, CreateSecondaryInstanceWithProperties)
     v.SetString(L"String2");
     EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, createdDgnECInstance2->SetValue(L"String2", v));
 
+    v.SetString(L"Second String");
+    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, createdDgnECInstance3->SetValue(L"String", v));
+    v.SetString(L"Second String2");
+    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, createdDgnECInstance3->SetValue(L"String2", v));
+
     const DgnV8Api::DgnECInstanceEnabler& nativeEnabler = createdDgnECInstance2->GetDgnECInstanceEnabler();
     nativeEnabler.ReplaceInstanceOnElement(NULL, *createdDgnECInstance2, createdDgnECInstance2->GetModelRef(),
                                            createdDgnECInstance2->GetElementRef(), createdDgnECInstance2->GetLocalId());
+    nativeEnabler.ReplaceInstanceOnElement(NULL, *createdDgnECInstance3, createdDgnECInstance3->GetModelRef(),
+                                           createdDgnECInstance3->GetElementRef(), createdDgnECInstance3->GetLocalId());
     }
 
     v8editor.Save();
@@ -757,6 +769,36 @@ TEST_F(ECConversionTests, CreateSecondaryInstanceWithProperties)
         stmt.Prepare(*db, selEcSql.c_str());
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_TRUE(0 == strcmp("String", stmt.GetValueText(0)));
+        ASSERT_TRUE(0 == strcmp("String2", stmt.GetValueText(1)));
+        }
+
+    // Modify a property of an existing (secondary) ECInstance
+    if (true)
+        {
+        DgnV8Api::EditElementHandle eeh(eid, v8editor.m_defaultModel);
+        Bentley::DgnECInstancePtr inst = v8editor.QueryECInstance(eeh, L"TestSchema", L"DerivedClass");
+        ASSERT_TRUE(inst.IsValid());
+        Bentley::ECN::ECValue oldValue;
+        ASSERT_EQ(Bentley::ECN::ECOBJECTS_STATUS_Success, inst->GetValue(oldValue, L"String"));
+        ASSERT_TRUE(oldValue.IsNull() || 0 != wcscmp(L"Changed", oldValue.GetString()));
+        inst->SetValue(L"String", Bentley::ECN::ECValue(L"Changed"));
+        inst->ScheduleWriteChanges(eeh);
+        eeh.ReplaceInModel(eeh.GetElementRef());
+        v8editor.Save();
+        }
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false);
+    ASSERT_EQ(1, m_count);
+
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        Utf8String selEcSql;
+        selEcSql.append("SELECT [String], [String2] FROM test.DerivedClassElementAspect");
+        EC::ECSqlStatement stmt;
+        stmt.Prepare(*db, selEcSql.c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_TRUE(0 == strcmp("Changed", stmt.GetValueText(0)));
         ASSERT_TRUE(0 == strcmp("String2", stmt.GetValueText(1)));
         }
 
@@ -887,32 +929,31 @@ TEST_F(ECConversionTests, CellWithInstance)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            06/2016
+// @bsimethod                                   Carole.MacDonald            02/2019
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECConversionTests, ImportInstanceWithReadOnlyCalculatedSpec)
+void ECConversionTests::ImportInstanceWithReadOnlyCalculatedSpec(bool asSecondary)
     {
-    LineUpFiles(L"Calculated.bim", L"Test3d.dgn", false);
-
     ECObjectsV8::ECSchemaReadContextPtr schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
 
-    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.01\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "    <ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.13\" prefix=\"bsca\" />"
-        "    <ECClass typeName=\"TestClass\" isDomainClass=\"True\">"
-        "        <ECProperty propertyName=\"MyString\" typeName=\"string\" />"
-        "        <ECProperty propertyName=\"MyNum\" typeName=\"int\" />"
-        "        <ECProperty propertyName=\"MyCalc\" typeName=\"string\" readOnly=\"True\">"
-        "            <ECCustomAttributes>"
-        "                <CalculatedECPropertySpecification xmlns=\"Bentley_Standard_CustomAttributes.01.13\">"
-        "                    <ECExpression>this.MyString &amp; \"-\" &amp; this.MyNum</ECExpression>"
-        "                    <IsDefaultValueOnly>False</IsDefaultValueOnly>"
-        "                    <UseLastValidValueOnFailure>True</UseLastValidValueOnFailure>"
-        "                </CalculatedECPropertySpecification>"
-        "            </ECCustomAttributes>"
-        "        </ECProperty>"
-        "    </ECClass>"
-        "</ECSchema>";
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.13" prefix="bsca" />
+            <ECClass typeName="Foo" isDomainClass="True" />
+            <ECClass typeName="TestClass" isDomainClass="True">
+                <ECProperty propertyName="MyString" typeName="string" />
+                <ECProperty propertyName="MyNum" typeName="int" />
+                <ECProperty propertyName="MyCalc" typeName="string" readOnly="True">
+                    <ECCustomAttributes>
+                        <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.13">
+                            <ECExpression>this.MyString &amp; "-" &amp; this.MyNum</ECExpression>
+                            <IsDefaultValueOnly>False</IsDefaultValueOnly>
+                            <UseLastValidValueOnFailure>True</UseLastValidValueOnFailure>
+                        </CalculatedECPropertySpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+        </ECSchema>)xml";
 
     EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
 
@@ -934,13 +975,19 @@ TEST_F(ECConversionTests, ImportInstanceWithReadOnlyCalculatedSpec)
     DgnV8Api::DgnECInstanceStatus ecInstanceStatus;
     DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
     DgnV8Api::ElementId eidWithInst;
-    {
-    v8editor.AddLine(&eidWithInst);
-    DgnV8Api::ElementHandle eh(eidWithInst, v8editor.m_defaultModel);
-    ecInstanceStatus = elementECInstanceEnabler->CreateInstanceOnElement(&createdDgnECInstance, wipInstance, eh);
-    ASSERT_EQ(DgnV8Api::DGNECINSTANCESTATUS_Success, ecInstanceStatus);
-    v8editor.Save();
-    }
+        {
+        v8editor.AddLine(&eidWithInst);
+        DgnV8Api::ElementHandle eh(eidWithInst, v8editor.m_defaultModel);
+        if (asSecondary)
+            {
+            // First create a primary instance
+            DgnV8Api::DgnElementECInstancePtr createdDgnECInstance2;
+            EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance2, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"Foo"));
+            }
+        ecInstanceStatus = elementECInstanceEnabler->CreateInstanceOnElement(&createdDgnECInstance, wipInstance, eh);
+        ASSERT_EQ(DgnV8Api::DGNECINSTANCESTATUS_Success, ecInstanceStatus);
+        v8editor.Save();
+        }
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
@@ -948,7 +995,10 @@ TEST_F(ECConversionTests, ImportInstanceWithReadOnlyCalculatedSpec)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         EC::ECSqlStatement stmt;
-        EXPECT_EQ(EC::ECSqlStatus::Success, stmt.Prepare(*db, "SELECT MyCalc FROM test.TestClass WHERE MyCalc='ABC-123'"));
+        if (asSecondary)
+            EXPECT_EQ(EC::ECSqlStatus::Success, stmt.Prepare(*db, "SELECT MyCalc FROM test.TestClassElementAspect WHERE MyCalc='ABC-123'"));
+        else
+            EXPECT_EQ(EC::ECSqlStatus::Success, stmt.Prepare(*db, "SELECT MyCalc FROM test.TestClass WHERE MyCalc='ABC-123'"));
 
         EC::ECInstanceECSqlSelectAdapter adapter(stmt);
         bool found = false;
@@ -962,7 +1012,7 @@ TEST_F(ECConversionTests, ImportInstanceWithReadOnlyCalculatedSpec)
             found = true;
             }
         ASSERT_TRUE(found) << "Should have found an instance using a WHERE criteria";
-    }
+        }
 
     // Update the values
         {
@@ -984,7 +1034,10 @@ TEST_F(ECConversionTests, ImportInstanceWithReadOnlyCalculatedSpec)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         EC::ECSqlStatement stmt;
-        EXPECT_EQ(EC::ECSqlStatus::Success, stmt.Prepare(*db, "SELECT MyCalc FROM test.TestClass WHERE MyCalc='XYZ-987'"));
+        if (asSecondary)
+            EXPECT_EQ(EC::ECSqlStatus::Success, stmt.Prepare(*db, "SELECT MyCalc FROM test.TestClassElementAspect WHERE MyCalc='XYZ-987'"));
+        else
+            EXPECT_EQ(EC::ECSqlStatus::Success, stmt.Prepare(*db, "SELECT MyCalc FROM test.TestClass WHERE MyCalc='XYZ-987'"));
 
         EC::ECInstanceECSqlSelectAdapter adapter(stmt);
         bool found = false;
@@ -998,8 +1051,25 @@ TEST_F(ECConversionTests, ImportInstanceWithReadOnlyCalculatedSpec)
             found = true;
             }
         ASSERT_TRUE(found) << "Should have found an instance using a WHERE criteria after update";
+
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            06/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECConversionTests, ImportInstanceWithReadOnlyCalculatedSpec)
+    {
+    LineUpFiles(L"Calculated.bim", L"Test3d.dgn", false);
+    ImportInstanceWithReadOnlyCalculatedSpec(false);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECConversionTests, ImportInstanceAsSecondaryWithReadOnlyCalculatedSpec)
+    {
+    LineUpFiles(L"Calculated.bim", L"Test3d.dgn", false);
+    ImportInstanceWithReadOnlyCalculatedSpec(true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1012,44 +1082,43 @@ TEST_F(ECConversionTests, ImportInstanceWithCalculatedSpecUsingRelated)
     ECObjectsV8::ECSchemaReadContextPtr schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
 
-    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.01\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "    <ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.13\" prefix=\"bsca\" />"
-        "    <ECClass typeName=\"Owner\" isDomainClass=\"True\">"
-        "        <ECProperty propertyName=\"FirstName\" typeName=\"string\" />"
-        "        <ECProperty propertyName=\"LastName\" typeName=\"string\" />"
-        "        <ECProperty propertyName=\"FullName\" typeName=\"string\" >"
-        "            <ECCustomAttributes>"
-        "                <CalculatedECPropertySpecification xmlns=\"Bentley_Standard_CustomAttributes.01.13\">"
-        "                    <ECExpression>this.FirstName &amp; \"-\" &amp; this.LastName</ECExpression>"
-        "                    <IsDefaultValueOnly>False</IsDefaultValueOnly>"
-        "                    <UseLastValidValueOnFailure>True</UseLastValidValueOnFailure>"
-        "                </CalculatedECPropertySpecification>"
-        "            </ECCustomAttributes>"
-        "        </ECProperty>"
-        "    </ECClass>"
-        "    <ECClass typeName=\"Chair\" isDomainClass=\"True\">"
-        "        <ECProperty propertyName=\"Color\" typeName=\"string\" />"
-        "        <ECProperty propertyName=\"OwnerName\" typeName=\"string\" >"
-        "            <ECCustomAttributes>"
-        "                <CalculatedECPropertySpecification xmlns=\"Bentley_Standard_CustomAttributes.01.13\">"
-        "                    <ECExpression>this.GetRelatedInstance(\"ChairHasOwner:0:Owner\").FirstName</ECExpression>"
-        "                    <IsDefaultValueOnly>False</IsDefaultValueOnly>"
-        "                    <UseLastValidValueOnFailure>True</UseLastValidValueOnFailure>"
-        "                </CalculatedECPropertySpecification>"
-        "            </ECCustomAttributes>"
-        "        </ECProperty>"
-        "    </ECClass>"
-        "    <ECRelationshipClass typeName=\"ChairHasOwner\" isDomainClass=\"True\" strength=\"referencing\" strengthDirection=\"forward\">"
-        "       <Source cardinality=\"(0,1)\" polymorphic=\"True\">"
-        "           <Class class=\"Chair\" />"
-        "       </Source>"
-        "       <Target cardinality=\"(0,1)\" polymorphic=\"True\">"
-        "           <Class class=\"Owner\"/>"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-
-        "</ECSchema>";
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.13" prefix="bsca" />
+            <ECClass typeName="Owner" isDomainClass="True">
+                <ECProperty propertyName="FirstName" typeName="string" />
+                <ECProperty propertyName="LastName" typeName="string" />
+                <ECProperty propertyName="FullName" typeName="string" >
+                    <ECCustomAttributes>
+                        <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.13">
+                            <ECExpression>this.FirstName &amp; "-" &amp; this.LastName</ECExpression>
+                            <IsDefaultValueOnly>False</IsDefaultValueOnly>
+                            <UseLastValidValueOnFailure>True</UseLastValidValueOnFailure>
+                        </CalculatedECPropertySpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+            <ECClass typeName="Chair" isDomainClass="True">
+                <ECProperty propertyName="Color" typeName="string" />
+                <ECProperty propertyName="OwnerName" typeName="string" >
+                    <ECCustomAttributes>
+                        <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.13">
+                            <ECExpression>this.GetRelatedInstance("ChairHasOwner:0:Owner").FirstName</ECExpression>
+                            <IsDefaultValueOnly>False</IsDefaultValueOnly>
+                            <UseLastValidValueOnFailure>True</UseLastValidValueOnFailure>
+                        </CalculatedECPropertySpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+            <ECRelationshipClass typeName="ChairHasOwner" isDomainClass="True" strength="referencing" strengthDirection="forward">
+               <Source cardinality="(0,1)" polymorphic="True">
+                   <Class class="Chair" />
+               </Source>
+               <Target cardinality="(0,1)" polymorphic="True">
+                   <Class class="Owner"/>
+               </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml";
 
     EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
 
