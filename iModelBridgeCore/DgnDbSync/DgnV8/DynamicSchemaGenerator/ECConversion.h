@@ -142,6 +142,7 @@ struct DynamicSchemaGenerator
 
     void CheckNoECSchemaChanges(bvector<DgnV8ModelP> const&);
     void BisifyV8Schemas(bvector<DgnV8FileP> const&, bvector<DgnV8ModelP> const&);
+    void RemoveDgnV8CustomAttributes(ECN::IECCustomAttributeContainerR container);
 
     public:
 
