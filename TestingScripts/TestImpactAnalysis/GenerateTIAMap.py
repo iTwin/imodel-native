@@ -246,10 +246,10 @@ def pushMapFiles():
         return False
     # Check status
     fs = []
-    success = git.status()
+    success = gc.status()
     if not success:
         return False
-    for f in git.stats:
+    for f in gc.stats:
         fp = f.split(' ')
         if len(fp) > 0:
             print fp[0]
@@ -259,7 +259,7 @@ def pushMapFiles():
     # If there are files. Add, commit and push them
     if len(fs) > 0:
         for f1 in fs:
-            git.execute('git add ' + f1)
+            gc.execute('git add ' + f1)
         success = gc.execute('git commit -m "Update TIA Map files."')
         if not success:
             return False
