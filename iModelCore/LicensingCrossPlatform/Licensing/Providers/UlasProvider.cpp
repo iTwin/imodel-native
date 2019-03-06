@@ -8,6 +8,7 @@
 
 
 #include "../Logging.h"
+#include "../GenerateSID.h"
 #include <Licensing/Utils/LogFileHelper.h>
 #include "UlasProvider.h"
 
@@ -196,3 +197,44 @@ folly::Future<folly::Unit> UlasProvider::SendFeatureLogs(BeFileNameCR featureCSV
             });
         });
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<Json::Value> UlasProvider::GetAccessKeyInfo(Utf8StringCR accessKey)
+    {
+    LOG.debug("UlasProvider::GetAccessKeyInfo");
+
+    auto url = m_buddiProvider->UlasAccessKeyBaseUrl();
+    url += "/info"; // does not require auth
+
+    HttpClient client(nullptr, m_httpHandler);
+    auto uploadRequest = client.CreateRequest(url, "POST");
+    uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
+
+    Json::Value requestJson(Json::objectValue);
+    GenerateSID gsid;
+
+    requestJson["accesskey"] = accessKey;
+    requestJson["cSID"] = gsid.GetMachineSID(m_clientInfo->GetDeviceId()); // need hash
+
+    Utf8String jsonBody = Json::FastWriter().write(requestJson);
+
+    uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
+
+    return uploadRequest.Perform().then(
+        [=](Response response)
+        {
+        if (!response.IsSuccess())
+            {
+            // call failed
+            LOG.errorv("ClientWithKeyImpl::ValidateAccessKey - %s", HttpError(response).GetMessage().c_str());
+            return Json::Value::GetNull();
+            }
+
+        auto responseBody = response.GetBody().AsString();
+        return Json::Value::From(response.GetBody().AsString());
+        });
+
+    }
+

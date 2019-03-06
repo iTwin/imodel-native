@@ -497,12 +497,65 @@ TEST_F(ClientTests, DISABLED_TrackUsage_FreeApplication_Success)
     EXPECT_SUCCESS(client->TrackUsage(tokenstring,version,projectId).get());
     }
 
+// ClientWithKey tests - move to new test file?
+TEST_F(ClientTests, StartWithKeyApplication_Error)
+    {
+    auto client = CreateWithKeyTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
+
+    EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
+        .Times(1)
+        .WillOnce(Return(BentleyStatus::ERROR));
+
+    EXPECT_EQ((int)client->StartApplication(), (int)LicenseStatus::Error);
+    }
+
+//TEST_F(ClientTests, DISABLED_StartApplicationInvalidKey_Success)
+//    {
+//    auto client = CreateWithKeyTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
+//
+//    EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
+//        .Times(1)
+//        .WillOnce(Return(BentleyStatus::SUCCESS));
+//
+//    Json::Value jsonAccessKeyResponse(Json::objectValue);
+//
+//    jsonAccessKeyResponse["status"] = "Failure";
+//    jsonAccessKeyResponse["msg"] = "Record is Inactive or Expired";
+//
+//    EXPECT_CALL(GetUlasProviderMock(), GetAccessKeyInfo(A<Utf8StringCR>()))
+//        .WillRepeatedly(Return(jsonAccessKeyResponse));
+//
+//
+//    
+//    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+//    // do i need to create a jsonPolicy that has a valid (or non-null) AccessKey?
+//    auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false);
+//    auto validPolicy = Policy::Create(jsonPolicyValid);
+//
+//    std::list<Json::Value> validPolicyList;
+//    validPolicyList.push_back(jsonPolicyValid);
+//
+//    EXPECT_CALL(GetPolicyProviderMock(), GetPolicy())
+//        .Times(1)
+//        .WillOnce(Return(ByMove(folly::makeFuture(validPolicy)))); // need ByMove since this calls the copy constructor for folly::Future, which is deleted
+//
+//    EXPECT_CALL(GetLicensingDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
+//        .Times(AtLeast(1));
+//
+//    EXPECT_CALL(GetLicensingDbMock(), DeleteAllOtherPolicyFilesByUser(A<Utf8StringCR>(), A<Utf8StringCR>()))
+//        .Times(AtLeast(1));
+//
+//    EXPECT_CALL(GetLicensingDbMock(), GetPolicyFilesByUser(A<Utf8StringCR>()))
+//        .Times(1)
+//        .WillOnce(Return(validPolicyList));
+//
+//    // TO MAKE THIS RETURN OK -> use 2545 as productId in the policy!!
+//    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error); // not entitiled so skips the heartbeat calls
+//    }
+
 TEST_F(ClientTests, DISABLED_StartWithKeyApplication_StopApplication_Success)
     {
-    EXPECT_CALL(GetBuddiProviderMock(), UlasRealtimeLoggingBaseUrl()) // called on SendUsageRealtimeWithKey() which is not currently called by StartApplication()
-        //.Times(AtLeast(1))
-        .WillRepeatedly(Return("https://qa-connect-ulastm.bentley.com/Bentley.ULAS.PostingService/PostingSvcWebApi/"));
-
+    
     auto client = CreateWithKeyTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
     EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
     EXPECT_SUCCESS(client->StopApplication());

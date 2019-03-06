@@ -47,3 +47,12 @@ Utf8String BuddiProvider::EntitlementPolicyBaseUrl()
 {
     return UrlProvider::Urls::EntitlementPolicyService.Get();
 }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String BuddiProvider::UlasAccessKeyBaseUrl()
+    {
+    // Ulas AccessKey Service url is not in UrlProvider by name
+    return UrlProvider::UrlDescriptor("UsageLoggingServices.AccessKey.Url", "", "", "", "", nullptr).Get();
+    }

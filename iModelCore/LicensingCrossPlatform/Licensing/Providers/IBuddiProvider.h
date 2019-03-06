@@ -23,6 +23,7 @@ public:
     virtual Utf8String EntitlementPolicyBaseUrl() = 0;
     virtual Utf8String UlasRealtimeLoggingBaseUrl() = 0;
     virtual Utf8String UlasRealtimeFeatureUrl() = 0;
+    virtual Utf8String UlasAccessKeyBaseUrl() = 0;
     virtual ~IBuddiProvider() {};
     };
 

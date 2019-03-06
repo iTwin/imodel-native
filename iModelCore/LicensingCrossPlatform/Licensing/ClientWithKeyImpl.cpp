@@ -56,6 +56,8 @@ ClientWithKeyImpl::ClientWithKeyImpl
     m_timeRetriever = TimeRetriever::Get();
     m_delayedExecutor = DelayedExecutor::Get();
 
+    m_isAccessKeyValid = false; // assume invalid access key to start
+
     if (Utf8String::IsNullOrEmpty(projectId.c_str()))
         m_projectId = "00000000-0000-0000-0000-000000000000";
 
@@ -68,7 +70,7 @@ ClientWithKeyImpl::ClientWithKeyImpl
 
 LicenseStatus ClientWithKeyImpl::StartApplication()
     {
-    LOG.trace("ClientWithKey::StartApplication");
+    LOG.trace("ClientWithKeyImpl::StartApplication");
 
     if (SUCCESS != m_licensingDb->OpenOrCreate(m_dbPath))
         {
@@ -93,9 +95,7 @@ LicenseStatus ClientWithKeyImpl::StartApplication()
         {
         // Begin heartbeats
         int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-        //UsageHeartbeat(currentTimeUnixMs);      // Record usage to database
-        //LogPostingHeartbeat(currentTimeUnixMs); // calls post usage logs and post feature logs
-        PolicyHeartbeat(currentTimeUnixMs);     // refresh policy, check if offline grace period should start
+        PolicyHeartbeat(currentTimeUnixMs);     // refresh policy
         }
     else
         {
@@ -127,13 +127,87 @@ BentleyStatus ClientWithKeyImpl::StopApplication()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ClientWithKeyImpl::PolicyHeartbeat(int64_t currentTime)
+    {
+    LOG.debug("ClientWithKeyImpl::PolicyHeartbeat");
+
+    if (m_startPolicyHeartbeat)
+        {
+        m_lastRunningPolicyheartbeatStartTime = currentTime;
+        m_startPolicyHeartbeat = false;
+        }
+
+    m_delayedExecutor->Delayed(HEARTBEAT_THREAD_DELAY_MS).then([this, currentTime]
+        {
+        int64_t policyInterval = m_policy->GetPolicyInterval(m_clientInfo->GetApplicationProductId(), m_featureString);
+
+        int64_t time_elapsed = currentTime - m_lastRunningPolicyheartbeatStartTime;
+
+        if (time_elapsed >= policyInterval)
+            {
+            // refresh policy
+            auto policyToken = GetPolicyToken();
+            if (policyToken != nullptr)
+                {
+                m_policy = policyToken;
+                }
+
+            CleanUpPolicies(); // if policy is expired or invalid, this will result in GetProductStatus() returning NotEntitled
+            m_lastRunningPolicyheartbeatStartTime = currentTime;
+            }
+
+        if (!m_stopPolicyHeartbeat)
+            {
+            int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
+            PolicyHeartbeat(currentTimeUnixMs);
+            }
+        else
+            {
+            m_policyHeartbeatStopped = true;
+            }
+        });
+    }
+
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ClientWithKeyImpl::ValidateAccessKey()
+    {
+    LOG.debug("ClientWithKeyImpl::ValidateAccessKey");
+
+    auto responseJson = m_ulasProvider->GetAccessKeyInfo(m_accessKey).get();
+
+    if (Json::Value::GetNull() == responseJson)
+        {
+        // call failed, so assume access key is unchanged since the last check
+        LOG.error("ClientWithKeyImpl::ValidateAccessKey - Call to AccessKey service failed");
+        return m_isAccessKeyValid;
+        }
+
+    if ("Success" != responseJson["status"].asString())
+        {
+        // unsuccessful if AccessKey is expired, not active, or not found - clear out policy from database
+        LOG.errorv("ClientWithKeyImpl::ValidateAccessKey - %s", responseJson["msg"].asString().c_str());
+        m_isAccessKeyValid = false;
+        }
+    else
+        {
+        m_isAccessKeyValid = true;
+        }
+
+    return m_isAccessKeyValid;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy> ClientWithKeyImpl::GetPolicyToken()
     {
     // TODO: rename this method? (and ClientImpl::GetPolicyToken) we are getting policy, not the token, and are storing the policy in the db...
     LOG.debug("ClientWithKeyImpl::GetPolicyToken");
 
-    // validate access key here
-
+    // returns nullptr if accesskey is inactive or expired
     auto policy = m_policyProvider->GetPolicyWithKey(m_accessKey).get();
 
     if (policy != nullptr)
@@ -143,6 +217,22 @@ std::shared_ptr<Policy> ClientWithKeyImpl::GetPolicyToken()
         }
 
     return policy;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LicenseStatus ClientWithKeyImpl::GetProductStatus(int requestedProductId)
+    {
+    LOG.debug("ClientWithKeyImpl::GetProductStatus");
+
+    if (!ValidateAccessKey())
+        {
+        LOG.info("AccessKey missing from portal(deleted), expired, or revoked");
+        return LicenseStatus::NotEntitled;
+        }
+
+    return ClientImpl::GetProductStatus(requestedProductId);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -177,51 +267,3 @@ std::list<std::shared_ptr<Policy>> ClientWithKeyImpl::GetUserPolicies()
         }
     return policyList;
     }
-
-//folly::Future<folly::Unit> ClientWithKeyImpl::SendUsageRealtimeWithKey()
-//    {
-//    LOG.trace("ClientWithKeyImpl::SendUsageRealtimeWithKey");
-//
-//    auto url = m_buddiProvider->UlasRealtimeLoggingBaseUrl();
-//
-//    url += "/" + m_accessKey;
-//
-//    std::ofstream logfile("D:/performSendUsageRealtimeWithKey.txt");
-//    logfile << url << std::endl;
-//    logfile.close();
-//
-//    HttpClient client(nullptr, m_httpHandler);
-//    auto uploadRequest = client.CreateRequest(url, "POST");
-//    //uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + m_accessTokenString);
-//    uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
-//
-//    // create Json body
-//    auto jsonBody = UsageJsonHelper::CreateJsonRandomGuids
-//        (
-//        m_clientInfo->GetDeviceId(),
-//        m_featureString,
-//        m_clientInfo->GetApplicationVersion(),
-//        m_projectId,
-//        std::stoi(m_clientInfo->GetApplicationProductId().c_str())
-//        );
-//
-//    uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
-//
-//    return uploadRequest.Perform().then(
-//        [=](Response response)
-//        {
-//        if (!response.IsSuccess())
-//            {
-//            std::ofstream logfile("D:/performSendUsageRealtimeWithKeyResponse.txt");
-//            logfile << response.GetBody().AsString() << std::endl;
-//            logfile << (int)response.GetHttpStatus() << std::endl;
-//            logfile.close();
-//            throw HttpError(response);
-//            }
-//        std::ofstream logfile("D:/performSendUsageRealtimeWithKeyResponse.txt");
-//        logfile << response.GetBody().AsString() << std::endl;
-//        logfile << (int)response.GetHttpStatus() << std::endl;
-//        logfile.close();
-//        return folly::makeFuture();
-//        });
-//    }

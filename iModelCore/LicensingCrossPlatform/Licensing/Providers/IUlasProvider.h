@@ -24,6 +24,7 @@ struct IUlasProvider
 public:
     virtual BentleyStatus PostUsageLogs(ILicensingDb& licensingDb, std::shared_ptr<Policy> policy) = 0;
     virtual BentleyStatus PostFeatureLogs(ILicensingDb& licensingDb, std::shared_ptr<Policy> policy) = 0;
+    virtual folly::Future<Json::Value> GetAccessKeyInfo(Utf8StringCR accessKey) = 0;
     virtual ~IUlasProvider() {};
     };
 

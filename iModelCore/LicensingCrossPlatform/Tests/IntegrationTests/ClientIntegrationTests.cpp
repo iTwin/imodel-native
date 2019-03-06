@@ -215,12 +215,11 @@ public:
 
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
+    //auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
 
     BeFileName dbPath = GetLicensingDbPathIntegration();
 
-    //Utf8String accesskey = "somekey"; // need a real one?
-    Utf8String accesskey = "3469AD8D095A53F3CBC9A905A8FF8926"; // this should work -> luke just made it
+    Utf8String accesskey = "3469AD8D095A53F3CBC9A905A8FF8926"; // valid accessKey
 
     return Client::CreateWithKey(
         accesskey,
