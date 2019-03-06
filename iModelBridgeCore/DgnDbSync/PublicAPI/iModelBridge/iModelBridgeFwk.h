@@ -214,6 +214,8 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         bool                m_isv8i;
         bvector<WString>    m_bargs;
         BeFileName          m_applicationWorkspace;
+        bvector<WString>    m_additionalFilePatterns;
+        iModelDmsSupport::SessionType  m_dmsType;
         static void PrintUsage();
 
         DmsServerArgs();
