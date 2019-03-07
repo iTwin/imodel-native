@@ -523,6 +523,7 @@ struct iModelBridge
         GCSCalculationMethod m_gcsCalculationMethod;
         BeFileName m_briefcaseName;
         BeFileName m_assetsDir;
+        BeFileName m_geoCoordDir;
         BeFileName m_libraryDir;
         BeFileName m_reportFileName;
         Utf8String m_converterJobName;
@@ -536,7 +537,7 @@ struct iModelBridge
         DgnElementId m_jobSubjectId;
         Utf8String   m_jobRunCorrelationId;
         IDmsSupport* m_dmsSupport;
-
+        bvector<WString> m_additionalFiles;
         Utf8String                              m_repositoryName;     //!< A repository in the iModelHub project
         int                                     m_environment;    //!< Connect environment. Should match UrlProvider::Environment
         Utf8String                              m_iModelHubUserName;
@@ -609,8 +610,10 @@ struct iModelBridge
         BeFileNameCR GetInputFileName() const {return m_inputFileName;} //!< The name of the input file that is to be read and converted and/or scanned for changes.
         void SetInputFileName(BeFileNameCR fn) {m_inputFileName=fn;} //!< Set the name of the input file that is to be read and converted and/or scanned for changes.
         BeFileNameCR GetAssetsDir() const {return m_assetsDir;} //!< The bridge library's assets directory
-        void SetAssetsDir(BeFileNameCR dir) {m_assetsDir=dir;}
-        BeFileNameCR GetLibraryDir() const {return m_libraryDir;} //!< The directory from which the bridge library itself was loaded
+        void SetAssetsDir(BeFileNameCR dir) { m_assetsDir = dir; }
+        BeFileNameCR GetGeoCoordData() const { return m_geoCoordDir; }
+        void SetGeoCoordData(BeFileNameCR dir) { m_geoCoordDir = dir; }
+        BeFileNameCR GetLibraryDir() const { return m_libraryDir; } //!< The directory from which the bridge library itself was loaded
         BeFileNameCR GetDrawingsDirs() const {return m_drawingsDirs;} //!< The top-level directory to scan for other files that may contain drawings and sheets
         void SetDrawingsDir(BeFileNameCR dir) {m_drawingsDirs = dir;}
         void AddDrawingAndSheetFile(BeFileNameCR fn) {m_drawingAndSheetFiles.push_back(fn);}
@@ -682,6 +685,9 @@ struct iModelBridge
         void        SetClientInfo(WebServices::ClientInfoPtr info) { m_clientInfo = info;}
         
         IMODEL_BRIDGE_EXPORT Http::IHttpHeaderProviderPtr GetDefaultHeaderProvider() const;
+
+        bvector<WString> const& GetAdditionalFilePattern() const { return m_additionalFiles; }
+        void AddAdditionalFilePattern(WStringCR pattern) { m_additionalFiles.push_back(pattern); }
         };
 
     private:
