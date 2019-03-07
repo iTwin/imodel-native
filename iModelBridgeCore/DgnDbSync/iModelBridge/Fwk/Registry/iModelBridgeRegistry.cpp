@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/Registry/iModelBridgeRegistry.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined(_WIN32)
@@ -378,7 +378,7 @@ BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(WStrin
 
     LOG.tracev(L"%ls := (%ls,%d)", sourceFilePath.c_str(), bestBridge.m_bridgeRegSubKey.c_str(), (int)bestBridge.m_affinity);
 
-    EnsureDocumentPropertiesFor(sourceFilePath);
+    EnsureDocumentPropertiesFor(sourceFilePath, nullptr);
     bridgeName = bestBridge.m_bridgeRegSubKey;
     return BSISUCCESS;
     }
@@ -400,7 +400,7 @@ bool iModelBridgeRegistryBase::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeRegistryBase::_AssignFileToBridge(BeFileNameCR sourceFilePath, wchar_t const* bridgeRegSubKey)
+BentleyStatus iModelBridgeRegistryBase::_AssignFileToBridge(BeFileNameCR sourceFilePath, wchar_t const* bridgeRegSubKey, BeGuidCP guid)
     {
     auto findBridgeForDoc = m_stateDb.GetCachedStatement("SELECT b.ROWID BridgeLibraryPath FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (b.ROWID = a.Bridge) AND (a.SourceFile=?)");
     findBridgeForDoc->BindText(1, Utf8String(sourceFilePath), Statement::MakeCopy::Yes);
@@ -431,7 +431,7 @@ BentleyStatus iModelBridgeRegistryBase::_AssignFileToBridge(BeFileNameCR sourceF
     LOG.tracev(L"File %ls assigned to %ls .", sourceFilePath.c_str(), bridgeRegSubKey);
 
     //!Lets insert default document properties for this 
-    EnsureDocumentPropertiesFor(sourceFilePath);
+    EnsureDocumentPropertiesFor(sourceFilePath, guid);
 
     m_stateDb.SaveChanges();
 
@@ -949,7 +949,7 @@ void            iModelBridgeRegistryBase::SetDocumentProperties(iModelBridgeDocu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeRegistryBase::EnsureDocumentPropertiesFor(BeFileNameCR fn)
+void iModelBridgeRegistryBase::EnsureDocumentPropertiesFor(BeFileNameCR fn, BeGuidCP guid)
     {
     iModelBridgeDocumentProperties _props;
     if (BSISUCCESS == _GetDocumentProperties(_props, fn))
@@ -958,7 +958,11 @@ void iModelBridgeRegistryBase::EnsureDocumentPropertiesFor(BeFileNameCR fn)
 #define TEST_REGISTRY_FAKE_GUIDS
 #ifdef TEST_REGISTRY_FAKE_GUIDS
     BeGuid testGuid;
-    testGuid.Create();
+    if (guid)
+        testGuid = *guid;
+    else
+        testGuid.Create();
+
     auto stmt = m_stateDb.GetCachedStatement("INSERT INTO DocumentProperties (LocalFilePath,DocGuid,DesktopURN,WebURN,AttributesJSON,SpatialRootTransformJSON) VALUES(?,?,'', '', '', '')");
     stmt->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
     stmt->BindText(2, testGuid.ToString(), Statement::MakeCopy::Yes);

@@ -2167,9 +2167,9 @@ bool iModelBridgeFwk::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* br
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::_AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey)
+BentleyStatus iModelBridgeFwk::_AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey, BeGuidCP guid)
     {
-    return GetRegistry()._AssignFileToBridge(fn, bridgeRegSubKey);
+    return GetRegistry()._AssignFileToBridge(fn, bridgeRegSubKey, guid);
     }
 
 /*---------------------------------------------------------------------------------**//**
