@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaParseUtils.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -51,7 +51,7 @@ ECObjectsStatus SchemaParseUtils::ParseCardinalityString(uint32_t &lowerLimit, u
         {
         LOG.debugv("Legacy cardinality of '%s' interpreted as '(0,n)'", cardinalityString.c_str());
         lowerLimit = 0;
-        upperLimit = UINT_MAX;
+        upperLimit = INT_MAX;
         return status;
         }
 
@@ -84,7 +84,7 @@ ECObjectsStatus SchemaParseUtils::ParseCardinalityString(uint32_t &lowerLimit, u
         }
 
     // Otherwise, we just assume the upper limit is 'n' or 'N' and is unbounded
-    upperLimit = UINT_MAX;
+    upperLimit = INT_MAX;
     return status;
     }
 
@@ -262,7 +262,7 @@ ECObjectsStatus SchemaParseUtils::ParseLegacyMultiplicityString(uint32_t &lowerL
         }
 
     // Otherwise, we just assume the upper limit is '*' and is unbounded
-    upperLimit = UINT_MAX;
+    upperLimit = INT_MAX;
     return status;
     }
 
@@ -285,7 +285,7 @@ ECObjectsStatus SchemaParseUtils::ParseMultiplicityString(uint32_t& lowerLimit, 
         }
 
     lowerLimit = (uint32_t)BeStringUtilities::ParseUInt64(match[1].str().c_str());
-    upperLimit = match[2].str() == "*" ? UINT_MAX : (uint32_t)BeStringUtilities::ParseUInt64(match[2].str().c_str());
+    upperLimit = match[2].str() == "*" ? INT_MAX : (uint32_t)BeStringUtilities::ParseUInt64(match[2].str().c_str());
 
     return ECObjectsStatus::Success;
     }

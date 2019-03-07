@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaDeserializationConversionTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -73,7 +73,7 @@ TEST_F(SchemaDeserializationConversionTest, TestMultiplicityConstraint)
     EXPECT_EQ(0, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetMultiplicity().GetLowerLimit());
     EXPECT_EQ(1, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetMultiplicity().GetUpperLimit());
     EXPECT_EQ(0, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetMultiplicity().GetLowerLimit());
-    EXPECT_EQ(UINT_MAX, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetMultiplicity().GetUpperLimit());
+    EXPECT_EQ(INT_MAX, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetMultiplicity().GetUpperLimit());
     }
 
 //---------------------------------------------------------------------------------------
@@ -122,7 +122,7 @@ TEST_F(SchemaDeserializationConversionTest, ExpectSuccessWithViolatedMultiplicit
     EXPECT_EQ(0, schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().GetMultiplicity().GetLowerLimit());
     EXPECT_EQ(1, schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().GetMultiplicity().GetUpperLimit());
     EXPECT_EQ(0, schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().GetMultiplicity().GetLowerLimit());
-    EXPECT_EQ(UINT_MAX, schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().GetMultiplicity().GetUpperLimit());
+    EXPECT_EQ(INT_MAX, schema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().GetMultiplicity().GetUpperLimit());
     }
 
 //---------------------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/SchemaParseUtilsTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -50,23 +50,23 @@ TEST_F(SchemaParseUtilsTest, ParseCardinalityString__LegacyStrings)
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseCardinalityString(lowerLimit, upperLimit, "UNBOUNDED"));
     EXPECT_EQ(0, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
+    EXPECT_EQ(INT_MAX, upperLimit);
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseCardinalityString(lowerLimit, upperLimit, "Unbounded"));
     EXPECT_EQ(0, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
+    EXPECT_EQ(INT_MAX, upperLimit);
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseCardinalityString(lowerLimit, upperLimit, "unbounded"));
     EXPECT_EQ(0, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
+    EXPECT_EQ(INT_MAX, upperLimit);
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseCardinalityString(lowerLimit, upperLimit, "n"));
     EXPECT_EQ(0, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
+    EXPECT_EQ(INT_MAX, upperLimit);
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseCardinalityString(lowerLimit, upperLimit, "N"));
     EXPECT_EQ(0, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
+    EXPECT_EQ(INT_MAX, upperLimit);
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseCardinalityString(lowerLimit, upperLimit, "5"));
     EXPECT_EQ(0, lowerLimit);
@@ -310,7 +310,7 @@ TEST_F(SchemaParseUtilsTest, ParseLegacyMultiplicityString)
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(5..*)"));
     EXPECT_EQ(5, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
+    EXPECT_EQ(INT_MAX, upperLimit);
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(42 .. 120)"));
     EXPECT_EQ(42, lowerLimit);
@@ -330,23 +330,23 @@ TEST_F(SchemaParseUtilsTest, ParseLegacyMultiplicityString)
     // would all be parsed as if they were "(3..*)".
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(3,12)"));
     EXPECT_EQ(3, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
+    EXPECT_EQ(INT_MAX, upperLimit);
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(5,N)"));
     EXPECT_EQ(5, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
+    EXPECT_EQ(INT_MAX, upperLimit);
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(7..N)"));
     EXPECT_EQ(7, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
+    EXPECT_EQ(INT_MAX, upperLimit);
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(5)"));
     EXPECT_EQ(5, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
+    EXPECT_EQ(INT_MAX, upperLimit);
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(7banana)"));
     EXPECT_EQ(7, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
+    EXPECT_EQ(INT_MAX, upperLimit);
     }
 
 //---------------------------------------------------------------------------------------
@@ -362,7 +362,7 @@ TEST_F(SchemaParseUtilsTest, ParseMultiplicityString)
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(5..*)"));
     EXPECT_EQ(5, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
+    EXPECT_EQ(INT_MAX, upperLimit);
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(42 .. 120)"));
     EXPECT_EQ(42, lowerLimit);

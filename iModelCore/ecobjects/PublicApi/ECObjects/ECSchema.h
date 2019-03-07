@@ -2171,11 +2171,11 @@ public:
     //! @param[in]  lowerLimit  must be less than or equal to upperLimit and greater than or equal to 0
     //! @param[in]  upperLimit  must be greater than or equal to lowerLimit and greater than 0
     RelationshipMultiplicity(uint32_t lowerLimit, uint32_t upperLimit) : m_lowerLimit(lowerLimit), m_upperLimit(upperLimit)
-        { BeAssert(lowerLimit <= upperLimit); BeAssert(upperLimit > 0); }
+        { BeAssert(lowerLimit <= upperLimit); BeAssert(upperLimit > 0); BeAssert(upperLimit <= INT_MAX); }
 
     //! Constructor where upper limit is set to Unbounded
     //! @param[in]  lowerLimit  must be less than or equal to upperLimit and greater than or equal to 0
-    RelationshipMultiplicity(uint32_t lowerLimit) : RelationshipMultiplicity(lowerLimit, UINT_MAX) {}
+    RelationshipMultiplicity(uint32_t lowerLimit) : RelationshipMultiplicity(lowerLimit, INT_MAX) {}
 
     //! Returns the lower limit of the multiplicity
     uint32_t GetLowerLimit() const {return m_lowerLimit;}
@@ -2183,7 +2183,7 @@ public:
     uint32_t GetUpperLimit() const {return m_upperLimit;}
 
     //! Indicates if the multiplicity is unbound (ie, upper limit is equal to "*")
-    bool IsUpperLimitUnbounded() const {return m_upperLimit == UINT_MAX;}
+    bool IsUpperLimitUnbounded() const {return m_upperLimit == INT_MAX;}
 
     //! Converts the multiplicity to a string, for example "(0..*)", "(1..1)"
     ECOBJECTS_EXPORT Utf8String ToString() const;
