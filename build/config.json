@@ -5,12 +5,12 @@
         {
             "name": "iModelCore",
             "archs": "x64+winrtx64+androidarm64+iosarm64+macosx64+linuxx64",
-            "augments": "",
             "version_seed": "2.1.0"
         },
         {
             "name": "iModelJsNodeAddon",
             "archs": "x64+linuxx64+macosx64",
+            "prg_id": "2348",
             "version_file": "$SRCROOT/iModel02/iModelJsNodeAddon/package_version.txt",
             "depends" : [
                 "iModelCore"
@@ -19,6 +19,7 @@
         {
             "name": "iModelBankAddon",
             "archs": "x64+linuxx64",
+            "prg_id": "2531",
             "version_file": "$SRCROOT/iModel02/iModelBankAddon/package_version.txt",
             "depends" : [
                 "iModelCore"
@@ -35,6 +36,7 @@
         {
             "name": "MstnBridge",
             "archs": "x64",
+            "prg_id": "2370",
             "version_seed": "2.1.0",
             "has_installers": "true",
             "depends" : [

@@ -104,6 +104,10 @@ def callEachStrategy(args, config, verData):
         bbEnv = None
 
         if 'bdf' == args.action:
+            # If present, associate the BDF with a PRG ID for release tracking.
+            if ('prg_id' in stratConfig) and stratConfig['prg_id']:
+                os.environ['PrgProductId'] = stratConfig['prg_id']
+
             # BDF names must be lower-case because BentleyBootstrap.py always lower-cases its input, which affects case-sensitive file systems.
             bdfPath = os.path.join(args.bdfdir, stratConfig['name'].lower() + '.xml')
             action = 'taglist -f ' + bdfPath
@@ -121,16 +125,16 @@ def callEachStrategy(args, config, verData):
         elif 'createinstallers' == args.action:
             if os.name != 'nt':
                 print('INFO: Not creating installers on this non-Windows platform.')
-                return ([], 0)
+                continue
 
             # Installers are expensive... try to short-circuit.
             if ('has_installers' not in stratConfig) or (stratConfig['has_installers'] != 'true'):
                 print('INFO: Not creating installers for ' + stratConfig['name'] + ' because configuration does not indicate it creates any.')
-                return ([], 0)                
+                continue
             
             if ('STRATS_TO_RELEASE' not in os.environ) or ((stratConfig['name'] not in os.environ['STRATS_TO_RELEASE']) and (os.environ['STRATS_TO_RELEASE'] != '*')):
                 print('INFO: Not creating installers for ' + stratConfig['name'] + ' because it is not in STRATS_TO_RELEASE (' + os.environ['STRATS_TO_RELEASE'] + ').')
-                return ([], 0)                
+                continue
 
             # Build agents are non-admin services... not sure how to support WIX ICE validators yet...
             print("WARNING: SKIPPING WIX INSTALLER ICE VALIDATION")
