@@ -276,6 +276,11 @@ BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface(DMatr
     return _GetDTMInterface(storageToUors, type);
     }
 
+BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface(DMatrix4d& storageToUors, bvector<DPoint3d>& regionPts, DTMAnalysisType type)
+{
+    return _GetDTMInterface(storageToUors, regionPts, type);
+}
+
 const BaseGCSCPtr& IScalableMesh::GetBaseGCS() const 
     {
     return _GetGCS().GetGeoRef().GetBasePtr();
@@ -1541,7 +1546,7 @@ BcDTMP ScalableMeshDTM::_GetBcDTM()
         params->SetLevel(m_scMesh->GetTerrainDepth());
 
         size_t totalPts = 0;
-        if (meshQueryInterface->Query(returnedNodes, 0, 0, params) != SUCCESS)
+        if (meshQueryInterface->Query(returnedNodes, !m_bounds.empty() ? m_bounds.data() : 0, !m_bounds.empty() ? (int)m_bounds.size() : 0, params) != SUCCESS)
             return nullptr;
         for (auto& node : returnedNodes)
         {
@@ -1551,7 +1556,7 @@ BcDTMP ScalableMeshDTM::_GetBcDTM()
         {
             returnedNodes.clear();
             params->SetLevel(params->GetLevel() - 1);
-            meshQueryInterface->Query(returnedNodes, 0, 0, params);
+            meshQueryInterface->Query(returnedNodes, !m_bounds.empty()? m_bounds.data() : 0, !m_bounds.empty() ? (int)m_bounds.size() : 0, params);
             totalPts = 0;
             for (auto& node : returnedNodes)
             {
@@ -1641,6 +1646,16 @@ DTMStatusInt ScalableMeshDTM::_GetBoundary(DTMPointArray& result)
 
     return DTM_SUCCESS;
     }
+
+RefCountedPtr<ScalableMeshDTM> ScalableMeshDTM::ExtractRegion(bvector<DPoint3d>& region)
+{
+    RefCountedPtr<ScalableMeshDTM> myPtr = ScalableMeshDTM::Create(m_scMesh);
+    myPtr->SetAnalysisType(m_draping->GetAnalysisType());
+    auto mat4d = DMatrix4d::From(m_transformToUors);
+    myPtr->SetStorageToUors(mat4d);
+    myPtr->m_bounds = region;
+    return myPtr;
+}
 
 IDTMDrapingP ScalableMeshDTM::_GetDTMDraping()
     {
@@ -1916,6 +1931,12 @@ template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<
     //m_scalableMeshDTM[type]->SetStorageToUors(storageToUors);
     return m_scalableMeshDTM[type].get();
     }
+
+template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<POINT>::_GetDTMInterface(DMatrix4d& storageToUors, bvector<DPoint3d>& regionPts, DTMAnalysisType type)
+{
+    m_scalableMeshDTMRegions.push_back(m_scalableMeshDTM[type]->ExtractRegion(regionPts));
+    return m_scalableMeshDTMRegions.back().get();
+}
 
 
 
@@ -4058,6 +4079,13 @@ template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMeshS
     assert(0);
     return 0;
     }
+
+template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMInterface(DMatrix4d& storageToUors, bvector<DPoint3d>& regionPoints, DTMAnalysisType type)
+{
+    assert(0);
+    return 0;
+}
+
 
 
 template <class POINT> DTMStatusInt ScalableMeshSingleResolutionPointIndexView<POINT>::_GetRange(DRange3dR range)
