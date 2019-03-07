@@ -106,7 +106,7 @@ def callEachStrategy(args, config, verData):
         if 'bdf' == args.action:
             # If present, associate the BDF with a PRG ID for release tracking.
             if ('prg_id' in stratConfig) and stratConfig['prg_id']:
-                os.environ['PrgProductId'] = stratConfig['prg_id']
+                os.environ['PrgProductId'] = str(stratConfig['prg_id'])
 
             # BDF names must be lower-case because BentleyBootstrap.py always lower-cases its input, which affects case-sensitive file systems.
             bdfPath = os.path.join(args.bdfdir, stratConfig['name'].lower() + '.xml')
