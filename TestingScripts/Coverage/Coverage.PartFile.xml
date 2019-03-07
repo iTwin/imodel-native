@@ -1,6 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+    
+  <Part Name="imodel02-CodeCoverage" OnlyPlatforms="x64" PrgOutputDir="imodel02-Coverage">
+		<RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository> 
+        <SubPart PartName="iModelBridgeCore-CodeCoverage"/>
+        <SubPart PartName="MstnBridge-CodeCoverage"/>
+        <SubPart PartName="iModelCore-CodeCoverage"/>
+    </Part>
+	
+	<!-- Tests in iModelBridgeCore build strategy -->
+	<Part Name="iModelBridgeCore-CodeCoverage" OnlyPlatforms="x64" PrgOutputDir="iModelBridgeCoreCoverage">
+		    <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
+        <SubPart PartName="DgnDbSync-CodeCoverage"/> 
+  </Part>
+	
+	 <Part Name="DgnDbSync-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BMakeOptions="+dCOMP_Name=DgnV8ConverterTests" OnlyPlatforms="x64">
+		    <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
+        <SubProduct Repository="imodel02" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" ProductName="DgnV8ConverterTests"/>
+    </Part>
+	
+	<!-- Tests in MstnBridge build strategy -->
+	<Part Name="MstnBridge-CodeCoverage" OnlyPlatforms="x64" PrgOutputDir="MstnBridgeCoverage">
+		    <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
+        <SubPart PartName="MstnBridgeTests-Coverage"/> 
+  </Part>
+	
+	 <Part Name="MstnBridgeTests-Coverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BMakeOptions="+dCOMP_Name=MstnBridgeTests" OnlyPlatforms="x64">
+		    <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository> -->
+        <SubProduct Repository="imodel02" PartFile="Bridges/Mstn/MstnBridge" ProductName="MstnBridgeTests"/>
+    </Part>
+
+    <!-- Tests in iModelCore build strategy -->
     <Part Name="iModelCore-CodeCoverage" OnlyPlatforms="x64" PrgOutputDir="iModelCoreCoverage">
 		<RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository> 
         <SubPart PartName="Bentley-CodeCoverage"/>
