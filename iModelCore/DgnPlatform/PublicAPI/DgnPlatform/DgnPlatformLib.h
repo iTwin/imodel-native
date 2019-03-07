@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatformLib.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -147,6 +147,7 @@ public:
             virtual ~IKnownLocationsAdmin() {}
             virtual BeFileNameCR _GetLocalTempDirectoryBaseName() = 0; //!< @see GetLocalTempDirectoryBaseName
             virtual BeFileNameCR _GetDgnPlatformAssetsDirectory() = 0; //!< @see GetDgnPlatformAssetsDirectory
+            virtual BeFileNameCR _GetGeoCoordinateDataDirectory() { return _GetDgnPlatformAssetsDirectory(); }
 
         public:
             //! Get the name of a local directory that can be used for creating temporary files. The directory must have
@@ -163,6 +164,11 @@ public:
             //! Return the directory containing the required DgnPlatform assets that must be deployed with any DgnPlatform-based app.
             //! Examples of required assets include fonts, ECSchemas, and localization resources.
             DGNPLATFORM_EXPORT BeFileNameCR GetDgnPlatformAssetsDirectory();
+
+            //! Return the directory containing the required GeoCoordinateData that must be deployed with any DgnPlatform-based app.
+            //! The only reason to use this method is when a PowerPlatform-based app is also using these libraries but wants to use the 
+            //! PowerPlatform based GeoCoordinateData and not the one from DgnClientSdk
+            BeFileNameCR GetGeoCoordinateDataDirectory() { return _GetGeoCoordinateDataDirectory(); }
 
             //! Gets the directory that holds the sprite definition files.
             virtual StatusInt _GetSpriteContainer(BeFileNameR spritePath, Utf8CP spriteNamespace, Utf8CP spriteName) { return BSIERROR; }
