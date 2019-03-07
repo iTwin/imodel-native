@@ -480,7 +480,7 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
         if (!pemFileName.empty())
             {
 #ifdef VANCOUVER_API
-			pCertAutorityAuth->SetCertificateAuthFileUrl(WString(pemFileName.c_str(), true));
+            pCertAutorityAuth->SetCertificateAuthFileUrl(WString(pemFileName.c_str(), true));
 #else	
             //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error. 
             //pCertAutorityAuth->SetCertificateAuthFileUrl(pemFileName);

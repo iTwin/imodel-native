@@ -210,8 +210,32 @@ IScalableMeshSourceCreatorWorker::Impl::~Impl()
 HFCPtr<MeshIndexType> IScalableMeshSourceCreatorWorker::Impl::GetDataIndex()
     {
     if (m_pDataIndex.GetPtr() == nullptr)
-        {       
+        {     
+        /*
+        BeFileName lockFileName(m_scmFileName);
+        lockFileName.AppendString(L".lock");
+
+        FILE* lockFile; 
+        BeDuration sleeper(BeDuration::FromSeconds(0.5));
+
+        while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+            {
+            sleeper.Sleep();            
+            }
+            */
         StatusInt status = IScalableMeshCreator::Impl::CreateDataIndex(m_pDataIndex, true, SM_ONE_SPLIT_THRESHOLD);
+
+        //fclose(lockFile);
+
+/*
+#ifndef NDEBUG
+        if (m_mainFilePtr != nullptr)
+            m_mainFilePtr->GetDb()->SetCanReopenShared(false);
+
+        if (m_sisterFilePtr != nullptr)
+            m_sisterFilePtr->GetDb()->SetCanReopenShared(false);
+#endif
+*/
 
         assert(m_pDataIndex.GetPtr() != nullptr);   
         assert(status == SUCCESS);
@@ -1403,9 +1427,34 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         sleeper.Sleep();            
         }        
 
+
+#ifndef NDEBUG
+
+    if (m_mainFilePtr == nullptr)
+        m_mainFilePtr = GetFile(true);
+                
+    if (m_mainFilePtr != nullptr)
+        m_mainFilePtr->GetDb()->SetCanReopenShared(true);
+
+    if (m_sisterFilePtr != nullptr)
+        m_sisterFilePtr->GetDb()->SetCanReopenShared(true);    
+
+
+#endif
+
+
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
     fclose(lockFile);
+
+#ifndef NDEBUG
+    if (m_mainFilePtr != nullptr)
+        m_mainFilePtr->GetDb()->SetCanReopenShared(false);
+
+    if (m_sisterFilePtr != nullptr)
+        m_sisterFilePtr->GetDb()->SetCanReopenShared(false);    
+#endif
+
 
     ScalableMeshQuadTreeBCLIBMeshFilter1<DPoint3d, DRange3d>* filter = dynamic_cast<ScalableMeshQuadTreeBCLIBMeshFilter1<DPoint3d, DRange3d>*>(pDataIndex->GetFilter());
     if (filter != nullptr)
@@ -1426,6 +1475,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
     SMMeshDataToLoad meshDataToFiltering;
     meshDataToFiltering.m_ptIndices = false;
+    meshDataToFiltering.m_features = true;
                         
     do
         {
@@ -2132,7 +2182,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::OpenSqlFiles(bool readOnly, bo
         {
         SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(GetDataIndex()->GetDataStore().get()));
         assert(pSqliteStore != nullptr);
-        
+                
         m_mainFilePtr = GetFile(true);
 
         if (m_smDb == nullptr)
@@ -2164,6 +2214,11 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::OpenSqlFiles(bool readOnly, bo
             }
         }
                 
+#ifndef NDEBUG
+    m_smDb->SetCanReopenShared(true);
+    m_smSisterDb->SetCanReopenShared(true);    
+#endif
+
     bool dbOpResult = true;
 
     if (!m_smDb->IsDbOpen() || !m_smDb->IsReadonly())
@@ -2189,8 +2244,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::OpenSqlFiles(bool readOnly, bo
         while (!m_smSisterDb->ReOpenShared(readOnly, true));
         }
 		*/
-
-
+    
     if (needSisterMainLockFile)
         {
         fclose(lockFile);
@@ -2211,6 +2265,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CloseSqlFiles()
 
     m_smSisterDb->CloseShared(wasTransactionAbandoned);
     assert(wasTransactionAbandoned == false);
+
+#ifndef NDEBUG
+    m_smDb->SetCanReopenShared(false);
+    m_smSisterDb->SetCanReopenShared(false);    
+#endif
+
 
     return SUCCESS;
     }
