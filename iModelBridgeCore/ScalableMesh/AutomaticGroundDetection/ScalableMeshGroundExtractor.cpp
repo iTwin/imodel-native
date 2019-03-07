@@ -457,11 +457,11 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
     if (m_scalableMesh->GetBaseGCS().IsValid() && !m_scalableMesh->IsCesium3DTiles())
         status = terrainCreator->SetBaseGCS(m_scalableMesh->GetBaseGCS()) == SUCCESS ? SMStatus::S_SUCCESS : SMStatus::S_ERROR;
 
-    BaseGCSCPtr destinationGcsPtr(terrainCreator->GetBaseGCS());
-
     assert(status == SMStatus::S_SUCCESS);
 
-    
+    BaseGCSCPtr destinationGcsPtr(terrainCreator->GetBaseGCS());
+    const GCS& gcs(terrainCreator->GetGCS());
+        
     BeFileName xyzFile(GetTempXyzFilePath());
     BeFileName xyzSourceFile(xyzFile); 
 
@@ -471,8 +471,8 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
         BeFileName newXyzFileName(m_dataSourceDir); 
         newXyzFileName.AppendString(BeFileName::GetFileNameAndExtension(xyzFile.c_str()).c_str());
                     
-        BeFileNameStatus statusMove = BeFileName::BeCopyFile(xyzFile.c_str(), newXyzFileName.c_str());
-        assert(statusMove == BeFileNameStatus::Success);
+        BeFileNameStatus statusCopy = BeFileName::BeCopyFile(xyzFile.c_str(), newXyzFileName.c_str());
+        assert(statusCopy == BeFileNameStatus::Success);
 
         xyzSourceFile = newXyzFileName;
         }
@@ -485,11 +485,8 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
     data.SetRepresenting3dData(false);
 
     sourceImportConfig.SetReplacementSMData(data);
-
-     if (destinationGcsPtr.IsValid())
-        {
-        sourceImportConfig.SetReplacementGCS(GetGCSFactory().Create(destinationGcsPtr.get()), true, false, false);
-        }
+    sourceImportConfig.SetReplacementGCS(gcs, true, false, false);
+     
 
     terrainCreator->EditSources().Add(groundPtsSource);    
 
@@ -542,19 +539,15 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
                     BeFileName newTextureName(directory); 
                     newTextureName.AppendString(BeFileName::GetFileNameAndExtension(currentTextureName.c_str()).c_str());
                     
-                    BeFileNameStatus statusMove = BeFileName::BeCopyFile(currentTextureName.c_str(), newTextureName.c_str());
-                    assert(statusMove == BeFileNameStatus::Success);
+                    BeFileNameStatus statusCopy = BeFileName::BeCopyFile(currentTextureName.c_str(), newTextureName.c_str());
+                    assert(statusCopy == BeFileNameStatus::Success);
 
                     currentTextureName = newTextureName;                
                     }
 
                 IDTMLocalFileSourcePtr textureSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_IMAGE, currentTextureName.c_str()));            
-
-                if (destinationGcsPtr.IsValid())
-                    {
-                    textureSource->EditConfig().SetReplacementGCS(GetGCSFactory().Create(destinationGcsPtr.get()), true, false, false);
-                    }
-
+                textureSource->EditConfig().SetReplacementGCS(gcs, true, false, false);
+                
                 terrainCreator->EditSources().Add(textureSource);                       
                 }        
 
@@ -586,19 +579,15 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
             BeFileName newCoverageBreaklineFileName(m_dataSourceDir); 
             newCoverageBreaklineFileName.AppendString(BeFileName::GetFileNameAndExtension(coverageBreaklineFile.c_str()).c_str());
                     
-            BeFileNameStatus statusMove = BeFileName::BeCopyFile(coverageBreaklineFile.c_str(), newCoverageBreaklineFileName.c_str());
-            assert(statusMove == BeFileNameStatus::Success);
+            BeFileNameStatus statusCopy = BeFileName::BeCopyFile(coverageBreaklineFile.c_str(), newCoverageBreaklineFileName.c_str());
+            assert(statusCopy == BeFileNameStatus::Success);
 
             coverageBreaklineFile = newCoverageBreaklineFileName;                
             }
 
         IDTMLocalFileSourcePtr coverageBreaklineSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_BREAKLINE, coverageBreaklineFile.c_str()));
-
-        if (destinationGcsPtr.IsValid())
-            {
-            coverageBreaklineSource->EditConfig().SetReplacementGCS(GetGCSFactory().Create(destinationGcsPtr.get()), true, false, false);
-            }
-
+        coverageBreaklineSource->EditConfig().SetReplacementGCS(gcs, true, false, false);
+        
         terrainCreator->EditSources().Add(coverageBreaklineSource); 
         }
 
