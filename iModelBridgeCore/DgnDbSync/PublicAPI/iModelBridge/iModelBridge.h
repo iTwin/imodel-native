@@ -537,7 +537,7 @@ struct iModelBridge
         DgnElementId m_jobSubjectId;
         Utf8String   m_jobRunCorrelationId;
         IDmsSupport* m_dmsSupport;
-
+        bvector<WString> m_additionalFiles;
         Utf8String                              m_repositoryName;     //!< A repository in the iModelHub project
         int                                     m_environment;    //!< Connect environment. Should match UrlProvider::Environment
         Utf8String                              m_iModelHubUserName;
@@ -685,6 +685,9 @@ struct iModelBridge
         void        SetClientInfo(WebServices::ClientInfoPtr info) { m_clientInfo = info;}
         
         IMODEL_BRIDGE_EXPORT Http::IHttpHeaderProviderPtr GetDefaultHeaderProvider() const;
+
+        bvector<WString> const& GetAdditionalFilePattern() const { return m_additionalFiles; }
+        void AddAdditionalFilePattern(WStringCR pattern) { m_additionalFiles.push_back(pattern); }
         };
 
     private:

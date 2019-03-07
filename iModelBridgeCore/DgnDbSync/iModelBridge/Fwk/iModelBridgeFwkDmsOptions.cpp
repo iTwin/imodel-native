@@ -125,16 +125,21 @@ BentleyStatus   iModelBridgeFwk::StageWorkspace()
     BentleyStatus status = BentleyStatus::SUCCESS;
     m_dmsSupport->_Initialize();
     m_dmsSupport->SetApplicationResourcePath(m_dmsServerArgs.m_applicationWorkspace);
+    bvector <WString> filePatterns = m_dmsServerArgs.m_additionalFilePatterns;
+    //! Allow the bridges to inject additional file patterns
+    if (NULL != m_bridge)
+        filePatterns.insert(filePatterns.end(), m_bridge->GetParamsCR().GetAdditionalFilePattern().begin(), m_bridge->GetParamsCR().GetAdditionalFilePattern().end());
+
     if (!m_dmsServerArgs.m_inputFileUrn.empty())
         {
         BeFileName workspaceCfgFile;
-        if (SUCCESS == m_dmsSupport->_FetchWorkspace(workspaceCfgFile, m_dmsServerArgs.m_inputFileUrn, m_dmsServerArgs.m_workspaceDir, m_dmsServerArgs.m_isv8i, m_dmsServerArgs.m_additionalFilePatterns))
+        if (SUCCESS == m_dmsSupport->_FetchWorkspace(workspaceCfgFile, m_dmsServerArgs.m_inputFileUrn, m_dmsServerArgs.m_workspaceDir, m_dmsServerArgs.m_isv8i, filePatterns))
             m_dmsServerArgs.SetDgnArg(L"--DGN_CFGFILE=", workspaceCfgFile, m_bargptrs);
         }
     else
         {
         BeFileName workspaceCfgFile;
-        if (SUCCESS == m_dmsSupport->_FetchWorkspace(workspaceCfgFile, m_dmsServerArgs.m_folderId, m_dmsServerArgs.m_documentId, m_dmsServerArgs.m_workspaceDir, m_dmsServerArgs.m_isv8i, m_dmsServerArgs.m_additionalFilePatterns))
+        if (SUCCESS == m_dmsSupport->_FetchWorkspace(workspaceCfgFile, m_dmsServerArgs.m_folderId, m_dmsServerArgs.m_documentId, m_dmsServerArgs.m_workspaceDir, m_dmsServerArgs.m_isv8i, filePatterns))
             m_dmsServerArgs.SetDgnArg(L"--DGN_CFGFILE=", workspaceCfgFile, m_bargptrs);
         }
     m_dmsSupport->_UnInitialize();
