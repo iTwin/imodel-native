@@ -85,6 +85,7 @@ void InitializeScalableMeshLogging()
     if(NativeLogging::LoggingConfig::IsProviderActive())
         return; // Provider already setup by app
 
+#if _WIN32
     // Setup logging system
     BeFileName appDir;
     WChar smDllFile[MAX_PATH];
@@ -106,8 +107,11 @@ void InitializeScalableMeshLogging()
         }
     else
         {
+#endif
         NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
+#if _WIN32
         }
+#endif
     }
 
 #ifndef LINUX_SCALABLEMESH_BUILD

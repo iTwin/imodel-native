@@ -323,6 +323,7 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
     }
 #endif
 
+#ifndef LINUX_SCALABLEMESH_BUILD
     if(serverUrl.empty())
         {
         // Unable to retrieve valid RDS url... fall back on CCApi (Windows only)
@@ -400,7 +401,7 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
             BeAssert(!"Unknown error while fetching RDS server url");
             }
         }
-
+#endif
     if(serverUrl.empty())
         {
         SMRDSPROVIDER_LOG.error("GetBuddiUrl() : RDS server URL couldn't be found");
