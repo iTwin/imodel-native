@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:07:12 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -565,6 +565,8 @@ class ScalableMeshMesh : public IScalableMeshMesh
         virtual DPoint3d* _EditPoints() override;
 
         virtual DTMStatusInt _GetAsBcDTM(BcDTMPtr& bcdtm)override;
+
+        virtual DTMStatusInt _GetAsBcDTM(BcDTMPtr& bcdtm, bool pointsOnly)override;
 
         virtual DTMStatusInt _GetBoundary(bvector<DPoint3d>& boundary) override;
 

@@ -1574,8 +1574,35 @@ BcDTMP ScalableMeshDTM::_GetBcDTM()
             for (auto&idx : indices) idx += (int)meshP->GetNbPoints();
             meshP->AppendMesh(currentMeshPtr->GetPolyfaceQuery()->GetPointCount(), const_cast<DPoint3d*>(currentMeshPtr->GetPolyfaceQuery()->GetPointCP()), (int)indices.size(), &indices[0], 0, 0, 0, 0, 0, 0);
         }
-		meshP->RemoveDuplicates();
-        DTMStatusInt val = meshP->GetAsBcDTM(m_dtm);
+
+        bool hasFeatureSource = false;
+
+        StatusInt status;
+        auto creator = IScalableMeshSourceCreator::GetFor(m_scMesh, status);
+        for (IDTMSourceCollection::const_iterator it = creator->GetSources().Begin(); it != creator->GetSources().End(); it++)
+        {
+            BeFileName path = BeFileName(it->GetPath());
+            if (0 == path.GetExtension().CompareToI(L"dtm") ||
+                0 == path.GetExtension().CompareToI(L"tin") ||
+                0 == path.GetExtension().CompareToI(L"dgn") ||
+                0 == path.GetExtension().CompareToI(L"bcdtm") ||
+                0 == path.GetExtension().CompareToI(L"dat"))
+            {
+                hasFeatureSource = true;
+            }
+            
+        }
+
+        DTMStatusInt val = DTM_SUCCESS;
+        if (hasFeatureSource)
+        {
+            meshP->RemoveDuplicates();
+            val = meshP->GetAsBcDTM(m_dtm);
+        }
+        else
+        {
+            val = meshP->GetAsBcDTM(m_dtm, true);
+        }
         if (val == DTM_ERROR) 
             {
             m_dtm = nullptr;

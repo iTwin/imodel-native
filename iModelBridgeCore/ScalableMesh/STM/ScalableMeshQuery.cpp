@@ -731,6 +731,11 @@ DTMStatusInt IScalableMeshMesh::GetAsBcDTM(BcDTMPtr& bcdtm)
     return _GetAsBcDTM(bcdtm);
     }
 
+DTMStatusInt IScalableMeshMesh::GetAsBcDTM(BcDTMPtr& bcdtm, bool pointsOnly)
+{
+    return _GetAsBcDTM(bcdtm, pointsOnly);
+}
+
 DTMStatusInt IScalableMeshMesh::GetBoundary(bvector<DPoint3d>& pts)
     {
     return _GetBoundary(pts);
@@ -1566,6 +1571,24 @@ DTMStatusInt ScalableMeshMesh::_GetBoundary(bvector<DPoint3d>& pts)
     return DTM_ERROR;
     }
 
+DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm, bool pointsOnly)
+    {
+
+    if (!pointsOnly)
+        return _GetAsBcDTM(bcdtm);
+
+    BC_DTM_OBJ* bcDtmP = 0;
+    int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
+    if (dtmCreateStatus == 0)
+    {
+        bcdtm = BcDTM::CreateFromDtmHandle(*bcDtmP);
+    }
+    else return DTM_ERROR;
+
+    bcdtmObject_storeDtmFeatureInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::RandomSpots, bcdtm->GetTinHandle()->nullUserTag, 1, &bcdtm->GetTinHandle()->nullFeatureId, m_points, (long)m_nbPoints);
+    return (DTMStatusInt)bcdtmObject_triangulateDtmObject(bcdtm->GetTinHandle());
+    }
+
 DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
     { 
     BC_DTM_OBJ* bcDtmP = 0;
@@ -1636,7 +1659,7 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
     int status = bcdtmObject_storeTrianglesInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, &pts[0], (int)pts.size(), &indices[0], (int)indices.size() / 3);
 
 #ifndef NDEBUG
-   /* WString name = L"C:\\work\\2017q2\\CS\\bcdtm_";
+   /* WString name = L"E:\\Elenie\\bcdtm_";
     name.append(std::to_wstring(indices.size()).c_str());
     name.append(L".bcdtm");
     bcdtmWrite_toFileDtmObject(bcdtm->GetTinHandle(), name.c_str());*/
@@ -2421,7 +2444,6 @@ void ScalableMeshMesh::RecalculateUVs(DRange3d& nodeRange)
 void ScalableMeshMesh::RemoveDuplicates()
 {
 	bmap<DPoint3d, int, DPoint3dZYXTolerancedSortComparison> firstOccurences(DPoint3dZYXTolerancedSortComparison(1e-5, 0)); // they use this tolerance in bclib
-
 
 	bvector<DPoint3d> newPoints;
 	bvector<int32_t> newIndices;

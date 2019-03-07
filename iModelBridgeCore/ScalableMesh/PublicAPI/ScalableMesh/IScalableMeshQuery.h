@@ -322,6 +322,8 @@ struct IScalableMeshMesh : public RefCountedBase
 
         virtual DTMStatusInt _GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm) = 0;
 
+        virtual DTMStatusInt _GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm, bool pointsOnly) = 0;
+
         virtual DTMStatusInt _GetBoundary(bvector<DPoint3d>& boundary) = 0;
 
 		virtual void _SetTransform(Transform newTransform) = 0;
@@ -355,6 +357,8 @@ struct IScalableMeshMesh : public RefCountedBase
         BENTLEY_SM_EXPORT DPoint3d* EditPoints();
 
         BENTLEY_SM_EXPORT DTMStatusInt GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm);
+
+        BENTLEY_SM_EXPORT DTMStatusInt GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm, bool pointsOnly);
 
         BENTLEY_SM_EXPORT DTMStatusInt GetBoundary(bvector<DPoint3d>& boundary);
 
