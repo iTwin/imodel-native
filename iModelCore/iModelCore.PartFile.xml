@@ -31,7 +31,7 @@
         <SubPart PartName="RunUnitCppTest" PartFile="iModelCore/iModelCoreTesting" Repository="imodel02"/>
     </Part>
 
-    <NuGetProduct Name="iModelCoreNuget" Description="iModel Core SDK" OnlyPlatforms="x64,linuxx64">
+    <NuGetProduct Name="iModelCoreNuget" Description="iModel Core SDK" OnlyPlatforms="x64">
         <Directories DirectoryListName="iModelCoreNugetDirs"/>
         <SubPart PartName="iModelCore"/>
     </NuGetProduct>
