@@ -7055,18 +7055,11 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::SaveGr
         }
 
     bool doSkip = false;
-    if (m_nodeHeader.m_IsLeaf && IsEmpty())
-        {
-        doSkip = true;
-        }
-    if(0 < GetNbPoints() && GetNbPoints() < 3)
-        {
-        doSkip = true;
-        }
+    if (m_nodeHeader.m_IsLeaf && IsEmpty()) doSkip = true;
+    if(m_nodeHeader.m_IsLeaf && m_nodeHeader.m_nbFaceIndexes == 0) doSkip = true;
+    if(0 < GetNbPoints() && GetNbPoints() < 3) doSkip = true;
     if (m_nodeHeader.m_nodeExtent.IsNull() || (m_nodeHeader.m_contentExtentDefined && m_nodeHeader.m_contentExtent.IsNull()))
-        {
         doSkip = true;
-        }
 
     if (!doSkip) pi_pGroup->AddNode<EXTENT>(this->m_nodeHeader);
     

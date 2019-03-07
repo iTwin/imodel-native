@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/ElemSourceRef.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -15,6 +15,11 @@
 #include "ElemSourceRef.h"
 #include "DGNModelUtilities.h"
 
+#ifdef VANCOUVER_API
+#include <RasterCore/DgnRaster.h>
+#include <RasterCore/RasterDEMFilters.h>
+#include <RasterCore/msrastercore.h>
+#endif
 
 //#include <DcInternal\DcStmCore\ScalableMeshUtil.h>
 

@@ -298,7 +298,7 @@ struct IScalableMesh :  IRefCounted
 
         virtual void                               _ImportTerrainSM(WString terrainPath) = 0;
 
-        virtual SMStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, GeoCoordinates::BaseGCSCPtr& destinationGcs, bool limitResolution) = 0;
+        virtual SMStatus                           _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, GeoCoordinates::BaseGCSCPtr& destinationGcs, bool limitResolution, bool reprojectElevation) = 0;
                                                                                                                                                                  
         virtual BentleyStatus                      _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName) = 0;
 
@@ -503,7 +503,7 @@ struct IScalableMesh :  IRefCounted
 
         BENTLEY_SM_EXPORT IScalableMeshPtr       GetTerrainSM();
 
-        BENTLEY_SM_EXPORT SMStatus          DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, GeoCoordinates::BaseGCSCPtr destinationGcs = nullptr, bool limitResolutions = false);
+        BENTLEY_SM_EXPORT SMStatus          DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, GeoCoordinates::BaseGCSCPtr destinationGcs = nullptr, bool limitResolutions = false, bool reprojectElevation = false);
 
         BENTLEY_SM_EXPORT BentleyStatus          CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName);
 

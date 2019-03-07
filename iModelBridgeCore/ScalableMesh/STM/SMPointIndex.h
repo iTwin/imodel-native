@@ -2086,6 +2086,10 @@ public:
         return new ISMPointIndexQuery<POINT, EXTENT>();
     }
 
+    virtual void ToggleLimitToLevel(bool shouldLimit, size_t maxLevel)
+    {};
+
+
 #ifdef ACTIVATE_NODE_QUERY_TRACING
     /*======================================================================================================
     **  Those methods are called by the application and the index to activate the node query tracing mechanism.
