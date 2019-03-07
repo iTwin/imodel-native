@@ -477,8 +477,9 @@ struct iModelBridge
         //! in succesfully converting data inside a file.
         //! @param fn   The name of the file that is to be converted
         //! @param bridgeRegSubKey The registry subkey that identifies the bridge
+        //! @param guid The the default docguid should docprops not exist for fn
         //! @return non-zero error status if assignment of this file to the registry database failed.
-        virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
+        virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey, BeSQLite::BeGuidCP guid) = 0;
         };
 
     //! Interface to enable bridges to perform briefcase operations, such as push while they run.
