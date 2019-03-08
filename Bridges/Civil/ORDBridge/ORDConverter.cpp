@@ -441,6 +441,10 @@ BentleyStatus ORDAlignmentsConverter::UpdateBimAlignment(AlignmentCR cifAlignmen
     if (horizAlignmentPtr->Update().IsNull())
         return BentleyStatus::ERROR;
 
+    auto alignmentPtr = AlignmentBim::Alignment::GetForEdit(alignmentCPtr->GetDgnDb(), alignmentCPtr->GetElementId());
+    alignmentPtr->GenerateAprox3dGeom();
+    alignmentPtr->Update();
+
     return BentleyStatus::SUCCESS;
     }
 
@@ -579,9 +583,26 @@ struct ORDCorridorsConverter: RefCountedBase
     protected:
         Utf8String _GetHash() override
             {
-            /*m_sha1(xml);
-            return m_sha1.GetHashString();*/
-            return "";
+            auto corridorCP = dynamic_cast<CorridorCP>(m_entity);
+            auto surfacesPtr = corridorCP->GetCorridorSurfaces();
+
+            Bentley::bvector<Byte> buffer;
+            while (surfacesPtr.IsValid() && surfacesPtr->MoveNext())
+                {
+                auto surfacePtr = surfacesPtr->GetCurrent();
+                if (surfacePtr.IsValid())
+                    {
+                    auto meshPtr = surfacePtr->GetMesh();
+                    if (meshPtr.IsValid())
+                        {
+                        buffer.clear();
+                        Bentley::BentleyGeometryFlatBuffer::GeometryToBytes(*meshPtr, buffer);
+                        m_sha1.Add(buffer.begin(), buffer.size());
+                        }
+                    }
+                }
+
+            return m_sha1.GetHashString();
             }
     }; // CifCorridorSourceItem
 

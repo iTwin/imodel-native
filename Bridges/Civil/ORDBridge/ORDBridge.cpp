@@ -244,8 +244,8 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     auto changeDetectorPtr = GetSyncInfo().GetChangeDetectorFor(*this);
 
     // IMODELBRIDGE REQUIREMENT: Keep information about the source document up to date.
-    iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetectorPtr, _GetParams().GetInputFileName());
-    auto fileScopeId = docLink.m_syncInfoRecord.GetROWID();
+    iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetectorPtr, _GetParams().GetInputFileName(), nullptr, "DocumentWithBeGuid", jobSubject.GetElementId().GetValue());
+    auto fileScopeId = jobSubject.GetElementId().GetValue();
 
     // IMODELBRIDGE REQUIREMENT: Note job transform and react when it changes
     ORDConverter::Params params(_GetParams(), jobSubject, *changeDetectorPtr, fileScopeId, m_converter->GetRootModelUnitSystem(), GetSyncInfo());
