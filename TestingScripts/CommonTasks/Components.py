@@ -53,7 +53,16 @@ Components = {'BeHttp':                 {'dll': 'BeHttpM02.dll', 'exe': 'BeHttpT
               'WSClient':               {'dll': 'WebServicesClientM02.dll', 'exe': 'WSClientTest',
                                          'ignore':['WSClient','Tests','UnitTests'],
                                          'pdb': ['WSClient', 'Client'],
-                                         'owner': 'Vincas Razma'}
+                                         'owner': 'Vincas Razma'},
+              'DgnV8ConverterTests':    {'dll': 'DgnV8ConverterM02.dll', 'exe': 'DgnV8ConverterTests',
+                                         'pdb': ['DgnDbSync', 'DgnV8ConverterTests'],
+                                         'owner': 'Carole MacDonald',
+                                         'repo': ['imodel02', 'iModelBridgeCore', 'DgnDbSync']},
+              'MstnBridgeTests':        {'dll': 'iModelBridgeM02.dll', 'exe': 'MstnBridgeTests',
+                                         'pdb': ['MstnBridge', 'MstnBridgeTests'],
+                                         'owner': 'Abeesh Basheer',
+                                         'repo': ['imodel02', 'Bridges', 'Mstn']},
+              
             }
 
 Architectures = { 'Winx64': {'log':'RunGTest'},
@@ -119,6 +128,8 @@ def LogPathForComp(compToFind):
     outRoot = os.getenv('OutRoot')
     if compToFind.lower() == 'dgnv8converter': # it has different naming convention
         logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', exeName, exeName, 'run', 'logs', 'test.log')
+    elif compToFind.lower() == 'dgnv8convertertests' or compToFind.lower() == 'mstnbridgetests': # it has different naming convention
+        logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', exeName, exeName, 'run', 'logs', 'test.log')
     else:
         logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', compToFind+'-GTest', exeName, 'run', 'logs', 'test.log')
     return logPath
@@ -128,6 +139,8 @@ def ExePathForComp(compToFind):
     if exeName is None:
         return None
     if compToFind.lower() == 'dgnv8converter': # it has different naming convention
+        exePath = os.path.join('%OutRoot%Winx64', 'Product', exeName, exeName+'.exe')
+    elif compToFind.lower() == 'dgnv8convertertests' or compToFind.lower() == 'mstnbridgetests': # it has different naming convention
         exePath = os.path.join('%OutRoot%Winx64', 'Product', exeName, exeName+'.exe')
     else:
         exePath = os.path.join('%OutRoot%Winx64', 'Product', compToFind+'-GTest', exeName+'.exe')

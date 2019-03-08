@@ -195,7 +195,12 @@ class CoverageOpenCPP:
             if reportType: #local report, always generate it
                 cov = CodeCoverage()
                 cov.set_ReportPath(self.repoPath)
-                cov.set_SourcePath(cmp.RepoPathForComp(comp))
+
+                if 'Bridges\\Mstn' in str(cmp.RepoPathForComp(comp)):
+                    cov.set_SourcePath(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Mstn','iModelBridgeCore')) #Mstn is using iModelBridgeCore
+                else:
+                    cov.set_SourcePath(cmp.RepoPathForComp(comp))
+                
                 cov.set_ExportType('html')
                 if cov.covTestExe(testExe):  # if a single run completes, mark it success
                     covSuccess = True
@@ -206,7 +211,10 @@ class CoverageOpenCPP:
                 if not os.path.exists(os.path.join(self.repoPath, os.path.basename(testExe)+'.xml')):
                     cov = CodeCoverage()
                     cov.set_ReportPath(self.repoPath)
-                    cov.set_SourcePath(cmp.RepoPathForComp(comp))
+                    if 'Bridges\\Mstn' in str(cmp.RepoPathForComp(comp)):
+                        cov.set_SourcePath(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Mstn','iModelBridgeCore')) #Mstn is using iModelBridgeCore
+                    else:
+                        cov.set_SourcePath(cmp.RepoPathForComp(comp))
                     if cov.covTestExe(testExe):  # if a single run completes, mark it success
                         covSuccess = True
                 else: #XML output is already there.
