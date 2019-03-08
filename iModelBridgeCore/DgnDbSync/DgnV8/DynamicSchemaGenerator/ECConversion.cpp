@@ -716,7 +716,7 @@ BentleyStatus V8ECClassInfo::Save(DgnDbR db, ECClassName const& v8ClassName, Bis
     Json::Value jsonObj;
     jsonObj["Rule"] = (int) rule;
     jsonObj["HasSecondary"] = hasSecondary;
-    return BeSQLite::DbResult::BE_SQLITE_OK == db.SavePropertyString(DgnV8Class::V8Info(v8ClassName.GetClassFullName().c_str()), jsonObj.ToString()) ? BSISUCCESS : BSIERROR;
+    return BeSQLite::DbResult::BE_SQLITE_OK == db.SavePropertyString(DgnV8Info::V8Class(v8ClassName.GetClassFullName().c_str()), jsonObj.ToString()) ? BSISUCCESS : BSIERROR;
 
     //CachedStatementPtr stmt = nullptr;
     //auto stat = db.GetCachedStatement(stmt, "INSERT INTO " SYNCINFO_ATTACH(V8ECCLASS_TABLE) " (V8SchemaName,V8ClassName,BisConversionRule) VALUES (?,?,?)");
@@ -1220,10 +1220,39 @@ DynamicSchemaGenerator::SchemaConversionScope::~SchemaConversionScope()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            06/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-void RemoveDgnV8CustomAttributes(ECN::IECCustomAttributeContainerR container)
+void DynamicSchemaGenerator::RemoveDgnV8CustomAttributes(ECN::IECCustomAttributeContainerR container)
     {
     for (ECN::IECInstancePtr instance : container.GetCustomAttributes(false))
         {
+        ECN::ECPropertyP prop = dynamic_cast<ECN::ECPropertyP> (&container);
+        if (nullptr != prop)
+            {
+            if (prop->IsCalculated())
+                {
+                ECN::ECValue v;
+                if (ECN::ECObjectsStatus::Success == instance->GetValue(v, "ECExpression") && !v.IsNull())
+                    {
+                    Utf8String expression = v.GetUtf8CP();
+                    if (expression.Contains("GetRelatedInstance"))
+                        {
+                        PropertySpec spec = DgnV8Info::V8Expression(prop->GetClass().GetFullName());
+                        Utf8String existing;
+                        GetDgnDb().QueryProperty(existing, spec);
+                        rapidjson::Document expressions(rapidjson::kObjectType);
+                        if (!existing.empty())
+                            expressions.Parse(existing.c_str());
+                        expressions.AddMember(rapidjson::StringRef(prop->GetName().c_str()), rapidjson::Value(expression.c_str(), expressions.GetAllocator()), expressions.GetAllocator());
+                        rapidjson::StringBuffer buffer;
+                        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                        expressions.Accept(writer);
+                        GetDgnDb().SavePropertyString(spec, buffer.GetString());
+                        }
+                    }
+                container.RemoveCustomAttribute(instance->GetClass().GetSchema().GetName(), instance->GetClass().GetName());
+                container.RemoveSupplementedCustomAttribute(instance->GetClass().GetSchema().GetName(), instance->GetClass().GetName());
+                continue;
+                }
+            }
         Utf8String v8SchemaName(instance->GetClass().GetSchema().GetName().c_str());
         if (!DynamicSchemaGenerator::IsDgnV8DeliveredSchema(v8SchemaName))
             continue;

@@ -477,8 +477,9 @@ struct iModelBridge
         //! in succesfully converting data inside a file.
         //! @param fn   The name of the file that is to be converted
         //! @param bridgeRegSubKey The registry subkey that identifies the bridge
+        //! @param guid The the default docguid should docprops not exist for fn
         //! @return non-zero error status if assignment of this file to the registry database failed.
-        virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
+        virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey, BeSQLite::BeGuidCP guid) = 0;
         };
 
     //! Interface to enable bridges to perform briefcase operations, such as push while they run.
@@ -522,6 +523,7 @@ struct iModelBridge
         GCSCalculationMethod m_gcsCalculationMethod;
         BeFileName m_briefcaseName;
         BeFileName m_assetsDir;
+        BeFileName m_geoCoordDir;
         BeFileName m_libraryDir;
         BeFileName m_reportFileName;
         Utf8String m_converterJobName;
@@ -608,8 +610,10 @@ struct iModelBridge
         BeFileNameCR GetInputFileName() const {return m_inputFileName;} //!< The name of the input file that is to be read and converted and/or scanned for changes.
         void SetInputFileName(BeFileNameCR fn) {m_inputFileName=fn;} //!< Set the name of the input file that is to be read and converted and/or scanned for changes.
         BeFileNameCR GetAssetsDir() const {return m_assetsDir;} //!< The bridge library's assets directory
-        void SetAssetsDir(BeFileNameCR dir) {m_assetsDir=dir;}
-        BeFileNameCR GetLibraryDir() const {return m_libraryDir;} //!< The directory from which the bridge library itself was loaded
+        void SetAssetsDir(BeFileNameCR dir) { m_assetsDir = dir; }
+        BeFileNameCR GetGeoCoordData() const { return m_geoCoordDir; }
+        void SetGeoCoordData(BeFileNameCR dir) { m_geoCoordDir = dir; }
+        BeFileNameCR GetLibraryDir() const { return m_libraryDir; } //!< The directory from which the bridge library itself was loaded
         BeFileNameCR GetDrawingsDirs() const {return m_drawingsDirs;} //!< The top-level directory to scan for other files that may contain drawings and sheets
         void SetDrawingsDir(BeFileNameCR dir) {m_drawingsDirs = dir;}
         void AddDrawingAndSheetFile(BeFileNameCR fn) {m_drawingAndSheetFiles.push_back(fn);}
