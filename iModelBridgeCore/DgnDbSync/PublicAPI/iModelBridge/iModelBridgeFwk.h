@@ -362,6 +362,8 @@ public:
 
     IMODEL_BRIDGE_FWK_EXPORT void SetTokenProvider(WebServices::IConnectTokenProviderPtr provider);
 
+    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus TestFeatureFlag (CharCP ff, bool& flag);
+
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) const;
 
     //!Internal function.

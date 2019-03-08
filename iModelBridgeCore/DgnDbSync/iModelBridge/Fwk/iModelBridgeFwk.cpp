@@ -2238,3 +2238,18 @@ BeSQLite::BeBriefcaseId iModelBridgeFwk::GetBriefcaseId()
 
     return BeSQLite::BeBriefcaseId(bcid);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Wouter.Rombouts                 03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::TestFeatureFlag(CharCP ff, bool& flag)
+    {
+    if (m_bridge != nullptr) 
+        {
+        flag = m_bridge->TestFeatureFlag(ff); 
+        return BSISUCCESS; 
+        } 
+
+    flag = false;
+    return BSIERROR; 
+    }
