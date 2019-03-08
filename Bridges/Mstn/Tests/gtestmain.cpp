@@ -90,7 +90,7 @@ struct BeGTestHost : RefCounted<BeTest::Host>
     static RefCountedPtr<BeGTestHost> Create (char const* progDir) {return new BeGTestHost (progDir);}
     };
 
-static wchar_t const* s_configFileName = L"MstnConverterTests.logging.config.xml";
+static wchar_t const* s_configFileName = L"MstnBridgeTests.logging.config.xml";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson
@@ -277,6 +277,12 @@ int WinSetEnv(const char * name, const char * value)
     }
 #endif
 
+static void recreateDir(BeFileNameCR dirName)
+    {
+    BeFileName::EmptyAndRemoveDirectory (dirName.c_str());
+    BeFileName::CreateNewDirectory (dirName.c_str());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -298,6 +304,12 @@ extern "C" int main (int argc, char **argv)
 
     auto hostPtr = BeGTestHost::Create(argv[0]);
     
+    //  Make sure output directies exist (and remove any results hanging around from a previous run)
+    BeFileName dirName;
+    hostPtr->GetOutputRoot(dirName);
+    recreateDir(dirName);
+    hostPtr->GetTempDir(dirName);
+    recreateDir(dirName);
 
     BeTest::Initialize (*hostPtr);
 
