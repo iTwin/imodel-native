@@ -697,6 +697,19 @@ DisplayParamsCPtr DisplayParams::CloneWithTextureOverride(TextureMappingCR textu
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParamsCPtr DisplayParams::CloneForMeshedLineString() const
+    {
+    BeAssert (Type::Linear == GetType());
+    auto clone = new DisplayParams(*this);
+    clone->m_type = Type::Mesh;
+    clone->m_fillFlags = FillFlags::Always;
+
+    return clone;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> static int compareValues(T const& lhs, T const& rhs)

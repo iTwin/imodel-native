@@ -208,7 +208,7 @@ public:
 
     DisplayParamsCPtr CloneForRasterText(TextureCR raster) const;
     DisplayParamsCPtr CloneWithTextureOverride(TextureMappingCR textureMapping) const;
-
+    DisplayParamsCPtr CloneForMeshedLineString() const;
 
     DGNPLATFORM_EXPORT Utf8String ToDebugString() const; //!< @private
 

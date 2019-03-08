@@ -525,7 +525,7 @@ public:
     AuxChannelTable                 m_auxChannels;
     SurfaceType                     m_type;
 
-    MeshParams(TriMeshArgsCR, bool isClassifier);
+    MeshParams(TriMeshArgsCR, bool isVolumeClassifier);
 };
 
 //=======================================================================================
@@ -836,9 +836,9 @@ void LUTDimensions::Init(uint32_t nEntries, uint32_t nRgbaPerEntry, uint32_t nEx
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshParams::MeshParams(TriMeshArgsCR args, bool isClassifier) : m_vertexParams(args.m_pointParams)
+MeshParams::MeshParams(TriMeshArgsCR args, bool isVolumeClassifier) : m_vertexParams(args.m_pointParams)
     {
-    if (isClassifier)
+    if (isVolumeClassifier)
         {
         m_type = SurfaceType::Classifier;
         }
@@ -1222,7 +1222,7 @@ BentleyStatus IModelTileWriter::CreateTriMesh(Json::Value& primitiveJson, MeshCR
     if (!args.Init(mesh))
         return ERROR;
 
-    MeshParams meshParams(args, m_loader.GetTree().IsClassifier());
+    MeshParams meshParams(args, m_loader.GetTree().IsVolumeClassifier());
     AddVertexTable(primitiveJson, meshParams.m_lutParams, meshParams.m_vertexParams, idStr);
     AddAuxChannelTable(primitiveJson, meshParams.m_auxChannels, idStr);
 

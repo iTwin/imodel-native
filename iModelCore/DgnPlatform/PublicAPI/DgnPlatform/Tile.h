@@ -267,8 +267,7 @@ public:
     ContentCP GetContent() const { return m_content.get(); }
     TreeR GetTree() const { return m_tree; }
 
-    virtual PolyfaceHeaderPtr Preprocess(PolyfaceHeaderR pf) const { return &pf; }
-    virtual bool Preprocess(Render::Primitives::PolyfaceList& polyface, Render::Primitives::StrokesList const& strokes) const { return false; }
+    virtual void Preprocess(Render::Primitives::PolyfaceList& polyfaces, Render::Primitives::StrokesList& strokes) const { }
     virtual bool CompressMeshQuantization() const { return false; }                             // If true the quantization of each mesh will be compressed to include only the mesh (not tile) range.  ...Classifiers;
     virtual uint64_t GetNodeId(DgnElementId id) const;
 
@@ -323,8 +322,9 @@ struct Tree : RefCountedBase, NonCopyableClass
     enum class Type : uint8_t
     {
         Model,
-        Classifier,
+        VolumeClassifier,
         Animation,
+        PlanarClassifier,
     };
 
     enum class RootTile : uint8_t
@@ -340,16 +340,19 @@ struct Tree : RefCountedBase, NonCopyableClass
         Tree::Type m_type;
         double m_classifierExpansion;
         DgnElementId m_animationSourceId;
+        bool m_omitEdges;
 
-        Id() : m_type(Type::Model), m_classifierExpansion(0.0) { }
-        Id(DgnModelId modelId, Tree::Type type, double expansion = 0.0, DgnElementId animationSourceId = DgnElementId()) : m_modelId(modelId), m_type(type), m_classifierExpansion(expansion), m_animationSourceId(animationSourceId) { }
+        Id() : m_type(Type::Model), m_classifierExpansion(0.0), m_omitEdges(false) { }
+        Id(DgnModelId modelId, Tree::Type type, bool omitEdges = false, double expansion = 0.0, DgnElementId animationSourceId = DgnElementId()) : m_modelId(modelId), m_type(type), m_omitEdges(omitEdges), m_classifierExpansion(expansion), m_animationSourceId(animationSourceId) { }
 
         bool IsValid() const { return m_modelId.IsValid(); }
-        bool IsClassifier() const { return Tree::Type::Classifier == m_type; }
+        bool IsVolumeClassifier() const { return Tree::Type::VolumeClassifier == m_type; }
+         bool IsPlanarClassifier() const { return Tree::Type::PlanarClassifier == m_type; }
         bool IsAnimation() const { return Tree::Type::Animation == m_type; }
-        double GetClassifierExpansion() const { BeAssert(IsClassifier()); return m_classifierExpansion; }
+        double GetClassifierExpansion() const { BeAssert(IsVolumeClassifier() || IsPlanarClassifier()); return m_classifierExpansion; }
         DgnElementId GetAnimationSourceId() const { BeAssert(IsAnimation()); return m_animationSourceId; }
         Tree::Type GetType() const { return m_type; }
+        bool GetOmitEdges() const { return m_omitEdges; }
 
         DGNPLATFORM_EXPORT Utf8String ToString() const;
         DGNPLATFORM_EXPORT static Id FromString(Utf8StringCR idString);
@@ -390,7 +393,9 @@ public:
     std::mutex& GetDbMutex() { return m_dbMutex; }
     DgnModelId GetModelId() const { return GetId().m_modelId; }
     Type GetType() const { return GetId().m_type; }
-    bool IsClassifier() const { return GetId().IsClassifier(); }
+    bool IsVolumeClassifier() const { return GetId().IsVolumeClassifier(); }
+    bool IsPlanarClassifier() const { return GetId().IsPlanarClassifier(); }
+    bool GetOmitEdges() const { return GetId().GetOmitEdges(); }
     ElementAlignedBox3dCR GetRange() const { return m_range; }
     Render::SystemR GetRenderSystem() const { return m_renderSystem; }
     TransformCR GetLocation() const { return m_location; }

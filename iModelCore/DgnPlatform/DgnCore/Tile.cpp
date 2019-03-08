@@ -55,6 +55,9 @@ constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 // unused - constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
 static const Utf8String s_classifierIdPrefix("C:");
 static const Utf8String s_animationIdPrefix("A:");
+static const Utf8String s_omitEdgesPrefix("E:0");
+static const Utf8String s_planarClassifierIdPrefix("CP:");
+
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/15
@@ -79,7 +82,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(SubRanges);
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     08/18
 //=======================================================================================
-struct ClassificationLoader : Loader
+struct VolumeClassificationLoader : Loader
 {
     DEFINE_T_SUPER(Loader);
 private:
@@ -87,12 +90,25 @@ private:
     DRange3d m_range;
 
     bool CompressMeshQuantization() const final { return true; }
-    PolyfaceHeaderPtr Preprocess(PolyfaceHeaderR pf) const final;
-    bool Preprocess(Render::Primitives::PolyfaceList& polyface, Render::Primitives::StrokesList const& strokes) const final;
+    void  Preprocess(PolyfaceList& polyfaces, StrokesList& strokes) const final;
     virtual uint64_t GetNodeId(DgnElementId elementId) const final { return elementId.GetValue(); }                           
 
 public:
-    ClassificationLoader(Tree& tree, ContentIdCR contentId);
+    VolumeClassificationLoader(Tree& tree, ContentIdCR contentId);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     08/18
+//=======================================================================================
+struct PlanarClassificationLoader : Loader
+{
+    DEFINE_T_SUPER(Loader);
+private:
+    double m_expansion;
+    void  Preprocess(PolyfaceList& polyfaces, StrokesList& strokes) const final;
+
+public:
+    PlanarClassificationLoader(Tree& tree, ContentIdCR contentId);
 };
 
 
@@ -887,6 +903,8 @@ protected:
     // ###TODO Revisit decimation...lots of small polyfaces can produce excessive vetices.
     static constexpr size_t GetDecimatePolyfacePointCount() { return 100; } // Only decimate meshes with at least this many points.
     static constexpr double GetDecimatePolyfaceMinRatio() { return 0.25; } // Decimation must reduce point count by at least this percentage.
+    
+    bool GetOmitEdges() const { return m_loader.GetTree().GetOmitEdges(); }
 
     MeshBuilderR GetMeshBuilder(MeshBuilderMap::Key const& key);
     DgnElementId GetElementId(GeometryR geom) const { return geom.GetEntityId(); }
@@ -896,7 +914,6 @@ protected:
     void AddPolyface(Polyface& polyface, GeometryR, double rangePixels, bool isContained, bool doDefer=true);
     void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar);
 
-    void AddStrokes(GeometryR geom, double rangePixels, bool isContained);
     void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained);
     void AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained);
 
@@ -1548,17 +1565,19 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
         // Classifiers are applied to all models (currently...) so they use project extents.
         auto projectExtents = model.GetDgnDb().GeoLocation().GetProjectExtents();
 
-        if (id.IsClassifier())
+        if (id.IsVolumeClassifier())
             range = projectExtents;
         else
             range.IntersectionOf(projectExtents, model.QueryElementsRange());
+        if(id.IsVolumeClassifier() || id.IsPlanarClassifier() && 0.0 != id.GetClassifierExpansion())
+            range.Extend(id.GetClassifierExpansion());
 
         range = scaleSpatialRange(range);
         uint32_t nElements = 0;
         
         populateRootTile = !range.IsNull() && isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex(), &nElements);   
-        if (id.IsClassifier())
-            populateRootTile = true;    // The classifier algorithm currently cannot handle multiple tiles -- force the root to populate...
+        if (id.IsVolumeClassifier())
+            populateRootTile = true;    // The volume classifier algorithm currently cannot handle multiple tiles -- force the root to populate...
 
         rootTileEmpty = 0 == nElements;
         }
@@ -1655,8 +1674,11 @@ LoaderPtr Tree::CreateLoader(ContentIdCR contentId)
     {
     switch (GetType())
         {
-        case Type::Classifier:
-            return new ClassificationLoader(*this, contentId);
+        case Type::VolumeClassifier:
+            return new VolumeClassificationLoader(*this, contentId);
+
+        case Type::PlanarClassifier:
+            return new PlanarClassificationLoader(*this, contentId);
 
         default:
             return new Loader(*this, contentId);
@@ -1699,8 +1721,13 @@ Utf8String Tree::Id::GetPrefixString() const
     if (IsAnimation())
         prefix = s_animationIdPrefix + m_animationSourceId.ToHexStr() + "_";
 
-    if (IsClassifier())
+    if (IsVolumeClassifier())
         prefix += s_classifierIdPrefix + Utf8PrintfString("%f_", m_classifierExpansion);
+    else if (IsPlanarClassifier())
+        prefix += s_planarClassifierIdPrefix + Utf8PrintfString("%f_", m_classifierExpansion);
+
+    if (GetOmitEdges())
+        prefix += s_omitEdgesPrefix + "_";
 
     return prefix;
     }
@@ -1722,10 +1749,13 @@ Tree::Id Tree::Id::FromString(Utf8StringCR str)
     Utf8String idStr = str;
     double classifierExpansion = 0.0;
     DgnElementId animationSourceId;
-    auto type = idStr.StartsWith(s_classifierIdPrefix.c_str()) ? Tree::Type::Classifier : (idStr.StartsWith(s_animationIdPrefix.c_str()) ? Tree::Type::Animation : Tree::Type::Model);
+    auto type = Tree::Type::Model;
+    bool omitEdges = false;
 
-    if (Tree::Type::Classifier == type)
+
+     if (idStr.StartsWith(s_classifierIdPrefix.c_str())) 
         {
+        type = Tree::Type::VolumeClassifier;
         double      value;
         size_t      endPrefix = str.find("_");
         if (1 == sscanf(str.c_str() + s_classifierIdPrefix.size(), "%lf", &value))
@@ -1733,19 +1763,32 @@ Tree::Id Tree::Id::FromString(Utf8StringCR str)
 
         idStr.erase(0, endPrefix+1);
         }
-
-    if (Tree::Type::Animation == type)
+    else if (idStr.StartsWith(s_planarClassifierIdPrefix.c_str())) 
         {
+        type = Tree::Type::PlanarClassifier;
+        double      value;
+        size_t      endPrefix = str.find("_");
+        if (1 == sscanf(str.c_str() + s_planarClassifierIdPrefix.size(), "%lf", &value))
+            classifierExpansion = value;
+
+        idStr.erase(0, endPrefix+1);
+        }
+    else if (idStr.StartsWith(s_animationIdPrefix.c_str()))
+        {
+        type = Tree::Type::Animation;
         size_t      endPrefix = str.find("_");
         auto        valueStr = str.substr(s_animationIdPrefix.size(), endPrefix - 2);
 
         animationSourceId = DgnElementId(BeInt64Id::FromString(valueStr.c_str()).GetValue());
 
         idStr.erase(0, endPrefix+1);
-        }
+        } 
 
+    if (false != (omitEdges = idStr.StartsWith(s_omitEdgesPrefix.c_str())))
+        idStr.erase(0, idStr.find("_") + 1);
+                                                           
     DgnModelId modelId(BeInt64Id::FromString(idStr.c_str()).GetValue());
-    return Id(modelId, type, classifierExpansion, animationSourceId);
+    return Id(modelId, type, omitEdges, classifierExpansion, animationSourceId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2089,9 +2132,9 @@ Loader::State Loader::ReadFromModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassificationLoader::ClassificationLoader(Tree& tree, ContentIdCR contentId) : T_Super(tree, contentId)
+VolumeClassificationLoader::VolumeClassificationLoader(Tree& tree, ContentIdCR contentId) : T_Super(tree, contentId)
     {
-    BeAssert(tree.IsClassifier());
+    BeAssert(tree.IsVolumeClassifier());
     Transform fromDgn;
     fromDgn.InverseOf(tree.GetLocation());
     fromDgn.Multiply(m_range, tree.GetDgnDb().GeoLocation().GetProjectExtents());
@@ -2099,26 +2142,28 @@ ClassificationLoader::ClassificationLoader(Tree& tree, ContentIdCR contentId) : 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+PlanarClassificationLoader::PlanarClassificationLoader(Tree& tree, ContentIdCR contentId) : T_Super(tree, contentId)
+    {
+    BeAssert(tree.IsPlanarClassifier());
+    m_expansion = tree.GetId().GetClassifierExpansion();
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr ClassificationLoader::Preprocess(PolyfaceHeaderR pf) const
+void VolumeClassificationLoader::Preprocess(PolyfaceList& polyfaces, StrokesList& strokes) const
     {
-    DPlane3d plane;
-    if (pf.IsClosedPlanarRegion(plane))
+    if (0.0 != m_expansion) 
         {
-        DRay3d              ray = DRay3d::FromOriginAndVector(plane.origin, plane.normal);
-        DRange1d            classifiedProjection = m_range.GetCornerRange(ray);
-        PolyfaceHeaderPtr   extrudedPolyface = pf.ComputeOffset(PolyfaceHeader::OffsetOptions(), classifiedProjection.high, classifiedProjection.low);
-
-        if (extrudedPolyface.IsValid())
+        for (auto& polyface : polyfaces)
             {
-            extrudedPolyface->Triangulate();
-            extrudedPolyface->BuildPerFaceNormals();
-            return extrudedPolyface;
+            PolyfaceHeaderPtr offsetPolyface = polyface.m_polyface->ComputeOffset(PolyfaceHeader::OffsetOptions(), m_expansion, 0.0, true, false, false);
+
+            if (offsetPolyface.IsValid())
+                polyface.m_polyface = offsetPolyface;
             }
         }
-
-    return &pf;
     }
 
 /*---------------------------------------------------------------------------------**//**                                             
@@ -2150,7 +2195,7 @@ static PolyfaceHeaderPtr polyfaceFromExpandedStrokes(StrokesCR strokes, double e
     DVec3d                      normal = DVec3d::UnitZ();      // Assume linear classification is always on XY plane...
     int32_t                     normalIndices[3];
 
-    normalIndices[0] = normalIndices[1] = normalIndices[2] = (int) coordinateMap->AddNormal(normal);
+    normalIndices[0] = normalIndices[1] = normalIndices[2] = 1 + (int) coordinateMap->AddNormal(normal);
     for (auto& stroke : strokes.m_strokes)
         {
         if (stroke.m_points.empty())
@@ -2221,19 +2266,106 @@ static PolyfaceHeaderPtr polyfaceFromExpandedStrokes(StrokesCR strokes, double e
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ClassificationLoader::Preprocess(Render::Primitives::PolyfaceList& polyfaces, Render::Primitives::StrokesList const& strokeList) const
+static void expandClosedPlanarPolyface(PolyfaceHeaderR polyface, DPlane3dCR plane, double expansion)
     {
-    if (0.0 != m_expansion)
+    struct Vertex 
         {
-        PolyfaceHeaderPtr   pf;
-        for (auto& strokes : strokeList)
-            if ((pf = polyfaceFromExpandedStrokes(strokes, m_expansion)).IsValid())
-                polyfaces.push_back(Polyface(*strokes.m_displayParams, *pf, false, true));
-        }
-    // Return true to ignore strokes even if no polyfaces produced... classification requires closed volumes.
-    return true;
+        int32_t  m_previousIndex;
+        int32_t  m_nextIndex;
+        Vertex() {}
+        Vertex(int32_t previousIndex, int32_t nextIndex): m_previousIndex(previousIndex), m_nextIndex(nextIndex) { }
+        };
+    bmap<int32_t, Vertex>       vertexMap;
+    
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
+        {
+        uint32_t numEdges =  visitor->NumEdgesThisFace();
+        for (uint32_t i = 0; i <numEdges; i++)
+            {
+            int thisIndex, nextIndex;
+            bool visible, nextVisible;
+
+            if (visitor->TryGetClientZeroBasedPointIndex(i, thisIndex, visible) && visible &&
+                visitor->TryGetClientZeroBasedPointIndex((i + 1) % numEdges, nextIndex, nextVisible))
+                {
+                auto thisFound = vertexMap.find(thisIndex);
+                if (thisFound == vertexMap.end())
+                    vertexMap.Insert(thisIndex, Vertex(-1, nextIndex));
+                else   
+                    thisFound->second.m_nextIndex = nextIndex;
+
+                auto nextFound =  vertexMap.find(nextIndex);
+                if (nextFound == vertexMap.end())
+                    vertexMap.Insert(nextIndex, Vertex(thisIndex, -1));
+                else   
+                    nextFound->second.m_previousIndex = thisIndex;
+                }
+            }
+        } 
+    bvector<DPoint3d>  pointCopy = polyface.Point();
+    DPoint3dCP points = &pointCopy.front();
+
+    for (auto curr:  vertexMap) 
+        {
+        if (curr.second.m_previousIndex < 0 || curr.second.m_nextIndex < 0)
+            {
+ //         BeAssert(false);
+            continue;
+            }
+        DPoint3dCR thisPoint = points[curr.first];
+        DVec3d  prev = DVec3d::FromStartEnd(points[curr.second.m_previousIndex], thisPoint), 
+                next = DVec3d::FromStartEnd(points[curr.second.m_nextIndex], thisPoint);
+        double minMagnitude = 1.0E-5;
+        bool prevDegenerate = prev.Normalize() < minMagnitude, nextDegenerate = next.Normalize() < minMagnitude;
+        if (prevDegenerate && nextDegenerate)
+            continue;
+        double expandDistance = expansion;
+        DVec3d expandDirection;
+        if (prevDegenerate)
+            expandDirection = DVec3d::FromCrossProduct(prev, plane.normal); 
+        else if (nextDegenerate)
+            expandDirection = DVec3d::FromCrossProduct(plane.normal, next);
+        else 
+            {
+            DVec3d perp =  DVec3d::FromCrossProduct(prev, plane.normal);
+            expandDirection = DVec3d::FromSumOf(prev, next);
+            if (expandDirection.Normalize() < minMagnitude)
+                expandDirection =  perp;
+            else 
+                expandDistance = expansion / perp.DotProduct(expandDirection);
+            }
+        polyface.Point()[curr.first] = DPoint3d::FromSumOf(thisPoint, expandDirection, expandDistance);
+        } 
     }
-        
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void PlanarClassificationLoader::Preprocess(PolyfaceList& polyfaces, StrokesList& strokes) const
+    {
+    if (0.0 != m_expansion) 
+        {
+        for (auto& polyface : polyfaces)
+            {
+            DPlane3d plane;
+
+            if (polyface.m_polyface->IsClosedPlanarRegion(plane))
+                expandClosedPlanarPolyface(*polyface.m_polyface, plane, m_expansion);
+            }    
+        if (!strokes.empty())   
+            {
+            auto    meshDisplayParams  = strokes.front().m_displayParams->CloneForMeshedLineString();
+            for (auto& strokes : strokes) {
+                PolyfaceHeaderPtr   polyface = polyfaceFromExpandedStrokes(strokes, m_expansion);
+
+                if (polyface.IsValid()) 
+                    polyfaces.push_back(Polyface(*meshDisplayParams, *polyface, false, true));   
+                }                    
+            }  
+        strokes.clear();              
+        }
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
@@ -2658,8 +2790,12 @@ void MeshGenerator::AddMeshes(GeometryR geom, bool doRangeTest)
 
     bool isContained = !doRangeTest || geomRange.IsContained(GetTileRange());
 
-    AddPolyfaces(geom, rangePixels, isContained);
-    AddStrokes(geom, rangePixels, isContained);
+    auto polyfaces = geom.GetPolyfaces(GetTolerance(), m_options.m_normalMode, *this);
+    auto strokes = geom.GetStrokes(GetTolerance(), *this);
+    m_loader.GetLoader().Preprocess(polyfaces, strokes);
+
+    AddStrokes(strokes, geom, rangePixels, isContained);
+    AddPolyfaces(polyfaces, geom, rangePixels, isContained);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2707,15 +2843,6 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddPolyfaces(GeometryR geom, double rangePixels, bool isContained)
-    {
-    auto polyfaces = geom.GetPolyfaces(GetTolerance(), m_options.m_normalMode, *this);
-    AddPolyfaces(polyfaces, geom, rangePixels, isContained);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained)
     {
     for (auto& polyface : polyfaces)
@@ -2749,8 +2876,6 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     if (polyface.IsNull() || 0 == polyface->GetPointIndexCount())
         return;
 
-    polyface = m_loader.GetLoader().Preprocess(*polyface);
-
     bool doDecimate = tilePolyface.CanDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
     if (doDecimate)
         {
@@ -2763,7 +2888,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
             }
         }
 
-    auto edgeOptions = tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
+    auto edgeOptions = (!GetOmitEdges() && tilePolyface.m_displayEdges) ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
 
     DgnElementId            elemId = GetElementId(geom);
     MeshEdgeCreationOptions edges(edgeOptions);
@@ -2911,19 +3036,6 @@ void ElementMeshGenerator::ClipPoints(StrokesR strokes) const
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17                 
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddStrokes(GeometryR geom, double rangePixels, bool isContained)
-    {
-    auto            strokes = geom.GetStrokes(GetTolerance(), *this);
-    PolyfaceList    polyfaces;
-
-    if (m_loader.GetLoader().Preprocess(polyfaces, strokes))
-        AddPolyfaces(polyfaces, geom, rangePixels, isContained);
-    else
-        AddStrokes(strokes, geom, rangePixels, isContained);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
