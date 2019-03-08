@@ -2,15 +2,18 @@
 |
 |     $Source: PublicAPI/Licensing/Utils/FeatureUserDataMap.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+
+//__PUBLISH_SECTION_START__
 
 #include <map>
 
 #include <Licensing/Licensing.h>
 #include <Bentley/WString.h>
+
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
