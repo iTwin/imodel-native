@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+//__PUBLISH_SECTION_START__
+
 #include <Licensing/Licensing.h>
 #include <Licensing/Utils/DateHelper.h>
 #include <Bentley/BeVersion.h>

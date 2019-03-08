@@ -87,7 +87,7 @@ BentleyStatus LicensingDb::SetUpTables()
     // Create Policy table
     if (m_db.CreateTable("Policy",
                          "PolicyId NVARCHAR(20) PRIMARY KEY, "
-                         "UserId NVARCHAR(20), "
+                         "UserId NVARCHAR(40), "
                          "AccessKey NVARCHAR(40), "
                          "ExpirationDate NVARCHAR(20), "
                          "LastUpdateTime NVARCHAR(20), "
