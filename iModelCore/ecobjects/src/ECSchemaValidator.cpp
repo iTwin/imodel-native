@@ -174,17 +174,10 @@ ECObjectsStatus ECSchemaValidator::BaseECValidator(ECSchemaCR schema)
         }
 
     // RULE: If the schema contains 'dynamic' (case-insensitive) in its name it must apply the CoreCA:DynamicSchema custom attribute.
-    if (schema.GetName().ContainsI("dynamic"))
+    if (schema.GetName().ContainsI("dynamic") && !schema.IsDynamicSchema())
         {
-        bool containsDynamicSchemaCA = schema.GetCustomAttributes(true).end() != std::find_if(
-            schema.GetCustomAttributes(true).begin(),
-            schema.GetCustomAttributes(true).end(),
-            [](auto const& custAttr) {return custAttr->GetClass().GetName().Equals("DynamicSchema");});
-        if (!containsDynamicSchemaCA)
-            {
-            LOG.errorv("Schema name contains 'dynamic' but does not appy the 'DynamicSchema' ECCustomAttribute");
-            status = ECObjectsStatus::Error;
-            }
+        LOG.errorv("Schema name contains 'dynamic' but does not appy the 'DynamicSchema' ECCustomAttribute");
+        status = ECObjectsStatus::Error;
         }
 
     for (bpair<SchemaKey, ECSchemaPtr> ref : schema.GetReferencedSchemas())
@@ -225,6 +218,8 @@ ECObjectsStatus ECSchemaValidator::BaseECValidator(ECSchemaCR schema)
         // RULE: A schema may not reference any ECXml less than EC3.1.
         if (refSchema->OriginalECXmlVersionLessThan(ECVersion::V3_1))
             {
+            if (schema.IsDynamicSchema() && refName.EqualsIAscii("ECv3ConversionAttributes"))
+                continue;
             LOG.errorv("Failed to validate '%s' since it references '%s' using EC%" PRIu32 ".%" PRIu32 ". A schema may not reference any EC2 or EC3.0 schemas.",
                        schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str(), refSchema->GetOriginalECXmlVersionMajor(), refSchema->GetOriginalECXmlVersionMinor());
              status = ECObjectsStatus::Error;

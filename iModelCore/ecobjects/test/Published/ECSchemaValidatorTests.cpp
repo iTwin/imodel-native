@@ -215,8 +215,9 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
         CheckStandardAsReference(schema, oldSchemaName, context, &validator, false, "Old standard schemas are used as a reference. Validation should fail.");
     for (auto newSchemaName : newStandardSchemaNames)
         CheckStandardAsReference(schema, newSchemaName, context, &validator, true, "New standard schemas are used as a reference. Validation should succeed.");
-
+    }
     // Use an updated ECDbMap schema as a reference
+    {
     Utf8String refXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='ECDbMap' alias='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "   <ECEntityClass typeName='TestClass'/>"
@@ -237,6 +238,55 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
     EXPECT_TRUE(validator.Validate(*schema)) << "Should succeed validation as the referenced schema is the latest version of ECDbMap";
+    }
+    {
+    Utf8String refXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ECv3ConversionAttributes' namespacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECClass typeName='TestClass'/>"
+        "</ECSchema>";
+    
+    InitBisContextWithSchemaXml(refXml.c_str());
+
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='01.00.00' alias='bis'/>"
+        "    <ECSchemaReference name='ECv3ConversionAttributes' version='01.00.00' alias='ref'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml.c_str(), *context);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    EXPECT_FALSE(validator.Validate(*schema)) << "Should fail validation as the ECv3ConversionAttributes schema is only allowed as a reference if the referencing schema is dynamic.";
+    }
+
+    // Test ECv3ConversionAttributes exception to EC2 schema rule.
+    {
+    Utf8String refXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ECv3ConversionAttributes' namespacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECClass typeName='TestClass'/>"
+        "</ECSchema>";
+    
+    InitBisContextWithSchemaXml(refXml.c_str());
+
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='01.00.00' alias='bis'/>"
+        "    <ECSchemaReference name='ECv3ConversionAttributes' version='01.00.00' alias='ref'/>"
+        "    <ECCustomAttributes>"
+        "        <DynamicSchema xmlns='CoreCustomAttributes.01.00.00'/>"
+        "    </ECCustomAttributes>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml.c_str(), *context);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    EXPECT_TRUE(validator.Validate(*schema)) << "Should succeed validation as the ECv3ConversionAttributes schema is an exception to the rule that all reference schemas must be at least 3.1. It also must be on a dynamic schema.";
     }
     }
 
