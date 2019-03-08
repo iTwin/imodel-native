@@ -112,7 +112,7 @@ protected:
     bool m_stopPolicyHeartbeat = false;
     bool m_policyHeartbeatStopped = false;
 
-    void PolicyHeartbeat(int64_t currentTime);
+    virtual void PolicyHeartbeat(int64_t currentTime);
     void StopPolicyHeartbeat();
 
     // Get the logging post source as a string
