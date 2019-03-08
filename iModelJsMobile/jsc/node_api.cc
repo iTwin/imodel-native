@@ -95,6 +95,13 @@ private:
     JSObjectRef _prototype;
 };
 
+struct wrapped_object {
+    napi_env env;
+    void* native_object;
+    napi_finalize finalize_cb;
+    void* finalize_hint;
+};
+
 //=======================================================================================
 // @bsiclass                                    Satyakam.Khadilkar    03/2018
 //=======================================================================================
@@ -140,6 +147,7 @@ public:
     static JSObjectRef CallAsConstructor (JSContextRef ctx, JSObjectRef constructor, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception){
         auto classCBData = reinterpret_cast<JSClassCallbackData*>(JSObjectGetPrivate(constructor));
         JSClassDefinition classDef = kJSClassDefinitionEmpty;
+        classDef.finalize = JSCFunctionCallbackWrapper::FinalizeObject;
         JSClassRef classRef = JSClassCreate(&classDef);
         JSObjectRef thisObject = JSObjectMake(ctx, classRef, nullptr);
         JSClassRelease(classRef);
@@ -149,6 +157,15 @@ public:
         return (JSObjectRef)cbwrapper.InvokeCallback();
     }
     
+    static void FinalizeObject(JSObjectRef object) {
+        wrapped_object* wrap =  (wrapped_object*)JSObjectGetPrivate(object);
+        if (wrap) {
+            if (wrap->finalize_cb) {
+                wrap->finalize_cb(wrap->env, wrap->native_object, wrap->finalize_hint);
+            }
+            delete wrap;
+        }
+    }
     static bool HasInstance (JSContextRef ctx, JSObjectRef constructor, JSValueRef possibleInstance, JSValueRef* exception) {
         auto classCBData = reinterpret_cast<JSClassCallbackData*>(JSObjectGetPrivate(constructor));
         auto instanceProto = JSObjectGetPrototype(ctx, (JSObjectRef)possibleInstance);
@@ -1426,10 +1443,17 @@ napi_status napi_wrap(napi_env env,
     NAPI_PREAMBLE(env);
     CHECK_ARG(env, js_object);
 
+
+    wrapped_object* wrap = new wrapped_object();
+    wrap->env = env;
+    wrap->native_object = native_object;
+    wrap->finalize_cb = finalize_cb;
+    wrap->finalize_hint = finalize_hint;
+    
 //    JSContextRef ctx = env->GetContext();
-    auto set = JSObjectSetPrivate((JSObjectRef)js_object, native_object);
+    auto set = JSObjectSetPrivate((JSObjectRef)js_object, wrap);
     BeAssert(set);
-    napi_create_reference(env, js_object, 1, result);
+    napi_create_reference(env, js_object, 0, result);
 
     return GET_RETURN_STATUS(env);
 }
@@ -1444,7 +1468,8 @@ napi_status napi_unwrap(napi_env env, napi_value obj, void** result) {
 
     //  JSContextRef ctx = env->GetContext();
     // TODO
-    *result = JSObjectGetPrivate((JSObjectRef)obj);
+    wrapped_object* wrap = (wrapped_object*)JSObjectGetPrivate((JSObjectRef)obj);
+    *result = wrap->native_object;
 
     return GET_RETURN_STATUS(env);
 }
