@@ -4,9 +4,9 @@
     
   <Part Name="imodel02-CodeCoverage" OnlyPlatforms="x64" PrgOutputDir="imodel02-Coverage">
 		<RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository> 
-        <SubPart PartName="iModelBridgeCore-CodeCoverage"/>
+		<SubPart PartName="iModelCore-CodeCoverage"/>
         <SubPart PartName="MstnBridge-CodeCoverage"/>
-        <SubPart PartName="iModelCore-CodeCoverage"/>
+		<SubPart PartName="iModelBridgeCore-CodeCoverage"/>
     </Part>
 	
 	<!-- Tests in iModelBridgeCore build strategy -->
