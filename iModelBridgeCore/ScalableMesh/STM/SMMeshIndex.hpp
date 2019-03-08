@@ -502,8 +502,12 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadDat
 
         if (meshDataToLoad->m_textureIndices)
             {
+			//Ensure that pool items for texture indices are created even before the node has been marked as textured.
+            bool isTextureCurrentVal = this->m_nodeHeader.m_isTextured; 
+            this->m_nodeHeader.m_isTextured = true;
             GetUVCoordsPtr();
             GetUVsIndicesPtr();
+            this->m_nodeHeader.m_isTextured = isTextureCurrentVal;
             }
             
         if (meshDataToLoad->m_texture)

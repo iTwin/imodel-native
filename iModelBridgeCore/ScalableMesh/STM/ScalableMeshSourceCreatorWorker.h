@@ -99,7 +99,7 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         
         StatusInt                    CreateGenerationTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName);
 
-        StatusInt                    CreateTextureTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName);
+        StatusInt                    CreateTextureTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName, int basePriority = 0);
         
         StatusInt                    CreateMeshTasks();        
 

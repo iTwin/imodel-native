@@ -987,15 +987,12 @@ void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<NodeTask
     maxGroupSize = maxGroupSize;
     }
 
-static bool s_createTextureTasks = false;
 
 StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName)
     {
     BeFileName taskDirectory(m_scmFileName);
 
     taskDirectory = taskDirectory.GetDirectoryName();
-
-    HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
     bvector<uint64_t> nodesToMesh;
     
@@ -1008,9 +1005,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
     GetGenerationTasks(generationTasks, maxGroupSize);
         
     CloseSqlFiles();
-
-    FreeDataIndex();
-
+    
     uint64_t totalNodes = 0;
     uint64_t totalStichableNodes = 0;
 
@@ -1027,9 +1022,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
     uint32_t maxPriority = 0;
     
     for (size_t ind = 0; ind < generationTasks.size(); ind++)    
-        {                              
+        {                                      
         BeFileName meshTaskFile(taskDirectory);
-
+        
         maxPriority = max(maxPriority, generationTasks[ind]->m_orderId);
 
         if (generationTasks[ind]->m_orderId > 0)
@@ -1131,57 +1126,32 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
         assert(status == BEXML_Success);
         }
 
-        //StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTextureTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName)
+    bvector<IDTMSource*> rasterSources;
+
+    GetRasterSources(rasterSources);
+    
+    if (rasterSources.size() > 0)
+        {
+        maxPriority++;
+                        
+        StatusInt statusTexturing = CreateTextureTasks(maxGroupSize, jobName, smFileName, maxPriority);
+
+        assert(statusTexturing == SUCCESS);
+        }
+
+    generationTasks.clear();
+    FreeDataIndex();
 
     CreateTaskPlanForTaskGrouping(maxPriority, jobName, smFileName);
-
-
-#if 0
-    wchar_t stringBuffer[100000];
-
-    pDataIndex->Mesh(&nodesToMesh);
-
-    uint32_t nbNodesPerTask = GetNbNodesPerTask(nodesToMesh.size());
-
-    for (size_t ind = 0; ind < nodesToMesh.size();)
-            {
-        BeFileName meshTaskFile(taskDirectory);
-
-        swprintf(stringBuffer, L"Mesh%zi.xml", ind);
-        meshTaskFile.AppendString(stringBuffer);
-        BeXmlDomPtr xmlDomPtr(BeXmlDom::CreateEmpty());
-
-        BeXmlNodeP workerNode(xmlDomPtr->AddNewElement("workerTask", nullptr, nullptr));
-        workerNode->AddAttributeStringValue("type", "mesh");
-
-        for (size_t nodeInd = 0; nodeInd < nbNodesPerTask; nodeInd++)
-            {
-            BeXmlNodeP tileNode(xmlDomPtr->AddNewElement("tile", nullptr, workerNode));
-            tileNode->AddAttributeUInt64Value("id", nodesToMesh[ind]);
-            ind++;
-
-            if (ind >= nodesToMesh.size())
-                break;
-            
-
-        BeXmlDom::ToStringOption toStrOption = (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Formatted | BeXmlDom::TO_STRING_OPTION_Indent);
-
-        BeXmlStatus status = xmlDomPtr->ToFile(meshTaskFile, toStrOption, BeXmlDom::FILE_ENCODING_Utf8);
-        assert(status == BEXML_Success);
-        }
-#endif
     
-
     return SUCCESS;
     }
 
-StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTextureTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName)
+StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTextureTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName, int basePriority)
     {
     BeFileName taskDirectory(m_scmFileName);
 
     taskDirectory = taskDirectory.GetDirectoryName();
-
-    HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
     bvector<uint64_t> initialTextureNodes;
 
@@ -1199,9 +1169,22 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTextureTasks(uint32_t ma
     wchar_t stringBuffer[100000];
 
     for (size_t ind = 0; ind < textureTasks.size(); ind++)
-    {
-
+        {
         BeFileName meshTaskFile(taskDirectory);
+        
+        //assert(textureTasks[ind]->m_orderId == 0);        
+
+        if (basePriority > 0)
+            {            
+            swprintf(stringBuffer, L"\\%s%i\\", TASK_PRIORITY_FOLDER_NAME, basePriority);
+            meshTaskFile.AppendToPath(stringBuffer);            
+
+            if (!meshTaskFile.DoesPathExist())
+                {
+                BeFileNameStatus status = BeFileName::CreateNewDirectory(meshTaskFile.c_str());
+                assert(status == BeFileNameStatus::Success);                
+                }
+            }
 
         swprintf(stringBuffer, L"Texture%zi.xml", ind);
         meshTaskFile.AppendString(stringBuffer);
@@ -1855,8 +1838,23 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP pXmlTaskNode)
     {
     BeXmlNodeP pChildNode = pXmlTaskNode->GetFirstChild();
+    
+    GetScalableMeshFileLock(true);
+    
+#ifndef NDEBUG
+    if (m_mainFilePtr == nullptr)
+        m_mainFilePtr = GetFile(true);
+                
+    if (m_mainFilePtr != nullptr)
+        m_mainFilePtr->GetDb()->SetCanReopenShared(true);
+
+    if (m_sisterFilePtr != nullptr)
+        m_sisterFilePtr->GetDb()->SetCanReopenShared(true);
+#endif
 
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
+
+    ReleaseScalableMeshFileLock();    
 
     bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>> nodesToMesh;
     bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>>     generatedNodes;
@@ -1865,7 +1863,10 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
 
     meshDataToLoad.m_features = false;
     meshDataToLoad.m_graph = false;
-
+    meshDataToLoad.m_ptIndices = true;
+    meshDataToLoad.m_textureIndices = true;
+    meshDataToLoad.m_texture = true;
+    
    /* ITextureProviderPtr textureStreamProviderPtr;
     WString url(L"http://www.bing.com/maps/Aerial");
     IScalableMeshPtr nullSmPtr;
@@ -1895,6 +1896,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
             tileIds.push_back(BeStringUtilities::ParseUInt64(Utf8String(idStr).c_str()));
         }
 
+
+
+        GetScalableMeshFileLock(true);
 
         assert(tileIds.size() > 0);
 
@@ -1929,6 +1933,8 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
 
         CloseSqlFiles();
 
+        ReleaseScalableMeshFileLock();    
+
         for (auto& node : nodesToMesh)
         {
             bool hasNoChildren = false;
@@ -1962,6 +1968,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
         nodesToMesh.clear();
         pChildNode = pChildNode->GetNextSibling();
     } while (pChildNode != nullptr);
+
+
+
 
 
     do
@@ -1999,6 +2008,8 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
 
         nodesToMesh.clear();
 
+        GetScalableMeshFileLock(true);
+
         //Flush all the data on disk    
         OpenSqlFiles(false, true);
 
@@ -2006,9 +2017,10 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
         {
             node->Discard();
             // pDataIndex->ClearNodeMap();
-
             node->Unload();
         }
+
+        pDataIndex->Store();
 
         generatedNodes.clear();
 
@@ -2020,11 +2032,13 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
             node->LoadData(&meshDataToLoad);
             nodesToMesh.push_back(node);
         }
+
         nodesCreated.clear();
-
-        pDataIndex->Store();
-
+        
         CloseSqlFiles();
+
+        ReleaseScalableMeshFileLock();    
+
     } while (!nodesToMesh.empty());
 
     return SUCCESS;
