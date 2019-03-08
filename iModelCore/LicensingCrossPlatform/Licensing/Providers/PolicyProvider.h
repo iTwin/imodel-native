@@ -26,6 +26,7 @@ struct PolicyProvider : IPolicyProvider
 protected:
     ClientInfoPtr m_clientInfo;
     IBuddiProviderPtr m_buddiProvider;
+    IHttpHandlerPtr m_httpHandler;
     std::shared_ptr<IAuthHandlerProvider> m_authHandlerProvider;
 	IConnectAuthenticationProvider::HeaderPrefix m_headerPrefix;
 
@@ -34,13 +35,15 @@ public:
         (
         IBuddiProviderPtr buddiProvider,
         ClientInfoPtr clientInfo,
-        std::shared_ptr<IAuthHandlerProvider> authHandlerProvider,
-		AuthType authType
+        IHttpHandlerPtr httpHandler,
+        AuthType authType,
+        std::shared_ptr<IAuthHandlerProvider> authHandlerProvider = nullptr // allow creation of non-authorized PolicyProvider
         );
     LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicy();
+    LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicyWithKey(Utf8StringCR accessKey);
     LICENSING_EXPORT folly::Future<Utf8String> GetCertificate();
     LICENSING_EXPORT folly::Future<Utf8String> PerformGetPolicyRequest();
-
+    LICENSING_EXPORT folly::Future<Utf8String> PerformGetPolicyWithKeyRequest(Utf8StringCR accessKey);
 private:
 	IConnectAuthenticationProvider::HeaderPrefix GetHeaderPrefix(AuthType authType);
     };

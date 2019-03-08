@@ -21,6 +21,13 @@ struct ClientWithKeyImpl : ClientImpl
     {
 protected:
     Utf8String m_accessKey;
+    bool m_isAccessKeyValid;
+    bool ValidateAccessKey();
+    std::shared_ptr<Policy> GetPolicyToken();
+    std::list<std::shared_ptr<Policy>> GetUserPolicies();
+
+    void PolicyHeartbeat(int64_t currentTime);
+
 public:
     LICENSING_EXPORT ClientWithKeyImpl
         (
@@ -29,15 +36,19 @@ public:
         BeFileNameCR db_path,
         bool offlineMode,
         IBuddiProviderPtr buddiProvider,
+        IPolicyProviderPtr policyProvider,
         IUlasProviderPtr ulasProvider,
         Utf8StringCR projectId,
         Utf8StringCR featureString,
-        IHttpHandlerPtr httpHandler
+        IHttpHandlerPtr httpHandler,
+        ILicensingDbPtr licensingDb
         );
     LICENSING_EXPORT LicenseStatus StartApplication();
     LICENSING_EXPORT BentleyStatus StopApplication();
 
-    LICENSING_EXPORT folly::Future<folly::Unit> SendUsageRealtimeWithKey();
+    LICENSING_EXPORT LicenseStatus GetProductStatus(int requestedProductId = -1);
+
+    LICENSING_EXPORT void DeleteAllOtherPoliciesByKey(std::shared_ptr<Policy> policy);
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

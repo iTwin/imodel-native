@@ -8,6 +8,7 @@
 
 
 #include "../Logging.h"
+#include "../GenerateSID.h"
 #include <Licensing/Utils/LogFileHelper.h>
 #include "UlasProvider.h"
 
@@ -30,7 +31,7 @@ UlasProvider::UlasProvider
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UlasProvider::PostUsageLogs(IUsageDb& usageDb, std::shared_ptr<Policy> policy)
+BentleyStatus UlasProvider::PostUsageLogs(ILicensingDb& licensingDb, std::shared_ptr<Policy> policy)
     {
     LOG.debug("UlasProvider::PostUsageLogs");
 
@@ -42,13 +43,13 @@ BentleyStatus UlasProvider::PostUsageLogs(IUsageDb& usageDb, std::shared_ptr<Pol
 
     logPath.AppendToPath(BeFileName(fileName));
 
-    if (SUCCESS != usageDb.WriteUsageToCSVFile(logPath))
+    if (SUCCESS != licensingDb.WriteUsageToCSVFile(logPath))
         {
         LOG.error("UlasProvider::PostLogs - ERROR: Unable to write usage records to usage log.");
         return ERROR;
         }
 
-    usageDb.CleanUpUsages();
+    licensingDb.CleanUpUsages();
 
     Utf8String ultimateId;
     ultimateId.Sprintf("%ld", policy->GetUltimateSAPId());
@@ -115,7 +116,7 @@ folly::Future<folly::Unit> UlasProvider::SendUsageLogs(BeFileNameCR usageCSV, Ut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UlasProvider::PostFeatureLogs(IUsageDb& usageDb, std::shared_ptr<Policy> policy)
+BentleyStatus UlasProvider::PostFeatureLogs(ILicensingDb& licensingDb, std::shared_ptr<Policy> policy)
     {
     LOG.debug("UlasProvider::PostFeatureLogs");
 
@@ -127,13 +128,13 @@ BentleyStatus UlasProvider::PostFeatureLogs(IUsageDb& usageDb, std::shared_ptr<P
 
     featureLogPath.AppendToPath(BeFileName(fileName));
 
-    if (SUCCESS != usageDb.WriteFeatureToCSVFile(featureLogPath))
+    if (SUCCESS != licensingDb.WriteFeatureToCSVFile(featureLogPath))
         {
         LOG.error("UlasProvider::PostFeatureLogs ERROR: Unable to write feature usage records to features log.");
         return ERROR;
         }
 
-    usageDb.CleanUpFeatures();
+    licensingDb.CleanUpFeatures();
 
     Utf8String ultimateId;
     ultimateId.Sprintf("%ld", policy->GetUltimateSAPId());
@@ -196,3 +197,44 @@ folly::Future<folly::Unit> UlasProvider::SendFeatureLogs(BeFileNameCR featureCSV
             });
         });
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<Json::Value> UlasProvider::GetAccessKeyInfo(Utf8StringCR accessKey)
+    {
+    LOG.debug("UlasProvider::GetAccessKeyInfo");
+
+    auto url = m_buddiProvider->UlasAccessKeyBaseUrl();
+    url += "/info"; // does not require auth
+
+    HttpClient client(nullptr, m_httpHandler);
+    auto uploadRequest = client.CreateRequest(url, "POST");
+    uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
+
+    Json::Value requestJson(Json::objectValue);
+    GenerateSID gsid;
+
+    requestJson["accesskey"] = accessKey;
+    requestJson["cSID"] = gsid.GetMachineSID(m_clientInfo->GetDeviceId()); // need hash
+
+    Utf8String jsonBody = Json::FastWriter().write(requestJson);
+
+    uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
+
+    return uploadRequest.Perform().then(
+        [=](Response response)
+        {
+        if (!response.IsSuccess())
+            {
+            // call failed
+            LOG.errorv("ClientWithKeyImpl::ValidateAccessKey - %s", HttpError(response).GetMessage().c_str());
+            return Json::Value::GetNull();
+            }
+
+        auto responseBody = response.GetBody().AsString();
+        return Json::Value::From(response.GetBody().AsString());
+        });
+
+    }
+

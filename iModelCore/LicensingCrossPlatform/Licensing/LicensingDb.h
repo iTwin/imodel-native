@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/UsageDb.h $
+|     $Source: Licensing/LicensingDb.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include "IUsageDb.h"
+#include "ILicensingDb.h"
 
 #include <Licensing/Licensing.h>
 #include <BeSQLite/BeSQLite.h>
@@ -23,7 +23,7 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct UsageDb : IUsageDb
+struct LicensingDb : ILicensingDb
 {
 private:
     Db m_db;
@@ -55,10 +55,12 @@ public:
     LICENSING_EXPORT BentleyStatus WriteFeatureToCSVFile(BeFileNameCR path);
 
     LICENSING_EXPORT std::list<Json::Value> GetPolicyFiles();
-    LICENSING_EXPORT std::list<Json::Value> GetPolicyFiles(Utf8String userId);
-    LICENSING_EXPORT BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken);
+    LICENSING_EXPORT std::list<Json::Value> GetPolicyFilesByUser(Utf8StringCR userId);
+    LICENSING_EXPORT std::list<Json::Value> GetPolicyFilesByKey(Utf8StringCR accessKey);
+    LICENSING_EXPORT BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken);
     LICENSING_EXPORT BentleyStatus DeletePolicyFile(Utf8StringCR policyId);
-    LICENSING_EXPORT BentleyStatus DeleteAllOtherUserPolicyFiles(Utf8StringCR policyId, Utf8StringCR userId);
+    LICENSING_EXPORT BentleyStatus DeleteAllOtherPolicyFilesByUser(Utf8StringCR policyId, Utf8StringCR userId);
+    LICENSING_EXPORT BentleyStatus DeleteAllOtherPolicyFilesByKey(Utf8StringCR policyId, Utf8StringCR accessKey);
 
     LICENSING_EXPORT Json::Value GetPolicyFile();
     LICENSING_EXPORT Json::Value GetPolicyFile(Utf8StringCR policyId);

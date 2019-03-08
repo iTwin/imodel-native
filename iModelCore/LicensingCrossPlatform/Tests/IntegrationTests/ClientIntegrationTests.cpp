@@ -10,12 +10,12 @@
 #include "ClientIntegrationTests.h"
 
 #include <Licensing/Client.h>
-#include <Licensing/FreeClient.h>
+#include <Licensing/SaasClient.h>
 #include <Licensing/Utils/DateHelper.h>
 #include "../../Licensing/ClientImpl.h"
-#include "../../Licensing/FreeClientImpl.h"
+#include "../../Licensing/SaasClientImpl.h"
 #include "../../Licensing/ClientWithKeyImpl.h"
-#include "../../Licensing/UsageDb.h"
+#include "../../Licensing/LicensingDb.h"
 #include "../../PublicAPI/Licensing/Utils/SCVWritter.h"
 
 #include <BeHttp/HttpClient.h>
@@ -83,7 +83,7 @@ public:
         }
     };
 
- BeFileName GetUsageDbPathIntegration()
+ BeFileName GetLicensingDbPathIntegration()
      {
      BeFileName path;
      BeTest::GetHost().GetTempDir(path);
@@ -107,7 +107,7 @@ public:
 		 if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
 			 return nullptr;
 	 }
-	 BeFileName dbPath = GetUsageDbPathIntegration();
+	 BeFileName dbPath = GetLicensingDbPathIntegration();
 
 	 return std::shared_ptr<Client>(Client::Create(manager->GetUserInfo(),
 		 clientInfo,
@@ -124,13 +124,13 @@ public:
 	 return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
      }
 
-// FreeClientImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider)
+// SaasClientImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider)
 //     {
 //     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 //     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 //     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-//     return std::make_shared<FreeClientImpl>(
+//     return std::make_shared<SaasClientImpl>(
 //         "",
 //         proxy,
 //         buddiProvider);
@@ -148,7 +148,7 @@ public:
 
 //     auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
 
-//     BeFileName dbPath = GetUsageDbPath();
+//     BeFileName dbPath = GetLicensingDbPath();
 
 //     Utf8String accesskey = "somekey";
 
@@ -180,7 +180,7 @@ public:
 //         if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
 //             return nullptr;
 //     }
-//     BeFileName dbPath = GetUsageDbPath();
+//     BeFileName dbPath = GetLicensingDbPath();
 
 //     return Client::Create(
 //         manager->GetUserInfo(),
@@ -193,43 +193,43 @@ public:
 //         proxy);
 //     }
 
-// FreeClientPtr CreateFreeTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+// SaasClientPtr CreateFreeTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
 //     {
 //     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 //     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
 //     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-//     return FreeClient::Create(
+//     return SaasClient::Create(
 //         "",
 //         proxy);
 //     }
 
-// ClientPtr CreateWithKeyTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
-//     {
-//     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-//     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
+ ClientPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+    {
+    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+    //RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
+    UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
 
-//     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
-//     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
+    //auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
 
-//     auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
+    BeFileName dbPath = GetLicensingDbPathIntegration();
 
-//     BeFileName dbPath = GetUsageDbPath();
+    Utf8String accesskey = "3469AD8D095A53F3CBC9A905A8FF8926"; // valid accessKey
 
-//     Utf8String accesskey = "somekey";
-
-//     return Client::CreateWithKey(
-//         accesskey,
-//         clientInfo,
-//         dbPath,
-//         true,
-//         "",
-//         "",
-//         proxy);
-//     }
+    return Client::CreateWithKey(
+        accesskey,
+        clientInfo,
+        dbPath,
+        true,
+        "",
+        "",
+        proxy);
+    }
 
 // ClientImplPtr CreateTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider)
 //     {
@@ -241,12 +241,12 @@ public:
 //     return CreateTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
 //     }
 
-// FreeClientImplPtr CreateFreeTestClient(bool signIn, IBuddiProviderPtr buddiProvider)
+// SaasClientImplPtr CreateFreeTestClient(bool signIn, IBuddiProviderPtr buddiProvider)
 //     {
 //     return CreateFreeTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider);
 //     }
 
- //FreeClientPtr CreateFreeTestClientFromFactory(bool signIn)
+ //SaasClientPtr CreateFreeTestClientFromFactory(bool signIn)
  //    {
  //    return CreateFreeTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
  //    }
@@ -256,10 +256,11 @@ public:
 //     return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, ulasProvider);
 //     }
 
-// ClientPtr CreateWithKeyTestClientFromFactory(bool signIn)
-//     {
-//     return CreateWithKeyTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
-//     }
+ClientPtr CreateWithKeyTestClient(bool signIn)
+    {
+    //return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+    return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, "1000");
+    }
 
  ///*--------------------------------------------------------------------------------------+
  //* @bsimethod
@@ -381,6 +382,14 @@ TEST_F(ClientIntegrationTests, Equality_Test)
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
     ASSERT_EQ((int)1, (int)1); // Mock policy should result in NotEntitled
     }
+
+TEST_F(ClientIntegrationTests, ClientWithKeyStartApplicationStopApplication_Success)
+    {
+    auto client = CreateWithKeyTestClient(true);
+    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+    client->StopApplication();
+    }
+
 
 // Below are "start from factory tests", some might be redundant since the client is already made from the factory here
 

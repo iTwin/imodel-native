@@ -1,16 +1,17 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/FreeClientImpl.h $
+|     $Source: Licensing/SaasClientImpl.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include "IFreeClient.h"
+#include "ISaasClient.h"
 
 #include <Licensing/Utils/TimeRetriever.h>
 #include <Licensing/Utils/DelayedExecutor.h>
+#include "Utils/FeatureEvent.h"
 
 #include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
@@ -24,13 +25,13 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-typedef std::shared_ptr<struct FreeClientImpl> FreeClientImplPtr;
+typedef std::shared_ptr<struct SaasClientImpl> SaasClientImplPtr;
 
-struct FreeClientImpl : IFreeClient
+struct SaasClientImpl : ISaasClient
     {
 protected:
-    ClientInfoPtr m_clientInfo;
-    ConnectSignInManager::UserInfo m_userInfo;
+    Utf8String m_deviceId;
+    int m_productId;
     IHttpHandlerPtr m_httpHandler;
     ITimeRetrieverPtr m_timeRetriever;
     IDelayedExecutorPtr m_delayedExecutor;
@@ -39,13 +40,15 @@ protected:
     IBuddiProviderPtr m_buddiProvider;
 
 public:
-    LICENSING_EXPORT FreeClientImpl
+    LICENSING_EXPORT SaasClientImpl
         (
+        int productId,
         Utf8StringCR featureString,
         IHttpHandlerPtr httpHandler,
         IBuddiProviderPtr buddiProvider
         );
     LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
+    LICENSING_EXPORT folly::Future<BentleyStatus> MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent);
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

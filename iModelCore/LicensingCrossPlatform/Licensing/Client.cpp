@@ -38,13 +38,13 @@ ClientPtr Client::Create
     bool offlineMode,
     Utf8StringCR projectId,
     Utf8StringCR featureString,
-IHttpHandlerPtr httpHandler,
-AuthType authType
+    IHttpHandlerPtr httpHandler,
+    AuthType authType
     )
     {
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
     IAuthHandlerProviderPtr authHandlerProvider = std::make_shared<AuthHandlerProvider>(authenticationProvider, httpHandler);
-    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, clientInfo, authHandlerProvider, authType);
+    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, clientInfo, httpHandler, authType, authHandlerProvider);
     IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, clientInfo, dbPath, httpHandler);
     return std::shared_ptr<Client>(new Client(std::make_shared<ClientImpl>(userInfo, clientInfo, authenticationProvider, dbPath, offlineMode, buddiProvider, policyProvider, ulasProvider, projectId, featureString, httpHandler, nullptr)));
     }
@@ -64,8 +64,9 @@ ClientPtr Client::CreateWithKey
     )
     {
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
+    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, clientInfo, httpHandler, AuthType::None);
     IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, clientInfo, dbPath, httpHandler);
-    return std::shared_ptr<Client>(new Client(std::make_shared<ClientWithKeyImpl>(accessKey, clientInfo, dbPath, offlineMode, buddiProvider, ulasProvider, projectId, featureString, httpHandler)));
+    return std::shared_ptr<Client>(new Client(std::make_shared<ClientWithKeyImpl>(accessKey, clientInfo, dbPath, offlineMode, buddiProvider, policyProvider, ulasProvider, projectId, featureString, httpHandler, nullptr)));
     }
 
 /*--------------------------------------------------------------------------------------+

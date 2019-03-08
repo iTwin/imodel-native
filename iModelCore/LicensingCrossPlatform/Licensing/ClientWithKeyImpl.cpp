@@ -8,7 +8,7 @@
 #include "ClientWithKeyImpl.h"
 #include "GenerateSID.h"
 #include "Logging.h"
-#include "UsageDb.h"
+#include "LicensingDb.h"
 #include "FreeApplicationPolicyHelper.h"
 
 #include <Licensing/Utils/LogFileHelper.h>
@@ -28,10 +28,12 @@ ClientWithKeyImpl::ClientWithKeyImpl
     BeFileNameCR db_path,
     bool offlineMode,
     IBuddiProviderPtr buddiProvider,
+    IPolicyProviderPtr policyProvider,
     IUlasProviderPtr ulasProvider,
     Utf8StringCR projectId,
     Utf8StringCR featureString,
-    IHttpHandlerPtr httpHandler
+    IHttpHandlerPtr httpHandler,
+    ILicensingDbPtr licensingDb
     )
     {
     m_userInfo = ConnectSignInManager::UserInfo();
@@ -41,17 +43,22 @@ ClientWithKeyImpl::ClientWithKeyImpl
     m_dbPath = db_path;
     m_offlineMode = offlineMode;
     m_buddiProvider = buddiProvider;
+    m_policyProvider = policyProvider;
     m_ulasProvider = ulasProvider;
     m_projectId = projectId;
     m_featureString = featureString;
     m_httpHandler = httpHandler;
 
-    m_usageDb = std::make_unique<UsageDb>();
+    if(m_licensingDb == nullptr) // either pass in a mock, or initialize here
+        m_licensingDb = std::make_unique<LicensingDb>(); // should this be make shared?
+
     m_correlationId = BeGuid(true).ToString();
     m_timeRetriever = TimeRetriever::Get();
     m_delayedExecutor = DelayedExecutor::Get();
 
-    if (projectId.empty())
+    m_isAccessKeyValid = false; // assume invalid access key to start
+
+    if (Utf8String::IsNullOrEmpty(projectId.c_str()))
         m_projectId = "00000000-0000-0000-0000-000000000000";
 
     if (m_offlineMode)
@@ -63,89 +70,200 @@ ClientWithKeyImpl::ClientWithKeyImpl
 
 LicenseStatus ClientWithKeyImpl::StartApplication()
     {
-    if (SUCCESS != m_usageDb->OpenOrCreate(m_dbPath))
+    LOG.trace("ClientWithKeyImpl::StartApplication");
+
+    if (SUCCESS != m_licensingDb->OpenOrCreate(m_dbPath))
+        {
+        LOG.error("ClientWithKeyImpl::StartApplication ERROR - Database creation failed.");
         return LicenseStatus::Error;
+        }
 
-    // Create dummy policy for free application usage
-    m_policy = FreeApplicationPolicyHelper::CreatePolicy();
+    m_policy = GetPolicyToken();
 
-    //if (ERROR == RecordUsage())
-    //	return LicenseStatus::Error;
+    if (m_policy == nullptr)
+        {
+        LOG.error("ClientWithKeyImpl::StartApplication ERROR - Policy token object is null.");
+        return LicenseStatus::Error;
+        }
 
-    // Begin heartbeats
-    //int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-    //UsageHeartbeat(currentTimeUnixMs);
-    //LogPostingHeartbeat(currentTimeUnixMs);
-    //SendUsageRealtimeWithKey().wait();
+    // Get product status
+    LicenseStatus licStatus = GetProductStatus();
 
-    // This is only a logging example
-    LOG.trace("StartApplication");
+    if ((LicenseStatus::Ok == licStatus) ||
+        (LicenseStatus::Offline == licStatus) ||
+        (LicenseStatus::Trial == licStatus))
+        {
+        // Begin heartbeats
+        int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
+        PolicyHeartbeat(currentTimeUnixMs);     // refresh policy
+        }
+    else
+        {
+        LOG.errorv("ClientImpl::StartApplication - LicenseStatus Returned: %d", licStatus);
+        }
 
-    return LicenseStatus::Ok;
+    return licStatus;
     }
 
 BentleyStatus ClientWithKeyImpl::StopApplication()
     {
-    LOG.trace("StopApplication");
+    LOG.trace("ClientWithKeyImpl::StopApplication");
 
     m_lastRunningPolicyheartbeatStartTime = 0;      // This will stop Policy heartbeat
     m_lastRunningUsageheartbeatStartTime = 0;       // This will stop Usage heartbeat
     m_lastRunningLogPostingheartbeatStartTime = 0;  // This will stop log posting heartbeat
 
-    if (m_usageDb->GetUsageRecordCount() > 0)
-        m_ulasProvider->PostFeatureLogs(*m_usageDb, m_policy);
+    if (m_licensingDb->GetUsageRecordCount() > 0)
+        m_ulasProvider->PostUsageLogs(*m_licensingDb, m_policy);
 
-    if (m_usageDb->GetFeatureRecordCount() > 0)
-        m_ulasProvider->PostFeatureLogs(*m_usageDb, m_policy);
+    if (m_licensingDb->GetFeatureRecordCount() > 0)
+        m_ulasProvider->PostFeatureLogs(*m_licensingDb, m_policy);
 
-    m_usageDb->Close();
+    m_licensingDb->Close();
 
     return SUCCESS;
     }
 
-folly::Future<folly::Unit> ClientWithKeyImpl::SendUsageRealtimeWithKey()
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClientWithKeyImpl::PolicyHeartbeat(int64_t currentTime)
     {
-    LOG.trace("ClientWithKeyImpl::SendUsageRealtimeWithKey");
+    LOG.debug("ClientWithKeyImpl::PolicyHeartbeat");
 
-    auto url = m_buddiProvider->UlasRealtimeLoggingBaseUrl();
-
-    url += "/" + m_accessKey;
-
-    std::ofstream logfile("D:/performSendUsageRealtimeWithKey.txt");
-    logfile << url << std::endl;
-    logfile.close();
-
-    HttpClient client(nullptr, m_httpHandler);
-    auto uploadRequest = client.CreateRequest(url, "POST");
-    //uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + m_accessTokenString);
-    uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
-
-    // create Json body
-    auto jsonBody = UsageJsonHelper::CreateJsonRandomGuids
-        (
-        m_clientInfo->GetDeviceId(),
-        m_featureString,
-        m_clientInfo->GetApplicationVersion(),
-        m_projectId
-        );
-
-    uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
-
-    return uploadRequest.Perform().then(
-        [=](Response response)
+    if (m_startPolicyHeartbeat)
         {
-        if (!response.IsSuccess())
+        m_lastRunningPolicyheartbeatStartTime = currentTime;
+        m_startPolicyHeartbeat = false;
+        }
+
+    m_delayedExecutor->Delayed(HEARTBEAT_THREAD_DELAY_MS).then([this, currentTime]
+        {
+        int64_t policyInterval = m_policy->GetPolicyInterval(m_clientInfo->GetApplicationProductId(), m_featureString);
+
+        int64_t time_elapsed = currentTime - m_lastRunningPolicyheartbeatStartTime;
+
+        if (time_elapsed >= policyInterval)
             {
-            std::ofstream logfile("D:/performSendUsageRealtimeWithKeyResponse.txt");
-            logfile << response.GetBody().AsString() << std::endl;
-            logfile << (int)response.GetHttpStatus() << std::endl;
-            logfile.close();
-            throw HttpError(response);
+            // refresh policy
+            auto policyToken = GetPolicyToken();
+            if (policyToken != nullptr)
+                {
+                m_policy = policyToken;
+                }
+
+            CleanUpPolicies(); // if policy is expired or invalid, this will result in GetProductStatus() returning NotEntitled
+            m_lastRunningPolicyheartbeatStartTime = currentTime;
             }
-        std::ofstream logfile("D:/performSendUsageRealtimeWithKeyResponse.txt");
-        logfile << response.GetBody().AsString() << std::endl;
-        logfile << (int)response.GetHttpStatus() << std::endl;
-        logfile.close();
-        return folly::makeFuture();
+
+        if (!m_stopPolicyHeartbeat)
+            {
+            int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
+            PolicyHeartbeat(currentTimeUnixMs);
+            }
+        else
+            {
+            m_policyHeartbeatStopped = true;
+            }
         });
+    }
+
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ClientWithKeyImpl::ValidateAccessKey()
+    {
+    LOG.debug("ClientWithKeyImpl::ValidateAccessKey");
+
+    auto responseJson = m_ulasProvider->GetAccessKeyInfo(m_accessKey).get();
+
+    if (Json::Value::GetNull() == responseJson)
+        {
+        // call failed, so assume access key is unchanged since the last check
+        LOG.error("ClientWithKeyImpl::ValidateAccessKey - Call to AccessKey service failed");
+        return m_isAccessKeyValid;
+        }
+
+    if ("Success" != responseJson["status"].asString())
+        {
+        // unsuccessful if AccessKey is expired, not active, or not found - clear out policy from database
+        LOG.errorv("ClientWithKeyImpl::ValidateAccessKey - %s", responseJson["msg"].asString().c_str());
+        m_isAccessKeyValid = false;
+        }
+    else
+        {
+        m_isAccessKeyValid = true;
+        }
+
+    return m_isAccessKeyValid;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::shared_ptr<Policy> ClientWithKeyImpl::GetPolicyToken()
+    {
+    // TODO: rename this method? (and ClientImpl::GetPolicyToken) we are getting policy, not the token, and are storing the policy in the db...
+    LOG.debug("ClientWithKeyImpl::GetPolicyToken");
+
+    // returns nullptr if accesskey is inactive or expired
+    auto policy = m_policyProvider->GetPolicyWithKey(m_accessKey).get();
+
+    if (policy != nullptr)
+        {
+        StorePolicyInLicensingDb(policy);
+        DeleteAllOtherPoliciesByKey(policy);
+        }
+
+    return policy;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LicenseStatus ClientWithKeyImpl::GetProductStatus(int requestedProductId)
+    {
+    LOG.debug("ClientWithKeyImpl::GetProductStatus");
+
+    if (!ValidateAccessKey())
+        {
+        LOG.info("AccessKey missing from portal(deleted), expired, or revoked");
+        return LicenseStatus::NotEntitled;
+        }
+
+    return ClientImpl::GetProductStatus(requestedProductId);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClientWithKeyImpl::DeleteAllOtherPoliciesByKey(std::shared_ptr<Policy> policy)
+    {
+    LOG.debug("ClientWithKeyImpl::DeleteAllOtherPoliciesByKey");
+
+    m_licensingDb->DeleteAllOtherPolicyFilesByKey(policy->GetPolicyId(),
+        policy->GetRequestData()->GetAccessKey());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::list<std::shared_ptr<Policy>> ClientWithKeyImpl::GetUserPolicies()
+    {
+    LOG.debug("ClientWithKeyImpl::GetUserPolicies");
+
+    std::list<std::shared_ptr<Policy>> policyList;
+    auto jsonpolicies = m_licensingDb->GetPolicyFilesByKey(m_accessKey);
+    for (auto json : jsonpolicies)
+        {
+        auto policy = Policy::Create(json);
+        if (!policy->IsValid())
+            continue;
+        if (policy->GetRequestData()->GetAccessKey().Equals(m_accessKey))
+            {
+            policyList.push_back(policy);
+            }
+        }
+    return policyList;
     }

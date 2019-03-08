@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/Licensing/FreeClient.h $
+|     $Source: PublicAPI/Licensing/SaasClient.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -26,16 +26,16 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-typedef std::shared_ptr<struct FreeClient> FreeClientPtr;
+typedef std::shared_ptr<struct SaasClient> SaasClientPtr;
 
-struct FreeClient
+struct SaasClient
     {
 private:
-    std::shared_ptr<struct IFreeClient> m_impl;
+    std::shared_ptr<struct ISaasClient> m_impl;
 
-    FreeClient
+    SaasClient
         (
-        std::shared_ptr<struct IFreeClient> implementation
+        std::shared_ptr<struct ISaasClient> implementation
         );
 
 public:
@@ -45,8 +45,9 @@ public:
     *
     *
     */
-    LICENSING_EXPORT static FreeClientPtr Create
+    LICENSING_EXPORT static SaasClientPtr Create
         (
+        int productId = 0, /** ProductId, must be provided if want to track against a particular product, alternative is tracking linked back to OIDC client id */
         Utf8StringCR featureString = "", /** FeatureString, defaults to an empty string */
         IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
         );

@@ -11,16 +11,16 @@
 Headers =
 Headers + $(SourceDir)IClient.h
 Headers + $(SourceDir)ClientImpl.h
-Headers + $(SourceDir)IFreeClient.h
-Headers + $(SourceDir)FreeClientImpl.h
+Headers + $(SourceDir)ISaasClient.h
+Headers + $(SourceDir)SaasClientImpl.h
 Headers + $(SourceDir)ClientWithKeyImpl.h
 Headers + $(SourceDir)GenerateSID.h
 Headers + $(SourceDir)Policy.h
-Headers + $(SourceDir)IUsageDb.h
-Headers + $(SourceDir)UsageDb.h
+Headers + $(SourceDir)ILicensingDb.h
+Headers + $(SourceDir)LicensingDb.h
 Headers + $(SourceDir)FreeApplicationPolicyHelper.h
 Headers + $(PublicApiDir)Client.h
-Headers + $(PublicApiDir)FreeClient.h
+Headers + $(PublicApiDir)SaasClient.h
 Headers + $(PublicApiDir)LicenseStatus.h
 Headers + $(PublicApiDir)Licensing.h
 Headers + $(PublicApiDir)Utils/DelayedExecutor.h
@@ -40,6 +40,7 @@ Headers + $(SourceDir)Providers/IAuthHandlerProvider.h
 Headers + $(SourceDir)Providers/AuthHandlerProvider.h
 Headers + $(SourceDir)Providers/IUlasProvider.h
 Headers + $(SourceDir)Providers/UlasProvider.h
+Headers + $(SourceDir)Utils/FeatureEvent.h
 
 
 #---------------------------------------------------------------------------------------+
@@ -49,13 +50,13 @@ $(o)Client$(oext)                    : $(SourceDir)Client.cpp $(Headers) ${Multi
 
 $(o)ClientImpl$(oext)                : $(SourceDir)ClientImpl.cpp $(Headers) ${MultiCompileDepends}
 
-$(o)FreeClient$(oext)                : $(SourceDir)FreeClient.cpp $(Headers) ${MultiCompileDepends}
+$(o)SaasClient$(oext)                : $(SourceDir)SaasClient.cpp $(Headers) ${MultiCompileDepends}
 
-$(o)FreeClientImpl$(oext)            : $(SourceDir)FreeClientImpl.cpp $(Headers) ${MultiCompileDepends}
+$(o)SaasClientImpl$(oext)            : $(SourceDir)SaasClientImpl.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)ClientWithKeyImpl$(oext)         : $(SourceDir)ClientWithKeyImpl.cpp $(Headers) ${MultiCompileDepends}
 
-$(o)UsageDb$(oext)                   : $(SourceDir)UsageDb.cpp $(Headers) ${MultiCompileDepends}
+$(o)LicensingDb$(oext)               : $(SourceDir)LicensingDb.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)Policy$(oext)                    : $(SourceDir)Policy.cpp $(Headers) ${MultiCompileDepends}
 
@@ -82,5 +83,7 @@ $(o)AuthHandlerProvider$(oext)       : $(SourceDir)Providers/AuthHandlerProvider
 $(o)PolicyProvider$(oext)            : $(SourceDir)Providers/PolicyProvider.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)UlasProvider$(oext)              : $(SourceDir)Providers/UlasProvider.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)FeatureEvent$(oext)             : $(SourceDir)Utils/FeatureEvent.cpp $(Headers) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki

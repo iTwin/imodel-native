@@ -10,7 +10,7 @@
 #include <Licensing/Utils/LogFileHelper.h>
 #include <Licensing/Utils/UsageJsonHelper.h>
 #include "Logging.h"
-#include "UsageDb.h"
+#include "LicensingDb.h"
 #include <BeHttp/HttpError.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
@@ -37,7 +37,7 @@ IUlasProviderPtr ulasProvider,
 Utf8StringCR projectId,
 Utf8StringCR featureString,
 IHttpHandlerPtr httpHandler,
-IUsageDbPtr usageDb
+ILicensingDbPtr licensingDb
 ) :
 m_userInfo(userInfo),
 m_clientInfo(clientInfo),
@@ -48,10 +48,10 @@ m_buddiProvider(buddiProvider),
 m_policyProvider(policyProvider),
 m_ulasProvider(ulasProvider),
 m_httpHandler(httpHandler),
-m_usageDb(usageDb)
+m_licensingDb(licensingDb)
     {
-    if(m_usageDb == nullptr) // either pass in a mock, or initialize here
-        m_usageDb = std::make_unique<UsageDb>();
+    if(m_licensingDb == nullptr) // either pass in a mock, or initialize here
+        m_licensingDb = std::make_unique<LicensingDb>();
 
     m_correlationId = BeGuid(true).ToString();
     m_timeRetriever = TimeRetriever::Get();
@@ -112,13 +112,13 @@ LicenseStatus ClientImpl::StartApplication()
         return LicenseStatus::Error;
         }
 
-    if (m_usageDb == nullptr)
+    if (m_licensingDb == nullptr)
         {
         LOG.error("ClientImpl::StartApplication ERROR - Database object is null.");
         return LicenseStatus::Error;
         }
 
-    if (SUCCESS != m_usageDb->OpenOrCreate(m_dbPath))
+    if (SUCCESS != m_licensingDb->OpenOrCreate(m_dbPath))
         {
         LOG.error("ClientImpl::StartApplication ERROR - Database creation failed.");
         return LicenseStatus::Error;
@@ -164,7 +164,7 @@ BentleyStatus ClientImpl::StopApplication()
     StopLogPostingHeartbeat();
     StopPolicyHeartbeat();
 
-    m_usageDb->Close();
+    m_licensingDb->Close();
 
     return SUCCESS;
     }
@@ -256,15 +256,16 @@ void ClientImpl::PolicyHeartbeat(int64_t currentTime)
             // check if offline grace period should start
             if (policyToken == nullptr)
                 {
-                m_policy = policyToken;
                 if (!HasOfflineGracePeriodStarted())
-                    m_usageDb->SetOfflineGracePeriodStart(DateHelper::GetCurrentTime());
+                    m_licensingDb->SetOfflineGracePeriodStart(DateHelper::GetCurrentTime());
                 }
-            // otherwise, check if offline grace period should be reset
+            // otherwise, refresh policy and check if offline grace period should be reset
             else
                 {
+                m_policy = policyToken;
+
                 if (HasOfflineGracePeriodStarted())
-                    m_usageDb->ResetOfflineGracePeriod();
+                    m_licensingDb->ResetOfflineGracePeriod();
                 }
             CleanUpPolicies();
             m_lastRunningPolicyheartbeatStartTime = currentTime;
@@ -327,8 +328,8 @@ void ClientImpl::LogPostingHeartbeat(int64_t currentTime)
 
         if (time_elapsed >= logsPostingInterval)
             {
-            m_ulasProvider->PostUsageLogs(*m_usageDb, m_policy);
-            m_ulasProvider->PostFeatureLogs(*m_usageDb, m_policy);
+            m_ulasProvider->PostUsageLogs(*m_licensingDb, m_policy);
+            m_ulasProvider->PostFeatureLogs(*m_licensingDb, m_policy);
             m_lastRunningLogPostingheartbeatStartTime = currentTime;
             }
 
@@ -339,11 +340,11 @@ void ClientImpl::LogPostingHeartbeat(int64_t currentTime)
             }
         else
             {
-            if (m_usageDb->GetUsageRecordCount() > 0)
-                m_ulasProvider->PostUsageLogs(*m_usageDb, m_policy);
+            if (m_licensingDb->GetUsageRecordCount() > 0)
+                m_ulasProvider->PostUsageLogs(*m_licensingDb, m_policy);
 
-            if (m_usageDb->GetFeatureRecordCount() > 0)
-                m_ulasProvider->PostFeatureLogs(*m_usageDb, m_policy);
+            if (m_licensingDb->GetFeatureRecordCount() > 0)
+                m_ulasProvider->PostFeatureLogs(*m_licensingDb, m_policy);
 
             m_logPostingHeartbeatStopped = true;
             }
@@ -387,7 +388,7 @@ BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap
         return ERROR;
         }
 
-    if (!m_usageDb->IsDbOpen())
+    if (!m_licensingDb->IsDbOpen())
         {
         LOG.error("ClientImpl::MarkFeature ERROR - Usage DB not open.");
         return ERROR;
@@ -468,7 +469,7 @@ BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap
                eventTimeZ.c_str(),
                userDataString.c_str());
 
-    if (SUCCESS != m_usageDb->RecordFeature(m_policy->GetUltimateSAPId(),
+    if (SUCCESS != m_licensingDb->RecordFeature(m_policy->GetUltimateSAPId(),
                                             m_policy->GetPrincipalId(),
                                             m_policy->GetAppliesToUserId(),
                                             m_clientInfo->GetDeviceId(),
@@ -506,7 +507,7 @@ BentleyStatus ClientImpl::RecordUsage()
     {
     LOG.debug("ClientImpl::RecordUsage");
 
-    if (!m_usageDb->IsDbOpen())
+    if (!m_licensingDb->IsDbOpen())
         {
         LOG.error("ClientImpl::RecordUsage ERROR - Usage DB is not open.");
         return ERROR;
@@ -544,7 +545,7 @@ BentleyStatus ClientImpl::RecordUsage()
                m_policy->GetUsageType().c_str());
 
 
-    if (SUCCESS != m_usageDb->RecordUsage(m_policy->GetUltimateSAPId(),
+    if (SUCCESS != m_licensingDb->RecordUsage(m_policy->GetUltimateSAPId(),
                                           m_policy->GetPrincipalId(),
                                           m_policy->GetAppliesToUserId(),
                                           m_clientInfo->GetDeviceId(),
@@ -581,8 +582,8 @@ std::shared_ptr<Policy> ClientImpl::GetPolicyToken()
     auto policy = m_policyProvider->GetPolicy().get();
     if (policy != nullptr)
         {
-        StorePolicyInUsageDb(policy);
-		DeleteAllOtherUserPolicies(policy);
+        StorePolicyInLicensingDb(policy);
+        DeleteAllOtherPoliciesByUser(policy);
         }
 
     return policy;
@@ -591,9 +592,9 @@ std::shared_ptr<Policy> ClientImpl::GetPolicyToken()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-IUsageDb& ClientImpl::GetUsageDb()
+ILicensingDb& ClientImpl::GetLicensingDb()
     {
-    return *m_usageDb;
+    return *m_licensingDb;
     }
 
 ///*--------------------------------------------------------------------------------------+
@@ -635,7 +636,7 @@ void ClientImpl::CleanUpPolicies()
 		// if policy is not valid, remove it from the database; no point in keeping it
 		if (!policy->IsValid())
 			{
-			m_usageDb->DeletePolicyFile(policy->GetPolicyId());
+			m_licensingDb->DeletePolicyFile(policy->GetPolicyId());
 			}
 		}
 	}
@@ -647,7 +648,7 @@ std::shared_ptr<Policy> ClientImpl::GetPolicyWithId(Utf8StringCR policyId)
 	{
     LOG.debug("ClientImpl::GetPolicyWithId");
 
-	auto jsonpolicy = m_usageDb->GetPolicyFile(policyId);
+	auto jsonpolicy = m_licensingDb->GetPolicyFile(policyId);
 	if (jsonpolicy == Json::Value::GetNull())
 		return nullptr;
 	return Policy::Create(jsonpolicy);
@@ -661,7 +662,7 @@ std::list<std::shared_ptr<Policy>> ClientImpl::GetPolicies()
     LOG.debug("ClientImpl::GetPolicies");
 
     std::list<std::shared_ptr<Policy>> policyList;
-	auto jsonpolicies = m_usageDb->GetPolicyFiles();
+	auto jsonpolicies = m_licensingDb->GetPolicyFiles();
 	for (auto json : jsonpolicies)
 		{
 		auto policy = Policy::Create(json);
@@ -678,7 +679,7 @@ std::list<std::shared_ptr<Policy>> ClientImpl::GetUserPolicies()
     LOG.debug("ClientImpl::GetUserPolicies");
 
     std::list<std::shared_ptr<Policy>> policyList;
-	auto jsonpolicies = m_usageDb->GetPolicyFiles(m_userInfo.userId);
+	auto jsonpolicies = m_licensingDb->GetPolicyFilesByUser(m_userInfo.userId);
 	for (auto json : jsonpolicies)
 		{
 		auto policy = Policy::Create(json);
@@ -730,25 +731,27 @@ std::shared_ptr<Policy> ClientImpl::SearchForPolicy(Utf8String requestedProductI
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientImpl::DeleteAllOtherUserPolicies(std::shared_ptr<Policy> policy)
+void ClientImpl::DeleteAllOtherPoliciesByUser(std::shared_ptr<Policy> policy)
 	{
-    LOG.debug("ClientImpl::DeleteAllOtherUserPolicies");
+    LOG.debug("ClientImpl::DeleteAllOtherPoliciesByUser");
 
-	m_usageDb->DeleteAllOtherUserPolicyFiles(policy->GetPolicyId(),
+	m_licensingDb->DeleteAllOtherPolicyFilesByUser(policy->GetPolicyId(),
 		policy->GetUserData()->GetUserId());
 	}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientImpl::StorePolicyInUsageDb(std::shared_ptr<Policy> policy)
+void ClientImpl::StorePolicyInLicensingDb(std::shared_ptr<Policy> policy)
 	{
-    LOG.debug("ClientImpl::StorePolicyInUsageDb");
+    LOG.debug("ClientImpl::StorePolicyInLicensingDb");
 
     auto expiration = policy->GetPolicyExpiresOn();
 	auto lastUpdate = policy->GetRequestData()->GetClientDateTime();
-	m_usageDb->AddOrUpdatePolicyFile(policy->GetPolicyId(),
-		policy->GetAppliesToUserId(),
+    auto accessKey = policy->GetRequestData()->GetAccessKey();
+    m_licensingDb->AddOrUpdatePolicyFile(policy->GetPolicyId(),
+        policy->GetAppliesToUserId(),
+        accessKey,
 		expiration,
 		lastUpdate,
 		policy->GetJson());
@@ -761,7 +764,7 @@ bool ClientImpl::HasOfflineGracePeriodStarted()
 	{
     LOG.debug("ClientImpl::HasOfflineGracePeriodStarted");
 
-	auto graceStartString = m_usageDb->GetOfflineGracePeriodStart();
+	auto graceStartString = m_licensingDb->GetOfflineGracePeriodStart();
 	return graceStartString != "";
 	}
 
@@ -772,7 +775,7 @@ int64_t ClientImpl::GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> poli
 	{
     LOG.debug("ClientImpl::GetDaysLeftInOfflineGracePeriod");
 
-    Utf8String graceStartString = m_usageDb->GetOfflineGracePeriodStart();
+    Utf8String graceStartString = m_licensingDb->GetOfflineGracePeriodStart();
 	if (graceStartString == "")
 	{
 		return 0;

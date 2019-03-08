@@ -1,13 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/UsageDb.cpp $
+|     $Source: Licensing/LicensingDb.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Licensing/Utils/SCVWritter.h>
 
-#include "UsageDb.h"
+#include "LicensingDb.h"
 #include "Logging.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY_LICENSING
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::OpenOrCreate(BeFileNameCR filePath)
+BentleyStatus LicensingDb::OpenOrCreate(BeFileNameCR filePath)
     {
     LOG.info("OpenorCreate");
 
@@ -36,7 +36,7 @@ BentleyStatus UsageDb::OpenOrCreate(BeFileNameCR filePath)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::OpenDb(BeFileNameCR filePath)
+BentleyStatus LicensingDb::OpenDb(BeFileNameCR filePath)
     {
     LOG.info("OpenDb");
 
@@ -56,7 +56,7 @@ BentleyStatus UsageDb::OpenDb(BeFileNameCR filePath)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UsageDb::IsDbOpen()
+bool LicensingDb::IsDbOpen()
     {
     LOG.debug("IsDbOpen");
     return m_db.IsDbOpen();
@@ -65,7 +65,7 @@ bool UsageDb::IsDbOpen()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::CreateDb(BeFileNameCR filePath)
+BentleyStatus LicensingDb::CreateDb(BeFileNameCR filePath)
     {
     LOG.debug("CreateDb");
 
@@ -80,7 +80,7 @@ BentleyStatus UsageDb::CreateDb(BeFileNameCR filePath)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::SetUpTables()
+BentleyStatus LicensingDb::SetUpTables()
     {
     LOG.info("SetUpTables");
 
@@ -88,6 +88,7 @@ BentleyStatus UsageDb::SetUpTables()
     if (m_db.CreateTable("Policy",
                          "PolicyId NVARCHAR(20) PRIMARY KEY, "
                          "UserId NVARCHAR(40), "
+                         "AccessKey NVARCHAR(40), "
                          "ExpirationDate NVARCHAR(20), "
                          "LastUpdateTime NVARCHAR(20), "
                          "PolicyFile NVARCHAR(900)") != DbResult::BE_SQLITE_OK)
@@ -178,7 +179,7 @@ BentleyStatus UsageDb::SetUpTables()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::SetUpOfflineGraceTable()
+BentleyStatus LicensingDb::SetUpOfflineGraceTable()
     {
     if (m_db.CreateTable("OfflineGrace",
         "GraceId NVARCHAR(20) PRIMARY KEY, "
@@ -194,16 +195,16 @@ BentleyStatus UsageDb::SetUpOfflineGraceTable()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UsageDb::Close()
+void LicensingDb::Close()
     {
-    LOG.debug("UsageDb::Close");
+    LOG.debug("LicensingDb::Close");
     m_db.CloseDb();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int64_t UsageDb::GetLastUsageRecordRowId()
+int64_t LicensingDb::GetLastUsageRecordRowId()
     {
     LOG.debug("GetLastUsageRecordRowId");
 
@@ -220,7 +221,7 @@ int64_t UsageDb::GetLastUsageRecordRowId()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UsageDb::GetLastUsageRecordedTime()
+Utf8String LicensingDb::GetLastUsageRecordedTime()
     {
     LOG.debug("GetLastUsageRecordedTime");
     
@@ -238,7 +239,7 @@ Utf8String UsageDb::GetLastUsageRecordedTime()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int64_t UsageDb::GetUsageRecordCount()
+int64_t LicensingDb::GetUsageRecordCount()
     {
     LOG.debug("GetUsageRecordCount");
 
@@ -255,7 +256,7 @@ int64_t UsageDb::GetUsageRecordCount()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int64_t UsageDb::GetLastFeatureRowId()
+int64_t LicensingDb::GetLastFeatureRowId()
     {
     LOG.debug("GetLastFeatureRowId");
 
@@ -273,7 +274,7 @@ int64_t UsageDb::GetLastFeatureRowId()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int64_t UsageDb::GetFeatureRecordCount()
+int64_t LicensingDb::GetFeatureRecordCount()
     {
     LOG.debug("GetFeatureRecordCount");
 
@@ -290,7 +291,7 @@ int64_t UsageDb::GetFeatureRecordCount()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::WriteUsageToCSVFile(BeFileNameCR path)
+BentleyStatus LicensingDb::WriteUsageToCSVFile(BeFileNameCR path)
     {
     LOG.info("WriteUsageToCSVFile");
 
@@ -338,7 +339,7 @@ BentleyStatus UsageDb::WriteUsageToCSVFile(BeFileNameCR path)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::WriteFeatureToCSVFile(BeFileNameCR path)
+BentleyStatus LicensingDb::WriteFeatureToCSVFile(BeFileNameCR path)
     {
     SCVWritter writter;
     Statement stmt;
@@ -391,7 +392,7 @@ BentleyStatus UsageDb::WriteFeatureToCSVFile(BeFileNameCR path)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::list<Json::Value> UsageDb::GetPolicyFiles()
+std::list<Json::Value> LicensingDb::GetPolicyFiles()
     {
     LOG.info("GetPolicyFiles");
 
@@ -420,10 +421,10 @@ std::list<Json::Value> UsageDb::GetPolicyFiles()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::list<Json::Value> UsageDb::GetPolicyFiles(Utf8String userId)
+std::list<Json::Value> LicensingDb::GetPolicyFilesByUser(Utf8StringCR userId)
     {
-    LOG.info("GetPolicyFiles (userid)");
-    
+    LOG.info("GetPolicyFilesByUser(userId)");
+
     std::list<Json::Value> policyList;
 
     Statement stmt;
@@ -453,7 +454,40 @@ std::list<Json::Value> UsageDb::GetPolicyFiles(Utf8String userId)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken)
+std::list<Json::Value> LicensingDb::GetPolicyFilesByKey(Utf8StringCR accessKey)
+    {
+    LOG.info("GetPolicyFilesByKey(accessKey)");
+
+    std::list<Json::Value> policyList;
+
+    Statement stmt;
+    if (m_db.IsDbOpen())
+        {
+        stmt.Prepare(m_db, "SELECT PolicyFile FROM Policy WHERE AccessKey = ?");
+        stmt.BindText(1, accessKey, Statement::MakeCopy::No);
+        bool isDone = false;
+        while (!isDone)
+            {
+            DbResult result = stmt.Step();
+            if (result == DbResult::BE_SQLITE_ROW)
+                {
+                Utf8String policyUtf8 = stmt.GetValueText(0);
+                auto policyJson = Json::Reader::DoParse(policyUtf8);
+                policyList.push_back(policyJson);
+                }
+            else
+                {
+                isDone = true;
+                }
+            }
+        }
+    return policyList;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus LicensingDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken)
     {
     LOG.debug("AddOrUpdatePolicyFile");
 
@@ -462,12 +496,13 @@ BentleyStatus UsageDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR
     if (m_db.IsDbOpen())
         {
         Utf8String stringToken = Json::FastWriter::ToString(policyToken);
-        stmt.Prepare(m_db, "INSERT INTO Policy VALUES (?, ?, ?, ?, ?)");
+        stmt.Prepare(m_db, "INSERT INTO Policy VALUES (?, ?, ?, ?, ?, ?)");
         stmt.BindText(1, policyId, Statement::MakeCopy::No);
         stmt.BindText(2, userId, Statement::MakeCopy::No);
-        stmt.BindText(3, expirationDate, Statement::MakeCopy::No);
-        stmt.BindText(4, lastUpdateTime, Statement::MakeCopy::No);
-        stmt.BindText(5, stringToken, Statement::MakeCopy::No);
+        stmt.BindText(3, accessKey, Statement::MakeCopy::No);
+        stmt.BindText(4, expirationDate, Statement::MakeCopy::No);
+        stmt.BindText(5, lastUpdateTime, Statement::MakeCopy::No);
+        stmt.BindText(6, stringToken, Statement::MakeCopy::No);
         DbResult result = stmt.Step();
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;
@@ -478,7 +513,7 @@ BentleyStatus UsageDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::DeletePolicyFile(Utf8StringCR policyId)
+BentleyStatus LicensingDb::DeletePolicyFile(Utf8StringCR policyId)
     {
     LOG.debug("DeletePolicyFile");
 
@@ -498,9 +533,9 @@ BentleyStatus UsageDb::DeletePolicyFile(Utf8StringCR policyId)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::DeleteAllOtherUserPolicyFiles(Utf8StringCR policyId, Utf8StringCR userId)
+BentleyStatus LicensingDb::DeleteAllOtherPolicyFilesByUser(Utf8StringCR policyId, Utf8StringCR userId)
     {
-    LOG.debug("DeleteAllOtherUserPolicyFiles");
+    LOG.debug("DeleteAllOtherPolicyFilesByUser");
 
     Statement stmt;
 
@@ -519,7 +554,28 @@ BentleyStatus UsageDb::DeleteAllOtherUserPolicyFiles(Utf8StringCR policyId, Utf8
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value UsageDb::GetPolicyFile()
+BentleyStatus LicensingDb::DeleteAllOtherPolicyFilesByKey(Utf8StringCR policyId, Utf8StringCR accessKey)
+    {
+    LOG.debug("DeleteAllOtherPolicyFilesByKey");
+
+    Statement stmt;
+
+    if (m_db.IsDbOpen())
+        {
+        stmt.Prepare(m_db, "DELETE FROM Policy WHERE AccessKey = ? AND PolicyId != ?");
+        stmt.BindText(1, accessKey, Statement::MakeCopy::No);
+        stmt.BindText(2, policyId, Statement::MakeCopy::No);
+        DbResult result = stmt.Step();
+        if (result == DbResult::BE_SQLITE_DONE)
+            return SUCCESS;
+        }
+    return ERROR;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value LicensingDb::GetPolicyFile()
     {
     LOG.debug("GetPolicyFile");
 
@@ -542,7 +598,7 @@ Json::Value UsageDb::GetPolicyFile()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value UsageDb::GetPolicyFile(Utf8StringCR policyId)
+Json::Value LicensingDb::GetPolicyFile(Utf8StringCR policyId)
     {
     LOG.debug("GetPolicyFile (policyId)");
 
@@ -566,7 +622,7 @@ Json::Value UsageDb::GetPolicyFile(Utf8StringCR policyId)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::SetOfflineGracePeriodStart(Utf8StringCR startTime)
+BentleyStatus LicensingDb::SetOfflineGracePeriodStart(Utf8StringCR startTime)
     {
     LOG.debug("SetOfflineGracePeriodStart");
 
@@ -590,7 +646,7 @@ BentleyStatus UsageDb::SetOfflineGracePeriodStart(Utf8StringCR startTime)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UsageDb::GetOfflineGracePeriodStart()
+Utf8String LicensingDb::GetOfflineGracePeriodStart()
     {
     LOG.debug("GetOfflineGracePeriodStart");
 
@@ -613,7 +669,7 @@ Utf8String UsageDb::GetOfflineGracePeriodStart()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::ResetOfflineGracePeriod()
+BentleyStatus LicensingDb::ResetOfflineGracePeriod()
     {
     LOG.debug("ResetOfflineGracePeriod");
 
@@ -627,7 +683,7 @@ BentleyStatus UsageDb::ResetOfflineGracePeriod()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::CleanUpUsages()
+BentleyStatus LicensingDb::CleanUpUsages()
     {
     LOG.info("CleanUpUsages");
 
@@ -660,7 +716,7 @@ BentleyStatus UsageDb::CleanUpUsages()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::CleanUpFeatures()
+BentleyStatus LicensingDb::CleanUpFeatures()
     {
     LOG.info("CleanUpFeatures");
 
@@ -693,13 +749,13 @@ BentleyStatus UsageDb::CleanUpFeatures()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::RecordUsage(int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
+BentleyStatus LicensingDb::RecordUsage(int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
                                    Utf8StringCR machineSID, Utf8StringCR userName, Utf8StringCR userSID, Utf8StringCR policyId,
                                    Utf8StringCR securableId, int productId, Utf8String featureString, int64_t productVersion, 
                                    Utf8StringCR projectId, Utf8String correlationId, Utf8StringCR eventTime, double schemaVersion,
                                    Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType)
     {
-    LOG.info("UsageDb::RecordUsage");
+    LOG.info("LicensingDb::RecordUsage");
 
     Statement stmt;
 
@@ -731,7 +787,7 @@ BentleyStatus UsageDb::RecordUsage(int64_t ultimateSAPId, Utf8StringCR principal
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;
 
-        LOG.errorv("UsageDb::RecordUsage - Failed to insert usage into the databse. BE_SQLITE error %d", result);
+        LOG.errorv("LicensingDb::RecordUsage - Failed to insert usage into the databse. BE_SQLITE error %d", result);
         }
 
     return ERROR;
@@ -740,14 +796,14 @@ BentleyStatus UsageDb::RecordUsage(int64_t ultimateSAPId, Utf8StringCR principal
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::RecordFeature(int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
+BentleyStatus LicensingDb::RecordFeature(int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
                                      Utf8StringCR machineSID, Utf8StringCR userName, Utf8StringCR userSID, Utf8StringCR policyId,
                                      Utf8StringCR securableId, int productId, Utf8String featureString, int64_t productVersion,
                                      Utf8StringCR projectId, Utf8String correlationId, Utf8StringCR eventTime, double schemaVersion,
                                      Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType, Utf8StringCR featureId,
                                      Utf8StringCR startDate, Utf8String endDate, Utf8String userData)
     {
-    LOG.info("UsageDb::RecordFeature");
+    LOG.info("LicensingDb::RecordFeature");
 
     Statement stmt;
 
@@ -783,7 +839,7 @@ BentleyStatus UsageDb::RecordFeature(int64_t ultimateSAPId, Utf8StringCR princip
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;
 
-        LOG.errorv("UsageDb::RecordFeature - Failed to insert feature into the databse. BE_SQLITE error %d", result);
+        LOG.errorv("LicensingDb::RecordFeature - Failed to insert feature into the databse. BE_SQLITE error %d", result);
         }
 
     return ERROR;
@@ -792,7 +848,7 @@ BentleyStatus UsageDb::RecordFeature(int64_t ultimateSAPId, Utf8StringCR princip
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::SetEimVersion()
+BentleyStatus LicensingDb::SetEimVersion()
     {
     LOG.debug("SetEimVersion");
 
@@ -818,9 +874,9 @@ BentleyStatus UsageDb::SetEimVersion()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::UpdateDb()
+BentleyStatus LicensingDb::UpdateDb()
     {
-    LOG.debug("UsageDb::UpdateDb");
+    LOG.debug("LicensingDb::UpdateDb");
 
     Statement stmt;
     DbResult result;
@@ -861,7 +917,7 @@ BentleyStatus UsageDb::UpdateDb()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::UpdateDbTables()
+BentleyStatus LicensingDb::UpdateDbTables()
     {
     LOG.info("UpdateDbTables");
     return SUCCESS;

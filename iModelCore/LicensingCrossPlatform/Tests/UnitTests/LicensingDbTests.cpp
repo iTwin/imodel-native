@@ -1,21 +1,21 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/UsageDbTests.cpp $
+|     $Source: Tests/UnitTests/LicensingDbTests.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/BeSQLite.h>
 
-#include "UsageDbTests.h"
+#include "LicensingDbTests.h"
 
-#include "../../Licensing/UsageDb.h"
+#include "../../Licensing/LicensingDb.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 
 USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS
 
-void UsageDbTests::SetUpTestCase()
+void LicensingDbTests::SetUpTestCase()
 	{
 	BeFileName tmpDir;
 	BeTest::GetHost().GetTempDir(tmpDir);
@@ -40,7 +40,7 @@ Utf8String ReadAllFile(BeFileNameCR path)
     return contents;
     }
 
-BentleyStatus OpenOrCreateTestDb(UsageDb& db, BeFileNameCR dbFileName = BeFileName("TestDb.db"))
+BentleyStatus OpenOrCreateTestDb(LicensingDb& db, BeFileNameCR dbFileName = BeFileName("TestDb.db"))
     {
     BeFileName tmpDir;
     BeTest::GetHost().GetTempDir(tmpDir);
@@ -48,9 +48,9 @@ BentleyStatus OpenOrCreateTestDb(UsageDb& db, BeFileNameCR dbFileName = BeFileNa
     return db.OpenOrCreate(tmpDir);
     }
 
-TEST_F(UsageDbTests, OpenOrCreate_OpenExistingDb_ContainsInsertedRows)
+TEST_F(LicensingDbTests, OpenOrCreate_OpenExistingDb_ContainsInsertedRows)
     {
-    UsageDb db;
+    LicensingDb db;
     EXPECT_SUCCESS(OpenOrCreateTestDb(db));
 
     Utf8String eventTime = DateTime::GetCurrentTimeUtc().ToString();
@@ -72,9 +72,9 @@ TEST_F(UsageDbTests, OpenOrCreate_OpenExistingDb_ContainsInsertedRows)
     EXPECT_TRUE(db.GetLastUsageRecordedTime().Equals(eventTime));
     }
 
-TEST_F(UsageDbTests, OpenOrCreate_DifferentDb_OpensNewDb)
+TEST_F(LicensingDbTests, OpenOrCreate_DifferentDb_OpensNewDb)
     {
-    UsageDb db;
+    LicensingDb db;
     EXPECT_SUCCESS(OpenOrCreateTestDb(db));
 
     Utf8String eventTime = DateTime::GetCurrentTimeUtc().ToString();
@@ -90,9 +90,9 @@ TEST_F(UsageDbTests, OpenOrCreate_DifferentDb_OpensNewDb)
     EXPECT_FALSE(db.GetLastUsageRecordedTime().Equals(eventTime));
     }
 
-TEST_F(UsageDbTests, OpenOrCreate_OpenAndUpdateExistingDatabase_Success)
+TEST_F(LicensingDbTests, OpenOrCreate_OpenAndUpdateExistingDatabase_Success)
     {
-    UsageDb db;
+    LicensingDb db;
     Utf8String fileName;
 
     fileName.Sprintf("Licensing-%s.db", BeGuid(true).ToString().c_str());
@@ -138,9 +138,9 @@ TEST_F(UsageDbTests, OpenOrCreate_OpenAndUpdateExistingDatabase_Success)
     EXPECT_SUCCESS(OpenOrCreateTestDb(db, BeFileName(fileName)));
     }
 
-TEST_F(UsageDbTests, WriteUsageToCSVFile_MultipleRecords_CreatesCorrectFile)
+TEST_F(LicensingDbTests, WriteUsageToCSVFile_MultipleRecords_CreatesCorrectFile)
     {
-    UsageDb db;
+    LicensingDb db;
     Utf8String fileName;
 
     fileName.Sprintf("Licensing-%s.db", BeGuid(true).ToString().c_str());
@@ -184,9 +184,9 @@ TEST_F(UsageDbTests, WriteUsageToCSVFile_MultipleRecords_CreatesCorrectFile)
     EXPECT_TRUE(fileContent.Contains(eventTime3));
     }
 
-TEST_F(UsageDbTests, WriteFeatureToCSVFile_MultipleRecords_CreatesCorrectFile)
+TEST_F(LicensingDbTests, WriteFeatureToCSVFile_MultipleRecords_CreatesCorrectFile)
     {
-    UsageDb db;
+    LicensingDb db;
     Utf8String fileName;
     using namespace std::chrono_literals;
 
@@ -234,9 +234,9 @@ TEST_F(UsageDbTests, WriteFeatureToCSVFile_MultipleRecords_CreatesCorrectFile)
     EXPECT_TRUE(fileContent.Contains(eventTime3));
     }
 
-TEST_F(UsageDbTests, CleanUpUsages_Success)
+TEST_F(LicensingDbTests, CleanUpUsages_Success)
     {
-    UsageDb db;
+    LicensingDb db;
 
     EXPECT_SUCCESS(OpenOrCreateTestDb(db));
 
@@ -274,9 +274,9 @@ TEST_F(UsageDbTests, CleanUpUsages_Success)
     EXPECT_EQ(0, db.GetUsageRecordCount());
     }
 
-TEST_F(UsageDbTests, OfflineGracePeriod_Success)
+TEST_F(LicensingDbTests, OfflineGracePeriod_Success)
 	{
-	UsageDb db;
+	LicensingDb db;
 
 	EXPECT_SUCCESS(OpenOrCreateTestDb(db));
 	
@@ -294,23 +294,23 @@ TEST_F(UsageDbTests, OfflineGracePeriod_Success)
 	EXPECT_EQ(db.GetOfflineGracePeriodStart(), "");
 	}
 
-TEST_F(UsageDbTests, DeleteAllOtherUserPolicies_Success)
+TEST_F(LicensingDbTests, DeleteAllOtherPoliciesByUser_Success)
 	{
-	UsageDb db;
+	LicensingDb db;
 
 	EXPECT_SUCCESS(OpenOrCreateTestDb(db));
 
 	Utf8String userId = "userA";
 	Utf8String policyIdToKeep = "3";
 	// Put in some dummy policies for user
-	db.AddOrUpdatePolicyFile("1", userId, "", "", "");
-	db.AddOrUpdatePolicyFile("2", userId, "", "", "");
-	db.AddOrUpdatePolicyFile(policyIdToKeep, userId, "", "", "");
+	db.AddOrUpdatePolicyFile("1", userId, "", "", "", "");
+	db.AddOrUpdatePolicyFile("2", userId, "", "", "", "");
+	db.AddOrUpdatePolicyFile(policyIdToKeep, userId, "", "", "", "");
 	// Put in a policy for a different user
-	db.AddOrUpdatePolicyFile("4", "userB", "", "", "");
+	db.AddOrUpdatePolicyFile("4", "userB", "", "", "", "");
 
 	// attempt to delete all other user's policies
-	db.DeleteAllOtherUserPolicyFiles(policyIdToKeep, userId);
+	db.DeleteAllOtherPolicyFilesByUser(policyIdToKeep, userId);
 
 	// Ids 1-2 should no longer exist
 	ASSERT_EQ(db.GetPolicyFile("1"), Json::Value::GetNull());

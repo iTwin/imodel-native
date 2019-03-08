@@ -21,9 +21,6 @@
     <ClCompile Include="ClientTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="UsageDbTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Utils\DelayedExecutorTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -60,15 +57,15 @@
     <ClCompile Include="Utils\MockHttpHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LicensingDbTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TestsHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ClientTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="UsageDbTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Utils\UrlSafeBase64UtilitiesTests.h">
@@ -119,7 +116,10 @@
     <ClInclude Include="Utils\MockHttpHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Mocks\UsageDbMock.h">
+    <ClInclude Include="LicensingDbTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Mocks\LicensingDbMock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

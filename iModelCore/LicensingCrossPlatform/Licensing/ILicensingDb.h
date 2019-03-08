@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/IUsageDb.h $
+|     $Source: Licensing/ILicensingDb.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,12 +13,12 @@
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
-typedef std::shared_ptr<struct IUsageDb> IUsageDbPtr;
+typedef std::shared_ptr<struct ILicensingDb> ILicensingDbPtr;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct IUsageDb
+struct ILicensingDb
     {
 public:
     virtual BentleyStatus OpenOrCreate(BeFileNameCR filePath) = 0;
@@ -29,10 +29,12 @@ public:
     virtual BentleyStatus WriteFeatureToCSVFile(BeFileNameCR path) = 0;
 
     virtual std::list<Json::Value> GetPolicyFiles() = 0;
-    virtual std::list<Json::Value> GetPolicyFiles(Utf8String userId) = 0;
-    virtual BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken) = 0;
+    virtual std::list<Json::Value> GetPolicyFilesByUser(Utf8StringCR userId) = 0;
+    virtual std::list<Json::Value> GetPolicyFilesByKey(Utf8StringCR accessKey) = 0;
+    virtual BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken) = 0;
     virtual BentleyStatus DeletePolicyFile(Utf8StringCR policyId) = 0;
-    virtual BentleyStatus DeleteAllOtherUserPolicyFiles(Utf8StringCR policyId, Utf8StringCR userId) = 0;
+    virtual BentleyStatus DeleteAllOtherPolicyFilesByUser(Utf8StringCR policyId, Utf8StringCR userId) = 0;
+    virtual BentleyStatus DeleteAllOtherPolicyFilesByKey(Utf8StringCR policyId, Utf8StringCR accessKey) = 0;
 
     virtual Json::Value GetPolicyFile() = 0;
     virtual Json::Value GetPolicyFile(Utf8StringCR policyId) = 0;
@@ -61,7 +63,7 @@ public:
         Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType, Utf8StringCR featureId,
         Utf8StringCR startDate, Utf8String endDate, Utf8String userData) = 0;
 
-    virtual ~IUsageDb() {};
+    virtual ~ILicensingDb() {};
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

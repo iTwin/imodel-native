@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Mocks/UsageDbMock.h $
+|     $Source: Tests/UnitTests/Mocks/LicensingDbMock.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,13 +8,13 @@
 #pragma once
 
 #include <Licensing/Licensing.h>
-#include "../../../Licensing/IUsageDb.h"
+#include "../../../Licensing/ILicensingDb.h"
 
 #include "../TestsHelper.h"
 
 BEGIN_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
 
-struct UsageDbMock : IUsageDb
+struct LicensingDbMock : ILicensingDb
     {
 public:
     MOCK_METHOD1(OpenOrCreate, BentleyStatus(BeFileNameCR filePath));
@@ -25,10 +25,12 @@ public:
     MOCK_METHOD1(WriteFeatureToCSVFile, BentleyStatus(BeFileNameCR path));
 
     MOCK_METHOD0(GetPolicyFiles, std::list<Json::Value>());
-    MOCK_METHOD1(GetPolicyFiles, std::list<Json::Value>(Utf8String userId));
-    MOCK_METHOD5(AddOrUpdatePolicyFile, BentleyStatus(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken));
+    MOCK_METHOD1(GetPolicyFilesByUser, std::list<Json::Value>(Utf8StringCR userId));
+    MOCK_METHOD1(GetPolicyFilesByKey, std::list<Json::Value>(Utf8StringCR accessKey));
+    MOCK_METHOD6(AddOrUpdatePolicyFile, BentleyStatus(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken));
     MOCK_METHOD1(DeletePolicyFile, BentleyStatus(Utf8StringCR policyId));
-    MOCK_METHOD2(DeleteAllOtherUserPolicyFiles, BentleyStatus(Utf8StringCR policyId, Utf8StringCR userId));
+    MOCK_METHOD2(DeleteAllOtherPolicyFilesByUser, BentleyStatus(Utf8StringCR policyId, Utf8StringCR userId));
+    MOCK_METHOD2(DeleteAllOtherPolicyFilesByKey, BentleyStatus(Utf8StringCR policyId, Utf8StringCR accessKey));
 
     MOCK_METHOD0(GetPolicyFile, Json::Value());
     MOCK_METHOD1(GetPolicyFile, Json::Value(Utf8StringCR policyId));

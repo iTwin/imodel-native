@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Licensing/Utils/UsageJsonHelper.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,7 +19,7 @@ struct UsageJsonHelper
 private:
 
 public:
-	static Utf8String CreateJsonRandomGuids(Utf8StringCR deviceID, Utf8StringCR featureString, BeVersionCR version, Utf8StringCR projectID)
+	static Utf8String CreateJsonRandomGuids(Utf8StringCR deviceID, Utf8StringCR featureString, BeVersionCR version, Utf8StringCR projectID, int productId)
 	{
 		Utf8String jsonString;
 
@@ -31,7 +31,7 @@ public:
 		//stream << "\"uID\": " << 1234 << ","; // client's login name excluding domain information (same is IMS id?) [STRING]
 		jsonString += "\"polID\": \"" + BeSQLite::BeGuid(true).ToString() + "\","; //  FreeApplicationPolicyHelper::GetRandomGUID() << "\","; // policy file ID [GUID]
 		jsonString += "\"secID\": \"" + BeSQLite::BeGuid(true).ToString() + "\","; // FreeApplicationPolicyHelper::GetRandomGUID() << "\","; // securable ID [STRING]
-		//stream << "\"prdid\": " << 1234 << ","; // product ID (4 digits) [NUMBER]
+        jsonString += "\"prdid\": " + Utf8String(std::to_string(productId).c_str()) + ","; // product ID (4 digits) [NUMBER]
 		jsonString += "\"fstr\": \"" + featureString + "\","; // feature string [STRING]
 
         const uint64_t versionNumber = UINT64_C(1000000000000) * version.GetMajor()  + UINT64_C(100000000) * version.GetMinor()  + UINT64_C(10000) * version.GetSub1() + ((uint64_t) version.GetSub2());

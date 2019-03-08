@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/FreeClient.cpp $
+|     $Source: Licensing/SaasClient.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 
-#include <Licensing/FreeClient.h>
-#include "FreeClientImpl.h"
+#include <Licensing/SaasClient.h>
+#include "SaasClientImpl.h"
 #include "Providers/BuddiProvider.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
@@ -16,9 +16,9 @@ USING_NAMESPACE_BENTLEY_LICENSING
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-FreeClient::FreeClient
+SaasClient::SaasClient
     (
-    std::shared_ptr<struct IFreeClient> implementation
+    std::shared_ptr<struct ISaasClient> implementation
     )
     {
     m_impl = implementation;
@@ -27,20 +27,21 @@ FreeClient::FreeClient
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-FreeClientPtr FreeClient::Create
+SaasClientPtr SaasClient::Create
     (
+    int productId,
     Utf8StringCR featureString,
     IHttpHandlerPtr httpHandler
     )
     {
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
-    return std::shared_ptr<FreeClient>(new FreeClient(std::make_shared<FreeClientImpl>(featureString, httpHandler, buddiProvider)));
+    return std::shared_ptr<SaasClient>(new SaasClient(std::make_shared<SaasClientImpl>(productId, featureString, httpHandler, buddiProvider)));
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> FreeClient::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
+folly::Future<BentleyStatus> SaasClient::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
     {
     return m_impl->TrackUsage(accessToken, version, projectId);
     }

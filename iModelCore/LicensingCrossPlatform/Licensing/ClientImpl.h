@@ -12,7 +12,7 @@
 #include <Licensing/LicenseStatus.h>
 
 #include "IClient.h"
-#include "UsageDb.h"
+#include "LicensingDb.h"
 #include "Policy.h"
 
 #include <Licensing/Utils/TimeRetriever.h>
@@ -29,7 +29,7 @@
 #include "Providers/IBuddiProvider.h"
 #include "Providers/IPolicyProvider.h"
 #include "Providers/IUlasProvider.h"
-#include "IUsageDb.h"
+#include "ILicensingDb.h"
 
 // Log Posting Sources
 #define LOGPOSTINGSOURCE_REALTIME           "RealTime"
@@ -64,7 +64,7 @@ protected:
     IHttpHandlerPtr m_httpHandler;
     ITimeRetrieverPtr m_timeRetriever;
     IDelayedExecutorPtr m_delayedExecutor;
-    IUsageDbPtr m_usageDb;
+    ILicensingDbPtr m_licensingDb;
     Utf8String m_featureString;
     Utf8String m_projectId;
     Utf8String m_correlationId;
@@ -76,11 +76,11 @@ protected:
 
     // Policy
 	std::shared_ptr<Policy> m_policy;
-    void StorePolicyInUsageDb(std::shared_ptr<Policy> policy);
-    std::shared_ptr<Policy> GetPolicyToken();
+    void StorePolicyInLicensingDb(std::shared_ptr<Policy> policy);
+    virtual std::shared_ptr<Policy> GetPolicyToken();
 
     std::list<std::shared_ptr<Policy>> GetPolicies();
-    std::list<std::shared_ptr<Policy>> GetUserPolicies();
+    virtual std::list<std::shared_ptr<Policy>> GetUserPolicies();
     std::shared_ptr<Policy> SearchForPolicy(Utf8String requestedProductId="");
     bool HasOfflineGracePeriodStarted();
     int64_t GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString);
@@ -134,7 +134,7 @@ public:
         Utf8StringCR projectId,
         Utf8StringCR featureString,
         IHttpHandlerPtr httpHandler,
-        IUsageDbPtr usageDb
+        ILicensingDbPtr licensingDb
         );
 
     // Usages
@@ -150,16 +150,16 @@ public:
     LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicy();
 
     // Product status
-    LICENSING_EXPORT LicenseStatus GetProductStatus(int requestedProductId = -1);
+    virtual LICENSING_EXPORT LicenseStatus GetProductStatus(int requestedProductId = -1);
 
     // Used in tests
-    LICENSING_EXPORT IUsageDb& GetUsageDb();
-	LICENSING_EXPORT void AddPolicyToDb(std::shared_ptr<Policy> policy) { StorePolicyInUsageDb(policy); };
+    LICENSING_EXPORT ILicensingDb& GetLicensingDb();
+	LICENSING_EXPORT void AddPolicyToDb(std::shared_ptr<Policy> policy) { StorePolicyInLicensingDb(policy); };
 	LICENSING_EXPORT std::shared_ptr<Policy> GetPolicyWithId(Utf8StringCR policyId);
 
 	// clean up policies; used internally, but also used in unit tests
 	LICENSING_EXPORT void CleanUpPolicies();
-	LICENSING_EXPORT void DeleteAllOtherUserPolicies(std::shared_ptr<Policy> policy);
+	LICENSING_EXPORT void DeleteAllOtherPoliciesByUser(std::shared_ptr<Policy> policy);
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

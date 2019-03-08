@@ -12,7 +12,7 @@
 #include "DummyPolicyHelper.h"
 
 #include <Licensing/Client.h>
-#include <Licensing/FreeClient.h>
+#include <Licensing/SaasClient.h>
 #include <Licensing/Utils/DateHelper.h>
 #include <Licensing/AuthType.h>
 #include "../../Licensing/Providers/PolicyProvider.h"
@@ -59,7 +59,7 @@ PolicyProviderTests::PolicyProviderTests() :
 
     EXPECT_CALL(*m_authMock, GetAuthHandler(_, _))
         .WillRepeatedly(Return(m_handlerMock));
-    m_policyProvider = std::make_shared<PolicyProvider>(m_buddiMock, clientInfo, m_authMock, AuthType::SAML);
+    m_policyProvider = std::make_shared<PolicyProvider>(m_buddiMock, clientInfo, m_handlerMock, AuthType::SAML, m_authMock);
     }
 
 PolicyProvider& PolicyProviderTests::GetPolicyProvider() const {

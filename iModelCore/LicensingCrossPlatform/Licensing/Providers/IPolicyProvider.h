@@ -22,6 +22,7 @@ struct IPolicyProvider
 {
 public:
     virtual folly::Future<std::shared_ptr<Policy>> GetPolicy() = 0;
+    virtual folly::Future<std::shared_ptr<Policy>> GetPolicyWithKey(Utf8StringCR accessKey) = 0;
     virtual ~IPolicyProvider() {};
 };
 

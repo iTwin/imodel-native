@@ -35,7 +35,24 @@ Utf8String BuddiProvider::UlasRealtimeLoggingBaseUrl()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String BuddiProvider::UlasRealtimeFeatureUrl()
+    {
+    return UlasRealtimeLoggingBaseUrl() + "/featureLog";
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BuddiProvider::EntitlementPolicyBaseUrl()
 {
     return UrlProvider::Urls::EntitlementPolicyService.Get();
 }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String BuddiProvider::UlasAccessKeyBaseUrl()
+    {
+    // Ulas AccessKey Service url is not in UrlProvider by name
+    return UrlProvider::UrlDescriptor("UsageLoggingServices.AccessKey.Url", "", "", "", "", nullptr).Get();
+    }
