@@ -167,6 +167,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName, uint32_t 
     m_smSisterDb = nullptr;
     m_nbWorkers = nbWorkers;
     m_lockSleeper = BeDuration::FromSeconds(0.5);
+    m_scalableMeshFileLock = nullptr;
 
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
     SetThreadingOptions(false, true, false);
@@ -186,6 +187,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr, uin
     m_smSisterDb = nullptr;
     m_nbWorkers = nbWorkers;
     m_lockSleeper = BeDuration::FromSeconds(0.5);
+    m_scalableMeshFileLock = nullptr;
 
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
     SetThreadingOptions(false, true, false);
@@ -206,7 +208,41 @@ IScalableMeshSourceCreatorWorker::Impl::~Impl()
     CachedDataEventTracer::GetInstance()->analyze(::_getpid());
 #endif	
     }
-   
+
+
+void IScalableMeshSourceCreatorWorker::Impl::GetScalableMeshFileLock(bool readOnly)
+    {
+    assert(m_scalableMeshFileLock == nullptr);
+
+    BeDuration sleeper(BeDuration::FromSeconds(0.5));
+
+    BeFileName lockFileName(m_scmFileName);
+    lockFileName.AppendString(L".lock");
+
+    int accessMode;
+
+    if (readOnly)
+        {
+        accessMode = _SH_DENYWR;
+        }
+    else
+        {
+        accessMode = _SH_DENYRW;
+        }
+    
+    while ((m_scalableMeshFileLock  = _wfsopen(lockFileName, L"ab+", accessMode)) == nullptr)
+        {
+        sleeper.Sleep();            
+        }        
+    }
+
+void IScalableMeshSourceCreatorWorker::Impl::ReleaseScalableMeshFileLock()
+    {
+    assert(m_scalableMeshFileLock != nullptr);
+    fclose(m_scalableMeshFileLock);
+    m_scalableMeshFileLock = nullptr;
+    }
+                   
 HFCPtr<MeshIndexType> IScalableMeshSourceCreatorWorker::Impl::GetDataIndex()
     {
     if (m_pDataIndex.GetPtr() == nullptr)
@@ -951,6 +987,8 @@ void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<NodeTask
     maxGroupSize = maxGroupSize;
     }
 
+static bool s_createTextureTasks = false;
+
 StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName)
     {
     BeFileName taskDirectory(m_scmFileName);
@@ -1093,6 +1131,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
         assert(status == BEXML_Success);
         }
 
+        //StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTextureTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName)
 
     CreateTaskPlanForTaskGrouping(maxPriority, jobName, smFileName);
 
@@ -1415,19 +1454,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
     assert(m_pDataIndex.GetPtr() == nullptr);
 
 
-    BeDuration sleeper(BeDuration::FromSeconds(0.5));
 
-    BeFileName lockFileName(m_scmFileName);
-    lockFileName.AppendString(L".lock");
-
-    FILE* lockFile; 
-
-    while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
-        {
-        sleeper.Sleep();            
-        }        
-
-
+    GetScalableMeshFileLock(true);
+    
 #ifndef NDEBUG
 
     if (m_mainFilePtr == nullptr)
@@ -1445,8 +1474,8 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
-    fclose(lockFile);
-
+    ReleaseScalableMeshFileLock();
+    
 #ifndef NDEBUG
     if (m_mainFilePtr != nullptr)
         m_mainFilePtr->GetDb()->SetCanReopenShared(false);
@@ -1530,13 +1559,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         assert(xmlStatus == BEXML_Success);
 
         
+        GetScalableMeshFileLock(true);
         
-
-        while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
-            {
-            sleeper.Sleep();            
-            }        
-         
+ 
         //TBD_G : Need lock file?        
         StatusInt status = OpenSqlFiles(true, true);
         assert(status == SUCCESS);
@@ -1627,7 +1652,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
         CloseSqlFiles();
 
-        fclose(lockFile);
+        ReleaseScalableMeshFileLock();
 
         for (auto& node : nodesToMesh)
             {
@@ -1764,12 +1789,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         } while (pChildNode != nullptr);
             
 
-    while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
-        {
-        sleeper.Sleep();
-        }
+    GetScalableMeshFileLock(false);
 
-
+    
     //Flush all the data on disk    
     OpenSqlFiles(false, true);
 
@@ -1797,9 +1819,8 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
     FreeDataIndex();
 
-    fclose(lockFile);
-
-    
+    ReleaseScalableMeshFileLock();
+        
 
     //m_pDataIndex->UnloadAllNodes();
 

@@ -45,6 +45,7 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         ScalableMeshDb* m_smSisterDb;
         SMSQLiteFilePtr m_mainFilePtr;
         SMSQLiteFilePtr m_sisterFilePtr;
+        FILE*           m_scalableMeshFileLock; 
 
 
         uint32_t m_nbWorkers;            
@@ -55,6 +56,10 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         HFCPtr<MeshIndexType> GetDataIndex();
 
         void FreeDataIndex();        
+
+        void GetScalableMeshFileLock(bool readOnly);
+
+        void ReleaseScalableMeshFileLock();
                 
         void GetGenerationTasks(bvector<NodeTaskPtr>& toExecuteTasks, uint32_t maxGroupSize);
 

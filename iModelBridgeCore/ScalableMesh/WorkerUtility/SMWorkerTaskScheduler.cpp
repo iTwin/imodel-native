@@ -674,8 +674,8 @@ IScalableMeshSourceCreatorWorkerPtr TaskScheduler::GetSourceCreatorWorker(const 
         lockFileName.AppendString(L".lock");
 
         FILE* lockFile; 
-
-        while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+                
+        while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYWR)) == nullptr)
             {
             sleeper.Sleep();            
             }    
