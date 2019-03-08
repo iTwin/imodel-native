@@ -155,16 +155,9 @@ def callEachStrategy(args, config, verData):
 
         cmd = getBBCmd() + ' -v {0} -s "{1}" {2} {3}'.format(args.verbosity, bbStrats, archArg, action)
         
-        effectiveEnv = (bbEnv if bbEnv else os.environ)
-        print
-        print('Environment for sub-process:')
-        for key in effectiveEnv:
-            print('    ' + key + '=' + effectiveEnv[key])
-        print
-
         print(cmd)
         cmdStartTime = time.time()
-        status = subprocess.call(cmd, shell=True, env=effectiveEnv)
+        status = subprocess.call(cmd, shell=True, env=(bbEnv if bbEnv else os.environ))
         callTimes[stratConfig['name']] = doubleToTimeString(cmdStartTime, time.time())
         
         # On Linux, `bash` seems to return 256 on an error, regardless of what the SH script actually returns.
@@ -173,14 +166,6 @@ def callEachStrategy(args, config, verData):
         if status != 0:
             status = 1
             break
-
-        if 'bdf' == args.action:
-            print
-            print('Generated BDF:')
-            bdfPath = os.path.join(args.bdfdir, stratConfig['name'].lower() + '.xml')
-            with open(bdfPath, 'r') as bdfFile:
-                print(bdfFile.read())
-            print
 
     return (callTimes, status)
 
