@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #if defined(_WIN32)
 #include <windows.h>
+#undef GetMessage
 #elif defined(__linux)
 #include <unistd.h>
 #endif
@@ -20,7 +21,7 @@
 #include <iModelBridge/iModelBridgeRegistry.h>
 #include <iModelBridge/iModelBridgeErrorHandling.h>
 #include "../iModelBridgeHelpers.h"
-#include <iModelBridge/Fwk/IModelClientForBridges.h>
+#include <iModelBridge/IModelClientForBridges.h>
 #include <BentleyLog4cxx/log4cxx.h>
 #include "../iModelBridgeLdClient.h"
 

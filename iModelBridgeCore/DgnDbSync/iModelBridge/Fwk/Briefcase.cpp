@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridgeFwk.h>
-#include <iModelBridge/Fwk/IModelClientForBridges.h>
+#include <iModelBridge/IModelClientForBridges.h>
 #include <WebServices/iModelHub/Client/Client.h>
 #include <Bentley/Tasks/AsyncTasksManager.h>
 #include <DgnPlatform/DgnProgressMeter.h>
@@ -18,7 +18,7 @@ USING_NAMESPACE_BENTLEY_TASKS
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_SQLITE
 
-static IModelClientForBridges* s_IModelHubClientForBridgesForTesting;
+static IModelClientForBridges* s_clientForTesting;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   05/17
@@ -271,6 +271,12 @@ BentleyStatus iModelBridgeFwk::IModelBankArgs::ParseCommandLine(bvector<WCharCP>
             continue;
             }
 
+        if (argv[iArg] == wcsstr(argv[iArg], L"--imodel-bank-imodel-name="))
+            {
+            m_iModelName = getArgValue(argv[iArg]);
+            continue;
+            }
+
         if (argv[iArg] == wcsstr(argv[iArg], L"--imodel-bank-dms-credentials-isEncrypted"))
             {
             m_dmsCredentialsEncrypted = true;
@@ -312,6 +318,8 @@ BentleyStatus iModelBridgeFwk::IModelBankArgs::Validate(int argc, WCharCP argv[]
 //---------------------------------------------------------------------------------------
 Utf8String iModelBridgeFwk::IModelBankArgs::GetBriefcaseBasename() const
     {
+    if (!m_iModelName.empty())
+        return m_iModelName;
     return m_iModelId;
     }
 
@@ -597,7 +605,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeFwk::Briefcase_Shutdown()
     {
-    if (nullptr != m_client && m_client != s_IModelHubClientForBridgesForTesting)
+    if (nullptr != m_client && m_client != s_clientForTesting)
         delete m_client;       // This relases the DgnDbBriefcase
         
     m_client = nullptr;
@@ -610,7 +618,7 @@ void iModelBridgeFwk::Briefcase_Shutdown()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeFwk::SetIModelClientForBridgesForTesting(IModelClientForBridges& c)
     {
-    s_IModelHubClientForBridgesForTesting = &c;
+    s_clientForTesting = &c;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -630,6 +638,8 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
     m_lastServerError = EffectiveServerError::Unknown;
 
     Http::HttpClient::Initialize(assetsDir);
+    Http::HttpClient::Reinitialize(); // In case Unintialize was called prior to this.
+    
     BeAssert(nullptr == m_client);
     WebServices::ClientInfoPtr clientInfo = nullptr;
     if (NULL != m_bridge)
@@ -638,8 +648,8 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
         clientInfo = m_bridge->GetParamsCR().GetClientInfo();
         }
 
-    if (s_IModelHubClientForBridgesForTesting)
-        m_client = s_IModelHubClientForBridgesForTesting;
+    if (s_clientForTesting)
+        m_client = s_clientForTesting;
     else
         {
         if (m_useIModelHub)

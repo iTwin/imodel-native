@@ -204,7 +204,7 @@ void ConverterApp::GetImportConfiguration(BeFileNameR instanceFilePath, BeFileNa
         instanceFilePath.AppendToPath(L"ImportConfig.xml");
         }
 
-    fwprintf(stdout, L"Configuration file <%ls>\n", instanceFilePath.GetName());
+    // fwprintf(stdout, L"Configuration file <%ls>\n", instanceFilePath.GetName());
     }
 
 /*---------------------------------------------------------------------------------**//**
