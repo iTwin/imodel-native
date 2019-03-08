@@ -7,6 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <Licensing/Licensing.h>
+
+//__PUBLISH_SECTION_START__
+
+BEGIN_BENTLEY_LICENSING_NAMESPACE
+
 enum class LicenseStatus
     {
     Error = -1,
@@ -19,3 +25,5 @@ enum class LicenseStatus
     Trial = 109,
     NotEntitled = 110
     };
+
+END_BENTLEY_LICENSING_NAMESPACE
