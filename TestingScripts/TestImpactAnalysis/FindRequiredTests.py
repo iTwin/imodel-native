@@ -7,11 +7,8 @@
 #--------------------------------------------------------------------------------------
 import os, sys, shutil
 import argparse
-import re
 import subprocess
-import sqlite3
 import time
-import psutil
 
 #Common Scripts to be used by any task
 scriptsDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
