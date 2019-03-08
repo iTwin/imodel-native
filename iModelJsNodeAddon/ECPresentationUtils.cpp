@@ -1625,17 +1625,14 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(IECPresentat
     PageOptions pageOptions = GetPageOptions(params);
     Json::Value options = GetContentOptions(params).GetJson();
     return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options)
-        .then([&manager, descriptorOverridesJson, pageOptions](ContentDescriptorCPtr descriptor)
-            {
-            if (descriptor.IsNull())
-                return folly::makeFutureWith([]() {return ECPresentationResult(ECPresentationStatus::InvalidArgument, "descriptor");});
-
-            ContentDescriptorCPtr overridenDescriptor = DescriptorOverrideHelper(descriptorOverridesJson).GetOverridenDescriptor(*descriptor);
-            return manager.GetContent(*overridenDescriptor, pageOptions).then([](ContentCPtr content)
-                {
-                return ECPresentationResult(content->AsJson());
-                });
-            });
+        .then([&manager, descriptorOverridesJson, pageOptions](ContentDescriptorCPtr descriptor) {
+          if (descriptor.IsNull())
+            return folly::makeFutureWith([]() { return ECPresentationResult(); });
+          ContentDescriptorCPtr overridenDescriptor = DescriptorOverrideHelper(descriptorOverridesJson).GetOverridenDescriptor(*descriptor);
+          return manager.GetContent(*overridenDescriptor, pageOptions).then([](ContentCPtr content) {
+            return ECPresentationResult(content->AsJson());
+          });
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1647,18 +1644,15 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSetSize(IECPr
     JsonValueCR descriptorOverridesJson = params["descriptorOverrides"];
     Json::Value options = GetContentOptions(params).GetJson();
     return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options)
-        .then([&manager, descriptorOverridesJson](ContentDescriptorCPtr descriptor)
-            {
-            if (descriptor.IsNull())
-                return folly::makeFutureWith([]() {return ECPresentationResult(ECPresentationStatus::InvalidArgument, "descriptor");});
-
-            ContentDescriptorCPtr overridenDescriptor = DescriptorOverrideHelper(descriptorOverridesJson).GetOverridenDescriptor(*descriptor);
-            return manager.GetContentSetSize(*overridenDescriptor)
-                .then([](size_t size)
-                    {
-                    return ECPresentationResult(rapidjson::Value((int64_t)size));
-                    });
-            });
+        .then([&manager, descriptorOverridesJson](ContentDescriptorCPtr descriptor) {
+          if (descriptor.IsNull())
+            return folly::makeFutureWith([]() { return ECPresentationResult(rapidjson::Value(0)); });
+          ContentDescriptorCPtr overridenDescriptor = DescriptorOverrideHelper(descriptorOverridesJson).GetOverridenDescriptor(*descriptor);
+          return manager.GetContentSetSize(*overridenDescriptor)
+              .then([](size_t size) {
+                return ECPresentationResult(rapidjson::Value((int64_t)size));
+              });
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
