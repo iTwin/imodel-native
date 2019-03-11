@@ -8,7 +8,7 @@
 %include mdl.mki
 
 ProductDir = $(OutputRootDir)Product/
-o = $(OutputRootDir)imodelbank_pkgs/
+o = $(OutputRootDir)imodelbankaddon_pkgs/
 baseDir = $(_MakeFilePath)
 
 %if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
