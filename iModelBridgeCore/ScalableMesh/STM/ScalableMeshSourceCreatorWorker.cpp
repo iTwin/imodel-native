@@ -1204,9 +1204,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTextureTasks(uint32_t ma
         workerNode->AddAttributeStringValue("jobName", jobName.c_str());
         workerNode->AddAttributeStringValue("smName", smFileName.c_str());    
 
-        //Node ID saved in 3sm file is 32 bits, so cannot go above 32 bits.
-        uint64_t baseNodeId = (ind + 1) << (32 - nbBitsForGrouping);
-        assert(baseNodeId >= (((uint64_t)1) << (32 - nbBitsForGrouping)) && baseNodeId < std::numeric_limits<uint32_t>::max());
+        //Node IDs are saved as signed 32 bits in 3sm file, so cannot go above 31 bits.
+        uint64_t baseNodeId = (ind + 1) << (31 - nbBitsForGrouping);
+        assert(baseNodeId >= (((uint64_t)1) << (31 - nbBitsForGrouping)) && baseNodeId < std::numeric_limits<int32_t>::max());
 
         workerNode->AddAttributeUInt64Value("newBaseNodeId", baseNodeId);
 
