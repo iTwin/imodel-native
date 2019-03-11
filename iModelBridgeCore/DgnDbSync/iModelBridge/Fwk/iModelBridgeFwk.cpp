@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #if defined(_WIN32)
 #include <windows.h>
+#undef GetMessage
 #elif defined(__linux)
 #include <unistd.h>
 #endif
@@ -20,7 +21,7 @@
 #include <iModelBridge/iModelBridgeRegistry.h>
 #include <iModelBridge/iModelBridgeErrorHandling.h>
 #include "../iModelBridgeHelpers.h"
-#include <iModelBridge/Fwk/IModelClientForBridges.h>
+#include <iModelBridge/IModelClientForBridges.h>
 #include <BentleyLog4cxx/log4cxx.h>
 #include "../iModelBridgeLdClient.h"
 
@@ -2237,4 +2238,19 @@ BeSQLite::BeBriefcaseId iModelBridgeFwk::GetBriefcaseId()
         return BeSQLite::BeBriefcaseId();
 
     return BeSQLite::BeBriefcaseId(bcid);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Wouter.Rombouts                 03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::TestFeatureFlag(CharCP ff, bool& flag)
+    {
+    if (m_bridge != nullptr) 
+        {
+        flag = m_bridge->TestFeatureFlag(ff); 
+        return BSISUCCESS; 
+        } 
+
+    flag = false;
+    return BSIERROR; 
     }

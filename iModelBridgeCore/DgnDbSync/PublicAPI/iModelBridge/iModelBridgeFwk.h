@@ -161,8 +161,11 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
 
         };
 
+#pragma warning(push)
+#pragma warning(disable : 4251)
+
     //! The command-line arguments required by the iModelBridgeFwk that pertain to iModelBanks
-    struct IModelBankArgs
+    struct IMODEL_BRIDGE_FWK_EXPORT IModelBankArgs
         {
         bool m_parsedAny {};
         bool m_dmsCredentialsEncrypted{};
@@ -170,6 +173,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         Utf8String m_url;            //!< Where the iModelBank server is 
         Utf8String m_iModelId;       //!< The GUID of the iModel that the bank serves. This is used to name to local briefcase and as a means of checking that the URL is correct.
         Utf8String m_accessToken;    //!< The token that identifies the user and the user's rights in this environment. (Is passed in http headers as the authorization property.)
+        Utf8String m_iModelName;     //!< Optional. Friendly name of the iModel. Returned by GetBriefcaseBasename
         bvector<WString> m_bargs;
 
         BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[]);
@@ -181,7 +185,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         };
 
     //! The command-line arguments required by the iModelBridgeFwk that pertain to the iModelHub
-    struct IModelHubArgs
+    struct IMODEL_BRIDGE_FWK_EXPORT IModelHubArgs
         {
         bool m_parsedAny {};
         bool                m_haveProjectGuid {}; //!< Was a project GUID supplied? If so, m_bcsProjectId is the GUID. Else, assume m_bcsProjectId is the project name.
@@ -200,6 +204,8 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         static void PrintUsage();
         bool ParsedAny() const {return m_parsedAny;}
         };
+
+    #pragma warning(pop)
 
     struct DmsServerArgs
         {
@@ -297,7 +303,7 @@ protected:
     bool Briefcase_IsBriefcase();
     BentleyStatus Briefcase_CreateRepository0(BeFileNameCR localDb);
     BentleyStatus Briefcase_IModelHub_CreateRepository();
-    void Briefcase_MakeBriefcaseName(); // Sets m_outputName
+    void Briefcase_MakeBriefcaseName(); // Sets m_briefcaseName
     BentleyStatus Briefcase_AcquireBriefcase();
     BentleyStatus Briefcase_AcquireExclusiveLocks();
     BentleyStatus Briefcase_Push(Utf8CP);
@@ -341,6 +347,8 @@ public:
     //! wmain should call this to run the bridge, connected to iModelHub.
     IMODEL_BRIDGE_FWK_EXPORT int Run(int argc, WCharCP argv[]);
 
+    BeFileName GetBriefcaseName() const {return m_briefcaseName;}
+
     static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("iModelBridge"); }
     bool GetCreateRepositoryIfNecessary() const {return m_jobEnvArgs.m_createRepositoryIfNecessary;}
     bool GetSkipAssignmentCheck() const {return m_jobEnvArgs.m_skipAssignmentCheck;}
@@ -363,6 +371,8 @@ public:
     IMODEL_BRIDGE_FWK_EXPORT static void SetRegistryForTesting(IModelBridgeRegistry&);
 
     IMODEL_BRIDGE_FWK_EXPORT void SetTokenProvider(WebServices::IConnectTokenProviderPtr provider);
+
+    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus TestFeatureFlag (CharCP ff, bool& flag);
 
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) const;
 

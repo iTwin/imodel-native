@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <iModelBridge/Fwk/IModelClientForBridges.h>
+#include <iModelBridge/IModelClientForBridges.h>
 #include <BeSQLite/BeSQLite.h>
 //=======================================================================================
 // @bsistruct                                                   Sam.Wilson   10/17
@@ -67,14 +67,6 @@ struct TestRepositoryAdmin : IRepositoryManager
         }
     };
 
-struct RevisionStats
-    {
-    size_t nSchemaRevs {};
-    size_t nDataRevs {};
-    bset<Utf8String> descriptions;
-    bset<Utf8String> userids;
-    };
-
 struct TestIModelHubClientForBridges : IModelHubClientForBridges
     {
     bool anyTxnsInFile(DgnDbR db)
@@ -88,7 +80,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
     BeFileName m_serverRepo;
     BeFileName m_testWorkDir;
     bvector<DgnRevisionPtr> m_revisions;
-    DgnDbP m_briefcase;
+    DgnDbP m_briefcase{};
     BeSQLite::BeBriefcaseId m_currentBriefcaseId;
     TestRepositoryAdmin m_admin;
     TestIModelHubClientForBridges(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir), m_currentBriefcaseId(BeSQLite::BeBriefcaseId::Standalone())
@@ -102,47 +94,56 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         return repoPath;
         }
 
-    size_t GetChangesetCount() const { return m_revisions.size(); }
-
-    bvector<DgnRevision*> GetDgnRevisions(size_t start = 0, size_t end = -1)
+    iModel::Hub::iModelInfoPtr GetIModelInfo() override {BeAssert(false && "not implemented"); return nullptr;}
+    
+    bvector<DgnRevisionPtr> GetDgnRevisions(size_t start = 0, size_t end = -1)
         {
         if (end < 0 || end > m_revisions.size())
             end = m_revisions.size();
-        bvector<DgnRevision*> revs;
+        bvector<DgnRevisionPtr> revs;
         for (size_t i = start; i < end; ++i)
             revs.push_back(m_revisions[i].get());
         return revs;
         }
 
-    RevisionStats ComputeRevisionStats(DgnDbR db, size_t start = 0, size_t end = -1)
-        {
-        RevisionStats stats;
-        for (auto rev : GetDgnRevisions(start, end))
-            {
-            stats.descriptions.insert(rev->GetSummary());
-            stats.userids.insert(rev->GetUserName());
-            if (rev->ContainsSchemaChanges(db))
-                ++stats.nSchemaRevs;
-            else
-                ++stats.nDataRevs;
-            }
-        return stats;
-        }
-
     bool IsConnected() const override { return true; }
+
+    BentleyStatus DeleteRepository() override
+        {
+        BeAssert(nullptr == m_briefcase);
+        if (m_serverRepo.empty() || !m_serverRepo.DoesPathExist())
+            {
+            m_lastServerError = iModel::Hub::Error::Id::iModelDoesNotExist;
+            return BSIERROR;
+            }
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(m_serverRepo.GetDirectoryName()));
+        m_serverRepo.clear();
+        m_revisions.clear();
+        m_briefcase = nullptr;
+        m_currentBriefcaseId = BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone());
+        return BSISUCCESS;
+        }
 
     StatusInt CreateRepository(Utf8CP repoName, BeFileNameCR localDgnDb) override
         {
+        BeAssert(nullptr == m_briefcase);
+        if (!m_serverRepo.empty() && m_serverRepo.DoesPathExist())
+            {
+            BeAssert(false);
+            m_lastServerError = iModel::Hub::Error::Id::iModelAlreadyExists;
+            return BSIERROR;
+            }
         m_serverRepo = MakeFakeRepoPath(m_testWorkDir, repoName);
         if (!m_serverRepo.EndsWith(L".bim"))
             m_serverRepo.append(L".bim");
-        BeFileName::CreateNewDirectory(m_serverRepo.GetDirectoryName());
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(m_serverRepo.GetDirectoryName()));
         EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(localDgnDb, m_serverRepo, false));
         return BSISUCCESS;
         }
 
     StatusInt AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName) override
         {
+        BeAssert(nullptr == m_briefcase);
         if (m_serverRepo.empty())
             {
             m_lastServerError = iModel::Hub::Error::Id::iModelDoesNotExist;
@@ -174,6 +175,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
 
     StatusInt OpenBriefcase(Dgn::DgnDbR db) override
         {
+        BeAssert(nullptr == m_briefcase);
         m_briefcase = &db;
         return BSISUCCESS;
         }
@@ -185,6 +187,8 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
 
     StatusInt JustCaptureRevision(Utf8CP comment)
         {
+        BeAssert(nullptr != m_briefcase);
+
         DgnRevisionPtr revision = CaptureChangeSet(m_briefcase, comment);
         if (revision.IsNull())
             return BSISUCCESS;
@@ -215,7 +219,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         BeAssert(BeSQLite::BE_SQLITE_OK == result);
 
         // *** TBD: test for expected changes
-        printf("CaptureChangeset contains_schema_changes? %d user:[%s] desc:[%s]\n", changeSet->ContainsSchemaChanges(*db), changeSet->GetUserName().c_str(), changeSet->GetSummary().c_str());
+        // printf("CaptureChangeset contains_schema_changes? %d user:[%s] desc:[%s]\n", changeSet->ContainsSchemaChanges(*db), changeSet->GetUserName().c_str(), changeSet->GetSummary().c_str());
         //changeSet->Dump(*db);
         return changeSet;
         }
