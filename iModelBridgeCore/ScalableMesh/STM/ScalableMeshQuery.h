@@ -1531,6 +1531,11 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
                 return false;
             }
 
+            virtual IScalableMesh* _GetScalableMesh() override
+            {
+                return nullptr;
+            }
+
     public:             
 
             ScalableMeshCachedMeshNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, bool loadTexture)
@@ -1629,6 +1634,11 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             {
                 return false;
             }
+
+            virtual IScalableMesh* _GetScalableMesh() override
+            {
+                return (IScalableMesh*)m_scalableMeshP;
+            }
           
     public:             
             
@@ -1676,7 +1686,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
                 }
 
             bool GetOrLoadAllTextureData(IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr);
-                
+ 
                 
             static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
                 {

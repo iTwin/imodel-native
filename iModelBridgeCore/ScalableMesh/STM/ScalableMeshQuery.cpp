@@ -3225,6 +3225,11 @@ bool      IScalableMeshCachedDisplayNode::GetContours(bvector<bvector<DPoint3d>>
     return _GetContours(contours);
 }
 
+IScalableMesh* IScalableMeshCachedDisplayNode::GetScalableMesh()
+{
+    return _GetScalableMesh();
+}
+
 IScalableMeshCachedDisplayNodePtr IScalableMeshCachedDisplayNode::Create(uint64_t nodeId, IScalableMesh* smP)
     {
     if (smP == nullptr)

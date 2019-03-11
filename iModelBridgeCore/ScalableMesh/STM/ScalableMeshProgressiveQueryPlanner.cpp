@@ -66,7 +66,12 @@ void QueryPlanner::FetchOverviewsAndPlanNextQuery(RequestedQuery& query, QueryPl
 
 void QueryPlanner::AddQueriesInPlan(QueryPlan& nextQueryPlan, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, QueryProcessor& queryProcessor, IScalableMeshViewDependentMeshQueryParamsPtr queryParam, RequestedQuery& query) const
 {
-    queryProcessor.AddQuery(nextQueryPlan.m_queryId, queryObjectP, nextQueryPlan.m_searchingNodes, nextQueryPlan.m_toLoadNodes, nextQueryPlan.m_loadTexture, nextQueryPlan.m_activeClips, nextQueryPlan.m_meshToQuery, nextQueryPlan.m_displayCacheManagerPtr);
+    queryProcessor.AddQuery(nextQueryPlan.m_queryId, queryObjectP, nextQueryPlan.m_searchingNodes, nextQueryPlan.m_toLoadNodes, nextQueryPlan.m_loadTexture, nextQueryPlan.m_activeClips, nextQueryPlan.m_meshToQuery, nextQueryPlan.m_displayCacheManagerPtr, nextQueryPlan.m_overviewsToUpdate);
+}
+
+void QueryPlanner::AddDirtyOverviews(QueryPlan& nextQueryPlan, bvector<RefCountedPtr<ScalableMeshCachedDisplayNode<DPoint3d>>>& dirtyOverviews)
+{
+    nextQueryPlan.m_overviewsToUpdate = dirtyOverviews;
 }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

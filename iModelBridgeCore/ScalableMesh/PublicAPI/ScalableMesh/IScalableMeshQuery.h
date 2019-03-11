@@ -662,6 +662,8 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
 
         virtual bool      _GetContours(bvector<bvector<DPoint3d>>& contours) = 0;
 
+        virtual IScalableMesh*    _GetScalableMesh() = 0;
+
     public : 
 
 
@@ -674,6 +676,8 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
         BENTLEY_SM_EXPORT void      SetIsInVideoMemory(bool isInVideoMemory);
 
         BENTLEY_SM_EXPORT bool      GetContours(bvector<bvector<DPoint3d>>& contours);
+
+        IScalableMesh*    GetScalableMesh();
 
         BENTLEY_SM_EXPORT static IScalableMeshCachedDisplayNodePtr Create(uint64_t nodeId, IScalableMesh* smP);
     };
