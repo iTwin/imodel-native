@@ -15,8 +15,7 @@ FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8Stri
 FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version, FeatureUserDataMap * featureUserData)
 	: m_featureId(featureId),
 	m_version(version),
-	m_featureUserData(featureUserData),
-	m_projectId("")
+	m_featureUserData(featureUserData)
 {}
 
 FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId)
@@ -29,7 +28,6 @@ FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8Stri
 FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version)
 	: m_featureId(featureId),
 	m_version(version),
-	m_projectId(""),
 	m_featureUserData()
 {}
 

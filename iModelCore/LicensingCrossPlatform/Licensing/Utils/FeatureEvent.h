@@ -9,7 +9,7 @@ struct FeatureEvent {
 	public:
 		Utf8StringCR m_featureId;
 		BeVersionCR m_version;
-		Utf8StringCR m_projectId;
+		Utf8String m_projectId = "";
 		FeatureUserDataMap* m_featureUserData;
 		FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId, FeatureUserDataMap* featureUserData);
 		FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId);
