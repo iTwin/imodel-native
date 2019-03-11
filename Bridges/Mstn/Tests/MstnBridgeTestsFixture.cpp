@@ -555,10 +555,18 @@ void MstnBridgeTestsFixture::StopImodelBankServer()
     if (!s_iModelBankProcess.hProcess)
         return;
 
+#ifdef EXPERIMENT_SEND_KILL_SIGNAL
+    // This does indeed send a nice, clean kill signal to imodel-bank, but it also seems to mess up the console in which I run the tests.
+    SetConsoleCtrlHandler(nullptr, true);                       // This process should ignore the Ctrl-C event that I am about to send to my console.
+    GenerateConsoleCtrlEvent (CTRL_C_EVENT, 0);                 // Send all (other) processes that share my console a Ctrl-C event
+    WaitForSingleObject (s_iModelBankProcess.hProcess, 5000);   // Wait for the subprocess to end
+    SetConsoleCtrlHandler(nullptr, false);                      // This process can go back to handling Ctrl-C events
+#else
     auto bankClient = dynamic_cast<BentleyApi::Dgn::IModelBankClient*>(&GetClient());
     ASSERT_EQ(BSISUCCESS, bankClient->Shutdown());
 
     WaitForSingleObject (s_iModelBankProcess.hProcess, 5000);
+#endif
     DWORD dwExitCode = 0;
     GetExitCodeProcess (s_iModelBankProcess.hProcess, &dwExitCode);
     // EXPECT_EQ(0, dwExitCode); -- usually I get 259, which is STILL_ACTIVE, meaning that the process has not in fact ended ?!?
