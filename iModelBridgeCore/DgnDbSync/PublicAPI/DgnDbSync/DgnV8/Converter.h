@@ -3298,11 +3298,11 @@ struct ElementConverter
 struct ElementAspectConverter : ElementConverter
     {
     private:
-        BentleyStatus ConvertToAspect(ElementConversionResults&, ECObjectsV8::IECInstance const& v8Instance, BentleyApi::Utf8CP aspectClassSuffix) const;
+        BentleyStatus ConvertToAspect(SyncInfo::V8ElementExternalSourceAspect*, ElementConversionResults&, ECObjectsV8::IECInstance const& v8Instance, BentleyApi::Utf8CP aspectClassSuffix) const;
 
     public:
         explicit ElementAspectConverter(Converter& converter) : ElementConverter(converter) {}
-        BentleyStatus ConvertToAspects(ElementConversionResults&, std::vector<std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule>> const& secondaryInstances) const;
+        BentleyStatus ConvertToAspects(SyncInfo::V8ElementExternalSourceAspect*, ElementConversionResults&, std::vector<std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule>> const& secondaryInstances) const;
     };
 
 //=======================================================================================

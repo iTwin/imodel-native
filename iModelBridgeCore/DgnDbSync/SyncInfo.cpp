@@ -1015,7 +1015,7 @@ BeSQLite::DbResult SyncInfo::InsertSchema(BentleyApi::ECN::ECSchemaId& insertedS
     jsonObj["checksum"] = checksum;
     jsonObj["isDynamic"] = isDynamic;
     BeSQLite::DbResult result;
-    if (BeSQLite::DbResult::BE_SQLITE_OK != (result = m_dgndb->SavePropertyString(DgnV8Schema::V8Info(schemaName.c_str()), jsonObj.ToString(), repositoryId.GetValue())))
+    if (BeSQLite::DbResult::BE_SQLITE_OK != (result = m_dgndb->SavePropertyString(DgnV8Info::V8Schema(schemaName.c_str()), jsonObj.ToString(), repositoryId.GetValue())))
         return result;
     insertedSchemaId = BECN::ECSchemaId((uint64_t) m_dgndb->GetLastInsertRowId());
     return BE_SQLITE_OK;

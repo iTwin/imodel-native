@@ -1259,37 +1259,28 @@ void RootModelConverter::ConvertNamedGroupsAndECRelationships()
 //---------------+---------------+---------------+---------------+---------------+-------
 void RootModelConverter::UpdateCalculatedProperties()
     {
+    // Need to register the ECDb expression context in order to parse the GetRelatedInstance expression
+    BeSQLite::EC::ECDbExpressionSymbolContext context(*m_dgndb);
 
     CachedStatementPtr stmt = nullptr;
-    auto stat = m_dgndb->GetCachedStatement(stmt, "SELECT p.ClassId, p.Name FROM ec_Property p, ec_CustomAttribute ca, ec_Class c WHERE ca.ClassId = c.Id AND c.Name='CalculatedECPropertySpecification' AND ca.ContainerId=p.Id AND ca.Instance LIKE '%GetRelatedInstance%'");
-    //auto stat = m_dgndb->GetCachedStatement(stmt, "SELECT p.ClassId, p.Name FROM ec_Property p, ec_CustomAttribute ca, ec_Class c WHERE ca.ClassId = c.Id AND c.Name='CalculatedECPropertySpecification' AND ca.ContainerId=p.Id");
+    auto stat = m_dgndb->GetCachedStatement(stmt, "SELECT Name, StrData FROM " BEDB_TABLE_Property " where Namespace='dgn_V8Expression'");
     if (stat != BE_SQLITE_OK)
         {
         BeAssert(false && "Could not retrieve cached statement.");
         return;
         }
 
-    bmap<BECN::ECClassId, bvector<Utf8String>> classMap;
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        BECN::ECClassId classId = stmt->GetValueId<BECN::ECClassId>(0);
-        bmap<BECN::ECClassId, bvector<Utf8String>>::iterator iter = classMap.find(classId);
-        classMap[classId].push_back(stmt->GetValueText(1));
-        }
+        Utf8String fullName = stmt->GetValueText(0);
+        Utf8String schemaName, className;
+        ECN::ECClass::ParseClassName(schemaName, className, fullName);
+        BECN::ECClassCP ecClass = m_dgndb->Schemas().GetClass(schemaName, className);
 
-    for (bmap<BECN::ECClassId, bvector<Utf8String>>::iterator iter = classMap.begin(); iter != classMap.end(); iter++)
-        {
-        BECN::ECClassCP ecClass = m_dgndb->Schemas().GetClass(iter->first);
+        rapidjson::Document expressions(rapidjson::kObjectType);
+        expressions.Parse(stmt->GetValueText(1));
 
-        Utf8String propertyNames;
-        bvector<Utf8String> properties = iter->second;
-        for (int i = 0; i < properties.size(); i++)
-            {
-            if (i != 0)
-                propertyNames.append(", ");
-            propertyNames.append(properties[i]);
-            }
-        Utf8PrintfString sql("SELECT ECClassId, ECInstanceId, * FROM %s"/*, propertyNames.c_str()*/, ecClass->GetECSqlName().c_str());
+        Utf8PrintfString sql("SELECT ECClassId, ECInstanceId, * FROM %s", ecClass->GetECSqlName().c_str());
 
         BeSQLite::EC::CachedECSqlStatementPtr instanceStmt = m_dgndb->GetPreparedECSqlStatement(sql.c_str());
         BeSQLite::EC::ECInstanceECSqlSelectAdapter dataAdapter(*instanceStmt);
@@ -1301,12 +1292,19 @@ void RootModelConverter::UpdateCalculatedProperties()
             DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(id));
             BECN::ECValue nullValue;
             nullValue.SetToNull();
-            for (int i = 0; i < properties.size(); i++)
+            for (rapidjson::Value::ConstMemberIterator iter = expressions.MemberBegin(); iter != expressions.MemberEnd(); ++iter)
                 {
-                BECN::ECValue v;
-                selectedInstance->SetValue(properties[i].c_str(), nullValue);
-                selectedInstance->GetValue(v, properties[i].c_str());
-                element->SetPropertyValue(properties[i].c_str(), v);
+                ECN::CalculatedPropertySpecificationPtr spec = ECN::CalculatedPropertySpecification::Create(iter->value.GetString(), ecClass->GetPropertyP(iter->name.GetString())->GetAsPrimitivePropertyP()->GetType());
+                if (spec.IsValid())
+                    {
+                    BECN::ECValue v;
+                    selectedInstance->GetValue(v, iter->name.GetString());
+
+                    selectedInstance->SetValue(iter->name.GetString(), nullValue);
+                    ECN::ECValue calcValue;
+                    spec->Evaluate(calcValue, v, *selectedInstance, iter->name.GetString());
+                    element->SetPropertyValue(iter->name.GetString(), calcValue);
+                    }
                 }
             element->Update();
             }

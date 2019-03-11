@@ -14,7 +14,7 @@
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include <DgnPlatform/UnitTests/DgnDbTestUtils.h>
 #include <DgnPlatform/GenericDomain.h>
-#include <iModelBridge/Fwk/IModelClientForBridges.h>
+#include <iModelBridge/IModelClientForBridges.h>
 #include <Bentley/BeFileName.h>
 #include <iModelBridge/FakeRegistry.h>
 #include <iModelBridge/TestiModelHubClientForBridges.h>

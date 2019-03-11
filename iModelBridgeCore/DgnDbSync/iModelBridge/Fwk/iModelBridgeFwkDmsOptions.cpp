@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/iModelBridgeFwkDmsOptions.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined(_WIN32)
@@ -43,7 +43,7 @@ BentleyStatus   iModelBridgeFwk::LoadDmsLibrary()
     if (nullptr == getInstance)
         return BentleyStatus::ERROR;
 
-    m_dmsSupport = getInstance(iModelDmsSupport::SessionType::PWDI, m_dmsServerArgs.m_dmsCredentials.GetUsername(), m_dmsServerArgs.m_dmsCredentials.GetPassword());//m_dmsCredentials
+    m_dmsSupport = getInstance(m_dmsServerArgs.m_dmsType, m_dmsServerArgs.m_dmsCredentials.GetUsername(), m_dmsServerArgs.m_dmsCredentials.GetPassword());//m_dmsCredentials
     
     if (nullptr == m_dmsSupport)
         {
@@ -102,6 +102,8 @@ BentleyStatus   iModelBridgeFwk::SetupDmsFiles()
 BentleyStatus   iModelBridgeFwk::StageInputFile()
     {
     BentleyStatus status = BentleyStatus::SUCCESS;
+    if (SUCCESS != m_dmsSupport->_StageInputFile(m_jobEnvArgs.m_inputFileName))
+        return ERROR;
     return status;
     }
 
@@ -126,13 +128,13 @@ BentleyStatus   iModelBridgeFwk::StageWorkspace()
     if (!m_dmsServerArgs.m_inputFileUrn.empty())
         {
         BeFileName workspaceCfgFile;
-        if (SUCCESS == m_dmsSupport->_FetchWorkspace(workspaceCfgFile, m_dmsServerArgs.m_inputFileUrn, m_dmsServerArgs.m_workspaceDir, m_dmsServerArgs.m_isv8i))
+        if (SUCCESS == m_dmsSupport->_FetchWorkspace(workspaceCfgFile, m_dmsServerArgs.m_inputFileUrn, m_dmsServerArgs.m_workspaceDir, m_dmsServerArgs.m_isv8i, m_dmsServerArgs.m_additionalFilePatterns))
             m_dmsServerArgs.SetDgnArg(L"--DGN_CFGFILE=", workspaceCfgFile, m_bargptrs);
         }
     else
         {
         BeFileName workspaceCfgFile;
-        if (SUCCESS == m_dmsSupport->_FetchWorkspace(workspaceCfgFile, m_dmsServerArgs.m_folderId, m_dmsServerArgs.m_documentId, m_dmsServerArgs.m_workspaceDir, m_dmsServerArgs.m_isv8i))
+        if (SUCCESS == m_dmsSupport->_FetchWorkspace(workspaceCfgFile, m_dmsServerArgs.m_folderId, m_dmsServerArgs.m_documentId, m_dmsServerArgs.m_workspaceDir, m_dmsServerArgs.m_isv8i, m_dmsServerArgs.m_additionalFilePatterns))
             m_dmsServerArgs.SetDgnArg(L"--DGN_CFGFILE=", workspaceCfgFile, m_bargptrs);
         }
     m_dmsSupport->_UnInitialize();
@@ -151,12 +153,14 @@ void iModelBridgeFwk::DmsServerArgs::PrintUsage()
     --dms-user=             (optional)  The username for the dms source.\n\
     --dms-password=         (optional)  The password for the dms source.\n\
     --dms-inputFileUrn=     (optional)  The urn to fetch the input file. This and associated workspace will be downloaded and stored in the location specified by\
---fwk-input and --dms-workspaceDir= eg.pw://server:datasource/Documents/D{c6cbe438-e200-4567-a98c-dfa55aba33be}\n\
+    --fwk-input and --dms-workspaceDir= eg.pw://server:datasource/Documents/D{c6cbe438-e200-4567-a98c-dfa55aba33be}\n\
     --dms-datasource=       (optional)  The datasource to fetch the files from. Explicit usage instead of URN\n\
     --dms-folderId=         (optional)  FolderId if inputFileUrn is not specified. Explicit usage instead of URN\n\
     --dms-documentId=       (optional)  DocumentId if inputFileUrn is not specified. Explicit usage instead of URN\n\
     --dms-appWorkspace=     (optional)  Reference application workspace if the default fallback is not usable.\n\
-    --dms-retries=          (optional)  The number of times to retry\n"
+    --dms-retries=          (optional)  The number of times to retry\n\
+    --dms-type=             (optional)  Supports the following values 1 ( PW (default)), 2 (PWShare), 3 (Azure SAS Url)\n\
+    --dms-additionalFiles=  (optional)  Applicable only for PW. Supports staging files specified by the pattern. (eg *.xml ). Can be specified more than once."
     );
     }
 
@@ -253,6 +257,7 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseCommandLine(bvector<WCharCP>&
             m_applicationWorkspace = BeFileName(WString(getArgValueW(argv[iArg])));
             continue;
             }
+
         if (argv[iArg] == wcsstr(argv[iArg], L"--dms-library"))
             {
             if (!m_dmsLibraryName.empty())
@@ -265,6 +270,16 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseCommandLine(bvector<WCharCP>&
             continue;
             }
 
+        if (argv[iArg] == wcsstr(argv[iArg], L"--dms-type="))
+            {
+            m_dmsType = static_cast<iModelDmsSupport::SessionType>(atoi(getArgValue(argv[iArg]).c_str()));
+            continue;
+            }
+        if (argv[iArg] == wcsstr(argv[iArg], L"--dms-additionalFiles="))
+            {
+            m_additionalFilePatterns.push_back(WString(getArgValueW(argv[iArg])));
+            continue;
+            }
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized server argument\n", argv[iArg]);
         return BSIERROR;
@@ -304,21 +319,26 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::Validate(int argc, WCharCP argv[])
         return SUCCESS;//Do nothing if dms support is not needed.
         }
 
-    if (!m_workspaceDir.DoesPathExist())
+    if (m_dmsType == iModelDmsSupport::SessionType::PWDI)
         {
-        GetLogger().fatal("Workspace directory provided is invalid.");
-        return BSIERROR;
+        if (!m_workspaceDir.DoesPathExist())
+            {
+            GetLogger().fatal("Workspace directory provided is invalid.");
+            return BSIERROR;
+            }
         }
 
     if (!m_inputFileUrn.empty())
         return SUCCESS;
 
-    if (m_folderId < 1 || m_documentId < 1 || m_dataSource.empty())
+    if (m_dmsType == iModelDmsSupport::SessionType::PWDI)
         {
-        GetLogger().fatal("FolderId, documentId and datasource needs to be provided or PW URN path should be specified.");
-        return BSIERROR;
+        if (m_folderId < 1 || m_documentId < 1 || m_dataSource.empty())
+            {
+            GetLogger().fatal("FolderId, documentId and datasource needs to be provided or PW URN path should be specified.");
+            return BSIERROR;
+            }
         }
-
     return BSISUCCESS;
     }
 
@@ -326,5 +346,6 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::Validate(int argc, WCharCP argv[])
 * @bsimethod                                    Abeesh.Basheer                  06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeFwk::DmsServerArgs::DmsServerArgs()
-    :m_folderId(0), m_documentId(0), m_isv8i(false)
-    {}
+    :m_folderId(0), m_documentId(0), m_isv8i(false), m_dmsType(iModelDmsSupport::SessionType::PWDI)
+    {
+    }
