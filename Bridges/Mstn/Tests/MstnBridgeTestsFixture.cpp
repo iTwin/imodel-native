@@ -11,6 +11,7 @@
 #include <iModelBridge/TestIModelHubClientForBridges.h>
 #include <iModelBridge/iModelBridgeFwk.h>
 #include <iModelBridge/FakeRegistry.h>
+#include <BeHttp/HttpClient.h>
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #include "V8FileEditor.h"
 
@@ -364,14 +365,34 @@ BentleyApi::BeFileName MstnBridgeTestsFixture::CreateTestDir(WCharCP testDir)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+static void getInfoForAllChangeSets(BentleyApi::bvector<BentleyApi::iModel::Hub::ChangeSetInfoPtr>& infos, IModelClientBase* clientWrapper)
+    {
+    BentleyApi::Http::HttpClient::Reinitialize();
+    
+    auto info = clientWrapper->GetIModelInfo();
+    ASSERT_TRUE(info.IsValid());
+    auto client = clientWrapper->GetImodelHubClientPtr();
+    ASSERT_TRUE(client.IsValid());
+    auto connectionResult = client->ConnectToiModel(*info)->GetResult();
+    ASSERT_TRUE(connectionResult.IsSuccess());
+    auto connection = connectionResult.GetValue();
+    auto changesetsResult = connection->GetAllChangeSets()->GetResult();
+    ASSERT_TRUE(changesetsResult.IsSuccess());
+    infos = changesetsResult.GetValue();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
 size_t MstnBridgeTestsFixture::GetChangesetCount()
     {
     auto testClient = dynamic_cast<BentleyApi::Dgn::TestIModelHubClientForBridges*>(&GetClient());
     if (nullptr != testClient)
         return testClient->GetDgnRevisions().size();
 
-    BeAssert(false && "TBD");
-    return 0;
+    BentleyApi::bvector<BentleyApi::iModel::Hub::ChangeSetInfoPtr> changesets;
+    getInfoForAllChangeSets(changesets, dynamic_cast<IModelClientBase*>(&GetClient()));
+    return changesets.size();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -396,7 +417,23 @@ RevisionStats MstnBridgeTestsFixture::ComputeRevisionStats(BentleyApi::Dgn::DgnD
         return stats;
         }
 
-    BeAssert(false && "TBD");
+    BentleyApi::bvector<BentleyApi::iModel::Hub::ChangeSetInfoPtr> changesets;
+    getInfoForAllChangeSets(changesets, dynamic_cast<IModelClientBase*>(&GetClient()));
+
+    if (end < 0 || end > changesets.size())
+        end = changesets.size();
+
+    for (size_t i = start; i < end; ++i)
+        {
+        auto csInfo = changesets[i];
+        stats.descriptions.insert(csInfo->GetDescription());
+        stats.userids.insert(csInfo->GetUserCreated());
+        bool isSchemaChange = csInfo->GetContainingChanges() == BentleyApi::iModel::Hub::ChangeSetInfo::ContainingChanges::Schema;
+        if (isSchemaChange)
+            ++stats.nSchemaRevs;
+        else
+            ++stats.nDataRevs;
+        }
     return stats;
     }
 
