@@ -28,26 +28,20 @@ ClientImpl::ClientImpl
 (
 const ConnectSignInManager::UserInfo& userInfo,
 ClientInfoPtr clientInfo,
-std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
 BeFileNameCR dbPath,
 bool offlineMode,
-IBuddiProviderPtr buddiProvider,
 IPolicyProviderPtr policyProvider,
 IUlasProviderPtr ulasProvider,
 Utf8StringCR projectId,
 Utf8StringCR featureString,
-IHttpHandlerPtr httpHandler,
 ILicensingDbPtr licensingDb
 ) :
 m_userInfo(userInfo),
 m_clientInfo(clientInfo),
-m_authProvider(authenticationProvider),
 m_dbPath(dbPath),
 m_featureString(featureString),
-m_buddiProvider(buddiProvider),
 m_policyProvider(policyProvider),
 m_ulasProvider(ulasProvider),
-m_httpHandler(httpHandler),
 m_licensingDb(licensingDb)
     {
     if(m_licensingDb == nullptr) // either pass in a mock, or initialize here
@@ -79,12 +73,6 @@ LicenseStatus ClientImpl::StartApplication()
     if (m_clientInfo == nullptr)
         {
         LOG.error("ClientImpl::StartApplication ERROR - Client Information object is null.");
-        return LicenseStatus::Error;
-        }
-
-    if (m_authProvider == nullptr)
-        {
-        LOG.error("ClientImpl::StartApplication ERROR - Authorization Provicer object is null.");
         return LicenseStatus::Error;
         }
 

@@ -60,6 +60,9 @@
     <ClCompile Include="LicensingDbTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DummyUserInfoHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TestsHelper.h">
@@ -120,6 +123,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Mocks\LicensingDbMock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DummyUserInfoHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

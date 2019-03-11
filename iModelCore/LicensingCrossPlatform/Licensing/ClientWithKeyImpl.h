@@ -35,12 +35,10 @@ public:
         ClientInfoPtr clientInfo,
         BeFileNameCR db_path,
         bool offlineMode,
-        IBuddiProviderPtr buddiProvider,
         IPolicyProviderPtr policyProvider,
         IUlasProviderPtr ulasProvider,
         Utf8StringCR projectId,
         Utf8StringCR featureString,
-        IHttpHandlerPtr httpHandler,
         ILicensingDbPtr licensingDb
         );
     LICENSING_EXPORT LicenseStatus StartApplication();

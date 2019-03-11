@@ -27,12 +27,10 @@ ClientWithKeyImpl::ClientWithKeyImpl
     ClientInfoPtr clientInfo,
     BeFileNameCR db_path,
     bool offlineMode,
-    IBuddiProviderPtr buddiProvider,
     IPolicyProviderPtr policyProvider,
     IUlasProviderPtr ulasProvider,
     Utf8StringCR projectId,
     Utf8StringCR featureString,
-    IHttpHandlerPtr httpHandler,
     ILicensingDbPtr licensingDb
     )
     {
@@ -42,12 +40,10 @@ ClientWithKeyImpl::ClientWithKeyImpl
     m_clientInfo = clientInfo;
     m_dbPath = db_path;
     m_offlineMode = offlineMode;
-    m_buddiProvider = buddiProvider;
     m_policyProvider = policyProvider;
     m_ulasProvider = ulasProvider;
     m_projectId = projectId;
     m_featureString = featureString;
-    m_httpHandler = httpHandler;
     m_licensingDb = licensingDb;
 
     if(m_licensingDb == nullptr) // either pass in a mock, or initialize here
