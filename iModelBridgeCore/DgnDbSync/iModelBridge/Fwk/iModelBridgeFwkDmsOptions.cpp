@@ -102,7 +102,7 @@ BentleyStatus   iModelBridgeFwk::SetupDmsFiles()
 BentleyStatus   iModelBridgeFwk::StageInputFile()
     {
     BentleyStatus status = BentleyStatus::SUCCESS;
-    if (SUCCESS != m_dmsSupport->_StageInputFile(m_jobEnvArgs.m_inputFileName))
+    if (!m_dmsSupport->_StageInputFile(m_jobEnvArgs.m_inputFileName))
         return ERROR;
     return status;
     }
