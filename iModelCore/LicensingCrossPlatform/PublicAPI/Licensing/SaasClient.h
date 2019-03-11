@@ -39,10 +39,10 @@ private:
         );
 
 public:
-    //! TODO
-    //! @param[in] productId TODO
-    //! @param[in] featureString TODO
-    //! @param[in] customHttpHandler TODO
+    //! Creates a SaaS Licensing Client
+    //! @param[in] productId ProductId of the application to track usage of
+    //! @param[in] featureString Feature string of the application to track usage of
+    //! @param[in] customHttpHandler CustomHttpHandler, defaults to a nullptr
     LICENSING_EXPORT static SaasClientPtr Create
         (
         int productId = 0, /** ProductId, must be provided if want to track against a particular product, alternative is tracking linked back to OIDC client id */
@@ -51,9 +51,9 @@ public:
         );
 
     //! Send realtime usage
-    //! @param[in] accessToken TODO
-    //! @param[in] version TODO
-    //! @param[in] projectId TODO
+    //! @param[in] accessToken OIDC token of user to track usage against
+    //! @param[in] version version for this usage
+    //! @param[in] projectId projectId of this usage
     LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
     };
 

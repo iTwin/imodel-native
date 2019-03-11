@@ -61,14 +61,14 @@ public:
         AuthType authType = AuthType::SAML
         );
 
-    //! TODO
-    //! @param[in] accessKey TODO
-    //! @param[in] clientInfo TODO
-    //! @param[in] dbPath TODO
-    //! @param[in] offlineMode TODO
-    //! @param[in] projectId TODO
-    //! @param[in] featureString TODO
-    //! @param[in] customHttpHandler TODO
+    //! Creates a client that uses accesskey
+    //! @param[in] accessKey Access key generated for the ultimate to track usage against
+    //! @param[in] clientInfo ClientInfoPtr from WSClient
+    //! @param[in] dbPath Path for LicenseClient database
+    //! @param[in] offlineMode ignored for now, no usage in this client yet
+    //! @param[in] projectId ProjectID string, defaults to an empty string
+    //! @param[in] featureString product feature string, defaults to an empty string
+    //! @param[in] customHttpHandler CustomHttpHandler, defaults to a nullptr
     LICENSING_EXPORT static ClientPtr CreateWithKey
         (
         Utf8StringCR accessKey, /** AccessKey */
@@ -99,9 +99,9 @@ public:
     */
     LICENSING_EXPORT BentleyStatus StopApplication();
 
-    //! TODO
-    //! @param[in] featureId TODO
-    //! @param[in] featureUserData TODO
+    //! Marks a feature as used
+    //! @param[in] featureId Feature GUID to mark
+    //! @param[in] featureUserData Feature tracking metadata
     LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData);
     };
 
