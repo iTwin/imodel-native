@@ -72,11 +72,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb $(BB2N0) re Licensing UnitTests Gtest</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb $(XXXXX) re Licensing-Gtest -s</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb $(BB2N0) re Licensing UnitTests Gtest -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb $(BB2N0) re Licensing UnitTests GtestUnit</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb $(XXXXX) re Licensing-GtestUnit -s</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb $(BB2N0) re Licensing UnitTests GtestUnit -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
-    <NMakeOutput>$(OutRoot)Winx64\Product\Licensing-Gtest\LicensingTest.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\Product\Licensing-GtestUnit\LicensingUnitTest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)licensingcrossplatform\Tests\UnitTests\;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);$(SrcRoot)LicensingCrossPlatform\Tests\UnitTests\;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
   </PropertyGroup>
