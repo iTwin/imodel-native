@@ -367,7 +367,7 @@ void ClientIntegrationTests::SetUpTestCase()
      ASSERT_EQ(SUCCESS, L10N::Initialize(BeSQLite::L10N::SqlangFiles(path)));
     }
 
-TEST_F(ClientIntegrationTests, StartApplication_StopApplication_Success)
+TEST_F(ClientIntegrationTests, DISABLED_StartApplication_StopApplication_Success)
 {
 	auto client = CreateTestClient(true);
 	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
@@ -375,13 +375,13 @@ TEST_F(ClientIntegrationTests, StartApplication_StopApplication_Success)
 }
 
 // Need to fix this to have mock return a valid policy (or reevaluate the logic here...)
-TEST_F(ClientIntegrationTests, Equality_Test)
+TEST_F(ClientIntegrationTests, DISABLED_Equality_Test)
     {
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
     ASSERT_EQ((int)1, (int)1); // Mock policy should result in NotEntitled
     }
 
-TEST_F(ClientIntegrationTests, ClientWithKeyStartApplicationStopApplication_Success)
+TEST_F(ClientIntegrationTests, DISABLED_ClientWithKeyStartApplicationStopApplication_Success)
     {
     auto client = CreateWithKeyTestClient(true);
     EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
