@@ -164,7 +164,7 @@ bool ClientWithKeyImpl::ValidateAccessKey()
     {
     LOG.debug("ClientWithKeyImpl::ValidateAccessKey");
 
-    auto responseJson = m_ulasProvider->GetAccessKeyInfo(m_accessKey).get();
+    auto responseJson = m_ulasProvider->GetAccessKeyInfo(m_clientInfo, m_accessKey).get();
 
     if (Json::Value::GetNull() == responseJson)
         {

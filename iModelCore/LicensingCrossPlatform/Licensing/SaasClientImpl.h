@@ -17,6 +17,7 @@
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
 
 #include "Providers/IBuddiProvider.h"
+#include "Providers/IUlasProvider.h"
 
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
@@ -32,20 +33,18 @@ struct SaasClientImpl : ISaasClient
 protected:
     Utf8String m_deviceId;
     int m_productId;
-    IHttpHandlerPtr m_httpHandler;
     ITimeRetrieverPtr m_timeRetriever;
     IDelayedExecutorPtr m_delayedExecutor;
     Utf8String m_featureString;
     Utf8String m_correlationId;
-    IBuddiProviderPtr m_buddiProvider;
+    IUlasProviderPtr m_ulasProvider;
 
 public:
     LICENSING_EXPORT SaasClientImpl
         (
         int productId,
         Utf8StringCR featureString,
-        IHttpHandlerPtr httpHandler,
-        IBuddiProviderPtr buddiProvider
+        IUlasProviderPtr ulasProvider
         );
     LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
     LICENSING_EXPORT folly::Future<BentleyStatus> MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent);
