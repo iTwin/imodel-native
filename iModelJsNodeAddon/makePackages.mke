@@ -8,7 +8,7 @@
 %include mdl.mki
 
 ProductDir = $(OutputRootDir)Product/
-o = $(OutputRootDir)packages/
+o = $(OutputRootDir)imodeljsnodeaddon_pkgs/
 baseDir = $(_MakeFilePath)
 
 %if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
