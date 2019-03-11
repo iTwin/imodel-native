@@ -71,13 +71,13 @@ public:
     //! @param[in] customHttpHandler CustomHttpHandler, defaults to a nullptr
     LICENSING_EXPORT static ClientPtr CreateWithKey
         (
-        Utf8StringCR accessKey, /** AccessKey */
-        ClientInfoPtr clientInfo, /** A ClientInfoPtr */
-        BeFileNameCR dbPath, /** Path for LicenseClient database */
-        bool offlineMode, /** If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream */
-        Utf8StringCR projectId = "", /** ProjectID string, defaults to an empty string */
-        Utf8StringCR featureString = "", /** FeatureString, defaults to an empty string */
-        IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
+        Utf8StringCR accessKey,
+        ClientInfoPtr clientInfo,
+        BeFileNameCR dbPath,
+        bool offlineMode,
+        Utf8StringCR projectId = "",
+        Utf8StringCR featureString = "",
+        IHttpHandlerPtr customHttpHandler = nullptr
         );
 
     //! StartApplication performs actions and creates threads required for usage posting and policy requests, returns LicenseStatus
