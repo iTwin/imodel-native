@@ -1022,11 +1022,16 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
     uint32_t maxPriority = 0;
     
     for (size_t ind = 0; ind < generationTasks.size(); ind++)    
-        {                                      
+        {                                              
         BeFileName meshTaskFile(taskDirectory);
-        
-        maxPriority = max(maxPriority, generationTasks[ind]->m_orderId);
 
+        /*
+        if (generationTasks[ind]->m_orderId > 0)
+            continue;
+            */
+                
+        maxPriority = max(maxPriority, generationTasks[ind]->m_orderId);
+        
         if (generationTasks[ind]->m_orderId > 0)
             {            
             swprintf(stringBuffer, L"\\%s%i\\", TASK_PRIORITY_FOLDER_NAME, generationTasks[ind]->m_orderId);
@@ -1165,14 +1170,18 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTextureTasks(uint32_t ma
 
     CloseSqlFiles();
 
-
     wchar_t stringBuffer[100000];
-
+    uint32_t nbBitsForGrouping = ceil(log(textureTasks.size()) / log(2));
+    
     for (size_t ind = 0; ind < textureTasks.size(); ind++)
         {
         BeFileName meshTaskFile(taskDirectory);
         
         //assert(textureTasks[ind]->m_orderId == 0);        
+        /*
+        if (textureTasks[ind]->m_orderId > 0)
+            continue;
+        */
 
         if (basePriority > 0)
             {            
@@ -1193,7 +1202,13 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTextureTasks(uint32_t ma
         BeXmlNodeP workerNode(xmlDomPtr->AddNewElement("workerTask", nullptr, nullptr));
         workerNode->AddAttributeStringValue("type", "texture");
         workerNode->AddAttributeStringValue("jobName", jobName.c_str());
-        workerNode->AddAttributeStringValue("smName", smFileName.c_str());
+        workerNode->AddAttributeStringValue("smName", smFileName.c_str());    
+
+        //Node ID saved in 3sm file is 32 bits, so cannot go above 32 bits.
+        uint64_t baseNodeId = (ind + 1) << (32 - nbBitsForGrouping);
+        assert(baseNodeId >= (((uint64_t)1) << (32 - nbBitsForGrouping)) && baseNodeId < std::numeric_limits<uint32_t>::max());
+
+        workerNode->AddAttributeUInt64Value("newBaseNodeId", baseNodeId);
 
         for (int resInd = (int)textureTasks[ind]->m_resolutionToGenerate.size() - 1; resInd >= 0; resInd--)
         {
@@ -1837,6 +1852,10 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
 StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP pXmlTaskNode)
     {
+    uint64_t baseNodeId = 0;
+    BeXmlStatus xmlStatus = pXmlTaskNode->GetAttributeUInt64Value(baseNodeId, "newBaseNodeId");    
+    assert(xmlStatus == BEXML_Success);
+
     BeXmlNodeP pChildNode = pXmlTaskNode->GetFirstChild();
     
     GetScalableMeshFileLock(true);
@@ -1853,11 +1872,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
 #endif
 
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
+    pDataIndex->SetNextID(baseNodeId);
 
     ReleaseScalableMeshFileLock();    
 
     bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>> nodesToMesh;
-    bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>>     generatedNodes;
+    bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>> generatedNodes;
 
     SMMeshDataToLoad meshDataToLoad;
 
@@ -2008,7 +2028,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
 
         nodesToMesh.clear();
 
-        GetScalableMeshFileLock(true);
+        GetScalableMeshFileLock(false);
 
         //Flush all the data on disk    
         OpenSqlFiles(false, true);

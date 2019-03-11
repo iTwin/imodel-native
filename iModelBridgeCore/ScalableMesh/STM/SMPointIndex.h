@@ -1443,7 +1443,7 @@ public:
     uint64_t    m_nbInputPoints;
 #endif    
 
-    void SetNextID(const uint64_t& id);
+    BENTLEY_SM_EXPORT void SetNextID(const uint64_t& id);
     uint64_t GetNextID() const;
 
 
