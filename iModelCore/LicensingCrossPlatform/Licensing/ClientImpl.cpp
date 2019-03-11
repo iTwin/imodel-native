@@ -316,8 +316,8 @@ void ClientImpl::LogPostingHeartbeat(int64_t currentTime)
 
         if (time_elapsed >= logsPostingInterval)
             {
-            m_ulasProvider->PostUsageLogs(*m_licensingDb, m_policy);
-            m_ulasProvider->PostFeatureLogs(*m_licensingDb, m_policy);
+            m_ulasProvider->PostUsageLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy);
+            m_ulasProvider->PostFeatureLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy);
             m_lastRunningLogPostingheartbeatStartTime = currentTime;
             }
 
@@ -329,10 +329,10 @@ void ClientImpl::LogPostingHeartbeat(int64_t currentTime)
         else
             {
             if (m_licensingDb->GetUsageRecordCount() > 0)
-                m_ulasProvider->PostUsageLogs(*m_licensingDb, m_policy);
+                m_ulasProvider->PostUsageLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy);
 
             if (m_licensingDb->GetFeatureRecordCount() > 0)
-                m_ulasProvider->PostFeatureLogs(*m_licensingDb, m_policy);
+                m_ulasProvider->PostFeatureLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy);
 
             m_logPostingHeartbeatStopped = true;
             }

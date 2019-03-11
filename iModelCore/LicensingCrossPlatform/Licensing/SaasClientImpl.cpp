@@ -13,7 +13,6 @@
 #include "Utils/FeatureEvent.h"
 
 #include <Licensing/Utils/LogFileHelper.h>
-#include <Licensing/Utils/UsageJsonHelper.h>
 
 #include <Bentley/BeSystemInfo.h>
 #include <BeHttp/HttpError.h>
@@ -26,8 +25,7 @@ SaasClientImpl::SaasClientImpl
     (
     int productId,
     Utf8StringCR featureString,
-    IHttpHandlerPtr httpHandler,
-    IBuddiProviderPtr buddiProvider
+    IUlasProviderPtr ulasProvider
     )
     {
     m_deviceId = BeSystemInfo::GetDeviceId();
@@ -35,8 +33,7 @@ SaasClientImpl::SaasClientImpl
         m_deviceId = "DefaultDevice";
     m_productId = productId;
     m_featureString = featureString;
-    m_httpHandler = httpHandler;
-    m_buddiProvider = buddiProvider;
+    m_ulasProvider = ulasProvider;
     m_correlationId = BeGuid(true).ToString();
     m_timeRetriever = TimeRetriever::Get();
     m_delayedExecutor = DelayedExecutor::Get();
@@ -48,38 +45,8 @@ SaasClientImpl::SaasClientImpl
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<BentleyStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
     {
-    // Send real time usage
-    LOG.trace("TrackUsage");
-
-    auto url = m_buddiProvider->UlasRealtimeLoggingBaseUrl();
-
-    HttpClient client(nullptr, m_httpHandler);
-    auto uploadRequest = client.CreateRequest(url, "POST");
-    uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + accessToken);
-    uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
-
-    // create Json body
-    auto jsonBody = UsageJsonHelper::CreateJsonRandomGuids
-        (
-        m_deviceId,
-        m_featureString,
-        version,
-        projectId,
-        m_productId
-        );
-
-    uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
-
-    return uploadRequest.Perform().then(
-        [=](Response response)
-        {
-        if (!response.IsSuccess())
-            {
-            LOG.errorv("SaasClientImpl::TrackUsage ERROR: Unable to post %s - %s", jsonBody.c_str(), response.GetBody().AsString().c_str());
-            return BentleyStatus::ERROR;
-            }
-        return BentleyStatus::SUCCESS;
-        });
+    LOG.debug("UlasProvider::RealtimeTrackUsage");
+    return m_ulasProvider->RealtimeTrackUsage(accessToken, m_productId, m_featureString, m_deviceId, version, projectId);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -87,34 +54,6 @@ folly::Future<BentleyStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<BentleyStatus> SaasClientImpl::MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent)
     {
-    LOG.tracev("MarkFeature - Called with featureId: %s, version: %s, projectId: %s", featureEvent.m_featureId.c_str(), featureEvent.m_version.ToString().c_str(), featureEvent.m_projectId.c_str());
-
-    // TODO put this in a feature posting sender
-    auto url = m_buddiProvider->UlasRealtimeFeatureUrl();
-
-    HttpClient client(nullptr, m_httpHandler);
-    auto uploadRequest = client.CreateRequest(url, "POST");
-    uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + accessToken);
-    uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
-
-    auto jsonBody = featureEvent.ToJson
-    (
-        m_productId,
-        m_featureString,
-        m_deviceId
-    );
-
-    uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
-
-    return uploadRequest.Perform().then(
-        [=] (Response response)
-        {
-        if (!response.IsSuccess())
-            {
-            LOG.errorv("SaasClientImpl::MarkFeature ERROR: Unable to post %s - %s", jsonBody.c_str(), response.GetBody().AsString().c_str());
-            return BentleyStatus::ERROR;
-            }
-        LOG.tracev("MarkFeature - Successfully marked featureId: %s, version: %s, projectId: %s", featureEvent.m_featureId.c_str(), featureEvent.m_version.ToString().c_str(), featureEvent.m_projectId.c_str());
-        return BentleyStatus::SUCCESS;
-        });
+    LOG.debug("SaasClientImpl::MarkFeature");
+    return m_ulasProvider->RealtimeMarkFeature(accessToken, featureEvent, m_productId, m_featureString, m_deviceId);
     }
