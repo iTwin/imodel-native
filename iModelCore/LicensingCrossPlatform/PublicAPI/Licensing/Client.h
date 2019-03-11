@@ -38,25 +38,37 @@ private:
         );
 
 public:
-    //! Client Creator
-    /*!
-    * Initializes an instance of Client, returns a ClientPtr to the prepared Client instance.
-    * 
-    * 
-    */
+    //! Initializes an instance of Client, returns a ClientPtr to the prepared Client instance.
+    //! @param[in] userInfo signed in user's info
+    //! @param[in] clientInfo ClientInfoPtr from WSClient
+    //! @param[in] authenticationProvider To get tokens to make rest calls
+    //! @param[in] dbPath Path for LicenseClient database
+    //! @param[in] offlineMode If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream
+    //! @param[in] projectId ProjectID string, defaults to an empty string
+    //! @param[in] featureString product feature string, defaults to an empty string
+    //! @param[in] customHttpHandler CustomHttpHandler, defaults to a nullptr
+    //! @param[in] authType auth type of token. defaults to SAML
     LICENSING_EXPORT static ClientPtr Create
         (
-        const ConnectSignInManager::UserInfo& userInfo, /** For determining UserID */
-        ClientInfoPtr clientInfo, /** A ClientInfoPtr */
-        std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider, /** For  */
-        BeFileNameCR dbPath, /** Path for LicenseClient database */
-        bool offlineMode, /** If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream */
-        Utf8StringCR projectId = "", /** ProjectID string, defaults to an empty string */
-        Utf8StringCR featureString = "", /** FeatureString, defaults to an empty string */
-        IHttpHandlerPtr customHttpHandler = nullptr, /** CustomHttpHandler, defaults to a nullptr */
-		AuthType authType = AuthType::SAML
+        const ConnectSignInManager::UserInfo& userInfo,
+        ClientInfoPtr clientInfo,
+        std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+        BeFileNameCR dbPath,
+        bool offlineMode,
+        Utf8StringCR projectId = "",
+        Utf8StringCR featureString = "",
+        IHttpHandlerPtr customHttpHandler = nullptr,
+        AuthType authType = AuthType::SAML
         );
 
+    //! TODO
+    //! @param[in] accessKey TODO
+    //! @param[in] clientInfo TODO
+    //! @param[in] dbPath TODO
+    //! @param[in] offlineMode TODO
+    //! @param[in] projectId TODO
+    //! @param[in] featureString TODO
+    //! @param[in] customHttpHandler TODO
     LICENSING_EXPORT static ClientPtr CreateWithKey
         (
         Utf8StringCR accessKey, /** AccessKey */
@@ -86,9 +98,10 @@ public:
     * Stop Application Comment
     */
     LICENSING_EXPORT BentleyStatus StopApplication();
-    /*!
-    * Mark Feature Comment
-    */
+
+    //! TODO
+    //! @param[in] featureId TODO
+    //! @param[in] featureUserData TODO
     LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData);
     };
 
