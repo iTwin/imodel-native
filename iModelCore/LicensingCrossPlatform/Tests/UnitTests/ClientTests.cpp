@@ -133,7 +133,7 @@ SaasClientImplPtr CreateTestSaasClient(bool signIn, uint64_t heartbeatInterval, 
         buddiProvider);
     }
 
-ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
+ClientWithKeyImplPtr CreateWithKeyTestClient(uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
     {
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
@@ -237,9 +237,9 @@ SaasClientPtr CreateTestSaasClientFromFactory(bool signIn)
     return CreateTestSaasClientFromFactory(signIn, TEST_HEARTBEAT_INTERVAL, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, std::atoi(TEST_PRODUCT_ID));
     }
 
-ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
+ClientWithKeyImplPtr CreateWithKeyTestClient(IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
     {
-    return CreateWithKeyTestClient(signIn, TEST_HEARTBEAT_INTERVAL, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, policyProvider, ulasProvider, licensingDb);
+    return CreateWithKeyTestClient(TEST_HEARTBEAT_INTERVAL, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, policyProvider, ulasProvider, licensingDb);
     }
 
 ClientPtr CreateWithKeyTestClientFromFactory(bool signIn)
@@ -495,7 +495,7 @@ TEST_F(ClientTests, DISABLED_TrackUsage_FreeApplication_Success)
 // ClientWithKey tests - move to new test file?
 TEST_F(ClientTests, WithKeyStartApplication_Error)
     {
-    auto client = CreateWithKeyTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
+    auto client = CreateWithKeyTestClient(GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
         .Times(1)
@@ -506,7 +506,7 @@ TEST_F(ClientTests, WithKeyStartApplication_Error)
 
 TEST_F(ClientTests, WithKeyStartApplicationNullPolicy_Error)
     {
-    auto client = CreateWithKeyTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
+    auto client = CreateWithKeyTestClient(GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
         .Times(1)
@@ -523,7 +523,7 @@ TEST_F(ClientTests, WithKeyStartApplicationNullPolicy_Error)
 
 TEST_F(ClientTests, WithKeyStartApplicationInvalidKey_Success)
     {
-    auto client = CreateWithKeyTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
+    auto client = CreateWithKeyTestClient(GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
         .Times(1)
@@ -559,7 +559,7 @@ TEST_F(ClientTests, WithKeyStartApplicationInvalidKey_Success)
 
 TEST_F(ClientTests, WithKeyStartApplication_StopApplication_Success)
     {
-    auto client = CreateWithKeyTestClient(true, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
+    auto client = CreateWithKeyTestClient(GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
         .Times(1)
