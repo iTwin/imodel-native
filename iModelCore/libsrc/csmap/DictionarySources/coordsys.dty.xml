@@ -8468,27 +8468,6 @@
                 <Name>Turkey</Name>
                 <Members>
                   <Member>
-                    <KeyName>EPSG:2319</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2320</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2321</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2322</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2323</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2324</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2325</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>ERP50-TK.TM27</KeyName>
                   </Member>
                   <Member>
@@ -8522,37 +8501,37 @@
                     <KeyName>ERP50-TK-UTM38</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK.TM27</KeyName>
+                    <KeyName>ED50TK2.TM27</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK.TM30</KeyName>
+                    <KeyName>ED50TK2.TM30</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK.TM33</KeyName>
+                    <KeyName>ED50TK2.TM33</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK.TM36</KeyName>
+                    <KeyName>ED50TK2.TM36</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK.TM39</KeyName>
+                    <KeyName>ED50TK2.TM39</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK.TM42</KeyName>
+                    <KeyName>ED50TK2.TM42</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK.TM45</KeyName>
+                    <KeyName>ED50TK2.TM45</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK-UTM35</KeyName>
+                    <KeyName>ED50TK2-UTM35</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK-UTM36</KeyName>
+                    <KeyName>ED50TK2-UTM36</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK-UTM37</KeyName>
+                    <KeyName>ED50TK2-UTM37</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK-UTM38</KeyName>
+                    <KeyName>ED50TK2-UTM38</KeyName>
                   </Member>
                   <Member>
                     <KeyName>WGS84-TK.TM27</KeyName>
@@ -8588,46 +8567,46 @@
                     <KeyName>WGS84-TK-UTM38</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5253</KeyName>
+                    <KeyName>TUREF.TM27-N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5254</KeyName>
+                    <KeyName>TUREF.TM30-N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5255</KeyName>
+                    <KeyName>TUREF.TM33-N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5256</KeyName>
+                    <KeyName>TUREF.TM36-N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5257</KeyName>
+                    <KeyName>TUREF.TM39-N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5258</KeyName>
+                    <KeyName>TUREF.TM42-N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5259</KeyName>
+                    <KeyName>TUREF.TM45-N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5253-1</KeyName>
+                    <KeyName>TUREF.TM27-I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5254-1</KeyName>
+                    <KeyName>TUREF.TM30-I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5255-1</KeyName>
+                    <KeyName>TUREF.TM33-I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5256-1</KeyName>
+                    <KeyName>TUREF.TM36-I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5257-1</KeyName>
+                    <KeyName>TUREF.TM39-I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5258-1</KeyName>
+                    <KeyName>TUREF.TM42-I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5259-1</KeyName>
+                    <KeyName>TUREF.TM45-I</KeyName>
                   </Member>
                   <Member>
                     <KeyName>TUREF.GK3d-9/N</KeyName>
@@ -31782,6 +31761,102 @@
                   <Member>
                     <KeyName>EPSG:5275-1</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>EPSG:2319</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2320</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2321</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2322</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2323</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2324</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2325</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK.TM27</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK.TM30</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK.TM33</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK.TM36</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK.TM39</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK.TM42</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK.TM45</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK-UTM35</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK-UTM36</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK-UTM37</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK-UTM38</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5253</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5254</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5255</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5256</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5257</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5258</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5259</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5253-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5254-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5255-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5256-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5257-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5258-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5259-1</KeyName>
+                  </Member>
                 </Members>
               </Group>
               <Group>
@@ -35051,10 +35126,10 @@
                     <KeyName>LL-ERP50-TK</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>LL-ED50TK</KeyName>
+                    <KeyName>LL-ED50TK2</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5252</KeyName>
+                    <KeyName>TUREF.LL</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -36693,6 +36768,12 @@
           <Group>
             <Name>Legacy</Name>
             <Members>
+               <Member>
+                 <KeyName>EPSG:5252</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>LL-ED50TK</KeyName>
+               </Member>
                <Member>
                  <KeyName>HongKong80.LL</KeyName>
                </Member>
