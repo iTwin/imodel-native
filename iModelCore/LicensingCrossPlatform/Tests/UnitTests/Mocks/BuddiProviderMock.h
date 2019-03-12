@@ -17,11 +17,11 @@ BEGIN_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
 struct BuddiProviderMock : IBuddiProvider
     {
 private:
-    Utf8String m_mockedEntitlementPolicyBaseUrl;
-    Utf8String m_mockedUlasLocationBaseUrl;
-    Utf8String m_mockedUlasRealtimeLoggingBaseUrl;
-    Utf8String m_mockedUlasRealtimeFeatureUrl;
-    Utf8String m_mockedUlasAccessKeyBaseUrl;
+    Utf8String m_mockedEntitlementPolicyBaseUrl = "";
+    Utf8String m_mockedUlasLocationBaseUrl = "";
+    Utf8String m_mockedUlasRealtimeLoggingBaseUrl = "";
+    Utf8String m_mockedUlasRealtimeFeatureUrl = "";
+    Utf8String m_mockedUlasAccessKeyBaseUrl = "";
 
 public:
     Utf8String EntitlementPolicyBaseUrl() override;
