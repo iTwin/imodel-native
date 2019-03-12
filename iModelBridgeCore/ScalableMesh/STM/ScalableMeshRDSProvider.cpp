@@ -292,7 +292,7 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
 #else
     Utf8String serverUrl;
     uint32_t connectRegion = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyRegionID();
-    if(connectRegion > 0)
+    if(connectRegion != uint32_t(-1))
         {
 #define DEFAULT_BUDDI_RDS_URL "http://buddi.bentley.com/discovery.asmx/GetUrl?urlName=RealityDataServices&region="
         Utf8String buddiUrl((DEFAULT_BUDDI_RDS_URL + std::to_string(connectRegion)).c_str());
