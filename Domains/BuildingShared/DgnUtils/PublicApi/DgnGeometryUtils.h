@@ -2,7 +2,7 @@
 |
 |     $Source: DgnUtils/PublicApi/DgnGeometryUtils.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,7 +10,7 @@
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 //=======================================================================================
-// @bsiclass                                     Mindaugas.Butkus               01/2018
+// @bsiclass                                     Elonas.Seviakovas              03/2019
 // GeometryUtils is a static class for doing various operations on geometry.
 // This is also a wrapper for all parasolid related activity.
 //=======================================================================================
@@ -19,6 +19,7 @@ struct DgnGeometryUtils
     private:
         static Dgn::IBRepEntityPtr GetCutSheetBody(Dgn::IBRepEntityCR geometryToSlice, double elevation);
 
+        static void ClearElementGeometry(Dgn::GeometricElement3dCR element);
     public:
         BUILDINGSHAREDDGNUTILS_EXPORT static BentleyStatus    CreateBodyFromGeometricPrimitive(Dgn::IBRepEntityPtr& out, Dgn::GeometricPrimitiveCPtr primitive, bool assignIds = false);
         BUILDINGSHAREDDGNUTILS_EXPORT static BentleyStatus    SliceBodyByPlanes(bvector<bpair<Dgn::IBRepEntityPtr, CurveVectorPtr>>& slicedGeometry, Dgn::IBRepEntityCR geometryToSlice,
@@ -98,21 +99,160 @@ struct DgnGeometryUtils
         //!                                 Returns sheet body when the given elevation is at the bottom of geometryToSlice.
         BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::IBRepEntityPtr GetDownwardSlice(Dgn::IBRepEntityCR geometryToSlice, double elevation);
 
-        //! Gets extrusion's extrusion detail
-        //! @param[out] extDetail   extrusion detail of this extrusion
-        //! @return                 true if there was no error in getting extrusion detail
-        BUILDINGSHAREDDGNUTILS_EXPORT static bool GetDgnExtrusionDetail(Dgn::SpatialLocationElementCR extrusionThatIsSolid, DgnExtrusionDetail& extDetail);
-
         //! Gets spatial location element's base shape
-        //! @param extrusionThatIsSolid   element for which we want to get the base shape
-        //! @return                       base shape curve vector
-        BUILDINGSHAREDDGNUTILS_EXPORT static CurveVectorPtr GetBaseShape(Dgn::SpatialLocationElementCR extrusionThatIsSolid);
+        //! @param element                  element for which we want to get the base shape
+        //! @return                         base shape curve vector
+        BUILDINGSHAREDDGNUTILS_EXPORT static CurveVectorPtr GetBaseShape(Dgn::GeometricElement3dCR element);
 
         //! Extracts spatial location element's bottom face shape
-        //! @param extrusionThatIsSolid   element for which we want to get the bottom face shape
-        //! @return                       bottom face shape curve vector
-        BUILDINGSHAREDDGNUTILS_EXPORT static CurveVectorPtr ExtractBottomFaceShape(Dgn::SpatialLocationElementCR extrusionThatIsSolid);
+        //! @param element                  element for which we want to get the bottom face shape
+        //! @return                         bottom face shape curve vector
+        BUILDINGSHAREDDGNUTILS_EXPORT static CurveVectorPtr ExtractBottomFaceShape(Dgn::GeometricElement3dCR element);
 
+        //---------------------------------------------------------------------------------------
+        // Extrusion
+        //---------------------------------------------------------------------------------------
+        //! Initiates geometry with extrusion detail
+        //! @param extrusion                extrusion geometry base
+        //! @param pGeometryParameters      parameters for building extrusion geometry
+        //! @param subCategoryId            subcategory id for extrusion geometry label
+        //! @param detail                   extrusion detail that will be applied to geometry
+        //! @param other                    additional geometry that will be applied to extrusion
+        //! @param updatePlacementOrigin    change placement to 
+        //! @return                         returns true if extrusion got initiated successfully
+        BUILDINGSHAREDDGNUTILS_EXPORT static bool InitiateExtrusionGeometry(
+            Dgn::GeometricElement3dR extrusion,
+            Dgn::Render::GeometryParamsCP pGeometryParameters,
+            Dgn::DgnSubCategoryId subCategoryId,
+            DgnExtrusionDetailCR detail,
+            IGeometryPtr const &other = nullptr,
+            bool updatePlacementOrigin = true);
+
+        //! Initiates geometry with extrusion detail
+        //! @param extrusion                extrusion geometry base
+        //! @param pGeometryParameters      parameters for building extrusion geometry
+        //! @param subCategoryId            subcategory id for extrusion geometry label
+        //! @param base                     shape of extrusion
+        //! @param height                   height of extrusion
+        //! @param other                    additional geometry that will be applied to extrusion
+        //! @param updatePlacementOrigin    change placement to 
+        //! @return                         returns true if extrusion got initiated successfully
+        BUILDINGSHAREDDGNUTILS_EXPORT static bool InitiateExtrusionGeometry(
+            Dgn::GeometricElement3dR extrusion,
+            Dgn::Render::GeometryParamsCP pGeometryParameters,
+            Dgn::DgnSubCategoryId subCategoryId,
+            CurveVectorCPtr base,
+            double height,
+            IGeometryPtr const &other = nullptr,
+            bool updatePlacementOrigin = true);
+
+        //! Calculates and sets extrusion footprint area
+        //! @param extrusion                extrusion geometry
+        BUILDINGSHAREDDGNUTILS_EXPORT static void CalculateProperties(Dgn::GeometricElement3dR extrusion);
+
+        //! Gets extrusion's extrusion detail
+        //! @param[in]  elementWithExtrusion   geometric element that contains extrusion detail
+        //! @param[out] extrusionDetail        extrusion detail of this extrusion
+        //! @return                            true if there was no error in getting extrusion detail
+        BUILDINGSHAREDDGNUTILS_EXPORT static bool GetDgnExtrusionDetail(Dgn::GeometricElement3dCR elementWithExtrusion, DgnExtrusionDetail& extrusionDetail);
+
+        //! Sets extrusion's extrusion detail
+        //! @param[in]  element             geometric element that will have it's extrusion detail set
+        //! @param[in]  extrusionDetail     new extrusion detail for this extrusion
+        BUILDINGSHAREDDGNUTILS_EXPORT static void SetDgnExtrusionDetail(
+            Dgn::GeometricElement3dR element, 
+            Dgn::Render::GeometryParamsCP pGeometryParameters,
+            Dgn::DgnSubCategoryId subCategoryId,
+            DgnExtrusionDetail const &extrusionDetail);
+
+        //! Sets extrusion's height
+        //! @param[in]  newHeight           new height for the extrusion
+        BUILDINGSHAREDDGNUTILS_EXPORT static void SetExtrusionHeight(
+            Dgn::GeometricElement3dR extrusion, 
+            Dgn::Render::GeometryParamsCP pGeometryParameters,
+            Dgn::DgnSubCategoryId subCategoryId,
+            double newHeight);
+
+        //! Gets extrusion's height
+        //! @returns height of extrusion
+        BUILDINGSHAREDDGNUTILS_EXPORT static double  GetExtrusionHeight(Dgn::GeometricElement3dCR extrusion);
+
+        //! Returns base plane of this extrusion
+        //! @return base plane of this extrusion
+        BUILDINGSHAREDDGNUTILS_EXPORT static DPlane3d GetExtrusionBasePlane(Dgn::GeometricElement3dCR extrusion);
+
+        //! Returns top plane of this extrusion
+        //! @return top plane of this extrusion
+        BUILDINGSHAREDDGNUTILS_EXPORT static DPlane3d GetExtrusionTopPlane(Dgn::GeometricElement3dCR extrusion);
+        
+        //! Returns geometry builder for specified extrusion
+        //! @param extrusion                extrusion geometry for which a geometry builder will be created
+        //! @param pGeometryParams          geometry parameters for the geometry builder
+        //! @param pOrigin                  origin point for the new geometry
+        //! @return geometry builder
+        BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::GeometryBuilderPtr GetExtrusionGeometryBuilder(Dgn::GeometricElement3dCR extrusion, Dgn::Render::GeometryParamsCP pGeometryParams, DPoint3dP pOrigin);
+
+        BUILDINGSHAREDDGNUTILS_EXPORT static void SetExtrusionName(
+            Dgn::GeometricElement3dR element,
+            Dgn::Render::GeometryParamsCP pGeometryParameters,
+            Dgn::DgnSubCategoryId subCategoryId,
+            Utf8CP name);
+
+        //! Updates this extrusion's geometry with given base curve vector
+        //! @param extrusion               extrusion that will have it's geometry updated
+        //! @param pGeometryParams         geometry parameters for new geometry
+        //! @param subCategoryId           subcategory id for extrusion geometry label
+        //! @param base                    new base curve vector for this extrusion
+        //! @param updatePlacementOrigin   true if origin of this extrusion should be updated
+        //! @return                            true if there was no error in updating extrusion's geometry
+        BUILDINGSHAREDDGNUTILS_EXPORT static bool UpdateExtrusionGeometry(
+            Dgn::GeometricElement3dR extrusion, 
+            Dgn::Render::GeometryParamsCP pGeometryParameters,
+            Dgn::DgnSubCategoryId subCategoryId,
+            CurveVectorCPtr base, 
+            bool updatePlacementOrigin = true);
+
+        //! Updates this extrusion's geometry with given extrusion detail
+        //! @param extrusion               extrusion that will have it's geometry updated
+        //! @param pGeometryParams         geometry parameters for new geometry
+        //! @param subCategoryId           subcategory id for extrusion geometry label
+        //! @param extrusiondetail         new extrusion detail for this extrusion
+        //! @param otherGeometry           any additional geometry for this extrusion
+        //! @param updatePlacementOrigin   true if origin of this extrusion should be updated
+        //! @return                        true if there was no error in updating extrusion's geometry
+        BUILDINGSHAREDDGNUTILS_EXPORT static bool UpdateExtrusionGeometry(
+            Dgn::GeometricElement3dR extrusion, 
+            Dgn::Render::GeometryParamsCP pGeometryParameters,
+            Dgn::DgnSubCategoryId subCategoryId,
+            DgnExtrusionDetailCR extrusionDetail, 
+            IGeometryPtr const &otherGeometry = nullptr, 
+            bool updatePlacementOrigin = true);
+    
+        //! Get the specified plane from the extrusion
+        //! @param[in] extrusion           extrusion geometry
+        //! @param[in] planeId             plane id: 0 - base; 1 - top
+        //! @param[out] planeOut           extracted plane destination
+        //! @return                        true if there was no error in getting extrusion's plane
+        BUILDINGSHAREDDGNUTILS_EXPORT static bool GetExtrusionPlane(Dgn::GeometricElement3dCR extrusion, int geometryId, DPlane3dR planeOut);
+
+        //! Strech extrusion to specified plane
+        //! @param extrusion               extrusion geometry
+        //! @param pGeometryParams         geometry parameters for new streched geometry
+        //! @param subCategoryId           subcategory id for streched geometry label
+        //! @param targetPlane             target plane that extrusion will be streched to
+        //! @return                        true if there was no error while streching extrusion
+        BUILDINGSHAREDDGNUTILS_EXPORT static bool StretchExtrusionToPlane(
+            Dgn::GeometricElement3dR extrusion, 
+            Dgn::Render::GeometryParamsCP pGeometryParameters,
+            Dgn::DgnSubCategoryId subCategoryId,
+            DPlane3dR targetPlane);
+
+        //! Strech extrusion to specified plane
+        //! @param builder                 geometry builder to which new label will be appended
+        //! @param profile                 new geometry label shape
+        //! @param name                    new geometry label name
+        //! @param subCategoryId           new geometry label subcategory id
+        BUILDINGSHAREDDGNUTILS_EXPORT static void AppendExtrusionLabel(Dgn::GeometryBuilderPtr& builder, CurveVectorCR profile, Utf8CP name, Dgn::DgnSubCategoryId subCategoryId);
     };
 
 END_BUILDING_SHARED_NAMESPACE

@@ -2,10 +2,13 @@
 |
 |     $Source: DgnUtils/DgnGeometryUtils.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/BuildingDgnUtilsApi.h"
+#include <Vu\VuApi.h>
+#include <BuildingShared/Units/UnitConverter.h>
+#include <math.h>
 
 USING_NAMESPACE_BUILDING_SHARED
 
@@ -682,7 +685,7 @@ Dgn::IBRepEntityPtr DgnGeometryUtils::GetDownwardSlice
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Nerijus.Jakeliunas              06/2017
 //---------------+---------------+---------------+---------------+---------------+------
-CurveVectorPtr DgnGeometryUtils::ExtractBottomFaceShape(Dgn::SpatialLocationElementCR extrusionThatIsSolid)
+CurveVectorPtr DgnGeometryUtils::ExtractBottomFaceShape(Dgn::GeometricElement3dCR extrusionThatIsSolid)
     {
     auto pGeometrySource = extrusionThatIsSolid.ToGeometrySource();
     if (nullptr == pGeometrySource)
@@ -739,8 +742,8 @@ CurveVectorPtr DgnGeometryUtils::ExtractBottomFaceShape(Dgn::SpatialLocationElem
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnGeometryUtils::GetDgnExtrusionDetail
 (
-    Dgn::SpatialLocationElementCR extrusionThatIsSolid,
-DgnExtrusionDetail& extDetail       //<= extrusion detail if success(true)
+    Dgn::GeometricElement3dCR extrusionThatIsSolid,
+    DgnExtrusionDetail& extDetail       //<= extrusion detail if success(true)
 )
     {
     auto pGeometrySource = extrusionThatIsSolid.ToGeometrySource ();
@@ -775,7 +778,7 @@ DgnExtrusionDetail& extDetail       //<= extrusion detail if success(true)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Nerijus.Jakeliunas               09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr DgnGeometryUtils::GetBaseShape(Dgn::SpatialLocationElementCR extrusionThatIsSolid)
+CurveVectorPtr DgnGeometryUtils::GetBaseShape(Dgn::GeometricElement3dCR extrusionThatIsSolid)
     {
     DgnExtrusionDetail extDetail;
     if (DgnGeometryUtils::GetDgnExtrusionDetail(extrusionThatIsSolid, extDetail))
@@ -807,4 +810,549 @@ CurveVectorPtr DgnGeometryUtils::GetBaseShape(Dgn::SpatialLocationElementCR extr
         }
 
     return planePtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnGeometryUtils::InitiateExtrusionGeometry
+(
+    Dgn::GeometricElement3dR extrusion,
+    Dgn::Render::GeometryParamsCP pGeometryParameters,
+    Dgn::DgnSubCategoryId subCategoryId,
+    DgnExtrusionDetailCR detail,
+    IGeometryPtr const &otherGeometry,
+    bool updatePlacementOrigin
+)
+    {
+    Dgn::DgnCategoryId catId = extrusion.GetCategoryId();
+
+    CurveVectorPtr baseShape = detail.FractionToProfile(0.0);
+    double actualArea;
+    DVec3d normal;
+    DPoint3d centroid;
+    baseShape->CentroidNormalArea(centroid, normal, actualArea);
+
+    DPoint3d origin = updatePlacementOrigin ? centroid : extrusion.GetPlacement().GetOrigin();
+
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*extrusion.GetModel(), catId, origin);
+    if (pGeometryParameters != nullptr)
+    {
+        builder->Append(*pGeometryParameters);
+    }
+
+    ISolidPrimitivePtr solidPrimitive = ISolidPrimitive::CreateDgnExtrusion(detail);
+    Transform worldToLocal = Transform::From(origin).ValidatedInverse();
+    solidPrimitive->TransformInPlace(worldToLocal);
+
+    if (!builder->Append(*solidPrimitive))
+        return false;
+
+    if (otherGeometry.IsValid() && otherGeometry->TryTransformInPlace(worldToLocal))
+        {
+        builder->Append(*otherGeometry);
+        }
+
+    baseShape->TransformInPlace(worldToLocal);
+    Utf8CP userLabel = extrusion.ToElement()->GetUserLabel();
+
+    AppendExtrusionLabel(builder, *baseShape, userLabel, subCategoryId);
+
+    if (SUCCESS != builder->Finish(extrusion))
+        return false;
+
+    extrusion.SetPropertyValue("FootprintArea", actualArea);
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnGeometryUtils::InitiateExtrusionGeometry
+(
+    Dgn::GeometricElement3dR extrusion,
+    Dgn::Render::GeometryParamsCP pGeometryParameters,
+    Dgn::DgnSubCategoryId subCategoryId,
+    CurveVectorCPtr base,
+    double height,
+    IGeometryPtr const &otherGeometry,
+    bool updatePlacementOrigin
+)
+{
+    if (!base.IsValid())
+    {
+        return false;
+    }
+
+    CurveVectorPtr selectedShape = base->Clone();
+    selectedShape->ConsolidateAdjacentPrimitives(true);
+    DVec3d zvector;
+    zvector.Zero();
+    zvector.z = 1.0;
+    zvector.Scale(height); //we build an upwards looking sweep direction 
+    DgnExtrusionDetail extrusionDetail(selectedShape, zvector, true);
+
+    return InitiateExtrusionGeometry(extrusion, pGeometryParameters, subCategoryId, extrusionDetail, otherGeometry, updatePlacementOrigin);
+}
+
+void DgnGeometryUtils::CalculateProperties(Dgn::GeometricElement3dR extrusion)
+    {
+    CurveVectorPtr curveVec = GetBaseShape(extrusion);
+    if (!curveVec.IsValid())
+        {
+        return;
+        }
+
+    double area;
+    DVec3d normal;
+    DPoint3d centroid;
+    curveVec->CentroidNormalArea(centroid, normal, area);
+
+    extrusion.SetPropertyValue("FootprintArea", area);
+    }
+
+void DgnGeometryUtils::ClearElementGeometry(Dgn::GeometricElement3dCR extrusion)
+    {
+    Dgn::GeometrySourceCP geometrySource = extrusion.ToGeometrySource();
+    Dgn::GeometryStreamR geometryStream = const_cast<Dgn::GeometryStreamR>(geometrySource->GetGeometryStream());
+    geometryStream.Clear();
+    }
+
+struct Extrusion : Dgn::GeometricElement3d {
+    Extrusion(Dgn::GeometricElement3d::CreateParams params) : Dgn::GeometricElement3d(params) { }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool findLabelOriginPoint(CurveVectorCR base, DPoint3d& labelOrigin)
+    {
+    bvector<bvector<DPoint3d>> regionsPoints;
+    if (!base.CollectLinearGeometry(regionsPoints) || regionsPoints.size() < 1)
+        {
+        return false;
+        }
+
+    EmbeddedIntArray indices;
+    EmbeddedDPoint3dArray XYZOut;
+    if (BSISUCCESS != vu_triangulateXYPolygon(&indices, &XYZOut, regionsPoints[0].data(), (int)regionsPoints[0].size(), 0.01, 3, false, true))
+        {
+        return false;
+        }
+
+    auto trianglePoints = bvector <DPoint3d>();
+    double maxRadius = -1.0;
+    for (int index : indices)
+        {
+        if (index > -1)
+            {
+            trianglePoints.push_back(XYZOut[index]);
+            }
+
+        if (-1 == index)
+            {
+            if (trianglePoints.size() != 3)
+                {
+                trianglePoints = bvector <DPoint3d>();
+                continue;
+                }
+
+            double c = trianglePoints[0].Distance(trianglePoints[1]);
+            double a = trianglePoints[1].Distance(trianglePoints[2]);
+            double b = trianglePoints[2].Distance(trianglePoints[0]);
+
+            // http://mathworld.wolfram.com/Incenter.html
+            double incenterX = (a * trianglePoints[0].x + b * trianglePoints[1].x + c * trianglePoints[2].x) / (a + b + c);
+            double incenterY = (a * trianglePoints[0].y + b * trianglePoints[1].y + c * trianglePoints[2].y) / (a + b + c);
+            DPoint3d incenter = DPoint3d::From(incenterX, incenterY, trianglePoints[0].z);
+
+            // http://mathworld.wolfram.com/Inradius.html
+            double halfPerimeter = (a + b + c) / 2.0;
+            double radius = sqrt((halfPerimeter - a) * (halfPerimeter - b) * (halfPerimeter - c) / halfPerimeter);
+
+            if (CurveVector::INOUT_In == base.PointInOnOutXY(incenter) && maxRadius < radius)
+                {
+                maxRadius = radius;
+                labelOrigin = incenter;
+                }
+
+            trianglePoints = bvector <DPoint3d>();
+            }
+        }
+
+    return maxRadius > 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::TextStringPtr createElementText
+(
+    CurveVectorCR base,
+    Utf8CP text,
+    double zElevation = 0.0,
+    double verticalOffset = 0.0
+)
+{
+    double pixelDist = 1.0 / 120.0;
+    double tScale = 30.0 * pixelDist;
+
+    DPoint3d userOrigin;
+    userOrigin.Zero();
+
+    DPoint2d textScale;
+    textScale.x = textScale.y = tScale;
+
+    Dgn::TextStringStylePtr style = Dgn::TextStringStyle::Create();
+    style->SetFont(Dgn::DgnFontManager::GetDecoratorFont());
+    style->SetSize(textScale);
+    style->SetIsUnderlined(true);
+
+    RotMatrix textMatrix;
+    textMatrix.InitFromScaleFactors(1.0, 1.0, 1.0);
+    Dgn::TextStringPtr textStrPtr = Dgn::TextString::Create();
+    textStrPtr->SetText(text);
+    textStrPtr->SetOrientation(textMatrix);
+    textStrPtr->SetStyle(*style);
+
+    DRange3d range;
+    base.GetRange(range);
+
+    double dx = (range.low.x + range.high.x) / 2.0;
+    double dy = (range.low.y + range.high.y) / 2.0;
+    DPoint3d labelOrigin;
+    Transform localToWorld, worldToLocal;
+    if (!base.IsRectangle(localToWorld, worldToLocal) && findLabelOriginPoint(base, labelOrigin))
+    {
+        dx = labelOrigin.x;
+        dy = labelOrigin.y;
+    }
+    userOrigin = DPoint3d::From(dx, dy - tScale * verticalOffset, zElevation);
+
+    textStrPtr->SetOriginFromJustificationOrigin(userOrigin, Dgn::TextString::HorizontalJustification::Center, Dgn::TextString::VerticalJustification::Middle);
+
+    return textStrPtr;
+}
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnGeometryUtils::AppendExtrusionLabel
+(
+    Dgn::GeometryBuilderPtr& builder, 
+    CurveVectorCR profile, Utf8CP name, 
+    Dgn::DgnSubCategoryId subCategoryId /*= DgnSubCategoryId ()*/
+)
+    {
+    if (nullptr == name || strlen(name) < 1)
+        {
+        return;
+        }
+
+    double area;
+    DVec3d normal;
+    DPoint3d centroid;
+    profile.CentroidNormalArea(centroid, normal, area);
+
+    //SetArea (area);
+    if (area > 0.01)
+        {
+        if (subCategoryId.IsValid())
+            {
+            builder->Append(subCategoryId);
+            }
+
+        Dgn::TextStringPtr textStrPtr = createElementText(profile, name, centroid.z, -1.0);
+        builder->Append(*textStrPtr);
+
+        area = UnitConverter::ToSquareFeet(area);
+
+        char areaText[100];
+        BeStringUtilities::Snprintf(areaText, 100, "Area %.1f Sq.Ft.", area);
+
+        Dgn::TextStringPtr areaStrPtr = createElementText(profile, areaText, centroid.z, 1.0);
+        builder->Append(*areaStrPtr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnGeometryUtils::SetExtrusionHeight
+(
+    Dgn::GeometricElement3dR extrusion,
+    Dgn::Render::GeometryParamsCP pGeometryParameters,
+    Dgn::DgnSubCategoryId subCategoryId,
+    double newHeight
+)
+    {
+    Dgn::GeometryCollection geometryData(extrusion);
+    if (geometryData.begin() == geometryData.end())
+        {
+        return;
+        }
+
+    //add new geometry
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(extrusion);
+    if (pGeometryParameters != nullptr)
+    {
+        builder->Append(*pGeometryParameters);
+    }
+
+    CurveVectorPtr baseProfile = nullptr;
+
+    Dgn::GeometricPrimitivePtr geometryPtr = (*geometryData.begin()).GetGeometryPtr();
+    if (geometryPtr.IsValid())
+        {
+        ISolidPrimitivePtr solidPrimitive = geometryPtr->GetAsISolidPrimitive();
+        DgnExtrusionDetail extDetail;
+        if (solidPrimitive.IsValid() && solidPrimitive->TryGetDgnExtrusionDetail(extDetail))
+            {
+            //clean the existing geometry
+            ClearElementGeometry(extrusion);
+
+            extDetail.m_extrusionVector.Normalize();
+            extDetail.m_extrusionVector.Scale(newHeight);
+            solidPrimitive->TrySetDgnExtrusionDetail(extDetail);
+
+            builder->Append(*solidPrimitive);
+
+            baseProfile = extDetail.m_baseCurve;
+            }
+        else
+            {
+            Dgn::IBRepEntityPtr solid = (*geometryData.begin()).GetGeometryPtr()->GetAsIBRepEntity();
+            if (solid.IsValid() && solid->GetEntityType() == Dgn::IBRepEntity::EntityType::Solid)
+                {
+                //clean the existing geometry
+                ClearElementGeometry(extrusion);
+
+                // TODO:  can/should we change hight of Solid ??? Do nothing for now
+                builder->Append(*solid);
+                baseProfile = DgnGeometryUtils::ExtractXYProfileFromSolid(*solid);
+                }
+            }
+        }
+
+
+    if (baseProfile.IsValid())
+        {
+        Utf8CP userLabel = extrusion.ToElement()->GetUserLabel();
+
+        AppendExtrusionLabel(builder, *baseProfile, userLabel, subCategoryId);
+        }
+    builder->Finish(extrusion);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+double DgnGeometryUtils::GetExtrusionHeight
+(
+    Dgn::GeometricElement3dCR extrusion
+)
+    {
+    DgnExtrusionDetail extrusionDetail;
+    if (DgnGeometryUtils::GetDgnExtrusionDetail(extrusion, extrusionDetail))
+        {
+        return extrusionDetail.m_extrusionVector.Magnitude();
+        }
+    else
+        {
+        return extrusion.ToGeometrySource3d()->GetPlacement().CalculateRange().ZLength();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DPlane3d DgnGeometryUtils::GetExtrusionBasePlane
+(
+    Dgn::GeometricElement3dCR extrusion
+)
+    {
+    DPlane3d plane;
+    plane.Zero();
+    Transform localToWorld, worldToLocal;
+    DRange3d range;
+    CurveVectorPtr baseShape = GetBaseShape(extrusion);
+    if (baseShape->IsPlanar(localToWorld, worldToLocal, range))
+        {
+        plane.origin = localToWorld.Origin();
+        plane.normal = localToWorld.ColumnZ();
+        }
+    else if (baseShape->size() == 1 &&
+        baseShape->at(0)->GetCurvePrimitiveType() == ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_PointString)
+        {
+        ICurvePrimitivePtr pointString = baseShape->at(0);
+        bvector<DPoint3d> points = *pointString->GetPointStringCP();
+        plane = DPlane3d::FromOriginAndNormal(points[0], DVec3d::From(0, 0, 1));
+        }
+    return plane;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DPlane3d DgnGeometryUtils::GetExtrusionTopPlane
+(
+    Dgn::GeometricElement3dCR extrusion
+)
+    {
+    DPlane3d plane;
+    plane.Zero();
+    plane.normal.z = 1.0;
+    Transform localToWorld, worldToLocal;
+    DRange3d range;
+    CurveVectorPtr baseShape = GetBaseShape(extrusion);
+    if (baseShape->IsPlanar(localToWorld, worldToLocal, range))
+        {
+        plane.origin = localToWorld.Origin();
+        plane.normal = localToWorld.ColumnZ();
+        DPoint3d offset{ 0.0, 0.0, 1.0 };
+        offset.ScaleToLength(GetExtrusionHeight(extrusion));
+        plane.origin.Add(offset);
+        }
+    return plane;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::GeometryBuilderPtr DgnGeometryUtils::GetExtrusionGeometryBuilder
+(
+    Dgn::GeometricElement3dCR extrusion,
+    Dgn::Render::GeometryParamsCP pGeometryParams,
+    DPoint3dP pOrigin
+)
+    {
+    DPoint3d zeroPoint;
+    zeroPoint.Zero();
+
+    if (pOrigin == nullptr)
+        {
+        pOrigin = &zeroPoint;
+        }
+
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*(extrusion.GetModel()), extrusion.GetCategoryId(), *pOrigin);
+
+    if (pGeometryParams != nullptr)
+        {
+        builder->Append(*pGeometryParams);
+        }
+
+    return builder;
+    }
+
+void DgnGeometryUtils::SetExtrusionName
+(
+    Dgn::GeometricElement3dR element,
+    Dgn::Render::GeometryParamsCP pGeometryParameters,
+    Dgn::DgnSubCategoryId subCategoryId,
+    Utf8CP name
+) 
+    {
+    element.SetUserLabel(name);
+
+    // need to trigger update of geometry so that we would update label element
+    SetExtrusionHeight(element, pGeometryParameters, subCategoryId, GetExtrusionHeight(element));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnGeometryUtils::SetDgnExtrusionDetail
+(
+    Dgn::GeometricElement3dR element,
+    Dgn::Render::GeometryParamsCP pGeometryParameters,
+    Dgn::DgnSubCategoryId subCategoryId,
+    DgnExtrusionDetail const &extrusionDetail //=> extrusion detail to set
+)
+    {
+    //clean the existing geometry
+    ClearElementGeometry(element);
+
+    // Create geometry
+    InitiateExtrusionGeometry(element, pGeometryParameters, subCategoryId, extrusionDetail, nullptr, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnGeometryUtils::UpdateExtrusionGeometry
+(
+    Dgn::GeometricElement3dR extrusion,
+    Dgn::Render::GeometryParamsCP pGeometryParameters,
+    Dgn::DgnSubCategoryId subCategoryId,
+    CurveVectorCPtr base,
+    bool updatePlacementOrigin
+)
+    {
+    return InitiateExtrusionGeometry(extrusion, pGeometryParameters, subCategoryId, base, GetExtrusionHeight(extrusion), nullptr, updatePlacementOrigin);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnGeometryUtils::UpdateExtrusionGeometry
+(
+    Dgn::GeometricElement3dR extrusion,
+    Dgn::Render::GeometryParamsCP pGeometryParameters,
+    Dgn::DgnSubCategoryId subCategoryId,
+    DgnExtrusionDetailCR extrusionDetail,
+    IGeometryPtr const &otherGeometry,
+    bool updatePlacementOrigin
+)
+    {
+    return InitiateExtrusionGeometry(extrusion, pGeometryParameters, subCategoryId, extrusionDetail, otherGeometry, updatePlacementOrigin);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnGeometryUtils::GetExtrusionPlane
+(
+    Dgn::GeometricElement3dCR extrusion,
+    int geometryId,
+    DPlane3dR planeOut
+)
+    {
+    if (geometryId != 0 && geometryId != 1) //currently only able to handle extrusion top/bottom face
+        BeAssert(!"Not Yet implemented");
+    switch (geometryId)
+        {
+    case 0:
+        planeOut = GetExtrusionBasePlane(extrusion);
+        break;
+    case 1:
+        planeOut = GetExtrusionTopPlane(extrusion);
+        break;
+    default:
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnGeometryUtils::StretchExtrusionToPlane
+(
+    Dgn::GeometricElement3dR extrusion,
+    Dgn::Render::GeometryParamsCP pGeometryParameters,
+    Dgn::DgnSubCategoryId subCategoryId,
+    DPlane3dR targetPlane
+)
+    {
+    //if (planeId != 1)
+    //    BeAssert(!"Not yet implemented");  //NEEDS WORK: currently can only stretch the top face?
+
+    DPlane3d bottomPlane = GetExtrusionBasePlane(extrusion);
+    double distance = targetPlane.Evaluate(bottomPlane.origin);
+    SetExtrusionHeight(extrusion, pGeometryParameters, subCategoryId, fabs(distance));
+
+    return false;
     }
