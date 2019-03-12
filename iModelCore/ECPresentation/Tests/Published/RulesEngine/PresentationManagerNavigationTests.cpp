@@ -2271,6 +2271,94 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstancesNodes_FindsAllMixinSubclassesAndCustomizesNodesCorrectly, R"*(
+    <ECEntityClass typeName="Element" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
+        <ECCustomAttributes>
+            <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
+                <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+            </LinkTableRelationshipMap>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="Element"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Classification" modifier="Sealed">
+        <BaseClass>Element</BaseClass>
+        <ECProperty propertyName="Description" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="IClassified" modifier="Abstract">
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.1.0">
+                <AppliesToEntityClass>Element</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="IClassifiedIsClassifiedAs" modifier="None" strength="referencing">
+        <BaseClass>ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="is classified as" polymorphic="true">
+            <Class class="IClassified"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="classifies" polymorphic="false">
+            <Class class="Classification"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="SpecificClassifiedClass">
+        <BaseClass>Element</BaseClass>
+        <BaseClass>IClassified</BaseClass>
+        <ECProperty propertyName="Label" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_FindsAllMixinSubclassesAndCustomizesNodesCorrectly)
+    {
+    ECEntityClassCP classClassification = GetClass("Classification")->GetEntityClassCP();
+    ECEntityClassCP classSpecificClassifiedClass = GetClass("SpecificClassifiedClass")->GetEntityClassCP();
+    ECRelationshipClassCP relationshipIClassifiedIsClassifiedAs = GetClass("IClassifiedIsClassifiedAs")->GetRelationshipClassCP();
+
+    IECInstancePtr classification = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classClassification);
+    IECInstancePtr classified = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classSpecificClassifiedClass, [](IECInstanceR instance) { instance.SetValue("Label", ECValue("test label")); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipIClassifiedIsClassifiedAs, *classified, *classification);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classSpecificClassifiedClass->GetFullName(), "Label"));
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", classClassification->GetFullName(), false));
+    rules->AddPresentationRule(*rule);
+
+    ChildNodeRule* relatedNodeRule = new ChildNodeRule();
+    relatedNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, "", 
+        RequiredRelationDirection_Backward, "", relationshipIClassifiedIsClassifiedAs->GetFullName(), GetClass("IClassified")->GetFullName()));
+    rules->AddPresentationRule(*relatedNodeRule);
+
+    // request for nodes
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree).GetJson();
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+
+    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    ASSERT_EQ(1, childNodes.GetSize());
+    ASSERT_STREQ("test label", childNodes[0]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_HideIfNoChildren_ReturnsNodesIfHasChildren)

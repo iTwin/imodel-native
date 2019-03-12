@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ECSchemaHelper.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -1572,7 +1572,7 @@ static CachedECSqlStatementPtr GetPreparedStatement(IConnectionCR connection, Ut
         connection.GetDb().AddAppData(ECInstanceLoadStatementCache::s_key, cache.get());
         }
 
-    RefCountedPtr<BeSQLite::Db::AppData> invalidatorAppData = connection.GetDb().FindAppData(cache->m_invalidatorKey);
+    RefCountedPtr<BeSQLite::Db::AppData> invalidatorAppData = connection.GetECDb().FindAppData(cache->m_invalidatorKey);
     RefCountedPtr<ECInstanceLoadStatementCacheInvalidator> invalidator = static_cast<ECInstanceLoadStatementCacheInvalidator*>(invalidatorAppData.get());
     if (invalidator.IsNull())
         {
