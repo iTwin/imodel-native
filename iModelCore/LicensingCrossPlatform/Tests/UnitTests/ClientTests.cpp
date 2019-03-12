@@ -472,132 +472,6 @@ TEST_F(ClientTests, StartApplicationStopApplication_Success)
     EXPECT_SUCCESS(client->StopApplication());
     }
 
-TEST_F(ClientTests, DISABLED_TrackUsage_FreeApplication_Success)
-    {
-    EXPECT_CALL(GetBuddiProviderMock(), UlasRealtimeLoggingBaseUrl()) // called on TrackUsage()
-        .Times(1)
-        .WillRepeatedly(Return("https://qa-connect-ulastm.bentley.com/Bentley.ULAS.PostingService/PostingSvcWebApi/"));
-    auto client = CreateTestSaasClient(GetUlasProviderMockPtr());
-    Utf8String tokenstring = "b683fe041bfd1ef554599e69253271f5f6775eb7106514fa56e512040d635d4a";
-    auto version = BeVersion(1, 0);
-    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
-    EXPECT_SUCCESS(client->TrackUsage(tokenstring,version,projectId).get());
-    }
-
-// ClientWithKey tests - move to new test file?
-TEST_F(ClientTests, WithKeyStartApplication_Error)
-    {
-    auto client = CreateWithKeyTestClient(GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
-
-    EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
-        .Times(1)
-        .WillOnce(Return(BentleyStatus::ERROR));
-
-    EXPECT_EQ((int)client->StartApplication(), (int)LicenseStatus::Error);
-    }
-
-TEST_F(ClientTests, WithKeyStartApplicationNullPolicy_Error)
-    {
-    auto client = CreateWithKeyTestClient(GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
-
-    EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
-        .Times(1)
-        .WillOnce(Return(BentleyStatus::SUCCESS));
-
-    std::shared_ptr<Policy> nullPolicy = nullptr;
-
-    EXPECT_CALL(GetPolicyProviderMock(), GetPolicyWithKey(A<Utf8StringCR>()))
-        .Times(1)
-        .WillOnce(Return(ByMove(folly::makeFuture(nullPolicy))));
-
-    EXPECT_EQ((int)client->StartApplication(), (int)LicenseStatus::Error);
-    }
-
-TEST_F(ClientTests, WithKeyStartApplicationInvalidKey_Success)
-    {
-    auto client = CreateWithKeyTestClient(GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
-
-    EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
-        .Times(1)
-        .WillOnce(Return(BentleyStatus::SUCCESS));
-
-    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
-    auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false);
-    auto validPolicy = Policy::Create(jsonPolicyValid);
-
-    std::list<Json::Value> validPolicyList;
-    validPolicyList.push_back(jsonPolicyValid);
-
-    EXPECT_CALL(GetPolicyProviderMock(), GetPolicyWithKey(A<Utf8StringCR>()))
-        .Times(1)
-        .WillOnce(Return(ByMove(folly::makeFuture(validPolicy)))); // need ByMove since this calls the copy constructor for folly::Future, which is deleted
-
-    EXPECT_CALL(GetLicensingDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
-        .Times(AtLeast(1));
-
-    EXPECT_CALL(GetLicensingDbMock(), DeleteAllOtherPolicyFilesByKey(A<Utf8StringCR>(), A<Utf8StringCR>()))
-        .Times(AtLeast(1));
-
-    Json::Value jsonAccessKeyResponse(Json::objectValue);
-    jsonAccessKeyResponse["status"] = "Failure";
-    jsonAccessKeyResponse["msg"] = "Record is Inactive or Expired";
-
-    EXPECT_CALL(GetUlasProviderMock(), GetAccessKeyInfo(A<ClientInfoPtr>(), A<Utf8StringCR>()))
-        .Times(1)
-        .WillOnce(Return(ByMove(folly::makeFuture(jsonAccessKeyResponse))));
-
-    EXPECT_EQ((int)client->StartApplication(), (int)LicenseStatus::NotEntitled);
-    }
-
-TEST_F(ClientTests, WithKeyStartApplication_StopApplication_Success)
-    {
-    auto client = CreateWithKeyTestClient(GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
-
-    EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
-        .Times(1)
-        .WillOnce(Return(BentleyStatus::SUCCESS));
-
-    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
-    auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFullWithKey(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false, TEST_ACCESSKEY);
-    auto validPolicy = Policy::Create(jsonPolicyValid);
-
-    Utf8StringCR testAccessKey = TEST_ACCESSKEY;
-
-    EXPECT_CALL(GetPolicyProviderMock(), GetPolicyWithKey(testAccessKey))
-        .Times(1)
-        .WillOnce(Return(ByMove(folly::makeFuture(validPolicy)))); // need ByMove since this calls the copy constructor for folly::Future, which is deleted
-
-    EXPECT_CALL(GetLicensingDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
-        .Times(AtLeast(1));
-
-    EXPECT_CALL(GetLicensingDbMock(), DeleteAllOtherPolicyFilesByKey(A<Utf8StringCR>(), A<Utf8StringCR>()))
-        .Times(AtLeast(1));
-
-    Json::Value jsonAccessKeyResponse(Json::objectValue);
-    jsonAccessKeyResponse["status"] = "Success";
-
-    EXPECT_CALL(GetUlasProviderMock(), GetAccessKeyInfo(A<ClientInfoPtr>(), A<Utf8StringCR>()))
-        .Times(1)
-        .WillOnce(Return(ByMove(folly::makeFuture(jsonAccessKeyResponse))));
-
-    std::list<Json::Value> validPolicyList;
-    validPolicyList.push_back(jsonPolicyValid);
-
-    EXPECT_CALL(GetLicensingDbMock(), GetPolicyFilesByKey(testAccessKey))
-        .Times(1)
-        .WillOnce(Return(validPolicyList));
-
-    EXPECT_CALL(GetLicensingDbMock(), GetOfflineGracePeriodStart())
-        .Times(1)
-        .WillOnce(Return(""));
-
-    EXPECT_CALL(GetLicensingDbMock(), Close())
-        .Times(1);
-
-    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
-    EXPECT_SUCCESS(client->StopApplication());
-    }
-
 // Tests for specific situations
 TEST_F(ClientTests, GetPolicy_Success)
     {
@@ -801,3 +675,154 @@ TEST_F(ClientTests, DeleteAllOtherPoliciesByUser_Success)
 
     client->DeleteAllOtherPoliciesByUser(validPolicy);
     }
+
+// SaasClient tests
+TEST_F(ClientTests, SaasClientTrackUsage_Success)
+    {
+    auto client = CreateTestSaasClient(GetUlasProviderMockPtr());
+
+    Utf8String accessToken = "TestToken";
+    const auto version = BeVersion(1, 0);
+    FeatureEvent featureEvent = FeatureEvent("TestFeatureId", version);
+
+    BentleyStatus status = BentleyStatus::SUCCESS;
+
+    EXPECT_CALL(GetUlasProviderMock(), RealtimeTrackUsage(A<Utf8StringCR>(), A<int>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<BeVersionCR>(), A<Utf8StringCR>()))
+        .Times(1)
+        .WillOnce(Return(ByMove(folly::makeFuture(status))));
+
+    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
+    EXPECT_SUCCESS(client->TrackUsage(accessToken, version, projectId).get());
+    }
+
+TEST_F(ClientTests, SaasClientMarkFeatureNoDataNoProject_Success)
+    {
+    auto client = CreateTestSaasClient(GetUlasProviderMockPtr());
+
+    Utf8String accessToken = "TestToken";
+    const auto version = BeVersion(1, 0);
+    FeatureEvent featureEvent = FeatureEvent("TestFeatureId", version);
+
+    BentleyStatus status = BentleyStatus::SUCCESS;
+
+    EXPECT_CALL(GetUlasProviderMock(), RealtimeMarkFeature(A<Utf8StringCR>(), A<FeatureEvent>(), A<int>(), A<Utf8StringCR>(), A<Utf8StringCR>()))
+        .Times(1)
+        .WillOnce(Return(ByMove(folly::makeFuture(status))));
+
+    EXPECT_SUCCESS(client->MarkFeature(accessToken, featureEvent).get());
+    }
+
+// ClientWithKey tests - move to new test file?
+TEST_F(ClientTests, WithKeyStartApplication_Error)
+    {
+    auto client = CreateWithKeyTestClient(GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
+
+    EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
+        .Times(1)
+        .WillOnce(Return(BentleyStatus::ERROR));
+
+    EXPECT_EQ((int)client->StartApplication(), (int)LicenseStatus::Error);
+    }
+
+TEST_F(ClientTests, WithKeyStartApplicationNullPolicy_Error)
+    {
+    auto client = CreateWithKeyTestClient(GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
+
+    EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
+        .Times(1)
+        .WillOnce(Return(BentleyStatus::SUCCESS));
+
+    std::shared_ptr<Policy> nullPolicy = nullptr;
+
+    EXPECT_CALL(GetPolicyProviderMock(), GetPolicyWithKey(A<Utf8StringCR>()))
+        .Times(1)
+        .WillOnce(Return(ByMove(folly::makeFuture(nullPolicy))));
+
+    EXPECT_EQ((int)client->StartApplication(), (int)LicenseStatus::Error);
+    }
+
+TEST_F(ClientTests, WithKeyStartApplicationInvalidKey_Success)
+    {
+    auto client = CreateWithKeyTestClient(GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
+
+    EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
+        .Times(1)
+        .WillOnce(Return(BentleyStatus::SUCCESS));
+
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false);
+    auto validPolicy = Policy::Create(jsonPolicyValid);
+
+    std::list<Json::Value> validPolicyList;
+    validPolicyList.push_back(jsonPolicyValid);
+
+    EXPECT_CALL(GetPolicyProviderMock(), GetPolicyWithKey(A<Utf8StringCR>()))
+        .Times(1)
+        .WillOnce(Return(ByMove(folly::makeFuture(validPolicy)))); // need ByMove since this calls the copy constructor for folly::Future, which is deleted
+
+    EXPECT_CALL(GetLicensingDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
+        .Times(AtLeast(1));
+
+    EXPECT_CALL(GetLicensingDbMock(), DeleteAllOtherPolicyFilesByKey(A<Utf8StringCR>(), A<Utf8StringCR>()))
+        .Times(AtLeast(1));
+
+    Json::Value jsonAccessKeyResponse(Json::objectValue);
+    jsonAccessKeyResponse["status"] = "Failure";
+    jsonAccessKeyResponse["msg"] = "Record is Inactive or Expired";
+
+    EXPECT_CALL(GetUlasProviderMock(), GetAccessKeyInfo(A<ClientInfoPtr>(), A<Utf8StringCR>()))
+        .Times(1)
+        .WillOnce(Return(ByMove(folly::makeFuture(jsonAccessKeyResponse))));
+
+    EXPECT_EQ((int)client->StartApplication(), (int)LicenseStatus::NotEntitled);
+    }
+
+TEST_F(ClientTests, WithKeyStartApplication_StopApplication_Success)
+    {
+    auto client = CreateWithKeyTestClient(GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
+
+    EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
+        .Times(1)
+        .WillOnce(Return(BentleyStatus::SUCCESS));
+
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFullWithKey(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false, TEST_ACCESSKEY);
+    auto validPolicy = Policy::Create(jsonPolicyValid);
+
+    Utf8StringCR testAccessKey = TEST_ACCESSKEY;
+
+    EXPECT_CALL(GetPolicyProviderMock(), GetPolicyWithKey(testAccessKey))
+        .Times(1)
+        .WillOnce(Return(ByMove(folly::makeFuture(validPolicy)))); // need ByMove since this calls the copy constructor for folly::Future, which is deleted
+
+    EXPECT_CALL(GetLicensingDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
+        .Times(AtLeast(1));
+
+    EXPECT_CALL(GetLicensingDbMock(), DeleteAllOtherPolicyFilesByKey(A<Utf8StringCR>(), A<Utf8StringCR>()))
+        .Times(AtLeast(1));
+
+    Json::Value jsonAccessKeyResponse(Json::objectValue);
+    jsonAccessKeyResponse["status"] = "Success";
+
+    EXPECT_CALL(GetUlasProviderMock(), GetAccessKeyInfo(A<ClientInfoPtr>(), A<Utf8StringCR>()))
+        .Times(1)
+        .WillOnce(Return(ByMove(folly::makeFuture(jsonAccessKeyResponse))));
+
+    std::list<Json::Value> validPolicyList;
+    validPolicyList.push_back(jsonPolicyValid);
+
+    EXPECT_CALL(GetLicensingDbMock(), GetPolicyFilesByKey(testAccessKey))
+        .Times(1)
+        .WillOnce(Return(validPolicyList));
+
+    EXPECT_CALL(GetLicensingDbMock(), GetOfflineGracePeriodStart())
+        .Times(1)
+        .WillOnce(Return(""));
+
+    EXPECT_CALL(GetLicensingDbMock(), Close())
+        .Times(1);
+
+    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
