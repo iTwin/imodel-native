@@ -13,9 +13,6 @@
 #include <BeSQLite/BeSQLite.h>
 #include <BeSQLite/L10N.h>
 
-using ::testing::AtLeast;
-using ::testing::Return;
-
 #define TEST_PRODUCT_ID     "2545"
 
 USING_NAMESPACE_BENTLEY_LICENSING
@@ -79,10 +76,9 @@ BuddiProviderMock& UlasProviderTests::GetMockBuddi() const {
 // this is used to use the mock url as input to the mock http client
 Utf8String UlasProviderTests::MockUlasUrl()
     {
-    Utf8String mockUrl("https://ulasmockurl.bentley.com"); // make real? shouldn't matter
-    EXPECT_CALL(GetMockBuddi(), UlasLocationBaseUrl())
-        .Times(1)
-        .WillRepeatedly(Return(mockUrl));
+    Utf8String mockUrl("https://ulasmockurl.bentley.com");
+
+    GetMockBuddi().MockUlasLocationBaseUrl(mockUrl);
 
     return mockUrl;
     }

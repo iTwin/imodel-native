@@ -402,9 +402,7 @@ TEST_F(ClientTests, StartApplicationNoHeartbeat_Success)
     std::list<Json::Value> validPolicyList;
     validPolicyList.push_back(jsonPolicyValid);
 
-    EXPECT_CALL(GetPolicyProviderMock(), GetPolicy())
-        .Times(1)
-        .WillOnce(Return(ByMove(folly::makeFuture(validPolicy)))); // need ByMove since this calls the copy constructor for folly::Future, which is deleted
+    GetPolicyProviderMock().MockGetPolicy(validPolicy);
 
     EXPECT_CALL(GetLicensingDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
         .Times(AtLeast(1));
@@ -417,6 +415,7 @@ TEST_F(ClientTests, StartApplicationNoHeartbeat_Success)
         .WillOnce(Return(validPolicyList));
 
     EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error); // not entitiled so skips the heartbeat calls
+    EXPECT_EQ(1, GetPolicyProviderMock().GetPolicyCalls());
     }
 
 TEST_F(ClientTests, StartApplicationStopApplication_Success)
@@ -435,8 +434,7 @@ TEST_F(ClientTests, StartApplicationStopApplication_Success)
     std::list<Json::Value> validPolicyList;
     validPolicyList.push_back(jsonPolicyValid);
 
-    EXPECT_CALL(GetPolicyProviderMock(), GetPolicy())
-        .WillRepeatedly(Return(ByMove(folly::makeFuture(validPolicy)))); // need ByMove since this calls the copy constructor for folly::Future, which is deleted
+    GetPolicyProviderMock().MockGetPolicy(validPolicy);
 
     EXPECT_CALL(GetLicensingDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
         .Times(AtLeast(1));
@@ -479,15 +477,14 @@ TEST_F(ClientTests, GetPolicy_Success)
     auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false);
     auto policy = Policy::Create(jsonPolicyValid);
 
-    EXPECT_CALL(GetPolicyProviderMock(), GetPolicy())
-        .Times(1)
-        .WillOnce(Return(ByMove(folly::makeFuture(policy)))); // need ByMove since this calls the copy constructor for Future, which is deleted
+    GetPolicyProviderMock().MockGetPolicy(policy);
 
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", "userId", "orgId");
     auto client = CreateTestClient(userInfo, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), GetAuthHandlerProviderMockPtr());
 
     auto policyToken = client->GetPolicy().get();
     EXPECT_NE(policyToken, nullptr); //not testing the policy token here, just that GetPolicy is called
+    EXPECT_EQ(1, GetPolicyProviderMock().GetPolicyCalls());
     }
 
 TEST_F(ClientTests, GetCertificate_Success_HttpMock)
@@ -732,13 +729,12 @@ TEST_F(ClientTests, WithKeyStartApplicationNullPolicy_Error)
         .Times(1)
         .WillOnce(Return(BentleyStatus::SUCCESS));
 
-    std::shared_ptr<Policy> nullPolicy = nullptr;
+    const std::shared_ptr<Policy> nullPolicy = nullptr;
 
-    EXPECT_CALL(GetPolicyProviderMock(), GetPolicyWithKey(A<Utf8StringCR>()))
-        .Times(1)
-        .WillOnce(Return(ByMove(folly::makeFuture(nullPolicy))));
+    GetPolicyProviderMock().MockGetPolicyWithKey(nullPolicy);
 
-    EXPECT_EQ((int)client->StartApplication(), (int)LicenseStatus::Error);
+    EXPECT_EQ((int)client->StartApplication(), static_cast<int>(LicenseStatus::Error));
+    EXPECT_EQ(1, GetPolicyProviderMock().GetPolicyWithKeyCalls());
     }
 
 TEST_F(ClientTests, WithKeyStartApplicationInvalidKey_Success)
@@ -751,14 +747,12 @@ TEST_F(ClientTests, WithKeyStartApplicationInvalidKey_Success)
 
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false);
-    auto validPolicy = Policy::Create(jsonPolicyValid);
+    const auto validPolicy = Policy::Create(jsonPolicyValid);
 
     std::list<Json::Value> validPolicyList;
     validPolicyList.push_back(jsonPolicyValid);
 
-    EXPECT_CALL(GetPolicyProviderMock(), GetPolicyWithKey(A<Utf8StringCR>()))
-        .Times(1)
-        .WillOnce(Return(ByMove(folly::makeFuture(validPolicy)))); // need ByMove since this calls the copy constructor for folly::Future, which is deleted
+    GetPolicyProviderMock().MockGetPolicyWithKey(validPolicy);
 
     EXPECT_CALL(GetLicensingDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
         .Times(AtLeast(1));
@@ -775,6 +769,7 @@ TEST_F(ClientTests, WithKeyStartApplicationInvalidKey_Success)
         .WillOnce(Return(ByMove(folly::makeFuture(jsonAccessKeyResponse))));
 
     EXPECT_EQ((int)client->StartApplication(), (int)LicenseStatus::NotEntitled);
+    EXPECT_EQ(1, GetPolicyProviderMock().GetPolicyWithKeyCalls());
     }
 
 TEST_F(ClientTests, WithKeyStartApplication_StopApplication_Success)
@@ -791,9 +786,7 @@ TEST_F(ClientTests, WithKeyStartApplication_StopApplication_Success)
 
     Utf8StringCR testAccessKey = TEST_ACCESSKEY;
 
-    EXPECT_CALL(GetPolicyProviderMock(), GetPolicyWithKey(testAccessKey))
-        .Times(1)
-        .WillOnce(Return(ByMove(folly::makeFuture(validPolicy)))); // need ByMove since this calls the copy constructor for folly::Future, which is deleted
+    GetPolicyProviderMock().MockGetPolicyWithKey(validPolicy);
 
     EXPECT_CALL(GetLicensingDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
         .Times(AtLeast(1));
@@ -824,5 +817,7 @@ TEST_F(ClientTests, WithKeyStartApplication_StopApplication_Success)
 
     EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
     EXPECT_SUCCESS(client->StopApplication());
+    EXPECT_EQ(1, GetPolicyProviderMock().GetPolicyWithKeyCalls());
     }
+
 

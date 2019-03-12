@@ -19,9 +19,9 @@ USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS
 class PolicyProviderTests : public ::testing::Test
     {
     private:
-        std::shared_ptr<MockHttpHandler>                    m_handlerMock;
+        std::shared_ptr<MockHttpHandler>                    m_httpHandlerMock;
         std::shared_ptr<BuddiProviderMock>                  m_buddiMock;
-        std::shared_ptr<AuthHandlerProviderMock>            m_authMock;
+        std::shared_ptr<AuthHandlerProviderMock>            m_authProviderMock;
         std::shared_ptr<PolicyProvider>                     m_policyProvider;
     public:
         PolicyProviderTests();
@@ -29,8 +29,11 @@ class PolicyProviderTests : public ::testing::Test
 
         PolicyProvider& GetPolicyProvider() const;
 
-        MockHttpHandler& GetMockHttp() const;
-        std::shared_ptr<MockHttpHandler> GetHandlerPtr() const;
+        MockHttpHandler& GetMockHttpHandler() const;
+        std::shared_ptr<MockHttpHandler> GetMockHttpHandlerPtr() const;
+
+        AuthHandlerProviderMock&                 GetAuthHandlerProviderMock() const;
+        std::shared_ptr<AuthHandlerProviderMock> GetAuthHandlerProviderMockPtr() const;
 
         BuddiProviderMock& GetMockBuddi() const;
         Utf8String MockEntitlementUrl();
