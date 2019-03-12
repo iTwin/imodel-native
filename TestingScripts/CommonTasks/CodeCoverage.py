@@ -89,4 +89,8 @@ class CodeCoverage:
             return False
         else:
             return True
+    def editModules(self, moduleFilter):
+        self.modules = ' --modules=' + moduleFilter
+        
+    
     
