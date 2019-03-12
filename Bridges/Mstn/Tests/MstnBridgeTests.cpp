@@ -25,6 +25,60 @@ struct MstnBridgeTests : public MstnBridgeTestsFixture
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, TestDenySchemaLock)
+    {
+    if (!UsingIModelBank())
+        {
+        fprintf(stderr, "Lock tests are supported only when using imodel-bank as the server\n.");
+        return;
+        }
+
+    auto testDir = CreateTestDir();
+
+    SetupIModelBankClient(ComputeAccessToken("user1"));                             // Identify this job with a user named "user1"
+
+    SetRulesFileInEnv setRulesFileVar(WriteRulesFile(L"testDenySchemaLock.json",    // Specify user1's permissions:
+          R"(       [                                 
+                        {                            
+                            "user": "user1",             
+                            "rules": [                   
+                                {                        
+                                    "request": "Lock/Create",
+                                    "rule": { "verb": "deny" }                        
+                                }                        
+                            ]                            
+                        }                            
+                    ]                               
+            )"));
+
+    bvector<WString> args;
+    SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY);
+    
+    BentleyApi::BeFileName inputFile;
+    MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
+
+    args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
+    args.push_back(L"--fwk-skip-assignment-check");
+
+    CreateRepository(); // This creates the iModel directory and starts the imodel-bank server
+    
+    auto bankClient = GetClientAsIModelBank();
+
+    iModelBridgeFwk fwk;
+    bvector<WCharCP> argptrs;
+    
+    MAKE_ARGC_ARGV(argptrs, args);
+
+    ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+
+    ASSERT_NE(0, fwk.Run(argc, argv)) << "Expect bridge to fail";
+
+    // TODO: Somehow verify that the failure was due to the schema lock being denied.
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)

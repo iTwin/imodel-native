@@ -14,14 +14,7 @@
 #include <BeHttp/HttpClient.h>
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #include "V8FileEditor.h"
-
-#define MAKE_ARGC_ARGV(argptrs, args)\
-for (auto& arg: args)\
-   argptrs.push_back(arg.c_str());\
-int argc = (int)argptrs.size();\
-wchar_t const** argv = argptrs.data();\
-
-BentleyApi::Dgn::IModelClientForBridges* MstnBridgeTestsFixture::s_client;
+#include <Bentley/Base64Utilities.h >
 
 static PROCESS_INFORMATION s_iModelBankProcess;
 
@@ -119,8 +112,6 @@ void MstnBridgeTestsFixture::SetUpTestCase()
     sqLangFile.AppendToPath(L"sqlang\\MstnBridgeTests_en-US.sqlang.db3");
     L10N::Initialize(BentleyApi::BeSQLite::L10N::SqlangFiles(sqLangFile));
     ScopedDgnHost host; // This statically initializes SQLite
-
-    SetupClient();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -128,7 +119,6 @@ void MstnBridgeTestsFixture::SetUpTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MstnBridgeTestsFixture::TearDownTestCase()
     {
-    StopImodelBankServer();
     BentleyApi::BeFileName::EmptyAndRemoveDirectory(GetOutputDir());
     }
 
@@ -148,8 +138,7 @@ BentleyApi::BeFileName MstnBridgeTestsFixture::GetTestDataDir()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MstnBridgeTestsFixture::MakeCopyOfFile(BentleyApi::BeFileNameR outFile, BentleyApi::WCharCP filename, BentleyApi::WCharCP suffix)
     {
-    BentleyApi::BeFileName filepath = GetTestDataDir();
-    filepath.AppendToPath(filename);
+    BentleyApi::BeFileName filepath = GetTestDataFileName(filename);
 
     outFile = GetOutputFileName(filename).GetDirectoryName();
     outFile.AppendToPath(filepath.GetFileNameWithoutExtension().c_str());
@@ -386,12 +375,12 @@ static void getInfoForAllChangeSets(BentleyApi::bvector<BentleyApi::iModel::Hub:
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t MstnBridgeTestsFixture::GetChangesetCount()
     {
-    auto testClient = dynamic_cast<BentleyApi::Dgn::TestIModelHubClientForBridges*>(&GetClient());
+    auto testClient = GetClientAsMock();
     if (nullptr != testClient)
         return testClient->GetDgnRevisions().size();
 
     BentleyApi::bvector<BentleyApi::iModel::Hub::ChangeSetInfoPtr> changesets;
-    getInfoForAllChangeSets(changesets, dynamic_cast<IModelClientBase*>(&GetClient()));
+    getInfoForAllChangeSets(changesets, GetClientAsIModelClientBase());
     return changesets.size();
     }
 
@@ -402,7 +391,7 @@ RevisionStats MstnBridgeTestsFixture::ComputeRevisionStats(BentleyApi::Dgn::DgnD
     {
     RevisionStats stats{};
 
-    auto testClient = dynamic_cast<BentleyApi::Dgn::TestIModelHubClientForBridges*>(&GetClient());
+    auto testClient = GetClientAsMock();
     if (nullptr != testClient)
         {
         for (auto rev : testClient->GetDgnRevisions(start, end))
@@ -418,7 +407,7 @@ RevisionStats MstnBridgeTestsFixture::ComputeRevisionStats(BentleyApi::Dgn::DgnD
         }
 
     BentleyApi::bvector<BentleyApi::iModel::Hub::ChangeSetInfoPtr> changesets;
-    getInfoForAllChangeSets(changesets, dynamic_cast<IModelClientBase*>(&GetClient()));
+    getInfoForAllChangeSets(changesets, GetClientAsIModelClientBase());
 
     if (end < 0 || end > changesets.size())
         end = changesets.size();
@@ -435,6 +424,31 @@ RevisionStats MstnBridgeTestsFixture::ComputeRevisionStats(BentleyApi::Dgn::DgnD
             ++stats.nDataRevs;
         }
     return stats;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::Utf8String MstnBridgeTestsFixture::ComputeAccessToken(Utf8CP uname)
+    {
+    // NB!                                                                     vv Must be no space between { and "
+    return BentleyApi::Base64Utilities::Encode(BentleyApi::Utf8PrintfString(R"({"ForeignProjectAccessToken": {"userInfo": { "id": "%s" } } })", uname));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::BeFileName MstnBridgeTestsFixture::WriteRulesFile(WCharCP fname, Utf8CP rules)
+    {
+    auto rulesFileName = GetOutputFileName(fname);
+
+    rulesFileName.BeDeleteFile();
+
+    FILE* fp = _wfopen(rulesFileName.c_str(), L"w+");
+    fputs(rules, fp);
+    fclose(fp);
+
+    return rulesFileName;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -507,41 +521,98 @@ BentleyApi::BentleyStatus MstnBridgeTestsFixture::ParseArgsFromRspFile(BentleyAp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::SetupClient()
+BentleyApi::WebServices::ClientInfoPtr MstnBridgeTestsFixture::GetClientInfo()
     {
     // TODO: Read client info from .json file on disk;
     static Utf8CP s_productId = "1654"; // Navigator Desktop
-    // MT Note: C++11 guarantees that the following line of code will be executed only once and in a thread-safe manner:
-    BentleyApi::WebServices::ClientInfoPtr clientInfo = BentleyApi::WebServices::ClientInfoPtr(
+    return BentleyApi::WebServices::ClientInfoPtr(
         new BentleyApi::WebServices::ClientInfo("Bentley-Test", BentleyApi::BeVersion(1, 0), "{41FE7A91-A984-432D-ABCF-9B860A8D5360}", "TestDeviceId", "TestSystem", s_productId, nullptr));
+    }
 
-    // TODO: Consult argv and check for --imodel-bank or --imodel-hub
-    auto imbPath = getenv("MSTN_BRIDGE_TESTS_IMODEL_BANK_SERVER_JS");
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void MstnBridgeTestsFixture::SetupIModelBankClient(BentleyApi::Utf8StringCR accessToken)
+    {
+    BeAssert(nullptr != getenv("MSTN_BRIDGE_TESTS_IMODEL_BANK_SERVER_JS"));
+
     BentleyApi::bvector<BentleyApi::WString> strings;
     BentleyApi::bvector<BentleyApi::WCharCP> ptrs;
     BentleyApi::bvector<WCharCP> bargptrs;
+    BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->trace("Using IModelBankClient");
+    ASSERT_EQ(BSISUCCESS, ParseArgsFromRspFile(strings, ptrs, ReadRspFile(L"imodel-bank.rsp")));
+    iModelBridgeFwk::IModelBankArgs imbArgs;
+    ASSERT_EQ(BSISUCCESS, imbArgs.ParseCommandLine(bargptrs, (int)ptrs.size(), &ptrs.front()));
+    ASSERT_EQ(0, bargptrs.size());
+
+    if (!accessToken.empty())
+        imbArgs.m_accessToken = accessToken;
+
+    m_client = new IModelBankClient(imbArgs, GetClientInfo());
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting(*m_client);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void MstnBridgeTestsFixture::SetupIModelHubClient()
+    {
+
+    BentleyApi::bvector<BentleyApi::WString> strings;
+    BentleyApi::bvector<BentleyApi::WCharCP> ptrs;
+    BentleyApi::bvector<WCharCP> bargptrs;
+
+    BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->trace("Using IModelHubClient");
+    ASSERT_EQ(BSISUCCESS, ParseArgsFromRspFile(strings, ptrs, ReadRspFile(L"imodel-hub.rsp")));
+    iModelBridgeFwk::IModelHubArgs imhArgs;
+    ASSERT_EQ(BSISUCCESS, imhArgs.ParseCommandLine(bargptrs, (int)ptrs.size(), &ptrs.front()));
+    ASSERT_EQ(0, bargptrs.size());
+
+    m_client = new IModelHubClient(imhArgs, GetClientInfo());
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting(*m_client);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void MstnBridgeTestsFixture::SetupMockClient()
+    {
+    BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->trace("Using TestIModelHubClientForBridges");
+    m_client = new TestIModelHubClientForBridges(GetOutputDir());
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting(*m_client);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void MstnBridgeTestsFixture::SetupClient()
+    {
+    // TODO: Consult argv and check for --imodel-bank or --imodel-hub
+    auto imbPath = getenv("MSTN_BRIDGE_TESTS_IMODEL_BANK_SERVER_JS");
     if (imbPath != nullptr)
         {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->trace("Using IModelBankClient");
-        ASSERT_EQ(BSISUCCESS, ParseArgsFromRspFile(strings, ptrs, ReadRspFile(L"imodel-bank.rsp")));
-        iModelBridgeFwk::IModelBankArgs imbArgs;
-        ASSERT_EQ(BSISUCCESS, imbArgs.ParseCommandLine(bargptrs, (int)ptrs.size(), &ptrs.front()));
-        ASSERT_EQ(0, bargptrs.size());
-        s_client = new IModelBankClient(imbArgs, clientInfo);
+        SetupIModelBankClient("");
         }
     else if (getenv("MSTN_BRIDGE_TESTS_IMODEL_HUB"))
         {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->trace("Using IModelHubClient");
-        iModelBridgeFwk::IModelHubArgs args;
-        s_client = new IModelHubClient(args, clientInfo);
+        SetupIModelHubClient();
         }
     else
         {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->trace("Using TestIModelHubClientForBridges");
-        s_client = new TestIModelHubClientForBridges(GetOutputDir());
+        SetupMockClient();
         }
+    }
 
-    iModelBridgeFwk::SetIModelClientForBridgesForTesting(*s_client);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+MstnBridgeTestsFixture::~MstnBridgeTestsFixture()
+    {
+    if (UsingIModelBank())
+        StopImodelBankServer();
+
+    delete m_client;
+    m_client = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -562,7 +633,7 @@ void MstnBridgeTestsFixture::StopImodelBankServer()
     WaitForSingleObject (s_iModelBankProcess.hProcess, 5000);   // Wait for the subprocess to end
     SetConsoleCtrlHandler(nullptr, false);                      // This process can go back to handling Ctrl-C events
 #else
-    auto bankClient = dynamic_cast<BentleyApi::Dgn::IModelBankClient*>(&GetClient());
+    auto bankClient = GetClientAsIModelBank();
     ASSERT_EQ(BSISUCCESS, bankClient->Shutdown());
 
     WaitForSingleObject (s_iModelBankProcess.hProcess, 5000);
@@ -581,9 +652,7 @@ void MstnBridgeTestsFixture::StopImodelBankServer()
 void MstnBridgeTestsFixture::StartImodelBankServer(BentleyApi::BeFileNameCR imodelDir)
     {
     // Run the imodel-bank server, telling it the imodel directory
-    BentleyApi::BeFileName runbatfile = GetTestDataDir();
-    runbatfile.AppendToPath(L"runImodelBankServer.bat");
-    WString runbatcmd = runbatfile;
+    WString runbatcmd = GetTestDataFileName(L"runImodelBankServer.bat");
     runbatcmd.append(L" ").append(imodelDir.c_str());
 
     STARTUPINFOW si;
@@ -646,7 +715,7 @@ void MstnBridgeTestsFixture::CreateRepository(Utf8CP repoName)
         return;
         }
 
-    auto hubClient = dynamic_cast<IModelHubClientForBridges*>(&GetClient());        // mock or real iModelHubClient
+    auto hubClient = GetClientAsIModelHubClientForBridges();        // mock or real iModelHubClient
     if (nullptr != hubClient)
         {
         ScopedDgnHost host;

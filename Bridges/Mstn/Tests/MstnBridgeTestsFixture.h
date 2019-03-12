@@ -11,6 +11,7 @@
 #include <DgnPlatform/DgnDb.h>
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include <iModelBridge/IModelClientForBridges.h>
+#include <iModelBridge/TestIModelHubClientForBridges.h>
 #include <WebServices/iModelHub/Client/Client.h>
 
 struct RevisionStats
@@ -24,6 +25,36 @@ struct RevisionStats
 #define DEFAULT_IMODEL_NAME  L"iModelBridgeTests_Test1"
 #define DEFAULT_IMODEL_NAME_A "iModelBridgeTests_Test1"
 
+#define MAKE_ARGC_ARGV(argptrs, args)\
+for (auto& arg: args)\
+   argptrs.push_back(arg.c_str());\
+int argc = (int)argptrs.size();\
+wchar_t const** argv = argptrs.data();\
+
+//=======================================================================================
+// @bsistruct                              
+//=======================================================================================
+struct ScopedEnvvar
+    {
+    Utf8String m_var;
+    ScopedEnvvar(BentleyApi::Utf8CP var, BentleyApi::Utf8StringCR value) : m_var(var)
+        {
+        putenv(BentleyApi::Utf8PrintfString("%s=%s", var, value.c_str()).c_str());
+        }
+    ~ScopedEnvvar()
+        {
+        putenv(BentleyApi::Utf8PrintfString("%s=", m_var.c_str()).c_str());
+        }
+    };
+
+//=======================================================================================
+// @bsistruct                              
+//=======================================================================================
+struct SetRulesFileInEnv : ScopedEnvvar
+    {
+    SetRulesFileInEnv(BentleyApi::BeFileNameCR fn) : ScopedEnvvar("IMODEL-BANK-RULES-FILE", BentleyApi::Utf8String(fn)) {}
+    };
+
 //=======================================================================================
 // @bsistruct                              
 //=======================================================================================
@@ -31,30 +62,49 @@ struct MstnBridgeTestsFixture : ::testing::Test
     {
     protected:
     BentleyApi::BeFileName m_briefcaseName;
-    static BentleyApi::Dgn::IModelClientForBridges* s_client;
-    static void SetupClient(); // Called by SetUpTestCase. Sets the above member variables, based on a command-line argument
-    static void StopImodelBankServer();
-    static BentleyApi::BeFileName CreateImodelBankRepository(BentleyApi::BeFileNameCR seedFile);
-    static void StartImodelBankServer(BentleyApi::BeFileNameCR imodelDir);
+    BentleyApi::Dgn::IModelClientForBridges* m_client;
+    void SetupClient(); // Called by SetUpTestCase. Sets the above member variables, based on a command-line argument
+    void SetupMockClient();
+    void SetupIModelHubClient();
+    void SetupIModelBankClient(BentleyApi::Utf8StringCR accessToken);
 
+    void StartImodelBankServer(BentleyApi::BeFileNameCR imodelDir);
+    void StopImodelBankServer();
+    
+    static BentleyApi::WebServices::ClientInfoPtr GetClientInfo();
+    static BentleyApi::BeFileName CreateImodelBankRepository(BentleyApi::BeFileNameCR seedFile);
     static BentleyApi::BeFileName CreateTestDir(WCharCP testDir = nullptr);
 
-    static BentleyApi::Dgn::IModelClientForBridges& GetClient() {return *s_client;}
+    BentleyApi::Dgn::IModelClientForBridges& GetClient() {return *m_client;}
 
-    static bool UsingIModelBank() {return nullptr != dynamic_cast<BentleyApi::Dgn::IModelBankClient*>(s_client);}
-    static bool UsingIModelHub()  {return nullptr != dynamic_cast<BentleyApi::Dgn::IModelHubClient*>(s_client);}
-    static bool UsingMockServer() {return !UsingIModelBank() && !UsingIModelHub();}
+    BentleyApi::Dgn::IModelHubClientForBridges* GetClientAsIModelHubClientForBridges() {return dynamic_cast<BentleyApi::Dgn::IModelHubClientForBridges*>(m_client);}
+    BentleyApi::Dgn::IModelClientBase* GetClientAsIModelClientBase() {return dynamic_cast<BentleyApi::Dgn::IModelClientBase*>(m_client);}
+    BentleyApi::Dgn::IModelBankClient* GetClientAsIModelBank() {return dynamic_cast<BentleyApi::Dgn::IModelBankClient*>(m_client);}
+    BentleyApi::Dgn::IModelHubClient*  GetClientAsIModelHub()  {return dynamic_cast<BentleyApi::Dgn::IModelHubClient*>(m_client);}
+    BentleyApi::Dgn::TestIModelHubClientForBridges* GetClientAsMock() {return dynamic_cast<BentleyApi::Dgn::TestIModelHubClientForBridges*>(m_client);}
 
-    static RevisionStats ComputeRevisionStats(BentleyApi::Dgn::DgnDbR db, size_t start = 0, size_t end = -1);
+    bool UsingIModelBank() {return nullptr != GetClientAsIModelBank();}
+    bool UsingIModelHub()  {return nullptr != GetClientAsIModelHub();}
+    bool UsingMockServer() {return nullptr != GetClientAsMock();}
 
-    static size_t GetChangesetCount();
+    RevisionStats ComputeRevisionStats(BentleyApi::Dgn::DgnDbR db, size_t start = 0, size_t end = -1);
 
-    static void MstnBridgeTestsFixture::CreateRepository(Utf8CP repoName = nullptr);
+    size_t GetChangesetCount();
+
+    void MstnBridgeTestsFixture::CreateRepository(Utf8CP repoName = nullptr);
 
     static BentleyApi::WString ReadRspFile(BentleyApi::WCharCP fn);
     static BentleyApi::BentleyStatus ParseArgsFromRspFile(BentleyApi::bvector<BentleyApi::WString>& strings, BentleyApi::bvector<BentleyApi::WCharCP>& ptrs, BentleyApi::WStringCR fn);
 
     static BentleyApi::BeFileName GetTestDataDir();
+
+    static BentleyApi::BeFileName GetTestDataFileName(WCharCP baseName) { auto fn = GetTestDataDir(); fn.AppendToPath(baseName); return fn; }
+
+    static BentleyApi::BeFileName WriteRulesFile(WCharCP fname, Utf8CP rules);
+    static BentleyApi::Utf8String ComputeAccessToken(Utf8CP uname);
+
+    MstnBridgeTestsFixture() : m_client(nullptr) { SetupClient(); }
+    ~MstnBridgeTestsFixture();
 
     public:
     static BentleyApi::BeFileName GetOutputDir();
