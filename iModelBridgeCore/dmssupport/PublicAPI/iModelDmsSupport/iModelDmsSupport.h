@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelDmsSupport/iModelDmsSupport.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -41,8 +41,9 @@ struct IDmsSupport
     virtual bool _UnInitializeSession() = 0;
     virtual bool _Initialize() = 0;
     virtual bool _UnInitialize() = 0;
-    virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pWMoniker, BeFileNameCR workspaceDir, bool isv8i) = 0;
-    virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR workspaceDir, bool isv8i) = 0;
+    virtual bool _StageInputFile(BeFileNameCR fileLocation) = 0;
+    virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pWMoniker, BeFileNameCR workspaceDir, bool isv8i, bvector<WString> const& additonalFilePatterns) = 0;
+    virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR workspaceDir, bool isv8i, bvector<WString> const& additonalFilePatterns) = 0;
     virtual void SetApplicationResourcePath(BeFileNameCR applicationResourcePath) = 0;
     virtual Bentley::DgnPlatform::DgnDocumentManager* _GetDgnDocumentManager() = 0;
     };
@@ -54,8 +55,9 @@ struct iModelDmsSupport
     {
     enum SessionType
         {
-        PWDI = 0,
-        PWShare = 1
+        PWDI = 1,
+        PWShare = 2,
+        AzureBlobStorage = 3,
         };
 
     IMODEL_DMSSUPPORT_EXPORT static IDmsSupport* GetInstance(SessionType sessionType, Utf8StringCR userName, Utf8StringCR password);
