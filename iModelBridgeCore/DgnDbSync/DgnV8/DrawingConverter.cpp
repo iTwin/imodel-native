@@ -1482,7 +1482,7 @@ bool Converter::DetectDeletedExtractionGraphics(ResolvedModelMapping const& root
         pathsToIgnore.insert(ComputeV8AttachmentIdPath(*attachmentUnchanged));
         }
 
-    auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT Identifier, Element.Id FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE ((Scope.Id = ?) AND (Kind=?))");
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT Identifier, Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE ((Scope.Id = ?) AND (Kind=?))");
     stmt->BindId(1, rootParentModel.GetDgnModel().GetModelId());
     stmt->BindText(2, SyncInfo::ExternalSourceAspect::Kind::ProxyGraphic, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
 
@@ -1517,7 +1517,7 @@ bool Converter::DetectDeletedExtractionGraphics(ResolvedModelMapping const& root
 bool Converter::DetectedDeletedExtractionGraphicsCategories(DgnModelR proxyGraphicScope, Utf8StringCR sectionedV8ElementPath, DgnCategoryIdSet const& seenCategories)
     {
     auto stmt = GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT dg.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GraphicalElement2d) " dg, " XTRN_SRC_ASPCT_FULLCLASSNAME " x"
+        "SELECT dg.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_GraphicalElement2d) " dg, " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " x"
         " WHERE x.Element.Id=dg.ECInstanceId AND x.Scope.Id=? AND x.Kind='ProxyGraphic' AND x.Identifier=? AND NOT InVirtualSet(?, dg.Category.Id)");
     int col=1;
     stmt->BindId(col++, proxyGraphicScope.GetModelId());

@@ -204,7 +204,7 @@ void ConverterApp::GetImportConfiguration(BeFileNameR instanceFilePath, BeFileNa
         instanceFilePath.AppendToPath(L"ImportConfig.xml");
         }
 
-    fwprintf(stdout, L"Configuration file <%ls>\n", instanceFilePath.GetName());
+    // fwprintf(stdout, L"Configuration file <%ls>\n", instanceFilePath.GetName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -604,8 +604,6 @@ BentleyStatus RootModelConverterApp::_DetectDeletedDocuments()
 BentleyStatus ConverterApp::Run(int argc, WCharCP argv[])
     {
     iModelBridgeSacAdapter::InitCrt(false);
-
-    _GetConverterParams().SetWantProvenanceInBim(true);
 
     iModelBridgeSacAdapter::Params saparams;
     if (BentleyStatus::SUCCESS != iModelBridgeSacAdapter::ParseCommandLine(*this, saparams, argc, argv))

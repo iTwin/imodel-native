@@ -220,25 +220,6 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
 
     SetRepositoryLinkInAppData(file, RepositoryLinkId(rlinkPost->GetElementId().GetValue()));
 
-#ifdef WIP_OLD_MODEL_PROVENANCE
-    if (_WantModelProvenanceInBim())
-        {
-        BeSQLite::BeGuid guid = GetDocumentGUIDforFile(file);
-        if (guid.IsValid())
-            {
-            if (BSISUCCESS != DgnV8FileProvenance::Find(nullptr, nullptr, guid, GetDgnDb()))
-                {
-                LOG.infov("DgnV8FileProvenance::Insert %s (%s)", Bentley::Utf8String(file.GetFileName()).c_str(), guid.ToString().c_str());
-                DgnV8FileProvenance::Insert(guid, xsa.GetFileName(), xsa.GetIdentifier(), GetDgnDb());
-                }
-            else
-                {
-                LOG.infov("DgnV8FileProvenance already has %s (%s)", Bentley::Utf8String(file.GetFileName()).c_str(), guid.ToString().c_str());
-                }
-            }
-        }
-#endif
-
 #ifndef NDEBUG
     {
     // iModelExternalSourceAspect::Dump(*rlinkPost, nullptr, NativeLogging::SEVERITY::LOG_DEBUG);
@@ -2278,13 +2259,26 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
 
         if (ecContent.m_v8ElementType == V8ElementType::NamedGroup)
             OnNamedGroupConverted(v8eh, results.m_element->GetElementClassId());
+        rapidjson::Document propsData(rapidjson::kObjectType);
+        if (!results.m_jsonProps.empty())
+            propsData.Parse(results.m_jsonProps.c_str());
+        propsData.AddMember("PrimaryInstance", rapidjson::Value(Utf8String(ecContent.m_primaryV8Instance->GetInstanceId().c_str()).c_str(), propsData.GetAllocator()), propsData.GetAllocator());
+        rapidjson::StringBuffer buffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+        propsData.Accept(writer);
+        results.m_jsonProps = buffer.GetString();
         }
     //item or aspects only if there was an ECInstance on the element at all
     if (hasSecondaryInstances)
         {
         if (nullptr == m_elementAspectConverter)
             m_elementAspectConverter = new ElementAspectConverter(*this);
-        if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(results, ecContent.m_secondaryV8Instances))
+
+        IChangeDetector::SearchResults changeInfo;
+        if (!isNewElement)
+            GetChangeDetector()._IsElementChanged(changeInfo, *this, v8eh, v8mm);
+
+        if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(&changeInfo.m_v8ElementAspect, results, ecContent.m_secondaryV8Instances))
             return BSIERROR;
         }
 
@@ -2484,6 +2478,18 @@ void Converter::AnnounceConversionResults(ElementConversionResults& results, Dgn
     if (results.m_v8PrimaryInstance.IsValid())
         ECInstanceInfo::Insert(GetDgnDb(), fileId, results.m_v8PrimaryInstance, bisElementKey, true);
 
+    auto sourceId = SyncInfo::V8ElementExternalSourceAspect::FormatSourceId(v8eh.GetElementId());
+    SyncInfo::V8ElementExternalSourceAspect aspect = SyncInfo::V8ElementExternalSourceAspect::GetAspectForEdit(element, sourceId);
+
+    rapidjson::Document propData = aspect.GetProperties();
+    auto& allocator = propData.GetAllocator();
+    if (!results.m_v8SecondaryInstanceMappings.empty() && !propData.HasMember("SecondaryInstances"))
+        {
+        rapidjson::Value tmp;
+        tmp.SetObject();
+        propData.AddMember("SecondaryInstances", tmp, allocator);
+        }
+
     for (bpair<V8ECInstanceKey,BECN::IECInstancePtr> const& v8SecondaryInstanceMapping : results.m_v8SecondaryInstanceMappings)
         {
         BECN::IECInstanceCR aspect = *v8SecondaryInstanceMapping.second;
@@ -2495,6 +2501,9 @@ void Converter::AnnounceConversionResults(ElementConversionResults& results, Dgn
             }
 
         ECInstanceInfo::Insert(GetDgnDb(), fileId, v8SecondaryInstanceMapping.first, BeSQLite::EC::ECInstanceKey(aspect.GetClass().GetId(), aspectId), false);
+        auto& secondary = propData["SecondaryInstances"];
+        if (!secondary.HasMember(v8SecondaryInstanceMapping.first.GetInstanceId()))
+            secondary.AddMember(rapidjson::StringRef(v8SecondaryInstanceMapping.first.GetInstanceId()), rapidjson::Value(aspectId.GetValue()), allocator);
         }
 
     for (ElementConversionResults& child : results.m_childElements)
@@ -2506,6 +2515,11 @@ void Converter::AnnounceConversionResults(ElementConversionResults& results, Dgn
     if (isParentElement)
         m_linkConverter->ConvertLinksOnElement(&v8eh, elementId, changeOperation);
 
+    if (!results.m_v8SecondaryInstanceMappings.empty())
+        {
+        aspect.SetProperties(propData);
+        element.Update();
+        }
     _OnElementConverted(elementId, &v8eh, changeOperation);
     }
 
@@ -3229,25 +3243,6 @@ ResolvedModelMapping RootModelConverter::_GetResolvedModelMapping(DgnV8ModelRefC
         return ResolvedModelMapping();
         }
 
-#ifdef WIP_OLD_MODEL_PROVENANCE
-    if (_WantModelProvenanceInBim())
-        {
-        DgnV8FileP file = v8Model.GetDgnFileP();
-        BeSQLite::BeGuid guid = GetDocumentGUIDforFile(*file);
-
-        if (guid.IsValid() && BSISUCCESS == DgnV8FileProvenance::Find(nullptr, nullptr, guid, GetDgnDb()))
-            {
-            LOG.infov("DgnV8FileProvenance has %s (%s)", Bentley::Utf8String(file->GetFileName()).c_str(), guid.ToString().c_str());
-            DgnV8ModelProvenance::ModelProvenanceEntry entry;
-            entry.m_dgnv8ModelId = v8ModelRef->GetModelId();
-            entry.m_modelId = modelId;
-            entry.m_modelName = newModelName;
-            entry.m_trans = trans;
-            DgnV8ModelProvenance::Insert(guid, entry, GetDgnDb());
-            }
-        }
-#endif
-
     DgnModelPtr model = m_dgndb->Models().GetModel(modelId);
     if (!model.IsValid())
         {
@@ -3620,7 +3615,6 @@ void ConverterLibrary::SetRootModelAndSubject(DgnV8ModelR rootV8Model, SubjectCR
     m_rootModelRef = &rootV8Model;
     m_rootFile = rootV8Model.GetDgnFileP();
 
-    CreateProvenanceTables(); // WIP_EXTERNAL_SOURCE_INFO - stop using so-called model provenance
     GetRepositoryLinkId(*m_rootFile);
     FindSpatialV8Models(*GetRootModelP());
     FindV8DrawingsAndSheets();
@@ -3811,19 +3805,12 @@ bool            Converter::IsTransformEqualWithTolerance(TransformCR lhs, Transf
 void Converter::CheckForAndSaveChanges()
     {
     m_hadAnyChanges |= m_dgndb->Txns().HasChanges();
-    iModelBridge::SaveChanges(*m_dgndb);
+    if (BSISUCCESS != iModelBridge::SaveChanges(*m_dgndb))
+        {
+        OnFatalError(IssueCategory::DiskIO(), Issue::Error(), "CheckForAndSaveChanges failed.");
+        }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Converter::_WantModelProvenanceInBim()
-    {
-    if (m_dgndb.IsNull())
-        return false;
-
-    return iModelBridge::WantModelProvenanceInBim(*m_dgndb);
-    }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
 

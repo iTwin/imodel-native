@@ -292,7 +292,7 @@ DgnElementId SyncInfo::ProxyGraphicExternalSourceAspect::FindDrawingGraphic (Dgn
     {
     auto drawingGraphicClass = db.Schemas().GetClass(drawingGraphicClassId);
     Utf8PrintfString ecsql(
-        "SELECT dg.ECInstanceId FROM %s dg, " XTRN_SRC_ASPCT_FULLCLASSNAME " x"
+        "SELECT dg.ECInstanceId FROM %s dg, " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " x"
         " WHERE x.Scope.Id=? AND dg.Category.Id=? AND x.Element.Id=dg.ECInstanceId AND x.Kind='ProxyGraphic' AND x.Identifier=?",
         drawingGraphicClass? drawingGraphicClass->GetFullName(): BIS_SCHEMA(BIS_CLASS_DrawingGraphic));
     auto stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
@@ -329,7 +329,7 @@ BentleyStatus SyncInfo::LevelExternalSourceAspect::FindFirstSubCategory(DgnSubCa
     extract. That returns an array of values, formatting as JSON text. That's why we have to bind a text value to match it.
     */
     auto aspectStmt = converter.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT x.Element.Id, x.JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " x "
+        "SELECT x.Element.Id, x.JsonProperties FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " x "
         " WHERE (x.Scope.Id=? AND x.Kind=? AND x.Identifier=? AND json_extract(x.JsonProperties, '$.v8ModelId', '$.levelType') = ?)");
     aspectStmt->BindId(1, repositoryLinkId);
     aspectStmt->BindText(2, Kind::Level, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
@@ -414,7 +414,7 @@ SyncInfo::LevelExternalSourceAspect SyncInfo::InsertLevel(DgnSubCategoryId subca
 SyncInfo::LevelExternalSourceAspect SyncInfo::LevelExternalSourceAspect::FindAspectByV8Model(DgnSubCategoryCR el, DgnV8ModelCR v8Model)
     {
     auto stmt = el.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT ECInstanceId, JsonProperties FROM " XTRN_SRC_ASPCT_FULLCLASSNAME
+        "SELECT ECInstanceId, JsonProperties FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect)
         " WHERE (Element.Id=? AND Kind=? AND json_extract(JsonProperties, '$.v8ModelId') = ?)");
     stmt->BindId(1, el.GetElementId());
     stmt->BindText(2, Kind::Level, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
@@ -504,7 +504,7 @@ DgnCategoryId SyncInfo::GetCategory(DgnV8EhCR v8Eh, ResolvedModelMapping const& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::EC::ECInstanceId SyncInfo::GetSoleAspectIdByKind(DgnElementCR el, Utf8CP kind)
     {
-    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind=?)");
+    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE (Element.Id=? AND Kind=?)");
     sel->BindId(1, el.GetElementId());
     sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     if (BE_SQLITE_ROW != sel->Step())
@@ -519,7 +519,7 @@ BeSQLite::EC::ECInstanceId SyncInfo::GetSoleAspectIdByKind(DgnElementCR el, Utf8
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<BeSQLite::EC::ECInstanceId> SyncInfo::GetExternalSourceAspectIds(DgnElementCR el, Utf8CP kind, Utf8StringCR sourceId)
     {
-    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Element.Id=? AND Kind=? AND Identifier=?)");
+    auto sel = el.GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE (Element.Id=? AND Kind=? AND Identifier=?)");
     sel->BindId(1, el.GetElementId());
     sel->BindText(2, kind, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     sel->BindText(3, sourceId.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
@@ -664,7 +664,7 @@ std::tuple<DgnElementCPtr, SyncInfo::V8ModelExternalSourceAspect> SyncInfo::V8Mo
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::V8ModelExternalSourceAspect SyncInfo::V8ModelExternalSourceAspect::GetAspectByAspectId(DgnDbR db, BeSQLite::EC::ECInstanceId aspectId)
     {
-    auto stmt = db.GetPreparedECSqlStatement("SELECT Element.Id FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (ECInstanceId=?)");
+    auto stmt = db.GetPreparedECSqlStatement("SELECT Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE (ECInstanceId=?)");
     stmt->BindId(1, aspectId);
     if (BE_SQLITE_ROW != stmt->Step())
         {
@@ -995,7 +995,7 @@ std::tuple<SyncInfo::ViewDefinitionExternalSourceAspect,DgnViewId> SyncInfo::Vie
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::EC::CachedECSqlStatementPtr SyncInfo::ViewDefinitionExternalSourceAspect::GetIteratorForScope(DgnDbR db, DgnElementId scope)
     {
-    auto stmt = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Scope.Id=? AND Kind=?)");
+    auto stmt = db.GetPreparedECSqlStatement("SELECT Element.Id, ECInstanceId from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE (Scope.Id=? AND Kind=?)");
     stmt->BindId(1, scope);
     stmt->BindText(2, Kind::ViewDefinition, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     return stmt;
@@ -1015,7 +1015,7 @@ BeSQLite::DbResult SyncInfo::InsertSchema(BentleyApi::ECN::ECSchemaId& insertedS
     jsonObj["checksum"] = checksum;
     jsonObj["isDynamic"] = isDynamic;
     BeSQLite::DbResult result;
-    if (BeSQLite::DbResult::BE_SQLITE_OK != (result = m_dgndb->SavePropertyString(DgnV8Schema::V8Info(schemaName.c_str()), jsonObj.ToString(), repositoryId.GetValue())))
+    if (BeSQLite::DbResult::BE_SQLITE_OK != (result = m_dgndb->SavePropertyString(DgnV8Info::V8Schema(schemaName.c_str()), jsonObj.ToString(), repositoryId.GetValue())))
         return result;
     insertedSchemaId = BECN::ECSchemaId((uint64_t) m_dgndb->GetLastInsertRowId());
     return BE_SQLITE_OK;
@@ -1258,7 +1258,7 @@ bool SyncInfo::FileHasChangedUriContent(RepositoryLinkId repositoryLinkId)
     if (!repositoryLinkId.IsValid())
         return false;
 
-    auto stmt = GetDgnDb()->GetPreparedECSqlStatement("SELECT Element.Id FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE Scope.Id=? AND Kind=?");
+    auto stmt = GetDgnDb()->GetPreparedECSqlStatement("SELECT Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE Scope.Id=? AND Kind=?");
     stmt->BindId(1, repositoryLinkId);
     stmt->BindText(2, UriExternalSourceAspect::Kind::URI, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
 

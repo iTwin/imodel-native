@@ -15,7 +15,6 @@ using namespace BECN;
 //****************************************************************************************
 // BisClassConverter
 //****************************************************************************************
-#define DGNDBSYNCV8_ECSCHEMA_NAME "DgnDbSyncV8"
 #define CUSTOMCLASSMAP_CLASSNAME "ClassMap"
 
 //---------------------------------------------------------------------------------------
@@ -166,7 +165,7 @@ BentleyStatus BisClassConverter::EnsureBaseClassesAndDerivedClassesAreSet(Schema
         {
         BECN::ECSchemaP schema = kvpair.second;
         //only interested in the domain schemas, so skip standard, system and supp schemas
-        if (context.ExcludeSchemaFromBisification(*schema))
+        if (DynamicSchemaGenerator::ExcludeSchemaFromBisification(*schema))
             continue;
 
         if (schema->GetAlias().empty())
@@ -208,7 +207,7 @@ BentleyStatus BisClassConverter::PreprocessConversion(SchemaConversionContext& c
         {
         BECN::ECSchemaP schema = kvpair.second;
         //only interested in the domain schemas, so skip standard, system and supp schemas
-        if (context.ExcludeSchemaFromBisification(*schema))
+        if (DynamicSchemaGenerator::ExcludeSchemaFromBisification(*schema))
             continue;
 
         if (schema->GetAlias().empty())
@@ -1328,7 +1327,7 @@ BentleyStatus BisClassConverter::ValidateClassProperties(SchemaConversionContext
             //which is included in the input schema list and which is not a standard/system/supp schema
             BECN::ECSchemaCR structSchema = structType->GetSchema();
             bmap<Utf8String, BECN::ECSchemaP> const& inputSchemas = context.GetSchemas();
-            if (context.ExcludeSchemaFromBisification(structSchema) ||
+            if (DynamicSchemaGenerator::ExcludeSchemaFromBisification(structSchema) ||
                 inputSchemas.find(structSchema.GetName()) == inputSchemas.end())
                 continue;
 
@@ -1678,29 +1677,6 @@ BisClassConverter::SchemaConversionContext::ElementAspectDefinition const* BisCl
 
     BeAssert(m_aspectMappings[index].first == &inputClass);
     return &m_aspectMappings[index].second;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     12/2015
-//---------------------------------------------------------------------------------------
-//static
-bool BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(ECN::ECSchemaCR schema)
-    {
-    return schema.IsStandardSchema() || schema.IsSystemSchema() || schema.IsSupplementalSchema() ||
-        schema.GetName().EqualsI(DGNDBSYNCV8_ECSCHEMA_NAME) || schema.GetName().EqualsI(BIS_ECSCHEMA_NAME) || 
-        schema.GetName().EqualsIAscii("Generic") || schema.GetName().EqualsIAscii("Functional") || 
-        schema.GetName().StartsWithI("ecdb") || schema.GetName().EqualsIAscii("ECv3ConversionAttributes");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            04/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-bool BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(Utf8StringCR schemaName)
-    {
-    return ECN::ECSchema::IsStandardSchema(schemaName) ||
-        schemaName.EqualsI(DGNDBSYNCV8_ECSCHEMA_NAME) || schemaName.EqualsI(BIS_ECSCHEMA_NAME) ||
-        schemaName.EqualsIAscii("Generic") || schemaName.EqualsIAscii("Functional") ||
-        schemaName.StartsWithI("ecdb") || schemaName.EqualsIAscii("ECv3ConversionAttributes");
     }
 
 //---------------------------------------------------------------------------------------

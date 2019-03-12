@@ -7,6 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
 #include <iModelBridge/iModelBridgeSacAdapter.h>
+#include <Bentley/BeTimeUtilities.h>
+#include <iModelBridge/iModelBridge.h>
+
 //----------------------------------------------------------------------------------------
 // @bsiclass                                    Umar.Hayat                      08/15
 //----------------------------------------------------------------------------------------
@@ -724,6 +727,7 @@ TEST_F(ConverterTests, GCSMultiFilesReprojectImport)
 TEST_F(ConverterTests, GCSMultiFilesGCSTransformNoScale)
     {
     m_noGcs       = true;
+    m_wantCleanUp = false;
 
     // Note: The root model is converted to a BIM Spatial model because it has a GCS, which the converter treats as evidence that it is not a drawing model, even though it is 2D.
 
@@ -1139,6 +1143,171 @@ TEST_F(ConverterTests, CommonReferences)
         ASSERT_EQ(1, getModelsByName(*db, s_master2Name).size());
         ASSERT_EQ(1, getModelsByName(*db, s_refName).size()) << "Since both master files reference the same ref3d, there should be only one copy of ref3d in the iModel";
         }
+    }
+
+//========================================================================================
+// @bsiclass                                    Sam.Wilson          11/17
+//========================================================================================
+struct ExternalSourceAspectTests : ConverterTests
+    {
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ExternalSourceAspectTests, Performance)
+    {
+    LineUpFiles(L"ExternalSourceAspectTests_Performance.bim", L"Test3d.dgn", false);
+    
+    static constexpr int s_insertElementCount = 1000;
+    static constexpr int s_insertAspectCount = 1000;
+    static constexpr int s_otherElementCount = 0;
+    static constexpr int s_selectRepeatCount = 100000;
+
+    DgnV8Api::ElementId lastElementsId = 0;
+    DgnV8Api::ModelId theModelId = 0;
+    if (true)
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        for (int i=0; i<s_insertElementCount; ++i)
+            {
+            v8editor.AddLine(&lastElementsId, v8editor.m_defaultModel, Bentley::DPoint3d::From(0,0,0));
+            }
+        v8editor.Save();
+
+        theModelId = v8editor.m_defaultModel->GetModelId();
+        }
+
+    if (true)
+        {
+        BentleyApi::StopWatch timer(true);
+        DoConvert(m_dgnDbFileName, m_v8FileName);
+        timer.Stop();
+        printf("ExternalSourceAspectTests.Performance convert = %lf\n", timer.GetElapsedSeconds());
+        }
+
+    DgnModelId modelId;
+    if (true)
+        {
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+
+        auto repositoryLink = FindRepositoryLinkByFilename(*db, m_v8FileName);
+        SyncInfo::V8ModelExternalSourceAspectIteratorByV8Id models(*repositoryLink, theModelId);
+        auto it = models.begin();
+        ASSERT_TRUE(it != models.end());
+        modelId = it->GetModelId();
+
+        if (true)
+            {
+            EC::ECSqlStatement totalCountStmt;
+            ASSERT_EQ(EC::ECSqlStatus::Success, totalCountStmt.Prepare(*db, "select count(*) from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " where (kind='Element' AND scope.id=?)"));
+            totalCountStmt.BindId(1, modelId);
+            BentleyApi::StopWatch timer(true);
+            ASSERT_EQ(BE_SQLITE_ROW, totalCountStmt.Step());
+            ASSERT_EQ(s_insertElementCount + s_otherElementCount, totalCountStmt.GetValueInt(0));
+            timer.Stop();
+            printf("ImodelJsTest.MeasureInsertPerformance select kind=Element and scope 1 time = %lf\n", timer.GetElapsedSeconds());
+            }
+
+        if (true)
+            {
+            EC::ECSqlStatement stmt;
+            ASSERT_EQ(EC::ECSqlStatus::Success, stmt.Prepare(*db, "select * from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " where (kind='Element' AND scope.id=? AND identifier=?)"));
+            stmt.BindId(1, modelId);
+            stmt.BindText(2, SyncInfo::V8ElementExternalSourceAspect::FormatSourceId(lastElementsId).c_str(), EC::IECSqlBinder::MakeCopy::Yes);
+
+            BentleyApi::StopWatch timer(true);
+
+            for (int i=0; i<s_selectRepeatCount; ++i)
+                {
+                stmt.Reset();
+                ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+                ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+                }
+
+            timer.Stop();
+            printf("ImodelJsTest.MeasureInsertPerformance select by kind, scope, identifier, repeated %d times = %lf\n", s_selectRepeatCount, timer.GetElapsedSeconds());
+
+            auto qplan = db->ExplainQuery(stmt.GetNativeSql());
+            ASSERT_TRUE(!qplan.Contains("SCAN"));
+            // TODO: When we get the next index in place, assert that qplan searches that index.
+            printf("%s\n", qplan.c_str());
+            }
+        }
+
+    DgnElementId theElementId; // The BIS element ID of the last V8 element
+    if (true)
+        {
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        auto el = FindV8ElementInDgnDb(*db, lastElementsId)->CopyForEdit();
+
+        auto aspectClass = iModelExternalSourceAspect::GetAspectClass(*db);
+
+        BentleyApi::StopWatch timer(true);
+
+        for (int i=0; i<s_insertAspectCount; ++i)
+            {
+            char buf[10];
+            itoa(i, buf, 10);
+            auto instance = iModelExternalSourceAspect::CreateInstance(DgnElementId(modelId.GetValue()), "Foo", buf, nullptr, *aspectClass);
+            auto aspect = iModelExternalSourceAspect(instance.get());
+            ASSERT_EQ(DgnDbStatus::Success, aspect.AddAspect(*el));
+            }
+
+        ASSERT_TRUE(el->Update().IsValid());
+
+        timer.Stop();
+        printf("ImodelJsTest.MeasureInsertPerformance update element, adding %d aspects = %lf\n", s_insertAspectCount, timer.GetElapsedSeconds());
+
+        theElementId = el->GetElementId();
+        }
+
+    if (true)
+        {
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+
+        if (true)
+            {
+            EC::ECSqlStatement totalCountStmt;
+            ASSERT_EQ(EC::ECSqlStatus::Success, totalCountStmt.Prepare(*db, "select count(*) from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " where (Element.Id=? and kind='Foo')"));
+            totalCountStmt.BindId(1, theElementId);
+            BentleyApi::StopWatch timer(true);
+            ASSERT_EQ(BE_SQLITE_ROW, totalCountStmt.Step());
+            ASSERT_EQ(s_insertElementCount + s_otherElementCount, totalCountStmt.GetValueInt(0));
+            timer.Stop();
+            printf("ImodelJsTest.MeasureInsertPerformance select Element.Id and kind=Foo 1 time = %lf\n", timer.GetElapsedSeconds());
+            }
+
+        if (true)
+            {
+            ASSERT_NE(s_insertAspectCount-1, lastElementsId); // make sure that the identifier of the last Foo aspect on this element doesn't happen to match the identifier of the 'Element' aspect on this element.
+
+            EC::ECSqlStatement stmt;
+            ASSERT_EQ(EC::ECSqlStatus::Success, stmt.Prepare(*db, "select * from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " where (Element.Id=? AND identifier=?)"));
+            stmt.BindId(1, theElementId);
+            stmt.BindText(2, Utf8PrintfString("%d", s_insertAspectCount-1).c_str(), EC::IECSqlBinder::MakeCopy::Yes);       // The identifier of the last Foo aspect
+
+            BentleyApi::StopWatch timer(true);
+
+            auto selectRepeatCount = s_selectRepeatCount;
+            for (int i=0; i<selectRepeatCount; ++i)
+                {
+                stmt.Reset();
+                ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+                ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+                }
+
+            timer.Stop();
+            printf("ImodelJsTest.MeasureInsertPerformance select by Element.Id and identifier, repeated %d times = %lf\n", selectRepeatCount, timer.GetElapsedSeconds());
+
+            auto qplan = db->ExplainQuery(stmt.GetNativeSql());
+            ASSERT_TRUE(!qplan.Contains("SCAN"));
+            // TODO: When we get the next index in place, assert that qplan searches that index.
+            printf("%s\n", qplan.c_str());
+            }
+        }
+
     }
 
 //========================================================================================

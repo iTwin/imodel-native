@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PrivateAPI/iModelBridge/Fwk/IModelClientForBridges.h $
+|     $Source: PublicAPI/iModelBridge/IModelClientForBridges.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -20,12 +20,17 @@
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <iModelBridge/iModelBridgeFwk.h>
 
+#pragma warning(push)
+#pragma warning(disable : 4251) // warning C4251: 'BentleyB0200::Dgn::IModelClientBase::m_client': class 'BentleyB0200::RefCountedPtr<BentleyB0200::iModel::Hub::Client>' needs to have dll-interface to be used by clients of struct 'BentleyB0200::Dgn::IModelClientBase' (compiling source file D:\bim0200dev_2\source\DgnDbSync\iModelBridge\Fwk\IModelClientForBridges.cpp)
+#pragma warning(disable : 4275) // warning C4275: non dll-interface struct 'BentleyB0200::Dgn::IModelHubClientForBridges' used as base for dll-interface struct 'BentleyB0200::Dgn::IModelHubClient' (compiling source file D:\bim0200dev_2\source\DgnDbSync\iModelBridge\Fwk\iModelBridgeFwk.cpp)
+#pragma warning(disable : 4250) // warning C4250: 'BentleyB0200::Dgn::IModelHubClient': inherits 'BentleyB0200::Dgn::IModelClientBase::BentleyB0200::Dgn::IModelClientBase::GetDgnRevisions' via dominance (compiling source file D:\bim0200dev_2\source\DgnDbSync\iModelBridge\Fwk\IModelClientForBridges.cpp)
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 typedef std::shared_ptr<struct WebServices::IConnectSignInManager> OidcSignInManagerPtr;
 // ========================================================================================================
 //! Interface to be adopted by a class that defines the interface between iModelBridgeFwk and an IModel server.
 // ========================================================================================================
-struct IModelClientForBridges
+struct IMODEL_BRIDGE_FWK_EXPORT IModelClientForBridges
 {
     virtual ~IModelClientForBridges() {}
 
@@ -40,6 +45,7 @@ struct IModelClientForBridges
     virtual IRepositoryManagerP GetRepositoryManager(DgnDbR db) = 0;
     virtual void CloseBriefcase() = 0;
     virtual StatusInt AcquireLocks(LockRequest&, DgnDbR) = 0;
+    virtual iModel::Hub::iModelInfoPtr GetIModelInfo() = 0;
 
     virtual bool IsConnected() const = 0;
 
@@ -53,12 +59,13 @@ struct IModelHubClientForBridges : virtual IModelClientForBridges
     virtual ~IModelHubClientForBridges() {}
 
     virtual StatusInt CreateRepository(Utf8CP repoName, BeFileNameCR localDgnDb) = 0;
+    virtual BentleyStatus DeleteRepository() = 0;
 };
 
 // ========================================================================================================
 // Provides an interface to an IModel server.
 // ========================================================================================================
-struct IModelClientBase : virtual IModelClientForBridges
+struct IMODEL_BRIDGE_FWK_EXPORT IModelClientBase : virtual IModelClientForBridges
 {
 protected:
     iModel::Hub::ClientPtr m_client;
@@ -85,8 +92,6 @@ public:
 
     StatusInt AcquireLocks(LockRequest&, DgnDbR) override;
 
-    virtual iModel::Hub::iModelInfoPtr GetIModelInfo() = 0;
-
     static bool SleepBeforeRetry();
 
     static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("iModelBridge"); }
@@ -95,22 +100,21 @@ public:
 // ========================================================================================================
 // Provides access to an iModelBank
 // ========================================================================================================
-struct IModelBankClient : IModelClientBase
+struct IMODEL_BRIDGE_FWK_EXPORT IModelBankClient : IModelClientBase
     {
     Utf8String m_iModelId;
 
     IModelBankClient(iModelBridgeFwk::IModelBankArgs const&, WebServices::ClientInfoPtr ci);
 
     iModel::Hub::iModelInfoPtr GetIModelInfo() override;
+
+    BentleyStatus Shutdown();
     };
 
 // ========================================================================================================
 // Provides access to an iModelHub
 // ========================================================================================================
-#pragma warning(push)
-#pragma warning(disable : 4250)
-
-struct IModelHubClient : IModelClientBase, IModelHubClientForBridges
+struct IMODEL_BRIDGE_FWK_EXPORT IModelHubClient : IModelClientBase, IModelHubClientForBridges
     {
 	Utf8String m_projectId;
     iModelBridgeFwk::IModelHubArgs m_args;
@@ -132,10 +136,9 @@ struct IModelHubClient : IModelClientBase, IModelHubClientForBridges
     void CloseBriefcase() override {m_impl.CloseBriefcase();}
     */
     StatusInt CreateRepository(Utf8CP repoName, BeFileNameCR localDgnDb) override;
+    BentleyStatus DeleteRepository() override;
     };
 
-#pragma warning(pop)
-
-
-
 END_BENTLEY_DGN_NAMESPACE
+
+#pragma warning(pop)
