@@ -369,7 +369,7 @@ void ClientTests::SetUpTestCase()
 
     BeFileName path;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(path);
-    path.AppendToPath(L"sqlang/DgnClientFx_en.sqlang.db3");
+    path.AppendToPath(L"TestAssets/sqlang/DgnClientFx_en.sqlang.db3");
 
     ASSERT_EQ(SUCCESS, L10N::Initialize(BeSQLite::L10N::SqlangFiles(path)));
     }
