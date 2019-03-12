@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnCore.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -374,8 +374,11 @@ DgnPlatformLib::Host::RepositoryAdmin&      DgnPlatformLib::Host::_SupplyReposit
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::GeoCoordinationAdmin& DgnPlatformLib::Host::_SupplyGeoCoordinationAdmin()
     {
-    BeFileName path = GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    BeFileName geo = GetIKnownLocationsAdmin().GetGeoCoordinateDataDirectory();
+    BeFileName path(geo);
     path.AppendToPath(L"DgnGeoCoord");
+    if (!path.DoesPathExist())
+        path = geo;
     return *DgnGeoCoordinationAdmin::Create(path);
     }
 

@@ -656,9 +656,6 @@
     <ClInclude Include="PublicAPI\DgnPlatform\DgnCodesManager.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\DgnPlatform\DgnProvenance.h">
-      <Filter>PublicAPI</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\DgnPlatform\ECSqlClassParams.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
@@ -1128,9 +1125,6 @@
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\CodeSpec.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnCore\DgnProvenance.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\FitContext.cpp">

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/UpdatePlan.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -212,6 +212,7 @@ protected:
     DRange3d m_subRect;
     bool m_hasSubRect = false;
     bool m_wantDecorators = true;
+    bool m_wantHilite = true;
     mutable bool m_wantWait = false;
 public:
     // Scale applied to the frustum when selecting tiles. This allows selecting tiles outside of the frustum.
@@ -250,6 +251,10 @@ public:
     // If true, decorators will be invoked to add their graphics.
     bool WantDecorators() const {return m_wantDecorators;}
     void SetWantDecorators(bool want) {m_wantDecorators=want;}
+    
+    // If true, selection and hilite will be invoked to add their graphics.
+    bool WantHilite() const {return m_wantHilite;}
+    void SetWantHilite(bool want) {m_wantHilite=want;}
 };
 
 //=======================================================================================

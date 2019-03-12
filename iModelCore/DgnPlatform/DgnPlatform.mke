@@ -2,7 +2,7 @@
 #
 #     $Source: DgnPlatform.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 
@@ -361,7 +361,6 @@ $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.
 
 $(o)SmartIBL$(oext) :                               $(DgnCoreDir)SmartIBL.cpp ${MultiCompileDepends}
 
-$(o)DgnProvenance$(oext) :                          $(DgnCoreDir)DgnProvenance.cpp $(DgnPlatformAPISrc)DgnProvenance.h ${MultiCompileDepends}
 
 #----------------------------------------------------------------------
 #   DgnBRep
