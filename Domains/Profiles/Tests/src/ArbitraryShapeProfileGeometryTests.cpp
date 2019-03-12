@@ -1,154 +1,28 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/src/ArbitraryShapeProfileTests.cpp $
+|     $Source: Tests/src/ArbitraryShapeProfileGeometryTests.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ProfileValidationTestCase.h"
+#include "ArbitraryGeometryProfileTestCase.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_PROFILES
 
-#define ASSERT_CURVEVECTOR(curveVector, boundaryType, minIndex)                                 AssertCurveVector (curveVector, boundaryType, minIndex, __FILE__, __LINE__)
-#define ASSERT_LINESTRING_CV(curveVector, boundaryType, minIndex, pointCount)                   AssertLineStringShape (curveVector, boundaryType, minIndex, pointCount, __FILE__, __LINE__)
-#define ASSERT_LINESTRING(curvePrimitive, pointCount)                                           AssertLineStringShape (curvePrimitive, pointCount, __FILE__, __LINE__)
-#define ASSERT_ARC_CV(curveVector, boundaryType, minIndex, center, radius)                      AssertArcShape (curveVector, boundaryType, minIndex, center, radius, __FILE__, __LINE__)
-#define ASSERT_ARC(curvePrimitive, center, radius)                                              AssertArcShape (curvePrimitive, center, radius, __FILE__, __LINE__)
-#define ASSERT_CHILD_LINESTRING(curveVector, curveIndex, boundaryType, minIndex, pointCount)    AssertChildLineStringShape (curveVector, curveIndex, boundaryType, minIndex, pointCount, __FILE__, __LINE__)
-#define ASSERT_CONTAINS_LINESTRING(curveVector, pointCount, expectedCount)                      AssertContainsLineStringShape (curveVector, pointCount, expectedCount, __FILE__, __LINE__)
-#define ASSERT_CONTAINS_ARC(curveVector, center, radius, expectedCount)                         AssertContainsArcShape (curveVector, center, radius, expectedCount, __FILE__, __LINE__)
-
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                                      03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ArbitraryShapeProfileTestCase : ProfileValidationTestCase<ArbitraryShapeProfile>
+struct ArbitraryShapeProfileGeometryTestCase : ArbitraryGeometryProfileTestCase
     {
     public:
         typedef ArbitraryShapeProfile::CreateParams CreateParams;
-
-    private:
-        Utf8CP GetFailureMessage (Utf8CP message, CharCP file, size_t lineNo);
-
-    public:
-        void AssertCurveVector (CurveVectorCPtr const& shape, CurveVector::BoundaryType expectedBoundaryType, size_t expectedMinimumIndex, CharCP file, size_t lineNo);
-
-        void AssertLineStringShape (CurveVectorCPtr const& shape, CurveVector::BoundaryType expectedBoundaryType, size_t expectedIndex, size_t expectedPointCount, CharCP file, size_t lineNo);
-        void AssertArcShape (CurveVectorCPtr const& shape, CurveVector::BoundaryType expectedBoundaryType, size_t expectedIndex, DPoint3d expectedCenter, double expectedRadius, CharCP file, size_t lineNo);
-        
-        void AssertChildLineStringShape (CurveVectorCPtr const& shape, size_t expectedCurveIndex, CurveVector::BoundaryType expectedBoundaryType, size_t expectedChildIndex, size_t expectedPointCount, CharCP file, size_t lineNo);
-
-        void AssertContainsLineStringShape (CurveVectorCPtr const& shape, size_t expectedPointCount, int minCount, CharCP file, size_t lineNo);
-        void AssertContainsArcShape (CurveVectorCPtr const& shape, DPoint3d expectedCenter, double expectedRadius, int minCount, CharCP file, size_t lineNo);
-
-        void AssertLineStringShape (ICurvePrimitiveCPtr const& shape, size_t expectedPointCount, CharCP file, size_t);
-        void AssertArcShape (ICurvePrimitiveCPtr const& shape, DPoint3d expectedCenter, double expectedRadius, CharCP, size_t lineNo);
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP ArbitraryShapeProfileTestCase::GetFailureMessage (Utf8CP message, CharCP file, size_t lineNo)
-    {
-    if (nullptr == file)
-        return "";
-
-    return Utf8PrintfString ("%s(%d): %s", file, lineNo, message).c_str();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ArbitraryShapeProfileTestCase::AssertCurveVector (CurveVectorCPtr const& shape, CurveVector::BoundaryType expectedBoundaryType, size_t expectedMinimumSize, CharCP file, size_t lineNo)
-    {
-    ASSERT_TRUE (shape.IsValid()) << GetFailureMessage("Curve vector is null", file, lineNo);
-    EXPECT_EQ (expectedBoundaryType, shape->GetBoundaryType()) << GetFailureMessage ("Curve vector boundary type is not as expected", file, lineNo);
-    ASSERT_TRUE (shape->size() >= expectedMinimumSize) << GetFailureMessage ("Curve vector has too little primitives", file, lineNo);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ArbitraryShapeProfileTestCase::AssertArcShape (CurveVectorCPtr const& shape, CurveVector::BoundaryType expectedBoundaryType, size_t expectedIndex, DPoint3d expectedCenter, double expectedRadius, CharCP file, size_t lineNo)
-    {
-    AssertCurveVector (shape, expectedBoundaryType, expectedIndex + 1, file, lineNo);
-    AssertArcShape ((*shape)[expectedIndex], expectedCenter, expectedRadius, file, lineNo);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ArbitraryShapeProfileTestCase::AssertArcShape (ICurvePrimitiveCPtr const& shape, DPoint3d expectedCenter, double expectedRadius, CharCP file, size_t lineNo)
-    {
-    ASSERT_TRUE (shape.IsValid()) << GetFailureMessage ("Curve primitive is null", file, lineNo);
-    ASSERT_EQ (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc, shape->GetCurvePrimitiveType()) << GetFailureMessage ("Curve primitive is not an arc", file, lineNo);
-    EXPECT_TRUE (expectedCenter.AlmostEqual (shape->GetArcCP()->center)) << GetFailureMessage ("Arc's center is not as expected", file, lineNo);
-    EXPECT_DOUBLE_EQ (expectedRadius, shape->GetArcCP()->vector0.Magnitude()) << GetFailureMessage ("Arc's radius is not as expected", file, lineNo);
-    EXPECT_DOUBLE_EQ (expectedRadius, shape->GetArcCP()->vector90.Magnitude()) << GetFailureMessage ("Arc's radius is not as expected", file, lineNo);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ArbitraryShapeProfileTestCase::AssertLineStringShape (CurveVectorCPtr const& shape, CurveVector::BoundaryType expectedBoundaryType, size_t expectedIndex, size_t expectedPointCount, CharCP file, size_t lineNo)
-    {
-    AssertCurveVector (shape, expectedBoundaryType, expectedIndex + 1, file, lineNo);
-    AssertLineStringShape ((*shape)[expectedIndex], expectedPointCount, file, lineNo);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ArbitraryShapeProfileTestCase::AssertLineStringShape (ICurvePrimitiveCPtr const& shape, size_t expectedPointCount, CharCP file, size_t lineNo)
-    {
-    ASSERT_TRUE (shape.IsValid()) << GetFailureMessage ("Curve primitive is null", file, lineNo);
-    ASSERT_EQ (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString, shape->GetCurvePrimitiveType()) << GetFailureMessage ("Curve primitive is not a line string", file, lineNo);
-    EXPECT_EQ (expectedPointCount, shape->GetLineStringCP()->size()) << GetFailureMessage ("Line string has incorrect point count", file, lineNo);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ArbitraryShapeProfileTestCase::AssertChildLineStringShape (CurveVectorCPtr const& shape, size_t expectedCurveIndex, CurveVector::BoundaryType expectedBoundaryType, size_t expectedChildIndex, size_t expectedPointCount, CharCP file, size_t lineNo)
-    {
-    ASSERT_TRUE (shape.IsValid()) << GetFailureMessage ("Curve vector is null", file, lineNo);
-    EXPECT_EQ (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector, (*shape)[expectedCurveIndex]->GetCurvePrimitiveType()) 
-        << GetFailureMessage ("Child is not a curve vector", file, lineNo);
-    AssertLineStringShape ((*shape)[expectedCurveIndex]->GetChildCurveVectorCP(), expectedBoundaryType, expectedChildIndex, expectedPointCount, file, lineNo);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ArbitraryShapeProfileTestCase::AssertContainsLineStringShape (CurveVectorCPtr const& shape, size_t expectedPointCount, int minCount, CharCP file, size_t lineNo)
-    {
-    EXPECT_TRUE (std::count_if (shape->begin(), shape->end(),
-        [expectedPointCount] (ICurvePrimitiveCPtr const& curve)
-        {
-        return ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString == curve->GetCurvePrimitiveType() &&
-            expectedPointCount == curve->GetLineStringCP()->size();
-        }) >= minCount) << GetFailureMessage ("Line string not found", file, lineNo);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ArbitraryShapeProfileTestCase::AssertContainsArcShape (CurveVectorCPtr const& shape, DPoint3d expectedCenter, double expectedRadius, int minCount, CharCP file, size_t lineNo)
-    {
-    EXPECT_TRUE (std::count_if (shape->begin(), shape->end(),
-        [expectedCenter, expectedRadius] (ICurvePrimitiveCPtr const& curve)
-        {
-        return ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc == curve->GetCurvePrimitiveType() &&
-            curve->GetArcCP()->center.AlmostEqual (expectedCenter) &&
-            BeNumerical::IsEqual (expectedRadius, curve->GetArcCP()->vector0.Magnitude()) &&
-            BeNumerical::IsEqual (expectedRadius, curve->GetArcCP()->vector90.Magnitude());
-        }) >= minCount) << GetFailureMessage ("Arc is not found", file, lineNo);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_Square_AsCurvePrimitive_Success)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_Square_AsCurvePrimitive_Success)
     {
     // Create profile geometry and assert it is has been created as expected
     ICurvePrimitivePtr squareCurve = ICurvePrimitive::CreateRectangle (-1.0, -1.0, 1.0, 1.0, 0); // (-1, -1, 0), (-1, 1, 0), (1, 1, 0), (1, -1, 0), (-1, -1, 0)
@@ -168,7 +42,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_Square_AsCurvePrimitive_Success)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_Square_AsCurveVector_Success)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_Square_AsCurveVector_Success)
     {
     // Create profile geometry and assert it is has been created as expected
     CurveVectorPtr squareCurve = CurveVector::CreateRectangle (-1.0, -1.0, 1.0, 1.0, 0); // (-1, -1, 0), (-1, 1, 0), (1, 1, 0), (1, -1, 0), (-1, -1, 0)
@@ -188,7 +62,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_Square_AsCurveVector_Success)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_SquareWithInnerSquareRemoved_Success)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_SquareWithInnerSquareRemoved_Success)
     {
     // Create profile geometry and assert it is has been created as expected
     CurveVectorPtr squareCurve = CurveVector::CreateRectangle (-1.0, -1.0, 1.0, 1.0, 0); // (-1, -1, 0), (-1, 1, 0), (1, 1, 0), (1, -1, 0), (-1, -1, 0)
@@ -216,7 +90,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_SquareWithInnerSquareRemoved_Suc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_AShape_Success)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_AShape_Success)
     {
     // Create profile geometry and assert it is has been created as expected
     bvector<DPoint3d> outerPoints = 
@@ -263,7 +137,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_AShape_Success)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_DifferentCurvePrimitivesOnSinglePerimeter_Success)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_DifferentCurvePrimitivesOnSinglePerimeter_Success)
     {
     // Create profile geometry and assert it is has been created as expected
     CurveVectorPtr squareShape = CurveVector::CreateRectangle (0, 0, 5, 6, 0); // (0, 0, 0), (5, 0, 0), (5, 6, 0), (0, 6, 0)
@@ -292,7 +166,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_DifferentCurvePrimitivesOnSingle
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_MultiplePerimeters_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_MultiplePerimeters_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     CurveVectorPtr squareShape1 = CurveVector::CreateRectangle (0, 0, 5, 6, 0); // (0, 0, 0), (5, 0, 0), (5, 6, 0), (0, 6, 0)
@@ -322,7 +196,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_MultiplePerimeters_Failed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_InnerHoleAndMultiplePerimeters_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_InnerHoleAndMultiplePerimeters_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     CurveVectorPtr squareShape1 = CurveVector::CreateRectangle (0, 0, 5, 6, 0); // (0, 0, 0), (5, 0, 0), (5, 6, 0), (0, 6, 0)
@@ -386,7 +260,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_InnerHoleAndMultiplePerimeters_F
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_TwoRectanglesOverlapping_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_TwoRectanglesOverlapping_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     CurveVectorPtr squareShape1 = CurveVector::CreateRectangle (-1, -1, 5, 6, 0); // (0, 0, 0), (5, 0, 0), (5, 6, 0), (0, 6, 0)
@@ -414,7 +288,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_TwoRectanglesOverlapping_Failed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_UnionOfTwoRectanglesAndCircle_Success)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_UnionOfTwoRectanglesAndCircle_Success)
     {
     // Create profile geometry and assert it is has been created as expected
     CurveVectorPtr squareShape1 = CurveVector::CreateRectangle (0, 0, 4, 4, 0); // (0, 0, 0), (4, 0, 0), (4, 4, 0), (0, 4, 0)
@@ -451,7 +325,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_UnionOfTwoRectanglesAndCircle_Su
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_3dCurveVector_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_3dGeometry_3dCurveVector_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     bvector<DPoint3d> points = 
@@ -478,7 +352,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_3dCurveVector_Failed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_Box_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_3dGeometry_Box_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     DgnBoxDetail boxShape = DgnBoxDetail 
@@ -510,7 +384,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_Box_Failed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_Cone_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_3dGeometry_Cone_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     DgnConeDetail coneShape = DgnConeDetail
@@ -538,7 +412,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_Cone_Failed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_Extrusion_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_3dGeometry_Extrusion_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     DgnExtrusionDetail extrusionShape = DgnExtrusionDetail
@@ -564,7 +438,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_Extrusion_Failed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_Extrusion2D_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_3dGeometry_Extrusion2D_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     DgnExtrusionDetail extrusionShape = DgnExtrusionDetail
@@ -590,7 +464,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_Extrusion2D_Failed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_RotationalSweep_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_3dGeometry_RotationalSweep_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     DgnRotationalSweepDetail rotationalSweepShape = DgnRotationalSweepDetail
@@ -624,7 +498,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_RotationalSweep_Faile
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_RuledSweep_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_3dGeometry_RuledSweep_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     DgnRuledSweepDetail ruledSweepShape = DgnRuledSweepDetail
@@ -664,7 +538,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_RuledSweep_Failed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_Sphere_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_3dGeometry_Sphere_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     DgnSphereDetail sphereShape = DgnSphereDetail(DPoint3d::From (0, 0, 0), 5.0);
@@ -685,7 +559,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_Sphere_Failed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_TorusPipe_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_3dGeometry_TorusPipe_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     DgnTorusPipeDetail torusPipeShape = DgnTorusPipeDetail 
@@ -711,7 +585,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_3dGeometry_TorusPipe_Failed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_3dPlane_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_3dPlane_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     bvector<DPoint3d> points =
@@ -738,7 +612,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_3dPlane_Failed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_Elevated_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_Elevated_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     bvector<DPoint3d> points =
@@ -765,7 +639,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_Elevated_Failed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_NotClosedShape_CurvePrimitive_Line_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_NotClosedShape_CurvePrimitive_Line_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     ICurvePrimitivePtr line = ICurvePrimitive::CreateLine (DPoint3d::From (0, 0, 0), DPoint3d::From (1, 1, 0));
@@ -786,7 +660,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_NotClosedShape_CurvePrimitive_Li
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_NotClosedShape_CurvePrimitive_LineString_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_NotClosedShape_CurvePrimitive_LineString_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     ICurvePrimitivePtr line = ICurvePrimitive::CreateLineString (bvector<DPoint3d>{ DPoint3d::From (0, 0, 0), DPoint3d::From (1, 1, 0) });
@@ -807,7 +681,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_NotClosedShape_CurvePrimitive_Li
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_NotClosedShape_CurveVector_LineString_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_NotClosedShape_CurveVector_LineString_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     CurveVectorPtr line = CurveVector::CreateLinear (bvector<DPoint3d>{ DPoint3d::From (0, 0, 0), DPoint3d::From (1, 1, 0) });
@@ -828,7 +702,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_NotClosedShape_CurveVector_LineS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_NoArea_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_NoArea_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     CurveVectorPtr line = CurveVector::CreateLinear (bvector<DPoint3d>{ DPoint3d::From (0, 0, 0), DPoint3d::From (1, 1, 0) }, CurveVector::BOUNDARY_TYPE_Outer);
@@ -854,7 +728,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_NoArea_Failed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_NoAreaArc_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_NoAreaArc_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     DEllipse3d arcEllipse = DEllipse3d::FromCenterRadiusXY ({ 0, 0, 0 }, 0);
@@ -875,7 +749,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_NoAreaArc_Failed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_UnclosedGeometry_CurvePrimitive_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_UnclosedGeometry_CurvePrimitive_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     DEllipse3d arcEllipse = DEllipse3d::FromPoints ({ 0, 0, 0 }, { 1, 0, 0 }, { 0, 1, 0 }, 0, PI);
@@ -896,7 +770,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_UnclosedGeometry_CurvePrimitive_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_BoundedUnclosedGeometry_CurveVector_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_BoundedUnclosedGeometry_CurveVector_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     DEllipse3d arcEllipse = DEllipse3d::FromPoints ({ 0, 0, 0 }, { 1, 0, 0 }, { 0, 1, 0 }, 0, PI);
@@ -920,7 +794,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_BoundedUnclosedGeometry_CurveVec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_ClosedArc_Success)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_ClosedArc_Success)
     {
     // Create profile geometry and assert it is has been created as expected
     DEllipse3d arcEllipse = DEllipse3d::FromPoints ({ 0, 0, 0 }, { 1, 0, 0 }, { 0, 1, 0 }, 0, PI);
@@ -950,7 +824,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_ClosedArc_Success)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_ClosedFrom3Lines_Success)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_ClosedFrom3Lines_Success)
     {
     // Create profile geometry and assert it is has been created as expected
     
@@ -987,7 +861,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_ClosedFrom3Lines_Success)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_ClosedFrom4LinesWithOneOutOfPerimeter_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_ClosedFrom4LinesWithOneOutOfPerimeter_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
 
@@ -1029,7 +903,7 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_ClosedFrom4LinesWithOneOutOfPeri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ArbitraryShapeProfileTestCase, Validate_TwoTouchingRectanglesOneOfWhichIsNotClosed_Failed)
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_TwoTouchingRectanglesOneOfWhichIsNotClosed_Failed)
     {
     // Create profile geometry and assert it is has been created as expected
     ICurvePrimitivePtr square1 = ICurvePrimitive::CreateRectangle (0, 0, 3, 3, 0);
@@ -1053,4 +927,45 @@ TEST_F (ArbitraryShapeProfileTestCase, Validate_TwoTouchingRectanglesOneOfWhichI
     ArbitraryShapeProfilePtr profilePtr = ArbitraryShapeProfile::Create (params);
     ASSERT_TRUE (profilePtr.IsValid());
     EXPECT_EQ (DgnDbStatus::ValidationFailed, profilePtr->Validate());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ArbitraryShapeProfileGeometryTestCase, Validate_BShapeWithoutInnerHoles_Success)
+    {
+    // Create profile geometry and assert it is has been created as expected
+    DEllipse3d topArc = DEllipse3d::FromPoints ({ 0, 3, 0 }, { 1, 3, 0 }, { 0, 4, 0 }, Angle::PiOver2(), -Angle::Pi());
+    ICurvePrimitivePtr topArcPrimitive = ICurvePrimitive::CreateArc (topArc);
+    ASSERT_ARC (topArcPrimitive, DPoint3d::From (0, 3, 0), 1.0);
+
+    DEllipse3d botArc = DEllipse3d::FromPoints ({ 0, 1, 0 }, { 1, 1, 0 }, { 0, 2, 0 }, Angle::PiOver2(), -Angle::Pi());
+    ICurvePrimitivePtr botArcPrimitive = ICurvePrimitive::CreateArc (botArc);
+    ASSERT_ARC (botArcPrimitive, DPoint3d::From (0, 1, 0), 1.0);
+
+    ICurvePrimitivePtr closingLine1 = ICurvePrimitive::CreateLine ({ 0, 0, 0 }, { 0, 2, 0 });
+    ASSERT_TRUE (closingLine1.IsValid());
+    EXPECT_EQ (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line, closingLine1->GetCurvePrimitiveType());
+
+    ICurvePrimitivePtr closingLine2 = ICurvePrimitive::CreateLine ({ 0, 2, 0 }, { 0, 4, 0 });
+    ASSERT_TRUE (closingLine2.IsValid());
+    EXPECT_EQ (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line, closingLine2->GetCurvePrimitiveType());
+
+    CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+    ASSERT_CURVEVECTOR (curveVector, CurveVector::BOUNDARY_TYPE_Outer, 0);
+    curveVector->Add (topArcPrimitive);
+    curveVector->Add (botArcPrimitive);
+    curveVector->Add (closingLine1);
+    curveVector->Add (closingLine2);
+    ASSERT_CURVEVECTOR (curveVector, CurveVector::BOUNDARY_TYPE_Outer, 4);
+
+    IGeometryPtr shape = IGeometry::Create (curveVector);
+    ASSERT_TRUE (shape.IsValid());
+    EXPECT_EQ (IGeometry::GeometryType::CurveVector, shape->GetGeometryType());
+
+    // Create profile and assert its valididty is as expected
+    CreateParams params (GetModel(), "BShapeWithoutInnerHoles", shape);
+    ArbitraryShapeProfilePtr profilePtr = ArbitraryShapeProfile::Create (params);
+    ASSERT_TRUE (profilePtr.IsValid());
+    EXPECT_EQ (DgnDbStatus::Success, profilePtr->Validate());
     }

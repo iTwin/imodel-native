@@ -36,7 +36,7 @@ public:
     static IGeometryPtr CreateCenterLineForZShape (CenterLineZShapeProfile const& profile);
     static IGeometryPtr CreateBentPlateShape (BentPlateProfile const& profile);
     static IGeometryPtr CreateBentPlateCenterLine (BentPlateProfile const& profile);
-    static IGeometryPtr CreateArbitraryCenterLineShape (IGeometry const& centerLine, double wallThickness);
+    static IGeometryPtr CreateArbitraryCenterLineShape (IGeometry const& centerLine, double wallThickness, Angle const& arcAngle, Angle const& chamferAngle);
     static IGeometryPtr CreateCircle (CircleProfile const& profile);
     static IGeometryPtr CreateHollowCircle (HollowCircleProfile const& profile);
     static IGeometryPtr CreateEllipse (EllipseProfile const& profile);
@@ -51,6 +51,8 @@ public:
     static IGeometryPtr CreateArbitraryCompositeShape (ArbitraryCompositeProfile const& profile, SinglePerimeterProfileCPtr updatedProfilePtr);
     static IGeometryPtr CreateDerivedShape (DerivedProfile const& profile, SinglePerimeterProfile const& baseProfile);
 
+    static bool ValidateRangeXY (IGeometry const& geometry, Utf8CP pProfileClassName);
+    static bool ValidateCurveVectorContinious (CurveVector const& curveVector, bool checkRegion, Utf8CP pProfileClassName);
     };
 
 END_BENTLEY_PROFILES_NAMESPACE

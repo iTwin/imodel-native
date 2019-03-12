@@ -75,3 +75,15 @@ DgnModel& ProfilesTestCase::GetModel()
     BeAssert (m_definitionModelPtr.IsValid());
     return *m_definitionModelPtr;
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ProfilesTestCase::GetFailureMessage (Utf8CP message, CharCP file, size_t lineNo)
+    {
+    if (nullptr == file)
+        return "";
+
+    return Utf8PrintfString ("%s(%d): %s", file, lineNo, message);
+    }

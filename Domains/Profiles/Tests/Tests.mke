@@ -33,7 +33,7 @@ o = $(OutputRootDir)build/$(programName)/
 always:
     !~@mkdir $(o)
 
-MultiCompileDepends = $(_MakeFileSpec) $(BEGTEST_INPUT)ProfilesTestCase.h $(BEGTEST_INPUT)ProfileValidationTestCase.h
+MultiCompileDepends = $(_MakeFileSpec) $(BEGTEST_INPUT)ProfilesTestCase.h $(BEGTEST_INPUT)ProfileValidationTestCase.h $(BEGTEST_INPUT)ArbitraryGeometryProfileTestCase.h
 
 %include MultiCppCompileRule.mki
 
@@ -42,6 +42,8 @@ $(o)Main.obj                            : $(BEGTEST_INPUT)Main.cpp ${MultiCompil
 $(o)TestHost.obj                        : $(BEGTEST_INPUT)TestHost.cpp ${MultiCompileDepends} $(BEGTEST_INPUT)TestHost.h
 
 $(o)ProfilesTestCase.obj                : $(BEGTEST_INPUT)ProfilesTestCase.cpp ${MultiCompileDepends}
+
+$(o)ArbitraryGeometryProfileTestCase.obj : $(BEGTEST_INPUT)ArbitraryGeometryProfileTestCase.cpp ${MultiCompileDepends}
 
 $(o)DomainTests.obj                     : $(BEGTEST_INPUT)DomainTests.cpp ${MultiCompileDepends}
 
@@ -101,7 +103,9 @@ $(o)ArbitraryCompositeProfileTests.obj  : $(BEGTEST_INPUT)ArbitraryCompositeProf
 
 $(o)ArbitraryCenterLineProfileTests.obj : $(BEGTEST_INPUT)ArbitraryCenterLineProfileTests.cpp ${MultiCompileDepends}
 
-$(o)ArbitraryShapeProfileTests.obj      : $(BEGTEST_INPUT)ArbitraryShapeProfileTests.cpp ${MultiCompileDepends}
+$(o)ArbitraryCenterLineProfileGeometryTests.obj : $(BEGTEST_INPUT)ArbitraryCenterLineProfileGeometryTests.cpp ${MultiCompileDepends}
+
+$(o)ArbitraryShapeProfileGeometryTests.obj      : $(BEGTEST_INPUT)ArbitraryShapeProfileGeometryTests.cpp ${MultiCompileDepends}
 
 $(o)DerivedProfileTests.obj             : $(BEGTEST_INPUT)DerivedProfileTests.cpp ${MultiCompileDepends}
 

@@ -234,7 +234,7 @@ void GeometryTestCase::InsertCardinalPoint (CardinalPoint const& point, Standard
     Placement3d placement;
     placement.GetOriginR() = DPoint3d::From(point.location);
     placement.GetOriginR().Add (DPoint3d::From (range.low.x + width / 2.0, range.low.y + height / 2.0, 0.01));
-    placement.TryApplyTransform (profilePlacement.GetTransform ());
+    placement.TryApplyTransform (profilePlacement.GetTransform());
     spatialLocationElementPtr->SetPlacement (placement);
 
     GeometryBuilderPtr builder = GeometryBuilder::Create (*pGeometrySource);
@@ -311,7 +311,7 @@ void GeometryTestCase::InsertPhysicalElement (ProfilePtr profilePtr, IGeometryPt
     builder->Append (GetGeometryParams());
     builder->Append (*profileGeometryPtr);
 
-    if (centerLineGeomPtr.IsValid ())
+    if (centerLineGeomPtr.IsValid())
         {
         Transform translation = Transform::From (DPoint3d::From (range.low.x * -1.0, range.low.y * -1.0, 0.01));
         BeAssert (centerLineGeomPtr->TryTransformInPlace (translation));
@@ -322,7 +322,7 @@ void GeometryTestCase::InsertPhysicalElement (ProfilePtr profilePtr, IGeometryPt
 
     bvector<CardinalPoint> cardinalPoints = profilePtr->GetCardinalPoints();
     for (size_t i = 0; i < cardinalPoints.size(); ++i)
-        InsertCardinalPoint (cardinalPoints[i], static_cast<StandardCardinalPoint>(i), *profileGeometryPtr, elementPlacement, profilePtr->GetName ().c_str ());
+        InsertCardinalPoint (cardinalPoints[i], static_cast<StandardCardinalPoint>(i), *profileGeometryPtr, elementPlacement, profilePtr->GetName().c_str());
 
     builder->Finish (*pGeometrySource);
 

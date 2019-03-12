@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesPch.h"
 #include <ProfilesInternal\ProfilesGeometry.h>
+#include <ProfilesInternal\ProfilesLogging.h>
+#include <ProfilesInternal\ProfilesProperty.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -1122,12 +1124,14 @@ IGeometryPtr ProfilesGeometry::CreateBentPlateCenterLine (BentPlateProfile const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-static IGeometryPtr createArbitraryCenterLineShape (CurveVectorPtr const& curvesPtr, double wallThickness)
+static IGeometryPtr createArbitraryCenterLineShape (CurveVectorPtr const& curvesPtr, double wallThickness, Angle const& arcAngle, Angle const& chamferAngle)
     {
     if (curvesPtr.IsNull())
         return nullptr;
 
     CurveOffsetOptions curveOffsetOptions (wallThickness / 2.0);
+    curveOffsetOptions.SetArcAngle (arcAngle.Radians());
+    curveOffsetOptions.SetChamferAngle (chamferAngle.Radians());
 
     CurveVectorCPtr rightOffsetedCurvesPtr = curvesPtr->CloneOffsetCurvesXY (curveOffsetOptions);
     CurveVectorCPtr leftOffsetedCurvesPtr = curvesPtr->CloneReversed()->CloneOffsetCurvesXY (curveOffsetOptions);
@@ -1155,26 +1159,26 @@ static IGeometryPtr createArbitraryCenterLineShape (CurveVectorPtr const& curves
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-static IGeometryPtr createArbitraryCenterLineShape (ICurvePrimitivePtr const& singleCurvePtr, double wallThickness)
+static IGeometryPtr createArbitraryCenterLineShape (ICurvePrimitivePtr const& singleCurvePtr, double wallThickness, Angle const& arcAngle, Angle const& chamferAngle)
     {
     if (singleCurvePtr.IsNull())
         return nullptr;
 
     CurveVectorPtr curvesPtr = CurveVector::Create (singleCurvePtr->Clone());
-    return createArbitraryCenterLineShape (curvesPtr, wallThickness);
+    return createArbitraryCenterLineShape (curvesPtr, wallThickness, arcAngle, chamferAngle);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryPtr ProfilesGeometry::CreateArbitraryCenterLineShape (IGeometry const& centerLine, double wallThickness)
+IGeometryPtr ProfilesGeometry::CreateArbitraryCenterLineShape (IGeometry const& centerLine, double wallThickness, Angle const& arcAngle, Angle const& chamferAngle)
     {
     switch (centerLine.GetGeometryType())
         {
         case IGeometry::GeometryType::CurvePrimitive:
-            return createArbitraryCenterLineShape (centerLine.GetAsICurvePrimitive(), wallThickness);
+            return createArbitraryCenterLineShape (centerLine.GetAsICurvePrimitive(), wallThickness, arcAngle, chamferAngle);
         case IGeometry::GeometryType::CurveVector:
-            return createArbitraryCenterLineShape (centerLine.GetAsCurveVector(), wallThickness);
+            return createArbitraryCenterLineShape (centerLine.GetAsCurveVector(), wallThickness, arcAngle, chamferAngle);
         default:
             return nullptr;
         }
@@ -1686,6 +1690,144 @@ IGeometryPtr ProfilesGeometry::CreateDerivedShape (DerivedProfile const& profile
     BeAssert (transform.InitFrom (transformMatrix));
 
     return baseProfile.GetShape()->Clone (transform);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProfilesGeometry::ValidateRangeXY (IGeometry const& geometry, Utf8CP pProfileClassName)
+    {
+    DRange3d range;
+    if (!geometry.TryGetRange (range))
+        {
+        ProfilesLog::FailedValidate_InvalidGeometry (pProfileClassName);
+        return false;
+        }
+
+    if (!ProfilesProperty::IsEqual (0, range.ZLength()))
+        {
+        ProfilesLog::FailedValidate_InvalidRange_Not2d (pProfileClassName);
+        return false;
+        }
+
+    if (!ProfilesProperty::IsEqual (0, range.low.z)) // Area may be negative is Z dimension of normal is negative
+        {
+        ProfilesLog::FailedValidate_InvalidRange_ZNon0 (pProfileClassName);
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Accumulates points of line string to a points vector.
+* Applies a check if a point is already in the vector before inserting and returns false if a point is repeating.
+* Skips first and last line string points to avoid collision with neighbor curve primitives.
+* @param[in/out]    keyPoints   Accumulated points
+* @param[in]        lineString  LineString to accumulate points from
+* @returns true on success (no repeating points)
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool accumulateLineStringPoints (bvector<DPoint2d>& keyPoints, bvector<DPoint3d> const& lineString)
+    {
+    // Skip first and last point as they will get accumulated via startEnd
+    for (size_t i = 1; i < lineString.size() - 1; ++i)
+        {
+        if (std::count_if 
+        (
+            keyPoints.begin(), 
+            keyPoints.end(), 
+            [&lineString, i] (DPoint2d const& point) { return point.AlmostEqual (DPoint2d::From (lineString[i])); }
+        ) > 0)
+            return false;
+
+        keyPoints.push_back (DPoint2d::From(lineString[i]));
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Recursively checks if curve primitives in curve vector are continious (curve primitives start with end of previous primitive).
+* If checking for a region shape, applies a check if it is closed.
+* If checking for an open shape, apples a check if points fo not repeat to avoid self intersections.
+* @param[in/out]    keyPoints   Helper point vector for checking if key points 
+*                               (starts and ends of curve primitives and points on line strings) do not repeat
+* @param[in]        curveVector Shape to validate
+* @param[in]        checkRegion true if shape is supposed to be checked if a region or an open shape
+* @return           true if shape is continious
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool validateCurveVectorIsContinious (bvector<DPoint2d>& keyPoints, CurveVector const& curveVector, bool checkRegion)
+    {
+    DPoint3d start, end, tempStart, tempEnd;
+
+    for (size_t i = 0; i < curveVector.size(); ++i)
+        {
+        ICurvePrimitivePtr const& primitive = curveVector[i];
+
+        // If curve primitive is a child curve vector, validate and accumulate key points recursively
+        if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == primitive->GetCurvePrimitiveType() &&
+            !validateCurveVectorIsContinious (keyPoints, *primitive->GetChildCurveVectorCP(), checkRegion))
+            return false;
+
+        // If curve primitive is a line string, accumulate its points and check if they do not repeat
+        if (!checkRegion && 
+            ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString == primitive->GetCurvePrimitiveType() &&
+            !accumulateLineStringPoints (keyPoints, *primitive->GetLineStringCP()))
+            return false;
+
+        // Check if primitive starts with an end of previous primitive
+        primitive->GetStartEnd (tempStart, tempEnd);
+        if (0 == i)
+            {
+            keyPoints.push_back (DPoint2d::From(tempStart));
+            keyPoints.push_back (DPoint2d::From(tempEnd));
+            start = tempStart;
+            end = tempEnd;
+            continue;
+            }
+
+        if (!end.AlmostEqual (tempStart))
+            return false;
+
+        // Check if primitive start/end points do not repeat
+        if (!checkRegion && 
+            i != curveVector.size() - 1 &&
+            std::count_if 
+            (
+                keyPoints.begin(), 
+                keyPoints.end(), 
+                [&tempEnd] (DPoint2d const& point) {return point.AlmostEqual (DPoint2d::From (tempEnd)); }
+            ) > 0)
+            return false;
+
+        keyPoints.push_back (DPoint2d::From (tempEnd));
+        end = tempEnd;
+        }
+
+    // Check if shape is closed
+    if (checkRegion && !start.AlmostEqual (end))
+        return false;
+
+    keyPoints.pop_back(); // Remove last point to avoid collisions with next primitive start on recursive call return
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProfilesGeometry::ValidateCurveVectorContinious (CurveVector const& curveVector, bool checkRegion, Utf8CP pProfileClassName)
+    {
+    bvector<DPoint2d> keyPoints;
+    if (!validateCurveVectorIsContinious (keyPoints, curveVector, checkRegion))
+        {
+        ProfilesLog::FailedValidate_NotContinious (pProfileClassName);
+        return false;
+        }
+
+    return true;
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

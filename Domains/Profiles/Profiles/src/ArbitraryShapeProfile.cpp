@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesPch.h"
+#include <ProfilesInternal\ProfilesGeometry.h>
 #include <ProfilesInternal\ProfilesProperty.h>
 #include <ProfilesInternal\ProfilesLogging.h>
 #include <Profiles\ArbitraryShapeProfile.h>
@@ -17,33 +18,6 @@ HANDLER_DEFINE_MEMBERS (ArbitraryShapeProfileHandler)
 #define SINGLE_PERIMETER_TEST_SCALE 1.01
 static bool validateCurveVectorGeometry (CurveVector const& curveVector);
 static bool validateCurveVectorClosed (CurveVector const& curveVector);
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool validateRange (IGeometry const& geometry)
-    {
-    DRange3d range;
-    if (!geometry.TryGetRange (range))
-        {
-        ProfilesLog::FailedValidate_InvalidGeometry (PRF_CLASS_ArbitraryShapeProfile);
-        return false;
-        }
-
-    if (!ProfilesProperty::IsEqual (0, range.ZLength()))
-        {
-        ProfilesLog::FailedValidate_InvalidRange_Not2d (PRF_CLASS_ArbitraryShapeProfile);
-        return false;
-        }
-    
-    if (!ProfilesProperty::IsEqual (0, range.low.z)) // Area may be negative is Z dimension of normal is negative
-        {
-        ProfilesLog::FailedValidate_InvalidRange_ZNon0 (PRF_CLASS_ArbitraryShapeProfile);
-        return false;
-        }
-
-    return true;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
@@ -102,49 +76,7 @@ static bool validateCurveVectorClosed (CurveVector const& curve)
     return true;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool checkIfCurveVectorIsContinious (CurveVector const& curveVector)
-    {
-    DPoint3d start, end, tempStart, tempEnd;
 
-    for (size_t i = 0; i < curveVector.size(); ++i)
-        {
-        ICurvePrimitivePtr const& primitive = curveVector[i];
-
-        if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == primitive->GetCurvePrimitiveType() &&
-            !checkIfCurveVectorIsContinious (*primitive->GetChildCurveVectorCP()))
-            {
-            ProfilesLog::FailedValidate_NotContinious (PRF_CLASS_ArbitraryShapeProfile);
-            return false;
-            }
-
-        primitive->GetStartEnd (tempStart, tempEnd);
-        if (0 == i)
-            {
-            start = tempStart;
-            end = tempEnd;
-            continue;
-            }
-
-        if (!end.AlmostEqual (tempStart))
-            {
-            ProfilesLog::FailedValidate_NotContinious (PRF_CLASS_ArbitraryShapeProfile);
-            return false;
-            }
-
-        end = tempEnd;
-        }
-
-    if (!start.AlmostEqual (end))
-        {
-        ProfilesLog::FailedValidate_NotContinious (PRF_CLASS_ArbitraryShapeProfile);
-        return false;
-        }
-
-    return true;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
@@ -202,7 +134,7 @@ static bool checkIfSinglePerimeterShape (CurveVector const& curveVector)
         return false;
         }
 
-    return checkIfCurveVectorIsContinious (*groupedCurves);
+    return ProfilesGeometry::ValidateCurveVectorContinious (*groupedCurves, true, PRF_CLASS_ArbitraryShapeProfile);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -306,7 +238,7 @@ bool ArbitraryShapeProfile::_Validate() const
     if (m_geometryPtr.IsNull())
         return false;
 
-    if (!validateRange (*m_geometryPtr))
+    if (!ProfilesGeometry::ValidateRangeXY(*m_geometryPtr, PRF_CLASS_ArbitraryShapeProfile))
         return false;
     
     switch (m_geometryPtr->GetGeometryType())

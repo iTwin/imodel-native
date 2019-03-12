@@ -94,4 +94,7 @@ protected:
 
         return modelPtr;
         }
+
+        Utf8String GetFailureMessage (Utf8CP message, CharCP file, size_t lineNo);
     };
+

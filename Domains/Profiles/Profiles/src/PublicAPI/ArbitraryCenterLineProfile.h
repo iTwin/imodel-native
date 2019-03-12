@@ -35,11 +35,17 @@ public:
         //! @param[in] pName Name of the Profile.
         //! @param[in] geometryPtr CenterLine geometry used to generate the shape for this profile.
         //! @param[in] wallThickness Constant thickness of profile walls.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, IGeometryPtr const& geometryPtr, double wallThickness);
+        //! @param[in] arcAngle (If this is positive) turns larger than this become arcs.
+        //! @param[in] chamferAngle (If this is positive) "outer chamfers" are created with this max angle.
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, IGeometryPtr const& geometryPtr, double wallThickness, Angle const& arcAngle = Angle::FromRadians(-1.0), Angle const& chamferAngle = Angle::AnglePiOver2());
 
     public:
         //! Constant thickness of profile walls.
         double wallThickness;
+        //! (If this is positive) turns larger than this become arcs.
+        Angle arcAngle;
+        //! (If this is positive) "outer chamfers" are created with this max angle.
+        Angle chamferAngle;
         };
 
 private:
@@ -48,6 +54,8 @@ private:
     virtual bool _Validate() const override;
     virtual bool _CreateGeometry() override;
     virtual IGeometryPtr _CreateShapeGeometry() const override;
+    
+    virtual void _CopyFrom (Dgn::DgnElement const& source) override;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (ArbitraryCenterLineProfile)
@@ -55,6 +63,9 @@ public:
 
     PROFILES_EXPORT static ArbitraryCenterLineProfilePtr Create (CreateParams const& params) { return new ArbitraryCenterLineProfile (params); }
 
+private:
+    Angle m_arcAngle;
+    Angle m_chamferAngle;
     }; // ArbitraryCenterLineProfile
 
 //=======================================================================================
