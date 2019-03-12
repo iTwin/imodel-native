@@ -17,6 +17,9 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+#define SMSAVEASLOGNAME L"ScalableMesh::SMSaveAs"
+#define SMSAVEAS_LOG (*NativeLogging::LoggingManager::GetLogger(SMSAVEASLOGNAME))
+
 void PrepareClipsForSaveAs(ClipVectorPtr clips)
     {
     if (!clips.IsValid()) return;
@@ -128,7 +131,7 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
             if (nT >= 1) nbThreads = (uint64_t)nT;
             }
 
-        //LOG.debugv("Publishing using [%I64d] threads", nbThreads);
+        SMSAVEAS_LOG.debugv("Publishing using [%I64d] threads", nbThreads);
 
         startTime = clock();
         bvector<DRange3d> ranges;
@@ -153,10 +156,10 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
         {
             if (progress != nullptr  && progress->IsCanceled()) return;
 
-            //std::wstringstream      threadIDStrStream;
-            //std::thread::id threadID = std::this_thread::get_id();
-            //threadIDStrStream << threadID;
-            //LOG.debugv("Processing node [%I64d] in thread %ls", node->GetNodeId(), threadIDStrStream.str().c_str());
+            std::wstringstream      threadIDStrStream;
+            std::thread::id threadID = std::this_thread::get_id();
+            threadIDStrStream << threadID;
+            SMSAVEAS_LOG.debugv("Processing node [%I64d] in thread %ls", node->GetNodeId(), threadIDStrStream.str().c_str());
 
             bool hasMSClips = false;
             for (auto const& range : ranges)
@@ -183,7 +186,7 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
                     tileStore->StoreBlock(&cesiumData, cesiumData.size(), smPtNode->GetBlockID());
                 else
                     {
-                    LOG.errorv("No Cesium 3DTiles data generated for node [%I64d]", nodeP->GetNodeId());
+                    SMSAVEAS_LOG.errorv("No Cesium 3DTiles data generated for node [%I64d]", nodeP->GetNodeId());
                     }
                 
                 //// Store header
@@ -270,7 +273,7 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
             printStats = true;
         if (printStats)
             {
-            LOG.infov("Time to process tree: %f", (clock() - startTime) / CLOCKS_PER_SEC);
+            SMSAVEAS_LOG.infov("Time to process tree: %f", (clock() - startTime) / CLOCKS_PER_SEC);
             }
         while (progress != nullptr && !distributor->empty())
             {
@@ -281,17 +284,12 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
         if (printStats)
             {
             auto tTime = (double)(clock() - startTime) / CLOCKS_PER_SEC;
-            LOG.infov("Time to load data: %f\n"
-                "Time to convert data : %f\n"
-                "Time to store data: %f\n"
-                "Total time: %f\n"
-                "Number processed nodes: %I64d\n"
-                "Total number of nodes: %I64d\n"
-                "Convert speed (nodes/sec): %f"
-                , (clock() - startTime) / CLOCKS_PER_SEC,
-                (double)convertTime.load() / CLOCKS_PER_SEC / nbThreads,
-                (double)storeTime.load() / CLOCKS_PER_SEC / nbThreads,
-                tTime, nbProcessedNodes.load(), nbNodes.load(), nbProcessedNodes.load() / tTime);
+            SMSAVEAS_LOG.infov("Total time: %f", tTime);
+            SMSAVEAS_LOG.infov("Time to convert data : %f", (double)convertTime.load() / CLOCKS_PER_SEC / nbThreads);
+            SMSAVEAS_LOG.infov("Time to store data: %f", (double)storeTime.load() / CLOCKS_PER_SEC / nbThreads);
+            SMSAVEAS_LOG.infov("Number processed nodes: %I64d", nbProcessedNodes.load());
+            SMSAVEAS_LOG.infov("Total number of nodes: %I64d", nbNodes.load());
+            SMSAVEAS_LOG.infov("Convert speed (nodes/sec): %f", nbProcessedNodes.load() / tTime);
             }
         }
     return true;
@@ -417,8 +415,7 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     strategy->AddGroup(rootNodeGroup.get());
     index->SetRootNodeGroup(rootNodeGroup);
 
-
-    //LOG.debug("Publishing index...");
+    SMSAVEAS_LOG.debug("Publishing index...");
 
     // Saving groups isn't parallelized therefore we run it in a single separate thread so that we can properly update the listener with the progress
     std::thread saveGroupsThread([index, strategy, rootNodeGroup, progress]()
@@ -460,7 +457,7 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
 
     PrepareClipsForSaveAs(clips);
 
-    //LOG.debug("Publishing nodes...");
+    SMSAVEAS_LOG.debug("Publishing nodes...");
 
     Publish3DTile(nodeP, pDataStore, Transform::FromIdentity(), clips, coverageID, isClipBoundary, nullptr/*sourceGCS*/, nullptr/*destinationGCS*/, progress, outputTexture);
 
@@ -596,14 +593,7 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
 
     WString wktStr;
 
-    if (meshP->GetBaseGCS() != nullptr)
-        {
-#ifdef VANCOUVER_API
-        meshP->GetBaseGCS()->GetWellKnownText(wktStr, BaseGCS::wktFlavorAutodesk);
-#else
-        meshP->GetBaseGCS()->GetWellKnownText(wktStr, BaseGCS::wktFlavorAutodesk, false);
-#endif
-        }
+    mesh->GetDbFile()->GetWkt(wktStr);
 
 
 

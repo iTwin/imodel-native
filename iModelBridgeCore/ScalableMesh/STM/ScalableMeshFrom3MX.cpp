@@ -518,6 +518,7 @@ public:
             {
                 if (node.textureID >= 0)
                 {
+                    m_scMesh->SetTextured(ScalableMesh::SMTextureType::Embedded);
                     if (scNode->AddTexturedMesh(node.vertices, node.ptsIndices, node.uvCoords, node.ptsIndices, 1, node.textureID) != SUCCESS)
                         return SMFrom3MXStatus::ScalableMeshSDKError;
                 }

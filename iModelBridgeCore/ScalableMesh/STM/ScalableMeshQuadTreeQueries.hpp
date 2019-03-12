@@ -6,7 +6,7 @@
 //:>       $Date: 2012/11/29 17:30:34 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -541,6 +541,12 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     return HGFViewDependentPointIndexQuery<POINT, EXTENT>::GlobalPreQuery(index, meshNodes);    
     }
 
+template<class POINT, class EXTENT> void ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::ToggleLimitToLevel(bool shouldLimit, size_t maxLevel)
+{
+    m_hasLevelLimit = shouldLimit;
+    m_levelLimit = maxLevel;
+}
+
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node, 
                                                                                                     HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
                                                                                                     size_t                                   numSubNodes,
@@ -582,7 +588,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
 
         // The point is located inside the node ...
         // Obtain objects from subnodes (if any)              
-        if (finalNode == true || node->IsLeaf())                             
+        if (finalNode == true || node->IsLeaf() || (m_hasLevelLimit && node->GetLevel() >= m_levelLimit))
             {                                       
             assert(node->GetFilter()->IsProgressiveFilter() == false);
                         
@@ -765,7 +771,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
 
         // The point is located inside the node ...
         // Obtain objects from subnodes (if any)              
-        if (finalNode == true || node->IsLeaf())                             
+        if (finalNode == true || node->IsLeaf() || (m_hasLevelLimit && node->GetLevel() >= m_levelLimit))
             {                                       
             assert(node->GetFilter()->IsProgressiveFilter() == false);
                         
@@ -921,9 +927,11 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
         finalNode = !IsCorrectForCurrentView(node, visibleExtent, this->m_rootToViewMatrix);
         }
 
+    if (m_hasLevelLimit && node->GetLevel() >= m_levelLimit)
+        finalNode = true;
     // The point is located inside the node ...
     // Obtain objects from subnodes (if any)              
-    if (finalNode == true || node->IsLeaf())                             
+    if (finalNode == true || node->IsLeaf())
         {                                       
         assert(node->GetFilter()==nullptr || node->GetFilter()->IsProgressiveFilter() == false);
                     

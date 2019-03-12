@@ -28,7 +28,11 @@
 #include "SMExternalProviderDataStore.h"
 #include "../InternalUtilityFunctions.h"
 
+#include "../Tracer.h"
 
+
+#define SMSTREAMINGSTORELOGNAME L"ScalableMesh::SMStreamingStore"
+#define SMSTREAMINGSTORE_LOG (*NativeLogging::LoggingManager::GetLogger(SMSTREAMINGSTORELOGNAME))
 
 
 USING_NAMESPACE_IMAGEPP
@@ -143,10 +147,13 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
             // NEEDS_WORK_SM_STREAMING : handle Azure token properly
             }
 #ifndef LINUX_SCALABLEMESH_BUILD
-        if (ScalableMeshRDSProvider::IsHostedByRDS(this->m_serverID, this->m_projectID, this->m_guid))
+        if (ScalableMeshRDSProvider::IsHostedByRDS("", this->m_projectID, this->m_guid))
             {
             // Forward to RDS to properly handle SAS tokens
             this->m_location = ServerLocation::RDS;
+            auto rdsServerUrl = ScalableMeshRDSProvider::GetBuddiUrl();
+            auto pos = rdsServerUrl.find(".");
+            this->m_serverID = Utf8String(rdsServerUrl.substr(8, pos - 8));
             }
         else
             {
@@ -2326,7 +2333,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
             file.Write(nullptr, dataToWrite, sizeToWrite);
         else
             {
-            LOG.errorv("Failed to open or create b3dm file [BeFileStatus(%d)] : %ls", (uint32_t)status, url.c_str());
+            SMSTREAMINGSTORE_LOG.errorv("Failed to open or create b3dm file [BeFileStatus(%d)] : %ls", (uint32_t)status, url.c_str());
             }
 
         if (mustCleanup)
@@ -2487,8 +2494,15 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
             block->SetTransform(m_transform);
             block->SetDecompressTexture(m_decompressTexture);
             block->SetGltfUpAxis(m_nodeGroup->GetGltfUpAxis());
-            block->Load(m_dataSourceAccount, m_dataSourceSessionName, m_dataType, m_nodeHeader->GetBlockSize((short)m_dataType));
+#ifdef TRACE_ON
+            clock_t startT = clock();
+#endif
+            block->Load(m_dataSourceAccount, m_dataSourceSessionName, m_dataType, m_nodeHeader->GetBlockSize((short)m_dataType));            
+#ifdef TRACE_ON
+            double elapsed = ((double)clock() - startT) / CLOCKS_PER_SEC;
 
+            TRACEPOINT(THREAD_ID(), EventType::CLOUDDATASOURCE_LOAD, blockID.m_integerID, (uint64_t)-1, -1, -1, elapsed*1000.0, 0)
+#endif
             }
         }
     //assert(block->GetID() == blockID.m_integerID);

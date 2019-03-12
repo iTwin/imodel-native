@@ -65,6 +65,7 @@
           <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
           <Assemblies>delivery/$(shlibprefix)ScalableMesh$(ApiNumber)$(shlibext)</Assemblies>             
           <Files ProductDirectoryName="Assemblies" Required="true">delivery/ScalableMeshCacert.pem</Files>
+          <Files ProductDirectoryName="Assemblies" Required="true">delivery/ScalableMeshLogging.config.xml</Files>
           <PublicAPI Domain="ScalableMesh" />
         </Bindings>
     </Part>
@@ -100,7 +101,10 @@
             <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMesh$(ApiNumber)$(shlibext)</Assemblies>
             <Files ProductDirectoryName="ScalableMeshAssemblies">delivery/ScalableMeshCacert.pem</Files>
             <Files ProductDirectoryName="PPNativeAssemblies">delivery/ScalableMeshCacert.pem</Files>
-            <PublicAPI Domain="ScalableMesh" />
+            <Files ProductDirectoryName="ScalableMeshAssemblies" Required="true">delivery/ScalableMeshLogging.config.xml</Files>
+            <Files ProductDirectoryName="PPNativeAssemblies" Required="true">delivery/ScalableMeshLogging.config.xml</Files>
+
+          <PublicAPI Domain="ScalableMesh" />
         </Bindings>
     </Part>
 
@@ -137,7 +141,8 @@
             <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMeshCore$(libext)</Libs>
             <Assemblies>delivery/$(shlibprefix)ScalableMeshCore$(ApiNumber)$(shlibext)</Assemblies>
             <Files ProductDirectoryName="Assemblies" Required="true">delivery/ScalableMeshCacert.pem</Files>
-            <PublicAPI Domain="ScalableMesh" />
+            <Files ProductDirectoryName="Assemblies" Required="true">delivery/ScalableMeshLogging.config.xml</Files>
+          <PublicAPI Domain="ScalableMesh" />
         </Bindings>
     </Part>
 

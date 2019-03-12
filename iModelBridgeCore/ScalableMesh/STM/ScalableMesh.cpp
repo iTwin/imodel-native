@@ -518,9 +518,9 @@ BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageDat
     return _CreateCoverage(coverageData, id, coverageName);
     }
 
-SMStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr destinationGcs, bool limitResolution)
+SMStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr destinationGcs, bool limitResolution, bool reprojectElevation)
     {
-    return _DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer, destinationGcs, limitResolution);
+    return _DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer, destinationGcs, limitResolution, reprojectElevation);
     }
 
 void IScalableMesh::GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData)
@@ -1227,6 +1227,11 @@ static bool s_checkHybridNodeState = false;
 template <class POINT> int ScalableMesh<POINT>::Open()
     {
 
+#if TRACE_ON
+    CachedDataEventTracer::GetInstance()->setLogDirectory("e:\\Elenie\\traceLogs\\");
+    CachedDataEventTracer::GetInstance()->start();
+#endif
+
     try 
         {
         bool isSingleFile = m_smSQLitePtr != nullptr ? m_smSQLitePtr->IsSingleFile() : false;
@@ -1395,6 +1400,10 @@ template <class POINT> int ScalableMesh<POINT>::Close
 (
 )
     {
+
+#ifdef TRACE_ON
+    CachedDataEventTracer::GetInstance()->analyze(-1);
+#endif
     WString path = m_path;
     if (this->IsCesium3DTiles() && !this->IsStubFile())
         {
@@ -3481,7 +3490,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
     return SUCCESS;
     }
 
-template <class POINT>  SMStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution)
+template <class POINT>  SMStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution, bool reprojectElevation)
     {    
 
 #if NEED_SAVE_AS_IN_IMPORT_DLL
@@ -3514,6 +3523,9 @@ template <class POINT>  SMStatus                      ScalableMesh<POINT>::_Dete
         smGroundExtractor->SetExtractionArea(coverageData);
         smGroundExtractor->SetGroundPreviewer(groundPreviewer);
 		smGroundExtractor->SetLimitTextureResolution(limitResolution);
+        smGroundExtractor->SetReprojectElevation(reprojectElevation);
+
+        
                 
         StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);
 
@@ -3663,7 +3675,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
 
     //auto coordInterp = this->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
     auto coordInterp = GeoCoordinates::GeoCoordInterpretation::Cartesian;
-       #ifndef LINUX_SCALABLEMESH_BUILD
+
     if (this->IsCesium3DTiles())
         {
         auto tileToDb = m_streamingSettings->GetTileToDbTransform();
@@ -3683,7 +3695,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
             coordInterp = GeoCoordinates::GeoCoordInterpretation::XYZ;
             }
         }
-        #endif
+	
 
     if (targetCS == nullptr || !gcs.HasGeoRef())
         {
