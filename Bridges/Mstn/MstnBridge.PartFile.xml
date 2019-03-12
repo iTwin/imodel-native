@@ -8,16 +8,18 @@
         <SubProduct ProductName="MstnBridge"/>
         <SubProduct ProductName="MstnBridgeTests"/>
         
-        <!-- Because we rebuild these from source, need to re-test. -->
+        <!-- Because we rebuild these from source, need to re-test. 
         <SubProduct ProductName="DgnV8ConverterTests" PartFile="DgnDbSync" Repository="DgnDbSync"/>
         <SubProduct ProductName="iModelBridge-Gtest" PartFile="iModelBridge" Repository="DgnDbSync"/>
-
+-->
+    
     </Part>
 
     <Product Name="MstnBridge" SaveProduct="true" BuildInstallSet="true">
         <SubPart PartName="MstnBridgeInstallFiles"/>
         <SubPart PartName="DgnV8ConverterExe" PartFile="DgnDbSync" Repository="DgnDbSync"/>
         <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="MakePackages" PartFile="bridge-addon" Repository="DgnDbSync"/>
         <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
         
         <InstallerWixFile SourceFile="Installer/MstnBridgeInstaller"/>
