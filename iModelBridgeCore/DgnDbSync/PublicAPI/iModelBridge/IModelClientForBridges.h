@@ -110,6 +110,7 @@ struct IMODEL_BRIDGE_FWK_EXPORT IModelBankClient : IModelClientBase
     IModelBankClient(iModelBridgeFwk::IModelBankArgs const&, WebServices::ClientInfoPtr ci);
 
     iModel::Hub::iModelInfoPtr GetIModelInfo() override;
+    void SetUrlAndAccessToken(iModelBridgeFwk::IModelBankArgs const&);
 
     BentleyStatus Shutdown();
     };
