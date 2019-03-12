@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/Commands/DTMAddIn.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "stdafx.h"
@@ -844,14 +844,59 @@ static DialogHookInfo uHooks[] =
         {HOOKITEMID_CommonOverriddenDistanceProp, (PFDialogHook)hook_labelContoursTextHeightWidth},
     };
 
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Poonam.Patil     02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static void    terrainModel_cmdHandler(WCharCP unparsed)
+    {
+    //if the terrain capability is not enabled then do not proceed
+    if (!mdlCapability_isEnabled(CAPABILITY_TERRAINMODEL))
+        {
+        WString         msg;
+        mdlResource_loadWString(msg, 0, RSCID_MESSAGES2, 919);
+        mdlOutput_messageCenter(OutputMessagePriority::Info, msg.c_str(), NULL, OutputMessageAlert::None);
+        return;
+        }
+
+    switch (tcb->last_parsed_command)
+        {
+        case CMD_TERRAINMODEL_FEATURETRACK:
+            {
+            FeatureTrack(unparsed);
+            break;
+            }
+        case CMD_TERRAINMODEL_IMPORT_DTM:
+            ImportCMD(unparsed);
+            break;
+        case CMD_TERRAINMODEL_IMPORT_LANDXML:
+            ImportCMD(unparsed);
+            break;
+        case CMD_TERRAINMODEL_IMPORT_LANDXML_PREPARE_CONFIG:
+            PrepareLandXMLCfg(unparsed);
+            break;
+        case CMD_TERRAINMODEL_LABEL_CONTOURS:
+            CMD_TERRAINMODEL_annotateContours(unparsed);
+            break;
+        case CMD_TERRAINMODEL_LABEL_SPOTS:
+            CMD_TERRAINMODEL_annotateSpots(unparsed);
+            break;
+       default:
+            {
+            assert(false);
+            return;
+            }
+        }
+    }
+
+
 static MdlCommandNumber s_commandNumbers [] =
     { 
-        { FeatureTrack,                                      CMD_TERRAINMODEL_FEATURETRACK },
-        { ImportCMD,                                         CMD_TERRAINMODEL_IMPORT_DTM },
-        { ImportCMD,                                         CMD_TERRAINMODEL_IMPORT_LANDXML },
-        { PrepareLandXMLCfg,                                 CMD_TERRAINMODEL_IMPORT_LANDXML_PREPARE_CONFIG },
-        { CMD_TERRAINMODEL_annotateContours,                 CMD_TERRAINMODEL_LABEL_CONTOURS},
-        { CMD_TERRAINMODEL_annotateSpots,                    CMD_TERRAINMODEL_LABEL_SPOTS},
+        { terrainModel_cmdHandler,                                      CMD_TERRAINMODEL_FEATURETRACK },
+        { terrainModel_cmdHandler,                                      CMD_TERRAINMODEL_IMPORT_DTM },
+        { terrainModel_cmdHandler,                                      CMD_TERRAINMODEL_IMPORT_LANDXML },
+        { terrainModel_cmdHandler,                                      CMD_TERRAINMODEL_IMPORT_LANDXML_PREPARE_CONFIG },
+        { terrainModel_cmdHandler,                                      CMD_TERRAINMODEL_LABEL_CONTOURS},
+        { terrainModel_cmdHandler,                                      CMD_TERRAINMODEL_LABEL_SPOTS},
     };
 
 MdlDesc*    s_mdlDescLoader = nullptr;

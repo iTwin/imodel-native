@@ -28,7 +28,7 @@ always:
 #   Symlink APIs
 #----------------------------------------------------------------------
 always:
-   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/AutomaticGroundDetection=$(SrcRoot)TerrainModel\AutomaticGroundDetection\PublicAPI"
+   ~linkdir "$(BuildContext)PublicAPI/AutomaticGroundDetection=$(SrcRoot)TerrainModel\AutomaticGroundDetection\PublicAPI"
   
 
 CCompOpts + -openmp -bigobj -GR -D__BENTLEY_GROUND_DETECT_BUILD__ -DDGNDB06_API

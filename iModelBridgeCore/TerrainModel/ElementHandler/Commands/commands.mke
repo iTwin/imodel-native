@@ -2,7 +2,7 @@
 #
 #     $Source: ElementHandler/Commands/commands.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 
@@ -235,7 +235,7 @@ MuiAdditionalIncludes = $(o) $(GensrcInclude)
 %include $(SharedMki)CreateAndSymlinkMui.mki
 
 #always:
-#   @SymLinkResxTranskitFiles.py $(baseDir)transkit.xml $(o) $(MuiTranskitDeliveryDir)
+#   @python.exe $(SrcRoot)bsicommon/build/SymLinkResxTranskitFiles.py $(baseDir)transkit.xml $(o) $(MuiTranskitDeliveryDir)
 
 always:
-   @SymLinkResxTranskitFiles.py $(basedir)Transkit.xml $(o)Managed\ $(MuiTranskitDeliveryDir)Managed\
+   @python.exe $(SrcRoot)bsicommon/build/SymLinkResxTranskitFiles.py $(basedir)Transkit.xml $(o)Managed\ $(MuiTranskitDeliveryDir)Managed\
