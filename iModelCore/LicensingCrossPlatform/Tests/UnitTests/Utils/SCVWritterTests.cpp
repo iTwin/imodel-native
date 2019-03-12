@@ -8,7 +8,7 @@
 
 #include "SCVWritterTests.h"
 
-#include <Licensing\Utils\SCVWritter.h>
+#include <Licensing/Utils/SCVWritter.h>
 
 USING_NAMESPACE_BENTLEY_LICENSING
 
