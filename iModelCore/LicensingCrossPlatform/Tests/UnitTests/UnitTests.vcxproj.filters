@@ -72,6 +72,9 @@
     <ClCompile Include="Mocks\AuthHandlerProviderMock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Mocks\UlasProviderMock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TestsHelper.h">

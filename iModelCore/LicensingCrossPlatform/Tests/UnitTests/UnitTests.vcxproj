@@ -14,6 +14,7 @@
     <ClCompile Include="Mocks\AuthHandlerProviderMock.cpp" />
     <ClCompile Include="Mocks\BuddiProviderMock.cpp" />
     <ClCompile Include="Mocks\PolicyProviderMock.cpp" />
+    <ClCompile Include="Mocks\UlasProviderMock.cpp" />
     <ClCompile Include="PolicyTests.cpp" />
     <ClCompile Include="TestsHelper.cpp" />
     <ClCompile Include="UlasProviderTests.cpp" />

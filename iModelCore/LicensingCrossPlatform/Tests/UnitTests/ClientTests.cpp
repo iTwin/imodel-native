@@ -424,8 +424,9 @@ TEST_F(ClientTests, StartApplicationStopApplication_Success)
         .WillRepeatedly(Return(1)); // will get PostUsageLogs() called
     EXPECT_CALL(GetLicensingDbMock(), GetFeatureRecordCount())
         .WillRepeatedly(Return(1)); // will get PostFeatureLogs() called
-    EXPECT_CALL(GetUlasProviderMock(), PostUsageLogs(_, _, _, _));
-    EXPECT_CALL(GetUlasProviderMock(), PostFeatureLogs(_, _, _, _));
+
+    GetUlasProviderMock().MockPostUsageLogs(BentleyStatus::SUCCESS);
+    GetUlasProviderMock().MockPostFeatureLogs(BentleyStatus::SUCCESS);
 
     // called in Policy heartbeat
     EXPECT_CALL(GetLicensingDbMock(), GetOfflineGracePeriodStart())
@@ -651,12 +652,11 @@ TEST_F(ClientTests, SaasClientTrackUsage_Success)
 
     BentleyStatus status = BentleyStatus::SUCCESS;
 
-    EXPECT_CALL(GetUlasProviderMock(), RealtimeTrackUsage(A<Utf8StringCR>(), A<int>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<BeVersionCR>(), A<Utf8StringCR>()))
-        .Times(1)
-        .WillOnce(Return(ByMove(folly::makeFuture(status))));
+    GetUlasProviderMock().MockRealtimeTrackUsage(BentleyStatus::SUCCESS);
 
     Utf8String projectId = "00000000-0000-0000-0000-000000000000";
     EXPECT_SUCCESS(client->TrackUsage(accessToken, version, projectId).get());
+    EXPECT_EQ(1, GetUlasProviderMock().RealtimeTrackUsageCalls());
     }
 
 TEST_F(ClientTests, SaasClientMarkFeatureNoDataNoProject_Success)
@@ -669,11 +669,10 @@ TEST_F(ClientTests, SaasClientMarkFeatureNoDataNoProject_Success)
 
     BentleyStatus status = BentleyStatus::SUCCESS;
 
-    EXPECT_CALL(GetUlasProviderMock(), RealtimeMarkFeature(A<Utf8StringCR>(), A<FeatureEvent>(), A<int>(), A<Utf8StringCR>(), A<Utf8StringCR>()))
-        .Times(1)
-        .WillOnce(Return(ByMove(folly::makeFuture(status))));
+    GetUlasProviderMock().MockRealtimeMarkFeature(BentleyStatus::SUCCESS);
 
     EXPECT_SUCCESS(client->MarkFeature(accessToken, featureEvent).get());
+    EXPECT_EQ(1, GetUlasProviderMock().RealtimeMarkFeatureCalls());
     }
 
 // ClientWithKey tests - move to new test file?
@@ -731,12 +730,11 @@ TEST_F(ClientTests, WithKeyStartApplicationInvalidKey_Success)
     jsonAccessKeyResponse["status"] = "Failure";
     jsonAccessKeyResponse["msg"] = "Record is Inactive or Expired";
 
-    EXPECT_CALL(GetUlasProviderMock(), GetAccessKeyInfo(A<ClientInfoPtr>(), A<Utf8StringCR>()))
-        .Times(1)
-        .WillOnce(Return(ByMove(folly::makeFuture(jsonAccessKeyResponse))));
+    GetUlasProviderMock().MockGetAccessKeyInfo(jsonAccessKeyResponse);
 
     EXPECT_EQ((int)client->StartApplication(), (int)LicenseStatus::NotEntitled);
     EXPECT_EQ(1, GetPolicyProviderMock().GetPolicyWithKeyCalls());
+    EXPECT_EQ(1, GetUlasProviderMock().GetAccessKeyInfoCalls());
     }
 
 TEST_F(ClientTests, WithKeyStartApplication_StopApplication_Success)
@@ -764,9 +762,7 @@ TEST_F(ClientTests, WithKeyStartApplication_StopApplication_Success)
     Json::Value jsonAccessKeyResponse(Json::objectValue);
     jsonAccessKeyResponse["status"] = "Success";
 
-    EXPECT_CALL(GetUlasProviderMock(), GetAccessKeyInfo(A<ClientInfoPtr>(), A<Utf8StringCR>()))
-        .Times(1)
-        .WillOnce(Return(ByMove(folly::makeFuture(jsonAccessKeyResponse))));
+    GetUlasProviderMock().MockGetAccessKeyInfo(jsonAccessKeyResponse);
 
     std::list<Json::Value> validPolicyList;
     validPolicyList.push_back(jsonPolicyValid);
@@ -785,6 +781,5 @@ TEST_F(ClientTests, WithKeyStartApplication_StopApplication_Success)
     EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
     EXPECT_SUCCESS(client->StopApplication());
     EXPECT_EQ(1, GetPolicyProviderMock().GetPolicyWithKeyCalls());
+    EXPECT_EQ(1, GetUlasProviderMock().GetAccessKeyInfoCalls());
     }
-
-
