@@ -97,7 +97,7 @@ BeFileName GetLicensingDbPath()
     return path;
     }
 
-ClientImplPtr CreateTestClient(ConnectSignInManager::UserInfo userInfo, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb, IAuthHandlerProviderPtr authHandler)
+ClientImplPtr CreateTestClient(ConnectSignInManager::UserInfo userInfo, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
     {
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
@@ -125,7 +125,7 @@ SaasClientImplPtr CreateTestSaasClient(uint64_t heartbeatInterval, ITimeRetrieve
         ulasProvider);
     }
 
-ClientWithKeyImplPtr CreateWithKeyTestClient(uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
+ClientWithKeyImplPtr CreateWithKeyTestClient(uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
     {
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
@@ -143,7 +143,7 @@ ClientWithKeyImplPtr CreateWithKeyTestClient(uint64_t heartbeatInterval, ITimeRe
         licensingDb);
     }
 
-// Note: cannot use BuddiProvider mocks with clients created with the factory
+// Note: cannot use mocks with clients created with the factory
 ClientPtr CreateTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
@@ -209,9 +209,9 @@ ClientPtr CreateWithKeyTestClientFromFactory(bool signIn, uint64_t heartbeatInte
         proxy);
     }
 
-ClientImplPtr CreateTestClient(ConnectSignInManager::UserInfo userInfo, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb, IAuthHandlerProviderPtr authHandler)
+ClientImplPtr CreateTestClient(ConnectSignInManager::UserInfo userInfo, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
     {
-    return CreateTestClient(userInfo, TEST_HEARTBEAT_INTERVAL, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, policyProvider, ulasProvider, licensingDb, authHandler);
+    return CreateTestClient(userInfo, TEST_HEARTBEAT_INTERVAL, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, policyProvider, ulasProvider, licensingDb);
     }
 
 ClientPtr CreateTestClientFromFactory(bool signIn)
@@ -229,9 +229,9 @@ SaasClientPtr CreateTestSaasClientFromFactory(bool signIn)
     return CreateTestSaasClientFromFactory(signIn, TEST_HEARTBEAT_INTERVAL, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, std::atoi(TEST_PRODUCT_ID));
     }
 
-ClientWithKeyImplPtr CreateWithKeyTestClient(IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
+ClientWithKeyImplPtr CreateWithKeyTestClient(IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
     {
-    return CreateWithKeyTestClient(TEST_HEARTBEAT_INTERVAL, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, policyProvider, ulasProvider, licensingDb);
+    return CreateWithKeyTestClient(TEST_HEARTBEAT_INTERVAL, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, policyProvider, ulasProvider, licensingDb);
     }
 
 ClientPtr CreateWithKeyTestClientFromFactory(bool signIn)
@@ -244,7 +244,6 @@ ClientPtr CreateWithKeyTestClientFromFactory(bool signIn)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientTests::ClientTests() :
     m_handler(std::make_shared<MockHttpHandler>()),
-    m_buddiProviderMock(std::make_shared<BuddiProviderMock>()),
     m_policyProviderMock(std::make_shared<PolicyProviderMock>()),
     m_ulasProviderMock(std::make_shared<UlasProviderMock>()),
     m_licensingDbMock(std::make_shared<LicensingDbMock>())
@@ -264,38 +263,6 @@ MockHttpHandler& ClientTests::GetHandler() const
 std::shared_ptr<MockHttpHandler> ClientTests::GetHandlerPtr() const
     {
     return m_handler;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-AuthHandlerProviderMock&  ClientTests::GetAuthHandlerProviderMock() const
-    {
-    return *m_authHandlerMock;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<AuthHandlerProviderMock> ClientTests::GetAuthHandlerProviderMockPtr() const
-    {
-    return m_authHandlerMock;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-BuddiProviderMock&  ClientTests::GetBuddiProviderMock() const
-    {
-    return *m_buddiProviderMock;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<BuddiProviderMock> ClientTests::GetBuddiProviderMockPtr() const
-    {
-    return m_buddiProviderMock;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -377,7 +344,7 @@ void ClientTests::SetUpTestCase()
 TEST_F(ClientTests, StartApplication_Error)
     {
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", "userId", "orgId");
-    auto client = CreateTestClient(userInfo, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), GetAuthHandlerProviderMockPtr());
+    auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
         .Times(1)
@@ -389,7 +356,7 @@ TEST_F(ClientTests, StartApplication_Error)
 TEST_F(ClientTests, StartApplicationNoHeartbeat_Success)
     {
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", "userId", "orgId");
-    auto client = CreateTestClient(userInfo, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), GetAuthHandlerProviderMockPtr());
+    auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
         .Times(1)
@@ -421,7 +388,7 @@ TEST_F(ClientTests, StartApplicationNoHeartbeat_Success)
 TEST_F(ClientTests, StartApplicationStopApplication_Success)
     {
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa", "orgId");
-    auto client = CreateTestClient(userInfo, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), GetAuthHandlerProviderMockPtr());
+    auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
         .Times(1)
@@ -480,7 +447,7 @@ TEST_F(ClientTests, GetPolicy_Success)
     GetPolicyProviderMock().MockGetPolicy(policy);
 
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", "userId", "orgId");
-    auto client = CreateTestClient(userInfo, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), GetAuthHandlerProviderMockPtr());
+    auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     auto policyToken = client->GetPolicy().get();
     EXPECT_NE(policyToken, nullptr); //not testing the policy token here, just that GetPolicy is called
@@ -505,7 +472,7 @@ TEST_F(ClientTests, GetCertificate_Success_HttpMock)
 TEST_F(ClientTests, GetProductStatusNoGracePeriod_Test)
     {
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa", "orgId");
-    auto client = CreateTestClient(userInfo, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), GetAuthHandlerProviderMockPtr());
+    auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     Utf8String userIdBad = "00000000-0000-0000-0000-000000000000";
@@ -588,7 +555,7 @@ TEST_F(ClientTests, GetProductStatusNoGracePeriod_Test)
 TEST_F(ClientTests, GetProductStatusStartedGracePeriod_Test)
     {
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa", "orgId");
-    auto client = CreateTestClient(userInfo, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), GetAuthHandlerProviderMockPtr());
+    auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
 
@@ -617,7 +584,7 @@ TEST_F(ClientTests, GetProductStatusStartedGracePeriod_Test)
 TEST_F(ClientTests, GetProductStatusExpiredGracePeriod_Test)
     {
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa", "orgId");
-    auto client = CreateTestClient(userInfo, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), GetAuthHandlerProviderMockPtr());
+    auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
 
@@ -640,7 +607,7 @@ TEST_F(ClientTests, GetProductStatusExpiredGracePeriod_Test)
 TEST_F(ClientTests, CleanUpPolicies_Success)
     {
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", "userId", "orgId");
-    auto client = CreateTestClient(userInfo, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), GetAuthHandlerProviderMockPtr());
+    auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
 
@@ -660,7 +627,7 @@ TEST_F(ClientTests, CleanUpPolicies_Success)
 TEST_F(ClientTests, DeleteAllOtherPoliciesByUser_Success)
     {
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", "userId", "orgId");
-    auto client = CreateTestClient(userInfo, GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), GetAuthHandlerProviderMockPtr());
+    auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
 
@@ -712,7 +679,7 @@ TEST_F(ClientTests, SaasClientMarkFeatureNoDataNoProject_Success)
 // ClientWithKey tests - move to new test file?
 TEST_F(ClientTests, WithKeyStartApplication_Error)
     {
-    auto client = CreateWithKeyTestClient(GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
+    auto client = CreateWithKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
         .Times(1)
@@ -723,7 +690,7 @@ TEST_F(ClientTests, WithKeyStartApplication_Error)
 
 TEST_F(ClientTests, WithKeyStartApplicationNullPolicy_Error)
     {
-    auto client = CreateWithKeyTestClient(GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
+    auto client = CreateWithKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
         .Times(1)
@@ -739,7 +706,7 @@ TEST_F(ClientTests, WithKeyStartApplicationNullPolicy_Error)
 
 TEST_F(ClientTests, WithKeyStartApplicationInvalidKey_Success)
     {
-    auto client = CreateWithKeyTestClient(GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
+    auto client = CreateWithKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
         .Times(1)
@@ -774,7 +741,7 @@ TEST_F(ClientTests, WithKeyStartApplicationInvalidKey_Success)
 
 TEST_F(ClientTests, WithKeyStartApplication_StopApplication_Success)
     {
-    auto client = CreateWithKeyTestClient(GetBuddiProviderMockPtr(), GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
+    auto client = CreateWithKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     EXPECT_CALL(GetLicensingDbMock(), OpenOrCreate(A<BeFileNameCR>()))
         .Times(1)

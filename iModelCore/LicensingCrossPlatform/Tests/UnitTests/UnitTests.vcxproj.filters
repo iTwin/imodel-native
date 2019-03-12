@@ -66,6 +66,12 @@
     <ClCompile Include="Mocks\PolicyProviderMock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Mocks\BuddiProviderMock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mocks\AuthHandlerProviderMock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TestsHelper.h">
