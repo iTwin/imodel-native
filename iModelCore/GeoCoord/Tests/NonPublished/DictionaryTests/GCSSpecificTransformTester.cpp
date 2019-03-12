@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/DictionaryTests/GCSSpecificTransformTester.cpp $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -345,6 +345,55 @@ TEST_P(GCSSpecificTransformTester, SpecificCoordConversionTest)
 INSTANTIATE_TEST_CASE_P(GCSSpecificTransformTester_Combined,
                         GCSSpecificTransformTester,
                         ValuesIn(s_listOfConversionTests));
+
+
+/*---------------------------------------------------------------------------------**//**
+* Domain tests
+* @bsimethod                                                    StephanePoulin  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (GCSSpecificTransformTester, SpecificElevationTesgtIsrael)
+    {
+    GeoCoordinates::BaseGCSPtr firstGCS;
+    GeoCoordinates::BaseGCSPtr secondGCS;
+
+   
+    firstGCS = GeoCoordinates::BaseGCS::CreateGCS(L"UTM84-36N");
+    secondGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
+
+    WString wellKnownText = L"PROJCS[\"Israel 1993 / Israeli T\",GEOGCS[\"EPSG:4141\",DATUM[\"EPSG:6141\",SPHEROID[\"EPSG:7019\",6378137.000,298.25722210],TOWGS84[-48.0000,55.0000,52.0000,0.000000,0.000000,0.000000,0.00000000]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"false_easting\",219529.584],PARAMETER[\"false_northing\",626907.390],PARAMETER[\"scale_factor\",1.000006700000],PARAMETER[\"central_meridian\",35.20451694444446],PARAMETER[\"latitude_of_origin\",31.73439361111112],UNIT[\"Meter\",1.00000000000000]]";
+    secondGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, wellKnownText.c_str());
+
+
+    ASSERT_TRUE(firstGCS.IsValid() && firstGCS->IsValid());
+    ASSERT_TRUE(secondGCS.IsValid() && secondGCS->IsValid());
+
+    ASSERT_TRUE(firstGCS->GetVerticalDatumCode() == GeoCoordinates::vdcFromDatum);
+    ASSERT_TRUE(secondGCS->GetVerticalDatumCode() == GeoCoordinates::vdcFromDatum);
+
+    DPoint3d resultPoint;
+    DPoint3d secondResultPoint;
+    DPoint3d inputPoint;
+
+    inputPoint.x = 800000;
+    inputPoint.y = 3000000;
+    inputPoint.z = 10.24;
+
+    firstGCS->SetReprojectElevation(true);
+    secondGCS->SetReprojectElevation(true);
+
+    ASSERT_TRUE(SUCCESS == local_reproject(resultPoint, inputPoint, *firstGCS, *secondGCS));
+
+    EXPECT_NEAR(resultPoint.x, 300862.38969781203, 0.001);
+    EXPECT_NEAR(resultPoint.y, 112309.01716421195, 0.001);
+    EXPECT_NEAR(resultPoint.z, -7.6771248336881399, 0.001);
+
+    ASSERT_TRUE(SUCCESS == local_reproject(secondResultPoint, resultPoint, *secondGCS, *firstGCS));
+
+    EXPECT_NEAR(secondResultPoint.x, 800000, 0.001);
+    EXPECT_NEAR(secondResultPoint.y, 3000000, 0.001);
+    EXPECT_NEAR(secondResultPoint.z, 10.24, 0.001);
+    }
 
 
 /*---------------------------------------------------------------------------------**//**
