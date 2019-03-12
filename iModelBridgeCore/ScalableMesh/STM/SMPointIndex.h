@@ -901,8 +901,9 @@ public:
             // Either case the node is an unsplit sublevel which implies it must have a parent and this parent may node be a leaf and the subnode no split must
             // point to this node. OR the node is not an unsplit sublevel which implies that either it has no parent or the parent is not a leaf and does not
             // point to an unsplit node.
-            HASSERT((m_nodeHeader.m_IsUnSplitSubLevel && GetParentNodePtr() != NULL && !GetParentNodePtr()->m_nodeHeader.m_IsLeaf && (GetParentNodePtr()->m_pSubNodeNoSplit == this)) ||
-                    (!m_nodeHeader.m_IsUnSplitSubLevel && ((GetParentNodePtr() == NULL) || (!GetParentNodePtr()->m_nodeHeader.m_IsLeaf && (GetParentNodePtr()->m_pSubNodeNoSplit == NULL)))));
+            HASSERT((GetParentNodePtr() == NULL) || //If parent is not loaded (for example during multi-process generations) cannot check further this precondition.
+                    (m_nodeHeader.m_IsUnSplitSubLevel && !GetParentNodePtr()->m_nodeHeader.m_IsLeaf && (GetParentNodePtr()->m_pSubNodeNoSplit == this)) ||
+                    (!m_nodeHeader.m_IsUnSplitSubLevel && !GetParentNodePtr()->m_nodeHeader.m_IsLeaf && (GetParentNodePtr()->m_pSubNodeNoSplit == NULL)));
 
             // Balancing must be homogenous throughout the index
             //NEEDS_WORK_SM: During partial update, possibly not.
@@ -1442,7 +1443,7 @@ public:
     uint64_t    m_nbInputPoints;
 #endif    
 
-    void SetNextID(const uint64_t& id);
+    BENTLEY_SM_EXPORT void SetNextID(const uint64_t& id);
     uint64_t GetNextID() const;
 
 
@@ -2084,6 +2085,10 @@ public:
     {
         return new ISMPointIndexQuery<POINT, EXTENT>();
     }
+
+    virtual void ToggleLimitToLevel(bool shouldLimit, size_t maxLevel)
+    {};
+
 
 #ifdef ACTIVATE_NODE_QUERY_TRACING
     /*======================================================================================================

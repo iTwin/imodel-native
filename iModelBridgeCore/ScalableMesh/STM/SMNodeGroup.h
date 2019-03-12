@@ -38,7 +38,8 @@
 
 #define OPEN_OR_CREATE_FILE(beFile, pathStr, accessMode) BeFileStatus::Success == OPEN_FILE(beFile, pathStr, accessMode) || BeFileStatus::Success == beFile.Create(pathStr)
 
-#define LOG (*NativeLogging::LoggingManager::GetLogger(L"SMPublisher"))
+#define SMNODEGROUPLOGNAME L"ScalableMesh::SMNodeGroup"
+#define SMNODEGROUP_LOG (*NativeLogging::LoggingManager::GetLogger(SMNODEGROUPLOGNAME))
 
 //#ifndef NDEBUG
 //#define DEBUG_GROUPS
@@ -318,7 +319,7 @@ SMNodeDistributor(Function function
                 }
             lock.lock();
             speed = size_before - Queue::size();
-            LOG.infov("nodes/sec: %f, remaining: %f", speed, Queue::size());
+            SMNODEGROUP_LOG.infov("nodes/sec: %f, remaining: %f", speed, Queue::size());
             for(auto state : m_threadStates)
                 {
                 if (!(areThreadsFinished = state.second == ThreadState::IDLE))
@@ -351,7 +352,7 @@ SMNodeDistributor(Function function
                 lock.lock();
                 speed = size_before - Queue::size();
                 auto elapsedTime = (float)((clock() - startTime) / CLOCKS_PER_SEC);
-                LOG.infov("nodes/sec: %f    avg: %f    remaining: %d", (float)speed, (float)(startSize - Queue::size()) / elapsedTime, Queue::size());
+                SMNODEGROUP_LOG.infov("nodes/sec: %f    avg: %f    remaining: %d", (float)speed, (float)(startSize - Queue::size()) / elapsedTime, Queue::size());
                 }
             else
                 {
@@ -1288,7 +1289,7 @@ size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>
         }
     this->m_transform.Multiply(pi_NodeHeader.m_nodeExtent, pi_NodeHeader.m_nodeExtent);
     TilePublisher::WriteBoundingVolume(nodeTile, pi_NodeHeader.m_nodeExtent);
-    if (pi_NodeHeader.m_nodeCount > 0 && pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
+    if (pi_NodeHeader.m_nodeCount > 0 && pi_NodeHeader.m_nbFaceIndexes > 0 && pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
         {
         if (this->m_sourceGCS != nullptr && this->m_sourceGCS != this->m_destinationGCS)
             {
@@ -1425,18 +1426,18 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         }
     if (BeFileStatus::FileNotFoundError != status)
         {
-        LOG.errorv("File still open after 10 retries (shouldn't exist) [BeFileStatus(%d)]: %ls", (uint32_t)status, group_filename.c_str());
+        SMNODEGROUP_LOG.errorv("File still open after 10 retries (shouldn't exist) [BeFileStatus(%d)]: %ls", (uint32_t)status, group_filename.c_str());
         }
     if (BeFileStatus::Success != status)
         {
-        //LOG.errorv("Failed to Open [BeFileStatus(%d)]... try to create it: %ls", (uint32_t)status, group_filename.c_str());
+        SMNODEGROUP_LOG.errorv("Failed to Open [BeFileStatus(%d)]... try to create it: %ls", (uint32_t)status, group_filename.c_str());
         status = file.Create(group_filename.c_str());
         }
     if (BeFileStatus::Success == status)
         file.Write(nullptr, utf8TileTree.c_str(), (uint32_t)utf8TileTree.size());
     else
         {
-        LOG.errorv("Failed to open or create json file [BeFileStatus(%d)]: %ls", (uint32_t)status, group_filename.c_str());
+        SMNODEGROUP_LOG.errorv("Failed to open or create json file [BeFileStatus(%d)]: %ls", (uint32_t)status, group_filename.c_str());
         }
 
     }

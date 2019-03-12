@@ -157,8 +157,19 @@ DbResult ScalableMeshDb::OpenShared(BENTLEY_NAMESPACE_NAME::Utf8CP path, bool re
     return result;
 }
 
+#ifndef NDEBUG
+void ScalableMeshDb::SetCanReopenShared(bool canReopenShared)
+    {
+    m_canReopenShared = canReopenShared;
+    }
+#endif
+
 bool ScalableMeshDb::ReOpenShared(bool readonly, bool allowBusyRetry)
-{
+    {
+#ifndef NDEBUG
+    assert(m_canReopenShared);
+#endif
+
     if (m_path.empty())
         return false;
 

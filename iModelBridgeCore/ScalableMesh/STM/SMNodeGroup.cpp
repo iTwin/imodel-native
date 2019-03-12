@@ -167,7 +167,7 @@ void SMNodeGroupMasterHeader::SaveToFile(const WString pi_pOutputDirPath) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt SMNodeGroup::SaveTilesetToCache(Json::Value & tileset, const uint64_t& priorityNodeID, bool generateIDs)
     {
-    assert(tileset.isMember("asset") && tileset.isMember("root"));
+    BeAssert(tileset.isMember("asset") && tileset.isMember("root")); // Cesium 3DTiles tileset specification not respected
 
     if (tileset["asset"].isMember("gltfUpAxis"))
         {
@@ -276,7 +276,11 @@ StatusInt SMNodeGroup::SaveTileToCache(Json::Value & tile, uint64_t tileID)
             BeFileName contentURL(content["url"].asString());
             if (L"json" == BEFILENAME(GetExtension, contentURL))
                 {
-                assert(!tile.isMember("children"));
+                if(tile.isMember("children"))
+                    {
+                    SMNODEGROUP_LOG.debugv("SaveTileToCache() : Cesium 3DTiles tileset specification not respected in file %ls", contentURL.c_str());
+                    BeAssert(!"Cesium 3DTiles tileset specification not respected");
+                    }
                 // the tile references a new tileset (group)
                 static std::atomic<uint32_t> s_currentGroupID = {0};
 
@@ -297,7 +301,12 @@ StatusInt SMNodeGroup::SaveTileToCache(Json::Value & tile, uint64_t tileID)
                 }
             else
                 {
-                assert(L"b3dm" == BEFILENAME(GetExtension, contentURL)); // only b3dm supported at the moment
+                if(L"b3dm" != BEFILENAME(GetExtension, contentURL))
+                    {
+                    SMNODEGROUP_LOG.error("SaveTileToCache() : Only b3dm supported at the moment");
+                    BeAssert(!"Only b3dm supported at the moment");
+                    return ERROR;
+                    }
                 auto newURLUtf16 = this->m_dataSourcePrefix;
                 newURLUtf16.append(contentURL.c_str());
                 auto newURLUtf8 = Utf8String(newURLUtf16.c_str());
@@ -412,6 +421,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
         //    }
         if (!m_isLoaded)
             {
+            SMNODEGROUP_LOG.error("Load() : Unable to lock an unloaded node");
             return ERROR;
             }
         }
@@ -430,6 +440,8 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
                 {
                 if (this->m_isRoot)
                     {
+                    SMNODEGROUP_LOG.error("Load() : Unrecoverable error, root tileset couldn't be downloaded");
+
                     // This is a serious error, the root tileset could not be downloaded...
                     // Either the dataset does not exist or a connection problem occured.
                     // Since this is not immediately recoverable, we throw here.
@@ -441,9 +453,10 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
                 return ERROR;
                 }
 
-            if (!tileset.isMember("root"))
+            if (!tileset.isMember("asset") || !tileset.isMember("root"))
                 {
-                assert(!"error reading Cesium 3D tileset");
+                SMNODEGROUP_LOG.errorv("Load() : Cesium 3DTiles tileset specification not respected in file %ls", url.c_str());
+                BeAssert(!"Cesium 3DTiles tileset specification not respected");
                 return ERROR;
                 }
 
@@ -668,13 +681,11 @@ const DataSource::SessionName &SMNodeGroup::GetDataSourceSessionName(void)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SMNodeGroup::DownloadCesiumTileset(const DataSourceURL & url, Json::Value & tileset)
     {
-    std::vector<DataSourceBuffer::BufferData>         dest;
+    std::vector<DataSourceBuffer::BufferData> dest;
     if (this->DownloadBlob(dest, url))
         {
         return ConvertToJsonFromBytes(tileset, dest);
         }
-
-    assert(!"A problem occured while downloading a group.");
     return false;
     }
 
@@ -703,9 +714,10 @@ bool SMNodeGroup::DownloadBlob(std::vector<DataSourceBuffer::BufferData>& dest, 
         if ((status = dataSource->close()).isFailed())
             throw status;
         }
-    catch (DataSourceStatus)
+    catch (const DataSourceStatus& response)
         {
-        assert(false);
+        SMNODEGROUP_LOG.errorv("DownloadBlob() : Failed to download datasource with status code [%d]", response.getCode());
+        BeAssert(false);
         }
 
     DataSourceManager::Get()->destroyDataSource(dataSource);
@@ -829,7 +841,8 @@ StatusInt SMNodeGroup::SaveNode(const uint64_t & id, Json::Value * header)
     {
     if (m_groupCachePtr == nullptr)
         {
-        assert(!"Cannot save node header in invalid group cache");
+        SMNODEGROUP_LOG.error("SaveNode() : Cannot save node header in invalid group cache");
+        BeAssert(!"Cannot save node header in invalid group cache");
         return ERROR;
         }
     return m_groupCachePtr->AddNodeToGroupCache(this, id, header);
@@ -970,7 +983,8 @@ StatusInt SMGroupCache::AddNodeToGroupCache(SMNodeGroupPtr group, const uint64_t
     // Check cache state
     if (m_nodeHeadersPtr == nullptr || m_downloadedGroupsPtr == nullptr || m_downloadedGroupsPtr->count(id) > 0)
         {
-        assert(!"Cannot add group to cache because cache is not setup properly or adding will corrupt existing data");
+        SMNODEGROUP_LOG.error("AddNodeToGroupCache() : Cannot add group to cache because cache is not setup properly or adding will corrupt existing data");
+        BeAssert(!"Cannot add group to cache because cache is not setup properly or adding will corrupt existing data");
         return ERROR;
         }
 

@@ -2,7 +2,7 @@
 #
 #  $Source: ScalableMeshCreator.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -33,7 +33,7 @@ always:
 #----------------------------------------------------------------------
 always:
    ~linkdir "$(BuildContext)PublicAPI/ScalableMesh=${SCMPublicAPISrc}/ScalableMesh"
-   ~linkfile $(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
+   ~linkfile "$(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
    ~linkfile "$(BuildContext)VendorAPI/TilePublisher/Constants.h=$(tilePublisherDir)Constants.h"
    ~linkfile "$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
 

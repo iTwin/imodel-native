@@ -86,12 +86,9 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
 
 
         StatusInt                           ApplyEditsFromSources(HFCPtr<MeshIndexType>& pIndex);
-
-        StatusInt                           GetRasterSources(bvector<IDTMSource*>& filteredSources);
-
+        
         StatusInt                           GetLocalSourceTextureProvider(ITextureProviderPtr& textureProviderPtr, bvector<IDTMSource*>& filteredSources);
         
-        StatusInt                           GetTextureProvider(ITextureProviderPtr& textureProviderPtr);
 
         StatusInt                           ImportRasterSourcesTo(HFCPtr<MeshIndexType>& pIndex);
 
@@ -116,6 +113,12 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
         void InitSources();
 
     protected:
+
+        StatusInt                           GetRasterSources(bvector<IDTMSource*>& filteredSources);
+
+        StatusInt                           GetTextureProvider(ITextureProviderPtr& textureProviderPtr);
+
+        StatusInt                           GetTextureProvider(ITextureProviderPtr& textureProviderPtr, IScalableMeshPtr& smPtr, HFCPtr<MeshIndexType>& dataIndexPtr);
 
         virtual void ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher3d) override;
 

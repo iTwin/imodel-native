@@ -141,6 +141,8 @@ struct IScalableMeshCreator::Impl
 
         BENTLEY_SM_EXPORT StatusInt                           GetStreamedTextureProvider(ITextureProviderPtr& textureStreamProviderPtr, const WString& url);
 
+        BENTLEY_SM_EXPORT StatusInt                           GetStreamedTextureProvider(ITextureProviderPtr& textureStreamProviderPtr, IScalableMeshPtr& smPtr, HFCPtr<MeshIndexType>& dataIndexPtr, const WString& url);
+
         BENTLEY_SM_EXPORT StatusInt                           CreateDataIndex(HFCPtr<MeshIndexType>& pDataIndex,
                                                                               bool                   needBalancing = false, 
                                                                               uint32_t               splitThreshold = 10000);

@@ -9,9 +9,12 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
-uint64_t DifferenceSet::WriteToBinaryStream(void*& serialized)
+uint64_t DifferenceSet::WriteToBinaryStream(void*& serialized, bool willBeRecomputed)
     {
-    uint64_t ct = sizeof(int32_t) + 7 * sizeof(uint64_t) + addedVertices.size()*sizeof(DPoint3d) + addedFaces.size()*sizeof(int32_t) + removedVertices.size()*sizeof(int32_t) + removedFaces.size() * sizeof(int32_t) + addedUvs.size()*sizeof(DPoint2d) + addedUvIndices.size()*sizeof(int32_t)+ sizeof(bool);
+    uint64_t ct = sizeof(int32_t) + 7 * sizeof(uint64_t);
+    if (!willBeRecomputed)
+        ct += addedVertices.size() * sizeof(DPoint3d) + addedFaces.size() * sizeof(int32_t) + removedVertices.size() * sizeof(int32_t) + removedFaces.size() * sizeof(int32_t) + addedUvs.size() * sizeof(DPoint2d) + addedUvIndices.size() * sizeof(int32_t);
+    ct += sizeof(bool);
     serialized = malloc(ct);
 
     size_t offset = 0;
@@ -19,36 +22,36 @@ uint64_t DifferenceSet::WriteToBinaryStream(void*& serialized)
     offset += sizeof(uint64_t);
     memcpy((uint8_t*)serialized+offset, &firstIndex, sizeof(int32_t));
     offset += sizeof(int32_t);
-    uint64_t arraySize = addedVertices.size();
+    uint64_t arraySize = willBeRecomputed? 0 : addedVertices.size();
     memcpy((uint8_t*)serialized + offset, &arraySize, sizeof(uint64_t));
     offset += sizeof(uint64_t);
-    if (addedVertices.size() > 0) memcpy((uint8_t*)serialized + offset, &addedVertices[0], addedVertices.size()*sizeof(DPoint3d));
-    offset += addedVertices.size()*sizeof(DPoint3d);
-    arraySize = addedFaces.size();
+    if (addedVertices.size() > 0 && !willBeRecomputed) memcpy((uint8_t*)serialized + offset, &addedVertices[0], addedVertices.size()*sizeof(DPoint3d));
+    offset += willBeRecomputed? 0 : addedVertices.size()*sizeof(DPoint3d);
+    arraySize = willBeRecomputed? 0 : addedFaces.size();
     memcpy((uint8_t*)serialized + offset, &arraySize, sizeof(uint64_t));
     offset += sizeof(uint64_t);
-   if(addedFaces.size() > 0) memcpy((uint8_t*)serialized + offset, &addedFaces[0], addedFaces.size()*sizeof(int32_t));
-    offset += addedFaces.size()*sizeof(int32_t);
-    arraySize = removedVertices.size();
+   if(addedFaces.size() > 0 && !willBeRecomputed) memcpy((uint8_t*)serialized + offset, &addedFaces[0], addedFaces.size()*sizeof(int32_t));
+    offset += willBeRecomputed? 0 :addedFaces.size()*sizeof(int32_t);
+    arraySize = willBeRecomputed? 0 :removedVertices.size();
     memcpy((uint8_t*)serialized + offset, &arraySize, sizeof(uint64_t));
     offset += sizeof(uint64_t);
-    if (removedVertices.size() > 0)memcpy((uint8_t*)serialized + offset, &removedVertices[0], removedVertices.size()*sizeof(int32_t));
-    offset += removedVertices.size()*sizeof(int32_t);
-    arraySize = removedFaces.size();
+    if (removedVertices.size() > 0 && !willBeRecomputed)memcpy((uint8_t*)serialized + offset, &removedVertices[0], removedVertices.size()*sizeof(int32_t));
+    offset += willBeRecomputed? 0 : removedVertices.size()*sizeof(int32_t);
+    arraySize = willBeRecomputed? 0 :removedFaces.size();
     memcpy((uint8_t*)serialized + offset, &arraySize, sizeof(uint64_t));
     offset += sizeof(uint64_t);
-    if (removedFaces.size() > 0) memcpy((uint8_t*)serialized + offset, &removedFaces[0], removedFaces.size()*sizeof(int32_t));
-    offset += removedFaces.size()*sizeof(int32_t);
-    arraySize = addedUvs.size();
+    if (removedFaces.size() > 0 && !willBeRecomputed) memcpy((uint8_t*)serialized + offset, &removedFaces[0], removedFaces.size()*sizeof(int32_t));
+    offset += willBeRecomputed? 0: removedFaces.size()*sizeof(int32_t);
+    arraySize = willBeRecomputed? 0 :addedUvs.size();
     memcpy((uint8_t*)serialized + offset, &arraySize, sizeof(uint64_t));
     offset += sizeof(uint64_t);
-    if (addedUvs.size() > 0) memcpy((uint8_t*)serialized + offset, &addedUvs[0], addedUvs.size()*sizeof(DPoint2d));
-    offset += addedUvs.size()*sizeof(DPoint2d);
-    arraySize = addedUvIndices.size();
+    if (addedUvs.size() > 0 && !willBeRecomputed) memcpy((uint8_t*)serialized + offset, &addedUvs[0], addedUvs.size()*sizeof(DPoint2d));
+    offset += willBeRecomputed? 0 :addedUvs.size()*sizeof(DPoint2d);
+    arraySize = willBeRecomputed? 0 :addedUvIndices.size();
     memcpy((uint8_t*)serialized + offset, &arraySize, sizeof(uint64_t));
     offset += sizeof(uint64_t);
-    if (addedUvIndices.size() > 0) memcpy((uint8_t*)serialized + offset, &addedUvIndices[0], addedUvIndices.size()*sizeof(int32_t));
-    offset += addedUvIndices.size()*sizeof(int32_t);
+    if (addedUvIndices.size() > 0 && !willBeRecomputed) memcpy((uint8_t*)serialized + offset, &addedUvIndices[0], addedUvIndices.size()*sizeof(int32_t));
+    offset += willBeRecomputed? 0 :addedUvIndices.size()*sizeof(int32_t);
     if (clientID == (uint64_t)-1) toggledForID = upToDate;
     memcpy((uint8_t*)serialized + offset, &toggledForID, sizeof(bool));
     offset += sizeof(bool);

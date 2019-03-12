@@ -1250,7 +1250,18 @@ StatusInt IScalableMeshSourceCreator::Impl::GetRasterSources(bvector<IDTMSource*
 
 StatusInt IScalableMeshSourceCreator::Impl::GetTextureProvider(ITextureProviderPtr& textureProviderPtr)
     {
+    return GetTextureProvider(textureProviderPtr, m_scmPtr, m_dataIndex);
+    }
+
+
+StatusInt IScalableMeshSourceCreator::Impl::GetTextureProvider(ITextureProviderPtr& textureProviderPtr, IScalableMeshPtr& smPtr, HFCPtr<MeshIndexType>& dataIndexPtr)
+{
     bvector<IDTMSource*> filteredSources;
+
+    if (m_dataIndex == nullptr && dataIndexPtr != nullptr)
+        m_dataIndex = dataIndexPtr;
+    if (m_scmPtr == nullptr && smPtr != nullptr)
+        m_scmPtr = smPtr;
 
     StatusInt status;
 
@@ -1275,12 +1286,12 @@ StatusInt IScalableMeshSourceCreator::Impl::GetTextureProvider(ITextureProviderP
     }
 
     if (containtStreamingSource)
-    {             
-        return GetStreamedTextureProvider(textureProviderPtr, filteredSources[0]->GetPath());
+    {
+        return GetStreamedTextureProvider(textureProviderPtr, smPtr, dataIndexPtr, filteredSources[0]->GetPath());
     }
-    
+
     return GetLocalSourceTextureProvider(textureProviderPtr, filteredSources);
-    }
+}
 
 int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<MeshIndexType>& pIndex)
     {

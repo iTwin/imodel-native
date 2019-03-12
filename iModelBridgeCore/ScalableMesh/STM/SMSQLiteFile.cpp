@@ -611,6 +611,7 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
 
 
     stmt->BindInt(15, newNodeHeader.m_isTextured ? 1 : 0); 
+    
     stmt->BindInt(16, (int)newNodeHeader.m_nodeCount);
     stmt->BindDouble(17, (double)newNodeHeader.m_geometricResolution);
     stmt->BindDouble(18, (double)newNodeHeader.m_textureResolution);
