@@ -42,9 +42,9 @@ public:
     // Client Creator - Initializes an instance of Client, returns a ClientPtr to the prepared Client instance.
     LICENSING_EXPORT static SaasClientPtr Create
         (
-        int productId = 0, /** ProductId, must be provided if want to track against a particular product, alternative is tracking linked back to OIDC client id */
-        Utf8StringCR featureString = "", /** FeatureString, defaults to an empty string */
-        IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
+        int productId = 0, // ProductId, must be provided if want to track against a particular product, alternative is tracking linked back to OIDC client id
+        Utf8StringCR featureString = "", // FeatureString, defaults to an empty string
+        IHttpHandlerPtr customHttpHandler = nullptr // CustomHttpHandler, defaults to a nullptr
         );
 
     // Send real time usage
