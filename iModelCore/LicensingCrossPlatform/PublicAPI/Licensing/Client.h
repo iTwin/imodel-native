@@ -38,12 +38,7 @@ private:
         );
 
 public:
-    //! Client Creator
-    /*!
-    * Initializes an instance of Client, returns a ClientPtr to the prepared Client instance.
-    * 
-    * 
-    */
+    // Client Creator - Initializes an instance of Client, returns a ClientPtr to the prepared Client instance.
     LICENSING_EXPORT static ClientPtr Create
         (
         const ConnectSignInManager::UserInfo& userInfo, /** For determining UserID */
@@ -86,9 +81,7 @@ public:
     * Stop Application Comment
     */
     LICENSING_EXPORT BentleyStatus StopApplication();
-    /*!
-    * Mark Feature Comment
-    */
+    // Mark Feature Comment
     LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData);
     };
 

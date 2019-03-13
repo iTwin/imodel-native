@@ -39,12 +39,7 @@ private:
         );
 
 public:
-    //! Client Creator
-    /*!
-    * Initializes an instance of Client, returns a ClientPtr to the prepared Client instance.
-    *
-    *
-    */
+    // Client Creator - Initializes an instance of Client, returns a ClientPtr to the prepared Client instance.
     LICENSING_EXPORT static SaasClientPtr Create
         (
         int productId = 0, /** ProductId, must be provided if want to track against a particular product, alternative is tracking linked back to OIDC client id */
@@ -52,9 +47,7 @@ public:
         IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
         );
 
-    /*!
-    * Send real time usage
-    */
+    // Send real time usage
     LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
     };
 
