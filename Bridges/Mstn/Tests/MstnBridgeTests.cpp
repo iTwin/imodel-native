@@ -164,6 +164,7 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
         });
 
     // B
+#ifdef THIS_WONT_WORK // you cannot run multiple fwk's concurrently in the process - they fight over the DgnViewLibHost global, for one thing.
     std::thread bridge_b([&] 
         {
         BeFileName bDir(testDir);
@@ -184,13 +185,31 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
         ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
         });
+#else
+    BeFileName bDir(testDir);
+    bDir.AppendToPath(L"B");
+    BeFileName::CreateNewDirectory(bDir.c_str());
+
+    FwkArgvMaker argvMaker;
+    argvMaker.SetUpBridgeProcessingArgs(bDir.c_str(), L"bridge_b", GetDgnv8BridgeDllName(), DEFAULT_IMODEL_NAME, true, L"imodel-bank.rsp");
+    argvMaker.ReplaceArgValue(L"--imodel-bank-access-token", ComputeAccessTokenW("B").c_str());
+
+    BentleyApi::BeFileName inputFile;
+    MakeCopyOfFile(inputFile, L"Test3d.dgn", L"_B");
+
+    argvMaker.SetInputFileArg(inputFile);
+    argvMaker.SetSkipAssignmentCheck();
+    
+    auto bridge_b = StartIModelBridgeFwkExe(argvMaker.GetArgC(), argvMaker.GetArgV(), L"MultiBridgeSequencing");
+#endif
 
 
     createFile(b_can_run);      // b runs first
     createFile(a_can_run);      // then a runs
 
     bridge_a.join();
-    bridge_b.join();
+//    bridge_b.join();
+    WaitForIModelBridgeFwkExe(bridge_b);
     }
 
 /*---------------------------------------------------------------------------------**//**

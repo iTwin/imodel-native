@@ -70,7 +70,10 @@ struct MstnBridgeTestsFixture : ::testing::Test
 
     void StartImodelBankServer(BentleyApi::BeFileNameCR imodelDir);
     void StopImodelBankServer();
-    
+
+    std::tuple<void*, void*> StartIModelBridgeFwkExe(int argc, wchar_t const** argv, WCharCP testName);
+    int WaitForIModelBridgeFwkExe(std::tuple<void*, void*> const&);
+        
     static BentleyApi::WebServices::ClientInfoPtr GetClientInfo();
     static BentleyApi::BeFileName CreateImodelBankRepository(BentleyApi::BeFileNameCR seedFile);
     static BentleyApi::BeFileName CreateTestDir(WCharCP testDir = nullptr);
@@ -176,7 +179,7 @@ struct FwkArgvMaker
 
     void ReplaceArgValue(WCharCP argName, WCharCP newValue);
 
-    void SetInputFileArg(BentleyApi::BeFileNameCR fn) {PushArg(WPrintfString(L"--fwk-input=\"%ls\"", fn.c_str()));}
+    void SetInputFileArg(BentleyApi::BeFileNameCR fn) {PushArg(BentleyApi::WPrintfString(L"--fwk-input=\"%ls\"", fn.c_str()));}
     void SetSkipAssignmentCheck() {PushArg(L"--fwk-skip-assignment-check");}
 
     BentleyApi::bvector<WCharCP> const& GetUnparsedArgs() {return m_bargptrs;}

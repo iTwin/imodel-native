@@ -672,6 +672,52 @@ MstnBridgeTestsFixture::~MstnBridgeTestsFixture()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+int MstnBridgeTestsFixture::WaitForIModelBridgeFwkExe(std::tuple<void*, void*> const& pi)
+    {
+    void* hProcess;
+    void* hThread;
+    std::tie(hProcess, hThread) = pi;
+    WaitForSingleObject (hProcess, 5000);
+    DWORD dwExitCode = 0;
+    GetExitCodeProcess (hProcess, &dwExitCode);
+    CloseHandle(hProcess);
+    CloseHandle(hThread);
+    return (int)dwExitCode;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+std::tuple<void*, void*> MstnBridgeTestsFixture::StartIModelBridgeFwkExe(int argc, wchar_t const** argv, WCharCP testName)
+    {
+    BentleyApi::BeFileName rspFile = GetOutputDir();
+    rspFile.AppendToPath(WPrintfString(L"%ls.iModelBridgeFwk.rsp", testName));
+    
+    FILE* fp = _wfopen(rspFile.c_str(), L"w+");
+
+    for (int i = 1; i < argc; ++i)
+        fwprintf(fp, L"%ls\n", argv[i]);
+
+    fclose(fp);
+
+    WPrintfString runcmd(L"%ls %ls", _wgetenv(L"MSTN_BRIDGE_TESTS_IMODEL_BRIDGE_FWK_EXE"), rspFile.c_str());
+
+    STARTUPINFOW si;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&pi, sizeof(pi));
+    EXPECT_TRUE(::CreateProcessW(nullptr, (LPWSTR)runcmd.c_str(), nullptr, nullptr, false, NORMAL_PRIORITY_CLASS, nullptr, nullptr, &si, &pi));
+    
+    ::Sleep(100);
+
+    return std::make_tuple(pi.hProcess, pi.hThread);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
 void MstnBridgeTestsFixture::StopImodelBankServer()
     {
     if (!UsingIModelBank())
