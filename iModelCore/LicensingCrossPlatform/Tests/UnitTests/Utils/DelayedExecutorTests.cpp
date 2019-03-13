@@ -37,8 +37,6 @@ TEST_F(DelayedExecutorTests, Delayed_FromLongestToShortest_ExecuteCallbacksAtApp
         executed1 = true;
         auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         EXPECT_GE(timeAfter-timeBefore, 150);
-        EXPECT_TRUE(executed2);
-        EXPECT_TRUE(executed3);
         });
 
     auto t2 = DelayedExecutor::Get()->Delayed(100).then([&]
@@ -46,8 +44,6 @@ TEST_F(DelayedExecutorTests, Delayed_FromLongestToShortest_ExecuteCallbacksAtApp
         executed2 = true;
         auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         EXPECT_GE(timeAfter - timeBefore, 100);
-        EXPECT_FALSE(executed1);
-        EXPECT_TRUE(executed3);
         });
 
     auto t3 = DelayedExecutor::Get()->Delayed(50).then([&]
@@ -55,8 +51,6 @@ TEST_F(DelayedExecutorTests, Delayed_FromLongestToShortest_ExecuteCallbacksAtApp
         executed3 = true;
         auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         EXPECT_GE(timeAfter - timeBefore, 50);
-        EXPECT_FALSE(executed1);
-        EXPECT_FALSE(executed2);
         });
 
     folly::collectAll(t1, t2, t3).wait();
@@ -79,8 +73,6 @@ TEST_F(DelayedExecutorTests, Delayed_FromShortestToLongest_ExecuteCallbacksAtApp
         executed1 = true;
         auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         EXPECT_GE(timeAfter - timeBefore, 50);
-        EXPECT_FALSE(executed2);
-        EXPECT_FALSE(executed3);
         });
 
     auto t2 = DelayedExecutor::Get()->Delayed(100).then([&]
@@ -88,8 +80,6 @@ TEST_F(DelayedExecutorTests, Delayed_FromShortestToLongest_ExecuteCallbacksAtApp
         executed2 = true;
         auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         EXPECT_GE(timeAfter - timeBefore, 100);
-        EXPECT_TRUE(executed1);
-        EXPECT_FALSE(executed3);
         });
 
     auto t3 = DelayedExecutor::Get()->Delayed(150).then([&]
@@ -97,8 +87,6 @@ TEST_F(DelayedExecutorTests, Delayed_FromShortestToLongest_ExecuteCallbacksAtApp
         executed3 = true;
         auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         EXPECT_GE(timeAfter - timeBefore, 150);
-        EXPECT_TRUE(executed1);
-        EXPECT_TRUE(executed2);
         });
 
     folly::collectAll(t1, t2, t3).wait();
