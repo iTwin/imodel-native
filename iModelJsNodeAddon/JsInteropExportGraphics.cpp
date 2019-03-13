@@ -235,6 +235,10 @@ void SetInput(PolyfaceQueryCR pf, TransformCR transform)
     if (!isIdentity)
         transform.Multiply(&m_inPoints[0], (int)pointCount);
 
+    RotMatrix normalMatrix = RotMatrix::From(transform);
+    isIdentity = normalMatrix.IsIdentity(); // check if it was just translation
+    if (!isIdentity)
+        normalMatrix.Invert();
     DPoint3dCP srcNormals = pf.GetNormalCP();
     uint32_t normalCount = (uint32_t) pf.GetNormalCount();
     m_inNormals.resize(normalCount);
@@ -243,7 +247,7 @@ void SetInput(PolyfaceQueryCR pf, TransformCR transform)
         DPoint3d tmpNormal = srcNormals[i];
         if (!isIdentity)
             {
-            transform.MultiplyMatrixOnly(tmpNormal);
+            normalMatrix.MultiplyTranspose(tmpNormal);
             tmpNormal.Normalize();
             }
         m_inNormals[i] = FPoint3d::From(tmpNormal);
