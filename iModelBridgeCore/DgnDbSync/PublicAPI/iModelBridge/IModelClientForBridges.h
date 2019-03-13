@@ -77,6 +77,9 @@ protected:
 public:
     IModelClientBase(WebServices::ClientInfoPtr ci, uint8_t maxRetryCount, WebServices::UrlProvider::Environment, int64_t cacheTimeOutMs);
 
+    iModel::Hub::ClientPtr GetImodelHubClientPtr() const {return m_client;}
+    iModel::Hub::BriefcasePtr GetImodelHubBriefcase() const {return m_briefcase;}
+
     bool IsConnected() const override {return m_client.IsValid();}
 
     StatusInt AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repoId) override;
@@ -107,6 +110,7 @@ struct IMODEL_BRIDGE_FWK_EXPORT IModelBankClient : IModelClientBase
     IModelBankClient(iModelBridgeFwk::IModelBankArgs const&, WebServices::ClientInfoPtr ci);
 
     iModel::Hub::iModelInfoPtr GetIModelInfo() override;
+    void SetUrlAndAccessToken(iModelBridgeFwk::IModelBankArgs const&);
 
     BentleyStatus Shutdown();
     };

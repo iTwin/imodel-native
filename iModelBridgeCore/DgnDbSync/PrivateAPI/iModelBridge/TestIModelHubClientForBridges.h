@@ -5,6 +5,7 @@
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#pragma once
 #include <iModelBridge/IModelClientForBridges.h>
 #include <BeSQLite/BeSQLite.h>
 //=======================================================================================

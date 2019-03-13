@@ -1840,7 +1840,10 @@ int iModelBridgeFwk::UpdateExistingBim()
         m_briefcaseDgnDb = nullptr; // close the current connection to the briefcase db before attempting to reopen it!
         
         if (BSISUCCESS != TryOpenBimWithBisSchemaUpgrade())
+            {
+            LOG.fatalv("Bridge cannot open and perform Bis Schema Upgrade (may be denied schema lock).");
             return BentleyStatus::ERROR;
+            }
 
         BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));
 
