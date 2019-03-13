@@ -37,7 +37,8 @@ TEST_F(MstnBridgeTests, TestDenySchemaLock)
 
     auto testDir = CreateTestDir();
 
-    SetupIModelBankClient(ComputeAccessToken("user1"));                             // Identify this job with a user named "user1"
+    CreateIModelBankClient(ComputeAccessToken("user1"));                             // Identify this job with a user named "user1"
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting(*m_client);
 
     SetRulesFileInEnv setRulesFileVar(WriteRulesFile(L"testDenySchemaLock.json",    // Specify user1's permissions:
           R"(       [                                 
@@ -76,6 +77,120 @@ TEST_F(MstnBridgeTests, TestDenySchemaLock)
     ASSERT_NE(0, fwk.Run(argc, argv)) << "Expect bridge to fail";
 
     // TODO: Somehow verify that the failure was due to the schema lock being denied.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void createFile(BentleyApi::BeFileName const& fn)
+    {
+    FILE* fp = _wfopen(fn.c_str(), L"w+");
+    fputs("go", fp);
+    fclose(fp);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, MultiBridgeSequencing)
+    {
+    if (!UsingIModelBank())
+        {
+        fprintf(stderr, "Lock tests are supported only when using imodel-bank as the server\n.");
+        return;
+        }
+
+    auto testDir = CreateTestDir();
+
+    BeFileName a_can_run(testDir);
+    a_can_run.AppendToPath(L"a_can_run.txt");
+    
+    BeFileName b_can_run(testDir);
+    b_can_run.AppendToPath(L"b_can_run.txt");
+
+    Utf8PrintfString rules(
+        R"(   [                                 
+                  {                            
+                      "user": "A",             
+                      "rules": [                   
+                          {                        
+                              "request": "Lock/Create",
+                              "rule": { "verb": "wait file", "object": "%s" }                        
+                          }                        
+                      ]                            
+                  },
+                  {                            
+                      "user": "B",             
+                      "rules": [                   
+                          {                        
+                              "request": "Lock/Create",
+                              "rule": { "verb": "wait file", "object": "%s" }                        
+                          }                        
+                      ]                            
+                  }                  
+              ]                               
+          )", Utf8String(a_can_run).c_str(), Utf8String(b_can_run).c_str());
+    rules.ReplaceAll("\\", "/");
+
+    SetRulesFileInEnv setRulesFileVar(WriteRulesFile(L"testDenySchemaLock.json", rules.c_str()));
+
+
+    // Create the iModel directory and start the server
+    CreateIModelBankClient(""); // TRICKY: I must have m_client defined before calling CreateRepository
+    CreateRepository(DEFAULT_IMODEL_NAME_A); // This creates the iModel directory and starts the imodel-bank server
+    m_client = nullptr;
+    iModelBridgeFwk::ClearIModelClientForBridgesForTesting();
+
+    // A
+    std::thread bridge_a([&] 
+        {
+        BeFileName aDir(testDir);
+        aDir.AppendToPath(L"A");
+        BeFileName::CreateNewDirectory(aDir.c_str());
+
+        FwkArgvMaker argvMaker;
+        argvMaker.SetUpBridgeProcessingArgs(aDir.c_str(), L"bridge_a", GetDgnv8BridgeDllName(), DEFAULT_IMODEL_NAME, true, L"imodel-bank.rsp");
+        argvMaker.ReplaceArgValue(L"--imodel-bank-access-token", ComputeAccessTokenW("A").c_str());
+
+        BentleyApi::BeFileName inputFile;
+        MakeCopyOfFile(inputFile, L"Test3d.dgn", L"_A");
+
+        argvMaker.SetInputFileArg(inputFile);
+        argvMaker.SetSkipAssignmentCheck();
+    
+        iModelBridgeFwk fwk;
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
+        ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
+        });
+
+    // B
+    std::thread bridge_b([&] 
+        {
+        BeFileName bDir(testDir);
+        bDir.AppendToPath(L"B");
+        BeFileName::CreateNewDirectory(bDir.c_str());
+
+        FwkArgvMaker argvMaker;
+        argvMaker.SetUpBridgeProcessingArgs(bDir.c_str(), L"bridge_b", GetDgnv8BridgeDllName(), DEFAULT_IMODEL_NAME, true, L"imodel-bank.rsp");
+        argvMaker.ReplaceArgValue(L"--imodel-bank-access-token", ComputeAccessTokenW("B").c_str());
+
+        BentleyApi::BeFileName inputFile;
+        MakeCopyOfFile(inputFile, L"Test3d.dgn", L"_B");
+
+        argvMaker.SetInputFileArg(inputFile);
+        argvMaker.SetSkipAssignmentCheck();
+    
+        iModelBridgeFwk fwk;
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
+        ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
+        });
+
+
+    createFile(b_can_run);      // b runs first
+    createFile(a_can_run);      // then a runs
+
+    bridge_a.join();
+    bridge_b.join();
     }
 
 /*---------------------------------------------------------------------------------**//**

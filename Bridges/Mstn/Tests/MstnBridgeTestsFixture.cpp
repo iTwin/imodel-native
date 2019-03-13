@@ -147,7 +147,6 @@ void MstnBridgeTestsFixture::MakeCopyOfFile(BentleyApi::BeFileNameR outFile, Ben
     outFile.append(L".");
     outFile.append(filepath.GetExtension().c_str());
 
-
     ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(filepath.c_str(), outFile.c_str()));
     }
 
@@ -156,36 +155,16 @@ void MstnBridgeTestsFixture::MakeCopyOfFile(BentleyApi::BeFileNameR outFile, Ben
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MstnBridgeTestsFixture::SetUpBridgeProcessingArgs(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP stagingDir, WCharCP bridgeRegSubkey, WCharCP iModelName)
     {
-    args.push_back(L"iModelBridgeTests.argv0"); // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    auto useBank = UsingIModelBank();
+    auto rspFileName = useBank? L"imodel-bank.rsp": L"imodel-hub.rsp";
 
-    auto rspFileName = UsingIModelBank()? L"imodel-bank.rsp": L"imodel-hub.rsp";
-    BentleyApi::bvector<BentleyApi::WString> strings;
-    BentleyApi::bvector<BentleyApi::WCharCP> ptrs;
-    BentleyApi::bvector<WCharCP> bargptrs;
-    ASSERT_EQ(BSISUCCESS, ParseArgsFromRspFile(strings, ptrs, ReadRspFile(rspFileName)));
-    for (auto arg : ptrs)
-        args.push_back(arg);
+    FwkArgvMaker argvMaker;
+    argvMaker.SetUpBridgeProcessingArgs(stagingDir, bridgeRegSubkey, GetDgnv8BridgeDllName(), iModelName, useBank, rspFileName);
 
-    if (nullptr == iModelName)
-        iModelName = DEFAULT_IMODEL_NAME;
-
-    if (UsingIModelBank())
-        args.push_back(BentleyApi::WPrintfString(L"--imodel-bank-imodel-name=%s", iModelName).c_str()); // TRICKY: This determines the name of the briefcase (not the name of the iModel inside iModelBank).
-    else
-        args.push_back(BentleyApi::WPrintfString(L"--server-repository=%s", iModelName).c_str());
-
-    args.push_back(L"--fwk-revision-comment=\"comment in quotes\"");
-
-    args.push_back(BentleyApi::WPrintfString(L"--fwk-bridge-library=\"%s\"", GetDgnv8BridgeDllName().c_str()));     // must refer to a path that exists! 
-
-    BentleyApi::BeFileName platformAssetsDir;
-    BentleyApi::BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
-    args.push_back(BentleyApi::WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
-
-    if (stagingDir)
-        args.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", stagingDir));
-    if (bridgeRegSubkey)
-        args.push_back(BentleyApi::WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubkey));
+    auto argv = argvMaker.GetArgV();
+    int argc = argvMaker.GetArgC();
+    for (int i = 0; i < argc; ++i)
+        args.push_back(argv[i]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -481,12 +460,12 @@ static BentleyStatus readEntireFile(BentleyApi::WStringR contents, BentleyApi::B
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyApi::WString MstnBridgeTestsFixture::ReadRspFile(BentleyApi::WCharCP fn)
+BentleyApi::WString FwkArgvMaker::ReadRspFileFromTestData(BentleyApi::WCharCP rspFileBaseName)
     {
     BentleyApi::BeFileName rspFileName;
     BentleyApi::BeTest::GetHost().GetDocumentsRoot(rspFileName);
     rspFileName.AppendToPath(L"TestData");
-    rspFileName.AppendToPath(fn);
+    rspFileName.AppendToPath(rspFileBaseName);
 
     BentleyApi::WString wargs;
     if (BSISUCCESS != readEntireFile(wargs, rspFileName))
@@ -501,21 +480,101 @@ BentleyApi::WString MstnBridgeTestsFixture::ReadRspFile(BentleyApi::WCharCP fn)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyApi::BentleyStatus MstnBridgeTestsFixture::ParseArgsFromRspFile(BentleyApi::bvector<BentleyApi::WString>& strings, BentleyApi::bvector<BentleyApi::WCharCP>& ptrs, BentleyApi::WStringCR wargs)
+BentleyApi::BentleyStatus FwkArgvMaker::ParseArgsFromRspFile(BentleyApi::WStringCR wargs)
     {
+    BentleyApi::bvector<BentleyApi::WString> strings;
     BentleyApi::BeStringUtilities::ParseArguments(strings, wargs.c_str(), L"\n\r");
 
     if (strings.empty())
         return BentleyApi::BSIERROR;
-        
-    ptrs.push_back(L"<argv0 placeholder>");
-    for (auto const& str: strings)
+
+    for (auto const& str : strings)
         {
         if (!str.empty())
-            ptrs.push_back(str.c_str());
+            PushArg(str);
         }
 
     return BentleyApi::BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+FwkArgvMaker::FwkArgvMaker()
+    {
+    PushArg(L"<argv0 placeholder>");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+FwkArgvMaker::~FwkArgvMaker()
+    {
+    Clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void FwkArgvMaker::Clear()
+    {
+    for (auto ptr : m_ptrs)
+        free((void*)ptr);
+    m_ptrs.clear();
+    m_bargptrs.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void FwkArgvMaker::PushArg(BentleyApi::WStringCR arg)
+    {
+    m_ptrs.push_back(_wcsdup(arg.c_str()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void FwkArgvMaker::SetUpBridgeProcessingArgs(WCharCP stagingDir, WCharCP bridgeRegSubkey, BentleyApi::BeFileNameCR bridgeDllName, WCharCP iModelName, bool useBank, WCharCP rspFileName)
+    {
+    ASSERT_EQ(BSISUCCESS, ParseArgsFromRspFile(ReadRspFileFromTestData(rspFileName)));
+
+    if (nullptr == iModelName)
+        iModelName = DEFAULT_IMODEL_NAME;
+
+    if (useBank)
+        PushArg(BentleyApi::WPrintfString(L"--imodel-bank-imodel-name=%s", iModelName).c_str()); // TRICKY: This determines the name of the briefcase (not the name of the iModel inside iModelBank).
+    else
+        PushArg(BentleyApi::WPrintfString(L"--server-repository=%s", iModelName).c_str());
+
+    PushArg(L"--fwk-revision-comment=\"comment in quotes\"");
+
+    PushArg(BentleyApi::WPrintfString(L"--fwk-bridge-library=\"%s\"", bridgeDllName.c_str()));     // must refer to a path that exists! 
+
+    BentleyApi::BeFileName platformAssetsDir;
+    BentleyApi::BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
+    PushArg(BentleyApi::WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
+
+    if (stagingDir)
+        PushArg(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", stagingDir));
+    if (bridgeRegSubkey)
+        PushArg(BentleyApi::WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubkey));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void FwkArgvMaker::ReplaceArgValue(WCharCP argName, WCharCP newValue)
+    {
+    for (size_t i = 0; i < m_ptrs.size(); ++i)
+        {
+        auto arg = m_ptrs[i];
+        if (wcsstr(arg, argName) == nullptr)
+            continue;
+        free((void*)arg);
+        m_ptrs[i] = _wcsdup(WPrintfString(L"%ls=%ls", argName, newValue).c_str());
+        break;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -532,54 +591,44 @@ BentleyApi::WebServices::ClientInfoPtr MstnBridgeTestsFixture::GetClientInfo()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::SetupIModelBankClient(BentleyApi::Utf8StringCR accessToken)
+void MstnBridgeTestsFixture::CreateIModelBankClient(BentleyApi::Utf8StringCR accessToken)
     {
     BeAssert(nullptr != getenv("MSTN_BRIDGE_TESTS_IMODEL_BANK_SERVER_JS"));
 
-    BentleyApi::bvector<BentleyApi::WString> strings;
-    BentleyApi::bvector<BentleyApi::WCharCP> ptrs;
-    BentleyApi::bvector<WCharCP> bargptrs;
-    BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->trace("Using IModelBankClient");
-    ASSERT_EQ(BSISUCCESS, ParseArgsFromRspFile(strings, ptrs, ReadRspFile(L"imodel-bank.rsp")));
+    FwkArgvMaker argvMaker;
+    ASSERT_EQ(BSISUCCESS, argvMaker.ParseArgsFromRspFile(argvMaker.ReadRspFileFromTestData(L"imodel-bank.rsp")));
+
     iModelBridgeFwk::IModelBankArgs imbArgs;
-    ASSERT_EQ(BSISUCCESS, imbArgs.ParseCommandLine(bargptrs, (int)ptrs.size(), &ptrs.front()));
-    ASSERT_EQ(0, bargptrs.size());
+    ASSERT_EQ(BSISUCCESS, imbArgs.ParseCommandLine(argvMaker.m_bargptrs, argvMaker.GetArgC(), argvMaker.GetArgV()));
+    ASSERT_EQ(0, argvMaker.m_bargptrs.size());
 
     if (!accessToken.empty())
         imbArgs.m_accessToken = accessToken;
 
     m_client = new IModelBankClient(imbArgs, GetClientInfo());
-    iModelBridgeFwk::SetIModelClientForBridgesForTesting(*m_client);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::SetupIModelHubClient()
+void MstnBridgeTestsFixture::CreateIModelHubClient()
     {
+    FwkArgvMaker argvMaker;
+    ASSERT_EQ(BSISUCCESS, argvMaker.ParseArgsFromRspFile(argvMaker.ReadRspFileFromTestData(L"imodel-hub.rsp")));
 
-    BentleyApi::bvector<BentleyApi::WString> strings;
-    BentleyApi::bvector<BentleyApi::WCharCP> ptrs;
-    BentleyApi::bvector<WCharCP> bargptrs;
-
-    BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->trace("Using IModelHubClient");
-    ASSERT_EQ(BSISUCCESS, ParseArgsFromRspFile(strings, ptrs, ReadRspFile(L"imodel-hub.rsp")));
     iModelBridgeFwk::IModelHubArgs imhArgs;
-    ASSERT_EQ(BSISUCCESS, imhArgs.ParseCommandLine(bargptrs, (int)ptrs.size(), &ptrs.front()));
-    ASSERT_EQ(0, bargptrs.size());
+    ASSERT_EQ(BSISUCCESS, imhArgs.ParseCommandLine(argvMaker.m_bargptrs, argvMaker.GetArgC(), argvMaker.GetArgV()));
+    ASSERT_EQ(0, argvMaker.m_bargptrs.size());
 
     m_client = new IModelHubClient(imhArgs, GetClientInfo());
-    iModelBridgeFwk::SetIModelClientForBridgesForTesting(*m_client);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::SetupMockClient()
+void MstnBridgeTestsFixture::CreateMockClient()
     {
-    BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->trace("Using TestIModelHubClientForBridges");
     m_client = new TestIModelHubClientForBridges(GetOutputDir());
-    iModelBridgeFwk::SetIModelClientForBridgesForTesting(*m_client);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -591,16 +640,21 @@ void MstnBridgeTestsFixture::SetupClient()
     auto imbPath = getenv("MSTN_BRIDGE_TESTS_IMODEL_BANK_SERVER_JS");
     if (imbPath != nullptr)
         {
-        SetupIModelBankClient("");
+        BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->trace("Using IModelBankClient");
+        CreateIModelBankClient("");
         }
     else if (getenv("MSTN_BRIDGE_TESTS_IMODEL_HUB"))
         {
-        SetupIModelHubClient();
+        BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->trace("Using IModelHubClient");
+        CreateIModelHubClient();
         }
     else
         {
-        SetupMockClient();
+        BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->trace("Using TestIModelHubClientForBridges");
+        CreateMockClient();
         }
+    
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting(*m_client);
     }
 
 /*---------------------------------------------------------------------------------**//**

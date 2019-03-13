@@ -64,9 +64,9 @@ struct MstnBridgeTestsFixture : ::testing::Test
     BentleyApi::BeFileName m_briefcaseName;
     BentleyApi::Dgn::IModelClientForBridges* m_client;
     void SetupClient(); // Called by SetUpTestCase. Sets the above member variables, based on a command-line argument
-    void SetupMockClient();
-    void SetupIModelHubClient();
-    void SetupIModelBankClient(BentleyApi::Utf8StringCR accessToken);
+    void CreateMockClient();
+    void CreateIModelHubClient();
+    void CreateIModelBankClient(BentleyApi::Utf8StringCR accessToken);
 
     void StartImodelBankServer(BentleyApi::BeFileNameCR imodelDir);
     void StopImodelBankServer();
@@ -93,15 +93,13 @@ struct MstnBridgeTestsFixture : ::testing::Test
 
     void MstnBridgeTestsFixture::CreateRepository(Utf8CP repoName = nullptr);
 
-    static BentleyApi::WString ReadRspFile(BentleyApi::WCharCP fn);
-    static BentleyApi::BentleyStatus ParseArgsFromRspFile(BentleyApi::bvector<BentleyApi::WString>& strings, BentleyApi::bvector<BentleyApi::WCharCP>& ptrs, BentleyApi::WStringCR fn);
-
     static BentleyApi::BeFileName GetTestDataDir();
 
     static BentleyApi::BeFileName GetTestDataFileName(WCharCP baseName) { auto fn = GetTestDataDir(); fn.AppendToPath(baseName); return fn; }
 
     static BentleyApi::BeFileName WriteRulesFile(WCharCP fname, Utf8CP rules);
     static BentleyApi::Utf8String ComputeAccessToken(Utf8CP uname);
+    static BentleyApi::WString ComputeAccessTokenW(Utf8CP uname) {auto atok = ComputeAccessToken(uname); return BentleyApi::WString(atok.c_str(), true);}
 
     MstnBridgeTestsFixture() : m_client(nullptr) { SetupClient(); }
     ~MstnBridgeTestsFixture();
@@ -150,6 +148,38 @@ struct MstnBridgeTestsFixture : ::testing::Test
     static void SetupTestDirectory(BentleyApi::BeFileNameR dirPath,  BentleyApi::WCharCP dirName, BentleyApi::WCharCP iModelName,
                                    BentleyApi::BeFileNameCR input1, BentleyApi::BeSQLite::BeGuidCR inputGuid, 
                                    BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid);
+    };
+
+//=======================================================================================
+// @bsistruct                              
+//=======================================================================================
+struct FwkArgvMaker
+    {
+    private:
+    BentleyApi::bvector<BentleyApi::WCharCP> m_ptrs;
+    public:
+    BentleyApi::bvector<WCharCP> m_bargptrs;
+
+    public:
+    FwkArgvMaker();
+    ~FwkArgvMaker();
+
+    void Clear();
+
+    BentleyApi::BentleyStatus ParseArgsFromRspFile(BentleyApi::WStringCR wargs);
+    static BentleyApi::WString ReadRspFileFromTestData(BentleyApi::WCharCP rspFileBaseName);
+    void SetUpBridgeProcessingArgs(WCharCP stagingDir, WCharCP bridgeRegSubkey, BentleyApi::BeFileNameCR bridgeDllName, WCharCP iModelName, bool useBank, WCharCP rspFileName);
+    void PushArg(BentleyApi::WStringCR);
+
+    wchar_t const** GetArgV() const {return const_cast<wchar_t const**>(m_ptrs.data());}
+    int GetArgC() const {return (int)m_ptrs.size();}
+
+    void ReplaceArgValue(WCharCP argName, WCharCP newValue);
+
+    void SetInputFileArg(BentleyApi::BeFileNameCR fn) {PushArg(WPrintfString(L"--fwk-input=\"%ls\"", fn.c_str()));}
+    void SetSkipAssignmentCheck() {PushArg(L"--fwk-skip-assignment-check");}
+
+    BentleyApi::bvector<WCharCP> const& GetUnparsedArgs() {return m_bargptrs;}
     };
 
 //=======================================================================================
