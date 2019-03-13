@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "TestsHelper.h"
+#include "JsonHelper.h"
 #include "ClientTests.h"
 #include "Utils/MockHttpHandler.h"
 #include "DummyPolicyHelper.h"
@@ -373,6 +374,29 @@ void ClientTests::SetUpTestCase()
 
     ASSERT_EQ(SUCCESS, L10N::Initialize(BeSQLite::L10N::SqlangFiles(path)));
     }
+
+TEST_F(ClientTests, JsonExample)
+{
+	BeFileName testJson;
+	BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);
+	testJson.AppendToPath(L"TestAssets/test.json");
+
+	BeFileName test3Json;
+	BeTest::GetHost().GetDgnPlatformAssetsDirectory(test3Json);
+	test3Json.AppendToPath(L"TestAssets/test3.json");
+
+	Json::Value test = ReadJsonFile(testJson);
+	Json::Value test2 = ReadJsonFile(testJson);
+	Json::Value test3 = ReadJsonFile(test3Json);
+
+	int a = test.compare(test2);
+	int b = test.compare(test3);
+	int c = test3.compare(test2);
+
+	ASSERT_EQ(a, 0);
+	ASSERT_NE(b, 0);
+	ASSERT_NE(c, 0);
+}
 
 TEST_F(ClientTests, StartApplication_Error)
     {

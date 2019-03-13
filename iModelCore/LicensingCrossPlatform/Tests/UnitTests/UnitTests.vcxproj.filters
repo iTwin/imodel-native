@@ -66,6 +66,9 @@
     <ClCompile Include="Mocks\PolicyProviderMock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="JsonHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TestsHelper.h">
@@ -129,6 +132,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DummyUserInfoHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

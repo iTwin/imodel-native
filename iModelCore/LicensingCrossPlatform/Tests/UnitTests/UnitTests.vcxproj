@@ -14,6 +14,7 @@
     <ClCompile Include="Mocks\PolicyProviderMock.cpp" />
     <ClCompile Include="PolicyTests.cpp" />
     <ClCompile Include="TestsHelper.cpp" />
+    <ClCompile Include="JsonHelper.cpp" />
     <ClCompile Include="UlasProviderTests.cpp" />
     <ClCompile Include="LicensingDbTests.cpp" />
     <ClCompile Include="PolicyProviderTests.cpp" />
@@ -37,6 +38,7 @@
     <ClInclude Include="Mocks\LicensingDbMock.h" />
     <ClInclude Include="PolicyTests.h" />
     <ClInclude Include="TestsHelper.h" />
+    <ClInclude Include="JsonHelper.h" />
     <ClInclude Include="UlasProviderTests.h" />
     <ClInclude Include="LicensingDbTests.h" />
     <ClInclude Include="PolicyProviderTests.h" />
