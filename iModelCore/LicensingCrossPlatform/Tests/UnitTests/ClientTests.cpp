@@ -378,76 +378,81 @@ TEST_F(ClientTests, StartApplication_Error)
 
 TEST_F(ClientTests, StartApplicationNoHeartbeat_Success)
     {
-    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", "userId", "orgId");
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
     auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     GetLicensingDbMock().MockOpenOrCreate(SUCCESS);
 
-    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false);
     auto validPolicy = Policy::Create(jsonPolicyValid);
 
-    std::list<Json::Value> validPolicyList;
-    validPolicyList.push_back(jsonPolicyValid);
-
     GetPolicyProviderMock().MockGetPolicy(validPolicy);
 
-    EXPECT_CALL(GetLicensingDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
-        .Times(AtLeast(1));
+    GetLicensingDbMock().MockAddOrUpdatePolicyFile(SUCCESS);
 
-    EXPECT_CALL(GetLicensingDbMock(), DeleteAllOtherPolicyFilesByUser(A<Utf8StringCR>(), A<Utf8StringCR>()))
-        .Times(AtLeast(1));
+    GetLicensingDbMock().MockDeleteAllOtherPolicyFilesByUser(SUCCESS);
+
+    std::list<Json::Value> validPolicyList;
+    validPolicyList.push_back(jsonPolicyValid);
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, validPolicyList);
 
     EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error); // not entitiled so skips the heartbeat calls
     EXPECT_EQ(1, GetPolicyProviderMock().GetPolicyCalls());
     EXPECT_EQ(1, GetLicensingDbMock().OpenOrCreateCount());
+    EXPECT_EQ(1, GetLicensingDbMock().AddOrUpdatePolicyFileCount());
+    EXPECT_EQ(1, GetLicensingDbMock().DeleteAllOtherPolicyFilesByUserCount());
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     }
 
 TEST_F(ClientTests, StartApplicationStopApplication_Success)
     {
-    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa", "orgId");
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
     auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     GetLicensingDbMock().MockOpenOrCreate(SUCCESS);
 
-    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
     auto validPolicy = Policy::Create(jsonPolicyValid);
+
+    GetPolicyProviderMock().MockGetPolicy(validPolicy);
+    GetLicensingDbMock().MockAddOrUpdatePolicyFile(SUCCESS);
+    GetLicensingDbMock().MockDeleteAllOtherPolicyFilesByUser(SUCCESS);
 
     std::list<Json::Value> validPolicyList;
     validPolicyList.push_back(jsonPolicyValid);
 
-    GetPolicyProviderMock().MockGetPolicy(validPolicy);
-
-    EXPECT_CALL(GetLicensingDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
-        .Times(AtLeast(1));
-
-    EXPECT_CALL(GetLicensingDbMock(), DeleteAllOtherPolicyFilesByUser(A<Utf8StringCR>(), A<Utf8StringCR>()))
-        .Times(AtLeast(1));
-
     GetLicensingDbMock().MockUserPolicyFiles(userId, validPolicyList);
 
-    // LogPosting heartbeat
-    EXPECT_CALL(GetLicensingDbMock(), GetUsageRecordCount())
-        .WillRepeatedly(Return(1)); // will get PostUsageLogs() called
-    EXPECT_CALL(GetLicensingDbMock(), GetFeatureRecordCount())
-        .WillRepeatedly(Return(1)); // will get PostFeatureLogs() called
+    // called in usage heartbeat
+    GetLicensingDbMock().MockRecordUsage(SUCCESS);
 
-    GetUlasProviderMock().MockPostUsageLogs(BentleyStatus::SUCCESS);
-    GetUlasProviderMock().MockPostFeatureLogs(BentleyStatus::SUCCESS);
+    // LogPosting heartbeat
+    GetLicensingDbMock().MockGetUsageRecordCount(1);
+    GetLicensingDbMock().MockGetFeatureRecordCount(1);
+
+    GetUlasProviderMock().MockPostUsageLogs(SUCCESS);
+    GetUlasProviderMock().MockPostFeatureLogs(SUCCESS);
 
     // called in Policy heartbeat
-    EXPECT_CALL(GetLicensingDbMock(), GetOfflineGracePeriodStart())
-        .WillRepeatedly(Return(""));
+    GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
 
+    // EQ for exact number of expected calls, LE for "At least" number of calls
     EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+    EXPECT_EQ(1, GetPolicyProviderMock().GetPolicyCalls());
     EXPECT_EQ(1, GetLicensingDbMock().OpenOrCreateCount());
+    EXPECT_LE(1, GetLicensingDbMock().AddOrUpdatePolicyFileCount());
+    EXPECT_LE(1, GetLicensingDbMock().DeleteAllOtherPolicyFilesByUserCount());
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     EXPECT_SUCCESS(client->StopApplication());
+    EXPECT_LE(1, GetUlasProviderMock().PostUsageLogsCalls());
+    EXPECT_LE(1, GetUlasProviderMock().PostFeatureLogsCalls());
     EXPECT_EQ(1, GetLicensingDbMock().RecordUsageCount()); // called in usage heartbeat
+    EXPECT_LE(1, GetLicensingDbMock().GetUsageRecordCountCount());
+    EXPECT_LE(1, GetLicensingDbMock().GetFeatureRecordCountCount());
+    EXPECT_LE(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
     EXPECT_EQ(1, GetLicensingDbMock().CloseCount());
     }
 
@@ -600,10 +605,9 @@ TEST_F(ClientTests, GetCertificate_Success_HttpMock)
 
 TEST_F(ClientTests, GetProductStatusExpiredGracePeriod_Test)
     {
-    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa", "orgId");
-    auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
-
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false);
     std::list<Json::Value> validPolicyList;
@@ -612,48 +616,44 @@ TEST_F(ClientTests, GetProductStatusExpiredGracePeriod_Test)
     auto timestampPast = DateHelper::AddDaysToCurrentTime(-14); // Two weeks ago; default offline period allowed is only 1 week
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, validPolicyList);
-
-    EXPECT_CALL(GetLicensingDbMock(), GetOfflineGracePeriodStart())
-        .WillRepeatedly(Return(timestampPast));
+    GetLicensingDbMock().MockGetOfflineGracePeriodStart(timestampPast);
 
     ASSERT_EQ((int)client->GetProductStatus(9900), (int)LicenseStatus::Expired); // Valid status should be Expired now, since offline grace period has expired
     ASSERT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
+    ASSERT_LE(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
     }
 
 TEST_F(ClientTests, CleanUpPolicies_Success)
     {
-    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", "userId", "orgId");
-    auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
-
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     auto jsonPolicyExpired = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(-1), DateHelper::AddDaysToCurrentTime(7), userId, 9903, "", 1, false);
     std::list<Json::Value> expiredPolicyList;
     expiredPolicyList.push_back(jsonPolicyExpired);
 
-    EXPECT_CALL(GetLicensingDbMock(), GetPolicyFiles())
-        .WillRepeatedly(Return(expiredPolicyList));
-
-    EXPECT_CALL(GetLicensingDbMock(), DeletePolicyFile(A<Utf8StringCR>()))
-        .Times(AtLeast(1));
+    GetLicensingDbMock().MockPolicyFiles(expiredPolicyList);
+    GetLicensingDbMock().MockDeletePolicyFile(SUCCESS);
 
     client->CleanUpPolicies();
+    EXPECT_LE(1, GetLicensingDbMock().GetPolicyFilesCount());
+    EXPECT_LE(1, GetLicensingDbMock().DeletePolicyFileCount());
     }
 
 TEST_F(ClientTests, DeleteAllOtherPoliciesByUser_Success)
     {
-    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", "userId", "orgId");
-    auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
-
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto client = CreateTestClient(userInfo, GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
     auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false);
     auto validPolicy = Policy::Create(jsonPolicyValid);
 
-    EXPECT_CALL(GetLicensingDbMock(), DeleteAllOtherPolicyFilesByUser(A<Utf8StringCR>(), A<Utf8StringCR>()))
-        .Times(AtLeast(1));
+    GetLicensingDbMock().MockDeleteAllOtherPolicyFilesByUser(SUCCESS);
 
     client->DeleteAllOtherPoliciesByUser(validPolicy);
+    EXPECT_LE(1, GetLicensingDbMock().DeleteAllOtherPolicyFilesByUserCount());
     }
 
 // SaasClient tests
@@ -731,11 +731,8 @@ TEST_F(ClientTests, WithKeyStartApplicationInvalidKey_Success)
 
     GetPolicyProviderMock().MockGetPolicyWithKey(validPolicy);
 
-    EXPECT_CALL(GetLicensingDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
-        .Times(AtLeast(1));
-
-    EXPECT_CALL(GetLicensingDbMock(), DeleteAllOtherPolicyFilesByKey(A<Utf8StringCR>(), A<Utf8StringCR>()))
-        .Times(AtLeast(1));
+    GetLicensingDbMock().MockAddOrUpdatePolicyFile(SUCCESS);
+    GetLicensingDbMock().MockDeleteAllOtherPolicyFilesByKey(SUCCESS);
 
     Json::Value jsonAccessKeyResponse(Json::objectValue);
     jsonAccessKeyResponse["status"] = "Failure";
@@ -745,6 +742,8 @@ TEST_F(ClientTests, WithKeyStartApplicationInvalidKey_Success)
 
     EXPECT_EQ((int)client->StartApplication(), (int)LicenseStatus::NotEntitled);
     EXPECT_EQ(1, GetLicensingDbMock().OpenOrCreateCount());
+    EXPECT_LE(1, GetLicensingDbMock().AddOrUpdatePolicyFileCount());
+    EXPECT_LE(1, GetLicensingDbMock().DeleteAllOtherPolicyFilesByKeyCount());
     EXPECT_EQ(1, GetPolicyProviderMock().GetPolicyWithKeyCalls());
     EXPECT_EQ(1, GetUlasProviderMock().GetAccessKeyInfoCalls());
     }
@@ -763,11 +762,8 @@ TEST_F(ClientTests, WithKeyStartApplication_StopApplication_Success)
 
     GetPolicyProviderMock().MockGetPolicyWithKey(validPolicy);
 
-    EXPECT_CALL(GetLicensingDbMock(), AddOrUpdatePolicyFile(A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Utf8StringCR>(), A<Json::Value>()))
-        .Times(AtLeast(1));
-
-    EXPECT_CALL(GetLicensingDbMock(), DeleteAllOtherPolicyFilesByKey(A<Utf8StringCR>(), A<Utf8StringCR>()))
-        .Times(AtLeast(1));
+    GetLicensingDbMock().MockAddOrUpdatePolicyFile(SUCCESS);
+    GetLicensingDbMock().MockDeleteAllOtherPolicyFilesByKey(SUCCESS);
 
     Json::Value jsonAccessKeyResponse(Json::objectValue);
     jsonAccessKeyResponse["status"] = "Success";
@@ -777,18 +773,17 @@ TEST_F(ClientTests, WithKeyStartApplication_StopApplication_Success)
     std::list<Json::Value> validPolicyList;
     validPolicyList.push_back(jsonPolicyValid);
 
-    EXPECT_CALL(GetLicensingDbMock(), GetPolicyFilesByKey(testAccessKey))
-        .Times(1)
-        .WillOnce(Return(validPolicyList));
-
-    EXPECT_CALL(GetLicensingDbMock(), GetOfflineGracePeriodStart())
-        .Times(1)
-        .WillOnce(Return(""));
+    GetLicensingDbMock().MockKeyPolicyFiles(testAccessKey, validPolicyList);
+    GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
 
     EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
     EXPECT_EQ(1, GetLicensingDbMock().OpenOrCreateCount());
+    EXPECT_LE(1, GetLicensingDbMock().AddOrUpdatePolicyFileCount());
+    EXPECT_LE(1, GetLicensingDbMock().DeleteAllOtherPolicyFilesByKeyCount());
+    EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(testAccessKey));
+    EXPECT_EQ(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
     EXPECT_EQ(1, GetPolicyProviderMock().GetPolicyWithKeyCalls());
-	EXPECT_EQ(1, GetUlasProviderMock().GetAccessKeyInfoCalls());
+    EXPECT_EQ(1, GetUlasProviderMock().GetAccessKeyInfoCalls());
     EXPECT_SUCCESS(client->StopApplication());
     EXPECT_EQ(1, GetLicensingDbMock().CloseCount());
     }

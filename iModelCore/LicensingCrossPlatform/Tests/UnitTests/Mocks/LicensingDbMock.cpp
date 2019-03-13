@@ -24,89 +24,101 @@ bool LicensingDbMock::IsDbOpen() {
     return m_isOpen;
 }
 
-
 BentleyStatus LicensingDbMock::WriteUsageToCSVFile(BeFileNameCR path) {
-    throw std::exception("Not implemented");
+    m_writeUsageToCSVFileCalls++;
+    return m_mockedWriteUsageToCSVFile;
 }
 
 BentleyStatus LicensingDbMock::WriteFeatureToCSVFile(BeFileNameCR path) {
-    throw std::exception("Not implemented");
+    m_writeFeatureToCSVFileCalls++;
+    return m_mockedWriteFeatureToCSVFile;
 }
 
-
 std::list<Json::Value> LicensingDbMock::GetPolicyFiles() {
-    throw std::exception("Not implemented");
+    m_getPolicyFilesCalls++;
+    return m_policyList;
 }
 
 std::list<Json::Value> LicensingDbMock::GetPolicyFilesByUser(Utf8StringCR userId) {
-    m_getPolicyFilesCountMap[userId]++;
-    return m_userPolicyMap[userId];
+    m_getPolicyFilesByUserCallsMap[userId]++;
+    return m_userPolicyListMap[userId];
 }
 
 std::list<Json::Value> LicensingDbMock::GetPolicyFilesByKey(Utf8StringCR accessKey) {
-    throw std::exception("Not implemented");
+    m_getPolicyFilesByKeyCallsMap[accessKey]++;
+    return m_keyPolicyListMap[accessKey];
 }
 
 BentleyStatus LicensingDbMock::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken) {
-    throw std::exception("Not implemented");
+    m_addOrUpdatePolicyFileCalls++;
+    return m_mockedAddOrUpdatePolicyFile;
 }
 
 BentleyStatus LicensingDbMock::DeletePolicyFile(Utf8StringCR policyId) {
-    throw std::exception("Not implemented");
+    m_deletePolicyFileCalls++;
+    return m_mockedDeletePolicyFile;
 }
 
 BentleyStatus LicensingDbMock::DeleteAllOtherPolicyFilesByUser(Utf8StringCR policyId, Utf8StringCR userId) {
-    throw std::exception("Not implemented");
+    m_deleteAllOtherPolicyFilesByUserCalls++;
+    return m_mockedDeleteAllOtherPolicyFilesByUser;
 }
 
 BentleyStatus LicensingDbMock::DeleteAllOtherPolicyFilesByKey(Utf8StringCR policyId, Utf8StringCR accessKey) {
-    throw std::exception("Not implemented");
+    m_deleteAllOtherPolicyFilesByKeyCalls++;
+    return m_mockedDeleteAllOtherPolicyFilesByKey;
 }
 
-
 Json::Value LicensingDbMock::GetPolicyFile() {
-    throw std::exception("Not implemented");
+    m_getPolicyFileCalls++;
+    return m_policyList.size() > 0 ? m_policyList.front() : Json::Value::GetNull();
 }
 
 Json::Value LicensingDbMock::GetPolicyFile(Utf8StringCR policyId) {
-    throw std::exception("Not implemented");
+    m_getPolicyFileByIdCallsMap[policyId]++;
+    return m_idPolicyFileMap[policyId];
 }
 
 
 BentleyStatus LicensingDbMock::SetOfflineGracePeriodStart(Utf8StringCR startTime) {
-    throw std::exception("Not implemented");
+    m_setOfflineGracePeriodStartCalls++;
+    return m_mockedSetOfflineGracePeriodStart;
 }
 
 Utf8String LicensingDbMock::GetOfflineGracePeriodStart() {
-    throw std::exception("Not implemented");
+    m_getOfflineGracePeriodStartCalls++;
+    return m_mockedGetOfflineGracePeriodStart;
 }
 
 BentleyStatus LicensingDbMock::ResetOfflineGracePeriod() {
-    throw std::exception("Not implemented");
+    m_resetOfflineGracePeriodCalls++;
+    return m_mockedResetOfflineGracePeriod;
 }
 
-
 Utf8String LicensingDbMock::GetLastUsageRecordedTime() {
-    throw std::exception("Not implemented");
+    m_getLastUsageRecordedTimeCalls++;
+    return m_mockedGetLastUsageRecordedTime;
 }
 
 int64_t LicensingDbMock::GetUsageRecordCount() {
-    throw std::exception("Not implemented");
+    m_getUsageRecordCountCalls++;
+    return m_mockedGetUsageRecordCount;
 }
 
 int64_t LicensingDbMock::GetFeatureRecordCount() {
-    throw std::exception("Not implemented");
+    m_getFeatureRecordCountCalls++;
+    return m_mockedGetFeatureRecordCount;
 }
 
-
 BentleyStatus LicensingDbMock::CleanUpUsages() {
-    throw std::exception("Not implemented");
+    m_cleanUpUsagesCalls++;
+    return m_mockedCleanUpUsages;
 }
 
 BentleyStatus LicensingDbMock::CleanUpFeatures() {
-    throw std::exception("Not implemented");
+    m_cleanUpFeaturesCalls++;
+    return m_mockedCleanUpFeatures;
 }
-
 
 BentleyStatus LicensingDbMock::RecordUsage(int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
     Utf8StringCR machineSID, Utf8StringCR userName, Utf8StringCR userSID, Utf8StringCR policyId,
@@ -115,11 +127,8 @@ BentleyStatus LicensingDbMock::RecordUsage(int64_t ultimateSAPId, Utf8StringCR p
     Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType) {
     
     m_recordUsageCalls++;
-    // TODO add some tests for what happens if this fails
-    
-    return SUCCESS;
+    return m_mockedRecordUsage;
 }
-
 
 BentleyStatus LicensingDbMock::RecordFeature(
     int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
@@ -128,18 +137,49 @@ BentleyStatus LicensingDbMock::RecordFeature(
     Utf8StringCR projectId, Utf8String correlationId, Utf8StringCR eventTime, double schemaVersion,
     Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType, Utf8StringCR featureId,
     Utf8StringCR startDate, Utf8String endDate, Utf8String userData) {
-    throw std::exception("Not implemented");
+    m_recordFeatureCalls++;
+    return m_mockedFeatureUsage;
 }
 
 // mock/testing functions
+void LicensingDbMock::MockPolicyFiles(std::list<Json::Value> policyFiles) {
+    m_policyList = policyFiles;
+}
 
 void LicensingDbMock::MockUserPolicyFiles(Utf8StringCR userId, std::list<Json::Value> policyFiles) {
-    m_userPolicyMap[userId] = policyFiles;
+    m_userPolicyListMap[userId] = policyFiles;
+    m_getPolicyFilesByUserCallsMap[userId] = 0; // initialize count for this user id
+}
+
+void LicensingDbMock::MockKeyPolicyFiles(Utf8StringCR accessKey, std::list<Json::Value> policyFiles) {
+    m_keyPolicyListMap[accessKey] = policyFiles;
+    m_getPolicyFilesByKeyCallsMap[accessKey] = 0; // initialize count for this key
+}
+
+void LicensingDbMock::MockIdPolicyFile(Utf8StringCR policyId, Json::Value policyFile)
+    {
+    m_idPolicyFileMap[policyId] = policyFile;
+    m_getPolicyFileByIdCallsMap[policyId] = 0; // initialize count for this id
 }
 
 int LicensingDbMock::GetPolicyFilesByUserCount(Utf8StringCR userId) {
-    if (m_getPolicyFilesCountMap.find(userId) != m_getPolicyFilesCountMap.end()) {
-        return m_getPolicyFilesCountMap[userId];
+    if (m_getPolicyFilesByUserCallsMap.find(userId) != m_getPolicyFilesByUserCallsMap.end()) {
+        return m_getPolicyFilesByUserCallsMap[userId];
     }
     return 0;
 }
+
+int LicensingDbMock::GetPolicyFilesByKeyCount(Utf8StringCR accessKey) {
+    if (m_getPolicyFilesByKeyCallsMap.find(accessKey) != m_getPolicyFilesByKeyCallsMap.end()) {
+        return m_getPolicyFilesByKeyCallsMap[accessKey];
+    }
+    return 0;
+}
+
+int LicensingDbMock::GetPolicyFileByIdCount(Utf8StringCR policyId) {
+    if (m_getPolicyFileByIdCallsMap.find(policyId) != m_getPolicyFileByIdCallsMap.end()) {
+        return m_getPolicyFileByIdCallsMap[policyId];
+    }
+    return 0;
+}
+
