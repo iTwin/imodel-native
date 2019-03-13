@@ -342,7 +342,7 @@ void ClientTests::SetUpTestCase()
     ASSERT_EQ(SUCCESS, L10N::Initialize(BeSQLite::L10N::SqlangFiles(path)));
     }
 
-TEST_F(ClientTests, JsonExample)
+TEST_F(ClientTests, DISABLED_JsonExample)
 {
 	BeFileName testJson;
 	BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);
