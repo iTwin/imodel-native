@@ -170,7 +170,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName, uint32_t 
     m_scalableMeshFileLock = nullptr;
 
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
-    SetThreadingOptions(false, true, false);
+    SetThreadingOptions(false, false, false);
     SetShareable(true);
     ScalableMeshDb::SetEnableSharedDatabase(true);
 #ifdef TRACE_ON	    
@@ -190,7 +190,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr, uin
     m_scalableMeshFileLock = nullptr;
 
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
-    SetThreadingOptions(false, true, false);
+    SetThreadingOptions(false, false, false);
     SetShareable(true);
     ScalableMeshDb::SetEnableSharedDatabase(true);
 #ifdef TRACE_ON		    
@@ -961,7 +961,7 @@ void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<NodeTask
 
     GroupNodes(toExecuteTasks, meshRootNode, maxGroupSize, childrenGroupingSize, nbResolutions, pDataIndex, NodeTaskType::GENERATION);
              
-#if !defined(NDEBUG) && defined(_WIN32)                            
+#if defined(_WIN32)                            
 
     size_t totalNbNodes = 0;
     size_t totalNbNodesToStitch = 0;
@@ -1442,6 +1442,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateFilterTasks(uint32_t res
     return SUCCESS;
     }
 
+static bool s_doMultiThreadFiltering = true;
+static bool s_doMultiThreadMeshing = true;
+static bool s_doMultiThreadStitching = true;
 
 StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP pXmlTaskNode)
     {
@@ -1680,23 +1683,47 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                 }
             }
             
-                    
+
         if (needFiltering)
             {
             for (auto& node : nodesToMesh)
-                {                  
-#ifndef NDEBUG
-                uint32_t pointCount = node->GetNbObjects();
-#endif
-                node->Filter((int)node->GetLevel(), nullptr);                
-                node->SetDirty(true);
+                {            
+                if (s_doMultiThreadFiltering)
+                    {
+                    RunOnNextAvailableThread(std::bind([] (SMPointIndexNode<DPoint3d, DRange3d>* node, size_t threadId) ->void
+                        {
+                        node->Filter((int)node->GetLevel(), nullptr);                
+                        node->SetDirty(true);                            
+                        SetThreadAvailableAsync(threadId);
+                        }, node,std::placeholders::_1));
+                    }
+                else
+                    {
 
 #ifndef NDEBUG
-                uint32_t newPointCount = node->GetNbObjects();
-                assert(pointCount <= newPointCount);
-                assert(newPointCount > 0);
-                assert(node->m_nodeHeader.m_nodeCount == newPointCount);
+                    //uint32_t pointCount = node->GetNbObjects();
 #endif
+                    node->Filter((int)node->GetLevel(), nullptr);                
+                    node->SetDirty(true);
+
+#ifndef NDEBUG
+/*
+                    if (!s_useThreadsInFiltering)
+                        {
+                        uint32_t newPointCount = node->GetNbObjects();
+                        assert(pointCount <= newPointCount);
+                        assert(newPointCount > 0);
+                        assert(node->m_nodeHeader.m_nodeCount == newPointCount);
+                        }
+    */
+#endif
+
+                    }
+                }
+
+            if (s_doMultiThreadFiltering)
+                {
+                WaitForThreadStop();
                 }
             }
             
@@ -1707,12 +1734,34 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                 {
                 assert(!node->m_nodeHeader.m_arePoints3d);
 
-                bool isMeshed = pDataIndex->GetMesher2_5d()->Mesh(node);
-
-                if (isMeshed)
+                if (s_doMultiThreadMeshing)
                     {
-                    node->SetDirty(true);
+                    RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<DPoint3d, DRange3d>* node, HFCPtr<MeshIndexType> pDataIndex, size_t threadId ) ->void
+                        {                        
+                        bool isMeshed = pDataIndex->GetMesher2_5d()->Mesh(node);
+
+                        if (isMeshed)
+                            {
+                            node->SetDirty(true);
+                            }
+
+                        SetThreadAvailableAsync(threadId);
+                        }, node, pDataIndex, std::placeholders::_1));
                     }
+                else
+                    {
+                    bool isMeshed = pDataIndex->GetMesher2_5d()->Mesh(node);
+
+                    if (isMeshed)
+                        {
+                        node->SetDirty(true);
+                        }
+                    }
+                }
+
+             if (s_doMultiThreadMeshing)
+                {
+                WaitForThreadStop();
                 }
             }
 
@@ -1725,29 +1774,52 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
                 if (node->GetBlockID().m_integerID == tileId)
                     {        
-#ifndef NDEBUG
-                    uint32_t pointCount = node->GetNbObjects();
-                    assert(node->m_nodeHeader.m_nodeCount == pointCount);
-#endif
-
-                    bool isStitched = pDataIndex->GetMesher2_5d()->Stitch(node);
-                    assert(isStitched == true);
-                    
-                    if (isStitched)
+                    if (s_doMultiThreadStitching)
                         {
-                        node->SetDirty(true);
-                        }
+                        RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<DPoint3d, DRange3d>* node, HFCPtr<MeshIndexType> pDataIndex, size_t threadId ) ->void
+                            {    
+                            bool isStitched = pDataIndex->GetMesher2_5d()->Stitch(node);
+                            assert(isStitched == true);
+                    
+                            if (isStitched)
+                                {
+                                node->SetDirty(true);
+                                }
 
-#ifndef NDEBUG
-                    uint32_t newPointCount = node->GetNbObjects();
-                    assert(pointCount <= newPointCount);
-                    assert(newPointCount > 0);
-                    assert(node->m_nodeHeader.m_nodeCount == newPointCount);
-#endif
+                            SetThreadAvailableAsync(threadId);
+                            }, node, pDataIndex, std::placeholders::_1));
+                        }
+                    else
+                        {                                    
+    #ifndef NDEBUG
+                        uint32_t pointCount = node->GetNbObjects();
+                        assert(node->m_nodeHeader.m_nodeCount == pointCount);
+    #endif
+
+                        bool isStitched = pDataIndex->GetMesher2_5d()->Stitch(node);
+                        assert(isStitched == true);
+                    
+                        if (isStitched)
+                            {
+                            node->SetDirty(true);
+                            }
+
+    #ifndef NDEBUG
+                        uint32_t newPointCount = node->GetNbObjects();
+                        assert(pointCount <= newPointCount);
+                        assert(newPointCount > 0);
+                        assert(node->m_nodeHeader.m_nodeCount == newPointCount);
+    #endif
+                        }
 
                     break;
                     }
                 }
+            }
+
+        if (s_doMultiThreadStitching && stitchTileIds.size())
+            {
+            WaitForThreadStop();
             }
 
 #ifndef NDEBUG
