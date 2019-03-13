@@ -882,7 +882,7 @@ void IScalableMeshProgressiveQueryEngine::CancelAllQueries()
 static double s_updateOverviewsDelay = (double)1 / 10 * CLOCKS_PER_SEC;
 
 //controls whether preload of overviews is subject to delay
-static bool s_shouldDelayPreloadOverviews = false;
+static bool s_shouldDelayPreloadOverviews = true;
 
 void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
     {    
