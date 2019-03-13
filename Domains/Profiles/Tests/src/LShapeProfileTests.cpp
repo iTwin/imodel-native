@@ -402,11 +402,11 @@ TEST_F (LShapeProfileTestCase, Insert_EdgeRadiusAgainstThickness_CorrectInsertRe
     {
     CreateParams params (GetModel(), "L", 10.0, 10.0, 1.0, 0.0, INFINITY);
 
-    params.edgeRadius = 0.5;
-    EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to half of the thickness.";
+    params.edgeRadius = 1.0;
+    EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to the thickness.";
 
-    params.edgeRadius = 0.5 + TESTS_EPSILON;
-    EXPECT_FAIL_Insert (params) << "Edge radius should be less or equal to half of the thickness.";
+    params.edgeRadius = 1.0 + TESTS_EPSILON;
+    EXPECT_FAIL_Insert (params) << "Edge radius should be less or equal to the thickness.";
     }
 
 /*---------------------------------------------------------------------------------**//**

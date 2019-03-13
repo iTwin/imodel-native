@@ -518,11 +518,11 @@ TEST_F (TTShapeProfileTestCase, Insert_FlangeEdgeRadiusAgainstTheFlangeThickness
     {
     CreateParams params (GetModel(), "TT", 10.0, 10.0, 1.0, 1.0, 1.0, 0.0, INFINITY);
 
-    params.flangeEdgeRadius = 0.5;
-    EXPECT_SUCCESS_Insert (params) << "Flange edge radius should be less or equal to half of the flange thickness.";
+    params.flangeEdgeRadius = 1.0;
+    EXPECT_SUCCESS_Insert (params) << "Flange edge radius should be less or equal to the flange thickness.";
 
-    params.flangeEdgeRadius = 0.5 + 0.0000001;
-    EXPECT_FAIL_Insert (params) << "Flange edge radius should be less or equal to half of the flange thickness.";
+    params.flangeEdgeRadius = 1.0 + 0.0000001;
+    EXPECT_FAIL_Insert (params) << "Flange edge radius should be less or equal to the flange thickness.";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -534,7 +534,7 @@ TEST_F (TTShapeProfileTestCase, Insert_FlangeEdgeRadiusAgainstTheInnerFlangeFace
 
     params.flangeThickness = 4.0;
     params.flangeEdgeRadius = 2.0;
-    EXPECT_SUCCESS_Insert (params) << "Flange edge radius should be less or equal to half of the flange thickness.";
+    EXPECT_SUCCESS_Insert (params) << "Flange edge radius should be less or equal to the flange thickness.";
 
     params.webThickness = 3.0;
     EXPECT_FAIL_Insert (params) << "Flange edge radius should be less or equal to half of inner flange face length.";

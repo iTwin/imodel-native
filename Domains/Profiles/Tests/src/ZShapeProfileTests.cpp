@@ -374,11 +374,11 @@ TEST_F (ZShapeProfileTestCase, Insert_FlangeEdgeRadiusAgainstTheFlangeThickness_
     {
     CreateParams params (GetModel(), "Z", 10.0, 10.0, 1.0, 1.0, 0.0, INFINITY);
 
-    params.flangeEdgeRadius = 0.5;
-    EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to half of the flange thickness.";
+    params.flangeEdgeRadius = 1.0;
+    EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to the flange thickness.";
 
-    params.flangeEdgeRadius = 0.5 + TESTS_EPSILON;
-    EXPECT_FAIL_Insert (params) << "Edge radius should be less or equal to half of the flange thickness.";
+    params.flangeEdgeRadius = 1.0 + TESTS_EPSILON;
+    EXPECT_FAIL_Insert (params) << "Edge radius should be less or equal to the flange thickness.";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -390,7 +390,7 @@ TEST_F (ZShapeProfileTestCase, Insert_FlangeEdgeRadiusAgainstTheInnerFlangeFace_
 
     params.flangeThickness = 4.0;
     params.flangeEdgeRadius = 2.0;
-    EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to half of the flange thickness.";
+    EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to the flange thickness.";
 
     params.webThickness = 8.0;
     EXPECT_FAIL_Insert (params) << "Edge radius should be less or equal to inner flange face length.";

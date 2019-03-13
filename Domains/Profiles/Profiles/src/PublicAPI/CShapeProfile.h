@@ -67,7 +67,7 @@ private:
     bool ValidateFlangeThickness() const;
     bool ValidateWebThickness() const;
     bool ValidateFilletRadius() const;
-    bool ValidteFlangeEdgeRadius() const;
+    bool ValidateFlangeEdgeRadius() const;
     bool ValidateFlangeSlope() const;
 
 public:

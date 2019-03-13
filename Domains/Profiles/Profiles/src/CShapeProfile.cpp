@@ -69,7 +69,7 @@ bool CShapeProfile::_Validate() const
     bool const isFlangeThicknessValid = ValidateFlangeThickness();
     bool const isWebThicknessValid = ValidateWebThickness();
     bool const isFilletRadiusValid = ValidateFilletRadius();
-    bool const isFlangeEdgeRadiusValid = ValidteFlangeEdgeRadius();
+    bool const isFlangeEdgeRadiusValid = ValidateFlangeEdgeRadius();
     bool const isFlangeSlopeValid = ValidateFlangeSlope();
 
     return isFlangeWidthValid && isDepthValid && isFlangeThicknessValid && isWebThicknessValid
@@ -174,7 +174,7 @@ bool CShapeProfile::ValidateFilletRadius() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CShapeProfile::ValidteFlangeEdgeRadius() const
+bool CShapeProfile::ValidateFlangeEdgeRadius() const
     {
     double const flangeEdgeRadius = GetFlangeEdgeRadius();
     if (ProfilesProperty::IsEqualToZero (flangeEdgeRadius))
@@ -182,7 +182,7 @@ bool CShapeProfile::ValidteFlangeEdgeRadius() const
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (flangeEdgeRadius);
     bool const fitsInFlangeWidth = ProfilesProperty::IsLessOrEqual (flangeEdgeRadius, GetFlangeInnerFaceLength() / 2.0);
-    bool const fitsInFlangeThickness = ProfilesProperty::IsLessOrEqual (flangeEdgeRadius, GetFlangeThickness() / 2.0);
+    bool const fitsInFlangeThickness = ProfilesProperty::IsLessOrEqual (flangeEdgeRadius, GetFlangeThickness());
 
     return isPositive && fitsInFlangeWidth && fitsInFlangeThickness;
     }

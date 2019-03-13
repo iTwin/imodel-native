@@ -157,7 +157,7 @@ bool TTShapeProfile::ValidateFlangeEdgeRadius() const
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (flangeEdgeRadius);
     bool const fitsInFlangeLength = ProfilesProperty::IsLessOrEqual (flangeEdgeRadius, GetFlangeInnerFaceLength() / 2.0);
-    bool const fitsInFlangeThickness = ProfilesProperty::IsLessOrEqual (flangeEdgeRadius, GetFlangeThickness() / 2.0);
+    bool const fitsInFlangeThickness = ProfilesProperty::IsLessOrEqual (flangeEdgeRadius, GetFlangeThickness());
 
     return isPositive && fitsInFlangeLength && fitsInFlangeThickness;
     }

@@ -164,10 +164,10 @@ static bool validateFlangeEdgeRadius (double edgeRadius, double innerFlangeFaceL
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (edgeRadius);
-    bool const isLessThanHalfFlangeThickness = ProfilesProperty::IsLessOrEqual (edgeRadius, flangeThickness / 2.0);
+    bool const isLessThanFlangeThickness = ProfilesProperty::IsLessOrEqual (edgeRadius, flangeThickness);
     bool const isLessThanAvailableFlangeLength = ProfilesProperty::IsLessOrEqual (edgeRadius, innerFlangeFaceLength / 2.0);
 
-    return isPositive && isLessThanHalfFlangeThickness && isLessThanAvailableFlangeLength;
+    return isPositive && isLessThanFlangeThickness && isLessThanAvailableFlangeLength;
     }
 
 /*---------------------------------------------------------------------------------**//**

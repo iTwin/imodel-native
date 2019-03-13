@@ -169,10 +169,10 @@ bool LShapeProfile::ValidateEdgeRadius() const
         return true;
 
     bool const isPositive = ProfilesProperty::IsGreaterOrEqualToZero (edgeRadius);
-    bool const isLessThanHalfThickness = ProfilesProperty::IsLessOrEqual (edgeRadius, GetThickness() / 2.0);
+    bool const isLessThanThickness = ProfilesProperty::IsLessOrEqual (edgeRadius, GetThickness());
     bool const isLessThanAvailableFlangeLength = ProfilesProperty::IsLessOrEqual (edgeRadius, GetFlangeInnerFaceLength() / 2.0);
 
-    return isPositive && isLessThanHalfThickness && isLessThanAvailableFlangeLength;
+    return isPositive && isLessThanThickness && isLessThanAvailableFlangeLength;
     }
 
 /*---------------------------------------------------------------------------------**//**

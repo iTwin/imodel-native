@@ -589,11 +589,11 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_TopFlangeEdgeRadiusAgainstFlange
     {
     CreateParams params (GetModel(), "AsymmetricI", 10.0, 10.0, 10.0, 1.0, 2.0, 1.0, 0.0, INFINITY);
 
-    params.topFlangeEdgeRadius = 0.5;
-    EXPECT_SUCCESS_Insert (params) << "Top flange edge radius should be less or equal to half of the top flange thickness.";
+    params.topFlangeEdgeRadius = 1.0;
+    EXPECT_SUCCESS_Insert (params) << "Top flange edge radius should be less or equal to the top flange thickness.";
 
-    params.topFlangeEdgeRadius = 0.5 + TESTS_EPSILON;
-    EXPECT_FAIL_Insert (params) << "Top flange edge radius should be less or equal to half of the top flange thickness.";
+    params.topFlangeEdgeRadius = 1.0 + TESTS_EPSILON;
+    EXPECT_FAIL_Insert (params) << "Top flange edge radius should be less or equal to the top flange thickness.";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -603,11 +603,11 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_BottomFlangeEdgeRadiusAgainstFla
     {
     CreateParams params (GetModel(), "AsymmetricI", 10.0, 10.0, 10.0, 2.0, 1.0, 1.0, 0.0, 0.0, Angle::FromRadians (0.0), 0.0, INFINITY);
 
-    params.bottomFlangeEdgeRadius = 0.5;
-    EXPECT_SUCCESS_Insert (params) << "Bottom flange edge radius should be less or equal to half of the bottom flange thickness.";
+    params.bottomFlangeEdgeRadius = 1.0;
+    EXPECT_SUCCESS_Insert (params) << "Bottom flange edge radius should be less or equal to the bottom flange thickness.";
 
-    params.bottomFlangeEdgeRadius = 0.5 + TESTS_EPSILON;
-    EXPECT_FAIL_Insert (params) << "Bottom flange edge radius should be less or equal to half of the bottom flange thickness.";
+    params.bottomFlangeEdgeRadius = 1.0 + TESTS_EPSILON;
+    EXPECT_FAIL_Insert (params) << "Bottom flange edge radius should be less or equal to the bottom flange thickness.";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -619,7 +619,7 @@ TEST_F (AsymmetricIShapeProfileTestCase, Insert_TopFlangeEdgeRadiusAgainstInnerF
 
     params.topFlangeThickness = 4.0;
     params.topFlangeEdgeRadius = 2.0;
-    EXPECT_SUCCESS_Insert (params) << "Top flange edge radius should be less or equal to half of the top flange thickness.";
+    EXPECT_SUCCESS_Insert (params) << "Top flange edge radius should be less or equal to the top flange thickness.";
 
     params.webThickness = 8.0;
     EXPECT_FAIL_Insert (params) << "Top flange edge radius should be less or equal to inner top flange face length.";
