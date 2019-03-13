@@ -374,9 +374,14 @@ struct NodesToGenerate
                     {
                     bvector<IScalableMeshNodePtr> neighborNodes = node->GetNeighborAt(relativePosX, relativePosY, relativePosZ);
                     for (auto& neighborNode : neighborNodes)
-                        {
-                        if (!FindNode(neighborNode->GetNodeId()))
+                        {                                                         
+                        ScalableMeshNode<DPoint3d>* smNeighborNode(dynamic_cast<ScalableMeshNode<DPoint3d>*>(neighborNode.get()));
+
+                        if ((smNeighborNode->GetNodePtr()->GetCount() > 0) && !FindNode(neighborNode->GetNodeId()))
+                            {
                             areAllNeighborFound = false;
+                            break;
+                            }
                         }
                     }
 
@@ -506,10 +511,12 @@ struct NodeTask : public RefCountedBase
             }
 
 
+        /*TBD_G : Currently empty node needs to be return to take into account empty neighbor node when computing stitchable nodes.
         ScalableMeshNode<DPoint3d>* smNode(dynamic_cast<ScalableMeshNode<DPoint3d>*>(currentNode.get()));
 
         if (smNode->GetNodePtr()->GetCount() == 0)
             return;
+			*/
 
         groupNodes.push_back(currentNode);
         
@@ -522,15 +529,14 @@ struct NodeTask : public RefCountedBase
         }
 
 
-
-
     void AddNode(IScalableMeshNodePtr& currentNode)
         {                
         ScalableMeshNode<DPoint3d>* smNode(dynamic_cast<ScalableMeshNode<DPoint3d>*>(currentNode.get()));
 
-        m_resolutionToGenerate[currentNode->GetLevel()].m_nodeIds.push_back(currentNode->GetNodeId());
+        uint64_t nbObjects = GetNbObjectsEstimate(smNode->GetNodePtr(), m_resolutionToGenerate.size());
 
-        m_totalNbPoints += GetNbObjectsEstimate(smNode->GetNodePtr(), m_resolutionToGenerate.size());
+		m_resolutionToGenerate[currentNode->GetLevel()].m_nodeIds.push_back(currentNode->GetNodeId());
+		m_totalNbPoints += nbObjects;
         }  
 
 
@@ -593,7 +599,7 @@ struct GenerationTask : public NodeTask
             }
         }
 		
-		    void MergeGenerationTask(const GenerationTaskPtr& newGenerationTask, HFCPtr<MeshIndexType> pDataIndex)
+    void MergeGenerationTask(const GenerationTaskPtr& newGenerationTask, HFCPtr<MeshIndexType> pDataIndex)
         {                        
         assert(newGenerationTask->m_resolutionToGenerate.size() == m_resolutionToGenerate.size());
         assert(newGenerationTask->m_orderId == m_orderId);
@@ -740,9 +746,7 @@ void GroupNodes(bvector<NodeTaskPtr>& toExecuteTasks, IScalableMeshNodePtr& curr
 
     //if (smNode->GetNodePtr()->GetCount() < pointThreshold)
     if (GetTotalCountWithSubResolutions(smNode->GetNodePtr(), nbResolutions, nbResolutions - 1) < pointThreshold)
-        {        
-        CreateNodeTask(toExecuteTasks, currentNode, nbResolutions,pointThreshold, pDataIndex, t);
-
+        {                
         childrenGroupingSize = smNode->GetNodePtr()->GetCount();
         //Dont add empty branch.
         if (childrenGroupingSize > 0)
@@ -980,6 +984,10 @@ void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<NodeTask
     wchar_t text_buffer[1000] = { 0 }; //temporary buffer
     swprintf(text_buffer, _countof(text_buffer), L"Nb Nodes To Mesh : %zd    Nb Nodes To Stich : %zd   Ratio : %.2f \r\n", totalNbNodes, totalNbNodesToStitch, independentStitchingPercentage); 
     OutputDebugStringW(text_buffer); // print
+
+#ifdef NDEBUG
+    wprintf(text_buffer);
+#endif
 
 #endif
 
