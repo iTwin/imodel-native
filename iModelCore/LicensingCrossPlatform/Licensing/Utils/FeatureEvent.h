@@ -11,10 +11,10 @@ struct FeatureEvent {
 		BeVersionCR m_version;
 		Utf8String m_projectId = "";
 		FeatureUserDataMap* m_featureUserData;
-		FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId, FeatureUserDataMap* featureUserData);
-		FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId);
-		FeatureEvent(Utf8StringCR featureId, BeVersionCR version, FeatureUserDataMap* featureUserData);
-		FeatureEvent(Utf8StringCR featureId, BeVersionCR version);
+        LICENSING_EXPORT FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId, FeatureUserDataMap* featureUserData);
+        LICENSING_EXPORT FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId);
+        LICENSING_EXPORT FeatureEvent(Utf8StringCR featureId, BeVersionCR version, FeatureUserDataMap* featureUserData);
+        LICENSING_EXPORT FeatureEvent(Utf8StringCR featureId, BeVersionCR version);
 		LICENSING_EXPORT Utf8String ToJson(
 			int productId,
 			Utf8StringCR featureString,

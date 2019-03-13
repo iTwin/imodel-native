@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <map>
 #include <Licensing/Licensing.h>
 #include "../../../Licensing/ILicensingDb.h"
 
@@ -17,55 +18,66 @@ BEGIN_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
 struct LicensingDbMock : ILicensingDb
     {
 public:
-    MOCK_METHOD1(OpenOrCreate, BentleyStatus(BeFileNameCR filePath));
-    MOCK_METHOD0(Close, void());
-    MOCK_METHOD0(IsDbOpen, bool());
+    // ILicensingDb API
+    BentleyStatus OpenOrCreate(BeFileNameCR filePath) override;
+    void Close() override;
+    bool IsDbOpen() override;
 
-    MOCK_METHOD1(WriteUsageToCSVFile, BentleyStatus(BeFileNameCR path));
-    MOCK_METHOD1(WriteFeatureToCSVFile, BentleyStatus(BeFileNameCR path));
+    BentleyStatus WriteUsageToCSVFile(BeFileNameCR path) override;
+    BentleyStatus WriteFeatureToCSVFile(BeFileNameCR path) override;
 
-    MOCK_METHOD0(GetPolicyFiles, std::list<Json::Value>());
-    MOCK_METHOD1(GetPolicyFilesByUser, std::list<Json::Value>(Utf8StringCR userId));
-    MOCK_METHOD1(GetPolicyFilesByKey, std::list<Json::Value>(Utf8StringCR accessKey));
-    MOCK_METHOD6(AddOrUpdatePolicyFile, BentleyStatus(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken));
-    MOCK_METHOD1(DeletePolicyFile, BentleyStatus(Utf8StringCR policyId));
-    MOCK_METHOD2(DeleteAllOtherPolicyFilesByUser, BentleyStatus(Utf8StringCR policyId, Utf8StringCR userId));
-    MOCK_METHOD2(DeleteAllOtherPolicyFilesByKey, BentleyStatus(Utf8StringCR policyId, Utf8StringCR accessKey));
+    std::list<Json::Value> GetPolicyFiles() override;
+    std::list<Json::Value> GetPolicyFilesByUser(Utf8StringCR userId) override;
+    std::list<Json::Value> GetPolicyFilesByKey(Utf8StringCR accessKey) override;
+    BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken) override;
+    BentleyStatus DeletePolicyFile(Utf8StringCR policyId) override;
+    BentleyStatus DeleteAllOtherPolicyFilesByUser(Utf8StringCR policyId, Utf8StringCR userId) override;
+    BentleyStatus DeleteAllOtherPolicyFilesByKey(Utf8StringCR policyId, Utf8StringCR accessKey) override;
 
-    MOCK_METHOD0(GetPolicyFile, Json::Value());
-    MOCK_METHOD1(GetPolicyFile, Json::Value(Utf8StringCR policyId));
+    Json::Value GetPolicyFile() override;
+    Json::Value GetPolicyFile(Utf8StringCR policyId) override;
 
-    MOCK_METHOD1(SetOfflineGracePeriodStart, BentleyStatus(Utf8StringCR startTime));
-    MOCK_METHOD0(GetOfflineGracePeriodStart, Utf8String());
-    MOCK_METHOD0(ResetOfflineGracePeriod, BentleyStatus());
+    BentleyStatus SetOfflineGracePeriodStart(Utf8StringCR startTime) override;
+    Utf8String GetOfflineGracePeriodStart() override;
+    BentleyStatus ResetOfflineGracePeriod() override;
 
-    MOCK_METHOD0(GetLastUsageRecordedTime, Utf8String());
-    MOCK_METHOD0(GetUsageRecordCount, int64_t());
-    MOCK_METHOD0(GetFeatureRecordCount, int64_t());
+    Utf8String GetLastUsageRecordedTime() override;
+    int64_t GetUsageRecordCount() override;
+    int64_t GetFeatureRecordCount() override;
 
-    MOCK_METHOD0(CleanUpUsages, BentleyStatus());
-    MOCK_METHOD0(CleanUpFeatures, BentleyStatus());
+    BentleyStatus CleanUpUsages() override;
+    BentleyStatus CleanUpFeatures() override;
 
-    virtual BentleyStatus RecordUsage(int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
+    BentleyStatus RecordUsage(int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
         Utf8StringCR machineSID, Utf8StringCR userName, Utf8StringCR userSID, Utf8StringCR policyId,
         Utf8StringCR securableId, int productId, Utf8String featureString, int64_t productVersion,
         Utf8StringCR projectId, Utf8String correlationId, Utf8StringCR eventTime, double schemaVersion,
-        Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType)
-        {
-        return RecordUsageMock();
-        }
-    MOCK_METHOD0(RecordUsageMock, BentleyStatus());
+        Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType) override;
 
-    virtual BentleyStatus RecordFeature(int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
+    BentleyStatus RecordFeature(
+        int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
         Utf8StringCR machineSID, Utf8StringCR userName, Utf8StringCR userSID, Utf8StringCR policyId,
         Utf8StringCR securableId, int productId, Utf8String featureString, int64_t productVersion,
         Utf8StringCR projectId, Utf8String correlationId, Utf8StringCR eventTime, double schemaVersion,
         Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType, Utf8StringCR featureId,
-        Utf8StringCR startDate, Utf8String endDate, Utf8String userData)
-        {
-        return RecordFeatureMock();
-        }
-    MOCK_METHOD0(RecordFeatureMock, BentleyStatus());
+        Utf8StringCR startDate, Utf8String endDate, Utf8String userData) override;
+
+    // Mocking/Testing API
+    void MockOpenOrCreate(BentleyStatus mocked) { m_mockedOpenOrCreate = mocked; }
+    int OpenOrCreateCount() const { return m_openOrCreateCalls; }
+    int CloseCount() const { return m_closeCalls; }
+    int RecordUsageCount() const { return m_recordUsageCalls; }
+    void MockUserPolicyFiles(Utf8StringCR userId, std::list<Json::Value> policyFiles);
+    int GetPolicyFilesByUserCount(Utf8StringCR userId);
+
+private:
+    int m_openOrCreateCalls = 0;
+    BentleyStatus m_mockedOpenOrCreate = BSIERROR; // just picked a status, if testing, need to explicitly set this with the mock call
+    bool m_isOpen = false;
+    int m_closeCalls = 0;
+    int m_recordUsageCalls = 0;
+    std::map<Utf8String, std::list<Json::Value>> m_userPolicyMap;
+    std::map<Utf8String, int> m_getPolicyFilesCountMap;
     };
 
 END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE

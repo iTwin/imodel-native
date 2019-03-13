@@ -31,12 +31,6 @@
 #include "Mocks/BuddiProviderMock.h"
 #include "Mocks/PolicyProviderMock.h"
 
-using ::testing::AtLeast;
-using ::testing::Return;
-using ::testing::ReturnRef;
-using ::testing::ByMove;
-using ::testing::_;
-
 #define TEST_PRODUCT_ID     "2545"
 
 USING_NAMESPACE_BENTLEY_LICENSING
@@ -51,36 +45,45 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //     }
 
 PolicyProviderTests::PolicyProviderTests() :
-    m_handlerMock(std::make_shared<MockHttpHandler>()),
+    m_httpHandlerMock(std::make_shared<MockHttpHandler>()),
     m_buddiMock(std::make_shared<BuddiProviderMock>()),
-    m_authMock(std::make_shared<AuthHandlerProviderMock>())
+    m_authProviderMock(std::make_shared<AuthHandlerProviderMock>())
     {
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", "2545");
 
-    EXPECT_CALL(*m_authMock, GetAuthHandler(_, _))
-        .WillRepeatedly(Return(m_handlerMock));
-    m_policyProvider = std::make_shared<PolicyProvider>(m_buddiMock, clientInfo, m_handlerMock, AuthType::SAML, m_authMock);
+    GetAuthHandlerProviderMock().MockGetAuthHandler(m_httpHandlerMock);
+
+    m_policyProvider = std::make_shared<PolicyProvider>(m_buddiMock, clientInfo, m_httpHandlerMock, AuthType::SAML, m_authProviderMock);
     }
 
-PolicyProvider& PolicyProviderTests::GetPolicyProvider() const {
+PolicyProvider& PolicyProviderTests::GetPolicyProvider() const
+    {
     return *m_policyProvider;
-}
-
-MockHttpHandler& PolicyProviderTests::GetMockHttp() const
-    {
-    return *m_handlerMock;
     }
 
-
-std::shared_ptr<MockHttpHandler> PolicyProviderTests::GetHandlerPtr() const
+MockHttpHandler& PolicyProviderTests::GetMockHttpHandler() const
     {
-    return m_handlerMock;
+    return *m_httpHandlerMock;
     }
 
+std::shared_ptr<MockHttpHandler> PolicyProviderTests::GetMockHttpHandlerPtr() const
+    {
+    return m_httpHandlerMock;
+    }
+
+AuthHandlerProviderMock& PolicyProviderTests::GetAuthHandlerProviderMock() const
+    {
+    return *m_authProviderMock;
+    }
+
+std::shared_ptr<AuthHandlerProviderMock> PolicyProviderTests::GetAuthHandlerProviderMockPtr() const
+    {
+    return m_authProviderMock;
+    }
 
 void PolicyProviderTests::TearDown()
     {
-    m_handlerMock->ValidateAndClearExpectations();
+    m_httpHandlerMock->ValidateAndClearExpectations();
     }
 
 void PolicyProviderTests::SetUpTestCase()
@@ -109,9 +112,8 @@ BuddiProviderMock& PolicyProviderTests::GetMockBuddi() const {
 
 Utf8String PolicyProviderTests::MockEntitlementUrl() {
     Utf8String mockUrl("https://entitlementmockurl.bentley.com/");
-    EXPECT_CALL(GetMockBuddi(), EntitlementPolicyBaseUrl())
-        .Times(1)
-        .WillRepeatedly(Return(mockUrl));
+
+    GetMockBuddi().MockEntitlementPolicyBaseUrl(mockUrl);
 
     return mockUrl;
 }
@@ -121,8 +123,8 @@ TEST_F(PolicyProviderTests, PerformGetPolicyRequest_Success)
     const auto mockUrl = MockEntitlementUrl();
     Utf8String expectedUrl = mockUrl + "/GetPolicy";
 
-    GetMockHttp().ExpectRequests(1);
-    GetMockHttp().ForRequest(1, [=] (Http::RequestCR request)
+    GetMockHttpHandler().ExpectRequests(1);
+    GetMockHttpHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_EQ(expectedUrl, request.GetUrl());
         return MockHttpHandler::StubHttpResponse();

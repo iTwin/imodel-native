@@ -10,7 +10,6 @@
 #include "Logging.h"
 #include "LicensingDb.h"
 #include "FreeApplicationPolicyHelper.h"
-#include "Utils/FeatureEvent.h"
 
 #include <Licensing/Utils/LogFileHelper.h>
 
@@ -41,7 +40,7 @@ SaasClientImpl::SaasClientImpl
 
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Jason.Wichert           2/2019
+* @bsimethod                                             Jason.Wichert           3/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<BentleyStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
     {
@@ -50,7 +49,7 @@ folly::Future<BentleyStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Luke.Lindsey             3/2019
+* @bsimethod                                            Jason.Wichert            3/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<BentleyStatus> SaasClientImpl::MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent)
     {

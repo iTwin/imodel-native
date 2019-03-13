@@ -11,7 +11,11 @@
     <ClCompile Include="DummyPolicyHelper.cpp" />
     <ClCompile Include="DummyUserInfoHelper.cpp" />
     <ClCompile Include="GenerateSIDTests.cpp" />
+    <ClCompile Include="Mocks\AuthHandlerProviderMock.cpp" />
+    <ClCompile Include="Mocks\BuddiProviderMock.cpp" />
+    <ClCompile Include="Mocks\LicensingDbMock.cpp" />
     <ClCompile Include="Mocks\PolicyProviderMock.cpp" />
+    <ClCompile Include="Mocks\UlasProviderMock.cpp" />
     <ClCompile Include="PolicyTests.cpp" />
     <ClCompile Include="TestsHelper.cpp" />
     <ClCompile Include="JsonHelper.cpp" />

@@ -67,6 +67,16 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="JsonHelper.cpp">
+    <ClCompile Include="Mocks\BuddiProviderMock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mocks\AuthHandlerProviderMock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mocks\UlasProviderMock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mocks\LicensingDbMock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

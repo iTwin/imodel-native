@@ -20,9 +20,9 @@ public:
     folly::Future<std::shared_ptr<Policy>> GetPolicy() override;
     folly::Future<std::shared_ptr<Policy>> GetPolicyWithKey(Utf8StringCR accessKey) override;
     void MockGetPolicy(std::shared_ptr<Policy> mocked) { m_mockedGetPolicy = mocked; }
-    void MockGetPolicyWithKey(std::shared_ptr<Policy> mocked) { m_mockedGetPolicyWithKey = mocked; };
-    int GetPolicyCalls() const { return m_getPolicyCalls; };
-    int GetPolicyWithKeyCalls() const { return m_getPolicyWithKeyCalls; };
+    void MockGetPolicyWithKey(std::shared_ptr<Policy> mocked) { m_mockedGetPolicyWithKey = mocked; }
+    int GetPolicyCalls() const { return m_getPolicyCalls; }
+    int GetPolicyWithKeyCalls() const { return m_getPolicyWithKeyCalls; }
 private:
     int m_getPolicyCalls = 0;
     int m_getPolicyWithKeyCalls = 0;

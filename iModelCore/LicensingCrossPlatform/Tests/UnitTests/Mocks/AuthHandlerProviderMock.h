@@ -17,9 +17,13 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 BEGIN_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
 
 struct AuthHandlerProviderMock : IAuthHandlerProvider
-{
+    {
+private:
+    IHttpHandlerPtr m_mockedGetAuthHandler = nullptr;
+
 public:
-    MOCK_METHOD2(GetAuthHandler, IHttpHandlerPtr(Utf8StringCR serverUrl, IConnectAuthenticationProvider::HeaderPrefix prefix));
-};
+    IHttpHandlerPtr GetAuthHandler(Utf8StringCR serverUrl, IConnectAuthenticationProvider::HeaderPrefix prefix) override;
+    void MockGetAuthHandler(IHttpHandlerPtr mocked) { m_mockedGetAuthHandler = mocked; };
+    };
 
 END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
