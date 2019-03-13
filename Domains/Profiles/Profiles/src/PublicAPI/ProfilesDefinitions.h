@@ -78,9 +78,6 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_CLASS_MaterialProfileDefinition                          "MaterialProfileDefinition"
 #define PRF_CLASS_MaterialProfile                                    "MaterialProfile"
 
-// Aspects
-#define PRF_CLASS_CustomCardinalPointsAspect                         "CustomCardinalPointsAspect"
-
 // Relationships
 #define PRF_REL_DerivedProfileRefersToSinglePerimeterProfile                    "DerivedProfileRefersToSinglePerimeterProfile"
 #define PRF_REL_DoubleLShapeProfileRefersToLShapeProfile                        "DoubleLShapeProfileRefersToLShapeProfile"
