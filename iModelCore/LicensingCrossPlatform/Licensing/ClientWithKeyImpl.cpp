@@ -27,12 +27,10 @@ ClientWithKeyImpl::ClientWithKeyImpl
     ClientInfoPtr clientInfo,
     BeFileNameCR db_path,
     bool offlineMode,
-    IBuddiProviderPtr buddiProvider,
     IPolicyProviderPtr policyProvider,
     IUlasProviderPtr ulasProvider,
     Utf8StringCR projectId,
     Utf8StringCR featureString,
-    IHttpHandlerPtr httpHandler,
     ILicensingDbPtr licensingDb
     )
     {
@@ -42,12 +40,11 @@ ClientWithKeyImpl::ClientWithKeyImpl
     m_clientInfo = clientInfo;
     m_dbPath = db_path;
     m_offlineMode = offlineMode;
-    m_buddiProvider = buddiProvider;
     m_policyProvider = policyProvider;
     m_ulasProvider = ulasProvider;
     m_projectId = projectId;
     m_featureString = featureString;
-    m_httpHandler = httpHandler;
+    m_licensingDb = licensingDb;
 
     if(m_licensingDb == nullptr) // either pass in a mock, or initialize here
         m_licensingDb = std::make_unique<LicensingDb>(); // should this be make shared?
@@ -108,16 +105,7 @@ LicenseStatus ClientWithKeyImpl::StartApplication()
 BentleyStatus ClientWithKeyImpl::StopApplication()
     {
     LOG.trace("ClientWithKeyImpl::StopApplication");
-
-    m_lastRunningPolicyheartbeatStartTime = 0;      // This will stop Policy heartbeat
-    m_lastRunningUsageheartbeatStartTime = 0;       // This will stop Usage heartbeat
-    m_lastRunningLogPostingheartbeatStartTime = 0;  // This will stop log posting heartbeat
-
-    if (m_licensingDb->GetUsageRecordCount() > 0)
-        m_ulasProvider->PostUsageLogs(*m_licensingDb, m_policy);
-
-    if (m_licensingDb->GetFeatureRecordCount() > 0)
-        m_ulasProvider->PostFeatureLogs(*m_licensingDb, m_policy);
+    StopPolicyHeartbeat(); // This will stop Policy heartbeat
 
     m_licensingDb->Close();
 
@@ -176,7 +164,7 @@ bool ClientWithKeyImpl::ValidateAccessKey()
     {
     LOG.debug("ClientWithKeyImpl::ValidateAccessKey");
 
-    auto responseJson = m_ulasProvider->GetAccessKeyInfo(m_accessKey).get();
+    auto responseJson = m_ulasProvider->GetAccessKeyInfo(m_clientInfo, m_accessKey).get();
 
     if (Json::Value::GetNull() == responseJson)
         {

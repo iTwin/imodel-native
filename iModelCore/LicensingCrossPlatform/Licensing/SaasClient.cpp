@@ -10,6 +10,7 @@
 #include <Licensing/SaasClient.h>
 #include "SaasClientImpl.h"
 #include "Providers/BuddiProvider.h"
+#include "Providers/UlasProvider.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 
@@ -35,7 +36,8 @@ SaasClientPtr SaasClient::Create
     )
     {
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
-    return std::shared_ptr<SaasClient>(new SaasClient(std::make_shared<SaasClientImpl>(productId, featureString, httpHandler, buddiProvider)));
+    IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, httpHandler);
+    return std::shared_ptr<SaasClient>(new SaasClient(std::make_shared<SaasClientImpl>(productId, featureString, ulasProvider)));
     }
 
 /*--------------------------------------------------------------------------------------+

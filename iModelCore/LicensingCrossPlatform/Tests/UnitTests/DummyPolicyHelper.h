@@ -38,7 +38,7 @@ struct DummyPolicyHelper
 
         static Utf8String PolicyExpiresOn(Utf8StringCR date);
 
-        static Utf8String RequestData(int productId, Utf8StringCR featureString, Utf8StringCR userId);
+        static Utf8String RequestData(int productId, Utf8StringCR featureString, Utf8StringCR userId, Utf8StringCR accessKey);
 
         static Utf8String MachineSignature();
         static Utf8String AppliesToUserId(Utf8StringCR userId);
@@ -54,10 +54,12 @@ struct DummyPolicyHelper
 
         static Utf8String DefaultQualifiers();
 
-        static Json::Value CreatePolicySpecific(PolicyType type, Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial);
+        static Json::Value CreatePolicySpecific(PolicyType type, Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial, Utf8StringCR accessKey);
             
     public:
         static Json::Value CreatePolicyFull(Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial);
+
+        static Json::Value CreatePolicyFullWithKey(Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial, Utf8StringCR accessKey);
 
         static Json::Value CreatePolicyNoSecurables(Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial);
 
@@ -72,8 +74,8 @@ struct DummyPolicyHelper
         static Json::Value CreatePolicyMissingFields();
 
         static Json::Value CreatePolicyQualifierOverrides(Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId,
-                                                           Utf8StringCR featureString, int accessKind, bool isTrial, bvector<QualifierOverride>& aclsQualifierOverrides,
-                                                           bvector<QualifierOverride>& securableDataQualifierOverrides);
+                                                          Utf8StringCR featureString, int accessKind, bool isTrial, Utf8StringCR accessKey,
+                                                          bvector<QualifierOverride>& aclsQualifierOverrides, bvector<QualifierOverride>& securableDataQualifierOverrides);
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

@@ -215,8 +215,6 @@ public:
 
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    //auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
-
     BeFileName dbPath = GetLicensingDbPathIntegration();
 
     Utf8String accesskey = "3469AD8D095A53F3CBC9A905A8FF8926"; // valid accessKey
@@ -369,7 +367,7 @@ void ClientIntegrationTests::SetUpTestCase()
      ASSERT_EQ(SUCCESS, L10N::Initialize(BeSQLite::L10N::SqlangFiles(path)));
     }
 
-TEST_F(ClientIntegrationTests, StartApplication_StopApplication_Success)
+TEST_F(ClientIntegrationTests, DISABLED_StartApplication_StopApplication_Success)
 {
 	auto client = CreateTestClient(true);
 	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
@@ -377,18 +375,41 @@ TEST_F(ClientIntegrationTests, StartApplication_StopApplication_Success)
 }
 
 // Need to fix this to have mock return a valid policy (or reevaluate the logic here...)
-TEST_F(ClientIntegrationTests, Equality_Test)
+TEST_F(ClientIntegrationTests, DISABLED_Equality_Test)
     {
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
     ASSERT_EQ((int)1, (int)1); // Mock policy should result in NotEntitled
     }
 
-TEST_F(ClientIntegrationTests, ClientWithKeyStartApplicationStopApplication_Success)
+TEST_F(ClientIntegrationTests, DISABLED_ClientWithKeyStartApplicationStopApplication_Success)
     {
     auto client = CreateWithKeyTestClient(true);
     EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
     client->StopApplication();
     }
+
+//TEST_F(ClientIntegrationTests, ClientWithKeyTestPolicyHeartbeat_Test)
+//    {
+//    // I am using this test to manually debug/test the heartbeat to make sure of the following:
+//    // - policy heartbeat does in fact run as expected (heartbeat every 1 second, refresh policy by PolicyInterval)
+//    // - policy heartbeat cleans up as expected (after StopApplication is called, it doens't try to access disposed resources)
+//    // - maybe: policy heartbeat handles going offline well (keeps using old policy and access key until policy expires)
+//    auto client = CreateWithKeyTestClient(true);
+//    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+//
+//    // use std::chrono::seconds(2); to wait in tests
+//    // PolicyRefresh: make a custom policy with a fast refresh! -> right now it is set for 60 days!
+//    // Heartbeat: check that function is entered multiple times [GOOD]
+//    // Cleanup: stop application and wait and check if anything is accessed [double check!]
+//
+//    std::this_thread::sleep_for(std::chrono::seconds(10));
+//
+//    EXPECT_SUCCESS(client->StopApplication());
+//
+//    std::this_thread::sleep_for(std::chrono::seconds(10));
+//
+//    EXPECT_EQ(1, 0);
+//    }
 
 
 // Below are "start from factory tests", some might be redundant since the client is already made from the factory here

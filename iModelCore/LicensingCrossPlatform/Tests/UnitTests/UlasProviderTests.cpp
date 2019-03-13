@@ -28,10 +28,7 @@ UlasProviderTests::UlasProviderTests() :
     m_handlerMock(std::make_shared<MockHttpHandler>()),
     m_buddiMock(std::make_shared<BuddiProviderMock>())
     {
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
-    BeFileName dbPath("TestPath");
-
-    m_ulasProvider = std::make_shared<UlasProvider>(m_buddiMock, clientInfo, dbPath, m_handlerMock);
+    m_ulasProvider = std::make_shared<UlasProvider>(m_buddiMock, m_handlerMock);
     }
 
 UlasProvider& UlasProviderTests::GetUlasProvider() const
@@ -95,6 +92,9 @@ Utf8String UlasProviderTests::MockUlasUrl()
 
 TEST_F(UlasProviderTests, SendUsageLogs_Success)
     {
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
+    BeFileName dbPath("TestPath");
+
     const auto mockUrl = MockUlasUrl();
     Utf8String expectedUrl = mockUrl + Utf8PrintfString("/usageLog?ultId=%s&prdId=%s&lng=%s", "1004175881", TEST_PRODUCT_ID, "en");
 
@@ -120,11 +120,14 @@ TEST_F(UlasProviderTests, SendUsageLogs_Success)
         return MockHttpHandler::StubHttpResponse();
         });
 
-    GetUlasProvider().SendUsageLogs(BeFileName("TestName"), Utf8String("1004175881")).get();
+    GetUlasProvider().SendUsageLogs(clientInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
     }
 
 TEST_F(UlasProviderTests, SendFeatureLogs_Success)
     {
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
+    BeFileName dbPath("TestPath");
+
     const auto mockUrl = MockUlasUrl();
     Utf8String expectedUrl = mockUrl + Utf8PrintfString("/featureLog?ultId=%s&prdId=%s&lng=%s", "1004175881", TEST_PRODUCT_ID, "en");
 
@@ -150,5 +153,5 @@ TEST_F(UlasProviderTests, SendFeatureLogs_Success)
         return MockHttpHandler::StubHttpResponse();
         });
 
-    GetUlasProvider().SendFeatureLogs(BeFileName("TestName"), Utf8String("1004175881")).get();
+    GetUlasProvider().SendFeatureLogs(clientInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
     }

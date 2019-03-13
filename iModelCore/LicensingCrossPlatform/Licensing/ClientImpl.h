@@ -60,8 +60,6 @@ protected:
     ClientInfoPtr m_clientInfo;
 	ConnectSignInManager::UserInfo m_userInfo;
     BeFileName m_dbPath;
-    std::shared_ptr<IConnectAuthenticationProvider> m_authProvider;
-    IHttpHandlerPtr m_httpHandler;
     ITimeRetrieverPtr m_timeRetriever;
     IDelayedExecutorPtr m_delayedExecutor;
     ILicensingDbPtr m_licensingDb;
@@ -70,7 +68,6 @@ protected:
     Utf8String m_correlationId;
     bool m_offlineMode;
     bool m_stopApplicationCalled;
-    IBuddiProviderPtr m_buddiProvider;
     IPolicyProviderPtr m_policyProvider;
     IUlasProviderPtr m_ulasProvider;
 
@@ -112,7 +109,7 @@ protected:
     bool m_stopPolicyHeartbeat = false;
     bool m_policyHeartbeatStopped = false;
 
-    void PolicyHeartbeat(int64_t currentTime);
+    virtual void PolicyHeartbeat(int64_t currentTime);
     void StopPolicyHeartbeat();
 
     // Get the logging post source as a string
@@ -125,15 +122,12 @@ public:
         (
 		const ConnectSignInManager::UserInfo& userInfo,
         ClientInfoPtr clientInfo,
-        std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
         BeFileNameCR db_path,
         bool offlineMode,
-        IBuddiProviderPtr buddiProvider,
         IPolicyProviderPtr policyProvider,
         IUlasProviderPtr ulasProvider,
         Utf8StringCR projectId,
         Utf8StringCR featureString,
-        IHttpHandlerPtr httpHandler,
         ILicensingDbPtr licensingDb
         );
 

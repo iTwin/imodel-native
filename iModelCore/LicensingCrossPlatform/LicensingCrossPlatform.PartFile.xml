@@ -50,7 +50,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="IntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=IntegrationTests">
+    <Part Name="IntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildIntegrationTests.mke" BentleyBuildMakeOptions="-dTestDir=IntegrationTests">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="Licensing" />
         <Bindings>
@@ -58,7 +58,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=UnitTests">
+    <Part Name="UnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildUnitTests.mke" BentleyBuildMakeOptions="-dTestDir=UnitTests">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="Licensing" />
 
@@ -67,35 +67,59 @@
         </Bindings>
     </Part>
 
-    <Product Name="Licensing-Tests">
+    <Product Name="Licensing-IntegrationTests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
-        <SubPart PartName="UnitTests"/>
         <SubPart PartName="IntegrationTests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingTest -dTEST_COLLECTION_PRODUCT=Licensing-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
-        <SubProduct ProductName="Licensing-Tests"/>
+    <Product Name="Licensing-UnitTests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="UnitTests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="GtestIntegration" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingIntegrationTest -dTEST_COLLECTION_PRODUCT=Licensing-IntegrationTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="Licensing-IntegrationTests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
 
         <Bindings>
-            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/LicensingTest/Assemblies/*</Files>
-            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/LicensingTest/Assets" />
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/LicensingIntegrationTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/LicensingIntegrationTest/Assets" />
         </Bindings>
     </Part>
 
-    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Licensing-Gtest -dGTEST_NAME=LicensingTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubProduct ProductName="Licensing-Gtest" />
+    <Part Name="GtestUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingUnitTest -dTEST_COLLECTION_PRODUCT=Licensing-UnitTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="Licensing-UnitTests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/LicensingUnitTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/LicensingUnitTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Part Name="RunGtestIntegration" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Licensing-GtestIntegration -dGTEST_NAME=LicensingIntegrationTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="Licensing-GtestIntegration" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/LicensingIntegrationTest.log</Files>
+        </Bindings>
+    </Part>    
+
+    <Part Name="RunGtestUnit" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Licensing-GtestUnit -dGTEST_NAME=LicensingUnitTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="Licensing-GtestUnit" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="UnitTestL10n"/>
 
         <Bindings>
-          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/LicensingTest.log</Files>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/LicensingUnitTest.log</Files>
         </Bindings>
     </Part>
 
     <Part Name="UnitTestL10n" BMakeFile="CopyTestingL10nDb.mke">
-        <SubProduct ProductName="Licensing-Gtest" />
+        <SubProduct ProductName="Licensing-GtestUnit" />
     </Part>
 
     <!--<Part Name="NativeClient.Docs" BMakeFile="Licensing/docs.mke" OnlyPlatforms="x64">
@@ -108,16 +132,22 @@
         </Bindings>
     </Part>-->
 
-    <Product Name="Licensing-Gtest" >
-        <SubPart PartName="Gtest"/>
+    <Product Name="Licensing-GtestIntegration" >
+        <SubPart PartName="GtestIntegration"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Product Name="Licensing-GtestUnit" >
+        <SubPart PartName="GtestUnit"/>
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
     <!-- ********************** -->
-    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingTest -dTEST_COLLECTION_PRODUCT=Licensing-Tests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
-        <SubProduct ProductName="Licensing-Tests"/>
+    <!-- TODO need mocks to be manual for Android, enable when we get there -->
+    <!-- <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingUnitTest -dTEST_COLLECTION_PRODUCT=Licensing-UnitTests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="Licensing-UnitTests"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
             <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
@@ -134,13 +164,13 @@
         <Bindings>
             <Files SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/Licensing-AndroidJUnit.log</Files>
         </Bindings>
-    </Part>
+    </Part> -->
 
     <!-- ********************** -->
     <!-- **** iOSXCTest **** -->
     <!-- ********************** -->
-    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingTest -dTEST_COLLECTION_PRODUCT=Licensing-Tests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
-        <SubProduct ProductName="Licensing-Tests"/>
+    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingUnitTest -dTEST_COLLECTION_PRODUCT=Licensing-UnitTests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="Licensing-UnitTests"/>
         <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
             <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/Licensing/Project" />
@@ -167,11 +197,11 @@
         Name="UwpTest"
         DeferType="BuildUnitTests"
         BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
-        BentleyBuildMakeOptions="-dTEST_NAME=LicensingTest -dTEST_COLLECTION_PRODUCT=Licensing-Tests"
+        BentleyBuildMakeOptions="-dTEST_NAME=LicensingUnitTest -dTEST_COLLECTION_PRODUCT=Licensing-UnitTests"
         OnlyPlatforms="WinRT*"
         ApiNumber="B02"
         >
-        <SubProduct ProductName="Licensing-Tests"/>
+        <SubProduct ProductName="Licensing-UnitTests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
             <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/LicensingUwpTest"/>
@@ -201,8 +231,11 @@
         <SubPart PartName="Licensing"/>
         <Directories DirectoryListName="LicenseClientCrossPlatform"/>
 
-        <SubProduct ProductName="Licensing-Gtest"/>
-        <SubPart PartName="RunGtest"/>
+        <SubProduct ProductName="Licensing-GtestUnit"/>
+        <SubPart PartName="RunGtestUnit"/>
+
+        <SubProduct ProductName="Licensing-GtestIntegration"/>
+        <SubPart PartName="RunGtestIntegration"/>
     </Product>
 
     <ProductDirectoryList ListName="LicenseClientCrossPlatform">

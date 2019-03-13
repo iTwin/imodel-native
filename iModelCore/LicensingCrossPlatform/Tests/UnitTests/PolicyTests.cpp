@@ -115,7 +115,7 @@ TEST_F(PolicyTests, GetACLsQualifierOverride_HeartbeatInterval_Success)
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
 
     auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyQualifierOverrides(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7),
-                                                                                    DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false,
+                                                                                    DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false, "",
                                                                                     aclsQualifierOverrides, securedataQualifierOverrides));
 
     EXPECT_NE(policy, nullptr);
@@ -139,7 +139,7 @@ TEST_F(PolicyTests, GetSecureDataQualifierOverride_PolicyInterval_Success)
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
 
     auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyQualifierOverrides(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7),
-                                                                                    DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false,
+                                                                                    DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false, "",
                                                                                     aclsQualifierOverrides, securedataQualifierOverrides));
 
     EXPECT_NE(policy, nullptr);
@@ -170,7 +170,7 @@ TEST_F(PolicyTests, GetACLsQualifierOverrideWithSecureDataQualifierOverride_Time
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
 
     auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyQualifierOverrides(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7),
-                                                                                    DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false,
+                                                                                    DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false, "",
                                                                                     aclsQualifierOverrides, securedataQualifierOverrides));
 
     EXPECT_NE(policy, nullptr);
