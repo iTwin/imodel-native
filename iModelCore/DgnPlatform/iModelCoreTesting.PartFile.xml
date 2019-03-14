@@ -6,7 +6,7 @@
     
     <Part Name="RunUnitGTest" OnlyPlatforms="x64,macos*,linux*" DeferType="RunUnitTests"
             BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/CheckLogfilesForFailures.mke"
-            BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs +dAllowIgnore=1"
+            BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs"
             >
         <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest"/>
 
