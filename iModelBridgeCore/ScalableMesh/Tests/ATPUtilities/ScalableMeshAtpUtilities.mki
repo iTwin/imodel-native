@@ -1,0 +1,59 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/ATPUtilities/ScalableMeshAtpUtilities.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+# If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
+# PreCompiledHeader.mki uses CCompPDBName
+appName     = ScalableMeshAtpUtilities
+DLM_NAME    = $(appName)
+LIB_NAME    = $(appName)
+CCompPDBName = $(appName)
+
+
+#----------------------------------------------------------
+# Preprocessor definition.
+#----------------------------------------------------------
+nameToDefine = __BENTLEYSMATPUTIL_BUILD__
+%include cdefapnd.mki
+
+nameToDefine = NO_IODEFS
+%include cdefapnd.mki
+
+#
+#  Defining NOMINMAX keeps windef.h from defining min/max macros. This is necessary to be able to use
+#  the std::min and std::max function templates. It might be nice to hoist this up to the power platform
+#  build policy level.
+#
+nameToDefine = NOMINMAX
+%include cdefapnd.mki
+
+OutBuildSM = $(OutBuildDir)ScalableMesh/
+o = $(OutBuildSM)$(appName)/
+
+#----------------------------------------------------------
+# Compile and link settings
+#----------------------------------------------------------
+%if defined(IncludeCompileLinkMki)
+%include $(SharedMki)CommonCompileLinkPolicy.mki
+%endif
+
+# dlmlink.mki common options.
+DLM_DEST                    = $(o)
+DLM_SYMB_DEST               = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_OBJECT_DEST             = $(o)
+DLM_NO_INITIALIZE_FUNCTION  = 1
+DLM_NO_DEF                  = 1
+DLM_NOMSBUILTINS            = 1
+DLM_NO_DLS                  = 1
+DLM_NOENTRY                 = 1
+DLM_NO_IMPLIB               = 1
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)/Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)/Delivery/
