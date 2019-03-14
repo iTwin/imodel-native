@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+                                                                                           
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: DgnCore/RenderPrimitives.cpp $
 |
@@ -139,13 +139,14 @@ private:
 
     PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context) override;
     StrokesList _GetStrokes (IFacetOptionsR facetOptions, ViewContextR context) override;
-    size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
     void _SetInCache(bool inCache) override { m_inCache = inCache; }
 
     static PolyfaceHeaderPtr FixPolyface(PolyfaceHeaderR, IFacetOptionsR);
     static void AddNormals(PolyfaceHeaderR, IFacetOptionsR);
     static void AddParams(PolyfaceHeaderR, IFacetOptionsR);
 public:
+    bool IsInstanceable() const override { return true; }
+
     static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, bool isCurved, DgnDbR db, bool disjoint)
         {
         BeAssert(!disjoint || geometry.GetAsCurveVector().IsValid());
@@ -164,8 +165,9 @@ private:
     SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db);
 
     PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context) override;
-    size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_entity); }
 public:
+    bool IsInstanceable() const override { return true; }
+
     static GeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
         {
         return new SolidKernelGeometry(solid, tf, range, elemId, params, db);
@@ -181,24 +183,25 @@ private:
     TextStringPtr                   m_text;
     mutable bvector<CurveVectorPtr> m_glyphCurves;
     DgnDbR                          m_db;
-    bool                            m_checkGlyphBoxes;
 
     TextStringGeometry(TextStringR text, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db, bool checkGlyphBoxes)
-        : SingularGeometry(transform, range, elemId, params, true, db), m_text(&text), m_checkGlyphBoxes(checkGlyphBoxes), m_db(db)
-        { 
-        //
+        : SingularGeometry(transform, range, elemId, params, true, db), m_text(&text), m_db(db)
+        {
+        // ###TODO remove dumb checkGlyphBoxes arg - it's not used?
         }
 
 public:
+    // Brien doesn't put text into geometry parts. Other bridges might. Raster text won't currently work properly due to the way the glyph atlases are produced.
+    // No easy way to detect here if raster text will be produced. For now just don't instance text.
+    bool IsInstanceable() const override { return false; }
+
     static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db, bool checkGlyphBoxes)
         {
         return new TextStringGeometry(textString, transform, range, elemId, params, db, checkGlyphBoxes);
         }
-    
-    bool DoGlyphBoxes (IFacetOptionsR facetOptions);
+
     PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context) override;
     StrokesList _GetStrokes (IFacetOptionsR facetOptions, ViewContextR context) override;
-    size_t _GetFacetCount(FacetCounter& counter) const override;
 
     DgnDbR GetDb() const { return m_db; }
     TextStringCR GetText() const { return *m_text; }
@@ -207,22 +210,21 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     11/2016
 //=======================================================================================
-struct GeomPartInstanceGeometry : Geometry
+struct InstancedGeometry : Geometry
 {
 private:
-    GeomPartPtr     m_part;
+    SharedGeomPtr   m_geom;
 
-    GeomPartInstanceGeometry(GeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
-        : Geometry(tf, range, elemId, params, part.IsCurved(), db), m_part(&part) { }
+    InstancedGeometry(SharedGeomR geom, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
+        : Geometry(tf, range, elemId, params, geom.IsCurved(), db), m_geom(&geom) { }
 
 public:
-    static GeometryPtr Create(GeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)  { return new GeomPartInstanceGeometry(part, tf, range, elemId, params, db); }
+    static GeometryPtr Create(SharedGeomR geom, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)  { return new InstancedGeometry(geom, tf, range, elemId, params, db); }
 
-    PolyfaceList _GetPolyfaces(double chordTolerance, NormalMode normalMode, ViewContextR context) override { return m_part->GetPolyfaces(chordTolerance, normalMode, this, context); }
-    StrokesList _GetStrokes (double chordTolerance, ViewContextR context) override { return m_part->GetStrokes(chordTolerance, this, context); }
-    size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetFacetCount (counter, *this); }
-    GeomPartCPtr _GetPart() const override { return m_part; }
-
+    PolyfaceList _GetPolyfaces(double chordTolerance, NormalMode normalMode, ViewContextR context) override { return m_geom->GetPolyfaces(chordTolerance, normalMode, this, context); }
+    StrokesList _GetStrokes (double chordTolerance, ViewContextR context) override { return m_geom->GetStrokes(chordTolerance, this, context); }
+    SharedGeomCPtr _GetSharedGeom() const override { return m_geom; }
+    bool IsInstanceable() const override { return false; }
 };
 
 //=======================================================================================
@@ -347,7 +349,7 @@ private:
         bool IsCurved() const { return m_isCurved; }
         bool HasRaster() const { return m_raster.IsValid(); }
         Raster* GetRaster() { return m_raster.IsValid() ? &m_raster : nullptr; }
-        bool GetRange(DRange3dR cRange) const { if (IsValid()) { return m_curves->GetRange(cRange); }  return false; } 
+        bool GetRange(DRange3dR cRange) const { if (IsValid()) { return m_curves->GetRange(cRange); }  return false; }
 
         Strokes::PointLists GetStrokes(IFacetOptionsR facetOptions)
             {
@@ -564,7 +566,7 @@ void DisplayParams::InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t wi
     m_surfaceMaterial = mat;
     m_width = width;
     m_linePixels = pixels;
-    
+
     BeAssert(nullptr == m_surfaceMaterial.GetGradient() || m_surfaceMaterial.GetTextureMapping().IsValid());
     }
 
@@ -613,32 +615,6 @@ DisplayParams DisplayParams::ForMesh(GraphicParamsCR gf, GeometryParamsCP geom, 
         surfMat = SurfaceMaterial(*gf.GetMaterial(), gf.GetMaterialUVDetail().GetTransform());
 
     return DisplayParams(gf.GetLineColor(), gf.GetFillColor(), gf.GetWidth(), static_cast<LinePixels>(gf.GetLinePixels()), surfMat, fillFlags, catId, subCatId, geomClass);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParamsCPtr DisplayParams::CreateForGeomPartInstance(DisplayParamsCR part, DisplayParamsCR inst)
-    {
-    if (part.GetType() == inst.GetType())
-        return &inst;
-
-    // We initially create the instance params via CreateForMesh(), because we don't know what type(s) of geometry the part will contain.
-    // Need to fix it up for linear/text
-    BeAssert(Type::Mesh == inst.GetType());
-    DisplayParamsPtr clone(new DisplayParams(part));
-    clone->m_fillColor = clone->m_lineColor = inst.m_lineColor;
-    clone->m_categoryId = inst.m_categoryId;
-    clone->m_subCategoryId = inst.m_subCategoryId;
-    clone->m_class = inst.m_class;
-
-    if (Type::Linear == clone->GetType())
-        {
-        clone->m_width = inst.m_width;
-        clone->m_linePixels = inst.m_linePixels;
-        }
-
-    return clone.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1041,7 +1017,7 @@ bool Mesh::HasNonPlanarNormals() const
 
     return false;
     }
-     
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1099,7 +1075,7 @@ uint32_t Mesh::AddVertex(QPoint3dCR vert, OctEncodedNormalCP normal, DPoint2dCP 
 
     if (nullptr != normal)
         m_normals.push_back(*normal);
-                                                                                                                 
+
     if (nullptr != param)
         m_uvParams.push_back(toFPoint2d(*param));
 
@@ -1380,7 +1356,7 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
         auto computeIndex   = [=](size_t i) { return (0 == i) ? 0 : iTriangle + i; };
         auto makeVertexKey  = [&](size_t index)
             {
-            return VertexKey(points[index], feature, fillColor, m_mesh->Verts().GetParams(), requireNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr); 
+            return VertexKey(points[index], feature, fillColor, m_mesh->Verts().GetParams(), requireNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr);
             };
 
         size_t indices[3]       = { computeIndex(0), computeIndex(1), computeIndex(2) };
@@ -1470,18 +1446,13 @@ void MeshBuilder::AddPointString(bvector<DPoint3d> const& points, FeatureCR feat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Mesh::AddPolyline(MeshPolylineCR polyline) 
+void Mesh::AddPolyline(MeshPolylineCR polyline)
     {
-    BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType()); 
-    
-    if (PrimitiveType::Polyline == GetType() && polyline.GetIndices().size() < 2)
-        {
-        // BeAssert(false);
-        return;
-        }
-        
+    BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType());
 
-    m_polylines.push_back(polyline);
+    // Ignore single-point line strings...
+    if (PrimitiveType::Polyline != GetType() || polyline.GetIndices().size() >= 2)
+        m_polylines.push_back(polyline);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1501,7 +1472,7 @@ uint32_t MeshBuilder::AddVertex(VertexMap& verts, VertexKey const& vertex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeomPart::Key::IsLessThan(GeomPart::KeyCR rhs, bool ignoreTolerance) const
+bool PartGeom::Key::IsLessThan(PartGeom::KeyCR rhs, bool ignoreTolerance) const
     {
     TEST_LESS_THAN(m_partId.GetValueUnchecked());
     if (!ignoreTolerance && m_tolerance != rhs.m_tolerance)
@@ -1522,25 +1493,58 @@ bool GeomPart::Key::IsLessThan(GeomPart::KeyCR rhs, bool ignoreTolerance) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeomPart::GeomPart(GeomPart::KeyCR key, DRange3dCR range, GeometryList const& geometries, bool hasSymbologyChanges)
-    : m_key(key), m_range (range), m_facetCount(0), m_geometries(geometries), m_hasSymbologyChanges(hasSymbologyChanges)
-    { 
-    }                
+PartGeom::PartGeom(PartGeom::KeyCR key, DRange3dCR range, GeometryList const& geometries, bool hasSymbologyChanges)
+    : SharedGeom(range, geometries), m_key(key), m_hasSymbologyChanges(hasSymbologyChanges)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SharedGeom::SharedGeom(DRange3dCR range, GeometryList const& geometries) : m_range(range), m_geometries(geometries)
+    {
+    for (auto const& geom : geometries)
+        {
+        if (!geom->IsInstanceable())
+            {
+            m_instanceable = false;
+            break;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SharedGeom::SharedGeom(DRange3dCR range, GeometryR geom) : m_range(range), m_geometries(geom)
+    {
+    // We know it's a solid primitive, which is always instanceable.
+    BeAssert(geom.IsInstanceable());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeomPart::IsCurved() const
+bool SharedGeom::IsCurved() const
     {
     // ###TODO: Take into account polyfaces which should be decimated...
     return m_geometries.ContainsCurves();
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t PartGeom::GetMinInstanceCount() const
+    {
+    return 2;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Adjust tolerance to account for transform scale.
 * @bsimethod                                                    Paul.Connelly   10/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-double GeomPart::ComputeTolerance(TransformCR transform, double baseTolerance)
+double PartGeom::ComputeTolerance(TransformCR transform, double baseTolerance)
     {
     DPoint3d tempPt;
     Transform invTrans;
@@ -1555,30 +1559,103 @@ double GeomPart::ComputeTolerance(TransformCR transform, double baseTolerance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-double GeomPart::ComputeTolerance(GeometryCP instance, double tolerance)
+double PartGeom::ComputeTolerance(GeometryCP instance, double tolerance)
     {
     return nullptr != instance ? ComputeTolerance(instance->GetTransform(), tolerance) : tolerance;
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParamsCR SharedGeom::GetInstanceDisplayParams(GeometryCP instance, DisplayParamsCR geomParams) const
+    {
+    return nullptr != instance ? instance->GetDisplayParams() : GetDisplayParams();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParamsCR GeomPart::GetInstanceDisplayParams(GeometryCP instance, DisplayParamsCR geomParams) const
+DisplayParamsCR PartGeom::GetInstanceDisplayParams(GeometryCP instance, DisplayParamsCR geomParams) const
     {
-    if (HasSymbologyChanges())
-        return geomParams;
-    else
-        return nullptr != instance ? instance->GetDisplayParams() : GetDisplayParams();
+    return HasSymbologyChanges() ? geomParams : T_Super::GetInstanceDisplayParams(instance, geomParams);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SolidPrimitiveGeom::Key::Key(ISolidPrimitiveR primitive, DisplayParamsCR displayParams, DRange3dCR range)
+    : m_primitive(&primitive), m_displayParams(&displayParams)
+    {
+    double const* in = &range.low.x;
+    for (size_t i = 0; i < 6; i++)
+        m_range[i] = static_cast<int64_t>(in[i] / GetCompareTolerance());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SolidPrimitiveGeom::Key::operator<(Key const& rhs) const
+    {
+    for (size_t i = 0; i < 6; i++)
+        if (m_range[i] != rhs.m_range[i])
+            return m_range[i] < rhs.m_range[i];
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SolidPrimitiveGeom::Key::IsEquivalent(Key const& rhs) const
+    {
+    BeAssert(!(*this < rhs) && !(rhs < *this));
+
+    return m_displayParams->IsEqualTo(*rhs.m_displayParams, ComparePurpose::Instance) && m_primitive->IsSameStructureAndGeometry(*rhs.m_primitive, GetCompareTolerance());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t SolidPrimitiveGeom::GetMinInstanceCount() const
+    {
+    // Below this minimum, we won't bother trying to instance this solid primitive.
+    // Otherwise, we will facet/stroke it, and decide whether or not to actually instance based on the number of facets/strokes produced.
+    // ###TODO_INSTANCING currently our caller will NOT do anything more intelligent to avoid producing too many instances - so bump up these values
+    static constexpr size_t s_minUncurved = 16; // 8;
+    static constexpr size_t s_minCurved = 5; // 2;
+    switch (GetKey().m_primitive->GetSolidPrimitiveType())
+        {
+        case SolidPrimitiveType_DgnBox:
+            return s_minUncurved * 2;
+        case SolidPrimitiveType_DgnTorusPipe:
+        case SolidPrimitiveType_DgnCone:
+        case SolidPrimitiveType_DgnSphere:
+        case SolidPrimitiveType_DgnRotationalSweep:
+            return s_minCurved;
+        default:
+            return IsCurved() ? s_minCurved : s_minUncurved;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SolidPrimitiveGeomPtr SolidPrimitiveGeom::Create(KeyCR key, DRange3dCR range, DgnDbR db)
+    {
+    bool isCurved = key.m_primitive->HasCurvedFaceOrEdge();
+    IGeometryPtr igeom = IGeometry::Create(key.m_primitive);
+    auto geom = Geometry::Create(*igeom, Transform::FromIdentity(), range, DgnElementId(), *key.m_displayParams, isCurved, db, false);
+    return new SolidPrimitiveGeom(key, range, *geom);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceList GeomPart::GetPolyfaces(double chordTolerance, NormalMode normalMode, GeometryCP instance, ViewContextR context)
+PolyfaceList SharedGeom::GetPolyfaces(double chordTolerance, NormalMode normalMode, GeometryCP instance, ViewContextR context)
     {
-    chordTolerance = m_key.m_tolerance;
+    chordTolerance = GetTolerance(chordTolerance);
     PolyfaceList polyfaces;
-    for (auto& geometry : m_geometries) 
+    for (auto& geometry : m_geometries)
         {
         BeAssert(geometry->GetTransform().IsIdentity());
         PolyfaceList thisPolyfaces = geometry->GetPolyfaces (chordTolerance, normalMode, context);
@@ -1603,7 +1680,7 @@ PolyfaceList GeomPart::GetPolyfaces(double chordTolerance, NormalMode normalMode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeomPart::SetInCache(bool inCache)
+void SharedGeom::SetInCache(bool inCache)
     {
     for (auto& geometry : m_geometries)
         geometry->SetInCache(inCache);
@@ -1612,12 +1689,12 @@ void GeomPart::SetInCache(bool inCache)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-StrokesList GeomPart::GetStrokes(double chordTolerance, GeometryCP instance, ViewContextR context)
+StrokesList SharedGeom::GetStrokes(double chordTolerance, GeometryCP instance, ViewContextR context)
     {
-    chordTolerance = m_key.m_tolerance;
+    chordTolerance = GetTolerance(chordTolerance);
     StrokesList strokes;
 
-    for (auto& geometry : m_geometries) 
+    for (auto& geometry : m_geometries)
         {
         StrokesList   thisStrokes = geometry->GetStrokes(chordTolerance, context);
 
@@ -1639,25 +1716,13 @@ StrokesList GeomPart::GetStrokes(double chordTolerance, GeometryCP instance, Vie
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t GeomPart::GetFacetCount(FacetCounter& counter, GeometryCR instance) const
-    {
-    if (0 == m_facetCount)
-        for (auto& geometry : m_geometries) 
-            m_facetCount += geometry->GetFacetCount(counter);
-            
-    return m_facetCount;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeomPart::AddInstance(TransformCR tf, DisplayParamsCR params, DgnElementId elemId)
+void SharedGeom::AddInstance(TransformCR tf, DisplayParamsCR params, DgnElementId elemId)
     {
     m_instances.push_back(Instance(tf, params, elemId));
-
-    auto myColor = GetDisplayParams().GetFillColorDef(),
+    auto const& myParams = GetDisplayParams();
+    auto myColor = myParams.GetFillColorDef(),
          dpColor = params.GetFillColorDef();
 
     if (myColor.GetValueNoAlpha() != dpColor.GetValueNoAlpha())
@@ -1666,10 +1731,10 @@ void GeomPart::AddInstance(TransformCR tf, DisplayParamsCR params, DgnElementId 
     if (myColor.GetAlpha() != dpColor.GetAlpha())
         m_symbology |= SymbologyOverrides::Alpha;
 
-    if (GetDisplayParams().GetLineWidth() != params.GetLineWidth())
+    if (myParams.GetLineWidth() != params.GetLineWidth())
         m_symbology |= SymbologyOverrides::LineWidth;
 
-    if (GetDisplayParams().GetLinePixels() != params.GetLinePixels())
+    if (myParams.GetLinePixels() != params.GetLinePixels())
         m_symbology |= SymbologyOverrides::LinePixels;
     }
 
@@ -1677,20 +1742,9 @@ void GeomPart::AddInstance(TransformCR tf, DisplayParamsCR params, DgnElementId 
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Geometry::Geometry(TransformCR tf, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbR db)
-    : m_params(&params), m_transform(tf), m_tileRange(range), m_entityId(entityId), m_isCurved(isCurved), m_facetCount(0), m_hasTexture(params.IsTextured())
+    : m_params(&params), m_transform(tf), m_tileRange(range), m_entityId(entityId), m_isCurved(isCurved), m_hasTexture(params.IsTextured())
     {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t Geometry::GetFacetCount(IFacetOptionsR options) const
-    {
-    if (0 != m_facetCount)
-        return m_facetCount;
-    
-    FacetCounter counter(options);
-    return (m_facetCount = _GetFacetCount(counter));
+    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1740,11 +1794,11 @@ IFacetOptionsPtr SingularGeometry::CreateFacetOptions(double chordTolerance, Nor
 
     switch (normalMode)
         {
-        case NormalMode::Always:    
-            normalsRequired = true; 
+        case NormalMode::Always:
+            normalsRequired = true;
             break;
-        case NormalMode::CurvedSurfacesOnly:    
-            normalsRequired = IsCurved(); 
+        case NormalMode::CurvedSurfacesOnly:
+            normalsRequired = IsCurved();
             break;
         }
 
@@ -1856,7 +1910,7 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimitiveGeometry::AddNormals(PolyfaceHeaderR polyface, IFacetOptionsR facetOptions)
     {
-    static double   s_defaultCreaseRadians = Angle::DegreesToRadians(45.0);       
+    static double   s_defaultCreaseRadians = Angle::DegreesToRadians(45.0);
     static double   s_sharedNormalSizeRatio = 5.0;      // Omit expensive shared normal if below this ratio of tolerance.
 
     polyface.BuildNormalsFast(s_defaultCreaseRadians, s_sharedNormalSizeRatio * facetOptions.GetChordTolerance());
@@ -1876,7 +1930,7 @@ void PrimitiveGeometry::AddParams(PolyfaceHeaderR polyface, IFacetOptionsR facet
 PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context)
     {
     PolyfaceHeaderPtr polyface = m_geometry->GetAsPolyfaceHeader();
-    
+
     if (polyface.IsValid())
         {
         if (m_inCache)
@@ -1938,7 +1992,7 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewCon
     {
     StrokesList             tileStrokes;
     CurveVectorPtr          curveVector = m_geometry->GetAsCurveVector();
-    
+
     if (!curveVector.IsValid())
         return tileStrokes;
 
@@ -1966,7 +2020,7 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewCon
 SolidKernelGeometry::SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
         : SingularGeometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
     {
-#if defined (BENTLEYCONFIG_PARASOLID)    
+#if defined (BENTLEYCONFIG_PARASOLID)
     if (DgnDb::ThreadId::Client != DgnDb::GetThreadId())
         PK_BODY_change_partition(PSolidUtil::GetEntityTag (*m_entity), PSolidThreadUtil::GetThreadPartition());
 #endif
@@ -1982,13 +2036,13 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, Vie
 #if defined (BENTLEYCONFIG_PARASOLID)
     DRange3d entityRange = m_entity->GetEntityRange();
     if (entityRange.IsNull())
-        return tilePolyfaces;                                                                                                                                                                                                 
+        return tilePolyfaces;
 
     double              rangeDiagonal = entityRange.DiagonalDistance();
     static double       s_minRangeRelTol = 1.0e-4;
     double              minChordTolerance = rangeDiagonal * s_minRangeRelTol;
     IFacetOptionsPtr    pFacetOptions = facetOptions.Clone();
-    
+
     if (facetOptions.GetChordTolerance() < minChordTolerance)
         pFacetOptions->SetChordTolerance (minChordTolerance);
 
@@ -2018,7 +2072,7 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, Vie
                 {
                 GeometryParams faceParams;
                 params[i].ToGeometryParams(faceParams, baseParams);
-                
+
                 GraphicParams gfParams;
                 context.CookGeometryParams(faceParams, gfParams);
 
@@ -2030,7 +2084,6 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, Vie
     else
         {
         auto polyface = BRepUtil::FacetEntity(*m_entity, *pFacetOptions);
-    
         if (polyface.IsValid() && polyface->HasFacets())
             tilePolyfaces.push_back (Polyface(GetDisplayParams(), *polyface));
         }
@@ -2073,9 +2126,9 @@ GeometryPtr Geometry::Create(IBRepEntityR solid, TransformCR tf, DRange3dCR rang
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryPtr Geometry::Create(GeomPartR part, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbR db)
+GeometryPtr Geometry::Create(SharedGeomR geom, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbR db)
     {
-    return GeomPartInstanceGeometry::Create(part, transform, range, entityId, params, db);
+    return InstancedGeometry::Create(geom, transform, range, entityId, params, db);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2247,7 +2300,7 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
     // This ensures the builder map is organized in the same order as the geometry list, and no meshes are merged.
     // This is required to make overlay decorations render correctly.
     uint16_t    order = 0;
-    for (auto const& geom : m_geometries)                                                                        
+    for (auto const& geom : m_geometries)
         {
         auto polyfaces = geom->GetPolyfaces(tolerance, options.m_normalMode, context);
         for (auto const& tilePolyface : polyfaces)
@@ -2447,21 +2500,6 @@ bool ColorTable::FindByIndex(ColorDef& color, uint16_t index) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TextStringGeometry::DoGlyphBoxes (IFacetOptionsR facetOptions)
-    {
-    if (!m_checkGlyphBoxes)
-        return false;
-
-    DRange2d            textRange = m_text->GetRange();
-    double              minDimension = std::min (textRange.high.x - textRange.low.x, textRange.high.y - textRange.low.y) * GetTransform().ColumnXMagnitude();
-    static const double s_minGlyphRatio = 1.0; 
-    
-    return minDimension < s_minGlyphRatio * facetOptions.GetChordTolerance();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptionsIn, ViewContextR context)
     {
     return GlyphCache::GetPolyfaces(*this, facetOptionsIn.GetChordTolerance(), context);
@@ -2473,24 +2511,6 @@ PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptionsIn, Vi
 StrokesList TextStringGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewContextR context)
     {
     return GlyphCache::GetStrokes(*this, facetOptions.GetChordTolerance(), context);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t TextStringGeometry::_GetFacetCount(FacetCounter& counter) const
-    {
-#if defined(IF_COUNTING_FACETS)
-    InitGlyphCurves();
-    size_t              count = 0;
-
-    for (auto& glyphCurve : m_glyphCurves)
-        count += counter.GetFacetCount(*glyphCurve);
-
-    return count;
-#else
-    return 0;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3124,7 +3144,7 @@ void GeometryListBuilder::_AddTriStrip(int numPoints, DPoint3dCP points, AsThick
         {
         int nPt = 0;
         auto tmpPts = reinterpret_cast<DPoint3dP>(_alloca((numPoints+1)*sizeof(DPoint3d)));
-        
+
         for (int iPtS1 = 0; iPtS1 < numPoints; iPtS1 += 2)
             tmpPts[nPt++] = points[iPtS1];
 
@@ -3541,7 +3561,7 @@ void TriangleList::AddTriangle(TriangleCR triangle)
         {
         if (triangle.GetEdgeVisible(i))
             flags |= (0x0002 << i);
-        
+
         m_indices.push_back(triangle.m_indices[i]);
         }
 
@@ -3558,7 +3578,7 @@ Triangle  TriangleList::GetTriangle(size_t index) const
         BeAssert(false);
         return Triangle();
         }
-    
+
     uint8_t         flags = m_flags.at(index);
     Triangle        triangle(0 != (flags & 0x0001));
     uint32_t const* pIndex = &m_indices.at(index*3);

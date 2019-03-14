@@ -32,7 +32,9 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Strokes);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryCollection);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(VertexKey);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TriangleKey);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(GeomPart);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(SharedGeom);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(PartGeom);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(SolidPrimitiveGeom);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryOptions);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryAccumulator);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ColorTable);
@@ -44,7 +46,9 @@ DEFINE_REF_COUNTED_PTR(DisplayParams);
 DEFINE_REF_COUNTED_PTR(Mesh);
 DEFINE_REF_COUNTED_PTR(MeshBuilder);
 DEFINE_REF_COUNTED_PTR(Geometry);
-DEFINE_REF_COUNTED_PTR(GeomPart);
+DEFINE_REF_COUNTED_PTR(SharedGeom);
+DEFINE_REF_COUNTED_PTR(PartGeom);
+DEFINE_REF_COUNTED_PTR(SolidPrimitiveGeom);
 
 typedef bvector<Polyface>               PolyfaceList;
 typedef bvector<Strokes>                StrokesList;
@@ -154,7 +158,7 @@ private:
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
 
     DisplayParamsCPtr Clone() const;
-    
+
     static DisplayParams ForMesh(GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys);
     static DisplayParams ForLinear(GraphicParamsCR gf, GeometryParamsCP geom);
     static DisplayParams ForText(GraphicParamsCR gf, GeometryParamsCP geom);
@@ -203,7 +207,6 @@ public:
     static DisplayParamsCPtr CreateForMesh(GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys) { return ForMesh(gf, geom, filled, db, sys).Clone(); }
     static DisplayParamsCPtr CreateForLinear(GraphicParamsCR gf, GeometryParamsCP geom) { return ForLinear(gf, geom).Clone(); }
     static DisplayParamsCPtr CreateForText(GraphicParamsCR gf, GeometryParamsCP geom) { return ForText(gf, geom).Clone(); }
-    static DisplayParamsCPtr CreateForGeomPartInstance(DisplayParamsCR partParams, DisplayParamsCR instanceParams);
     static DisplayParamsCPtr Create(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys, TextureMappingCR texMap);
 
     DisplayParamsCPtr CloneForRasterText(TextureCR raster) const;
@@ -323,12 +326,12 @@ struct Triangle
     void SetIndices(uint32_t a, uint32_t b, uint32_t c) { m_indices[0] = a; m_indices[1] = b; m_indices[2] = c; }
     void SetEdgeFlags(MeshEdge::Flags a, MeshEdge::Flags b, MeshEdge::Flags c)  { m_edgeFlags[0] = a; m_edgeFlags[1] = b; m_edgeFlags[2] = c; }
     void SetEdgeFlags(MeshEdge::Flags a) { m_edgeFlags[0] = m_edgeFlags[1]; m_edgeFlags[2] = a; }
-    void SetEdgeFlags(bool const* visible) { m_edgeFlags[0] = visible[0] ? MeshEdge::Flags::Visible : MeshEdge::Flags::Invisible; 
+    void SetEdgeFlags(bool const* visible) { m_edgeFlags[0] = visible[0] ? MeshEdge::Flags::Visible : MeshEdge::Flags::Invisible;
                                              m_edgeFlags[1] = visible[1] ? MeshEdge::Flags::Visible : MeshEdge::Flags::Invisible;
                                              m_edgeFlags[2] = visible[2] ? MeshEdge::Flags::Visible : MeshEdge::Flags::Invisible; }
     bool GetEdgeVisible(size_t index) const { BeAssert(index < 3); if(index>2) index=2; return m_edgeFlags[index] == MeshEdge::Flags::Visible; }
 
-    bool IsDegenerate() const  { return m_indices[0] == m_indices[1] || m_indices[0] == m_indices[2] || m_indices[1] == m_indices[2]; }                                   
+    bool IsDegenerate() const  { return m_indices[0] == m_indices[1] || m_indices[0] == m_indices[2] || m_indices[1] == m_indices[2]; }
 };
 
 //=======================================================================================
@@ -434,7 +437,7 @@ private:
     bool                            m_isPlanar;
     PolyfaceAuxData::Channels       m_auxChannels;
     size_t                          m_nodeIndex;
-    GeomPartCPtr                    m_part;
+    SharedGeomCPtr                  m_sharedGeom;
 
     Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, size_t nodeIndex)
         : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_is2d(is2d), m_isPlanar(isPlanar), m_nodeIndex(nodeIndex) { }
@@ -480,7 +483,6 @@ public:
     PrimitiveType GetType() const { return m_type; }
     FeatureTableCP GetFeatureTable() const { return m_features.m_table; }
     PolyfaceAuxData::Channels GetAuxChannels() const { return m_auxChannels; }
-    
 
     DGNPLATFORM_EXPORT DRange3d ComputeRange() const;
     DGNPLATFORM_EXPORT DRange3d ComputeUVRange() const;
@@ -492,8 +494,8 @@ public:
 
     GraphicPtr GetGraphics (MeshGraphicArgs& args, Dgn::Render::SystemCR system, DgnDbR db) const;
 
-    void SetPart(GeomPartCR part) { m_part = &part; }
-    GeomPartCP GetPart() const { return m_part.get(); }
+    void SetSharedGeom(SharedGeomCR geom) { m_sharedGeom = &geom; }
+    SharedGeomCP GetSharedGeom() const { return m_sharedGeom.get(); }
 };
 
 //=======================================================================================
@@ -561,7 +563,7 @@ private:
     FeatureTableP   m_featureTable;
     bool            m_is2d;
 public:
-    MeshBuilderMap(double tolerance, FeatureTableP features, DRange3dCR range, bool is2d) : 
+    MeshBuilderMap(double tolerance, FeatureTableP features, DRange3dCR range, bool is2d) :
         m_vertexTolerance(tolerance*ToleranceRatio::Vertex()), m_facetAreaTolerance(tolerance*ToleranceRatio::FacetArea()), m_featureTable(features), m_range(range), m_is2d(is2d) { }
     MeshBuilderMap() : MeshBuilderMap(0.0, nullptr, DRange3d::NullRange(), false) { }
 
@@ -767,7 +769,6 @@ private:
     Transform               m_transform;
     DRange3d                m_tileRange;
     DgnElementId            m_entityId;
-    mutable size_t          m_facetCount;
     bool                    m_isCurved;
     bool                    m_hasTexture;
 protected:
@@ -778,19 +779,13 @@ protected:
     virtual PolyfaceList _GetPolyfaces(double chordTolerance, NormalMode, ViewContextR) = 0;
     virtual StrokesList _GetStrokes(double chordTolerance, ViewContextR) { return StrokesList(); }
     virtual bool _DoVertexCluster() const { return true; }
-    virtual size_t _GetFacetCount(FacetCounter& counter) const = 0;
-    virtual GeomPartCPtr _GetPart() const { return nullptr; }
+    virtual SharedGeomCPtr _GetSharedGeom() const { return nullptr; }
     virtual void _SetInCache(bool inCache) { }
-
-    void SetFacetCount(size_t numFacets);
 public:
     DisplayParamsCR GetDisplayParams() const { return *m_params; }
     TransformCR GetTransform() const { return m_transform; }
     DRange3dCR GetTileRange() const { return m_tileRange; }
     DgnElementId GetEntityId() const { return m_entityId; } //!< The ID of the element from which this geometry was produced
-    size_t GetFacetCount(IFacetOptionsR options) const;
-    size_t GetFacetCount(FacetCounter& counter) const { return _GetFacetCount(counter); }
-    
     Feature GetFeature() const { return m_params.IsValid() ? Feature(GetEntityId(), m_params->GetSubCategoryId(), m_params->GetClass()) : Feature(); }
 
     static IFacetOptionsPtr CreateFacetOptions(double chordTolerance, bool wantEdgeChains);
@@ -803,9 +798,11 @@ public:
     PolyfaceList GetPolyfaces(double chordTolerance, NormalMode normalMode, ViewContextR context);
     bool DoVertexCluster() const { return _DoVertexCluster(); }
     StrokesList GetStrokes (double chordTolerance, ViewContextR context);
-    GeomPartCPtr GetPart() const { return _GetPart(); }
+    SharedGeomCPtr GetSharedGeom() const { return _GetSharedGeom(); }
     void SetInCache(bool inCache) { _SetInCache(inCache); }
     void SetClipVector(ClipVectorCP clip) { m_clip = nullptr != clip ? ClipVector::CreateCopy(*clip) : nullptr; }
+
+    virtual bool IsInstanceable() const = 0;
 
     //! Create a Geometry for an IGeometry
     static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbR db, bool disjoint);
@@ -813,8 +810,8 @@ public:
     static GeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsCR params, DgnDbR db);
     //! Create a Geometry for text.
     static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbR db, bool checkGlyphBoxes);
-    //! Create a Geometry for a part instance.
-    static GeometryPtr Create(GeomPartR part, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbR db);
+    //! Create a Geometry for a shared geometry instance.
+    static GeometryPtr Create(SharedGeomR geom, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbR db);
 };
 
 //=======================================================================================
@@ -828,6 +825,13 @@ private:
     bool    m_complete = true;
     bool    m_curved = false;
 public:
+    GeometryList() = default;
+    explicit GeometryList(GeometryR geom) : m_list(1)
+        {
+        m_list[0] = &geom;
+        m_curved = geom.IsCurved();
+        }
+
     bool IsComplete() const { return m_complete; }
     bool ContainsCurves() const { return m_curved; }
     void MarkIncomplete() { m_complete = false; }
@@ -852,25 +856,14 @@ public:
 };
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   12/16
+//! Represents shareable geometry, e.g. from a DgnGeometryPart or a SolidPrimitive.
+//! Multiple instances can all refer to the single representation of the shared geometry,
+//! with per-instance transform, element ID, and optional symbology overrides.
+// @bsistruct                                                   Paul.Connelly   03/19
 //=======================================================================================
-struct GeomPart : RefCountedBase
+struct SharedGeom : RefCountedBase
 {
-    struct Key
-    {
-        DgnGeometryPartId   m_partId;
-        double              m_tolerance = 0.0;
-        DisplayParamsCPtr   m_displayParams;
-
-        Key() { } // Chiefly for use in collection types...
-        Key(DgnGeometryPartId partId, double tolerance, DisplayParamsCR displayParams)
-            : m_partId(partId), m_tolerance(tolerance), m_displayParams(&displayParams) { }
-
-        bool IsLessThan(Key const& rhs, bool ignoreTolerance) const;
-    };
-
-    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Key);
-
+public:
     struct Instance
     {
     private:
@@ -900,45 +893,89 @@ struct GeomPart : RefCountedBase
         LineWidth = 1 << 3,
         LinePixels = 1 << 6,
     };
+protected:
+    GeometryList        m_geometries;
 private:
     DRange3d            m_range;
-    mutable size_t      m_facetCount;
-    Key                 m_key;
-    GeometryList        m_geometries;
     InstanceList        m_instances;
-    bool                m_hasSymbologyChanges;
     SymbologyOverrides  m_symbology = SymbologyOverrides::None;
+    bool                m_instanceable = true;
 
     uint32_t _GetExcessiveRefCountThreshold() const  override {return 100000;}
 
 protected:
-    GeomPart(KeyCR key, DRange3dCR range, GeometryList const& geometry, bool hasSymbologyChanges);
+    virtual DisplayParamsCR GetInstanceDisplayParams(GeometryCP instance, DisplayParamsCR geomParams) const;
+    virtual size_t GetMinInstanceCount() const = 0;
 
-    static double ComputeTolerance(GeometryCP instance, double tolerance);
-    DisplayParamsCR GetInstanceDisplayParams(GeometryCP instance, DisplayParamsCR geomParams) const;
+    SharedGeom(DRange3dCR range, GeometryList const& geometries);
+    SharedGeom(DRange3dCR range, GeometryR geom);
 public:
-    static GeomPartPtr Create(KeyCR key, DRange3dCR range, GeometryList const& geometry, bool hasSymbologyChanges) { return new GeomPart(key, range, geometry, hasSymbologyChanges); }
-
-    PolyfaceList GetPolyfaces(double chordTolerance, NormalMode, GeometryCP instance, ViewContextR);
-    StrokesList GetStrokes(double chordTolerance, GeometryCP instance, ViewContextR);
-    size_t GetFacetCount(FacetCounter& counter, GeometryCR instance) const;
-
-    bool IsCurved() const;
-    bool IsComplete() const { return m_geometries.IsComplete(); }
-    bool IgnoresTolerance() const { return IsComplete() && !IsCurved(); }
-
-    KeyCR GetKey() const { return m_key; }
-    DisplayParamsCR GetDisplayParams() const { return *m_key.m_displayParams; }
-    bool HasSymbologyChanges() const { return m_hasSymbologyChanges; }
     GeometryList const& GetGeometries() const { return m_geometries; }
     DRange3d GetRange() const { return m_range; };
-
     SymbologyOverrides GetSymbologyOverrides() const { return m_symbology; }
+
     InstanceList const& GetInstances() const { return m_instances; }
     size_t GetInstanceCount() const { return GetInstances().size(); }
     void AddInstance(TransformCR tf, DisplayParamsCR dispParams, DgnElementId elemId);
 
     void SetInCache(bool inCache);
+
+    bool IsCurved() const;
+    bool IsComplete() const { return m_geometries.IsComplete(); }
+    PolyfaceList GetPolyfaces(double chordTolerance, NormalMode, GeometryCP instance, ViewContextR);
+    StrokesList GetStrokes(double chordTolerance, GeometryCP instance, ViewContextR);
+
+    virtual DisplayParamsCR GetDisplayParams() const = 0;
+    virtual double GetTolerance(double baseTolerance) const { return baseTolerance; }
+    bool IsWorthInstancing() const { return GetInstanceCount() >= GetMinInstanceCount(); }
+    virtual bool IsInstanceable() const { return m_instanceable; }
+};
+
+ENUM_IS_FLAGS(SharedGeom::SymbologyOverrides);
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct PartGeom : SharedGeom
+{
+    DEFINE_T_SUPER(SharedGeom);
+
+    struct Key
+    {
+        DgnGeometryPartId   m_partId;
+        double              m_tolerance = 0.0;
+        DisplayParamsCPtr   m_displayParams;
+
+        Key() { } // Chiefly for use in collection types...
+        Key(DgnGeometryPartId partId, double tolerance, DisplayParamsCR displayParams)
+            : m_partId(partId), m_tolerance(tolerance), m_displayParams(&displayParams) { }
+
+        bool IsLessThan(Key const& rhs, bool ignoreTolerance) const;
+    };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Key);
+
+private:
+    Key                 m_key;
+    bool                m_hasSymbologyChanges;
+
+protected:
+    PartGeom(KeyCR key, DRange3dCR range, GeometryList const& geometry, bool hasSymbologyChanges);
+
+    static double ComputeTolerance(GeometryCP instance, double tolerance);
+
+    DisplayParamsCR GetInstanceDisplayParams(GeometryCP, DisplayParamsCR) const override;
+    size_t GetMinInstanceCount() const override;
+public:
+    static PartGeomPtr Create(KeyCR key, DRange3dCR range, GeometryList const& geometry, bool hasSymbologyChanges) { return new PartGeom(key, range, geometry, hasSymbologyChanges); }
+
+    bool IsInstanceable() const override { return !m_hasSymbologyChanges && T_Super::IsInstanceable(); }
+    DisplayParamsCR GetDisplayParams() const override { return *m_key.m_displayParams; }
+    double GetTolerance(double baseTolerance) const override { return m_key.m_tolerance; }
+    bool IgnoresTolerance() const { return IsComplete() && !IsCurved(); }
+
+    KeyCR GetKey() const { return m_key; }
+    bool HasSymbologyChanges() const { return m_hasSymbologyChanges; }
 
     static double ComputeTolerance(TransformCR transform, double baseTolerance);
 
@@ -946,13 +983,58 @@ public:
     {
         using is_transparent = std::true_type;
 
-        bool operator()(GeomPartPtr const& lhs, GeomPartPtr const& rhs) const { return lhs->GetKey().IsLessThan(rhs->GetKey(), lhs->IgnoresTolerance()); }
-        bool operator()(GeomPartPtr const& lhs, KeyCR rhs) const { return lhs->GetKey().IsLessThan(rhs, lhs->IgnoresTolerance()); }
-        bool operator()(KeyCR lhs, GeomPartPtr const& rhs) const { return lhs.IsLessThan(rhs->GetKey(), rhs->IgnoresTolerance()); }
+        bool operator()(PartGeomPtr const& lhs, PartGeomPtr const& rhs) const { return lhs->GetKey().IsLessThan(rhs->GetKey(), lhs->IgnoresTolerance()); }
+        bool operator()(PartGeomPtr const& lhs, KeyCR rhs) const { return lhs->GetKey().IsLessThan(rhs, lhs->IgnoresTolerance()); }
+        bool operator()(KeyCR lhs, PartGeomPtr const& rhs) const { return lhs.IsLessThan(rhs->GetKey(), rhs->IgnoresTolerance()); }
     };
 };
 
-ENUM_IS_FLAGS(GeomPart::SymbologyOverrides);
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/19
+//=======================================================================================
+struct SolidPrimitiveGeom : SharedGeom
+{
+    struct Key
+    {
+    private:
+        static constexpr double GetCompareTolerance() { return 1.0E-5; }
+    public:
+        ISolidPrimitivePtr  m_primitive;
+        DisplayParamsCPtr   m_displayParams;
+        int64_t             m_range[6];
+
+        Key() { } // Chiefly for use in collection types...
+        Key(Key const& other) = default;
+        Key(ISolidPrimitiveR primitive, DisplayParamsCR params, DRange3dCR range);
+
+        // For ordered comparison - compares range only. For use in set/map.
+        bool operator<(Key const& rhs) const;
+        // For rhs with same range, determine if both have the same geometry and compatible display params. For use in multiset/multimap.
+        bool IsEquivalent(Key const& rhs) const;
+    };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Key);
+
+private:
+    Key m_key;
+
+    SolidPrimitiveGeom(KeyCR key, DRange3dCR range, GeometryR geom) : SharedGeom(range, geom), m_key(key) { }
+    size_t GetMinInstanceCount() const override;
+public:
+    DisplayParamsCR GetDisplayParams() const override { return *m_key.m_displayParams; }
+    KeyCR GetKey() const { return m_key; }
+
+    struct PtrComparator
+    {
+        using is_transparent = std::true_type;
+
+        bool operator()(SolidPrimitiveGeomPtr const& lhs, SolidPrimitiveGeomPtr const& rhs) const { return lhs->m_key < rhs->m_key; }
+        bool operator()(SolidPrimitiveGeomPtr const& lhs, KeyCR rhs) const { return lhs->m_key < rhs; }
+        bool operator()(KeyCR lhs, SolidPrimitiveGeomPtr const& rhs) const { return lhs < rhs->m_key; }
+    };
+
+    static SolidPrimitiveGeomPtr Create(KeyCR key, DRange3dCR range, DgnDbR db);
+};
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16

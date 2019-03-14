@@ -1,4 +1,4 @@
-/*-------------------------------------------------------------------------------------+                                                                                           
+/*-------------------------------------------------------------------------------------+
 |
 |     $Source: DgnCore/IModelTileWriter.cpp $
 |
@@ -263,7 +263,7 @@ public:
         ColorIndex const& colorIndex = args.m_colors;
         uint32_t nColors = colorIndex.IsUniform() ? 0 : colorIndex.m_numColors;
 
-        m_dimensions.Init(nVerts, nRgbaPerVert, nColors + nExtraRgba); 
+        m_dimensions.Init(nVerts, nRgbaPerVert, nColors + nExtraRgba);
         BeAssert(0 == m_dimensions.GetWidth() % nRgbaPerVert || (0 < nColors && 1 == m_dimensions.GetHeight()));
 
         m_data = ByteStream(m_dimensions.GetWidth() * m_dimensions.GetHeight() * 4);
@@ -1402,8 +1402,6 @@ void IModelTileWriter::AddMeshes(Render::Primitives::GeometryCollectionCR geomet
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void setTransform(float* dst, TransformCR transform)
     {
-    // auto rot = RotMatrix::FromTransposeOf(instanceTransform.Matrix());
-    // auto transform = Transform::From(rot, instanceTransform.Origin());
     for (size_t i = 0; i < 3; i++)
         for (size_t j = 0; j < 4; j++)
             *dst++ = static_cast<float>(transform.form3d[i][j]);
@@ -1412,7 +1410,7 @@ static void setTransform(float* dst, TransformCR transform)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void setOverrides(uint8_t* dst, GeomPart::SymbologyOverrides ovrFlags, DisplayParamsCR params)
+static void setOverrides(uint8_t* dst, SharedGeom::SymbologyOverrides ovrFlags, DisplayParamsCR params)
     {
     // The first byte holds what's actually overridden.
     // Easier to just write all the symbology than to branch based on each flag.
@@ -1472,7 +1470,7 @@ void IModelTileWriter::AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t&
         m_json["materials"][materialName] = materialJson;
         primitiveJson["material"] = materialName;
 
-        auto part = mesh.GetPart();
+        auto part = mesh.GetSharedGeom();
         if (nullptr != part)
             {
             auto const& instances = part->GetInstances();
@@ -1486,8 +1484,17 @@ void IModelTileWriter::AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t&
             ByteStream ovrs;
             auto ovrFlags = part->GetSymbologyOverrides();
             static constexpr uint32_t sizeOfOvrs = sizeof(uint32_t) * 2;
-            if (GeomPart::SymbologyOverrides::None != ovrFlags)
+            if (SharedGeom::SymbologyOverrides::None != ovrFlags)
                 ovrs = ByteStream(sizeOfOvrs * nInstances);
+
+            DRange3d transformRange = DRange3d::NullRange();
+            for (uint32_t i = 0; i < nInstances; i++)
+                {
+                auto const& instance = instances[i];
+                transformRange.Extend(instance.GetTransform().Origin());
+                }
+
+            DPoint3d transformCenter = DPoint3d::FromInterpolate(transformRange.low, 0.5, transformRange.high);
 
             for (uint32_t i = 0; i < nInstances; i++)
                 {
@@ -1502,18 +1509,24 @@ void IModelTileWriter::AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t&
                 size_t featureByteIndex = 3 * i;
                 memcpy(featureIds.data() + featureByteIndex, &featureIndex, 3);
 
+                // Make transform relative to center to eliminate precision issues in shader...
+                Transform tf = instance.GetTransform();
+                DPoint3d origin;
+                origin.DifferenceOf(tf.Origin(), transformCenter);
+                tf.SetTranslation(origin);
+
                 size_t transformIndex = sizeOfTransform * i;
-                setTransform(reinterpret_cast<float*>(transforms.data() + transformIndex), instance.GetTransform());
+                setTransform(reinterpret_cast<float*>(transforms.data() + transformIndex), tf);
 
                 // The first byte holds what's actually overridden.
                 // Easier to just write all the symbology than to branch based on each flag.
-                if (GeomPart::SymbologyOverrides::None != ovrFlags)
+                if (SharedGeom::SymbologyOverrides::None != ovrFlags)
                     {
                     size_t ovrsIndex = sizeOfOvrs * i;
                     setOverrides(ovrs.data() + ovrsIndex, part->GetSymbologyOverrides(), instance.GetDisplayParams());
                     }
                 }
-            
+
             Utf8String featureBufferId("bv"), transformBufferId("bv");
             featureBufferId.append("InstanceFeatures").append(idStr);
             transformBufferId.append("InstanceTransforms").append(idStr);
@@ -1525,39 +1538,19 @@ void IModelTileWriter::AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t&
             primitiveJson["instances"]["featureIds"] = featureBufferId;
             primitiveJson["instances"]["transforms"] = transformBufferId;
 
-            if (GeomPart::SymbologyOverrides::None != ovrFlags)
+            Json::Value centerJson(Json::arrayValue);
+            centerJson.append(transformCenter.x);
+            centerJson.append(transformCenter.y);
+            centerJson.append(transformCenter.z);
+            primitiveJson["instances"]["transformCenter"] = std::move(centerJson);
+
+            if (SharedGeom::SymbologyOverrides::None != ovrFlags)
                 {
                 Utf8String ovrBufferId("bv");
                 ovrBufferId.append("InstanceOverrides").append(idStr);
                 AddBufferView(ovrBufferId.c_str(), ovrs);
                 primitiveJson["instances"]["symbologyOverrides"] = ovrBufferId;
                 }
-            }
-        else
-            {
-// #define TEST_INSTANCING
-#if defined(TEST_INSTANCING)
-            // ###TODO_INSTANCING Remove me - exists for testing purposes only
-            Utf8String featureBufferId("bv");
-            featureBufferId.append("InstanceFeatures").append(idStr);
-
-            static bvector<uint8_t> s_featureIds = { 0, 0, 0 };
-            AddBufferView(featureBufferId.c_str(), s_featureIds);
-
-            Utf8String transformBufferId("bv");
-            transformBufferId.append("InstanceTransforms").append(idStr);
-
-            static bvector<float> s_transforms = {
-                1.0f, 0.0f, 0.0f, 0.0f,
-                0.0f, 1.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 1.0f, 0.0f
-            };
-            AddBufferView(transformBufferId.c_str(), s_transforms);
-
-            primitiveJson["instances"]["count"] = 1;
-            primitiveJson["instances"]["featureIds"] = featureBufferId;
-            primitiveJson["instances"]["transforms"] = transformBufferId;
-#endif
             }
 
         primitivesNode.append(primitiveJson);
@@ -1846,6 +1839,9 @@ IModelTile::WriteStatus IModelTileWriter::WriteTile(Tile::Content::MetadataCR me
     m_buffer.Append(static_cast<uint32_t>(metadata.m_emptySubRanges));
 
     WriteLength(startPosition, headerLengthDataPosition);
+
+    if (geometry.Meshes().FeatureTable().size() == 0 && geometry.Meshes().size() != 0)
+        BeAssert(false && "WriteTile: empty feature table");
 
     WriteFeatureTable(geometry.Meshes().FeatureTable());
     PadToBoundary();

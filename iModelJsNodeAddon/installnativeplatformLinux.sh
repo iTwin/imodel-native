@@ -20,5 +20,5 @@ fi
 
 if [ ! -d "$tempDir" ]; then invalidiModelJsDir; fi
 
-cp $OutRoot/LinuxX64/packages/imodeljs-native/* $tempDir/core/backend/node_modules/@bentley/imodeljs-native
-cp -r $OutRoot/LinuxX64/packages/imodeljs-linux-x64 $tempDir/core/backend/node_modules/@bentley/imodeljs-native
+cp $OutRoot/LinuxX64/imodeljsnodeaddon_pkgs/imodeljs-native/* $tempDir/core/backend/node_modules/@bentley/imodeljs-native
+cp -r $OutRoot/LinuxX64/imodeljsnodeaddon_pkgs/imodeljs-linux-x64 $tempDir/core/backend/node_modules/@bentley/imodeljs-native

@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+ 
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicAPI/DgnPlatform/Tile.h $
 |
@@ -263,7 +263,7 @@ public:
     bool IsInvalid() const { return State::Invalid == GetState(); }
 
     ContentIdCR GetContentId() const { return m_contentId; }
-    bool AllowInstancing() const { return GetContentId().AllowInstancing(); }
+    bool AllowInstancing() const;
     ContentCP GetContent() const { return m_content.get(); }
     TreeR GetTree() const { return m_tree; }
 
@@ -385,7 +385,7 @@ protected:
     Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, RootTile rootTile);
 
     DGNPLATFORM_EXPORT LoaderPtr CreateLoader(ContentIdCR contentId);
-    void LoadNodeMapFromAnimation();                       
+    void LoadNodeMapFromAnimation();
 public:
     DGNPLATFORM_EXPORT ~Tree();
 
@@ -403,6 +403,8 @@ public:
     uint64_t GetDiscreteNodeId(DgnElementId elementId) const;
     AnimationNodeMapCR GetAnimationNodeMap() const { return m_nodeMap; }
 
+    // Instancing not supported for classifiers or animated geometry.
+    bool AllowInstancing() const { return Type::Model == GetType(); }
 
     bool Is3d() const { return m_is3d; }
     bool Is2d() const { return !Is3d(); }

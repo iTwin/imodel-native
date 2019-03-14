@@ -10,8 +10,8 @@ if not exist %tempDir%\core\backend goto :badJsdir
 
 set destDir=%tempDir%\core\backend\node_modules\@bentley\imodeljs-native
 echo on
-xcopy /QYIS %OutRoot%Winx64\packages\imodeljs-native %destDir%
-xcopy /QYIS %OutRoot%Winx64\packages\imodeljs-win32-x64 %destDir%\imodeljs-win32-x64
+xcopy /QYIS %OutRoot%Winx64\imodeljsnodeaddon_pkgs\imodeljs-native %destDir%
+xcopy /QYIS %OutRoot%Winx64\imodeljsnodeaddon_pkgs\imodeljs-win32-x64 %destDir%\imodeljs-win32-x64
 @echo off
 
 REM Create a semaphore file that identifies that this is a dev build, and helps bypass version checks
