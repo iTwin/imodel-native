@@ -1572,16 +1572,22 @@ static CachedECSqlStatementPtr GetPreparedStatement(IConnectionCR connection, Ut
         connection.GetDb().AddAppData(ECInstanceLoadStatementCache::s_key, cache.get());
         }
 
-    RefCountedPtr<BeSQLite::Db::AppData> invalidatorAppData = connection.GetDb().FindAppData(cache->m_invalidatorKey);
-    RefCountedPtr<ECInstanceLoadStatementCacheInvalidator> invalidator = static_cast<ECInstanceLoadStatementCacheInvalidator*>(invalidatorAppData.get());
-    if (invalidator.IsNull())
+    // note: we may get here when the primary connection (ECDb) is being closed. In that case the close
+    // is stopped while destroying app data and waits for ECPresentation threads to finish - we have to make
+    // sure we don't alter the app data during that process
+    if (connection.IsOpen())
         {
-        RefCountedPtr<ECInstanceLoadStatementCacheInvalidator> invalidator = ECInstanceLoadStatementCacheInvalidator::Create([cache = cache.get()]()
+        RefCountedPtr<BeSQLite::Db::AppData> invalidatorAppData = connection.GetECDb().FindAppData(cache->m_invalidatorKey);
+        RefCountedPtr<ECInstanceLoadStatementCacheInvalidator> invalidator = static_cast<ECInstanceLoadStatementCacheInvalidator*>(invalidatorAppData.get());
+        if (invalidator.IsNull())
             {
-            cache->OnInvalidatorDestroyed();
-            });
-        connection.GetECDb().AddAppData(cache->m_invalidatorKey, invalidator.get(), true);
-        cache->SetInvalidator(invalidator.get());
+            RefCountedPtr<ECInstanceLoadStatementCacheInvalidator> invalidator = ECInstanceLoadStatementCacheInvalidator::Create([cache = cache.get()]()
+                {
+                cache->OnInvalidatorDestroyed();
+                });
+            connection.GetECDb().AddAppData(cache->m_invalidatorKey, invalidator.get(), true);
+            cache->SetInvalidator(invalidator.get());
+            }
         }
 
     return cache->GetStatement(connection, ecsql);
