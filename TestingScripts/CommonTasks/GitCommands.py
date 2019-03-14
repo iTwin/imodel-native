@@ -108,3 +108,13 @@ class GitCommand:
                 if not os.path.exists(f):
                     sFiles.remove(f)
             return sFiles
+    def get_mod_time(self, f):
+        success = self.execute('git log -1 --format="%at" ' + f)
+        if not success:
+            return 0
+        else:
+            lines = self.res.split('\n')
+            for line in lines:
+                if len(line) > 1:
+                    return int(line.strip())
+            

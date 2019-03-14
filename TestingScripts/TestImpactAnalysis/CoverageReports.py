@@ -19,6 +19,7 @@ from printing import printColored
 from TestResults import TestResults
 from TestsFromCpp import TestCatalog, CPPTests
 from FindRequiredTests import getIgnoredTests
+from GitCommands import GitCommand
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Jeff.Marker
@@ -34,14 +35,15 @@ def fixPath(path):
 #-------------------------------------------------------------------------------------------
 def getChangedTests(reportPath, comp):
     tl = []
+    gc = GitCommand()
     mapFile = cmp.TiaMapPathForComp(comp)
     if not os.path.exists(mapFile):
         return tl
-    timeToCompare = os.path.getmtime(mapFile)
+    timeToCompare = gc.get_mod_time(mapFile)
     tcatalog = TestCatalog(cmp.RepoPathForComp(comp))
     sf = tcatalog.get_files()
     for sfn in sf:
-        fileTime = os.path.getmtime(sfn)
+        fileTime = gc.get_mod_time(sfn)
         if fileTime > timeToCompare:
             cpp = CPPTests(sfn)
             tests = cpp.get_tests()
@@ -144,29 +146,30 @@ def printResults(results, comp):
 # bsimethod                                     Majd.Uddin    09/2017
 #-------------------------------------------------------------------------------------------
 def main():
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--reportPath", help = "The path at which you want XML reports of Coverage e.g. --reportPath=D:\CoverageReports", required = True)
-        parser.add_argument("--component", help = "The name of the component you want reports for e.g. --component=ECDb. If none is given, runs for all.")
-        parser.add_argument("--forceAll", help = "Pass this argument to force generate Coverage report for all tests. Otherwise, it will run for changed tests only.", action='store_true')
 
-        args = parser.parse_args()
-        reportPath = args.reportPath
-        if reportPath == None:
-                print printColored('\n Script requires to get a folder where Coverage reports will be stored. Error.', 'red', True)
-                exit(-1)
-        if not os.path.exists(reportPath):
-               print printColored('\n The report path is not valid: ' + reportPath, 'red', True)
-               exit(-1)
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("--reportPath", help = "The path at which you want XML reports of Coverage e.g. --reportPath=D:\CoverageReports", required = True)
+    # parser.add_argument("--component", help = "The name of the component you want reports for e.g. --component=ECDb. If none is given, runs for all.")
+    # parser.add_argument("--forceAll", help = "Pass this argument to force generate Coverage report for all tests. Otherwise, it will run for changed tests only.", action='store_true')
 
-        if args.component is None:#for all components
-            comps = cmp.Components
-        else:
-            comps = [args.component]
+    # args = parser.parse_args()
+    # reportPath = args.reportPath
+    # if reportPath == None:
+    #         print printColored('\n Script requires to get a folder where Coverage reports will be stored. Error.', 'red', True)
+    #         exit(-1)
+    # if not os.path.exists(reportPath):
+    #         print printColored('\n The report path is not valid: ' + reportPath, 'red', True)
+    #         exit(-1)
 
-        #Run for required components
-        for comp in comps:
-            results = runCoverage(reportPath, comp, args.forceAll)
-            printResults(results, comp)  
+    # if args.component is None:#for all components
+    #     comps = cmp.Components
+    # else:
+    #     comps = [args.component]
+
+    # #Run for required components
+    # for comp in comps:
+    #     results = runCoverage(reportPath, comp, args.forceAll)
+    #     printResults(results, comp)  
 
 if __name__ == '__main__':
     main()
