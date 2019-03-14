@@ -1,0 +1,65 @@
+#----------------------------------------------------------------------
+#
+#     $Source: DgnPlatform.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+OutDgnPlatformBuild             = $(PartBuildDir)
+DgnPlatformObj                  = $(OutDgnPlatformBuild)DgnPlatform/
+
+MultiCompileIntermediatePdbFile = $(DgnPlatformObj)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+
+SrcDgnPlatform                  = $(SrcRoot)DgnPlatform/
+PrivateApiSrc                   = $(SrcDgnPlatform)PrivateApi/
+
+#----------------------------------------------------------------------
+# We're building the DgnPlatform dll
+#----------------------------------------------------------------------
+nameToDefine                    = __DGNPLATFORM_BUILD__
+%include cdefapnd.mki
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+# If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
+# PreCompiledHeader.mki uses CCompPDBName
+appName                         = DgnPlatform
+CCompPDBName                    = $(appName)
+DLM_NAME                        = $(appName)
+MuiBaseName                     = $(appName)
+
+#
+#  Defining NOMINMAX keeps windef.h from defining min/max macros. This is necessary to be able to use
+#  the std::min and std::max function templates.
+nameToDefine                    = NOMINMAX
+%include cdefapnd.mki
+
+%if defined (debug)                     # If bmake  +ddebug
+    nameToDefine                = PAGALLOC_PAGE_DEBUG_CHECK_DOUBLE_FREE=1
+    %include cdefapnd.mki
+%endif
+
+# Phase of development lifecycle
+%if defined (PRG_BETABUILD)
+    nameToDefine = PRG_BETABUILD
+    %include cdefapnd.mki
+%elif defined (PRG_CERTIFIEDBUILD)
+    nameToDefine = PRG_CERTIFIEDBUILD
+    %include cdefapnd.mki
+%endif
+
+# so that we can #include "DgnPlatformInternal.h"
+dirToSearch  = $(SrcDgnPlatform)
+%include cincapnd.mki
+
+# ICU header files require additional include paths... do this vs. modifying vendor APIs.
+dirToSearch = $(BuildContext)VendorAPI/icu4c/
+%include cincapnd.mki
+
+# Freetype2 header files require additional include paths... do this vs. modifying vendor APIs.
+dirToSearch = $(BuildContext)VendorAPI/freetype2/
+%include cincapnd.mki
+
+dirToSearch  = $(PrivateApiSrc)
+%include cincapnd.mki
+

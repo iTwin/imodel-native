@@ -1,0 +1,20 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/PreparePulledTestRunners.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+
+#----------------------------------------------------------
+# Set up all the standard stuff.
+#----------------------------------------------------------
+%include  mdl.mki
+
+%include $(SrcRoot)DgnPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
+
+always:
+    ~mkdir $(TESTRUNNERS_NUGET_DIR)
+    ~mkdir $(TESTFILES_DIR)
+    ~mkdir $(NEWFILES_DIR)
+    python Tests/DgnProject/Compatibility/CompatibilityRunner/PreparePulledTestRunners.py $(TESTRUNNERS_NUGET_DIR) $(TESTRUNNERS_SANDBOXDIR) $(TESTFILES_DIR) $(NEWFILES_DIR)
