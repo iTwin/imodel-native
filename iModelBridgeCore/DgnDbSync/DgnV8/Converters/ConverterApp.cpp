@@ -342,6 +342,14 @@ BentleyStatus RootModelConverterApp::_Initialize(int argc, WCharCP argv[])
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConverterApp::_Terminate(BentleyStatus)
+    {
+    Converter::Terminate(_GetParams());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverterApp::DetectDrawingsDirs()

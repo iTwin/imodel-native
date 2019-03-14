@@ -33,7 +33,7 @@
     </appender>
 
     <root>                            
-      <priority value="info" />
+      <priority value="warn" />
       <appender-ref ref="Console" />
       <appender-ref ref="RollingFileAppender" />
       <appender-ref ref="OutputDebugStringAppender" />
