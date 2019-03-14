@@ -147,29 +147,29 @@ def printResults(results, comp):
 #-------------------------------------------------------------------------------------------
 def main():
 
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("--reportPath", help = "The path at which you want XML reports of Coverage e.g. --reportPath=D:\CoverageReports", required = True)
-    # parser.add_argument("--component", help = "The name of the component you want reports for e.g. --component=ECDb. If none is given, runs for all.")
-    # parser.add_argument("--forceAll", help = "Pass this argument to force generate Coverage report for all tests. Otherwise, it will run for changed tests only.", action='store_true')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--reportPath", help = "The path at which you want XML reports of Coverage e.g. --reportPath=D:\CoverageReports", required = True)
+    parser.add_argument("--component", help = "The name of the component you want reports for e.g. --component=ECDb. If none is given, runs for all.")
+    parser.add_argument("--forceAll", help = "Pass this argument to force generate Coverage report for all tests. Otherwise, it will run for changed tests only.", action='store_true')
 
-    # args = parser.parse_args()
-    # reportPath = args.reportPath
-    # if reportPath == None:
-    #         print printColored('\n Script requires to get a folder where Coverage reports will be stored. Error.', 'red', True)
-    #         exit(-1)
-    # if not os.path.exists(reportPath):
-    #         print printColored('\n The report path is not valid: ' + reportPath, 'red', True)
-    #         exit(-1)
+    args = parser.parse_args()
+    reportPath = args.reportPath
+    if reportPath == None:
+            print printColored('\n Script requires to get a folder where Coverage reports will be stored. Error.', 'red', True)
+            exit(-1)
+    if not os.path.exists(reportPath):
+            print printColored('\n The report path is not valid: ' + reportPath, 'red', True)
+            exit(-1)
 
-    # if args.component is None:#for all components
-    #     comps = cmp.Components
-    # else:
-    #     comps = [args.component]
+    if args.component is None:#for all components
+        comps = cmp.Components
+    else:
+        comps = [args.component]
 
-    # #Run for required components
-    # for comp in comps:
-    #     results = runCoverage(reportPath, comp, args.forceAll)
-    #     printResults(results, comp)  
+    #Run for required components
+    for comp in comps:
+        results = runCoverage(reportPath, comp, args.forceAll)
+        printResults(results, comp)  
 
 if __name__ == '__main__':
     main()
