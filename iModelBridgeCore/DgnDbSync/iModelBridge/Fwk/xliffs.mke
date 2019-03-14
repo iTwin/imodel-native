@@ -1,0 +1,14 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: iModelBridge/Fwk/xliffs.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+ContextDeliveryDir  = $(OutputRootDir)BuildContexts/iModelBridge/Delivery/
+
+SQLANG_CHeader = $(_MakeFilePath)../../PublicAPI/iModelBridge/iModelBridgeFwk.h
+SQLANG_Xliff   = $(OutputRootDir)build/iModelBridgeFwk/iModelBridgeFwk_en.xliff
+%include $(SrcRoot)bsicommon/sharedmki/CHeaderToXliff.mki

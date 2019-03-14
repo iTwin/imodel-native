@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="SP3D_BB_V3Conversion" nameSpacePrefix="sp3dbb" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECCustomAttributes>
+        <ResolvePropertyNameConflicts xmlns="ECv3ConversionAttributes.01.00" />
+        <ResolveClassNameConflicts xmlns="ECv3ConversionAttributes.01.00" />
+    </ECCustomAttributes>
+    <ECClass typeName="CPRteCableTrayDistribConn" displayLabel="Cable Tray Distribution Connection">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3D_BB:BOC_Cableway;SP3D_BB:Cableway;SP3D_BB:IJRteDistribConnection;SP3D_BB:IJDistribConnection;SP3D_BB:IJProxyPropagateStopper;SP3D_BB:IJRteConnection;SP3D_BB:IJCommonObjects;SP3D_BB:IJDesignChild;SP3D_BB:IJWBSProjectChild;SP3D_BB:IJWBSItemChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CPSmartEquipmentPart" displayLabel="SmartEquipmentPart (Catalog)" isDomainClass="True">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3D_BB:SmartEquipmentPart;SP3D_BB:BOC_EquipmentPart;SP3D_BB:IJSmartItem;SP3D_BB:IJSmartObject</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDGenNozzle" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+            <ForceAbstract xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJEqpFoundationPortID" displayLabel="Foundation Port ID" isDomainClass="True">
+        <ECProperty propertyName="ID" typeName="double">
+            <ECCustomAttributes>
+                <OverwriteTypeName xmlns="ECv3ConversionAttributes.01.00">
+                    <TypeName>Id</TypeName>
+                </OverwriteTypeName>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="IJUAHgrAnvil_PND" isDomainClass="False">
+        <ECProperty propertyName="Pipe_Dia" typeName="double">
+            <ECCustomAttributes>
+                <OverwriteTypeName xmlns="ECv3ConversionAttributes.01.00">
+                    <TypeName>PIPE_DIA</TypeName>
+                </OverwriteTypeName>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="IJUAHgrLRParts_FIG212N" isDomainClass="False">
+        <ECProperty propertyName="Pipe_Dia" typeName="double" displayLabel="Pipe Diameter">
+            <ECCustomAttributes>
+                <OverwriteTypeName xmlns="ECv3ConversionAttributes.01.00">
+                    <TypeName>PIPE_DIA</TypeName>
+                </OverwriteTypeName>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="IJUAHgrLRParts_FIG216N" isDomainClass="False">
+        <ECProperty propertyName="Pipe_Dia" typeName="double" displayLabel="Pipe Diameter">
+            <ECCustomAttributes>
+                <OverwriteTypeName xmlns="ECv3ConversionAttributes.01.00">
+                    <TypeName>PIPE_DIA</TypeName>
+                </OverwriteTypeName>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="IJUAHgrLRParts_FIG295HN" isDomainClass="False">
+        <ECProperty propertyName="Pipe_Dia" typeName="double" displayLabel="Pipe Diameter">
+            <ECCustomAttributes>
+                <OverwriteTypeName xmlns="ECv3ConversionAttributes.01.00">
+                    <TypeName>PIPE_DIA</TypeName>
+                </OverwriteTypeName>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="IJUAHgrLRParts_FIG295N" isDomainClass="False">
+        <ECProperty propertyName="Pipe_Dia" typeName="double" displayLabel="Pipe Diameter">
+            <ECCustomAttributes>
+                <OverwriteTypeName xmlns="ECv3ConversionAttributes.01.00">
+                    <TypeName>PIPE_DIA</TypeName>
+                </OverwriteTypeName>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+</ECSchema>
