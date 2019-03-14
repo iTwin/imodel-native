@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnElement.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -3072,6 +3072,22 @@ public:
     //! @param[in] description Optional description for this PhysicalPartition
     //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static PhysicalPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8StringCR name, Utf8CP description=nullptr);
+
+    BE_JSON_NAME(PhysicalPartition); //<! The namespace reserved for PhysicalPartition Json properties
+    BE_JSON_NAME(Model); //<! PhysicalPartition.Model
+
+    //! Get Json properties
+    ECN::AdHocJsonValueCR GetPhysicalPartitionJsonProperties() const {return GetJsonProperties(json_PhysicalPartition());}
+
+    //! Get Json properties from a particular sub-namespace
+    ECN::AdHocJsonValue GetPhysicalPartitionJsonProperties(Utf8CP sns) const {return GetJsonProperties(json_PhysicalPartition()).GetMember(sns);}
+
+    //! Set Json properties
+    void SetPhysicalPartitionJsonProperties(JsonValueCR props) {SetJsonProperties(json_PhysicalPartition(), props);}
+
+    //! Set Json properties from a particular sub-namespace
+    void SetPhysicalPartitionJsonProperties(Utf8CP sns, JsonValueCR props) {m_jsonProperties.GetMemberR(json_PhysicalPartition())[sns] = props;}
+
 };
 
 //=======================================================================================
