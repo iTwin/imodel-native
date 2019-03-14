@@ -1,0 +1,50 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Docs/Overview/BeFileName.doxpage $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+// __PUBLISH_SECTION_START__
+
+BEGIN_BENTLEY_NAMESPACE
+
+//=======================================================================================
+// Define files overview page
+//=======================================================================================
+/** @page PAGE_BeFileNameOverview Working with file names
+
+The DgnDb technology stack includes a portability layer for working in CPP across multiple
+platforms.  The BeFileName class and related types are used for working with file names and 
+directories in a portable way.
+
+@tableofcontents
+
+@see BentleyApi::BeFileName
+@see BentleyApi::BeFile
+
+<hr>
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section RequiredIncludes Required include files
+
+__PUBLISH_INSERT_FILE__ Overview_BeFileName_Include.sampleCode
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section CreateDirectory Creating a new directory
+
+__PUBLISH_INSERT_FILE__ Overview_BeFileName_CreateDirectory.sampleCode
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section BuildFileName Building a file name
+
+__PUBLISH_INSERT_FILE__ Overview_BeFileName_BuildFileName.sampleCode
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section WritingToFile Writing to a file
+
+__PUBLISH_INSERT_FILE__ Overview_BeFileName_WritingToFile.sampleCode
+
+*/
+
+END_BENTLEY_NAMESPACE
