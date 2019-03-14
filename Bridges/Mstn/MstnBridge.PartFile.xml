@@ -86,6 +86,7 @@
     </Part>
 
     <Product Name="MstnBridgeTests">
+        <SubProduct ProductName="iModelBridgeFwk" Repository="dgndbsync" PartFile="iModelBridge"/>
         <SubPart PartName="MstnBridgeTestsExe"/>
         <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="DgnDbSync" Repository="DgnDbSync"/>

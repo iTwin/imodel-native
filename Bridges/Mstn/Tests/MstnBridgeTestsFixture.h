@@ -55,6 +55,48 @@ struct SetRulesFileInEnv : ScopedEnvvar
     SetRulesFileInEnv(BentleyApi::BeFileNameCR fn) : ScopedEnvvar("IMODEL-BANK-RULES-FILE", BentleyApi::Utf8String(fn)) {}
     };
 
+struct ProcessRunner;
+typedef void (*T_SendKillSignal)(ProcessRunner&);
+
+//=======================================================================================
+// @bsistruct                              
+//=======================================================================================
+struct ProcessRunner
+    {
+    private:
+    BentleyApi::WString m_cmd;
+    int m_argc {};
+    wchar_t const** m_argv {};
+    void* m_hProcess {};
+    void* m_hThread {};
+    int m_pid {};
+    int m_exitCode {};
+    BentleyApi::BeFileName m_rspFile {};
+    T_SendKillSignal m_sendKillSignal {};
+    BentleyApi::Dgn::IShutdownIModelServer* m_shutdown {};
+    BentleyApi::WString m_cmdline;
+
+    public:
+    ProcessRunner() {}
+    ProcessRunner(BentleyApi::WStringCR cmd, int argc, wchar_t const** argv, BentleyApi::BeFileNameCR rspFile, T_SendKillSignal, BentleyApi::Dgn::IShutdownIModelServer*);
+    ProcessRunner(ProcessRunner&&);
+    ProcessRunner(ProcessRunner const&) = delete;
+    ~ProcessRunner();
+
+    void SetCmd(BentleyApi::WStringCR c) { m_cmd = c; }
+    void SetArgs(int c, wchar_t const** v) { m_argc=c; m_argv=v; }
+    void SetUseRspFile(BentleyApi::BeFileNameCR rspFile) {m_rspFile=rspFile;}
+
+    BentleyApi::BentleyStatus Start(size_t waitMs);
+    BentleyApi::BentleyStatus Stop(size_t waitMs);
+
+    static int FindProcessId(BentleyApi::Utf8CP name);
+
+    static void DoSleep(size_t ms);
+
+    int GetExitCode() const {return m_exitCode;}
+    };
+
 //=======================================================================================
 // @bsistruct                              
 //=======================================================================================
@@ -62,23 +104,23 @@ struct MstnBridgeTestsFixture : ::testing::Test
     {
     protected:
     BentleyApi::BeFileName m_briefcaseName;
-    BentleyApi::Dgn::IModelClientForBridges* m_client;
-    void SetupClient(); // Called by SetUpTestCase. Sets the above member variables, based on a command-line argument
-    void CreateMockClient();
-    void CreateIModelHubClient();
-    void CreateIModelBankClient(BentleyApi::Utf8StringCR accessToken);
+    BentleyApi::Dgn::IModelClientForBridges* m_client {};
+    BentleyApi::BeFileName GetIModelParentDir();
+    BentleyApi::BeFileName GetIModelDir();
 
-    void StartImodelBankServer(BentleyApi::BeFileNameCR imodelDir);
-    void StopImodelBankServer();
+    ProcessRunner StartImodelBankServer(BentleyApi::BeFileNameCR imodelDir, BentleyApi::Dgn::IModelBankClient& bankClient);
 
-    std::tuple<void*, void*> StartIModelBridgeFwkExe(int argc, wchar_t const** argv, WCharCP testName);
-    int WaitForIModelBridgeFwkExe(std::tuple<void*, void*> const&);
-        
-    static BentleyApi::WebServices::ClientInfoPtr GetClientInfo();
-    static BentleyApi::BeFileName CreateImodelBankRepository(BentleyApi::BeFileNameCR seedFile);
+    BentleyApi::WebServices::ClientInfoPtr GetClientInfo();
+    void CreateImodelBankRepository(BentleyApi::BeFileNameCR seedFile);
     static BentleyApi::BeFileName CreateTestDir(WCharCP testDir = nullptr);
 
     BentleyApi::Dgn::IModelClientForBridges& GetClient() {return *m_client;}
+
+    void SetupClient(BentleyApi::Utf8StringCR accessToken = ""); // Calls one of the create functions below and then sets m_client to the result
+
+    BentleyApi::Dgn::TestIModelHubClientForBridges* CreateMockClient();
+    BentleyApi::Dgn::IModelHubClient* CreateIModelHubClient(BentleyApi::Utf8StringCR accessToken);
+    BentleyApi::Dgn::IModelBankClient* CreateIModelBankClient(BentleyApi::Utf8StringCR accessToken);
 
     BentleyApi::Dgn::IModelHubClientForBridges* GetClientAsIModelHubClientForBridges() {return dynamic_cast<BentleyApi::Dgn::IModelHubClientForBridges*>(m_client);}
     BentleyApi::Dgn::IModelClientBase* GetClientAsIModelClientBase() {return dynamic_cast<BentleyApi::Dgn::IModelClientBase*>(m_client);}
@@ -86,15 +128,14 @@ struct MstnBridgeTestsFixture : ::testing::Test
     BentleyApi::Dgn::IModelHubClient*  GetClientAsIModelHub()  {return dynamic_cast<BentleyApi::Dgn::IModelHubClient*>(m_client);}
     BentleyApi::Dgn::TestIModelHubClientForBridges* GetClientAsMock() {return dynamic_cast<BentleyApi::Dgn::TestIModelHubClientForBridges*>(m_client);}
 
-    bool UsingIModelBank() {return nullptr != GetClientAsIModelBank();}
-    bool UsingIModelHub()  {return nullptr != GetClientAsIModelHub();}
-    bool UsingMockServer() {return nullptr != GetClientAsMock();}
+    static Utf8CP GetIModelBankServerJs() {return getenv("MSTN_BRIDGE_TESTS_IMODEL_BANK_SERVER_JS");}
 
     RevisionStats ComputeRevisionStats(BentleyApi::Dgn::DgnDbR db, size_t start = 0, size_t end = -1);
 
     size_t GetChangesetCount();
 
     void MstnBridgeTestsFixture::CreateRepository(Utf8CP repoName = nullptr);
+    ProcessRunner StartServer();
 
     static BentleyApi::BeFileName GetTestDataDir();
 
@@ -104,7 +145,7 @@ struct MstnBridgeTestsFixture : ::testing::Test
     static BentleyApi::Utf8String ComputeAccessToken(Utf8CP uname);
     static BentleyApi::WString ComputeAccessTokenW(Utf8CP uname) {auto atok = ComputeAccessToken(uname); return BentleyApi::WString(atok.c_str(), true);}
 
-    MstnBridgeTestsFixture() : m_client(nullptr) { SetupClient(); }
+    MstnBridgeTestsFixture() : m_client(nullptr) {}
     ~MstnBridgeTestsFixture();
 
     public:
@@ -177,10 +218,13 @@ struct FwkArgvMaker
     wchar_t const** GetArgV() const {return const_cast<wchar_t const**>(m_ptrs.data());}
     int GetArgC() const {return (int)m_ptrs.size();}
 
+    static void ReplaceArgValue(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP argName, WCharCP newValue);
+    static void ReplaceArgValue(BentleyApi::bvector<BentleyApi::WCharCP>& ptrs, WCharCP argName, WCharCP newValue);
     void ReplaceArgValue(WCharCP argName, WCharCP newValue);
 
     void SetInputFileArg(BentleyApi::BeFileNameCR fn) {PushArg(BentleyApi::WPrintfString(L"--fwk-input=\"%ls\"", fn.c_str()));}
     void SetSkipAssignmentCheck() {PushArg(L"--fwk-skip-assignment-check");}
+    void SetMaxRetries(int n) {PushArg(BentleyApi::WPrintfString(L"----server-retries=", n));}
 
     BentleyApi::bvector<WCharCP> const& GetUnparsedArgs() {return m_bargptrs;}
     };

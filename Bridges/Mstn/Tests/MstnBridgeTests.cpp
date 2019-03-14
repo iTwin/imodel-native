@@ -29,16 +29,13 @@ struct MstnBridgeTests : public MstnBridgeTestsFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MstnBridgeTests, TestDenySchemaLock)
     {
-    if (!UsingIModelBank())
+    if (nullptr == GetIModelBankServerJs())
         {
         fprintf(stderr, "Lock tests are supported only when using imodel-bank as the server\n.");
         return;
         }
 
     auto testDir = CreateTestDir();
-
-    CreateIModelBankClient(ComputeAccessToken("user1"));                             // Identify this job with a user named "user1"
-    iModelBridgeFwk::SetIModelClientForBridgesForTesting(*m_client);
 
     SetRulesFileInEnv setRulesFileVar(WriteRulesFile(L"testDenySchemaLock.json",    // Specify user1's permissions:
           R"(       [                                 
@@ -54,29 +51,29 @@ TEST_F(MstnBridgeTests, TestDenySchemaLock)
                     ]                               
             )"));
 
-    bvector<WString> args;
-    SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY);
-    
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
 
-    args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
-    args.push_back(L"--fwk-skip-assignment-check");
+    SetupClient(ComputeAccessToken("user1"));
+    CreateRepository();
+    {
+    auto runningServer = StartServer();
 
-    CreateRepository(); // This creates the iModel directory and starts the imodel-bank server
-    
-    auto bankClient = GetClientAsIModelBank();
+
+    FwkArgvMaker argvMaker;
+    argvMaker.SetUpBridgeProcessingArgs(testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, GetDgnv8BridgeDllName(), DEFAULT_IMODEL_NAME, true, L"imodel-bank.rsp");
+    argvMaker.ReplaceArgValue(L"--imodel-bank-access-token", ComputeAccessTokenW("user1").c_str());
+
+    argvMaker.SetInputFileArg(inputFile);
+    argvMaker.SetSkipAssignmentCheck();
 
     iModelBridgeFwk fwk;
-    bvector<WCharCP> argptrs;
     
-    MAKE_ARGC_ARGV(argptrs, args);
-
-    ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
-
-    ASSERT_NE(0, fwk.Run(argc, argv)) << "Expect bridge to fail";
+    ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
+    ASSERT_NE(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV())) << "Expect bridge to fail";
 
     // TODO: Somehow verify that the failure was due to the schema lock being denied.
+    }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -94,7 +91,7 @@ static void createFile(BentleyApi::BeFileName const& fn)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MstnBridgeTests, MultiBridgeSequencing)
     {
-    if (!UsingIModelBank())
+    if (nullptr == GetIModelBankServerJs())
         {
         fprintf(stderr, "Lock tests are supported only when using imodel-bank as the server\n.");
         return;
@@ -135,13 +132,22 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
     SetRulesFileInEnv setRulesFileVar(WriteRulesFile(L"testDenySchemaLock.json", rules.c_str()));
 
 
+    // -------------------------------------------------------
     // Create the iModel directory and start the server
-    CreateIModelBankClient(""); // TRICKY: I must have m_client defined before calling CreateRepository
-    CreateRepository(DEFAULT_IMODEL_NAME_A); // This creates the iModel directory and starts the imodel-bank server
-    m_client = nullptr;
-    iModelBridgeFwk::ClearIModelClientForBridgesForTesting();
+    // -------------------------------------------------------
+    CreateImodelBankRepository(GetSeedFile());
 
-    // A
+    {
+    std::unique_ptr<BentleyApi::Dgn::IModelBankClient> bankClient(CreateIModelBankClient(""));
+    { // make sure server is stopped before releasing bankClient, as that is used by runningServer's Stop method.
+    auto runningServer = StartImodelBankServer(GetIModelDir(), *bankClient);
+    
+    ASSERT_TRUE(m_client == nullptr);
+    iModelBridgeFwk::ClearIModelClientForBridgesForTesting(); // nobody should have set the test client, but clear it just in case.
+
+    // -------------------------------------------------------
+    // Bridge A
+    // -------------------------------------------------------
     std::thread bridge_a([&] 
         {
         BeFileName aDir(testDir);
@@ -157,15 +163,19 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
 
         argvMaker.SetInputFileArg(inputFile);
         argvMaker.SetSkipAssignmentCheck();
+
+        argvMaker.SetMaxRetries(INT_MAX);   // must allow lots of time for bridge B to run to completion. Unfortunately, there is no way to predict how many retries will be required.
     
         iModelBridgeFwk fwk;
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
         ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
         });
 
-    // B
-#ifdef THIS_WONT_WORK // you cannot run multiple fwk's concurrently in the process - they fight over the DgnViewLibHost global, for one thing.
-    std::thread bridge_b([&] 
+    // -------------------------------------------------------
+    // Bridge B
+    // -------------------------------------------------------
+    // Note: You cannot run multiple fwk's concurrently in the process, as they fight over globals such as DgnViewLibHost.
+    // That's why we have to run the second bridge in a separate process.
         {
         BeFileName bDir(testDir);
         bDir.AppendToPath(L"B");
@@ -181,35 +191,27 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
         argvMaker.SetInputFileArg(inputFile);
         argvMaker.SetSkipAssignmentCheck();
     
-        iModelBridgeFwk fwk;
-        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
-        ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
-        });
-#else
-    BeFileName bDir(testDir);
-    bDir.AppendToPath(L"B");
-    BeFileName::CreateNewDirectory(bDir.c_str());
+        BentleyApi::BeFileName rspFile = GetOutputDir();
+        rspFile.AppendToPath(L"MultiBridgeSequencing_B.rsp");
+        ProcessRunner bridge_b(_wgetenv(L"MSTN_BRIDGE_TESTS_IMODEL_BRIDGE_FWK_EXE"), argvMaker.GetArgC(), argvMaker.GetArgV(), rspFile, nullptr, nullptr);
+        bridge_b.Start(0);
 
-    FwkArgvMaker argvMaker;
-    argvMaker.SetUpBridgeProcessingArgs(bDir.c_str(), L"bridge_b", GetDgnv8BridgeDllName(), DEFAULT_IMODEL_NAME, true, L"imodel-bank.rsp");
-    argvMaker.ReplaceArgValue(L"--imodel-bank-access-token", ComputeAccessTokenW("B").c_str());
-
-    BentleyApi::BeFileName inputFile;
-    MakeCopyOfFile(inputFile, L"Test3d.dgn", L"_B");
-
-    argvMaker.SetInputFileArg(inputFile);
-    argvMaker.SetSkipAssignmentCheck();
+        createFile(b_can_run);      // b runs first
+        ASSERT_EQ(BSISUCCESS, bridge_b.Stop(5*60*1000));   // wait for up to 5 minutes for b to finish
+        // TODO: Verify that b ran successfully
+        }
     
-    auto bridge_b = StartIModelBridgeFwkExe(argvMaker.GetArgC(), argvMaker.GetArgV(), L"MultiBridgeSequencing");
-#endif
-
-
-    createFile(b_can_run);      // b runs first
     createFile(a_can_run);      // then a runs
 
     bridge_a.join();
-//    bridge_b.join();
-    WaitForIModelBridgeFwkExe(bridge_b);
+
+    // TODO: Verify that B ran first and that A ran second and ran successfully
+
+    runningServer.Stop(10*1000);    // must wait long enough for imodel-bank server to shut down. The time required can vary unpredictably but seems to increase when a second process has been running.
+    }
+    }
+    // ASSERT_EQ(0, ProcessRunner::FindProcessId("node.exe"));
+    ASSERT_EQ(0, ProcessRunner::FindProcessId("iModelBridgeFwk.exe"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -217,6 +219,9 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
     {
+    // if (nullptr == GetIModelBankServerJs())
+    //   ProcessRunner::DoSleep(5000);
+
     auto testDir = CreateTestDir();
 
     bvector<WString> args;
@@ -228,7 +233,10 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
     args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
     args.push_back(L"--fwk-skip-assignment-check");
 
+    SetupClient();
     CreateRepository();
+    // ASSERT_EQ(0, ProcessRunner::FindProcessId("node.exe"));
+    auto runningServer = StartServer();
     
     if (true)
         {
@@ -277,7 +285,9 @@ TEST_F(MstnBridgeTests, TestSourceElementIdAspect)
     args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
     args.push_back(L"--fwk-skip-assignment-check");
 
+    SetupClient();
     CreateRepository();
+    auto runningServer = StartServer();
     
     int64_t srcId = AddLine(inputFile);
     if (true)
@@ -310,7 +320,9 @@ TEST_F(MstnBridgeTests, TestSourceElementIdAspect)
 //    args.push_back (WPrintfString (L"--fwk-input=\"%ls\"", inputFile.c_str ()));
 //    args.push_back (L"--fwk-skip-assignment-check");
 //
+//    SetupClient();
 //    CreateRepository ();
+//    auto runningServer = StartServer();
 //
 //    int64_t modelid = AddModel (inputFile, "TestModel");
 //    if (true)
@@ -360,7 +372,9 @@ TEST_F(MstnBridgeTests, TestSourceElementIdAspect)
 //    args.push_back (WPrintfString (L"--fwk-input=\"%ls\"", inputFile.c_str ()));
 //    args.push_back (L"--fwk-skip-assignment-check");
 //
+//    SetupClient();
 //    CreateRepository();
+//    auto runningServer = StartServer();
 //
 //    int64_t modelid = AddView (inputFile, "TestView");
 //    if (true)
@@ -419,7 +433,9 @@ TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridge)
 
     args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
 
+    SetupClient();
     CreateRepository();
+    auto runningServer = StartServer();
 
     BentleyApi::BeFileName assignDbName(testDir);
     assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
@@ -473,7 +489,9 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridge)
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir.c_str(), nullptr, DEFAULT_IMODEL_NAME);
     
+    SetupClient();
     CreateRepository();
+    auto runningServer = StartServer();
 
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
@@ -565,7 +583,9 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args,nullptr, nullptr, iModelName);
     
+    SetupClient();
     CreateRepository("ConvertAttachmentMultiBridgeSharedReference");
+    auto runningServer = StartServer();
 
     BentleyApi::BeFileName inputFile1;
     MakeCopyOfFile(inputFile1, L"Test3d.dgn", L"1");
@@ -727,7 +747,9 @@ TEST_F(MstnBridgeTests, DISABLED_PushAfterEachModel)
     {
     auto testDir = CreateTestDir();
 
+    SetupClient();
     CreateRepository();
+    auto runningServer = StartServer();
 
     // Set up to process a master file and two reference files, all mapped to MstnBridge
     bvector<WString> args;
@@ -800,7 +822,9 @@ TEST_F(MstnBridgeTests, PushAfterEachFile)
     {
     auto testDir = CreateTestDir();
      
+    SetupClient();
     CreateRepository();
+    auto runningServer = StartServer();
 
     // Set up to process a master file and two reference files, all mapped to MstnBridge
     bvector<WString> args;
@@ -902,7 +926,9 @@ TEST_F(MstnBridgeTests, DISABLED_TestCodeRemovalPerformance)
     args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
     args.push_back(L"--fwk-skip-assignment-check");
 
+    SetupClient();
     CreateRepository();
+    auto runningServer = StartServer();
 
     int64_t srcId = AddLine(inputFile,200000);
     if (true)
@@ -941,7 +967,9 @@ TEST_P (SynchInfoTests, TestSynchInfoAspect)
     args.push_back (WPrintfString (L"--fwk-input=\"%ls\"", inputFile.c_str ()));
     args.push_back (L"--fwk-skip-assignment-check");
 
+    SetupClient();
     CreateRepository();
+    auto runningServer = StartServer();
 
     int64_t srcId = 0;
     if (0 == type.CompareToI (L"Model"))

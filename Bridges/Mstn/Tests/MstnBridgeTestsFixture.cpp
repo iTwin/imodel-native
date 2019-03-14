@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <windows.h>
+#include <tlhelp32.h>
 #include "ConverterInternal.h"
 #include "MstnBridgeTestsFixture.h"
 #include <iModelBridge/TestIModelHubClientForBridges.h>
@@ -14,9 +15,7 @@
 #include <BeHttp/HttpClient.h>
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #include "V8FileEditor.h"
-#include <Bentley/Base64Utilities.h >
-
-static PROCESS_INFORMATION s_iModelBankProcess;
+#include <Bentley/Base64Utilities.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
@@ -155,7 +154,7 @@ void MstnBridgeTestsFixture::MakeCopyOfFile(BentleyApi::BeFileNameR outFile, Ben
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MstnBridgeTestsFixture::SetUpBridgeProcessingArgs(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP stagingDir, WCharCP bridgeRegSubkey, WCharCP iModelName)
     {
-    auto useBank = UsingIModelBank();
+    auto useBank = GetIModelBankServerJs();
     auto rspFileName = useBank? L"imodel-bank.rsp": L"imodel-hub.rsp";
 
     FwkArgvMaker argvMaker;
@@ -470,7 +469,7 @@ BentleyApi::WString FwkArgvMaker::ReadRspFileFromTestData(BentleyApi::WCharCP rs
     BentleyApi::WString wargs;
     if (BSISUCCESS != readEntireFile(wargs, rspFileName))
         {
-        fwprintf(stderr, L"%ls - response file not found\n", rspFileName.c_str());
+        BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->errorv(L"%ls - response file not found\n", rspFileName.c_str());
         return L"";
         }
 
@@ -564,17 +563,40 @@ void FwkArgvMaker::SetUpBridgeProcessingArgs(WCharCP stagingDir, WCharCP bridgeR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FwkArgvMaker::ReplaceArgValue(WCharCP argName, WCharCP newValue)
+void FwkArgvMaker::ReplaceArgValue(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP argName, WCharCP newValue)
     {
-    for (size_t i = 0; i < m_ptrs.size(); ++i)
+    for (size_t i = 0; i < args.size(); ++i)
         {
-        auto arg = m_ptrs[i];
+        auto arg = args[i];
+        if (!arg.Contains(argName))
+            continue;
+        args[i] = WPrintfString(L"%ls=%ls", argName, newValue).c_str();
+        break;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void FwkArgvMaker::ReplaceArgValue(BentleyApi::bvector<BentleyApi::WCharCP>& ptrs, WCharCP argName, WCharCP newValue)
+    {
+    for (size_t i = 0; i < ptrs.size(); ++i)
+        {
+        auto arg = ptrs[i];
         if (wcsstr(arg, argName) == nullptr)
             continue;
         free((void*)arg);
-        m_ptrs[i] = _wcsdup(WPrintfString(L"%ls=%ls", argName, newValue).c_str());
+        ptrs[i] = _wcsdup(WPrintfString(L"%ls=%ls", argName, newValue).c_str());
         break;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void FwkArgvMaker::ReplaceArgValue(WCharCP argName, WCharCP newValue)
+    {
+    ReplaceArgValue(m_ptrs, argName, newValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -591,67 +613,67 @@ BentleyApi::WebServices::ClientInfoPtr MstnBridgeTestsFixture::GetClientInfo()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::CreateIModelBankClient(BentleyApi::Utf8StringCR accessToken)
+BentleyApi::Dgn::IModelBankClient* MstnBridgeTestsFixture::CreateIModelBankClient(BentleyApi::Utf8StringCR accessToken)
     {
-    BeAssert(nullptr != getenv("MSTN_BRIDGE_TESTS_IMODEL_BANK_SERVER_JS"));
-
     FwkArgvMaker argvMaker;
-    ASSERT_EQ(BSISUCCESS, argvMaker.ParseArgsFromRspFile(argvMaker.ReadRspFileFromTestData(L"imodel-bank.rsp")));
+    EXPECT_EQ(BSISUCCESS, argvMaker.ParseArgsFromRspFile(argvMaker.ReadRspFileFromTestData(L"imodel-bank.rsp")));
 
     iModelBridgeFwk::IModelBankArgs imbArgs;
-    ASSERT_EQ(BSISUCCESS, imbArgs.ParseCommandLine(argvMaker.m_bargptrs, argvMaker.GetArgC(), argvMaker.GetArgV()));
-    ASSERT_EQ(0, argvMaker.m_bargptrs.size());
+    EXPECT_EQ(BSISUCCESS, imbArgs.ParseCommandLine(argvMaker.m_bargptrs, argvMaker.GetArgC(), argvMaker.GetArgV()));
+    EXPECT_EQ(0, argvMaker.m_bargptrs.size());
 
     if (!accessToken.empty())
         imbArgs.m_accessToken = accessToken;
 
-    m_client = new IModelBankClient(imbArgs, GetClientInfo());
+    return new IModelBankClient(imbArgs, GetClientInfo());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::CreateIModelHubClient()
+BentleyApi::Dgn::IModelHubClient* MstnBridgeTestsFixture::CreateIModelHubClient(BentleyApi::Utf8StringCR accessToken)
     {
     FwkArgvMaker argvMaker;
-    ASSERT_EQ(BSISUCCESS, argvMaker.ParseArgsFromRspFile(argvMaker.ReadRspFileFromTestData(L"imodel-hub.rsp")));
+    EXPECT_EQ(BSISUCCESS, argvMaker.ParseArgsFromRspFile(argvMaker.ReadRspFileFromTestData(L"imodel-hub.rsp")));
 
     iModelBridgeFwk::IModelHubArgs imhArgs;
-    ASSERT_EQ(BSISUCCESS, imhArgs.ParseCommandLine(argvMaker.m_bargptrs, argvMaker.GetArgC(), argvMaker.GetArgV()));
-    ASSERT_EQ(0, argvMaker.m_bargptrs.size());
+    EXPECT_EQ(BSISUCCESS, imhArgs.ParseCommandLine(argvMaker.m_bargptrs, argvMaker.GetArgC(), argvMaker.GetArgV()));
+    EXPECT_EQ(0, argvMaker.m_bargptrs.size());
 
-    m_client = new IModelHubClient(imhArgs, GetClientInfo());
+    // TODO: get userid from accessToken
+
+    return new IModelHubClient(imhArgs, GetClientInfo());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::CreateMockClient()
+BentleyApi::Dgn::TestIModelHubClientForBridges* MstnBridgeTestsFixture::CreateMockClient()
     {
-    m_client = new TestIModelHubClientForBridges(GetOutputDir());
+    return new TestIModelHubClientForBridges(GetOutputDir());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::SetupClient()
+void MstnBridgeTestsFixture::SetupClient(BentleyApi::Utf8StringCR accessToken)
     {
     // TODO: Consult argv and check for --imodel-bank or --imodel-hub
-    auto imbPath = getenv("MSTN_BRIDGE_TESTS_IMODEL_BANK_SERVER_JS");
+    auto imbPath = GetIModelBankServerJs();
     if (imbPath != nullptr)
         {
         BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->trace("Using IModelBankClient");
-        CreateIModelBankClient("");
+        m_client = CreateIModelBankClient(accessToken);
         }
     else if (getenv("MSTN_BRIDGE_TESTS_IMODEL_HUB"))
         {
         BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->trace("Using IModelHubClient");
-        CreateIModelHubClient();
+        m_client = CreateIModelHubClient(accessToken);
         }
     else
         {
         BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->trace("Using TestIModelHubClientForBridges");
-        CreateMockClient();
+        m_client = CreateMockClient();
         }
     
     iModelBridgeFwk::SetIModelClientForBridgesForTesting(*m_client);
@@ -662,139 +684,221 @@ void MstnBridgeTestsFixture::SetupClient()
 +---------------+---------------+---------------+---------------+---------------+------*/
 MstnBridgeTestsFixture::~MstnBridgeTestsFixture()
     {
-    if (UsingIModelBank())
-        StopImodelBankServer();
-
-    delete m_client;
-    m_client = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-int MstnBridgeTestsFixture::WaitForIModelBridgeFwkExe(std::tuple<void*, void*> const& pi)
-    {
-    void* hProcess;
-    void* hThread;
-    std::tie(hProcess, hThread) = pi;
-    WaitForSingleObject (hProcess, 5000);
-    DWORD dwExitCode = 0;
-    GetExitCodeProcess (hProcess, &dwExitCode);
-    CloseHandle(hProcess);
-    CloseHandle(hThread);
-    return (int)dwExitCode;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::tuple<void*, void*> MstnBridgeTestsFixture::StartIModelBridgeFwkExe(int argc, wchar_t const** argv, WCharCP testName)
-    {
-    BentleyApi::BeFileName rspFile = GetOutputDir();
-    rspFile.AppendToPath(WPrintfString(L"%ls.iModelBridgeFwk.rsp", testName));
-    
-    FILE* fp = _wfopen(rspFile.c_str(), L"w+");
-
-    for (int i = 1; i < argc; ++i)
-        fwprintf(fp, L"%ls\n", argv[i]);
-
-    fclose(fp);
-
-    WPrintfString runcmd(L"%ls %ls", _wgetenv(L"MSTN_BRIDGE_TESTS_IMODEL_BRIDGE_FWK_EXE"), rspFile.c_str());
-
-    STARTUPINFOW si;
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    PROCESS_INFORMATION pi;
-    ZeroMemory(&pi, sizeof(pi));
-    EXPECT_TRUE(::CreateProcessW(nullptr, (LPWSTR)runcmd.c_str(), nullptr, nullptr, false, NORMAL_PRIORITY_CLASS, nullptr, nullptr, &si, &pi));
-    
-    ::Sleep(100);
-
-    return std::make_tuple(pi.hProcess, pi.hThread);
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::StopImodelBankServer()
-    {
-    if (!UsingIModelBank())
-        return;
-
-    if (!s_iModelBankProcess.hProcess)
-        return;
-
-#ifdef EXPERIMENT_SEND_KILL_SIGNAL
-    // This does indeed send a nice, clean kill signal to imodel-bank, but it also seems to mess up the console in which I run the tests.
-    SetConsoleCtrlHandler(nullptr, true);                       // This process should ignore the Ctrl-C event that I am about to send to my console.
-    GenerateConsoleCtrlEvent (CTRL_C_EVENT, 0);                 // Send all (other) processes that share my console a Ctrl-C event
-    WaitForSingleObject (s_iModelBankProcess.hProcess, 5000);   // Wait for the subprocess to end
-    SetConsoleCtrlHandler(nullptr, false);                      // This process can go back to handling Ctrl-C events
-#else
-    auto bankClient = GetClientAsIModelBank();
-    ASSERT_EQ(BSISUCCESS, bankClient->Shutdown());
-
-    WaitForSingleObject (s_iModelBankProcess.hProcess, 5000);
-#endif
-    DWORD dwExitCode = 0;
-    GetExitCodeProcess (s_iModelBankProcess.hProcess, &dwExitCode);
-    // EXPECT_EQ(0, dwExitCode); -- usually I get 259, which is STILL_ACTIVE, meaning that the process has not in fact ended ?!?
-    CloseHandle(s_iModelBankProcess.hProcess);
-    CloseHandle(s_iModelBankProcess.hThread);
-    ZeroMemory(&s_iModelBankProcess, sizeof(s_iModelBankProcess));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::StartImodelBankServer(BentleyApi::BeFileNameCR imodelDir)
-    {
-    // Run the imodel-bank server, telling it the imodel directory
-    WString runbatcmd = GetTestDataFileName(L"runImodelBankServer.bat");
-    runbatcmd.append(L" ").append(imodelDir.c_str());
-
-    STARTUPINFOW si;
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    ZeroMemory(&s_iModelBankProcess, sizeof(s_iModelBankProcess));
-    ASSERT_TRUE(::CreateProcessW(nullptr, (LPWSTR)runbatcmd.c_str(), nullptr, nullptr, false, NORMAL_PRIORITY_CLASS, nullptr, nullptr, &si, &s_iModelBankProcess));
-    
-    DWORD sleepinterval = 1;
-    for (int i=0; i<10; ++i)
+    if (m_client != nullptr)
         {
-        if (GetClient().GetIModelInfo().IsValid()) // The real purpose of calling GetIModelInfo is to make the test wait until the bank server is up and responding.
-            break;
-        ::Sleep(sleepinterval);
-        sleepinterval *= 2;
+        delete m_client;
+        m_client = nullptr;
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyApi::BeFileName MstnBridgeTestsFixture::CreateImodelBankRepository(BentleyApi::BeFileNameCR seedFile)
+ProcessRunner::ProcessRunner(BentleyApi::WStringCR cmd, int argc, wchar_t const** argv, BentleyApi::BeFileNameCR rspFile, T_SendKillSignal ks, BentleyApi::Dgn::IShutdownIModelServer* sds)
+    : m_cmd(cmd), m_argc(argc), m_argv(argv), m_rspFile(rspFile), m_sendKillSignal(ks), m_shutdown(sds)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+ProcessRunner::ProcessRunner(ProcessRunner&& rhs)
+    : m_cmd(std::move(rhs.m_cmd)),
+    m_argc(rhs.m_argc), m_argv(rhs.m_argv),
+    m_rspFile(std::move(rhs.m_rspFile)),
+    m_hProcess(rhs.m_hProcess),
+    m_hThread(rhs.m_hThread),
+    m_pid(rhs.m_pid),
+    m_exitCode(rhs.m_exitCode),
+    m_sendKillSignal(rhs.m_sendKillSignal),
+    m_shutdown(rhs.m_shutdown)
+    {
+    rhs.m_hProcess = rhs.m_hThread = 0;
+    rhs.m_pid = 0;
+    rhs.m_shutdown = nullptr;
+    rhs.m_sendKillSignal = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+ProcessRunner::~ProcessRunner()
+    {
+    Stop(10*1000);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::BentleyStatus ProcessRunner::Start(size_t waitMs)
+    {
+    BentleyApi::WString args;
+    if (!m_rspFile.empty())
+        {
+        FILE* fp = _wfopen(m_rspFile.c_str(), L"w+");
+
+        for (int i = 1; i < m_argc; ++i)
+            fwprintf(fp, L"%ls\n", m_argv[i]);
+
+        fclose(fp);
+        args = L"@";
+        args.append(m_rspFile);
+        }
+    else
+        {
+        for (int i = 1; i < m_argc; ++i)
+            args.append(L" ").append(m_argv[i]);
+        }
+
+    m_cmdline.Sprintf(L"%ls %ls", m_cmd.c_str(), args.c_str());
+        
+    STARTUPINFOW si;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&pi, sizeof(pi));
+    EXPECT_TRUE(::CreateProcessW(nullptr, (LPWSTR)m_cmdline.c_str(), nullptr, nullptr, false, NORMAL_PRIORITY_CLASS, nullptr, nullptr, &si, &pi));
+    
+    m_hProcess = pi.hProcess;
+    m_hThread = pi.hThread;
+    m_pid = pi.dwProcessId;
+
+    BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->tracev(L"++++++++++++++++++ %ls\n", m_cmdline.c_str());
+
+    ::Sleep(waitMs);
+
+    return BentleyApi::BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+int ProcessRunner::FindProcessId(BentleyApi::Utf8CP name)
+    {
+    HANDLE hProcessSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
+
+    PROCESSENTRY32 processEntry = { 0 };
+    processEntry.dwSize = sizeof(processEntry);
+
+    DWORD pid = 0;
+    BOOL ok = Process32First(hProcessSnapShot, &processEntry);
+    if (ok)
+        {
+        do  {
+            if (strstr(processEntry.szExeFile, name))
+                {
+                pid = processEntry.th32ProcessID;
+                BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->tracev("%s %ld\n", processEntry.szExeFile, processEntry.th32ProcessID);
+                break;
+                }
+
+            } while (Process32Next(hProcessSnapShot, &processEntry));
+        }
+    CloseHandle(hProcessSnapShot);
+
+    return (int)pid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::BentleyStatus ProcessRunner::Stop(size_t waitMs)
+    {
+    if (nullptr == m_hProcess)
+        return BentleyApi::BSIERROR;
+
+    if (m_sendKillSignal != nullptr)
+        m_sendKillSignal(*this);
+
+    if (m_shutdown != nullptr)
+        m_shutdown->Shutdown();
+
+    DWORD status = WaitForSingleObject (m_hProcess, waitMs);
+
+    DWORD dwExitCode = 0;
+    GetExitCodeProcess (m_hProcess, &dwExitCode);
+
+    // TODO: This won't work until we assert the PROCESS_TERMINATE right when we create the process
+    if (WAIT_OBJECT_0 != status)
+        {
+        // TODO: This won't work until we assert the PROCESS_TERMINATE right when we create the process
+        //    TerminateProcess(m_hProcess, 1);    
+        BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->warningv("%s wait = %x\n", m_cmdline.c_str(), status);
+        }
+
+    CloseHandle(m_hProcess);
+    CloseHandle(m_hThread);
+
+    m_hProcess = m_hThread = nullptr;
+    m_pid = 0;
+
+    m_exitCode = (int)dwExitCode;
+
+    BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->tracev(L"xxxxxxxxxxxxxxxxx %ls\n", m_cmdline.c_str());
+    
+    return (status == WAIT_OBJECT_0)? BentleyApi::BSISUCCESS: BentleyApi::BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+ProcessRunner MstnBridgeTestsFixture::StartImodelBankServer(BentleyApi::BeFileNameCR imodelDir, BentleyApi::Dgn::IModelBankClient& bankClient)
+    {
+    wchar_t const* argv[] = {L"", imodelDir.data()};
+    ProcessRunner runner(GetTestDataFileName(L"runImodelBankServer.bat"), _countof(argv), argv, BentleyApi::BeFileName(), nullptr, &bankClient);
+    runner.Start(100);
+
+    DWORD sleepinterval = 1;
+    for (int i=0; i<10; ++i)
+        {
+        if (bankClient.GetIModelInfo().IsValid()) // The real purpose of calling GetIModelInfo is to make the test wait until the bank server is up and responding.
+            break;
+        ::Sleep(sleepinterval);
+        sleepinterval *= 2;
+        }
+    return runner;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::BeFileName MstnBridgeTestsFixture::GetIModelParentDir()
+    {
+    BentleyApi::BeFileName outImodelFs = GetOutputDir();
+    outImodelFs.AppendToPath(L"imodelfs");
+    return outImodelFs;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::BeFileName MstnBridgeTestsFixture::GetIModelDir()
+    {
+    BentleyApi::BeFileName outImodelDir = GetIModelParentDir();
+    outImodelDir.AppendToPath(L"233e1f55-561d-42a4-8e80-d6f91743863e");     // must match Tests/data/imodelfs and imodel.json
+    return outImodelDir;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void MstnBridgeTestsFixture::CreateImodelBankRepository(BentleyApi::BeFileNameCR seedFile)
     {
     // Copy the entire imodelfs directory to output
     BentleyApi::BeFileName inImodelFs = GetTestDataDir();
-    inImodelFs.AppendToPath(L"imodelfs");                                   // must match Tests/data/imodelfs and imodel.json
-    BentleyApi::BeFileName outImodelFs = GetOutputDir();
-    outImodelFs.AppendToPath(L"imodelfs");
+    inImodelFs.AppendToPath(L"imodelfs");
+
+    BentleyApi::BeFileName outImodelFs = GetIModelParentDir();
+
     BentleyApi::BeFileName::EmptyAndRemoveDirectory(outImodelFs.c_str());
     //        BentleyApi::BeFileName::CreateNewDirectory(outImodelFs.c_str());  -- Clone creates the dir
-    BentleyApi::BeFileName::CloneDirectory(inImodelFs.c_str(), outImodelFs.c_str());
-
-    BentleyApi::BeFileName outImodelDir = outImodelFs;
-    outImodelDir.AppendToPath(L"233e1f55-561d-42a4-8e80-d6f91743863e");     // must match Tests/data/imodelfs and imodel.json
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::CloneDirectory(inImodelFs.c_str(), outImodelFs.c_str()));
 
     // Copy the seed file into the imodelfs
-    BentleyApi::BeFileName outSeedFile = outImodelDir;
-    outSeedFile.AppendToPath(L"seed.bim");                                  //      "                   "
+    BentleyApi::BeFileName outSeedFile = GetIModelDir();
+    outSeedFile.AppendToPath(L"seed.bim");
     outSeedFile.BeDeleteFile();
-    BentleyApi::BeFileName::BeCopyFile(seedFile.c_str(), outSeedFile.c_str());
-
-    return outImodelDir;
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(seedFile.c_str(), outSeedFile.c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -805,17 +909,15 @@ void MstnBridgeTestsFixture::CreateRepository(Utf8CP repoName)
     if (nullptr == repoName)
         repoName = DEFAULT_IMODEL_NAME_A;
 
-    auto seedFile = GetSeedFile(); // tricky - GetSeedFile initializes and terminates the host. 
+    auto seedFile = GetSeedFile();
 
-    if (UsingIModelBank())                                                          // iModelBank server does not create the repo. The repo must be set up before starting imb.
+    if (GetIModelBankServerJs())
         {
-        StopImodelBankServer();
-        auto iModelDir = CreateImodelBankRepository(seedFile);
-        StartImodelBankServer(iModelDir);
+        CreateImodelBankRepository(seedFile);
         return;
         }
 
-    auto hubClient = GetClientAsIModelHubClientForBridges();        // mock or real iModelHubClient
+    auto hubClient = GetClientAsIModelHubClientForBridges(); // mock or real iModelHubClient
     if (nullptr != hubClient)
         {
         ScopedDgnHost host;
@@ -826,6 +928,20 @@ void MstnBridgeTestsFixture::CreateRepository(Utf8CP repoName)
 
     BeAssert(false && "unknown type of IModelClientForBridges");
     FAIL() << "unknown type of IModelClientForBridges";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+ProcessRunner MstnBridgeTestsFixture::StartServer()
+    {
+    BeAssert(m_client != nullptr);
+
+    auto bankClient = GetClientAsIModelBank();
+    if (bankClient != nullptr)
+        return StartImodelBankServer(GetIModelDir(), *bankClient);
+        
+    return ProcessRunner();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -843,6 +959,11 @@ void MstnBridgeTestsFixture::RunTheBridge(BentleyApi::bvector<BentleyApi::WStrin
     ASSERT_EQ(0, fwk.Run(argc, argv));
 
     m_briefcaseName = fwk.GetBriefcaseName();
+    }
+
+void ProcessRunner::DoSleep(size_t ms)
+    {
+    ::Sleep(ms);
     }
 
 /*---------------------------------------------------------------------------------**//**
