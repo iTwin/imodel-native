@@ -64,13 +64,13 @@ void ProfilesDomain::_OnSchemaImported (DgnDb& db) const
     CodeSpecPtr codeSpecPtr = CodeSpec::Create (db, PRF_CODESPEC_StandardCatalogProfile, CodeScopeSpec::CreateRepositoryScope());
 
     CodeFragmentSpecList& fragments = codeSpecPtr->GetFragmentSpecsR();
-    fragments.push_back (CodeFragmentSpec::FromElementTypeCode ("Manufacturer"));
-    fragments.push_back (CodeFragmentSpec::FromFixedString (":"));
-    fragments.push_back (CodeFragmentSpec::FromElementTypeCode ("StandardsOrganization"));
-    fragments.push_back (CodeFragmentSpec::FromFixedString (":"));
-    fragments.push_back (CodeFragmentSpec::FromElementTypeCode ("Revision"));
-    fragments.push_back (CodeFragmentSpec::FromFixedString (":"));
-    fragments.push_back (CodeFragmentSpec::FromElementTypeCode ("Designation"));
+    fragments.push_back (CodeFragmentSpec::FromPropertyValue ("Manufacturer"));
+    fragments.push_back (CodeFragmentSpec::FromFixedString (" "));
+    fragments.push_back (CodeFragmentSpec::FromPropertyValue ("StandardsOrganization"));
+    fragments.push_back (CodeFragmentSpec::FromFixedString (" "));
+    fragments.push_back (CodeFragmentSpec::FromPropertyValue ("Revision"));
+    fragments.push_back (CodeFragmentSpec::FromFixedString (" "));
+    fragments.push_back (CodeFragmentSpec::FromPropertyValue ("Designation"));
 
     BeAssert (codeSpecPtr->Insert() == DgnDbStatus::Success);
     }

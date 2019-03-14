@@ -215,8 +215,7 @@ END_BENTLEY_PROFILES_NAMESPACE
 // CodeSpec names and CodeValue string formats
 //-----------------------------------------------------------------------------------------
 #define PRF_CODESPEC_StandardCatalogProfile                 PRF_SCHEMA_ALIAS ":StandardCatalogProfile"
-#define PRF_CODEVALUE_DELIM_StandardCatalogProfile          ":"
-#define PRF_CODEVALUE_FORMAT_StandardCatalogProfile         "%s:%s:%s:%s"
+#define PRF_CODEVALUE_FORMAT_StandardCatalogProfile         "%s %s %s %s"
 
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects

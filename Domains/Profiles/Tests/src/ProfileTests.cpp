@@ -302,7 +302,7 @@ TEST_F (ProfileTestCase, GetCode_ExistingCode_CorrectFormatString)
     profilePtr->SetStandardCatalogCode (StandardCatalogCode ("A", "B", "C"));
 
     Utf8CP pCodeValue = profilePtr->GetCode().GetValue().GetUtf8CP();
-    ASSERT_STREQ ("A:B:C:D", pCodeValue) << "StandardCatalogProfile CodeValue should be of format: '<Manufacturer>:<StandardsOrganization>:<Revision>:<Designation>'";
+    ASSERT_STREQ ("A B C D", pCodeValue) << "StandardCatalogProfile CodeValue should be of format: '<Manufacturer>:<StandardsOrganization>:<Revision>:<Designation>'";
     }
 
 /*---------------------------------------------------------------------------------**//**
