@@ -6,7 +6,7 @@
 |       $Date: 2015/09/08 10:27:17 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -84,7 +84,7 @@ struct DifferenceSet
 		
     void Empty();
 
-    uint64_t WriteToBinaryStream(void*& serialized);
+    uint64_t WriteToBinaryStream(void*& serialized, bool willBeRecomputed=false);
     void LoadFromBinaryStream(void* serialized, uint64_t ct);
     template <class PointType3D, class PointType2D>
     void ApplyClipDiffSetToMesh(PointType3D*& points, size_t& nbPoints,

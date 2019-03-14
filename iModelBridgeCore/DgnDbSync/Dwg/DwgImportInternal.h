@@ -187,6 +187,8 @@ public:
 
     // create profile polyline curve
     CurveVectorPtr          CreateCurveVector (bool useElevation);
+    // Apply constant width to the curve created via above method
+    CurveVectorPtr          ApplyConstantWidthTo (CurveVectorPtr const& plineCurve);
     // apply thickness to the polyline curve created via above method
     GeometricPrimitivePtr   ApplyThicknessTo (CurveVectorPtr const& plineCurve);
     // Hash this polyline data and add it to output MD5:
@@ -440,7 +442,7 @@ private:
     void            SetDefaultCreation ();
     Utf8String      BuildPartCodeValue (DwgImporter::GeometryEntry const& geomEntry, size_t partNo);
     void            TransformGeometry (GeometricPrimitiveR geometry, TransformR geomTrans, double* partScale = nullptr) const;
-    void            Validate2dTransform (TransformR transform) const;
+    bool            Validate2dTransform (TransformR transform) const;
     void            ApplyPartScale (TransformR transform, double scale, bool invert) const;
     bool            NeedsSeparateElement (DgnCategoryId id) const;
     DgnGeometryPartId CreateGeometryPart (DRange3dR range, double& partScale, TransformR geomToLocal, Utf8StringCR partTag, DwgImporter::GeometryEntry const& geomEntry);

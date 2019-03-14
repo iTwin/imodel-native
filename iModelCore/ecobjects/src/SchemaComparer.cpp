@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaComparer.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -587,13 +587,20 @@ BentleyStatus SchemaComparer::CompareSchema(SchemaChange& change, ECSchemaCP old
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes, ECSchemaReferenceList const* oldVal, ECSchemaReferenceList const* newVal)
     {
-    bset<Utf8String, CompareIUtf8Ascii> oldReferences, newReferences, allReferences;
+    bmap<Utf8String, Utf8String, CompareIUtf8Ascii> oldReferences, newReferences;
+    bset<Utf8String, CompareIUtf8Ascii> allReferences;
     if (oldVal != nullptr)
         {
         for (auto const& kvPair : *oldVal)
             {
-            Utf8String name = kvPair.second->GetFullSchemaName();
-            oldReferences.insert(name);
+            const Utf8String name = kvPair.second->GetName();
+            const Utf8String fullname = kvPair.second->GetFullSchemaName();
+            if (!oldReferences.insert(make_bpair(name, fullname)).second)
+                {
+                BeAssert(false && "Multiple version of same referenced schema is not supported");
+                return ERROR;
+                }
+
             allReferences.insert(name);
             }
         }
@@ -602,16 +609,25 @@ BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes,
         {
         for (auto const& kvPair : *newVal)
             {
-            Utf8String name = kvPair.second->GetFullSchemaName();
-            newReferences.insert(name);
+            const Utf8String name = kvPair.second->GetName();
+            const Utf8String fullname = kvPair.second->GetFullSchemaName();
+            if (!newReferences.insert(make_bpair(name, fullname)).second)
+                {
+                BeAssert(false && "Multiple version of same referenced schema is not supported");
+                return ERROR;
+                }
+
             allReferences.insert(name);
             }
         }
 
     for (Utf8StringCR schemaName : allReferences)
         {
-        const bool existsInOld = oldReferences.find(schemaName) != oldReferences.end();
-        const bool existsInNew = newReferences.find(schemaName) != newReferences.end();
+        const auto oldIt = oldReferences.find(schemaName);
+        const auto newIt = newReferences.find(schemaName);
+
+        const bool existsInOld = oldIt != oldReferences.end();
+        const bool existsInNew = newIt != newReferences.end();
 
         ECChange::ECChange::ECChange::OpCode opCode;
         Nullable<Utf8String> oldRef;
@@ -619,19 +635,24 @@ BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes,
 
         if (existsInOld && existsInNew)
             {
+            Utf8StringCR oldSchemaFullName = oldIt->second;
+            Utf8StringCR newSchemaFullName = newIt->second;
+            if (oldSchemaFullName.EqualsI(newSchemaFullName))
+                continue;
+
             opCode = ECChange::ECChange::ECChange::OpCode::Modified;
-            oldRef = schemaName;
-            newRef = schemaName;
+            oldRef = oldSchemaFullName;
+            newRef = newSchemaFullName;
             }
         else if (existsInOld && !existsInNew)
             {
             opCode = ECChange::ECChange::ECChange::OpCode::Deleted;
-            oldRef = schemaName;
+            oldRef = oldIt->second;
             }
         else if (!existsInOld && existsInNew)
             {
             opCode = ECChange::ECChange::ECChange::OpCode::New;
-            newRef = schemaName;
+            newRef = newIt->second;
             }
         else
             {

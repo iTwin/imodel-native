@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/newton.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //////////////////////////////////////////////////////////////////////////////////
@@ -29,7 +29,8 @@ NewtonIterationsRRToRR::NewtonIterationsRRToRR
 double abstol,
 double reltol,
 int    maxIterations,
-int    successiveConvergenceTarget
+int    successiveConvergenceTarget,
+double minStep
 )
     {
     if (abstol < 0.0)
@@ -43,6 +44,7 @@ int    successiveConvergenceTarget
     mMaxIterations = maxIterations;
     mSuccessiveConvergenceTarget = successiveConvergenceTarget;
     mSoftAbstolU = mSoftAbstolV = -1.0;
+    mMinStepU = mMinStepV = minStep;
     }
 void NewtonIterationsRRToRR::SetSoftTolerance (double abstolU, double abstolV)
     {
@@ -401,7 +403,8 @@ min and max relative size and min absolute size.
 static double ComputeDerivativeStep
 (
 double u,
-double relStep
+double relStep,
+double minStep = 0
 )
     {
     static double sMaxRelStep = 1.0e-6;
@@ -417,6 +420,8 @@ double relStep
     double du = relStep * u;
     if (fabs (du) < sMinStep)
         du = sMinStep;
+    if (fabs (du) < minStep)
+        du = minStep;
     return du;
     }
 
@@ -434,11 +439,13 @@ double &g,
 double &dfdu,
 double &dfdv,
 double &dgdu,
-double &dgdv
+double &dgdv,
+double minStepU,
+double minStepV
 )
     {
-    double du = ComputeDerivativeStep (u, 0.0);
-    double dv = ComputeDerivativeStep (v, 0.0);
+    double du = ComputeDerivativeStep (u, 0.0, minStepU);
+    double dv = ComputeDerivativeStep (v, 0.0, minStepV);
     double fu, gu, fv, gv;
     double u1 = u + du;
     double v1 = v + dv;
@@ -519,7 +526,7 @@ double maxdv
     double f, g, dfdu, dfdv, dgdu, dgdv, du, dv;
     for (int numIterations = 0; CheckIterationStart (u, v, numIterations); numIterations++)
         {
-        if (!ApproximateDerivatives (evaluator, u, v, f, g, dfdu, dfdv, dgdu, dgdv))
+        if (!ApproximateDerivatives (evaluator, u, v, f, g, dfdu, dfdv, dgdu, dgdv, mMinStepU, mMinStepV))
             return false;
         if (!ComputeNewtonStep(f, g, dfdu, dfdv, dgdu, dgdv, du, dv))
             return false;

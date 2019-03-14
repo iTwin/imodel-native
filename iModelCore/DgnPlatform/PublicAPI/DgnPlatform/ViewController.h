@@ -261,6 +261,8 @@ public:
     //! determine whether this is a 3d template view
     bool IsTemplateView3d() const {return nullptr != _ToTemplateView3d();}
 
+    DgnElementIdSet const& GetExcludedElements() const {return m_definition->GetDisplayStyle().GetExcludedElements();}
+
     //! Get the ViewFlags from the DisplayStyle of this view
     Render::ViewFlags GetViewFlags() const {return m_definition->GetDisplayStyle().GetViewFlags();}
 

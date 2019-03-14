@@ -24,7 +24,6 @@
 #include <DgnPlatform/image.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/GenericDomain.h>
-#include <DgnPlatform/DgnProvenance.h>
 #include <iModelBridge/iModelBridge.h>
 
 namespace DgnDbApi = BentleyApi::Dgn;
@@ -1066,10 +1065,6 @@ public:
     //! Add a callback to be invoked by _FinishConversion
     //! @param f    Finisher to be invoked by _FinishConversion. @note f must not be freed by the caller and will not be freed by the Converter.
     void AddFinisher(IFinishConversion& f) {m_finishers.push_back(&f);}
-
-    virtual bool _WantProvenanceInBim() {return _GetParams().GetWantProvenanceInBim();}
-
-    DGNDBSYNC_EXPORT virtual bool _WantModelProvenanceInBim();
 
     //! Get the DMS document properties for a specified file, if available.
     void GetDocumentProperties(iModelBridgeDocumentProperties& docProps, BeFileNameCR localFilename)
@@ -2316,9 +2311,6 @@ protected:
 
     BentleyStatus MakeSchemaChanges(bvector<DgnFileP> const&, bvector<DgnV8ModelP> const&);
 
-    // WIP_EXTERNAL_SOURCE_INFO - stop using so-called model provenance
-    void CreateProvenanceTables();
-
     SpatialConverterBase(SpatialParams const& p) : T_Super(p) {}
 
     DgnV8Api::ModelInfo const& _GetModelInfo(DgnV8ModelCR v8Model) override { return m_rootModelRef->GetDgnModelP()->GetModelInfo(); }
@@ -3306,11 +3298,11 @@ struct ElementConverter
 struct ElementAspectConverter : ElementConverter
     {
     private:
-        BentleyStatus ConvertToAspect(ElementConversionResults&, ECObjectsV8::IECInstance const& v8Instance, BentleyApi::Utf8CP aspectClassSuffix) const;
+        BentleyStatus ConvertToAspect(SyncInfo::V8ElementExternalSourceAspect*, ElementConversionResults&, ECObjectsV8::IECInstance const& v8Instance, BentleyApi::Utf8CP aspectClassSuffix) const;
 
     public:
         explicit ElementAspectConverter(Converter& converter) : ElementConverter(converter) {}
-        BentleyStatus ConvertToAspects(ElementConversionResults&, std::vector<std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule>> const& secondaryInstances) const;
+        BentleyStatus ConvertToAspects(SyncInfo::V8ElementExternalSourceAspect*, ElementConversionResults&, std::vector<std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule>> const& secondaryInstances) const;
     };
 
 //=======================================================================================

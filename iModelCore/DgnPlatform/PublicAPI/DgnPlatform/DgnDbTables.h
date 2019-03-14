@@ -52,6 +52,7 @@
 #define BIS_CLASS_ElementAspect             "ElementAspect"
 #define BIS_CLASS_ElementMultiAspect        "ElementMultiAspect"
 #define BIS_CLASS_ElementUniqueAspect       "ElementUniqueAspect"
+#define BIS_CLASS_ExternalSourceAspect      "ExternalSourceAspect"
 #define BIS_CLASS_GeometricElement          "GeometricElement"
 #define BIS_CLASS_GeometricElement2d        "GeometricElement2d"
 #define BIS_CLASS_GeometricElement3d        "GeometricElement3d"

@@ -44,10 +44,6 @@ typedef std::shared_ptr<struct ClientInfo> ClientInfoPtr;
 //! @brief Eneds a table of translatable strings contained in an iModelBridge.
 #define IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END };
 
-#define XTRN_SRC_ASPCT_ECSCHEMA_NAME            "BisCore"
-#define XTRN_SRC_ASPCT_SCHEMA(name)             XTRN_SRC_ASPCT_ECSCHEMA_NAME "." name
-#define XTRN_SRC_ASPCT_CLASS                    "ExternalSourceAspect"
-#define XTRN_SRC_ASPCT_FULLCLASSNAME            XTRN_SRC_ASPCT_SCHEMA(XTRN_SRC_ASPCT_CLASS)
 #define XTRN_SRC_ASPCT_Scope                    "Scope"
 #define XTRN_SRC_ASPCT_Identifier               "Identifier"
 #define XTRN_SRC_ASPCT_Kind                     "Kind"
@@ -482,8 +478,9 @@ struct iModelBridge
         //! in succesfully converting data inside a file.
         //! @param fn   The name of the file that is to be converted
         //! @param bridgeRegSubKey The registry subkey that identifies the bridge
+        //! @param guid The the default docguid should docprops not exist for fn
         //! @return non-zero error status if assignment of this file to the registry database failed.
-        virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
+        virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey, BeSQLite::BeGuidCP guid) = 0;
         };
 
     //! Interface to enable bridges to perform briefcase operations, such as push while they run.
@@ -527,6 +524,7 @@ struct iModelBridge
         GCSCalculationMethod m_gcsCalculationMethod;
         BeFileName m_briefcaseName;
         BeFileName m_assetsDir;
+        BeFileName m_geoCoordDir;
         BeFileName m_libraryDir;
         BeFileName m_reportFileName;
         Utf8String m_converterJobName;
@@ -540,13 +538,12 @@ struct iModelBridge
         DgnElementId m_jobSubjectId;
         Utf8String   m_jobRunCorrelationId;
         IDmsSupport* m_dmsSupport;
-
+        bvector<WString> m_additionalFiles;
         Utf8String                              m_repositoryName;     //!< A repository in the iModelHub project
         int                                     m_environment;    //!< Connect environment. Should match UrlProvider::Environment
         Utf8String                              m_iModelHubUserName;
         Utf8String                              m_projectGuid;
 
-        bool m_wantProvenanceInBim {};
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
         IMODEL_BRIDGE_EXPORT void SetReportFileName();
         void SetThumbnailTimeout(BeDuration timeout) {m_thumbnailTimeout = timeout;}
@@ -614,8 +611,10 @@ struct iModelBridge
         BeFileNameCR GetInputFileName() const {return m_inputFileName;} //!< The name of the input file that is to be read and converted and/or scanned for changes.
         void SetInputFileName(BeFileNameCR fn) {m_inputFileName=fn;} //!< Set the name of the input file that is to be read and converted and/or scanned for changes.
         BeFileNameCR GetAssetsDir() const {return m_assetsDir;} //!< The bridge library's assets directory
-        void SetAssetsDir(BeFileNameCR dir) {m_assetsDir=dir;}
-        BeFileNameCR GetLibraryDir() const {return m_libraryDir;} //!< The directory from which the bridge library itself was loaded
+        void SetAssetsDir(BeFileNameCR dir) { m_assetsDir = dir; }
+        BeFileNameCR GetGeoCoordData() const { return m_geoCoordDir; }
+        void SetGeoCoordData(BeFileNameCR dir) { m_geoCoordDir = dir; }
+        BeFileNameCR GetLibraryDir() const { return m_libraryDir; } //!< The directory from which the bridge library itself was loaded
         BeFileNameCR GetDrawingsDirs() const {return m_drawingsDirs;} //!< The top-level directory to scan for other files that may contain drawings and sheets
         void SetDrawingsDir(BeFileNameCR dir) {m_drawingsDirs = dir;}
         void AddDrawingAndSheetFile(BeFileNameCR fn) {m_drawingAndSheetFiles.push_back(fn);}
@@ -650,9 +649,6 @@ struct iModelBridge
         void SetDoDetectDeletedModelsAndElements(bool b) {m_doDetectDeletedModelsAndElements=b;}
         void SetDmsSupportLibrary (IDmsSupport* dmsAccessor) { m_dmsSupport  = dmsAccessor;}
         IDmsSupport* GetDmsSupportLibrary() { return m_dmsSupport; }
-
-        void SetWantProvenanceInBim(bool v) { m_wantProvenanceInBim = v; }
-        bool GetWantProvenanceInBim() const { return m_wantProvenanceInBim; }
 
         Utf8String GetiModelName() const { return m_repositoryName; }
         void SetiModelName(Utf8StringCR repositoryName)  { m_repositoryName = repositoryName; }
@@ -690,6 +686,9 @@ struct iModelBridge
         void        SetClientInfo(WebServices::ClientInfoPtr info) { m_clientInfo = info;}
         
         IMODEL_BRIDGE_EXPORT Http::IHttpHeaderProviderPtr GetDefaultHeaderProvider() const;
+
+        bvector<WString> const& GetAdditionalFilePattern() const { return m_additionalFiles; }
+        void AddAdditionalFilePattern(WStringCR pattern) { m_additionalFiles.push_back(pattern); }
         };
 
     private:
@@ -1060,8 +1059,6 @@ public:
     //! @{
 
     IMODEL_BRIDGE_EXPORT bool TestFeatureFlag(CharCP featureFlag);
-
-    IMODEL_BRIDGE_EXPORT static bool WantModelProvenanceInBim(DgnDbR db);
     //! @}
     };
 

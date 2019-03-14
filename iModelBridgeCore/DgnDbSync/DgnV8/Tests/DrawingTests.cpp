@@ -1257,7 +1257,7 @@ TEST_F (SheetCompositionTests, HasDrawingBoundary)
 void SheetCompositionTests::FindSheetModelSource(DgnV8Api::ModelId& v8SheetModelId, DgnDbR db, DgnModelId sheetModelId)
     {
     auto selSheetModelSourceId = db.GetPreparedECSqlStatement(
-        "SELECT x.Identifier from " BIS_SCHEMA(BIS_CLASS_Sheet) " s JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=s.ECInstanceId)"
+        "SELECT x.Identifier from " BIS_SCHEMA(BIS_CLASS_Sheet) " s JOIN " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " x ON (x.Element.id=s.ECInstanceId)"
         " WHERE x.Element.Id=? and x.Kind='Model'");
     selSheetModelSourceId->BindId(1, sheetModelId);
     ASSERT_EQ(BE_SQLITE_ROW, selSheetModelSourceId->Step());
@@ -1271,7 +1271,7 @@ void SheetCompositionTests::FindSheetModelSource(DgnV8Api::ModelId& v8SheetModel
 void SheetCompositionTests::AnalyzeDrawingModels(std::vector<DgnElementId>& drawingElementIds, int& attachmentAspectCount, DgnDbR db)
     {
     auto selDrawingModelAspect = db.GetPreparedECSqlStatement(
-        "SELECT d.ECInstanceId, x.ECInstanceId from " BIS_SCHEMA(BIS_CLASS_Drawing) " d JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=d.ECInstanceId)"
+        "SELECT d.ECInstanceId, x.ECInstanceId from " BIS_SCHEMA(BIS_CLASS_Drawing) " d JOIN " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " x ON (x.Element.id=d.ECInstanceId)"
         " WHERE x.Kind='Element'");
     while (BE_SQLITE_ROW == selDrawingModelAspect->Step())
         {
@@ -1301,7 +1301,7 @@ void SheetCompositionTests::AnalyzeProxyGraphics(std::vector<DrawingGraphicInfo>
 
     // Find all ExternalSourceAspects on all DrawingGraphics in the DrawingModel
     auto selGraphics = db.GetPreparedECSqlStatement(
-        "SELECT x.Identifier, dg.ECInstanceId, dg.Category.Id from " BIS_SCHEMA(BIS_CLASS_GraphicalElement2d) " dg JOIN " XTRN_SRC_ASPCT_FULLCLASSNAME " x ON (x.Element.id=dg.ECInstanceId)"
+        "SELECT x.Identifier, dg.ECInstanceId, dg.Category.Id from " BIS_SCHEMA(BIS_CLASS_GraphicalElement2d) " dg JOIN " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " x ON (x.Element.id=dg.ECInstanceId)"
         " WHERE dg.Model.Id=? and x.Kind='ProxyGraphic'");
     selGraphics->BindId(1, drawingModel.GetModelId());
     
@@ -1619,8 +1619,6 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (SheetCompositionTests, ExtractedDrawingGraphics)
     {
-    m_params.SetWantProvenanceInBim(true);
-
     LineUpFiles (L"HasDrawingBoundary.bim", L"DVTest_Case1.dgn", true);
     m_wantCleanUp = false;
 

@@ -1250,7 +1250,6 @@ bool  setExtendedPath = false   // false forces new logic to use tangent extensi
             {
             auto cvA = gA->GetAsCurveVector ();
             auto cvB = gB->GetAsCurveVector ();
-
             if (cvA.IsValid () && cvB.IsValid ())
                 {
                 PathLocationDetail startA, endA, startB, endB;
@@ -3221,34 +3220,257 @@ TEST(Train,Envelope)
 
     Check::ClearGeometry ("Train.Envelope");
     }
+CurveVectorPtr  ThickenPathToRegion(CurveVectorPtr const& plineCurve, double halfWidth)
+    {
+
+    double  pointTolerance = 0.01 * halfWidth;
+
+    // move the curve towards left by half width
+    CurveOffsetOptions  offsetOptions(halfWidth);
+    offsetOptions.SetTolerance(pointTolerance);
+
+    auto left = plineCurve->CloneOffsetCurvesXY(offsetOptions);
+    if (!left.IsValid())
+        return  nullptr;
+
+    // move the curve towards right by half width
+    offsetOptions.SetOffsetDistance(-halfWidth);
+
+    auto right = plineCurve->CloneOffsetCurvesXY(offsetOptions);
+    if (!right.IsValid())
+        return  nullptr;
+    if (plineCurve->IsClosedPath())
+        {
+        auto parityRegion = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
+        parityRegion->Add(right);
+        parityRegion->Add(left);
+        parityRegion->FixupXYOuterInner(false);
+        return parityRegion;
+        }
+    else
+        {
+        auto shape = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
+
+        ICurvePrimitivePtr  top, bottom;
+        // get start and end points
+        DPoint3d    starts[2], ends[2];
+        if (!left->GetStartEnd(starts[0], ends[0]) || !right->GetStartEnd(starts[1], ends[1]))
+            return  nullptr;
+
+        // bottom cap to connect left->right
+        bottom = ICurvePrimitive::CreateLine(DSegment3d::From(ends[0], ends[1]));
+        if (!bottom.IsValid())
+            return  nullptr;
+
+        // top cap to connect right->left
+        top = ICurvePrimitive::CreateLine(DSegment3d::From(starts[1], starts[0]));
+        if (!top.IsValid())
+            return  nullptr;
+
+        // reverse the right curve
+        right->ReverseCurvesInPlace();
+
+        // add and orient them to complete a loop:
+        shape->AddPrimitives(*left);
+        shape->Add(bottom);
+        shape->AddPrimitives(*right);
+        shape->Add(top);
+        if (shape->IsClosedPath())
+            return  shape;
+
+        CurveGapOptions gapOptions(pointTolerance, 1.0e-4, 1.0e-4);
+        return shape->CloneWithGapsClosed(gapOptions);
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(CCIXY,ClosestPointToPartialCurve)
+TEST(ThickenPathToRegion, openPolylines)
     {
-    auto cp0 = ICurvePrimitive::CreateLine (DSegment3d::From (0,0,0, 10,10,0));
-    auto cv0 = CurveVector::Create (cp0);
-
-    // crossing curves
-    auto cpA = ICurvePrimitive::CreateLine (DSegment3d::From (10,0,0, 2,8,0));
-    auto cpB = ICurvePrimitive::CreateLineString (bvector<DPoint3d> {DPoint3d::From (10,0,0), DPoint3d::From (10,6,0), DPoint3d::From (0,3,0)});
-    auto cpC = ICurvePrimitive::CreateArc (DEllipse3d::FromPointsOnArc (DPoint3d::From (10,0,0), DPoint3d::From (2,5,0), DPoint3d::From (6,0,0)));
-    for (auto cp : {cpA, cpB, cpC})
+    bvector<bvector<DPoint3d>> paths{
         {
-        SaveAndRestoreCheckTransform shifter (20, 0, 0);
-        auto cv1 = CurveVector::Create (cp);
-        CurveVectorPtr intersectionsA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
-        CurveVectorPtr intersectionsB = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
-        CurveCurve::IntersectionsXY (*intersectionsA, *intersectionsB, *cv0, *cv1, nullptr);
-        DPoint3d spacePoint = DPoint3d::From (3,4,0);
-        CurveLocationDetail intersectionDetail;
-        Check::SaveTransformedMarker (spacePoint);
-        Check::True (intersectionsA->ClosestPointBoundedXY (spacePoint, nullptr, intersectionDetail));
-        Check::SaveTransformedMarker (intersectionDetail.point, -0.05);
-        Check::SaveTransformed (DSegment3d::From (spacePoint, intersectionDetail.point));
-        Check::SaveTransformed (*cv0);
-        Check::SaveTransformed (*cv1);
+        DPoint3d::From(-10, 0, 0),
+        DPoint3d::From(0, 0, 0),
+        DPoint3d::From(4, -5, 0),
+        DPoint3d::From(-10,-5,0)
+        },
+        {
+        DPoint3d::From(-10, 0, 0),
+        DPoint3d::From(0, 0, 0),
+        DPoint3d::From(8, -5, 0),
+        DPoint3d::From(-10,-5,0),
+        DPoint3d::From(-10, 0, 0)
         }
-    Check::ClearGeometry ("CCIXY.ClosestPointToPartialCurve");
+
+        /* ,
+        {
+        DPoint3d::From (0, 0, 0),
+        DPoint3d::From (10, 0, 0),
+        DPoint3d::From (10, 5, 0)
+        },
+        {
+        DPoint3d::From (0, 0, 0),
+        DPoint3d::From (10, 0, 0),
+        DPoint3d::From (12, 5, 0)
+        },
+        {
+        DPoint3d::From (0, 0, 0),
+        DPoint3d::From (10, 0, 0),
+        DPoint3d::From (0, 5, 0),
+        DPoint3d::From (10,10,0),
+        DPoint3d::From ( 0,10,0),
+        DPoint3d::From (8,15,0)
+        } */
+        };
+    double verticalShift = 0.001;
+    for (DPoint2d offsets : {
+        DPoint2d::From (0.5, 0.5),
+        DPoint2d::From (0.0, 0.25),
+        DPoint2d::From (0.25, 0.0),
+            DPoint2d::From(-0.25, 0.5),
+        })
+        {
+        double leftOffset  = offsets.x;
+        double rightOffset = offsets.y;
+        double radius = 1.0;
+        for (auto & points : paths)
+            {
+            SaveAndRestoreCheckTransform shifter(30, 0, 0);
+            auto cv = CurveVector::CreateLinear(points, 
+                points.back ().AlmostEqual (points.front ()) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
+            Check::SaveTransformed(*cv);
+            Check::Shift(0, 20, 0);
+
+            auto region = CurveVector::ThickenXYPathToArea(cv, leftOffset, rightOffset);
+
+            Check::Shift(0, 0, verticalShift);
+            Check::SaveTransformed(points);
+            Check::Shift(0, 0, -verticalShift);
+            if (region.IsValid())
+                Check::SaveTransformed(*region);
+
+            Check::Shift (0,20,0);
+
+            auto cvB = cv->CloneWithFillets (radius);
+            auto regionB = CurveVector::ThickenXYPathToArea(cvB, leftOffset, rightOffset);
+            Check::Shift(0, 0, verticalShift);
+            Check::SaveTransformed(points);
+            Check::Shift(0, 0, -verticalShift);
+            if (regionB.IsValid ()  )
+                Check::SaveTransformed (*regionB);
+            }
+        }
+    Check::ClearGeometry("ThickenPathToRegion.openPolylines");
     }
+
+
+CurveVectorPtr CurveVector19Feb00()
+    {
+    auto cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+
+
+    cv->push_back(ICurvePrimitive::CreateLine(
+        DSegment3d::From(
+            DPoint3d::From(226818.62784515313, 68416.728429918381, 0.0),
+            DPoint3d::From(226818.45465399697, 68416.753526201544, 0.0))));
+
+    return cv;
+    }
+CurveVectorPtr CurveVector19Feb01()
+    {
+    auto cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+
+    cv->push_back(ICurvePrimitive::CreateArc(
+        DEllipse3d::FromScaledRotMatrix(
+            DPoint3d::From(226917.43056137353, 68710.221406539262, 0.0),
+            RotMatrix::FromColumnVectors(
+                DVec3d::From(0.11039277888089406, -0.99388803915277812, 0.0),
+                DVec3d::FromCrossProduct(DVec3d::From(0.0, -0.0, -1.0), DVec3d::From(0.11039277888089406, -0.99388803915277812, 0.0)),
+                DVec3d::From(0.0, -0.0, -1.0)),
+            309.67741935489840, 309.67741935489840,
+            Angle::DegreesToRadians(24.943467150543480), Angle::DegreesToRadians(-24.943467150543480))));
+
+
+    cv->push_back(ICurvePrimitive::CreateLine(
+        DSegment3d::From(
+            DPoint3d::From(226951.61671225278, 68402.436723446735, 0.0),
+            DPoint3d::From(227237.84239773938, 68434.228281009811, 0.0))));
+
+    return cv;
+    }
+
+TEST(CurveCurve, TaperFilletTaperSmallRadius)
+    {
+    char const *subAStr = R"({"DgnCurveVector":{"Member":[{"LineSegment":{"endPoint":[226818.45465399697,68416.753526201544,0.0],"startPoint":[226818.62784515313,68416.728429918381,0.0]}}],"boundaryType":1}})";
+    char const *subBStr = R"({"DgnCurveVector":{"Member":[{"CircularArc":{"placement":{"origin":[226917.43056137353,68710.221406539262,0.0],"vectorX":[0.11039277888089406,-0.99388803915277812,0.0],"vectorZ":[0.0,-0.0,-1.0]},"radius":309.67741935489840,"startAngle":24.943467150543480,"sweepAngle":-24.943467150543480}},{"LineSegment":{"endPoint":[227237.84239773938,68434.228281009811,0.0],"startPoint":[226951.61671225278,68402.436723446735,0.0]}}],"boundaryType":1}})";
+    for (double radius : { 0.5, 0.1 })
+        {
+        SaveAndRestoreCheckTransform shifter(0, 40, 0);
+        for (double distanceFactor : {0.2, 0.5, 1.0, 2.0, 5.0})
+            {
+            SaveAndRestoreCheckTransform shifter(0, 2, 0);
+            double distanceA = 0.0090659115617812997 * distanceFactor;
+            double distanceB = 0.0090659115681263475 * distanceFactor;
+            RunTaperFilletTaper(subAStr, subBStr,
+                        0, 0,
+                        radius,
+                        0.0, 0.0,
+                        distanceA, distanceB,
+                        0.0, 0.0);
+            }
+        }
+
+#ifdef abc
+    void RunTaperFilletTaper(char const * jsonA, char const * jsonB,
+        double setbackA,
+        double taperA,
+        double filletRadius,
+        double setbackB,
+        double taperB,
+        double &distanceA,
+        double &distanceB,
+        double offsetA,
+        double offsetB,
+        bool  setExtendedPath = false   // false forces new logic to use tangent extension
+
+
+
+    CurveVectorPtr subA = GeometryHelper::DeserializeCurveVector(subAStr);
+    CurveVectorPtr subB = GeometryHelper::DeserializeCurveVector(subBStr);
+
+    auto pathA = CurveVectorWithDistanceIndex::Create();
+    pathA->SetPath(*subA);
+    auto pathB = CurveVectorWithDistanceIndex::Create();
+    pathB->SetPath(*subB);
+
+    double distanceA = 0.0090659115617812997;
+    double distanceB = 0.0090659115681263475;
+    for (double radius : { 0.5, 0.1 })
+        {
+        SaveAndRestoreCheckTransform shifter (0, 20, 0);
+        Check::SaveTransformed (*subA);
+        Check::SaveTransformed (*subB);
+        auto filletPath = GeometryHelper::ConstructTaperFilletTaperEx(*pathA, *pathB, 0.0, 0.0, .1, 0.0, 0.0, distanceA, distanceB);
+        if (filletPath.IsValid ())
+            Check::SaveTransformed (*filletPath);
+        }
+#endif
+    Check::ClearGeometry ("CurveCurve.TaperFilletTaperSmallRadius");
+    }
+#ifdef abc
+double distanceA = 0.0090659115617812997;
+double distanceB = 0.0090659115681263475;
+auto filletPath = GeometryHelper::ConstructTaperFilletTaperEx(*pathA, *pathB, 0.0, 0.0, .1, 0.0, 0.0, distanceA, distanceB);
+
+ICurvePrimitiveR curveA,
+ICurvePrimitiveR curveB,
+double fractionA,
+double fractionB,
+double setbackA,            //!< [in] setback distance from vectorA
+double taperA,              //!< [in] taper distance along vectorA
+double filletRadius,        //!< [in] fillet radius
+double setbackB,            //!< [in] setback distance from vectorB
+double taperB
+
+#endif

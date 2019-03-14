@@ -1,3 +1,5 @@
+ExternalSourceAspectTests.Performance   # ignore performance test in normal builds
+
 # [CGM] Drawings are now converted using the ExtractionGraphics processing and it does not process named groups anymore
 NamedGroupTests.NamedGroupOf2dElement
     # [ RUN      ] NamedGroupTests.NamedGroupOf2dElement

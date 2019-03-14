@@ -63,6 +63,7 @@ protected:
     mutable BeMutex m_mutex;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
+    DgnElementIdSet m_excludedElements;
     Render::ViewFlags m_viewFlags;
     BackgroundMap m_backgroundMap;
 
@@ -88,6 +89,7 @@ public:
     BE_JSON_NAME(subCategory);
     BE_JSON_NAME(subCategoryOvr);
     BE_JSON_NAME(backgroundMap);
+    BE_JSON_NAME(excludedElements);
 
     DisplayStyle2dCP ToDisplayStyle2d() const {return _ToDisplayStyle2d();}
     DisplayStyle2dP ToDisplayStyle2dP() {return const_cast<DisplayStyle2dP>(_ToDisplayStyle2d());}
@@ -148,6 +150,12 @@ public:
     //! Get the background map.
     BackgroundMap const& GetBackgroundMap() const { return m_backgroundMap; }
     void SetBackgroundMap(BackgroundMap const& backgroundMap) { m_backgroundMap = backgroundMap; }
+
+    //! Get the IDs of the elements that should never be drawn for this DisplayStyle
+    DgnElementIdSet const& GetExcludedElements() const { return m_excludedElements; }
+
+    //! Set the IDs of the elements that should never be drawn for this DisplayStyle
+    void SetExcludedElements(DgnElementIdSet const& excludedElements) { m_excludedElements = excludedElements; }
 
     //! Create a DgnCode for a DisplayStyle given a name that is meant to be unique within the scope of the specified DefinitionModel
     static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_DisplayStyle, scope, name);}

@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <cstdio>
-#include <atlbase.h> 
 #include <json/value.h>
 #include <node-addon-api/napi.h>
 #include <iModelBridge/iModelBridgeFwk.h>
@@ -138,7 +137,7 @@ wchar_t const** argv = argptrs.data();\
 {\
     if(json.isMember(MEMBER)) { \
         Utf8String tempsUtf8String = json.get(MEMBER, "").asString();\
-        LPCTSTR t = static_cast<LPCTSTR> (tempsUtf8String.c_str());\
+        Utf8CP t = tempsUtf8String.c_str();\
         args.push_back(WPrintfString(L"--%s=%S", COMMAND, t));\
     }\
 }
@@ -170,8 +169,7 @@ Napi::Function RequestTokenFunction()
 static void justLogAssertionFailures(WCharCP message, WCharCP file, uint32_t line, BeAssertFunctions::AssertType atype)
     {
     WPrintfString str(L"BridgeAddon.cpp: ASSERT: (%ls) @ %ls:%u\n", message, file, line);
-    // NativeLogging::LoggingManager::GetLogger("BimTeleporter")->errorv(str.c_str());
-    ::OutputDebugStringW (str.c_str());
+    NativeLogging::LoggingManager::GetLogger("iModelBridge")->errorv(str.c_str());
     }    
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -212,6 +210,11 @@ int RunBridge(Env env, const char* jsonString)
     SET_ARG("fwk_staging_dir", L"fwk-staging-dir") 
     SET_ARG("fwk_input", L"fwk-input") 
 
+    // For files located in a DMS (Document Management System)
+    SET_ARG("dms_library", L"dms-library") 
+    SET_ARG("dms_inputFileUrn", L"dms-inputFileUrn")
+    SET_ARG("dms_type", L"dms-type")  
+
     // Optional 
     SET_ARG("server_project_guid", L"server-project-guid"); 
     SET_ARG("fwk_bridge_regsubkey", L"fwk-bridge-regsubkey");
@@ -226,7 +229,6 @@ int RunBridge(Env env, const char* jsonString)
     SET_ARG("fwk_create_repository_if_necessary", L"fwk-create-repository-if-necessary"); 
 
     SET_ARG_NO_VALUE("fwk_skip_assignment_check", L"fwk-skip-assignment-check");
-     
     
     bvector<WCharCP> argptrs;
     MAKE_ARGC_ARGV(argptrs, args);

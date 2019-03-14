@@ -21,6 +21,7 @@
       <SubPart PartName="google_gtest"         PartFile="iModelCore/util/gtest/gtest"            Repository="imodel02" />
       <SubPart PartName="google_gtest_lib"     PartFile="iModelCore/util/gtest/gtest"            Repository="imodel02" />
       <SubPart PartName="ScalableMeshCreator"  PartFile="iModelBridgeCore/ScalableMesh/ScalableMeshCore" Repository="imodel02" />
+      <SubPart PartName="LoggingNativeLog4cxx" PartFile="LoggingSDK"       Repository="LoggingSDK"/>
       <Bindings>
         <Files ProductDirectoryName="ScalableMeshUnitTests">Delivery/ScalableMeshUnitTests.exe</Files>
       </Bindings>
@@ -103,7 +104,7 @@
     <ProductDirectory   Name="TerrainModelNativeAssemblies" Path="Dlls"/>
     <ProductDirectory   Name="PointoolsAssemblies" Path="Dlls"/>
     <ProductDirectory   Name="PointCloudCoreAssemblies" Path="Dlls"/>
-    <ProductDirectory   Name="LoggingNativeAssemblies" Deliver="false"/>
+    <ProductDirectory   Name="LoggingNativeAssemblies" Path="Dlls"/>
     <ProductDirectory   Name="PCLAssemblies" Path="Dlls"/>
     <ProductDirectory   Name="CGALAssemblies" Path="Dlls"/>
     <ProductDirectory   Name="PPNativeAssemblies" Path="Dlls" Deliver="true"/>

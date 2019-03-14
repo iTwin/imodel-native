@@ -42,9 +42,27 @@ bool   PWWorkspaceHelper::_UnInitialize()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt   PWWorkspaceHelper::StageDocument(long folderId, long documentId, BeFileNameCR dirPath)
+    {
+    wchar_t filePath[1024] = { 0 };
+    if (!aaApi_GiveOutDocument(folderId, documentId, dirPath.c_str(), filePath, 1024))
+        {
+        int statusCodeAfter = aaApi_GetLastErrorId();
+        LOG.errorv("Unable to fetch workspace for file. Status Code: %d", statusCodeAfter);
+        LOG.errorv("%ls", aaApi_GetLastErrorMessage());
+        LOG.errorv("%ls", aaApi_GetLastErrorDetail());
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PWWorkspaceHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR destination, bool isv8i)
+StatusInt   PWWorkspaceHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR destination, bool isv8i, bvector<WString> const& additonalFilePatterns)
     {
     int statusCodeBefore = aaApi_GetLastErrorId();
     LOG.tracev("Generating workspace configuration file. %d", statusCodeBefore);
@@ -65,13 +83,30 @@ StatusInt   PWWorkspaceHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, int
         {
         int statusCodeAfter = aaApi_GetLastErrorId();
         LOG.errorv("Unable to fetch workspace for file. Status Code: %d", statusCodeAfter);
-        LOG.errorv(aaApi_GetLastErrorMessage());
-        LOG.errorv(aaApi_GetLastErrorDetail());
+        LOG.errorv("%ls", aaApi_GetLastErrorMessage());
+        LOG.errorv("%ls", aaApi_GetLastErrorDetail());
         status = statusCodeAfter;
         }
 
-    LOG.tracev("Finished workspace configuration file: %S", workspaceFilePath);
+    LOG.tracev("Finished workspace configuration file: %ls", workspaceFilePath);
     workspaceCfgFile = BeFileName(workspaceFilePath);
+
+    if (!additonalFilePatterns.empty())
+        {
+        for (auto pattern: additonalFilePatterns)
+            {
+            int result = aaApi_SelectDocumentsByNameProp((long)folderId, pattern.c_str(), NULL, NULL, NULL);
+            if (result > 0)
+                {
+                for (int index = 0; index < result; ++index)
+                    {
+                    long docId = aaApi_GetDocumentId(index);
+                    if (docId != 0)
+                        StageDocument(folderId, docId, destination);
+                    }
+                }
+            }
+        }
     return status;
     }
 
@@ -96,7 +131,7 @@ PWWorkspaceHelper::~PWWorkspaceHelper()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PWWorkspaceHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pwMoniker, BeFileNameCR workspaceDir, bool isv8i)
+StatusInt   PWWorkspaceHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pwMoniker, BeFileNameCR workspaceDir, bool isv8i, bvector<WString> const& additonalFilePatterns)
     {
     _Initialize();
 
@@ -104,7 +139,7 @@ StatusInt   PWWorkspaceHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, WSt
     if (SUCCESS != GetFolderIdFromMoniker(folderId, documentId, pwMoniker))
         return ERROR;
 
-    return _FetchWorkspace(workspaceCfgFile, folderId, documentId, workspaceDir, isv8i);
+    return _FetchWorkspace(workspaceCfgFile, folderId, documentId, workspaceDir, isv8i, additonalFilePatterns);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -117,14 +152,14 @@ StatusInt       PWWorkspaceHelper::GetFolderIdFromMoniker(int& folderId, int& do
     LPCWSTR monikerArray = &pwMoniker[0];
     if (!aaApi_StringsToMonikers(1, &moniker, &monikerArray, monikerFlags))
         {
-        LOG.errorv("aaApi_StringsToMonikers failed for document %s", pwMoniker.c_str());
+        LOG.errorv("aaApi_StringsToMonikers failed for document %ls", pwMoniker.c_str());
         return ERROR;
         }
 
     LPCGUID guid = aaApi_GetDocumentGuidFromMoniker(moniker);
     if (NULL == guid)
         {
-        LOG.errorv("aaApi_GetDocumentGuidFromMoniker failed for document %s", pwMoniker.c_str());
+        LOG.errorv("aaApi_GetDocumentGuidFromMoniker failed for document %ls", pwMoniker.c_str());
         aaApi_Free(moniker);
         return ERROR;
         }
@@ -132,7 +167,7 @@ StatusInt       PWWorkspaceHelper::GetFolderIdFromMoniker(int& folderId, int& do
     AADOC_ITEM docItem = { 0 };
     if (!aaApi_GetDocumentIdsByGUIDs(1, guid, &docItem))
         {
-        LOG.errorv("aaApi_GetDocumentIdsByGUIDs failed for document %s", pwMoniker.c_str());
+        LOG.errorv("aaApi_GetDocumentIdsByGUIDs failed for document %ls", pwMoniker.c_str());
         aaApi_Free((void*)guid);
         aaApi_Free(moniker);
         return ERROR;

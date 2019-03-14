@@ -33,10 +33,10 @@ always:
 #   Symlink APIs
 #----------------------------------------------------------------------
 always:
-   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)/ScalableMesh"
-   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
-   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/Constants.h=$(tilePublisherDir)Constants.h"
-   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
+   ~linkdir "$(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)/ScalableMesh"
+   ~linkfile "$(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
+   ~linkfile "$(BuildContext)VendorAPI/TilePublisher/Constants.h=$(tilePublisherDir)Constants.h"
+   ~linkfile "$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
 
 
 CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR
@@ -538,4 +538,10 @@ $(o)ScalableMeshCacert.pem: $(baseDir)ScalableMeshCacert.pem
     $(CopyFirstDepToFirstTarget)
 
 $(ContextDeliveryDir)ScalableMeshCacert.pem : $(o)ScalableMeshCacert.pem
+        $(LinkFirstDepToFirstTarget)
+
+#----------------------------------------------------------------------------------------
+# Symlink the loggging configuration file to enable ScalableMesh logging
+#----------------------------------------------------------------------------------------
+$(ContextDeliveryDir)ScalableMeshLogging.config.xml : $(baseDir)Logging/ScalableMeshLogging.config.xml
         $(LinkFirstDepToFirstTarget)

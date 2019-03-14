@@ -2,11 +2,12 @@
 |
 |     $Source: iModelDmsSupport/iModelDmsSupport.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelDmsSupport/DmsSession.h>
 #include "PWWorkspaceHelper.h"
+#include "AzureBlobStorageHelper.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 /*---------------------------------------------------------------------------------**//**
@@ -27,10 +28,10 @@ extern "C"
 +---------------+---------------+---------------+---------------+---------------+------*/
 IDmsSupport*    iModelDmsSupport::GetInstance(iModelDmsSupport::SessionType sessionType, Utf8StringCR userName, Utf8StringCR password)
     {
-    if (sessionType != SessionType::PWDI)
-        return NULL;
-    
     DmsSession session(userName, password, sessionType);
+
+    if (sessionType == SessionType::AzureBlobStorage)
+        return new AzureBlobStorageHelper();
     
     return new PWWorkspaceHelper(session);
     }

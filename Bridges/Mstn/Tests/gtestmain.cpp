@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/gtestmain.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -53,25 +53,16 @@ struct BeGTestHost : RefCounted<BeTest::Host>
     virtual void _GetDgnPlatformAssetsDirectory (BeFileName& path) override {path = m_programPath; path.AppendToPath(L"assets");}
     virtual void _GetTempDir(BeFileName& path) override
         {
-#if defined (BENTLEY_WIN32)
-        // use the standard Windows temporary directory
-        wchar_t tempPathW[MAX_PATH];
-        ::GetTempPathW(_countof(tempPathW), tempPathW);
-        path.SetName(tempPathW);
-        path.AppendToPath(WPrintfString(L"%llu", (uint64_t)GetCurrentProcessId()).c_str());
-        path.AppendSeparator();
-#else
-        path.SetName(WString(getenv("tmp")).c_str());
-        path.AppendToPath(WPrintfString(L"%llu", (uint64_t)getpid()).c_str());
-        path.AppendSeparator();
-#endif
-        path.AppendToPath(m_programName.c_str());
-        path.AppendSeparator();
+        path = m_programPath;
+        path.AppendToPath(L"run");
+        path.AppendToPath(L"Temp");
         }
 
     virtual void _GetOutputRoot (BeFileName& path) override
         {
-        _GetTempDir(path);
+        path = m_programPath;
+        path.AppendToPath(L"run");
+        path.AppendToPath(L"Output");
 #if defined (USE_GTEST)
         if (::testing::UnitTest::GetInstance() && ::testing::UnitTest::GetInstance()->current_test_info())
             {
@@ -99,7 +90,7 @@ struct BeGTestHost : RefCounted<BeTest::Host>
     static RefCountedPtr<BeGTestHost> Create (char const* progDir) {return new BeGTestHost (progDir);}
     };
 
-static wchar_t const* s_configFileName = L"MstnConverterTests.logging.config.xml";
+static wchar_t const* s_configFileName = L"MstnBridgeTests.logging.config.xml";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson
@@ -286,6 +277,12 @@ int WinSetEnv(const char * name, const char * value)
     }
 #endif
 
+static void recreateDir(BeFileNameCR dirName)
+    {
+    BeFileName::EmptyAndRemoveDirectory (dirName.c_str());
+    BeFileName::CreateNewDirectory (dirName.c_str());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -307,6 +304,12 @@ extern "C" int main (int argc, char **argv)
 
     auto hostPtr = BeGTestHost::Create(argv[0]);
     
+    //  Make sure output directies exist (and remove any results hanging around from a previous run)
+    BeFileName dirName;
+    hostPtr->GetOutputRoot(dirName);
+    recreateDir(dirName);
+    hostPtr->GetTempDir(dirName);
+    recreateDir(dirName);
 
     BeTest::Initialize (*hostPtr);
 

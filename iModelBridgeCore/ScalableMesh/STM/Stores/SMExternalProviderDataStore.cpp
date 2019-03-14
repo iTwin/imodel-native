@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMExternalProviderDataStore.cpp $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -85,8 +85,13 @@ void SMExternalClipDefinitionExtOps::GetAllCoverageIDs(bvector<uint64_t>& allIds
 
 void SMExternalClipDefinitionExtOps::GetClipType(uint64_t id, SMNonDestructiveClipType& type)
 {
-	bvector<DPoint3d> clipData;
-	m_clipProvider->GetClipPolygon(clipData, id, type);
+    bvector<DPoint3d> clipData;
+    m_clipProvider->GetClipPolygon(clipData, id, type);
+    if(clipData.empty())
+    {
+        ClipVectorPtr cp = nullptr;
+        m_clipProvider->GetClipVector(cp, id, type);
+    }
 }
 
 

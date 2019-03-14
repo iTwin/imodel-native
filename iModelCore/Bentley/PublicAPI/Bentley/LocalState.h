@@ -24,12 +24,16 @@ struct ILocalState
 protected:
     virtual ~ILocalState () {}
 
-    //! Saves the Utf8String value in the local state. Set to empty to delete value.
-    //! @note The nameSpace and key pair must be unique.
+    //! Saves the Utf8String value in the local state.
+    //! @param nameSpace Namespace usually identifies code responsible for maintaing value.
+    //! @param key Key identifying value in context of namespace.
+    //! @param value String to save. Passing empty string will delete record.
     virtual void _SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) = 0;
 
-    //! Returns a stored Utf8String from the local state. Returns empty if value does not exist.
-    //! @note The nameSpace and key pair uniquely identifies the value.
+    //! Returns a stored Utf8String from the local state.
+    //! @param nameSpace Namespace usually identifies code responsible for maintaing value.
+    //! @param key Key identifying value in context of namespace.
+    //! @return String for given namespace and key. Returns empty if record does not exist.
     virtual Utf8String _GetValue (Utf8CP nameSpace, Utf8CP key) const = 0;
 
 public:

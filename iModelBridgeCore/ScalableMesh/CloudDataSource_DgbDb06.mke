@@ -42,7 +42,7 @@ always:
 SrcDir=$(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/CloudDataSource/
 
 always:
-    @CreateSymLinks.py -d"$(BuildContext)VendorAPI/CloudDataSource=$(includeDir)"
+    ~linkdir "$(BuildContext)VendorAPI/CloudDataSource=$(includeDir)"
 
 CCompOpts + -DUNICODE -D__CLOUD_DATA_SOURCE_BUILD__
 

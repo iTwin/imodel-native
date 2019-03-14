@@ -2,7 +2,7 @@
 #
 #     $Source: iModelDmsSupport/iModelDmsSupport.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 
@@ -49,6 +49,8 @@ $(o)PWWorkspaceHelper$(oext) : $(_MakeFilePath)PWWorkspaceHelper.cpp $(_MakeFile
 
 $(o)PWDocumentManager$(oext) : $(_MakeFilePath)PWDocumentManager.cpp $(_MakeFilePath)PWWorkspaceHelper.h $(dmsAPISrc)DmsSession.h $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
 
+$(o)AzureBlobStorageHelper$(oext) : $(_MakeFilePath)AzureBlobStorageHelper.cpp $(_MakeFilePath)AzureBlobStorageHelper.h $(dmsAPISrc)DmsSession.h $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 DgnPlatformV8LibDir = ${BuildContext}/SubParts/VersionedDgnV8Libs/
@@ -67,6 +69,7 @@ DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
+LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
 
 LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)$(libprefix)PWManagedWorkspace$(stlibext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)$(libprefix)dmscli$(stlibext)
@@ -74,4 +77,5 @@ LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)$(libprefix)dmsgen$(stlibex
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DgnPlatform.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)Bentley.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyAllocator.lib
+
 %include $(sharedMki)linkLibrary.mki

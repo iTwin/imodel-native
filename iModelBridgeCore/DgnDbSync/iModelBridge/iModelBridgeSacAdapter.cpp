@@ -104,7 +104,8 @@ void iModelBridgeSacAdapter::InitializeHost(iModelBridge& bridge, Utf8CP product
     fwkDb3.AppendToPath(L"iModelBridgeFwk_en-US.sqlang.db3");
 
     static iModelBridgeBimHost s_host(bridge._GetParams().GetRepositoryAdmin(), fwkAssets, fwkDb3, productName); // *** TBD supply bridge name as product name
-    DgnPlatformLib::Initialize(s_host);
+    s_host.SetGeoCoordinateDataDir(bridge._GetParams().GetGeoCoordData());
+    DgnPlatformLib::Initialize(s_host, true);
 
     static PrintfProgressMeter s_meter;
     T_HOST.SetProgressMeter(&s_meter);
@@ -622,12 +623,6 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
         {
         unSupportedFwkArg(argv[iArg]);
         bparams.SetBridgeJobName(iModelBridge::GetArgValue(argv[iArg]).c_str());
-        return iModelBridge::CmdLineArgStatus::Success;
-        }
-
-    if (argv[iArg] == wcsstr(argv[iArg], L"--xsa"))
-        {
-        bparams.SetWantProvenanceInBim(true);
         return iModelBridge::CmdLineArgStatus::Success;
         }
 

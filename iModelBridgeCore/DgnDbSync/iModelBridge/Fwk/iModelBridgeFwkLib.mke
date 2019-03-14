@@ -33,9 +33,9 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)iModelBridgeFwk$(oext): $(baseDir)iModelBridgeFwk.cpp $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
 
-$(o)Briefcase$(oext): $(baseDir)Briefcase.cpp $(DgnDbServerDepends) $(iModelBridgeAPISrc)iModelBridgeFwk.h $(iModelBridgePrivateAPISrc)iModelBridge/Fwk/IModelClientForBridges.h ${MultiCompileDepends}
+$(o)Briefcase$(oext): $(baseDir)Briefcase.cpp $(DgnDbServerDepends) $(iModelBridgeAPISrc)iModelBridgeFwk.h $(iModelBridgeAPISrc)IModelClientForBridges.h ${MultiCompileDepends}
 
-$(o)IModelClientForBridges$(oext): $(baseDir)IModelClientForBridges.cpp $(BuildContext)PublicAPI/WebServices/iModelHub/Client/ClientHelper.h $(iModelBridgePrivateAPISrc)iModelBridge/Fwk/IModelClientForBridges.h $(DgnDbServerDepends) ${MultiCompileDepends}
+$(o)IModelClientForBridges$(oext): $(baseDir)IModelClientForBridges.cpp $(BuildContext)PublicAPI/WebServices/iModelHub/Client/ClientHelper.h $(iModelBridgeAPISrc)IModelClientForBridges.h $(DgnDbServerDepends) ${MultiCompileDepends}
 
 $(o)iModelBridgeRegistry$(oext): $(RegistryDir)iModelBridgeRegistry.cpp $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeRegistry.h $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
 

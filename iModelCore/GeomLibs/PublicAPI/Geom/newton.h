@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/newton.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -152,6 +152,8 @@ protected:
     double mSoftAbstolW;
     int    mMaxIterations;
     int    mSuccessiveConvergenceTarget;
+    double mMinStepU;
+    double mMinStepV;
 public:
 
 // Default constructor sets up arbitrary tolerances.
@@ -170,7 +172,8 @@ NewtonIterationsRRToRR
 double abstol,
 double reltol = 1.0e-12,
 int    maxIterations = 20,
-int    successiveConvergenceTarget = 2
+int    successiveConvergenceTarget = 2,
+double minStep = 1.0e-11
 );
 
 // Set a tolerance for convergence in cases that get close and have a failed step.

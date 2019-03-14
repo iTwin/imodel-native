@@ -13,6 +13,7 @@
         <SubPart PartName="MstnBridgeInstallFiles"/>
         <SubPart PartName="DgnV8ConverterExe" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
         <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="MakePackages" PartFile="bridge-addon" Repository="DgnDbSync"/>
         <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         

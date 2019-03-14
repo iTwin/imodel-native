@@ -2621,16 +2621,13 @@
                     <KeyName>EPSG:2326</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>HongKong80.GridSystem</KeyName>
+                    <KeyName>HongKong80b.GridSystem</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:102140</KeyName>
+                    <KeyName>HongKong80b.UTM-49N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:102141</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:102142</KeyName>
+                    <KeyName>HongKong80b.UTM-50N</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -6082,21 +6079,6 @@
                <Member>
                  <KeyName>EUROP50.SPBA</KeyName>
                </Member>
-               <Member>
-                 <KeyName>ETRF89.UTM-31N/zE-N</KeyName>
-               </Member>
-               <Member>
-                 <KeyName>ETRF89.UTM-33N/zE-N</KeyName>
-               </Member>
-               <Member>
-                 <KeyName>ETRF89.UTM-31N/N-zE</KeyName>
-               </Member>
-               <Member>
-                 <KeyName>ETRF89.UTM-32N/N-zE</KeyName>
-               </Member>
-               <Member>
-                 <KeyName>ETRF89.UTM-33N/N-zE</KeyName>
-               </Member>
             </Members>
             <Groups>
               <Group>
@@ -7028,6 +7010,21 @@
                   </Member>
                   <Member>
                     <KeyName>DB_REF.GK3d-5/EN</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ETRF89.UTM-31N/zE-N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ETRF89.UTM-33N/zE-N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ETRF89.UTM-31N/N-zE</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ETRF89.UTM-32N/N-zE</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ETRF89.UTM-33N/N-zE</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -30946,6 +30943,23 @@
                 </Members>
               </Group>
               <Group>
+                <Name>Hong Kong</Name>
+                <Members>
+                  <Member>
+                    <KeyName>HongKong80.GridSystem</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102140</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102141</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102142</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
                 <Name>Ireland</Name>
                 <Members>
                   <Member>
@@ -33949,7 +33963,7 @@
                     <KeyName>Xian80.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>HongKong80.LL</KeyName>
+                    <KeyName>HongKong80b.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4611</KeyName>
@@ -36679,6 +36693,9 @@
           <Group>
             <Name>Legacy</Name>
             <Members>
+               <Member>
+                 <KeyName>HongKong80.LL</KeyName>
+               </Member>
                <Member>
                  <KeyName>EPSG:4312</KeyName>
                </Member>

@@ -486,3 +486,8 @@ LINKER_LIBRARIES            = \
 
 %include $(sharedMki)LinkLibrary.mki
 
+#----------------------------------------------------------------------------------------
+# Symlink the loggging configuration file to enable ScalableMesh logging
+#----------------------------------------------------------------------------------------
+$(ContextDeliveryDir)ScalableMeshLogging.config.xml : $(baseDir)Logging/ScalableMeshLogging.config.xml
+        $(LinkFirstDepToFirstTarget)

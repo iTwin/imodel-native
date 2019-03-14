@@ -70,6 +70,10 @@
         <!-- Keep this commented out by default since we do not want to write to localappdata on firebug & PRG machines-->
     </root>
 
+    <category name="MstnBridgeTests">
+        <priority value="trace"/>
+    </category>
+
     <category name="BeSQLite">
         <priority value="error"/>
     </category>
@@ -78,18 +82,18 @@
         <priority value="fatal"/>
     </category>
 
-    <!--
     <category name="iModelBridge">
-        <priority value="all"/>
+        <priority value="warn"/>
     </category>
     <category name="iModelBridgeFwk">
-        <priority value="all"/>
+        <priority value="warn"/>
     </category>
     <category name="iModelHub">
-        <priority value="info"/>
+        <priority value="warn"/>
     </category>
-    -->
-    
+    <category name="Bentley.Http">
+        <priority value="warn"/>
+    </category>
     <!-- 
     <category name="DgnDbSync">
         <priority value="all"/>

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/HttpRequestTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -42,6 +42,15 @@ TEST_F(HttpRequestTests, Ctor_UrlWithUnsafeCharacters_CharactersAreEscaped)
     {
     Request request(TEST_URL_UNSAFE_CHARS);
     EXPECT_STREQ(TEST_URL_UNSAFE_CHARS_ESCAPED, request.GetUrl().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTests, Ctor_Default_CertificateVerificationEnabled)
+    {
+    Request request("foo://bar");
+    EXPECT_TRUE(request.GetValidateCertificate());
     }
 
 /*--------------------------------------------------------------------------------------+

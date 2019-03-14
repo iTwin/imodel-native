@@ -2,7 +2,7 @@
 #
 #     $Source: PublicAPI/PublicApi.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 PolicyFile      = $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/AssertTerrainModelPolicy.mki
@@ -31,7 +31,7 @@ cleanopt =
 %endif
 
 always:
-    PublishAPI.py -o$(genDir) -d$(BuildContext)PublicAPI -s$(stampFileName) $(scope1Arg) $(cleanopt) -x$(TARGET_PLATFORM)
+    python.exe $(SrcRoot)bsicommon/build/PublishAPI.py -o$(genDir) -d$(BuildContext)PublicAPI -s$(stampFileName) $(scope1Arg) $(cleanopt) -x$(TARGET_PLATFORM)
     ~linkdir "$(BuildContext)$(OutputApiDir)=$(genDir)"
 
 #### Old

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/CalculatedProperty.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -33,7 +33,8 @@ private:
     InstanceExpressionContextP  m_thisContext;
     EvaluationOptions           m_evaluationOptions;
 
-    CalculatedPropertySpecification (Utf8CP exprStr, NodeR expr, ParserRegexP regex, IECInstanceCR customAttr, PrimitiveType primType, ECValueCR failureValue);
+    CalculatedPropertySpecification(Utf8CP exprStr, NodeR expr, ParserRegexP regex, IECInstanceCR customAttr, PrimitiveType primType, ECValueCR failureValue);
+    CalculatedPropertySpecification(Utf8CP exprStr, NodeR expr, ParserRegexP regex, PrimitiveType primType, ECValueCR failureValue);
     ~CalculatedPropertySpecification();
 public:
     Utf8CP GetExpression() const {return m_expressionStr.c_str();}
@@ -48,7 +49,11 @@ public:
 
     bool IsDefaultOnly() const { return m_isDefaultOnly; }
 
-    ECOBJECTS_EXPORT static RefCountedPtr<CalculatedPropertySpecification> Create (ECPropertyCR hostProperty, PrimitiveType propertyType);
+    ECOBJECTS_EXPORT static RefCountedPtr<CalculatedPropertySpecification> Create(ECPropertyCR hostProperty, PrimitiveType propertyType);
+
+    // This was created for the DgnV8Converter to use.  It only ever needs to calculate a value for the this.GetRelatedInstance() expression and no longer
+    // stores a custom attribute on the property.  Therefore, it needs a way to hand calculate the value.
+    ECOBJECTS_EXPORT static RefCountedPtr<CalculatedPropertySpecification> Create(Utf8String expression, PrimitiveType primitiveType);
     };
 
 typedef RefCountedPtr<CalculatedPropertySpecification> CalculatedPropertySpecificationPtr;

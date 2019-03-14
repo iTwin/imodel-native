@@ -2,7 +2,7 @@
 #
 #  $Source: ScalableMesh.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
      
@@ -33,7 +33,7 @@ always:
 #----------------------------------------------------------------------
 always:
    ~linkdir "$(BuildContext)PublicAPI/ScalableMesh=${SCMPublicAPISrc}/ScalableMesh"
-   ~linkfile $(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
+   ~linkfile "$(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
    ~linkfile "$(BuildContext)VendorAPI/TilePublisher/Constants.h=$(tilePublisherDir)Constants.h"
    ~linkfile "$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
 
@@ -552,4 +552,10 @@ $(o)ScalableMeshCacert.pem: $(baseDir)ScalableMeshCacert.pem
     $(CopyFirstDepToFirstTarget)
 
 $(ContextDeliveryDir)ScalableMeshCacert.pem : $(o)ScalableMeshCacert.pem
+        $(LinkFirstDepToFirstTarget)
+
+#----------------------------------------------------------------------------------------
+# Symlink the loggging configuration file to enable ScalableMesh logging
+#----------------------------------------------------------------------------------------
+$(ContextDeliveryDir)ScalableMeshLogging.config.xml : $(baseDir)Logging/ScalableMeshLogging.config.xml
         $(LinkFirstDepToFirstTarget)

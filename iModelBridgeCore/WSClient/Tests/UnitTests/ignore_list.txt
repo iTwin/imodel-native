@@ -71,3 +71,43 @@ WSRepositoryClientTests.SendCreateObjectRequest_WebApiV2AndRootInstanceContainsI
     # VSTS#58325
     # Stream:Bim0200Dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 01/09/2019
     # Crash
+
+ConnectSignInManagerTests.GetAuthenticationHandler_UrlProviderQa_DoesNotSetSetValidateCertificateForRequests
+    # bim0200, x64, optimized
+    # [ RUN      ] ConnectSignInManagerTests.GetAuthenticationHandler_UrlProviderQa_DoesNotSetSetValidateCertificateForRequests
+    # 2019-03-04 10:32:15,289 ERROR [0x000006c0] WSClient - Base token not found for 'https://connect-wsg20.bentley.com' delegation token
+    # 
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Connect\ConnectSignInManagerTests.cpp(138): error: Value of: request.GetValidateCertificate()
+    #   Actual: true
+    # Expected: false
+    # [  FAILED  ] ConnectSignInManagerTests.GetAuthenticationHandler_UrlProviderQa_DoesNotSetSetValidateCertificateForRequests (7 ms)
+ConnectSignInManagerTests.GetAuthenticationHandler_UrlProviderDev_DoesNotSetSetValidateCertificateForRequests
+    # bim0200, x64, optimized
+    # [ RUN      ] ConnectSignInManagerTests.GetAuthenticationHandler_UrlProviderDev_DoesNotSetSetValidateCertificateForRequests
+    # 2019-03-04 10:32:15,297 ERROR [0x00001bcc] WSClient - Base token not found for 'https://connect-wsg20.bentley.com' delegation token
+    # 
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Connect\ConnectSignInManagerTests.cpp(156): error: Value of: request.GetValidateCertificate()
+    #   Actual: true
+    # Expected: false
+    # [  FAILED  ] ConnectSignInManagerTests.GetAuthenticationHandler_UrlProviderDev_DoesNotSetSetValidateCertificateForRequests (6 ms)
+UrlProviderTests.GetSecurityConfigurator_InitializedWithDev_DoesNotSetValidateCertificate
+    # bim0200, x64, optimized
+    # [ RUN      ] UrlProviderTests.GetSecurityConfigurator_InitializedWithDev_DoesNotSetValidateCertificate
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(358): error: Value of: request.GetValidateCertificate()
+    #   Actual: true
+    # Expected: false
+    # [  FAILED  ] UrlProviderTests.GetSecurityConfigurator_InitializedWithDev_DoesNotSetValidateCertificate (1 ms)
+UrlProviderTests.GetSecurityConfigurator_InitializedWithQa_DoesNotSetValidateCertificate
+    # bim0200, x64, optimized
+    # [ RUN      ] UrlProviderTests.GetSecurityConfigurator_InitializedWithQa_DoesNotSetValidateCertificate
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(378): error: Value of: request.GetValidateCertificate()
+    #   Actual: true
+    # Expected: false
+    # [  FAILED  ] UrlProviderTests.GetSecurityConfigurator_InitializedWithQa_DoesNotSetValidateCertificate (1 ms)
+UrlProviderTests.GetSecurityConfigurator_InitializedWithReleaseAndSetToQa_DoesNotSetValidateCertificate
+    # bim0200, x64, optimized
+    # [ RUN      ] UrlProviderTests.GetSecurityConfigurator_InitializedWithReleaseAndSetToQa_DoesNotSetValidateCertificate
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(420): error: Value of: request.GetValidateCertificate()
+    #   Actual: true
+    # Expected: false
+    # [  FAILED  ] UrlProviderTests.GetSecurityConfigurator_InitializedWithReleaseAndSetToQa_DoesNotSetValidateCertificate (0 ms)

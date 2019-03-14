@@ -120,7 +120,11 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
                        // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
 
     // Tell the bridge to generate schemas
-    _MakeSchemaChanges();
+    if (BSISUCCESS != _MakeSchemaChanges())
+        {
+        LOG.fatalv("_MakeSchemaChanges failed");
+        return nullptr; // caller must call abandon changes
+        }
     //We will need import the provenance schema
     bool madeChanges;
     
@@ -170,15 +174,17 @@ DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, b
     // (Note that OpenDgnDb will also merge in any pending schema changes that were recently pulled from iModelHub.)
 
     madeSchemaChanges = false;
-    auto db = DgnDb::OpenDgnDb(&dbres, dbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Exclusive));
+    DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Exclusive);
+    oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades);
+    auto db = DgnDb::OpenDgnDb(&dbres, dbName, oparams);
     if (!db.IsValid())
         {
-        if (BeSQLite::BE_SQLITE_ERROR_SchemaUpgradeRequired != dbres)
+        if (!(BeSQLite::BE_SQLITE_ERROR_SchemaUpgradeRequired == dbres || 
+            BeSQLite::BE_SQLITE_ERROR_SchemaUpgradeRecommended == dbres))
             return nullptr;
 
         // We must do a schema upgrade.
         // Probably, the bridge registered some required domains, and they must be imported
-        DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Exclusive);
         oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade);
         db = DgnDb::OpenDgnDb(&dbres, dbName, oparams);
         if (!db.IsValid())
@@ -1048,19 +1054,6 @@ iModelBridge::IBriefcaseManager::PushStatus iModelBridge::PushChanges(DgnDbR db,
 
     db.SaveChanges(commitComment.c_str());
     return bcMgr->_Push(commitComment.c_str());
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool iModelBridge::WantModelProvenanceInBim(DgnDbR db)
-    {
-    if (!db.TableExists(DGN_TABLE_ProvenanceModel))
-        return true;
-
-    if (db.ColumnExists(DGN_TABLE_ProvenanceModel, "Transform"))
-        return true;
-
-    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
