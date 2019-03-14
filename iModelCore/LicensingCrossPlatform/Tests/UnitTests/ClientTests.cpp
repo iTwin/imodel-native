@@ -92,7 +92,7 @@ BeFileName GetLicensingDbPath()
     return path;
     }
 
-ClientImplPtr CreateTestClient(ConnectSignInManager::UserInfo userInfo, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
+ClientImplPtr CreateTestClient(ConnectSignInManager::UserInfo userInfo, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb, Utf8StringCR productId = TEST_PRODUCT_ID)
     {
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
@@ -112,7 +112,7 @@ ClientImplPtr CreateTestClient(ConnectSignInManager::UserInfo userInfo, uint64_t
         );
     }
 
-SaasClientImplPtr CreateTestSaasClient(uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, int productId, IUlasProviderPtr ulasProvider)
+SaasClientImplPtr CreateTestSaasClient(IUlasProviderPtr ulasProvider, int productId = std::atoi(TEST_PRODUCT_ID))
     {
     return std::make_shared<SaasClientImpl>(
         productId,
@@ -120,7 +120,7 @@ SaasClientImplPtr CreateTestSaasClient(uint64_t heartbeatInterval, ITimeRetrieve
         ulasProvider);
     }
 
-ClientWithKeyImplPtr CreateWithKeyTestClient(uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
+ClientWithKeyImplPtr CreateWithKeyTestClient(IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb, Utf8StringCR productId = TEST_PRODUCT_ID)
     {
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
@@ -139,58 +139,34 @@ ClientWithKeyImplPtr CreateWithKeyTestClient(uint64_t heartbeatInterval, ITimeRe
     }
 
 // Note: cannot use mocks with clients created with the factory
-ClientPtr CreateTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+ClientPtr CreateTestClientFromFactory(ConnectSignInManager::UserInfo userInfo, Utf8StringCR productId = TEST_PRODUCT_ID)
     {
-    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-    UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
-
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
-    if (signIn)
-    {
-        Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
-        if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
-            return nullptr;
-    }
     BeFileName dbPath = GetLicensingDbPath();
 
     return Client::Create(
-        manager->GetUserInfo(),
+        userInfo,
         clientInfo,
-        manager,
+        nullptr,
         dbPath,
         true,
         "",
         "",
-        proxy);
+        nullptr);
     }
 
-SaasClientPtr CreateTestSaasClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, int productId)
+SaasClientPtr CreateTestSaasClientFromFactory(int productId = std::atoi(TEST_PRODUCT_ID))
     {
-    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-    UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
-
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
     return SaasClient::Create(
         productId,
         "",
-        proxy);
+        nullptr);
     }
 
-ClientPtr CreateWithKeyTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+ClientPtr CreateWithKeyTestClientFromFactory(Utf8StringCR productId = TEST_PRODUCT_ID)
     {
-    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-    UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
-
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
-
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-
-    auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
 
     BeFileName dbPath = GetLicensingDbPath();
 
@@ -201,37 +177,7 @@ ClientPtr CreateWithKeyTestClientFromFactory(bool signIn, uint64_t heartbeatInte
         true,
         "",
         "",
-        proxy);
-    }
-
-ClientImplPtr CreateTestClient(ConnectSignInManager::UserInfo userInfo, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
-    {
-    return CreateTestClient(userInfo, TEST_HEARTBEAT_INTERVAL, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, policyProvider, ulasProvider, licensingDb);
-    }
-
-ClientPtr CreateTestClientFromFactory(bool signIn)
-    {
-    return CreateTestClientFromFactory(signIn, TEST_HEARTBEAT_INTERVAL, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
-    }
-
-SaasClientImplPtr CreateTestSaasClient(IUlasProviderPtr ulasProvider)
-    {
-    return CreateTestSaasClient(TEST_HEARTBEAT_INTERVAL, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, std::atoi(TEST_PRODUCT_ID), ulasProvider);
-    }
-
-SaasClientPtr CreateTestSaasClientFromFactory(bool signIn)
-    {
-    return CreateTestSaasClientFromFactory(signIn, TEST_HEARTBEAT_INTERVAL, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, std::atoi(TEST_PRODUCT_ID));
-    }
-
-ClientWithKeyImplPtr CreateWithKeyTestClient(IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb)
-    {
-    return CreateWithKeyTestClient(TEST_HEARTBEAT_INTERVAL, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, policyProvider, ulasProvider, licensingDb);
-    }
-
-ClientPtr CreateWithKeyTestClientFromFactory(bool signIn)
-    {
-    return CreateWithKeyTestClientFromFactory(signIn, TEST_HEARTBEAT_INTERVAL, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+        nullptr);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -358,6 +304,28 @@ TEST_F(ClientTests, DISABLED_JsonExample)
 	ASSERT_NE(b, 0);
 	ASSERT_NE(c, 0);
 }
+
+TEST_F(ClientTests, CreateClientFromFactory_Success)
+    {
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", "userId", "orgId");
+    auto client = CreateTestClientFromFactory(userInfo);
+
+    EXPECT_NE(nullptr, client);
+    }
+
+TEST_F(ClientTests, CreateWithKeyClientFromFactory_Success)
+    {
+    auto client = CreateWithKeyTestClientFromFactory();
+
+    EXPECT_NE(nullptr, client);
+    }
+
+TEST_F(ClientTests, CreateSaasClientFromFactory_Success)
+    {
+    auto client = CreateTestSaasClientFromFactory();
+
+    EXPECT_NE(nullptr, client);
+    }
 
 TEST_F(ClientTests, StartApplication_Error)
     {
