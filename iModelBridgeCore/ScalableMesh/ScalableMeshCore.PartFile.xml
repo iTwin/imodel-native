@@ -112,7 +112,7 @@
     <SubPart PartName="ScalableMeshCore"  />
     <SubPart PartName="ScalableMeshCreator"  />
     <SubPart PartName="DgnView"              PartFile="DgnDisplay"       Repository="DgnDisplay"/>
-    <SubPart PartName="LoggingNativeLog4cxx" PartFile="LoggingSDK"       Repository="LoggingSDK"/>
+    <SubPart PartName="LoggingNativeLog4cxx" PartFile="iModelCore/LoggingSDK/LoggingSDK"/>
     <Bindings>
       <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshATPexe.exe</Files>
     </Bindings>
