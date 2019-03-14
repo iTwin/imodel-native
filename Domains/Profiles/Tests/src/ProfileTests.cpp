@@ -535,3 +535,29 @@ TEST_F (ProfileTestCase, RemoveCustomCardinalPoint_NonExistintPoint_NotFoundErro
 
     ASSERT_EQ (DgnDbStatus::NotFound, profilePtr->RemoveCustomCardinalPoint ("test"));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ProfileTestCase, StandardCardinalPointToString_StandardCardinalPoint_String)
+    {
+    EXPECT_STREQ ("BottomLeft", StandardCardinalPointToString (StandardCardinalPoint::BottomLeft));
+    EXPECT_STREQ ("BottomCenter", StandardCardinalPointToString (StandardCardinalPoint::BottomCenter));
+    EXPECT_STREQ ("BottomRight", StandardCardinalPointToString (StandardCardinalPoint::BottomRight));
+    EXPECT_STREQ ("MidDepthLeft", StandardCardinalPointToString (StandardCardinalPoint::MidDepthLeft));
+    EXPECT_STREQ ("MidDepthCenter", StandardCardinalPointToString (StandardCardinalPoint::MidDepthCenter));
+    EXPECT_STREQ ("MidDepthRight", StandardCardinalPointToString (StandardCardinalPoint::MidDepthRight));
+    EXPECT_STREQ ("TopLeft", StandardCardinalPointToString (StandardCardinalPoint::TopLeft));
+    EXPECT_STREQ ("TopCenter", StandardCardinalPointToString (StandardCardinalPoint::TopCenter));
+    EXPECT_STREQ ("TopRight", StandardCardinalPointToString (StandardCardinalPoint::TopRight));
+    EXPECT_STREQ ("GeometricCentroid", StandardCardinalPointToString (StandardCardinalPoint::GeometricCentroid));
+    EXPECT_STREQ ("BottomInLineWithGeometricCentroid", StandardCardinalPointToString (StandardCardinalPoint::BottomInLineWithGeometricCentroid));
+    EXPECT_STREQ ("LeftInLineWithGeometricCentroid", StandardCardinalPointToString (StandardCardinalPoint::LeftInLineWithGeometricCentroid));
+    EXPECT_STREQ ("RightInLineWithGeometricCentroid", StandardCardinalPointToString (StandardCardinalPoint::RightInLineWithGeometricCentroid));
+    EXPECT_STREQ ("TopInLineWithGeometricCentroid", StandardCardinalPointToString (StandardCardinalPoint::TopInLineWithGeometricCentroid));
+    EXPECT_STREQ ("ShearCenter", StandardCardinalPointToString (StandardCardinalPoint::ShearCenter));
+    EXPECT_STREQ ("BottomInLineWithShearCenter", StandardCardinalPointToString (StandardCardinalPoint::BottomInLineWithShearCenter));
+    EXPECT_STREQ ("LeftInLineWithShearCenter", StandardCardinalPointToString (StandardCardinalPoint::LeftInLineWithShearCenter));
+    EXPECT_STREQ ("RightInLineWithShearCenter", StandardCardinalPointToString (StandardCardinalPoint::RightInLineWithShearCenter));
+    EXPECT_STREQ ("TopInLineWithShearCenter", StandardCardinalPointToString (StandardCardinalPoint::TopInLineWithShearCenter));
+    }

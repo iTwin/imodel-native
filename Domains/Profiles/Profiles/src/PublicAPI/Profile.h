@@ -92,6 +92,10 @@ enum class StandardCardinalPoint : uint32_t
     TopInLineWithShearCenter            //!< Most top point of the profiles geometry thats in-line with @ref ShearCenter
     };
 
+//! Returns string representation of the StandardCardinalPoint enumeration.
+//! @details This function always returns a valid pointer.
+PROFILES_EXPORT extern Utf8CP StandardCardinalPointToString (StandardCardinalPoint standardCardinalPoint);
+
 //=======================================================================================
 //! A resource defining one or more 2D areas that may have voids.
 //! @ingroup GROUP_Profiles

@@ -39,6 +39,20 @@ static Utf8CP s_standardCardinalPointNames[] =
 constexpr uint32_t s_standardCardinalPointCount = _countof (s_standardCardinalPointNames);
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP StandardCardinalPointToString (StandardCardinalPoint standardCardinalPoint)
+    {
+    uint32_t index = static_cast<uint32_t> (standardCardinalPoint);
+    if (index > s_standardCardinalPointCount)
+        {
+        BeAssert (false);
+        return s_standardCardinalPointNames[0];
+        }
+    return s_standardCardinalPointNames[index];
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Creates a StandaloneECEnabler used for CardinalPoint ECIntance creation.
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -170,7 +184,7 @@ static DPoint2d getGeometricCentroid (IGeometry const& geometry)
 static DPoint2d getCardinalPointLocation(StandardCardinalPoint type, IGeometryPtr profileShapePtr)
     {
     DRange3d shapeRange = { 0 };
-    if (!profileShapePtr->TryGetRange(shapeRange))
+    if (!profileShapePtr->TryGetRange (shapeRange))
         shapeRange = DRange3d{ 0 };
 
     double const halfWidth = shapeRange.XLength() / 2.0;
@@ -178,22 +192,22 @@ static DPoint2d getCardinalPointLocation(StandardCardinalPoint type, IGeometryPt
 
     switch (type)
         {
-        case StandardCardinalPoint::BottomLeft:                         return DPoint2d::From(-halfWidth, -halfDepth);
-        case StandardCardinalPoint::BottomCenter:                       return DPoint2d::From(0.0, -halfDepth);
-        case StandardCardinalPoint::BottomRight:                        return DPoint2d::From(halfWidth, -halfDepth);
-        case StandardCardinalPoint::MidDepthLeft:                       return DPoint2d::From(-halfWidth, 0.0);
-        case StandardCardinalPoint::MidDepthCenter:                     return DPoint2d::From(0.0, 0.0);
-        case StandardCardinalPoint::MidDepthRight:                      return DPoint2d::From(halfWidth, 0.0);
-        case StandardCardinalPoint::TopLeft:                            return DPoint2d::From(-halfWidth, halfDepth);
-        case StandardCardinalPoint::TopCenter:                          return DPoint2d::From(0.0, halfDepth);
-        case StandardCardinalPoint::TopRight:                           return DPoint2d::From(halfWidth, halfDepth);
-        case StandardCardinalPoint::GeometricCentroid:                  return getGeometricCentroid(*profileShapePtr);
-        case StandardCardinalPoint::BottomInLineWithGeometricCentroid:  return DPoint2d::From(getGeometricCentroid(*profileShapePtr).x, -halfDepth);
-        case StandardCardinalPoint::LeftInLineWithGeometricCentroid:    return DPoint2d::From(-halfWidth, getGeometricCentroid(*profileShapePtr).y);
-        case StandardCardinalPoint::RightInLineWithGeometricCentroid:   return DPoint2d::From(halfWidth, getGeometricCentroid(*profileShapePtr).y);
-        case StandardCardinalPoint::TopInLineWithGeometricCentroid:     return DPoint2d::From(getGeometricCentroid(*profileShapePtr).x, halfDepth);
+        case StandardCardinalPoint::BottomLeft:                         return DPoint2d::From (-halfWidth, -halfDepth);
+        case StandardCardinalPoint::BottomCenter:                       return DPoint2d::From (0.0, -halfDepth);
+        case StandardCardinalPoint::BottomRight:                        return DPoint2d::From (halfWidth, -halfDepth);
+        case StandardCardinalPoint::MidDepthLeft:                       return DPoint2d::From (-halfWidth, 0.0);
+        case StandardCardinalPoint::MidDepthCenter:                     return DPoint2d::From (0.0, 0.0);
+        case StandardCardinalPoint::MidDepthRight:                      return DPoint2d::From (halfWidth, 0.0);
+        case StandardCardinalPoint::TopLeft:                            return DPoint2d::From (-halfWidth, halfDepth);
+        case StandardCardinalPoint::TopCenter:                          return DPoint2d::From (0.0, halfDepth);
+        case StandardCardinalPoint::TopRight:                           return DPoint2d::From (halfWidth, halfDepth);
+        case StandardCardinalPoint::GeometricCentroid:                  return getGeometricCentroid (*profileShapePtr);
+        case StandardCardinalPoint::BottomInLineWithGeometricCentroid:  return DPoint2d::From (getGeometricCentroid (*profileShapePtr).x, -halfDepth);
+        case StandardCardinalPoint::LeftInLineWithGeometricCentroid:    return DPoint2d::From (-halfWidth, getGeometricCentroid (*profileShapePtr).y);
+        case StandardCardinalPoint::RightInLineWithGeometricCentroid:   return DPoint2d::From (halfWidth, getGeometricCentroid (*profileShapePtr).y);
+        case StandardCardinalPoint::TopInLineWithGeometricCentroid:     return DPoint2d::From (getGeometricCentroid (*profileShapePtr).x, halfDepth);
             // ShearPoint cardinal point locations are currently not supported.
-        default:                                                        return DPoint2d::From(0.0, 0.0);
+        default:                                                        return DPoint2d::From (0.0, 0.0);
         }
     }
 
@@ -207,9 +221,7 @@ static CardinalPoint createStandardCardinalPoint (StandardCardinalPoint type, Pr
     IGeometryPtr shapePtr = profile.GetShape();
     BeAssert (shapePtr.IsValid());
 
-    Utf8CP pName = s_standardCardinalPointNames[static_cast<int> (type)];
-
-    return CardinalPoint (pName, getCardinalPointLocation (type, shapePtr));
+    return CardinalPoint (StandardCardinalPointToString (type), getCardinalPointLocation (type, shapePtr));
     }
 
 /*---------------------------------------------------------------------------------**//**
