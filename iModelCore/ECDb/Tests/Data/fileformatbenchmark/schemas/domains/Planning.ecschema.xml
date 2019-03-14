@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="Planning" alias="bp" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
+    <ECSchemaReference name="ECDbMap" version="2.0" alias="ecdbmap"/>
+    <ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA"/>
+
+    <ECEntityClass typeName="PlanningElement" modifier="Abstract">
+        <BaseClass>bis:InformationContentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+            <ShareColumns xmlns="ECDbMap.2.0">
+                <MaxSharedColumnsBeforeOverflow>8</MaxSharedColumnsBeforeOverflow>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
+        </ECCustomAttributes>
+        <ECProperty propertyName="OutlineIndex" typeName="int" description="Controls order within the parent when displaying an outline list">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECNavigationProperty propertyName="Plan" relationshipName="PlanningElementBelongsToPlan" direction="forward" displayLabel="Planning Element belongs to Plan">
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECProperty propertyName="WBSCode" displayLabel="WBS Code" typeName="string">
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="PlanningElementBelongsToPlan" strength="referencing" strengthDirection="forward" modifier="Sealed">
+        <!-- @see PlanningElement.PlanId ECNavigationProperty -->
+        <Source multiplicity="(0..*)" roleLabel="belongs to" polymorphic="true">
+            <Class class="PlanningElement"/>
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="has many" polymorphic="true">
+            <Class class="Plan" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="PlanningPartition" modifier="Sealed">
+        <BaseClass>bis:InformationPartitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="PlanningModel">
+        <BaseClass>bis:InformationModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="Plan">
+        <BaseClass>WorkBreakdown</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="MinutesPerDay" typeName="int">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="MinutesPerWeek" typeName="int">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="DaysPerMonth" typeName="int">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="WorkBreakdown">
+        <BaseClass>PlanningElement</BaseClass>
+        <BaseClass>bis:IParentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="Activity">
+        <BaseClass>PlanningElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    
+    <ECStructClass typeName="Duration">
+        <ECProperty propertyName="Format" typeName="Duration_Format"/>
+        <ECProperty propertyName="Value" typeName="double"/>
+    </ECStructClass>
+
+    <ECEntityClass typeName="TimeSpan">
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Baseline" relationshipName="TimeSpanBelongsToBaseline" direction="forward" displayLabel="Time Span is belongs to Baseline">
+            <ECCustomAttributes>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECProperty propertyName="PlannedStart" typeName="dateTime" description="Time the activity has been planned to be started" displayLabel="Planned Start">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.1.0">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="PlannedFinish" typeName="dateTime" description="Time the activity has been planned to be finished" displayLabel="Planned Finish">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.1.0">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="PlannedDuration" typeName="Duration" displayLabel="Planned Duration"/>
+        <ECProperty propertyName="ActualStart" typeName="dateTime" description="Time the activity actually started" displayLabel="Actual Start">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.1.0">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ActualFinish" typeName="dateTime" description="Time the activity actually finished" displayLabel="Actual Finish">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.1.0">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="RemainingDuration" typeName="Duration" displayLabel="Remaining Duration"/>
+        <ECProperty propertyName="EarlyStart" typeName="dateTime" description="Earliest time an activity may start" displayLabel="Early Start">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.1.0">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="EarlyFinish" typeName="dateTime" description="Earliest time an activity may finish" displayLabel="Early Finish">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.1.0">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LateStart" typeName="dateTime" description="Latest time an activity must start" displayLabel="Late Start">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.1.0">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LateFinish" typeName="dateTime" description="Latest time an activity must finish" displayLabel="Late Finish">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.1.0">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="TotalFloat" typeName="Duration" displayLabel="Total Float"/>
+        <ECStructProperty propertyName="FreeFloat" typeName="Duration" displayLabel="Free Float"/>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="TimeSpanBelongsToBaseline" strength="referencing" strengthDirection="forward" modifier="Sealed">
+        <!-- @see TimeSpan.BaselineId ECNavigationProperty -->
+        <Source multiplicity="(0..*)" roleLabel="belongs to" polymorphic="true">
+            <Class class="TimeSpan"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="has many" polymorphic="true">
+            <Class class="Baseline" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="Baseline">
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+            <DbIndexList xmlns="ECDbMap.2.0">
+                <Indexes>
+                    <DbIndex>
+                        <Name>ix_bp_baseline</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>Element.Id</string>
+                            <string>Label</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </DbIndexList>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Label" typeName="string" displayLabel="Label"/>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="WorkBreakdownOwnsWorkBreakdowns" strength="embedding" modifier="None">
+        <!-- Relationship that indicates that child elements are "hidden" -->
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+            <Class class="WorkBreakdown"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="WorkBreakdown"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="WorkBreakdownOwnsActivities" strength="embedding" modifier="None">
+        <!-- Relationship that indicates that child elements are "hidden" -->
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+            <Class class="WorkBreakdown"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Activity"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="PlanOwnsBaselines" isDomainClass="True" strength="embedding" strengthDirection="forward" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="True">
+            <Class class="Plan" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="False">
+            <Class class="Baseline"/>
+        </Target>
+    </ECRelationshipClass>
+    
+    <ECRelationshipClass typeName="ActivityAffectsElements" strength="referencing" modifier="None">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <ECNavigationProperty propertyName="ElementAppearanceProfile" relationshipName="AppearanceProfileSpecifiesAppearance" direction="backward" displayLabel="Appearance Profile" description="Profile that controls the appearance of the affected elements.">
+            <ECCustomAttributes>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <Source multiplicity="(0..*)" roleLabel="affects" polymorphic="true">
+            <Class class="Activity"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is affected by" polymorphic="true">
+            <Class class="bis:Element"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="AppearanceProfileSpecifiesAppearance" strength="referencing" modifier="Sealed">
+        <!-- @see ActivityAffectsElements.ElementAppearanceProfile ECNavigationProperty -->
+        <Source multiplicity="(0..1)" roleLabel="specifies appearance of" polymorphic="true">
+            <Class class="ElementAppearanceProfile" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="has appearance specified in" polymorphic="true">
+            <Class class="ActivityAffectsElements"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ActivityHasConstraint" strength="referencing" modifier="None">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <ECStructProperty propertyName="LagTime" typeName="Duration"/>
+        <ECProperty propertyName="Type" typeName="ActivityHasConstraint_Type"/>
+        <Source multiplicity="(0..*)" roleLabel="is predecessor of" polymorphic="true">
+            <Class class="Activity"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is successor of" polymorphic="true">
+            <Class class="Activity"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="WorkBreakdownOwnsTimeSpans" isDomainClass="True" strength="embedding" strengthDirection="forward" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="True">
+            <Class class="WorkBreakdown" />
+        </Source>
+        <!-- TODO: Ideally we want this to be (1...*), but does ElementOwnsMultiAspects allow this??-->
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="False">
+            <Class class="TimeSpan"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ActivityOwnsTimeSpans" isDomainClass="True" strength="embedding" strengthDirection="forward" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="True">
+            <Class class="Activity" />
+        </Source>
+        <!-- TODO: Ideally we want this to be (1...*), but does ElementOwnsMultiAspects allow this??-->
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="False">
+            <Class class="TimeSpan"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="CameraAnimation" modifer="Sealed">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="InterpolationType" typeName="CameraAnimation_InterpolationType">
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="CameraKeyFrame" modifer="Sealed">
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Ticks" typeName="long"/>
+        <ECProperty propertyName="EyePoint" typeName="point3d" description="Camera eye point" displayLabel="Eye Point"/>
+        <ECProperty propertyName="TargetPoint" typeName="point3d" description="Camera target point" displayLabel="Target Point"/>
+        <ECProperty propertyName="UpVector" typeName="point3d" description="Camera up vector" displayLabel="Up Vector"/>
+        <ECProperty propertyName="ViewDelta" typeName="point2d" description="Camera view delta" displayLabel="View Delta"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ElementAppearanceProfile" modifer="Sealed">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Type" typeName="ElementAppearanceProfile_Type">
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>  
+        </ECProperty>
+        <ECProperty propertyName="DisplaySettings" typeName="string" extendedTypeName="AdHocJson">
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="CameraAnimationOwnsKeyFrames" isDomainClass="True" strength="embedding" strengthDirection="forward" modifier="None">
+        <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
+            <Class class="CameraAnimation" />
+        </Source>
+        <!-- TODO: Ideally we want this to be (1...*), but does ElementOwnsMultiAspects allow this??-->
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
+            <Class class="CameraKeyFrame"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEnumeration typeName="ElementAppearanceProfile_Type" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Maintain"/>
+        <ECEnumerator value="1" displayLabel="Create"/>
+        <ECEnumerator value="2" displayLabel="Destroy"/>
+        <ECEnumerator value="3" displayLabel="Temporary"/>
+    </ECEnumeration>
+
+    <ECEnumeration typeName="ActivityHasConstraint_Type" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="FinishToStart"/>
+        <ECEnumerator value="1" displayLabel="StartToFinish"/>
+        <ECEnumerator value="2" displayLabel="StartToStart"/>
+        <ECEnumerator value="3" displayLabel="FinishToFinish"/>
+    </ECEnumeration>
+    
+    <ECEnumeration typeName="CameraAnimation_InterpolationType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Linear"/>
+        <ECEnumerator value="1" displayLabel="Spline"/>
+    </ECEnumeration>
+    
+    <ECEnumeration typeName="Duration_Format" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="None"/>
+        <ECEnumerator value="1" displayLabel="Minutes"/>
+        <ECEnumerator value="2" displayLabel="Hours"/>
+        <ECEnumerator value="3" displayLabel="Days"/>
+        <ECEnumerator value="4" displayLabel="Weeks"/>
+        <ECEnumerator value="5" displayLabel="Months"/>
+    </ECEnumeration>
+    
+</ECSchema>

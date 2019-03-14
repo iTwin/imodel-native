@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="KitchenSink" alias="ks" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <ECCustomAttributeClass typeName="AccessCustomAttributes" modifier="None" appliesTo="Any">
+        <ECProperty propertyName="AccessLevel" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="Writeable" typeName="boolean" readOnly="false"/>
+    </ECCustomAttributeClass>
+    <ECEntityClass typeName="BaseClass" modifier="None">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="BaseClassMember" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="BaseRelationshipClass" modifier="Abstract" strength="referencing" strengthDirection="forward">
+        <ECProperty propertyName="MyIntegerMember" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="MyLongMember" typeName="long" readOnly="false"/>
+        <Source multiplicity="(0..1)" roleLabel="source constraint2" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="target constraint2" polymorphic="true">
+            <Class class="Test2Class"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECStructClass typeName="Struct1" modifier="None">
+        <ECProperty propertyName="Struct1BoolMember" typeName="boolean" readOnly="false"/>
+        <ECProperty propertyName="Struct1IntMember" typeName="int" readOnly="false"/>
+    </ECStructClass>
+    <ECStructClass typeName="Struct2" modifier="None">
+        <ECProperty propertyName="Struct2StringMember" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Struct2DoubleMember" typeName="double" readOnly="false"/>
+        <ECStructArrayProperty propertyName="NestedArray" typeName="Struct1" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECStructClass typeName="Struct3" modifier="None">
+        <ECProperty propertyName="Struct3DoubleMember" typeName="double" readOnly="false"/>
+        <ECProperty propertyName="Struct3IntMember" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="Struct3BoolMember" typeName="boolean" readOnly="false"/>
+    </ECStructClass>
+    <ECEntityClass typeName="TestClass" modifier="None">
+        <BaseClass>BaseClass</BaseClass>
+        <ECCustomAttributes>
+            <AccessCustomAttributes xmlns="KitchenSink.01.00.00">
+                <AccessLevel>4</AccessLevel>
+                <Writeable>False</Writeable>
+            </AccessCustomAttributes>
+        </ECCustomAttributes>
+        <ECProperty propertyName="IntegerMember" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="NegativeMember" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="CustomFormatInt" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="LongMember" typeName="long" readOnly="false"/>
+        <ECProperty propertyName="BooleanMember" typeName="boolean" readOnly="false"/>
+        <ECProperty propertyName="DoubleMember" typeName="double" readOnly="true"/>
+        <ECProperty propertyName="DateTimeMember" typeName="dateTime" readOnly="false"/>
+        <ECProperty propertyName="StringMember" typeName="string" description="This is the string property description" displayLabel="StringDisplayLabel" readOnly="false" />
+        <ECProperty propertyName="StartPoint" typeName="point3d" description="This is the start point property description" displayLabel="Start Point Label" readOnly="false"/>
+        <ECProperty propertyName="EndPoint" typeName="point3d" readOnly="false"/>
+        <ECStructProperty propertyName="EmbeddedStruct" typeName="Struct1" readOnly="false"/>
+        <ECStructProperty propertyName="SecondEmbeddedStruct" typeName="Struct1" readOnly="false"/>
+        <ECArrayProperty propertyName="IntArray" typeName="int" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="SmallIntArray" typeName="int" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="StringArray" typeName="string" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="DateArray" typeName="dateTime" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="StructArray" typeName="Struct2" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="EmptyIntArray" typeName="int" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="OneMemberIntArray" typeName="int" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructProperty propertyName="FormattedStruct" typeName="Struct3" readOnly="false"/>
+        <ECArrayProperty propertyName="FormattedArray" typeName="int" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="PointArray" typeName="point3d" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Test2Class" modifier="None">
+        <ECProperty propertyName="Test2StringMember" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ClonedRelationshipClass" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <BaseClass>BaseRelationshipClass</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="source constraint2" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="target constraint2" polymorphic="true">
+            <Class class="Test2Class"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Document" modifier="None">
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="DifferentNumber" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FileName" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Size" typeName="long" readOnly="false"/>
+        <ECProperty propertyName="UpdateTime" typeName="dateTime" readOnly="false"/>
+        <ECNavigationProperty propertyName="Folder" relationshipName="FolderHasDocuments" direction="Backward" />
+    </ECEntityClass>
+    <ECEntityClass typeName="User" modifier="None">
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+        <ECNavigationProperty propertyName="Doc" relationshipName="DocumentHasOwner" direction="Backward" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="DocumentHasOwner" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <Source multiplicity="(0..1)" roleLabel="has Owner" polymorphic="true">
+            <Class class="Document"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="owns a Document" polymorphic="true">
+            <Class class="User"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ExplicitRelationshipClass" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <BaseClass>BaseRelationshipClass</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="source constraint2" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="target constraint2" polymorphic="true">
+            <Class class="Test2Class"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="FM_Equipment" displayLabel="Equipment" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="FM_Chair" displayLabel="Chair" modifier="None">
+        <BaseClass>FM_Equipment</BaseClass>
+        <ECProperty propertyName="FM_Type" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Cost" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Room" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Owner" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Color" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="FM_Computer" displayLabel="Computer" modifier="None">
+        <BaseClass>FM_Equipment</BaseClass>
+        <ECProperty propertyName="FM_Vendor" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Make" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Model" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Room" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Owner" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="FM_Desk" displayLabel="Desk" modifier="None">
+        <BaseClass>FM_Equipment</BaseClass>
+        <ECProperty propertyName="FM_Type" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Cost" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Room" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Owner" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Size" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="FM_Employee" displayLabel="Employee" modifier="None">
+        <ECProperty propertyName="FM_FirstName" typeName="string" displayLabel="First Name" readOnly="false"/>
+        <ECProperty propertyName="FM_LastName" typeName="string" displayLabel="Last Name" readOnly="false"/>
+        <ECProperty propertyName="FM_ID" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_SSN" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Room" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="FM_Monitor" displayLabel="Monitor" modifier="None">
+        <BaseClass>FM_Equipment</BaseClass>
+        <ECProperty propertyName="FM_Vendor" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Make" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Model" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Owner" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Room" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Size" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="FM_Phone" displayLabel="Phone" modifier="None">
+        <BaseClass>FM_Equipment</BaseClass>
+        <ECProperty propertyName="FM_Number" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Room" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Owner" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Folder" modifier="None">
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="SomeNumber" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="UpdateTime" typeName="dateTime" readOnly="false"/>
+        <ECNavigationProperty propertyName="ParentFolder" relationshipName="FolderHasSubFolders" direction="Backward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="FolderHasDocuments" description="FolderHasDocuments" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <Source multiplicity="(0..1)" roleLabel="has Documents" polymorphic="true">
+            <Class class="Folder"/>
+        </Source>
+        <Target multiplicity="(0..N)" roleLabel="areWid held by Folder" polymorphic="true">
+            <Class class="Document"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="FolderHasSubFolders" description="FolderHasSubFolders" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <Source multiplicity="(0..1)" roleLabel="has sub folders" polymorphic="true">
+            <Class class="Folder"/>
+        </Source>
+        <Target multiplicity="(0..N)" roleLabel="are held by Folder" polymorphic="true">
+            <Class class="Folder"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ImplicitRelationshipClass" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <AccessCustomAttributes xmlns="KitchenSink.01.00.00">
+                <AccessLevel>5</AccessLevel>
+                <Writeable>False</Writeable>
+            </AccessCustomAttributes>
+        </ECCustomAttributes>
+        <Source multiplicity="(0,1)" roleLabel="source constraint" polymorphic="true">
+            <ECCustomAttributes>
+                <AccessCustomAttributes xmlns="KitchenSink.01.00.00">
+                    <AccessLevel>6</AccessLevel>
+                    <Writeable>True</Writeable>
+                </AccessCustomAttributes>
+            </ECCustomAttributes>
+            <Class class="TestClass" />
+        </Source>
+        <Target multiplicity="(0,N)" roleLabel="target constraint" polymorphic="true">
+            <ECCustomAttributes>
+                <AccessCustomAttributes xmlns="KitchenSink.01.00.00">
+                    <AccessLevel>7</AccessLevel>
+                    <Writeable>False</Writeable>
+                </AccessCustomAttributes>
+            </ECCustomAttributes>
+            <Class class="Test2Class">
+            </Class>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="IsCGPoint" description="Has one CG Point" modifier="None">
+        <BaseClass>TestClass</BaseClass>
+        <ECProperty propertyName="MyPoint3d" typeName="point3d" readOnly="false"/>
+    </ECEntityClass>
+    <ECCustomAttributeClass typeName="IsmClassInfo" modifier="None" appliesTo="Any">
+        <ECProperty propertyName="IsmTypeName" typeName="string" readOnly="false"/>
+    </ECCustomAttributeClass>
+    <ECEntityClass typeName="IsmPropertyHolder" modifier="None"/>
+    <ECEntityClass typeName="IsmObject" modifier="None">
+        <BaseClass>IsmPropertyHolder</BaseClass>
+        <ECProperty propertyName="IsmId" typeName="string" description="ISM GUID" readOnly="false"/>
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="IsmConnectionPoint" modifier="None">
+        <BaseClass>IsmObject</BaseClass>
+        <ECProperty propertyName="Location" typeName="Bentley.Geometry.Common.ICoordinate" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="PrimitiveClass" modifier="None">
+        <BaseClass>BaseClass</BaseClass>
+        <ECProperty propertyName="IntegerMember" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="NegativeMember" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="CustomFormatInt" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="LongMember" typeName="long" readOnly="false"/>
+        <ECProperty propertyName="BooleanMember" typeName="boolean" readOnly="false"/>
+        <ECProperty propertyName="DoubleMember" typeName="double" readOnly="true"/>
+        <ECProperty propertyName="DateTimeMember" typeName="dateTime" readOnly="false"/>
+        <ECProperty propertyName="StringMember" typeName="string" description="This is the string property description" displayLabel="StringDisplayLabel" readOnly="false"/>
+        <ECProperty propertyName="StartPoint" typeName="point3d" description="This is the start point property description" displayLabel="Start Point Label" readOnly="false"/>
+        <ECProperty propertyName="EndPoint" typeName="point3d" readOnly="false"/>
+        <ECNavigationProperty propertyName="Project" relationshipName="ProjectHasPrimitive" direction="Backward" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ecProject" description="Project Class" displayLabel="Project" modifier="None">
+        <ECProperty propertyName="Name" typeName="string" displayLabel="Project Name" readOnly="false"/>
+        <ECNavigationProperty propertyName="Widget" relationshipName="WidgetBelongsToProject" direction="Backward" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ProjectHasPrimitive" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="holds">
+            <Class class="ecProject"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="held by">
+            <Class class="PrimitiveClass"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="ecWidget" description="Widget" displayLabel="Widget" modifier="None">
+        <ECProperty propertyName="EC_InstanceID" typeName="int" description="Unique identifier for instances of your business class" readOnly="false"/>
+        <ECProperty propertyName="ecstringattr" typeName="string" displayLabel="stringattr" readOnly="false"/>
+        <ECProperty propertyName="eclongattr" typeName="int" displayLabel="longattr" readOnly="false"/>
+        <ECNavigationProperty propertyName="Project" relationshipName="ProjectHasWidget" direction="Backward" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ProjectHasWidget" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="holds">
+            <Class class="ecProject"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="held by">
+            <Class class="ecWidget"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="WidgetBelongsToProject" modifier="Sealed" strength="referencing" strengthDirection="forward">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="belongs to">
+            <Class class="ecWidget"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="holds">
+            <Class class="ecProject"/>
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>
