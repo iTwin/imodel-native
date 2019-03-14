@@ -1,0 +1,45 @@
+ALL: CS_Test.exe mfcTest.exe
+
+CC_FLG= /nologo /I..\include /MT /O2 /W3 /EHsc /D"WIN32" /D"NDEBUG" /D"_WINDOWS"
+
+CPP_FLG= /nologo /I..\include /MT /O2 /W3 /EHsc /D"WIN32" /D"NDEBUG" /D"_WINDOWS" /D"__MFC__" /D"__CPP__"
+
+.C.OBJ:
+	cl /c $(CC_FLG) /Fp"cs_map.pch" /Yc"cs_map.h" $<
+
+.CPP.OBJ:
+	cl /c $(CPP_FLG) /D_CRT_SECURE_NO_WARNINGS /DWINVER=0x0500 $<
+
+TEST_SRC= \
+CS_Test.c \
+CStest1.c \
+CStest2.c \
+CStest3.c \
+CStest4.c \
+CStest5.c \
+CStest6.c \
+CStest7.c \
+CStest8.c \
+CStest9.c \
+CStestA.c \
+CStestB.c \
+CStestC.c \
+CStestD.c \
+CStestE.c \
+CStestF.c \
+CStestG.c \
+CStestH.c \
+CStestI.c \
+CStestJ.c \
+CStestK.c \
+CStestL.c \
+CStestS.c \
+CStestSupport.c \
+CStestT.c
+
+CS_Test.exe: CS_Test.c
+	cl /MT /O2 /I..\include $(TEST_SRC) ..\Source\CS_rlsUpdt.c /link ..\Source\csmap.lib
+
+mfcTest.exe: mfcTest.cpp mfcTest.h
+	rc /l 0x409 /fo"mfcTest.res" /i..\include /d"NDEBUG" ..\Source\csmap.rc
+	cl /MT /O2 /I..\include /D"__MFC__" mfcTest.cpp /link mfcTest.res ..\SOURCE\csmap.lib /subsystem:windows /machine:I386
