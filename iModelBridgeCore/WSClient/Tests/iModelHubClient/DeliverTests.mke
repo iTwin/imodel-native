@@ -1,0 +1,11 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/iModelHubClient/DeliverTests.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+always:
+    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(OutputRootDir)Product/iModelHubNativeTests $(OutputRootDir)Product/iModelHub/NativeTests

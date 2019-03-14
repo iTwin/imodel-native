@@ -1,0 +1,12 @@
+{
+"CodePostSize": 100,
+"CodeGetSize": 1000,
+"CodeGetByIDSize": 1000,
+"LockPostSize": 100,
+"LockGetSize": 1000,
+"LockGetByIDSize": 1000,
+"CodeGetAttemptsCount": 1,
+"LockGetAttemptsCount": 1,
+"CodeGetSplitCount": 1,
+"LockGetSplitCount": 1
+}

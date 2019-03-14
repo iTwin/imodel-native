@@ -1,0 +1,917 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+
+    <Part Name="WebServiceClientComponents" Sequential="true">
+        <SubPart PartName="WebServicesClient"/>
+    </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // WebServicesClient lib                                                  // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <Part Name="WebServicesClient">
+        <SubPart PartName="WebServicesClient-PC"/>
+
+        <!-- N.B. Do NOT add LibType="Static" here. See comments on WebServicesClient-Android-Shim as to why. -->
+        <SubPart PartName="WebServicesClient-iOS"/>
+        <SubPart PartName="WebServicesClient-Android-Shim"/>
+    </Part>
+
+    <Part Name="WebServicesClient-PC" ExcludePlatforms="iOS*, Android*">
+        <SubPart PartName="WebServicesClient-PublicAPI"/>
+        <SubPart PartName="WebServicesClient-Library"/>
+        <SubPart PartName="WSClient-Xliffs"/>
+    </Part>
+
+    <Part Name="WebServicesClient-iOS" OnlyPlatforms="iOS*">
+        <SubPart PartName="WebServicesClient-PublicAPI" LibType="Static"/>
+        <SubPart PartName="WebServicesClient-Library" LibType="Static"/>
+        <SubPart PartName="WSClient-Xliffs" LibType="Static"/>
+    </Part>
+
+    <!--
+        Cannot directly add a SubPart in WebServicesClient to
+        WebServicesClient-Android/LibType=Static due to LKGs. The issue arises
+        on Windows, for example, which does not build anything in wsclient
+        statically, and thus will not post anything in the static LKG for
+        wsclient (good). Because there is no static LKG at all,
+        WebServicesClient cannot go searching for the static partfile to see
+        that this is Android-only. The workaround is to add a "shim" dynamic
+        part in the middle with the platform filter first.
+    -->
+    <Part Name="WebServicesClient-Android-Shim" OnlyPlatforms="Android*">
+        <SubPart PartName="WebServicesClient-Android" LibType="Static"/>
+    </Part>
+
+    <Part Name="WebServicesClient-Android" OnlyPlatforms="Android*">
+        <SubPart PartName="WebServicesClient-Library-Android" LibType="Static" />
+    </Part>
+
+    <Part Name="WebServicesClient-PublicAPI" BentleyBuildMakeFile="ClientPrewire.mke">
+        <Bindings>
+            <PublicAPI Domain="WebServices" />
+        </Bindings>
+    </Part>
+
+    <Part Name="WSClient-PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke"
+     BentleyBuildMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml +dPUBLISHAPI_VENDORAPI4=folly">
+        <SubPart PartName="WSClientLibrarySubParts"/>
+        <SubPart PartName="WebServicesClient-PublicAPI"/>
+        <SubPart PartName="WebServicesCache-PublicAPI"/>
+        <SubPart PartName="iModelHubClient-PublicAPI"/>
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient" />
+        </Bindings>
+    </Part>
+
+    <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="ClientLib.mke" ExcludePlatforms="Android*" ApiNumber="M02">
+        <SubPart PartName="WebServicesClient-PublicAPI" />
+        <SubPart PartName="BentleyDesktopClientCCApi"     PartFile="SdkSources"  Repository="bsicommon" />
+        <SubPart PartName="BeHttpLibrary"                 PartFile="BeHttp"      Repository="BeHttp" />
+        <SubPart PartName="BeSecurityLibrary"             PartFile="BeSecurity"  Repository="BeSecurity" />
+        <SubPart PartName="ECObjectsNative"               PartFile="ECObjects"   Repository="ECObjects" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)WebServicesClient$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)WebServicesClient$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="WebServicesClient-Library-Android" BentleyBuildMakeFile="ClientLib.mke" OnlyPlatforms="Android*">
+        <SubPart PartName="WebServicesClient-PublicAPI" />
+        <SubPart PartName="ECObjectsNative"               PartFile="ECObjects"   Repository="ECObjects" />
+        <SubPart PartName="ECDbLibrary"                   PartFile="ECDb"        Repository="ECDb" />
+        <SubPart PartName="BeHttpLibrary"                 PartFile="BeHttp"      Repository="BeHttp" />
+        <SubPart PartName="BeSecurityLibrary"             PartFile="BeSecurity"  Repository="BeSecurity" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)WebServicesClient$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)WebServicesClient$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="NuGetPackage-WebServicesClient" BentleyBuildMakeFile="WebServicesClient.NuGetPackage.mke" OnlyPlatforms="x64" >
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="WSClientLibrarySubParts" />
+        <SubPart PartName="WebServicesClient"/>
+        <SubPart PartName="WSClient-PublishedAPI"/>
+        <SubPart PartName="WSClient_en_L10N"/>
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\WebServicesClient\WebServicesClient.*.nupkg</Files>
+        </Bindings>
+    </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // FakeServer lib                                          	           // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <Part Name="FakeServer" DeferType="BuildUnitTests">
+        <SubPart PartName="FakeServer-PublicAPI" />
+        <SubPart PartName="FakeServer-Library" />
+        <SubPart PartName="WSClient-Xliffs" />
+    </Part>
+
+    <Part Name="FakeServer-PublicAPI" BentleyBuildMakeFile="FakeServerPrewire.mke">
+        <SubPart PartName="WebServicesClient-PublicAPI"/>
+        <Bindings>
+            <PublicAPI Domain="FakeServer" />
+        </Bindings>
+    </Part>
+
+    <Part Name="FakeServer-Library"  BentleyBuildMakeFile="FakeServerLib.mke" ExcludePlatforms="Android*" ApiNumber="M02">
+        <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="DgnPlatformDLL"              PartFile="DgnPlatform"    	Repository="DgnPlatform"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)FakeServer$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)FakeServer$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // WebServicesCache lib                                                   // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <!--
+        Cannot directly add a SubPart in WebServicesCache to
+        WebServicesCache-Library-Android/LibType=Static due to LKGs. The issue arises
+        on Windows, for example, which does not build anything in wsclient
+        statically, and thus will not post anything in the static LKG for
+        wsclient (good). Because there is no static LKG at all,
+        WebServicesClient cannot go searching for the static partfile to see
+        that this is Android-only. The workaround is to add a "shim" dynamic
+        part in the middle with the platform filter first.
+    -->
+    <Part Name="WebServicesCache-Library-Android-Shim" OnlyPlatforms="Android*">
+        <SubPart PartName="WebServicesCache-Library-Android" LibType="Static"/>
+    </Part>
+
+    <Part Name="WebServicesCache">
+        <SubPart PartName="WebServicesCache-PublicAPI" />
+        <SubPart PartName="WebServicesCache-Library" />
+        <SubPart PartName="WebServicesCache-Library-Android-Shim"/>
+        <SubPart PartName="WebServicesCache-Schemas" />
+        <SubPart PartName="WSClient-Xliffs" />
+    </Part>
+
+    <Part Name="WebServicesCache-PublicAPI" BentleyBuildMakeFile="CachePrewire.mke">
+        <SubPart PartName="WebServicesClient-PublicAPI"/>
+        <Bindings>
+            <PublicAPI Domain="WebServices" />
+        </Bindings>
+    </Part>
+
+    <Part Name="WebServicesCache-Library" BentleyBuildMakeFile="CacheLib.mke" ExcludePlatforms="Android*" ApiNumber="M02">
+        <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="WSClientLibrarySubParts"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)WebServicesCache$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)WebServicesCache$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="WebServicesCache-Library-Android" BentleyBuildMakeFile="CacheLib.mke" OnlyPlatforms="Android*">
+        <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="WSClientLibrarySubParts" LibType="Static"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)WebServicesCache$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)WebServicesCache$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="WebServicesCache-Schemas" BentleyBuildMakeFile="CacheSchemasDelivery.mke">
+        <Bindings>
+            <Directory
+                SourceName="Delivery/ECSchemas/WSClient/Cache"
+                SubPartDirectory="ECSchemas/WSClient/Cache"
+                ProductDirectoryName="Assets"
+                ProductSubDirectory="ECSchemas/WSClient/Cache" />
+        </Bindings>
+    </Part>
+
+    <Part Name="NuGetPackage-WebServicesCache" BentleyBuildMakeFile="WebServicesCache.NuGetPackage.mke" OnlyPlatforms="x64" >
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="WSClientLibrarySubParts" />
+        <SubPart PartName="WebServicesCache" />
+        <SubPart PartName="WSClient-PublishedAPI" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\WebServicesCache\WebServicesCache.*.nupkg</Files>
+        </Bindings>
+    </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // iModelHubClient lib                                                  // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <!--
+        Cannot directly add a SubPart in iModelHubClient to
+        iModelHubClient-Library-Android/LibType=Static due to LKGs. The issue arises
+        on Windows, for example, which does not build anything in wsclient
+        statically, and thus will not post anything in the static LKG for
+        wsclient (good). Because there is no static LKG at all,
+        WebServicesClient cannot go searching for the static partfile to see
+        that this is Android-only. The workaround is to add a "shim" dynamic
+        part in the middle with the platform filter first.
+    -->
+    <Part Name="iModelHubClient-Library-Android-Shim" OnlyPlatforms="Android*">
+        <SubPart PartName="iModelHubClient-Library-Android" LibType="Static"/>
+    </Part>
+
+    <Part Name="iModelHubClient">
+        <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="iModelHubClient-PublicAPI" />
+        <SubPart PartName="iModelHubClient-Library" />
+        <SubPart PartName="iModelHubClient-Library-Android-Shim"/>
+        <SubPart PartName="WSClient-Xliffs" />
+        <SubPart PartName="iModelHubClient-Xliffs" />
+    </Part>
+
+    <Part Name="iModelHubClient-PublicAPI" BentleyBuildMakeFile="iModelHubClientPrewire.mke">
+        <Bindings>
+            <PublicAPI Domain="WebServices" />
+        </Bindings>
+    </Part>
+
+    <Part Name="iModelHubClient-Library" BentleyBuildMakeFile="iModelHubClientLib.mke"  ApiNumber="M02" ExcludePlatforms="Android*">
+        <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="DgnPlatformDll" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)iModelHubClient$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)iModelHubClient$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+
+    <Part Name="iModelHubClient-Library-Android" BentleyBuildMakeFile="iModelHubClientLib.mke" OnlyPlatforms="Android*">
+        <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="DgnPlatformDll" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)iModelHubClient$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)iModelHubClient$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="NuGetPackage-iModelHubClient" BentleyBuildMakeFile="iModelHubClient.NuGetPackage.mke"  OnlyPlatforms="x64">
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="iModelHubClient" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\iModelHubClient\iModelHubClient.*.nupkg</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="iModelHubClient-Xliffs" BentleyBuildMakeFile="iModelHubClient/xliffs.mke">
+        <Bindings>
+            <Files ProductDirectoryName="WSClientXliffs" Required="false" SubPartDirectory="xliffs">
+                Delivery/xliffs/iModelHubClient_en.xliff
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="iModelHubPrewireForIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/prewire.mke">
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="iModelHubNativeTests" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/ignore_list.txt</Files>
+            <Files ProductDirectoryName="UnitTests-Assets">Delivery/iModelHubNativeTests/iModelHubIntegrationTests.logging.config.xml</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="iModelHubBackdoorForIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
+        <SubPart PartName="iModelHubClient-Library"/>
+        <SubPart PartName="iModelHubPrewireForIntegrationTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="iModelHub/Backdoor" SourceName="Delivery/iModelHubNativeTests/Objects/Backdoor"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="iModelHubIntegrationTestsHelpers" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Helpers">
+        <SubPart PartName="iModelHubClient-Library"/>
+        <SubPart PartName="iModelHubClient-PublicAPI"/>
+        <SubPart PartName="iModelHubPrewireForIntegrationTests" />
+        <SubPart PartName="OidcNativeClient" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="iModelHub/Helpers" SourceName="Delivery/iModelHubNativeTests/Objects/Helpers"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="iModelHubIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Integration -dUsePublishedApi">
+        <SubPart PartName="iModelHubIntegrationTestsHelpers"/>
+        <SubPart PartName="FakeServer"/>
+        <SubPart PartName="IMHSClientExe"/> 
+        <SubPart PartName="DgnPlatformSqlang" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="iModelHubNativeTests/Integration" SourceName="Delivery/iModelHubNativeTests/Objects/Integration"/>
+            <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/IntegrationTests.json</Files>
+            <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/PerformanceTests.json</Files>
+            <Files ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ECSchemas" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/DgnPlatformTest.ecschema.xml</Files>
+            <Files ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ECSchemas" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/SchemaVersionTest.02.02.02.ecschema.xml</Files>
+            <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/ignore_list_dev.txt</Files>
+            <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/ignore_list_qa.txt</Files>
+            <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/whitelist.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Product Name="iModelHubNativeTestsCollection" DeferType="BuildUnitTests">
+        <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="iModelHubIntegrationTests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="iModelHubNativeTests"/>
+    </Product>
+
+    <Part Name="iModelHubGtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke"
+    BentleyBuildMakeOptions="-dTEST_NAME=iModelHubNativeTests -dTEST_COLLECTION_PRODUCT=iModelHubNativeTestsCollection -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x64">
+        <SubProduct ProductName="iModelHubNativeTestsCollection"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/iModelHubNativeTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/iModelHubNativeTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="iModelHubNativeTests" DeferType="BuildUnitTests" SaveProduct="true">
+        <SubPart PartName="iModelHubGtest"/>
+        <Directories DirectoryListName="iModelHubNativeTests"/>
+    </Product>
+
+    <Part Name="IMHSClientExe" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/IMHSClientExe/IMHSClient.mke" OnlyPlatforms="x64">
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="iModelHubClient-Library"/>
+        <SubPart PartName="iModelHubClient-PublicAPI"/>
+        <Bindings>
+            <Files>
+                Delivery\IMHSClientExe.exe
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="OidcNativeClient" DeferType="BuildUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests/iModelHubClient/OidcNativeClientPrewire.mke">
+        <NuGetPackage>Testing.OidcNativeClient</NuGetPackage>
+        <Bindings>
+            <Libs>Nuget\native\OidcInterop$(libext)</Libs>
+            <Assemblies>
+                Nuget\native\HtmlAgilityPack$(shlibext)
+                Nuget\native\IdentityModel$(shlibext)
+                Nuget\native\IdentityModel.OidcClient$(shlibext)
+                Nuget\native\Microsoft.Extensions.DependencyInjection.Abstractions$(shlibext)
+                Nuget\native\Microsoft.Extensions.Logging.Abstractions$(shlibext)
+                Nuget\native\Microsoft.Extensions.Logging$(shlibext)
+                Nuget\native\Microsoft.IdentityModel.Logging$(shlibext)
+                Nuget\native\Microsoft.IdentityModel.Tokens$(shlibext)
+                Nuget\native\Newtonsoft.Json$(shlibext)
+                Nuget\native\OidcClient$(shlibext)
+                Nuget\native\OidcInterop$(shlibext)
+                Nuget\native\System.IdentityModel.Tokens.Jwt$(shlibext)
+                Nuget\native\System.Net.Http$(shlibext)
+                Nuget\native\WebDriver$(shlibext)
+            </Assemblies>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">
+                Delivery/chromedriver.exe
+                Delivery/iModelHubNativeTests.exe.config
+            </Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="iModelHubNativeTests">
+        <ProductDirectory Name="Gtest-NativeAssemblies"    Path=""/>
+        <ProductDirectory Name="Assemblies"                Path=""/>
+        <ProductDirectory Name="Assemblies"                Path="" LibType="Static" Deliver="false"/>
+        <ProductDirectory Name="Assets"                    Path="Assets"/>
+        <ProductDirectory Name="Assets"                    Path="Assets" LibType="static"/>
+        <ProductDirectory Name="sqlang"                    Path="sqlang" RelativeTo="Assets"/>
+        <ProductDirectory Name="sqlang"                    Path="sqlang" RelativeTo="Assets" LibType="static"/>
+        <ProductDirectory Name="Gtest-Assets"              Path="Assets"/>
+        <ProductDirectory Name="VendorNotices"             Deliver="false" />
+        <ProductDirectory Name="VendorNotices"             Deliver="false" LibType="static" />
+        <ProductDirectory Name="LoggingManagedAssemblies"  Deliver="false"/>
+        <ProductDirectory Name="LoggingNativeAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="UnitTests-Objects"         Path="Objects" Deliver="true"/>
+        <ProductDirectory Name="UnitTests-Objects"         Deliver="false" LibType="Static"/>
+        
+        <ProductDirectory Name="PublisherLoggingConfigXml"      Deliver="false" />
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false" />
+        <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" />
+    </ProductDirectoryList>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // L10N                                                                   // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <Part Name="WSClient-Xliffs" BentleyBuildMakeFile="xliffs.mke">
+        <Bindings>
+            <Files ProductDirectoryName="WSClientXliffs" Required="false" SubPartDirectory="xliffs">
+                Delivery/xliffs/WebServicesCache_en.xliff
+                Delivery/xliffs/WebServicesClient_en.xliff
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- English Xliffs generated during the build are pushed (by PRG only) to Mercurial next to translations for L10N vendor convenience -->
+    <Part Name="L10N-WSClientXliffs-en" OnlyPlatforms="x64"
+        BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/PushXliffsFromBuild.mke"
+        BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/WSClient/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-WSClient/ -dL10N_XLIFF_LANG_DIRECTORY=en">
+        <SubPart PartName="WSClient-Xliffs" />
+        <SubPart PartName="iModelHubClient-Xliffs" />
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-cs" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=cs">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/WebServicesCache_cs.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/WebServicesClient_cs.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-de" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=de">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/WebServicesCache_de.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/WebServicesClient_de.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-es" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=es">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/WebServicesCache_es.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/WebServicesClient_es.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-fi" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fi">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/WebServicesCache_fi.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/WebServicesClient_fi.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-fr" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fr">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/WebServicesCache_fr.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/WebServicesClient_fr.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-it" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=it">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/WebServicesCache_it.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/WebServicesClient_it.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-ja" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ja">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/WebServicesCache_ja.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/WebServicesClient_ja.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-ko" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ko">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/WebServicesCache_ko.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/WebServicesClient_ko.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-nl" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=nl">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/WebServicesCache_nl.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/WebServicesClient_nl.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-pl" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pl">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/WebServicesCache_pl.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/WebServicesClient_pl.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-pt" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pt">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/WebServicesCache_pt.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/WebServicesClient_pt.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-ru" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ru">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/WebServicesCache_ru.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/WebServicesClient_ru.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-sv" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=sv">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/WebServicesCache_sv.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/WebServicesClient_sv.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-tr" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=tr">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/WebServicesCache_tr.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/WebServicesClient_tr.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-zh-cn" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-cn">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/WebServicesCache_zh-cn.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/WebServicesClient_zh-cn.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-WSClientXliffs-zh-tw" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-tw">
+        <RequiredRepository>l10n-WSClient</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/WebServicesClient_zh-tw.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/WebServicesCache_zh-tw.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // Unit Tests                                                             // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/Prewire.mke">
+        <SubPart PartName="WebServicesCache" />
+        <SubPart PartName="WebServicesClient"/>
+        <SubPart PartName="WSClientTestAssets" />
+        <SubPart PartName="WSClient_en_L10N" />
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="WebServices" SubPartDirectory="UnitTests/WebServices">
+                Delivery/UnitTests/ignore_list.txt
+            </Files>
+            <Directory ProductDirectoryName="WSClientTestAssets" SourceName="WSClientTestAssets"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="WSClientTestAssets" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/AssetsDelivery.mke" />
+
+    <Part
+        Name="WSClient_en_L10N"
+        BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
+        BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/WSClient/sqlang/WSClient_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+        <SubPart PartName="WebServicesCache" />
+        <SubPart PartName="WebServicesClient"/>
+        <Bindings>
+            <Files ProductDirectoryName="sqlang" Required="true">Delivery/sqlang/WSClient_en.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-Published" DeferType="BuildUnitTests"
+        BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke"
+        BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi -dENABLE_DGNDBSERVER_UNIT_TESTS -dBUILD_AGGREGATE_TESTS"
+        >
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="WSClient-PublishedAPI" />
+        <SubPart PartName="iModelHubClient-Library" />
+        <SubPart PartName="iModelHubClient-Library-Android" LibType="Static" />
+
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="WebServices/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+        </Bindings>
+    </Part>
+
+    <!-- Define a test collection part. This is included in DgnClientFx's TestsAggregate -->
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-Published"/>
+
+        <!-- Ensure that builds, run manually if needed -->
+        <SubPart PartName="WSClientIntegrationTests" />
+        <SubPart PartName="WSClientCompatibilityTestTool" />
+    </Part>
+
+    <!-- Define a gtest program to run the tests. 
+        The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts -->
+    <Product Name="WSClient-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+
+        <!-- WIP to silence build warnings. -->
+        <Directories DirectoryListName="WSClient-Tests-Dirs"/>
+    </Product>
+
+    <!-- WIP to silence build warnings. -->
+    <ProductDirectoryList ListName="WSClient-Tests-Dirs">
+        <ProductDirectory Name="Gtest-NativeAssemblies" Deliver="false"/>
+        <ProductDirectory Name="sqlang" LibType="static" Deliver="false"/>
+
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false" />
+        <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="Assemblies"/>
+    </ProductDirectoryList>
+
+    <Part Name="Gtest" DeferType="BuildUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=WSClientTest -dTEST_COLLECTION_PRODUCT=WSClient-Tests"
+        OnlyPlatforms="x86,x64,Linux*,MacOS*"
+        >
+        <SubProduct ProductName="WSClient-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/WSClientTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/WSClientTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="WSClient-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke"
+        BentleyBuildMakeOptions="-dGTEST_PRODUCT=WSClient-Gtest -dGTEST_NAME=WSClientTest"
+        OnlyPlatforms="x86,x64,MacOs*,Linux*"
+        >
+        <SubProduct ProductName="WSClient-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/WSClientTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Memory leak testing of WSClient tests. Only called on demand -->
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=WSClient-Gtest -dGTEST_NAME=WSClientTest" OnlyPlatforms="x64">
+        <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+        <SubProduct ProductName="WSClient-Gtest" />
+    </Part>
+
+
+    <!-- Part for Visual Studio based builds on G0505 -->
+    <Part Name="WSClientUnitTests-VS" >
+        <SubPart PartName="WSClientUnitTests" />
+        <SubPart PartName="BeGTestExe" PartFile="BeGTest" Repository="BeGTest" />
+    </Part>
+
+    <!-- ********************** -->
+    <!-- **** AndroidJUnit **** -->
+    <!-- ********************** -->
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=WSClient-Tests -dTEST_SHORT_NAME=WSClientTst -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="WSClient-Tests"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
+        </Bindings>
+    </Part>
+
+    <Product Name="WSClient-AndroidJUnit" >
+        <SubPart PartName="AndroidJUnit" LibType="Static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=WSClient-AndroidJUnit" OnlyPlatforms="Android*">
+        <SubProduct ProductName="WSClient-AndroidJUnit"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/WSClient-AndroidJUnit.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- ********************** -->
+    <!-- **** iOSXCTest **** -->
+    <!-- ********************** -->
+    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=WSClient -dTEST_COLLECTION_PRODUCT=WSClient-Tests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="WSClient-Tests"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/WSClient/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="WSClient-iOSXCTest" >
+        <SubPart PartName="iOSXCTest" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=WSClient-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="WSClient-iOSXCTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/WSClient-iOSXCTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- *********************************************************** -->
+    <!-- **** UWP Microsoft::VisualStudio::CppUnitTestFramework **** -->
+    <!-- *********************************************************** -->
+    <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
+    <Part
+        Name="UwpTest" DeferType="BuildUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=WSClient -dTEST_COLLECTION_PRODUCT=WSClient-Tests"
+        OnlyPlatforms="WinRT*"
+        ApiNumber="M02"
+        >
+        <SubProduct ProductName="WSClient-Tests"/>
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/WSClientUwpTest"/>
+        </Bindings>
+    </Part>
+
+    <Product Name="WSClient-UwpTest">
+        <SubPart PartName="UwpTest"/>
+        <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part
+        Name="RunUwpTest"
+        DeferType="RunUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=WSClient-UwpTest"
+        OnlyPlatforms="WinRT*"
+        >
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubProduct ProductName="WSClient-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/WSClient-UwpTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // Integration Tests - used for debugging                                 // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <Product Name="WSClient-IntegrationGTest" OnlyPlatforms="x64">
+        <SubPart PartName="WSClientIntegrationTests"/>
+        <Directories DirectoryListName="IntegrationGTestDirectories"/>
+    </Product>
+
+    <ProductDirectoryList ListName="IntegrationGTestDirectories">
+        <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+        <ProductDirectory Name="Assemblies" Path=""/>
+        <ProductDirectory Name="Assets" Path="Assets"/>
+        <ProductDirectory Name="Assets" Path="Assets" LibType="static"/>
+        <ProductDirectory Name="sqlang"  Path="sqlang" RelativeTo="Assets"/>
+        <ProductDirectory Name="sqlang"  Path="sqlang" RelativeTo="Assets" LibType="static"/>
+        <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
+        <ProductDirectory Name="VendorNotices" Deliver="false" />
+        <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false" />
+        <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" />
+    </ProductDirectoryList>
+
+    <Part Name="WSClientIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" OnlyPlatforms="x64">
+        <SubPart PartName="WSClient_en_L10N"/>
+        <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="WebServicesCache" />
+        <SubPart PartName="WSClient-PublishedAPI" />
+        <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
+        <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">
+                Delivery/WSClientIntegrationTests.exe
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // Compatibility Tests - tool for WSG server developers                   // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <Part Name="WSClientCompatibilityTestTool" OnlyPlatforms="x64" >
+        <SubPart PartName="WSClientLibrarySubParts" />
+        <SubProduct ProductName="WSClientCompatibilityTestTool" />
+    </Part>
+
+    <Product Name="WSClientCompatibilityTestTool" SaveProduct="true">
+        <SubPart PartName="WSClientLibrarySubParts" />
+        <SubPart PartName="WSClientCompatibilityTests" />
+        <Directories DirectoryListName="WSClientCompatibilityTestToolDirList" />
+    </Product>
+
+    <Part Name="NuGetPackage-WSClientCompatibilityTestTool" DeferType="BuildUnitTests" BentleyBuildMakeFile="WSClientCompatibilityTestTool.NuGetPackage.mke" OnlyPlatforms="x64" >
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="WSClientLibrarySubParts" />
+        <SubPart PartName="WSClientCompatibilityTests" />
+        <SubPart PartName="WSClient-PublishedAPI" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\WSClientCompatibilityTestTool\WSClientCompatibilityTestTool.*.nupkg</Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="WSClientCompatibilityTestToolDirList" >
+        <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+        <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+        <ProductDirectory Name="Assemblies" Path=""/>
+        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
+        <ProductDirectory Name="Assets" Path="Assets"/>
+        <ProductDirectory Name="Assets" Path="Assets" LibType="static"/>
+        <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
+        <ProductDirectory Name="VendorNotices" Deliver="false" />
+        <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false" />
+        <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" />
+
+        <ProductDirectory Name="sqlang"                             Path="Assets/sqlang"/>
+        <ProductDirectory Name="ecobjectsnativeassemblies"          Path=""/>
+        <ProductDirectory Name="ecschemas"                          Path=""/>
+        <ProductDirectory Name="loggingnativeassemblies"            Path=""/>
+        <ProductDirectory Name="bentleynativeassemblies"            Path=""/>
+        <ProductDirectory Name="geomnativeassemblies"               Path=""/>
+
+        <ProductDirectory Name="BeCurlAssemblies"                   Path=""/>
+        <ProductDirectory Name="BeOpenSSLAssemblies"                Path=""/>
+        <ProductDirectory Name="http"                               Path="http"/>
+        <ProductDirectory Name="Libs"                               Deliver="false"/>
+        <ProductDirectory Name="Libs"                               Deliver="false" LibType="static"/>
+        <ProductDirectory Name="BentleyLibs"                        Deliver="false"/>
+        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
+        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
+        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
+        <ProductDirectory Name="PublicAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="WSClientAssemblies"                 Path=""/>
+        <ProductDirectory Name="WSClientCompatibilityTests"         Path=""/>
+
+        <!-- WIP to silence build warnings. -->
+        <ProductDirectory Name="WSClientTestAssets" Deliver="false"/>
+        <ProductDirectory Name="UnitTests-IgnoreList" Deliver="false"/>
+    </ProductDirectoryList>
+
+    <Part Name="WSClientCompatibilityTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/CompatibilityTests/CompatibilityTests.mke" OnlyPlatforms="x64" >
+        <SubPart PartName="WSClientLibrarySubParts" />
+        <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="WebServicesCache" />
+        <SubPart PartName="WSClient-PublishedAPI" />
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
+        <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="WSClientCompatibilityTests">
+                Delivery/WSClientCompatibilityTests$(exeext)
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- Not all libraries might be actuall required, TODO: remove not needed libraries -->
+    <Part Name="WSClientLibrarySubParts">
+        <!-- Make sure that the environment-specific source/tools for DgnClientFx are current for syncpull workflows -->
+        <!-- Some of these are just so that when we pull in Firebug for winx86 we also get the repos for Android -->
+        <RequiredRepository>Bsitools-WinX86</RequiredRepository>
+        <RequiredRepository>Bsitools-MacX64</RequiredRepository>
+        <RequiredRepository>Bsitools-LinuxX86</RequiredRepository>
+        <RequiredRepository>Bsitools-LinuxX64</RequiredRepository>
+        <RequiredRepository>Bsitools-Doclava</RequiredRepository>
+        <RequiredRepository>Bsitools-JsonTinyValidator</RequiredRepository>
+        <!-- Also make sure that the testing frameworks are current for syncpull workflows -->
+        <RequiredRepository>BeGTest</RequiredRepository>
+        <RequiredRepository>Bsitools-Jasmine</RequiredRepository>
+
+        <SubPart PartName="BentleyDll"                  PartFile="Bentley"          Repository="Bentley" />
+        <SubPart PartName="BeHttp"                      PartFile="BeHttp"           Repository="BeHttp"/>
+        <SubPart PartName="BeSecurity"                  PartFile="BeSecurity"       Repository="BeSecurity" />
+        <SubPart PartName="LibXml2" 					PartFile="Libsrc-Nugets" 	Repository="bsicommon"/>
+        <SubPart PartName="GeomDlls"                    PartFile="geomlibs"         Repository="GeomLibs" />
+        <SubPart PartName="GeomLibsSerialization"       PartFile="geomlibs"         Repository="GeomLibs" />
+        <SubPart PartName="csmapStatic"                 PartFile="csmap"            Repository="libsrc-csmap" />
+        <SubPart PartName="BeSQLite"                    PartFile="BeSQLite"         Repository="BeSQLite" />
+        <SubPart PartName="ECDb"                        PartFile="ECDb"             Repository="ECDb" />
+        <SubPart PartName="ECObjectsNative"             PartFile="ECObjects"        Repository="ECObjects" />
+        <SubPart PartName="UnitsNative"                 PartFile="Units"            Repository="Units" />
+        <SubPart PartName="BeJsonCpp"                   PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="Curl" 						PartFile="Libsrc-Nugets" 	Repository="bsicommon"/>
+        <SubPart PartName="BeJavaScript" PartFile="BeJavaScript/BeJavaScript" Repository="Bentley"/>
+        <SubPart PartName="LoggingManagedInteropShim"/>
+    </Part>
+
+    <Part Name="LoggingManagedInteropShim" OnlyPlatforms="x64">
+        <SubPart PartName="LoggingManagedInterop" PartFile="LoggingSDK" Repository="LoggingSDK"/>
+    </Part>
+
+</BuildContext>
