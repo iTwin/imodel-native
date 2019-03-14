@@ -1919,6 +1919,8 @@ int iModelBridgeFwk::UpdateExistingBim()
             return RETURN_STATUS_CONVERTER_ERROR;
             }
 
+        //Call save changes before the bridge is closed.
+        dbres = m_briefcaseDgnDb->SaveChanges();
         callTerminate.m_status = callCloseOnReturn.m_status = BSISUCCESS;
         }
     //This allow SQLite to create optimize execution plans when running queries. It should be be included in changeset that bridges post.
