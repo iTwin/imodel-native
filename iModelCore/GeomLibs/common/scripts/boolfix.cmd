@@ -1,0 +1,1 @@
+call gemaproc %GEMADIR%g\boolfix.g %1

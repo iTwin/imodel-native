@@ -1,0 +1,13 @@
+message TransitionSpiral
+{
+required string SpiralType = 1;
+required IPlacement Placement = 2;
+required Angle StartBearing = 3;
+required double StartRadius = 4;
+required Angle EndBearing = 5;
+required double EndRadius = 6;
+required double ActiveStartFraction = 7;
+required double ActiveEndFraction = 8;
+required IGeometry Geometry = 9;
+}
+
