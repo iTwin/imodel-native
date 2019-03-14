@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="Profiles" alias="prf" description="EC Schema for Profiles" version="01.00.00" displayLabel="Profiles" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis" />
+    <ECSchemaReference name="AecUnits" version="01.00.01" alias="AECU" />
 
     <ECStructClass typeName="CardinalPoint" description="2D location on the profile used to place and offset profiles when extruding them on curve members.">
         <ECProperty propertyName="Name" typeName="string" description="Name of the cardinal point, used to reference and distinquish cardinal points. Unique in the scope of a profile." />
@@ -46,14 +47,14 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="FlangeWidth" typeName="double" description="Extent of the flange, defined parallel to the x axis of the position coordinate system." />
-        <ECProperty propertyName="Depth" typeName="double" description="Extent of the web, defined parallel to the y axis of the position coordinate system." />
-        <ECProperty propertyName="FlangeThickness" typeName="double" description="Constant wall thickness of flanges." />
-        <ECProperty propertyName="WebThickness" typeName="double" description="Constant wall thickness of the web." />
+        <ECProperty propertyName="FlangeWidth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the flange, defined parallel to the x axis of the position coordinate system." />
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the web, defined parallel to the y axis of the position coordinate system." />
+        <ECProperty propertyName="FlangeThickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Constant wall thickness of flanges." />
+        <ECProperty propertyName="WebThickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Constant wall thickness of the web." />
         <!-- Optional properties -->
-        <ECProperty propertyName="FilletRadius" typeName="double" description="The fillet radius between the web and the flange. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="FlangeEdgeRadius" typeName="double" description="Radius of the lower edges of the top flange and the upper edges of the bottom flange. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="FlangeSlope" typeName="double" description="Slope of the lower face of the top flange and of the upper face of the bottom flange. Non-zero in case of tapered flanges, 0 in case of parallel flanges, default 0 if not specified." />
+        <ECProperty propertyName="FilletRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="The fillet radius between the web and the flange. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="FlangeEdgeRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Radius of the lower edges of the top flange and the upper edges of the bottom flange. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="FlangeSlope" typeName="double" kindOfQuantity="AECU:ANGLE" description="Slope of the lower face of the top flange and of the upper face of the bottom flange. Non-zero in case of tapered flanges, 0 in case of parallel flanges, default 0 if not specified." />
     </ECEntityClass>
 
     <ECEntityClass typeName="IShapeProfile" modifier="Sealed" description="An I shaped Profile similar to rolled steel I-shapes.">
@@ -61,14 +62,14 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="FlangeWidth" typeName="double" description="Extent of the width (flange length), defined parallel to the x axis of the position coordinate system." />
-        <ECProperty propertyName="Depth" typeName="double" description="Extent of the depth (web length), defined parallel to the y axis of the position coordinate system." />
-        <ECProperty propertyName="FlangeThickness" typeName="double" description="Flange thickness of the I-shape. Both, the upper and the lower flanges have the same thickness and they are centred on the y-axis of the position coordinate system." />
-        <ECProperty propertyName="WebThickness" typeName="double" description="Web thickness of the I-shape. The web is centred on the x-axis and the y-axis of the position coordinate system." />
+        <ECProperty propertyName="FlangeWidth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the width (flange length), defined parallel to the x axis of the position coordinate system." />
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the depth (web length), defined parallel to the y axis of the position coordinate system." />
+        <ECProperty propertyName="FlangeThickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Flange thickness of the I-shape. Both, the upper and the lower flanges have the same thickness and they are centred on the y-axis of the position coordinate system." />
+        <ECProperty propertyName="WebThickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Web thickness of the I-shape. The web is centred on the x-axis and the y-axis of the position coordinate system." />
         <!-- Optional properties -->
-        <ECProperty propertyName="FilletRadius" typeName="double" description="The fillet radius between the web and the flange. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="FlangeEdgeRadius" typeName="double" description="Radius of the lower edges of the top flange and the upper edges of the bottom flange. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="FlangeSlope" typeName="double" description="Slope of the lower faces of the top flange and of the upper faces of the bottom flange. Non-zero in case of tapered flanges, 0 in case of parallel flanges, default 0 if not specified." />
+        <ECProperty propertyName="FilletRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="The fillet radius between the web and the flange. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="FlangeEdgeRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Radius of the lower edges of the top flange and the upper edges of the bottom flange. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="FlangeSlope" typeName="double" kindOfQuantity="AECU:ANGLE" description="Slope of the lower faces of the top flange and of the upper faces of the bottom flange. Non-zero in case of tapered flanges, 0 in case of parallel flanges, default 0 if not specified." />
     </ECEntityClass>
 
     <ECEntityClass typeName="AsymmetricIShapeProfile" modifier="Sealed" description="An asymmetric (about x-axis) I shaped Profile similar to rolled steel I-shapes.">
@@ -76,19 +77,19 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="TopFlangeWidth" typeName="double" description="Extent of the top flange, defined parallel to the x axis of the position coordinate system." />
-        <ECProperty propertyName="BottomFlangeWidth" typeName="double" description="Extent of the bottom flange, defined parallel to the x axis of the position coordinate system." />
-        <ECProperty propertyName="Depth" typeName="double" description="Extent of the depth (web length), defined parallel to the y axis of the position coordinate system." />
-        <ECProperty propertyName="TopFlangeThickness" typeName="double" description="Flange thickness of the top flange." />
-        <ECProperty propertyName="BottomFlangeThickness" typeName="double" description="Flange thickness of the bottom flange." />
-        <ECProperty propertyName="WebThickness" typeName="double" description="Web thickness of the I-shape. The web is centred on the x-axis and the y-axis of the position coordinate system." />
+        <ECProperty propertyName="TopFlangeWidth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the top flange, defined parallel to the x axis of the position coordinate system." />
+        <ECProperty propertyName="BottomFlangeWidth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the bottom flange, defined parallel to the x axis of the position coordinate system." />
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the depth (web length), defined parallel to the y axis of the position coordinate system." />
+        <ECProperty propertyName="TopFlangeThickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Flange thickness of the top flange." />
+        <ECProperty propertyName="BottomFlangeThickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Flange thickness of the bottom flange." />
+        <ECProperty propertyName="WebThickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Web thickness of the I-shape. The web is centred on the x-axis and the y-axis of the position coordinate system." />
         <!-- Optional properties -->
-        <ECProperty propertyName="TopFlangeFilletRadius" typeName="double" description="The fillet radius between the web and the top flange. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="TopFlangeEdgeRadius" typeName="double" description="Radius of the lower edges of the top flange. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="TopFlangeSlope" typeName="double" description="Slope of the lower faces of the top flange. Non-zero in case of of tapered top flange, 0 in case of parallel top flange, default 0 if not specified." />
-        <ECProperty propertyName="BottomFlangeFilletRadius" typeName="double" description="The fillet radius between the web and the bottom flange. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="BottomFlangeEdgeRadius" typeName="double" description="Radius of the upper edges of the bottom flange. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="BottomFlangeSlope" typeName="double" description="Slope of the upper faces of the bottom flange. Non-zero in case of of tapered bottom flange, 0 in case of parallel bottom flange, default 0 if not specified." />
+        <ECProperty propertyName="TopFlangeFilletRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="The fillet radius between the web and the top flange. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="TopFlangeEdgeRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Radius of the lower edges of the top flange. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="TopFlangeSlope" typeName="double" kindOfQuantity="AECU:ANGLE" description="Slope of the lower faces of the top flange. Non-zero in case of of tapered top flange, 0 in case of parallel top flange, default 0 if not specified." />
+        <ECProperty propertyName="BottomFlangeFilletRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="The fillet radius between the web and the bottom flange. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="BottomFlangeEdgeRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Radius of the upper edges of the bottom flange. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="BottomFlangeSlope" typeName="double" kindOfQuantity="AECU:ANGLE" description="Slope of the upper faces of the bottom flange. Non-zero in case of of tapered bottom flange, 0 in case of parallel bottom flange, default 0 if not specified." />
     </ECEntityClass>
 
     <ECEntityClass typeName="LShapeProfile" modifier="Sealed" description="An L-shaped Profile (also refered as Angle) similar to rolled steel L-shapes.">
@@ -96,13 +97,13 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="Width" typeName="double" description="Horizontal leg length, defined parallel to the x axis of the position coordinate system." />
-        <ECProperty propertyName="Depth" typeName="double" description="Vertical leg length, defined parallel to the y axis of the position coordinate system." />
-        <ECProperty propertyName="Thickness" typeName="double" description="Constant wall thickness of profile." />
+        <ECProperty propertyName="Width" typeName="double" kindOfQuantity="AECU:LENGTH" description="Horizontal leg length, defined parallel to the x axis of the position coordinate system." />
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Vertical leg length, defined parallel to the y axis of the position coordinate system." />
+        <ECProperty propertyName="Thickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Constant wall thickness of profile." />
         <!-- Optional properties -->
-        <ECProperty propertyName="FilletRadius" typeName="double" description="Fillet radius between legs. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="EdgeRadius" typeName="double" description="Radius of flange edges. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="LegSlope" typeName="double" description="Slope of the inner faces of the legs. Non-zero in case of tapered legs, 0 in case of perpendicular legs, default 0 if not specified." />
+        <ECProperty propertyName="FilletRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Fillet radius between legs. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="EdgeRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Radius of flange edges. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="LegSlope" typeName="double" kindOfQuantity="AECU:ANGLE" description="Slope of the inner faces of the legs. Non-zero in case of tapered legs, 0 in case of perpendicular legs, default 0 if not specified." />
     </ECEntityClass>
 
     <ECEntityClass typeName="SchifflerizedLShapeProfile" modifier="Sealed" description="An L-shaped Profile (also refered as Angle) with legs bent at 15 degree angle, making the angle between the legs equal to 60 degrees.">
@@ -110,12 +111,12 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="LegLength" typeName="double" description="Leg length. Both vertical and horizontal legs are defined wiht equal length." />
-        <ECProperty propertyName="Thickness" typeName="double" description="Constant wall thickness of profile." />
+        <ECProperty propertyName="LegLength" typeName="double" kindOfQuantity="AECU:LENGTH" description="Leg length. Both vertical and horizontal legs are defined wiht equal length." />
+        <ECProperty propertyName="Thickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Constant wall thickness of profile." />
         <!-- Optional properties -->
-        <ECProperty propertyName="LegBendOffset" typeName="double" description="Offset defining where legs are bent. Offset is measured from start of the angle (leg joint) plus leg thickness i.e. if LegBendOffset is zero, legs will be bent at distance equal to Thickness from the leg joint." />
-        <ECProperty propertyName="FilletRadius" typeName="double" description="Fillet radius between legs. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="EdgeRadius" typeName="double" description="Radius of flange edges. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="LegBendOffset" typeName="double" kindOfQuantity="AECU:LENGTH" description="Offset defining where legs are bent. Offset is measured from start of the angle (leg joint) plus leg thickness i.e. if LegBendOffset is zero, legs will be bent at distance equal to Thickness from the leg joint." />
+        <ECProperty propertyName="FilletRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Fillet radius between legs. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="EdgeRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Radius of flange edges. 0 if sharp-edged, default 0 if not specified." />
     </ECEntityClass>
 
     <ECEntityClass typeName="TShapeProfile" modifier="Sealed" description="A T-shaped Profile similar to rolled steel T-shapes.">
@@ -123,16 +124,16 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="FlangeWidth" typeName="double" description="Extent of the width (top flange), defined parallel to the x axis of the position coordinate system." />
-        <ECProperty propertyName="Depth" typeName="double" description="Extent of the depth (web length), defined parallel to the y axis of the position coordinate system." />
-        <ECProperty propertyName="FlangeThickness" typeName="double" description="Constant wall thickness of the flange." />
-        <ECProperty propertyName="WebThickness" typeName="double" description="Constant wall thickness of the web." />
+        <ECProperty propertyName="FlangeWidth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the width (top flange), defined parallel to the x axis of the position coordinate system." />
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the depth (web length), defined parallel to the y axis of the position coordinate system." />
+        <ECProperty propertyName="FlangeThickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Constant wall thickness of the flange." />
+        <ECProperty propertyName="WebThickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Constant wall thickness of the web." />
         <!-- Optional properties -->
-        <ECProperty propertyName="FilletRadius" typeName="double" description="The fillet radius between the web and the flange. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="FlangeEdgeRadius" typeName="double" description="Radius of flange edges. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="FlangeSlope" typeName="double" description="Slope of the lower face of the flange. Non-zero in case of tapered flange, 0 in case of non-tapered flange, default 0 if not specified." />
-        <ECProperty propertyName="WebEdgeRadius" typeName="double" description="Radius of web edges. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="WebSlope" typeName="double" description="Slope of the web. Non-zero in case of tapered web, 0 in case of non-tapered web, default 0 if not specified." />
+        <ECProperty propertyName="FilletRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="The fillet radius between the web and the flange. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="FlangeEdgeRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Radius of flange edges. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="FlangeSlope" typeName="double" kindOfQuantity="AECU:ANGLE" description="Slope of the lower face of the flange. Non-zero in case of tapered flange, 0 in case of non-tapered flange, default 0 if not specified." />
+        <ECProperty propertyName="WebEdgeRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Radius of web edges. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="WebSlope" typeName="double" kindOfQuantity="AECU:ANGLE" description="Slope of the web. Non-zero in case of tapered web, 0 in case of non-tapered web, default 0 if not specified." />
     </ECEntityClass>
 
     <ECEntityClass typeName="TTShapeProfile" modifier="Sealed" description="A TT-shaped Profile similar to double-tee concrete shapes.">
@@ -140,17 +141,17 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="FlangeWidth" typeName="double" description="Extent of the width (top flange), defined parallel to the x axis of the position coordinate system." />
-        <ECProperty propertyName="Depth" typeName="double" description="Extent of the depth (web length), defined parallel to the y axis of the position coordinate system." />
-        <ECProperty propertyName="FlangeThickness" typeName="double" description="Constant wall thickness of the flange." />
-        <ECProperty propertyName="WebThickness" typeName="double" description="Constant wall thickness of the web." />
-        <ECProperty propertyName="WebSpacing" typeName="double" description="Spacing between the two webs." />
+        <ECProperty propertyName="FlangeWidth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the width (top flange), defined parallel to the x axis of the position coordinate system." />
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the depth (web length), defined parallel to the y axis of the position coordinate system." />
+        <ECProperty propertyName="FlangeThickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Constant wall thickness of the flange." />
+        <ECProperty propertyName="WebThickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Constant wall thickness of the web." />
+        <ECProperty propertyName="WebSpacing" typeName="double" kindOfQuantity="AECU:LENGTH" description="Spacing between the two webs." />
         <!-- Optional properties -->
-        <ECProperty propertyName="FilletRadius" typeName="double" description="The fillet radius between the web and the flange. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="FlangeEdgeRadius" typeName="double" description="Radius of flange edges. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="FlangeSlope" typeName="double" description="Slope of the lower face of the flange. Non-zero in case of tapered flange, 0 in case of non-tapered flange, default 0 if not specified." />
-        <ECProperty propertyName="WebEdgeRadius" typeName="double" description="Radius of web edges. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="WebSlope" typeName="double" description="Slope of the web. Non-zero in case of tapered web, 0 in case of non-tapered web, default 0 if not specified." />
+        <ECProperty propertyName="FilletRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="The fillet radius between the web and the flange. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="FlangeEdgeRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Radius of flange edges. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="FlangeSlope" typeName="double" kindOfQuantity="AECU:ANGLE" description="Slope of the lower face of the flange. Non-zero in case of tapered flange, 0 in case of non-tapered flange, default 0 if not specified." />
+        <ECProperty propertyName="WebEdgeRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Radius of web edges. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="WebSlope" typeName="double" kindOfQuantity="AECU:ANGLE" description="Slope of the web. Non-zero in case of tapered web, 0 in case of non-tapered web, default 0 if not specified." />
     </ECEntityClass>
 
     <ECEntityClass typeName="ZShapeProfile" modifier="Sealed" description="A Z-shaped Profile similar to rolled steel Z-shapes.">
@@ -158,14 +159,14 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="FlangeWidth" typeName="double" description="Extent of single flange, defined parallel to the x axis of the position coordinate system." />
-        <ECProperty propertyName="Depth" typeName="double" description="Extent of the depth (web length), defined parallel to the y axis of the position coordinate system." />
-        <ECProperty propertyName="FlangeThickness" typeName="double" description="Constant wall thickness of flanges." />
-        <ECProperty propertyName="WebThickness" typeName="double" description="Constant wall thickness of the web." />
+        <ECProperty propertyName="FlangeWidth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of single flange, defined parallel to the x axis of the position coordinate system." />
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the depth (web length), defined parallel to the y axis of the position coordinate system." />
+        <ECProperty propertyName="FlangeThickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Constant wall thickness of flanges." />
+        <ECProperty propertyName="WebThickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Constant wall thickness of the web." />
         <!-- Optional properties -->
-        <ECProperty propertyName="FilletRadius" typeName="double" description="The fillet radius between the web and the flanges. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="FlangeEdgeRadius" typeName="double" description="Radius of flange edges. 0 if sharp-edged, default 0 if not specified." />
-        <ECProperty propertyName="FlangeSlope" typeName="double" description="Slope of the lower face of the top flange and of the upper face of the bottom flange. Non-zero in case of tapered flanges, 0 in case of parallel flanges, default 0 if not specified." />
+        <ECProperty propertyName="FilletRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="The fillet radius between the web and the flanges. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="FlangeEdgeRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Radius of flange edges. 0 if sharp-edged, default 0 if not specified." />
+        <ECProperty propertyName="FlangeSlope" typeName="double" kindOfQuantity="AECU:ANGLE" description="Slope of the lower face of the top flange and of the upper face of the bottom flange. Non-zero in case of tapered flanges, 0 in case of parallel flanges, default 0 if not specified." />
     </ECEntityClass>
 
     <ECEntityClass typeName="ICenterLineProfile" modifier="Abstract" displayLabel="Center Line Profile Mixin">
@@ -175,7 +176,7 @@
             </IsMixin>
         </ECCustomAttributes>
         <ECProperty propertyName="CenterLine" typeName="Bentley.Geometry.Common.IGeometry" description="" />
-        <ECProperty propertyName="WallThickness" typeName="double" description="Constant thickness of profile walls." />
+        <ECProperty propertyName="WallThickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Constant thickness of profile walls." />
     </ECEntityClass>
 
     <ECEntityClass typeName="CenterLineCShapeProfile" modifier="Sealed" description="A C shaped Profile with rounded corners, similar to cold-formed steel C-shapes.">
@@ -184,11 +185,11 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="FlangeWidth" typeName="double" description="Extent of the flange, defined parallel to the x axis of the position coordinate system." />
-        <ECProperty propertyName="Depth" typeName="double" description="Extent of the web, defined parallel to the y axis of the position coordinate system." />
-        <ECProperty propertyName="FilletRadius" typeName="double" description="Inner fillet radius." />
+        <ECProperty propertyName="FlangeWidth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the flange, defined parallel to the x axis of the position coordinate system." />
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the web, defined parallel to the y axis of the position coordinate system." />
+        <ECProperty propertyName="FilletRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Inner fillet radius." />
         <!-- Optional properties -->
-        <ECProperty propertyName="Girth" typeName="double" description="Length of lips. 0 if profile doesn't have lips, default 0 if not specified." />
+        <ECProperty propertyName="Girth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Length of lips. 0 if profile doesn't have lips, default 0 if not specified." />
     </ECEntityClass>
 
     <ECEntityClass typeName="CenterLineLShapeProfile" modifier="Sealed" description="An L-shaped Profile with rounded corners, similar to cold-formed steel L-shapes.">
@@ -197,11 +198,11 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="Width" typeName="double" description="Horizontal leg length, defined parallel to the x axis of the position coordinate system." />
-        <ECProperty propertyName="Depth" typeName="double" description="Vertical leg length, defined parallel to the y axis of the position coordinate system." />
-        <ECProperty propertyName="FilletRadius" typeName="double" description="Inner fillet radius." />
+        <ECProperty propertyName="Width" typeName="double" kindOfQuantity="AECU:LENGTH" description="Horizontal leg length, defined parallel to the x axis of the position coordinate system." />
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Vertical leg length, defined parallel to the y axis of the position coordinate system." />
+        <ECProperty propertyName="FilletRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Inner fillet radius." />
         <!-- Optional properties -->
-        <ECProperty propertyName="Girth" typeName="double" description="Length of lips. 0 if profile doesn't have lips, default 0 if not specified." />
+        <ECProperty propertyName="Girth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Length of lips. 0 if profile doesn't have lips, default 0 if not specified." />
     </ECEntityClass>
 
     <ECEntityClass typeName="CenterLineZShapeProfile" modifier="Sealed" description="A Z-shaped Profile with rounded corners, similar to cold-formed steel Z-shapes">
@@ -210,11 +211,11 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="FlangeWidth" typeName="double" description="Extent of single flange, defined parallel to the x axis of the position coordinate system." />
-        <ECProperty propertyName="Depth" typeName="double" description="Extent of the depth (web length), defined parallel to the y axis of the position coordinate system." />
-        <ECProperty propertyName="FilletRadius" typeName="double" description="Inner fillet radius." />
+        <ECProperty propertyName="FlangeWidth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of single flange, defined parallel to the x axis of the position coordinate system." />
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the depth (web length), defined parallel to the y axis of the position coordinate system." />
+        <ECProperty propertyName="FilletRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Inner fillet radius." />
         <!-- Optional properties -->
-        <ECProperty propertyName="Girth" typeName="double" description="Length of lips. 0 if profile doesn't have lips, default 0 if not specified." />
+        <ECProperty propertyName="Girth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Length of lips. 0 if profile doesn't have lips, default 0 if not specified." />
     </ECEntityClass>
 
     <ECEntityClass typeName="BentPlateProfile" modifier="Sealed" description="Profile of a plate that has been bent at a given point with a given angle.">
@@ -223,10 +224,10 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="Width" typeName="double" description="Extent of the plate length, defined parallel to the x axis of the position coordinate system." />
-        <ECProperty propertyName="BendAngle" typeName="double" description="Inner angle of the bend point. Value is valid in range (0..180) degrees. Values near 180 degrees meaning an almost unbent plate and values near 0 are almost fully bent in half plate." />
-        <ECProperty propertyName="BendOffset" typeName="double" description="Offset from the left edge of the plate defining at what point the plate is bent." />
-        <ECProperty propertyName="FilletRadius" typeName="double" description="Inner fillet radius of the bend point." />
+        <ECProperty propertyName="Width" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the plate length, defined parallel to the x axis of the position coordinate system." />
+        <ECProperty propertyName="BendAngle" typeName="double" kindOfQuantity="AECU:ANGLE" description="Inner angle of the bend point. Value is valid in range (0..180) degrees. Values near 180 degrees meaning an almost unbent plate and values near 0 are almost fully bent in half plate." />
+        <ECProperty propertyName="BendOffset" typeName="double" kindOfQuantity="AECU:LENGTH" description="Offset from the left edge of the plate defining at what point the plate is bent." />
+        <ECProperty propertyName="FilletRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Inner fillet radius of the bend point." />
     </ECEntityClass>
 
     <!-- Geometric shapes -->
@@ -235,8 +236,8 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="XRadius" typeName="double" description="The first radius of the ellipse. It is measured along the direction of x axis of the position coordinate system." />
-        <ECProperty propertyName="YRadius" typeName="double" description="The second radius of the ellipse. It is measured along the direction of y axis of the position coordinate system." />
+        <ECProperty propertyName="XRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="The first radius of the ellipse. It is measured along the direction of x axis of the position coordinate system." />
+        <ECProperty propertyName="YRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="The second radius of the ellipse. It is measured along the direction of y axis of the position coordinate system." />
     </ECEntityClass>
 
     <ECEntityClass typeName="CircleProfile" modifier="Sealed" description="">
@@ -244,7 +245,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="Radius" typeName="double" description="The radius of the circle." />
+        <ECProperty propertyName="Radius" typeName="double" kindOfQuantity="AECU:LENGTH" description="The radius of the circle." />
     </ECEntityClass>
 
     <ECEntityClass typeName="HollowCircleProfile" modifier="Sealed" description="">
@@ -253,7 +254,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="Radius" typeName="double" description="The radius of the circle." />
+        <ECProperty propertyName="Radius" typeName="double" kindOfQuantity="AECU:LENGTH" description="The radius of the circle." />
     </ECEntityClass>
 
     <ECEntityClass typeName="RectangleProfile" modifier="Sealed" description="">
@@ -261,8 +262,8 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="Width" typeName="double" description="Extent of the rectangle in the direction of the x-axis." />
-        <ECProperty propertyName="Depth" typeName="double" description="Extent of the rectangle in the direction of the y-axis." />
+        <ECProperty propertyName="Width" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the rectangle in the direction of the x-axis." />
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the rectangle in the direction of the y-axis." />
     </ECEntityClass>
 
     <ECEntityClass typeName="RoundedRectangleProfile" modifier="Sealed" description="">
@@ -270,9 +271,9 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="Width" typeName="double" description="Extent of the rectangle in the direction of the x-axis." />
-        <ECProperty propertyName="Depth" typeName="double" description="Extent of the rectangle in the direction of the y-axis." />
-        <ECProperty propertyName="RoundingRadius" typeName="double" description="Radius of the circular arcs by which all four corners of the rectangle are equally rounded." />
+        <ECProperty propertyName="Width" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the rectangle in the direction of the x-axis." />
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the rectangle in the direction of the y-axis." />
+        <ECProperty propertyName="RoundingRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Radius of the circular arcs by which all four corners of the rectangle are equally rounded." />
     </ECEntityClass>
 
     <ECEntityClass typeName="HollowRectangleProfile" modifier="Sealed" description="">
@@ -280,12 +281,12 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="Width" typeName="double" description="Extent of the rectangle in the direction of the x-axis." />
-        <ECProperty propertyName="Depth" typeName="double" description="Extent of the rectangle in the direction of the y-axis." />
-        <ECProperty propertyName="WallThickness" typeName="double" description="Constant thickness of profile walls." />
+        <ECProperty propertyName="Width" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the rectangle in the direction of the x-axis." />
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the rectangle in the direction of the y-axis." />
+        <ECProperty propertyName="WallThickness" typeName="double" kindOfQuantity="AECU:LENGTH" description="Constant thickness of profile walls." />
         <!-- Optional properties -->
-        <ECProperty propertyName="InnerFilletRadius" typeName="double" description="Radius of the circular arcs, by which all four corners of the inner contour of rectangle are equally rounded. Default 0 (= no rounding arcs) if not specified." />
-        <ECProperty propertyName="OuterFilletRadius" typeName="double" description="Radius of the circular arcs, by which all four corners of the outer contour of rectangle are equally rounded. Default 0 (= no rounding arcs) if not specified." />
+        <ECProperty propertyName="InnerFilletRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Radius of the circular arcs, by which all four corners of the inner contour of rectangle are equally rounded. Default 0 (= no rounding arcs) if not specified." />
+        <ECProperty propertyName="OuterFilletRadius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Radius of the circular arcs, by which all four corners of the outer contour of rectangle are equally rounded. Default 0 (= no rounding arcs) if not specified." />
     </ECEntityClass>
 
     <ECEntityClass typeName="TrapeziumProfile" modifier="Sealed" description="">
@@ -293,10 +294,10 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="TopWidth" typeName="double" description="Extent of the top line measured along the implicit x-axis." />
-        <ECProperty propertyName="BottomWidth" typeName="double" description="Extent of the bottom line measured along the implicit x-axis." />
-        <ECProperty propertyName="Depth" typeName="double" description="Extent of the distance between the parallel bottom and top lines measured along the implicit y-axis." />
-        <ECProperty propertyName="TopOffset" typeName="double" description="Offset from the beginning of the top line to the bottom line, measured along the implicit x-axis." />
+        <ECProperty propertyName="TopWidth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the top line measured along the implicit x-axis." />
+        <ECProperty propertyName="BottomWidth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the bottom line measured along the implicit x-axis." />
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the distance between the parallel bottom and top lines measured along the implicit y-axis." />
+        <ECProperty propertyName="TopOffset" typeName="double" kindOfQuantity="AECU:LENGTH" description="Offset from the beginning of the top line to the bottom line, measured along the implicit x-axis." />
     </ECEntityClass>
 
     <ECEntityClass typeName="RegularPolygonProfile" modifier="Sealed" description="">
@@ -305,7 +306,7 @@
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
         <ECProperty propertyName="SideCount" typeName="long" description="Count of sides (edges) the polygon is made of. Value cannot be less than 3 or greater than 32." />
-        <ECProperty propertyName="SideLength" typeName="double" description="Constant length of each polygon side (edge)." />
+        <ECProperty propertyName="SideLength" typeName="double" kindOfQuantity="AECU:LENGTH" description="Constant length of each polygon side (edge)." />
     </ECEntityClass>
 
     <ECEntityClass typeName="CapsuleProfile" modifier="Sealed" description="">
@@ -313,8 +314,8 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="Width" typeName="double" description="Extent of the capsule in the direction of the x-axis." />
-        <ECProperty propertyName="Depth" typeName="double" description="Extent of the capsule in the direction of the y-axis." />
+        <ECProperty propertyName="Width" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the capsule in the direction of the x-axis." />
+        <ECProperty propertyName="Depth" typeName="double" kindOfQuantity="AECU:LENGTH" description="Extent of the capsule in the direction of the y-axis." />
     </ECEntityClass>
 
     <ECEntityClass typeName="ArbitraryShapeProfile" modifier="None">
@@ -340,7 +341,7 @@
         <ECNavigationProperty propertyName="BaseProfile" relationshipName="DerivedProfileRefersToSinglePerimeterProfile" direction="Forward" description="" />
         <ECProperty propertyName="Offset" typeName="point2d" description="2D vector specifying how the profiles geometry will be offseted from it's original coordinates." />
         <ECProperty propertyName="Scale" typeName="point2d" description="A non-uniform scale factor." />
-        <ECProperty propertyName="Rotation" typeName="double" description="Angle by which the profiles geometry will be rotated." />
+        <ECProperty propertyName="Rotation" typeName="double" kindOfQuantity="AECU:ANGLE" description="Angle by which the profiles geometry will be rotated." />
         <ECProperty propertyName="MirrorAboutYAxis" typeName="boolean" description="Flag indicating whether the profiles geometry should be mirrored around the Y axis." />
     </ECEntityClass>
 
@@ -374,7 +375,7 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="SingleProfile" relationshipName="ArbitraryCompositeProfileAspectRefersToSinglePerimeterProfile" direction="Forward" description="" />
         <ECProperty propertyName="Offset" typeName="point2d" description="2D vector specifying how the profiles geometry will be offseted from it's original coordinates." />
-        <ECProperty propertyName="Rotation" typeName="double" description="Angle by which the profiles geometry will be rotated." />
+        <ECProperty propertyName="Rotation" typeName="double" kindOfQuantity="AECU:ANGLE" description="Angle by which the profiles geometry will be rotated." />
         <ECProperty propertyName="MirrorAboutYAxis" typeName="boolean" description="Flag indicating whether the profiles geometry should be mirrored around the Y axis." />
         <ECProperty propertyName="MemberPriority" typeName="int" description="Index used to strictly order components. This property is a duplicate from bis:ElementGorupsMembers." />
     </ECEntityClass>
@@ -398,7 +399,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="Spacing" typeName="double" description="Distance separating the individual back to back LShapeProfiles." />
+        <ECProperty propertyName="Spacing" typeName="double" kindOfQuantity="AECU:LENGTH" description="Distance separating the individual back to back LShapeProfiles." />
         <ECProperty propertyName="Type" typeName="DoubleLShapeProfileType" description="Enumeration defining which legs are to be placed back to back." />
         <ECNavigationProperty propertyName="SingleProfile" relationshipName="DoubleLShapeProfileRefersToLShapeProfile" direction="Forward" description="Reference to LShapeProfile that will be used to construct the profile." />
     </ECEntityClass>
@@ -417,7 +418,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
-        <ECProperty propertyName="Spacing" typeName="double" description="Distance separating the individual back to back CShapeProfiles." />
+        <ECProperty propertyName="Spacing" typeName="double" kindOfQuantity="AECU:LENGTH" description="Distance separating the individual back to back CShapeProfiles." />
         <ECNavigationProperty propertyName="SingleProfile" relationshipName="DoubleCShapeProfileRefersToCShapeProfile" direction="Forward" description="Reference to CShapeProfile that will be used to construct the profile." />
     </ECEntityClass>
 
