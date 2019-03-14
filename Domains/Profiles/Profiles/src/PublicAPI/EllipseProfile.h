@@ -27,11 +27,11 @@ public:
         DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (EllipseProfile)
 
     public:
-        //! Minimal constructor that initializes all members to zero.
+        //! Minimal constructor that initializes Profile members to default values and associates it with provided DgnModel.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
-        //! Full constructor to initialize members.
+        //! Constructor to initialize Profile members and associate it with provided DgnModel.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double xRadius, double yRadius);

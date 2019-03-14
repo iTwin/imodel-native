@@ -31,7 +31,7 @@ public:
         explicit CreateParams (Dgn::DgnModel const& model, Dgn::DgnClassId const& classId, Utf8CP pName, IGeometryPtr const& geometryPtr);
 
     public:
-        //! Constructor to initialize members.
+        //! Constructor to initialize Profile members and associate it with provided DgnModel.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
         //! @param[in] geometryPtr IGeometry to set for this profile.
@@ -39,7 +39,7 @@ public:
 
     public:
         //! Geometry of the profile
-        IGeometryPtr geometryPtr;
+        IGeometryPtr geometryPtr = nullptr;
         };
 
 protected:

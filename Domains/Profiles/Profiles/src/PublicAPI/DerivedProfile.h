@@ -38,13 +38,13 @@ public:
         //! @param[in] pName Name of the Profile.
         //! @param[in] baseProfile Reference to SinglePerimeterProfile that will be used to construct the profile.
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, SinglePerimeterProfile const& baseProfile);
-        //! Constructor to initialize members.
+        //! Constructor to initialize Profile members and associate it with provided DgnModel.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
         //! @param[in] baseProfileId Id of SinglePerimeterProfile that will be used to construct the profile.
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, Dgn::DgnElementId const& baseProfileId,
                                                DPoint2d const& offset, DPoint2d const& scale, Angle const& rotation, bool mirrorAboutYAxis = false);
-        //! Constructor to initialize members.
+        //! Constructor to initialize Profile members and associate it with provided DgnModel.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
         //! @param[in] baseProfile Reference to SinglePerimeterProfile that will be used to construct the profile.
@@ -53,11 +53,16 @@ public:
 
     public:
         //! @beginGroup
-        Dgn::DgnElementId baseProfileId; //!< Id of the base SinglePerimetrProfile that will be used to construct the profile.
-        DPoint2d offset; //!< 2D vector specifying how the profiles geometry will be offseted from it's original coordinates.
-        DPoint2d scale; //!< A non-uniform scale factor.
-        Angle rotation; //!< Angle by which the profiles geometry will be rotated.
-        bool mirrorAboutYAxis; //!< Flag indicating whether the profiles geometry should be mirrored around the Y axis.
+        //! Id of the base SinglePerimetrProfile that will be used to construct the profile.
+        Dgn::DgnElementId baseProfileId;
+        //! 2D vector specifying how the profiles geometry will be offseted from it's original coordinates.
+        DPoint2d offset = DPoint2d::From (0.0, 0.0);
+        //! A non-uniform scale factor.
+        DPoint2d scale = DPoint2d::From (1.0, 1.0);
+        //! Angle by which the profiles geometry will be rotated.
+        Angle rotation = Angle::FromRadians (0.0);
+        //! Flag indicating whether the profiles geometry should be mirrored around the Y axis.
+        bool mirrorAboutYAxis = false;
         //! @endGroup
         };
 

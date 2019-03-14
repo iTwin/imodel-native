@@ -29,7 +29,7 @@ public:
         DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (ArbitraryCenterLineProfile)
 
     public:
-        //! Constructor to initialize members.
+        //! Constructor to initialize Profile members and associate it with provided DgnModel.
         //! @details Geometry must be of type IGeometry::GeometryType::CurvePrimitive or IGeometry::GeometryType::CurveVector.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
@@ -41,11 +41,11 @@ public:
 
     public:
         //! Constant thickness of profile walls.
-        double wallThickness;
+        double wallThickness = 0.0;
         //! (If this is positive) turns larger than this become arcs.
-        Angle arcAngle;
+        Angle arcAngle = Angle::FromRadians (-1.0);
         //! (If this is positive) "outer chamfers" are created with this max angle.
-        Angle chamferAngle;
+        Angle chamferAngle = Angle::AnglePiOver2();
         };
 
 private:
@@ -54,7 +54,7 @@ private:
     virtual bool _Validate() const override;
     virtual bool _CreateGeometry() override;
     virtual IGeometryPtr _CreateShapeGeometry() const override;
-    
+
     virtual void _CopyFrom (Dgn::DgnElement const& source) override;
 
 public:
