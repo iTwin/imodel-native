@@ -1,0 +1,23 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: LicensingCrossPlatform/Tests/UnitTests/Published/TestsHelper.h $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+#pragma once
+
+#include <Bentley/BeTest.h>
+#include <Licensing/Licensing.h>
+
+#define BEGIN_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE BEGIN_BENTLEY_LICENSING_NAMESPACE namespace UnitTests {
+#define END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE   } END_BENTLEY_LICENSING_NAMESPACE
+#define USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS using namespace BentleyApi::Licensing::UnitTests;
+
+#define EXPECT_SUCCESS(EXPR) EXPECT_EQ(SUCCESS, (EXPR))
+#define EXPECT_ERROR(EXPR) EXPECT_EQ(ERROR, (EXPR))
+
+BEGIN_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
+
+END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE
