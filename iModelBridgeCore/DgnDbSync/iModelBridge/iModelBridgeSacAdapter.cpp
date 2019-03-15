@@ -105,7 +105,7 @@ void iModelBridgeSacAdapter::InitializeHost(iModelBridge& bridge, Utf8CP product
 
     static iModelBridgeBimHost s_host(bridge._GetParams().GetRepositoryAdmin(), fwkAssets, fwkDb3, productName); // *** TBD supply bridge name as product name
     s_host.SetGeoCoordinateDataDir(bridge._GetParams().GetGeoCoordData());
-    DgnPlatformLib::Initialize(s_host, true);
+    DgnPlatformLib::Initialize(s_host);
 
     static PrintfProgressMeter s_meter;
     T_HOST.SetProgressMeter(&s_meter);

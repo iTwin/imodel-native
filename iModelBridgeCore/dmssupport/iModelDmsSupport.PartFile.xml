@@ -72,13 +72,13 @@
 
   <Part Name="iModelDmsSupport" BentleyBuildMakeFile="iModelDmsSupport/iModelDmsSupport.mke" OnlyPlatforms="x64"  ApiNumber="M02">
     <SubPart PartName="ProjectWise_SDK"/>
-    <SubPart PartName="VersionedV8_InternalSDK" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
-    <SubPart PartName="PublicAPI" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
+    <SubPart PartName="VersionedV8_InternalSDK" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
+    <SubPart PartName="PublicAPI" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
     <SubPart PartName="v8ConfigSupport"/>
     <SubPart PartName="iModelDmsPublicApi"/>
     <SubPart PartName="UstationDummy"/>
-    <SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient"/>
-    <SubPart PartName="BentleyDll" Repository="imodel02" PartFile="iModelCore/Bentley/Bentley"/>
+    <SubPart PartName="WebServicesClient" PartFile="iModelCore/WSClient/WSClient"/>
+    <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley"/>
     <Bindings>
       <Assemblies>Delivery/$(shlibprefix)iModelDmsSupport$(ApiNumber)$(shlibext)</Assemblies>
       <Libs Required="false">Delivery/iModelDmsSupport$(libext)</Libs>
