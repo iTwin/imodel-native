@@ -264,6 +264,9 @@ public:
     //! Get the ViewFlags from the DisplayStyle of this view
     Render::ViewFlags GetViewFlags() const {return m_definition->GetDisplayStyle().GetViewFlags();}
 
+    //! Get the list of excluded elements from the DisplayStyle of this view
+    DgnElementIdSet const& GetExcludedElements() const {return m_definition->GetDisplayStyle().GetExcludedElements();}
+
     //! Set the ViewFlags for the DisplayStyle of this view
     DGNPLATFORM_EXPORT void SetViewFlags(Render::ViewFlags viewFlags);
 

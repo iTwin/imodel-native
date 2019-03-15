@@ -1346,6 +1346,13 @@ void DisplayStyle::_OnLoadedJsonProperties()
 
         OverrideSubCategory(subCategoryId, DgnSubCategory::Override(val));
         }
+    
+    JsonValueCR excludedElementsJson = GetStyle(json_excludedElements());
+    m_excludedElements.clear();
+    for (Json::ArrayIndex i = 0; i < excludedElementsJson.size(); ++i)
+        {
+        m_excludedElements.insert(DgnElementId(excludedElementsJson[i].asUInt64()));
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1388,6 +1395,21 @@ void DisplayStyle::_OnSaveJsonProperties()
             it.second.ToJson(ovrJson[i++]);
             }
         SetStyle(json_subCategoryOvr(), ovrJson);
+        }
+
+    if (m_excludedElements.empty())
+        {
+        RemoveStyle(json_excludedElements());
+        }
+    else
+        {
+        Json::Value excludedElementsJson;
+        int i = 0;
+        for (auto const& it : m_excludedElements)
+            {
+            excludedElementsJson[i++] = (it.ToHexStr());
+            }
+        SetStyle(json_excludedElements(), excludedElementsJson);
         }
     }
 
