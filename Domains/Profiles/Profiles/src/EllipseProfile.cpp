@@ -17,14 +17,14 @@ HANDLER_DEFINE_MEMBERS (EllipseProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-EllipseProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+EllipseProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-EllipseProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double xRadius, double yRadius)
+EllipseProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double xRadius, double yRadius)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , xRadius (xRadius)
     , yRadius (yRadius)

@@ -26,7 +26,7 @@ MaterialProfile::MaterialProfile (CreateParams const& params) : T_Super (params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-MaterialProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, DgnElementId const& profileId, DgnElementId const& materialId)
+MaterialProfile::CreateParams::CreateParams (DefinitionModel const& model, DgnElementId const& profileId, DgnElementId const& materialId)
     : T_Super (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb())), profileId (profileId), materialId (materialId)
     {
     }

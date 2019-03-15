@@ -17,14 +17,14 @@ HANDLER_DEFINE_MEMBERS (SchifflerizedLShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchifflerizedLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+SchifflerizedLShapeProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchifflerizedLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double legLength, double thickness,
+SchifflerizedLShapeProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double legLength, double thickness,
                                                         double legBendOffset, double filletRadius, double edgeRadius)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , legLength (legLength)

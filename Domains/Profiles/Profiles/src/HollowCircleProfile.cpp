@@ -17,14 +17,14 @@ HANDLER_DEFINE_MEMBERS (HollowCircleProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-HollowCircleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+HollowCircleProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-HollowCircleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double radius, double wallThickness)
+HollowCircleProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double radius, double wallThickness)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , radius (radius)
     , wallThickness (wallThickness)

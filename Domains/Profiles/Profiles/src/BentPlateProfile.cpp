@@ -17,7 +17,7 @@ HANDLER_DEFINE_MEMBERS (BentPlateProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentPlateProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+BentPlateProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {
     }
@@ -25,7 +25,7 @@ BentPlateProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentPlateProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double wallThickness,
+BentPlateProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double width, double wallThickness,
                                               Angle const& bendAngle, double bendOffset, double filletRadius)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , width (width)

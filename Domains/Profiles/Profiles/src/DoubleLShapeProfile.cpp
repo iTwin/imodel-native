@@ -18,7 +18,7 @@ HANDLER_DEFINE_MEMBERS (DoubleLShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DoubleLShapeProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, double spacing,
+DoubleLShapeProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double spacing,
                                                  LShapeProfile const& singleProfile, DoubleLShapeProfileType type)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , spacing (spacing)
@@ -29,7 +29,7 @@ DoubleLShapeProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DoubleLShapeProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, double spacing,
+DoubleLShapeProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double spacing,
                                                  DgnElementId const& singleProfileId, DoubleLShapeProfileType type)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , spacing (spacing)

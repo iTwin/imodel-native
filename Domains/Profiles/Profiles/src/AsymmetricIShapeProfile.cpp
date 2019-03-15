@@ -17,14 +17,14 @@ HANDLER_DEFINE_MEMBERS (AsymmetricIShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsymmetricIShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+AsymmetricIShapeProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsymmetricIShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double topFlangeWidth, double bottomFlangeWidth, double depth,
+AsymmetricIShapeProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double topFlangeWidth, double bottomFlangeWidth, double depth,
                                                      double topFlangeThickness, double bottomFlangeThickness, double webThickness, double topFlangeFilletRadius,
                                                      double topFlangeEdgeRadius, Angle const& topFlangeSlope, double bottomFlangeFilletRadius,
                                                      double bottomFlangeEdgeRadius, Angle const& bottomFlangeSlope)

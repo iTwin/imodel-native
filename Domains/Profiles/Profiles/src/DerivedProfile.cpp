@@ -16,7 +16,7 @@ HANDLER_DEFINE_MEMBERS (DerivedProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DerivedProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, DgnElementId const& baseProfileId)
+DerivedProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, DgnElementId const& baseProfileId)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , baseProfileId (baseProfileId)
     , offset (DPoint2d::From (0.0, 0.0))
@@ -29,7 +29,7 @@ DerivedProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DerivedProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, SinglePerimeterProfile const& baseProfile)
+DerivedProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, SinglePerimeterProfile const& baseProfile)
     : CreateParams (model, pName, baseProfile.GetElementId())
     {
     }
@@ -37,7 +37,7 @@ DerivedProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DerivedProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, DgnElementId const& baseProfileId,
+DerivedProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, DgnElementId const& baseProfileId,
                                             DPoint2d const& offset, DPoint2d const& scale, Angle const& rotation, bool mirrorAboutYAxis)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , baseProfileId (baseProfileId)
@@ -51,7 +51,7 @@ DerivedProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DerivedProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, SinglePerimeterProfile const& baseProfile,
+DerivedProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, SinglePerimeterProfile const& baseProfile,
                                             DPoint2d const& offset, DPoint2d const& scale, Angle const& rotation, bool mirrorAboutYAxis)
     : CreateParams (model, pName, baseProfile.GetElementId(), offset, scale, rotation, mirrorAboutYAxis)
     {

@@ -30,7 +30,7 @@ protected:
     virtual ~ProfilesTestCase();
 
     Dgn::DgnDb& GetDb();
-    Dgn::DgnModel& GetModel();
+    Dgn::DefinitionModel& GetModel();
 
     /*---------------------------------------------------------------------------------**//**
     * Create and insert an entity class instance.

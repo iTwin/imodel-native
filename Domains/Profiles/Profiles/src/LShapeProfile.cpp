@@ -19,14 +19,14 @@ HANDLER_DEFINE_MEMBERS (LShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-LShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+LShapeProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-LShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double thickness,
+LShapeProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double width, double depth, double thickness,
                                            double filletRadius, double edgeRadius, Angle const& legSlope)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , width (width)

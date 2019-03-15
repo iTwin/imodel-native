@@ -77,7 +77,7 @@ public:
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
         //! @param[in] component Vector of ArbitraryCompositeProfileComponent, see @ref components.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, ComponentVector const& components);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model, Utf8CP pName, ComponentVector const& components);
 
     public:
         ComponentVector components; //!< Vector of ArbitraryCompositeProfileComponent's. @details Order of components in the vector is importatnt, see ArbitraryCompositeProfileComponent.GetMemberPriority

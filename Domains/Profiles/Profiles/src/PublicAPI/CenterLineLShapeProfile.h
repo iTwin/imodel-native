@@ -31,7 +31,7 @@ public:
         //! Minimal constructor that initializes Profile members to default values and associates it with provided DgnModel.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model, Utf8CP pName);
         //! Constructor to initialize Profile members and associate it with provided DgnModel.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
@@ -39,7 +39,7 @@ public:
         //! @param[in] depth Profile's depth.
         //! @param[in] girth Profile's girth.
         //! @param[in] filletRadius Profile's inner fillet radius.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth,
+        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model, Utf8CP pName, double width, double depth,
             double wallThickness, double girth = 0.0, double filletRadius = 0.0);
 
     public:

@@ -70,12 +70,11 @@ DgnDb& ProfilesTestCase::GetDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel& ProfilesTestCase::GetModel()
+DefinitionModel& ProfilesTestCase::GetModel()
     {
     BeAssert (m_definitionModelPtr.IsValid());
     return *m_definitionModelPtr;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019

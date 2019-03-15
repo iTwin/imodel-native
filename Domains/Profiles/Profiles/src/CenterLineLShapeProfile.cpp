@@ -17,7 +17,7 @@ HANDLER_DEFINE_MEMBERS (CenterLineLShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CenterLineLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+CenterLineLShapeProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {
     }
@@ -25,7 +25,7 @@ CenterLineLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CenterLineLShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth,
+CenterLineLShapeProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double width, double depth,
                                                      double wallThickness, double girth, double filletRadius)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , width (width)

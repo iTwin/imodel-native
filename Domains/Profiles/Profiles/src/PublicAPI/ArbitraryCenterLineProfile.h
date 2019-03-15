@@ -37,7 +37,7 @@ public:
         //! @param[in] wallThickness Constant thickness of profile walls.
         //! @param[in] arcAngle (If this is positive) turns larger than this become arcs.
         //! @param[in] chamferAngle (If this is positive) "outer chamfers" are created with this max angle.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, IGeometryPtr const& geometryPtr, double wallThickness, Angle const& arcAngle = Angle::FromRadians(-1.0), Angle const& chamferAngle = Angle::AnglePiOver2());
+        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model, Utf8CP pName, IGeometryPtr const& geometryPtr, double wallThickness, Angle const& arcAngle = Angle::FromRadians(-1.0), Angle const& chamferAngle = Angle::AnglePiOver2());
 
     public:
         //! Constant thickness of profile walls.

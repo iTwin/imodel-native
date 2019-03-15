@@ -17,14 +17,14 @@ HANDLER_DEFINE_MEMBERS (RegularPolygonProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-RegularPolygonProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+RegularPolygonProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-RegularPolygonProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, uint64_t sideCount, double sideLength)
+RegularPolygonProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, uint64_t sideCount, double sideLength)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , sideCount (sideCount)
     , sideLength (sideLength)

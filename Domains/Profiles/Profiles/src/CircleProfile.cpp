@@ -17,14 +17,14 @@ HANDLER_DEFINE_MEMBERS (CircleProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CircleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+CircleProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CircleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double radius)
+CircleProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double radius)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , radius (radius)
     {}

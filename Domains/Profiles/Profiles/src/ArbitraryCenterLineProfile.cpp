@@ -144,7 +144,7 @@ static bool validateCurvePrimitiveGeometry (ICurvePrimitive const& curvePrimitiv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-ArbitraryCenterLineProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, IGeometryPtr const& geometryPtr, 
+ArbitraryCenterLineProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, IGeometryPtr const& geometryPtr, 
                                                         double wallThickness, Angle const& arcAngle, Angle const& chamferAngle)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName, geometryPtr)
     , wallThickness (wallThickness)

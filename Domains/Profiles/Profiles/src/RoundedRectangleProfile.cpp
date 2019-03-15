@@ -17,14 +17,14 @@ HANDLER_DEFINE_MEMBERS (RoundedRectangleProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoundedRectangleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+RoundedRectangleProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoundedRectangleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double roundingRadius)
+RoundedRectangleProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double width, double depth, double roundingRadius)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , width (width)
     , depth (depth)

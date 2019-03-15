@@ -20,7 +20,7 @@ HANDLER_DEFINE_MEMBERS (ProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Profile::CreateParams::CreateParams (Dgn::DgnModel const& model, Dgn::DgnClassId const& classId, Utf8CP pName)
+Profile::CreateParams::CreateParams (DefinitionModel const& model, Dgn::DgnClassId const& classId, Utf8CP pName)
     : T_Super (model.GetDgnDb(), model.GetModelId(), classId)
     , name (pName)
     {

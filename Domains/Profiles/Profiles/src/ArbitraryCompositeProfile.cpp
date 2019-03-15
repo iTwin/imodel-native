@@ -42,7 +42,7 @@ ArbitraryCompositeProfileComponent::ArbitraryCompositeProfileComponent (SinglePe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-ArbitraryCompositeProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, ComponentVector const& components)
+ArbitraryCompositeProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, ComponentVector const& components)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , components (components)
     {}

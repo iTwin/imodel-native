@@ -17,14 +17,14 @@ HANDLER_DEFINE_MEMBERS (HollowRectangleProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-HollowRectangleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+HollowRectangleProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-HollowRectangleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth, double wallThickness,
+HollowRectangleProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double width, double depth, double wallThickness,
                                                     double innerFilletRadius, double outerFilletRadius)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , width (width)

@@ -44,13 +44,13 @@ public:
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
         //! @param[in] singleProfile Reference to LShapeProfile that will be used to construct the profile.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double spacing, LShapeProfile const& singleProfile,
+        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model, Utf8CP pName, double spacing, LShapeProfile const& singleProfile,
                                                DoubleLShapeProfileType type = DoubleLShapeProfileType::LLBB);
         //! Constructor to initialize members.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
         //! @param[in] singleProfileId Id of LShapeProfile that will be used to construct the profile.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double spacing, Dgn::DgnElementId const& singleProfileId,
+        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model, Utf8CP pName, double spacing, Dgn::DgnElementId const& singleProfileId,
                                                DoubleLShapeProfileType type = DoubleLShapeProfileType::LLBB);
 
     public:

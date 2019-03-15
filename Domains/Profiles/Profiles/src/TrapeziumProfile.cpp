@@ -17,14 +17,14 @@ HANDLER_DEFINE_MEMBERS (TrapeziumProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TrapeziumProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+TrapeziumProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TrapeziumProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double topWidth, double bottomWidth, double depth, double topOffset)
+TrapeziumProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double topWidth, double bottomWidth, double depth, double topOffset)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , topWidth (topWidth)
     , bottomWidth (bottomWidth)

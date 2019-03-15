@@ -17,14 +17,14 @@ HANDLER_DEFINE_MEMBERS (TShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+TShapeProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
+TShapeProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
                                            double webThickness, double filletRadius, double flangeEdgeRadius, Angle const& flangeSlope,
                                            double webEdgeRadius, Angle const& webSlope)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)

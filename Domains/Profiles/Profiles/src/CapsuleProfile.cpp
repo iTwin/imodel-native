@@ -17,14 +17,14 @@ HANDLER_DEFINE_MEMBERS (CapsuleProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-CapsuleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+CapsuleProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-CapsuleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth)
+CapsuleProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double width, double depth)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , width (width)
     , depth (depth)

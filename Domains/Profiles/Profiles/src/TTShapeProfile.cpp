@@ -17,14 +17,14 @@ HANDLER_DEFINE_MEMBERS (TTShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TTShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+TTShapeProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TTShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
+TTShapeProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
                                            double webThickness, double webSpacing, double filletRadius, double flangeEdgeRadius,
                                            Angle const& flangeSlope, double webEdgeRadius, Angle const& webSlope)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)

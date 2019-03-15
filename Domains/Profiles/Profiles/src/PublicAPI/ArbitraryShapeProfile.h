@@ -28,14 +28,14 @@ public:
 
     protected:
         //! @private
-        explicit CreateParams (Dgn::DgnModel const& model, Dgn::DgnClassId const& classId, Utf8CP pName, IGeometryPtr const& geometryPtr);
+        explicit CreateParams (Dgn::DefinitionModel const& model, Dgn::DgnClassId const& classId, Utf8CP pName, IGeometryPtr const& geometryPtr);
 
     public:
         //! Constructor to initialize Profile members and associate it with provided DgnModel.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
         //! @param[in] geometryPtr IGeometry to set for this profile.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, IGeometryPtr const& geometryPtr);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model, Utf8CP pName, IGeometryPtr const& geometryPtr);
 
     public:
         //! Geometry of the profile

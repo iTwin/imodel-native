@@ -17,14 +17,14 @@ HANDLER_DEFINE_MEMBERS (RectangleProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RectangleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+RectangleProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RectangleProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double width, double depth)
+RectangleProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, double width, double depth)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , width (width)
     , depth (depth)

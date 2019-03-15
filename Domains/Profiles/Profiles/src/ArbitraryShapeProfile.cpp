@@ -199,7 +199,7 @@ static bool validateCurveVectorGeometry (CurveVector const& curveVector)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-ArbitraryShapeProfile::CreateParams::CreateParams (DgnModel const& model, DgnClassId const& classId, Utf8CP pName, IGeometryPtr const& geometryPtr)
+ArbitraryShapeProfile::CreateParams::CreateParams (DefinitionModel const& model, DgnClassId const& classId, Utf8CP pName, IGeometryPtr const& geometryPtr)
     : T_Super (model, classId, pName)
     , geometryPtr (geometryPtr)
     {
@@ -208,7 +208,7 @@ ArbitraryShapeProfile::CreateParams::CreateParams (DgnModel const& model, DgnCla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-ArbitraryShapeProfile::CreateParams::CreateParams (DgnModel const& model, Utf8CP pName, IGeometryPtr const& geometryPtr)
+ArbitraryShapeProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, IGeometryPtr const& geometryPtr)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , geometryPtr (geometryPtr)
     {

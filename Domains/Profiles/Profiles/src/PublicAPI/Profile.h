@@ -115,7 +115,7 @@ public:
 
     protected:
         //! @private
-        explicit CreateParams (Dgn::DgnModel const& model, Dgn::DgnClassId const& classId, Utf8CP pName);
+        explicit CreateParams (Dgn::DefinitionModel const& model, Dgn::DgnClassId const& classId, Utf8CP pName);
 
     public:
         //! Name of the Profile.

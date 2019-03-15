@@ -30,11 +30,11 @@ public:
         //! Minimal constructor that initializes Profile members to default values and associates it with provided DgnModel.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model, Utf8CP pName);
         //! Constructor to initialize Profile members and associate it with provided DgnModel.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double legLength, double thickness,
+        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model, Utf8CP pName, double legLength, double thickness,
                                                double legBendOffset = 0.0, double filletRadius = 0.0, double edgeRadius = 0.0);
 
     public:

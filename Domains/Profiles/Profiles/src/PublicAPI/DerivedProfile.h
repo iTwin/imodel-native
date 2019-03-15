@@ -32,23 +32,23 @@ public:
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
         //! @param[in] baseProfileId Id of SinglePerimeterProfile that will be used to construct the profile.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, Dgn::DgnElementId const& baseProfileId);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model, Utf8CP pName, Dgn::DgnElementId const& baseProfileId);
         //! Minimal constructor that initializes all transformation properties to default values.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
         //! @param[in] baseProfile Reference to SinglePerimeterProfile that will be used to construct the profile.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, SinglePerimeterProfile const& baseProfile);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model, Utf8CP pName, SinglePerimeterProfile const& baseProfile);
         //! Constructor to initialize Profile members and associate it with provided DgnModel.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
         //! @param[in] baseProfileId Id of SinglePerimeterProfile that will be used to construct the profile.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, Dgn::DgnElementId const& baseProfileId,
+        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model, Utf8CP pName, Dgn::DgnElementId const& baseProfileId,
                                                DPoint2d const& offset, DPoint2d const& scale, Angle const& rotation, bool mirrorAboutYAxis = false);
         //! Constructor to initialize Profile members and associate it with provided DgnModel.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
         //! @param[in] baseProfile Reference to SinglePerimeterProfile that will be used to construct the profile.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, SinglePerimeterProfile const& baseProfile,
+        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model, Utf8CP pName, SinglePerimeterProfile const& baseProfile,
                                                DPoint2d const& offset, DPoint2d const& scale, Angle const& rotation, bool mirrorAboutYAxis = false);
 
     public:
