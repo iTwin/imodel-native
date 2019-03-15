@@ -1633,10 +1633,48 @@ void CustomFunctionsContext::_OnSettingChanged(Utf8CP rulesetId, Utf8CP settingI
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomFunctionsManager& CustomFunctionsManager::GetManager()
     {
-    static CustomFunctionsManager* s_manager = nullptr;
-    if (nullptr == s_manager)
-        s_manager = new CustomFunctionsManager();
-    return *s_manager;
+    static CustomFunctionsManager s_manager;
+    return s_manager;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+CustomFunctionsManager::CustomFunctionsManager()
+    : m_contexts(new BeThreadLocalStorage())
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+CustomFunctionsManager::~CustomFunctionsManager()
+    {
+    for (bvector<CustomFunctionsContext*>* contexts : m_allContexts)
+        {
+        BeAssert(contexts->empty());
+        delete contexts;
+        }
+
+    DELETE_AND_CLEAR(m_contexts);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<CustomFunctionsContext*>& CustomFunctionsManager::GetContexts() const
+    {
+    void* ptr = m_contexts->GetValueAsPointer();
+    bvector<CustomFunctionsContext*>* contexts = nullptr;
+    if (nullptr != ptr)
+        contexts = static_cast<bvector<CustomFunctionsContext*>*>(ptr);
+
+    if (nullptr == contexts)
+        {
+        contexts = new bvector<CustomFunctionsContext*>();
+        m_allContexts.push_back(contexts);
+        m_contexts->SetValueAsPointer(contexts);
+        }
+    return *contexts;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1644,7 +1682,7 @@ CustomFunctionsManager& CustomFunctionsManager::GetManager()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CustomFunctionsManager::_OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const
     {
-    for (CustomFunctionsContext* ctx : m_contexts)
+    for (CustomFunctionsContext* ctx : GetContexts())
         ctx->_OnSettingChanged(rulesetId, settingId);
     }
 
@@ -1653,8 +1691,8 @@ void CustomFunctionsManager::_OnSettingChanged(Utf8CP rulesetId, Utf8CP settingI
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomFunctionsContext& CustomFunctionsManager::GetCurrentContext() const
     {
-    BeAssert(!m_contexts.empty());
-    return *m_contexts.back();
+    BeAssert(!GetContexts().empty());
+    return *GetContexts().back();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1662,7 +1700,7 @@ CustomFunctionsContext& CustomFunctionsManager::GetCurrentContext() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CustomFunctionsManager::PushContext(CustomFunctionsContext& context)
     {
-    m_contexts.push_back(&context);
+    GetContexts().push_back(&context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1670,10 +1708,19 @@ void CustomFunctionsManager::PushContext(CustomFunctionsContext& context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomFunctionsContext* CustomFunctionsManager::PopContext()
     {
-    CustomFunctionsContext* context = m_contexts.back();
+    CustomFunctionsContext* context = GetContexts().back();
     if (nullptr != context)
-        m_contexts.pop_back();
+        GetContexts().pop_back();
+
     return context;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CustomFunctionsManager::IsContextEmpty()
+    {
+    return GetContexts().empty();
     }
 
 /*---------------------------------------------------------------------------------**//**
