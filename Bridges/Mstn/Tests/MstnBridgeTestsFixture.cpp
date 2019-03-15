@@ -16,6 +16,7 @@
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #include "V8FileEditor.h"
 #include <Bentley/Base64Utilities.h>
+#include <Bentley/Desktop/FileSystem.h>
 
 MstnBridgeTestsLogProvider MstnBridgeTestsFixture::s_logProvider;
 
@@ -873,6 +874,29 @@ ProcessRunner MstnBridgeTestsFixture::StartImodelBankServer(BentleyApi::BeFileNa
         ::Sleep(sleepinterval);
         sleepinterval *= 2;
         }
+    return runner;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+ProcessRunner MstnBridgeTestsFixture::StartImodelBridgeFwkExe(FwkArgvMaker const& argvMaker, size_t msWaitForStart)
+    {
+    BentleyApi::BeFileName rspFile = GetOutputDir();
+    rspFile.AppendToPath(L"iModelBridgeFwk.rsp");
+
+    BentleyApi::BeFileName fwkExeRel(BentleyApi::Desktop::FileSystem::GetExecutableDir());
+    fwkExeRel.AppendToPath(L"..");
+    fwkExeRel.AppendToPath(L"iModelBridgeFwk");
+    fwkExeRel.AppendToPath(L"lib");
+    fwkExeRel.AppendToPath(L"x64");
+    fwkExeRel.AppendToPath(L"iModelBridgeFwk.exe");
+    BentleyApi::BeFileName fwkExe;
+    BentleyApi::BeFileName::FixPathName(fwkExe, fwkExeRel.c_str());
+
+    ProcessRunner runner(fwkExe, argvMaker.GetArgC(), argvMaker.GetArgV(), rspFile, nullptr, nullptr);
+    runner.Start(msWaitForStart);
+
     return runner;
     }
 

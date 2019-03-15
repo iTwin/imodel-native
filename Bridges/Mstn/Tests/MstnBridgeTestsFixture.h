@@ -99,7 +99,7 @@ struct ProcessRunner
     };
 
 struct LogProcessor;
-
+struct FwkArgvMaker;
 //=======================================================================================
 // @bsistruct                              
 //=======================================================================================
@@ -114,6 +114,7 @@ struct MstnBridgeTestsFixture : ::testing::Test
     BentleyApi::BeFileName GetIModelDir();
 
     ProcessRunner StartImodelBankServer(BentleyApi::BeFileNameCR imodelDir, BentleyApi::Dgn::IModelBankClient& bankClient);
+    ProcessRunner StartImodelBridgeFwkExe(FwkArgvMaker const&, size_t msWaitForStart = 0);
 
     BentleyApi::WebServices::ClientInfoPtr GetClientInfo();
     void CreateImodelBankRepository(BentleyApi::BeFileNameCR seedFile);

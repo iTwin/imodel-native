@@ -10,6 +10,7 @@
 #include <iModelBridge/iModelBridgeFwk.h>
 #include <iModelBridge/FakeRegistry.h>
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
+#include <Bentley/Desktop/FileSystem.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 
@@ -223,12 +224,10 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
         argvMaker.SetInputFileArg(inputFile);
         argvMaker.SetSkipAssignmentCheck();
     
-        BentleyApi::BeFileName rspFile = GetOutputDir();
-        rspFile.AppendToPath(L"MultiBridgeSequencing_B.rsp");
-        ProcessRunner bridge_b(_wgetenv(L"MSTN_BRIDGE_TESTS_IMODEL_BRIDGE_FWK_EXE"), argvMaker.GetArgC(), argvMaker.GetArgV(), rspFile, nullptr, nullptr);
-        bridge_b.Start(0);
+        auto bridge_b = StartImodelBridgeFwkExe(argvMaker);
 
-        createFile(b_can_run);      // b runs first
+        createFile(b_can_run);      // let b run
+
         ASSERT_EQ(BSISUCCESS, bridge_b.Stop(5*60*1000));   // wait for up to 5 minutes for b to finish
                 
         ASSERT_EQ(0, bridge_b.GetExitCode());
