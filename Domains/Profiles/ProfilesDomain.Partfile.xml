@@ -35,12 +35,10 @@
     </Part>
 
     <Part Name="ProfilesPublicAPI" BentleyBuildMakeFile="Profiles/ProfilesDomainDll.prewire.mke" ApiNumber="B02">
+        <SubPart PartName="ProfilesSchema" PartFile="BisSchemas" Repository="BisSchemas" />
         <SubPart PartName="AecUnitsPublicAPI" Repository="DgnDomains-DesignModelingUnits" PartFile="AecUnits" />
         <Bindings>
             <PublicAPI Domain="Profiles" />
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/Profiles.ecschema.xml
-            </Files>
             <Directory SourceName="PublicAPI/Profiles" ProductDirectoryName="ProfilesIncludes" />
         </Bindings>
     </Part>
