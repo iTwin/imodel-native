@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/CustomAttributeUnitsConversionTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -82,22 +82,22 @@ struct UnitInstanceConversionTest : ECTestFixture
     mutable TestUnitResolver m_testUnitResolver;
     };
 
-void verifyReferencedSchemas(ECSchemaR convertedSchema, bvector<Utf8String> expectedReferenceFullNames)
+void verifyReferencedSchemas(ECSchemaR convertedSchema, bvector<Utf8String> expectedReferenceNames)
     {
-    EXPECT_EQ(expectedReferenceFullNames.size(), convertedSchema.GetReferencedSchemas().size());
+    EXPECT_EQ(expectedReferenceNames.size(), convertedSchema.GetReferencedSchemas().size());
 
     for (auto const& schemaReference : convertedSchema.GetReferencedSchemas())
         {
-        Utf8String refSchemaFullName = schemaReference.first.GetFullSchemaName();
-        auto it = std::find(expectedReferenceFullNames.begin(), expectedReferenceFullNames.end(), refSchemaFullName);
-        EXPECT_NE(expectedReferenceFullNames.end(), it) << "Found unexpected schema reference: " << refSchemaFullName.c_str();
-        if (expectedReferenceFullNames.end() != it)
-            expectedReferenceFullNames.erase(it);
+        Utf8String refSchemaName = schemaReference.first.GetName();
+        auto it = std::find(expectedReferenceNames.begin(), expectedReferenceNames.end(), refSchemaName);
+        EXPECT_NE(expectedReferenceNames.end(), it) << "Found unexpected schema reference: " << refSchemaName.c_str();
+        if (expectedReferenceNames.end() != it)
+            expectedReferenceNames.erase(it);
         }
-    if (0 != expectedReferenceFullNames.size())
+    if (0 != expectedReferenceNames.size())
         {
-        Utf8String referencesNotFound = BeStringUtilities::Join(expectedReferenceFullNames, ", ");
-        EXPECT_EQ(0, expectedReferenceFullNames.size()) << "Did not find expected reference schemas: " << referencesNotFound.c_str();
+        Utf8String referencesNotFound = BeStringUtilities::Join(expectedReferenceNames, ", ");
+        EXPECT_EQ(0, expectedReferenceNames.size()) << "Did not find expected reference schemas: " << referencesNotFound.c_str();
         }
     }
 
@@ -182,9 +182,9 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnArrayPr
     ASSERT_TRUE(ECSchemaConverter::Convert(*schema, schemaContext.get())) << "Failed to convert schema";
     validateUnitsInConvertedSchema(*schema, *originalSchema);
     bvector<Utf8String> expectedRefSchemas;
-    expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
-    expectedRefSchemas.push_back("Units.01.00.00");
-    expectedRefSchemas.push_back("Formats.01.00.00");
+    expectedRefSchemas.push_back("ECv3ConversionAttributes");
+    expectedRefSchemas.push_back("Units");
+    expectedRefSchemas.push_back("Formats");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
@@ -220,9 +220,9 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnlyOnPro
     ASSERT_TRUE(ECSchemaConverter::Convert(*schema, schemaContext.get())) << "Failed to convert schema";
     validateUnitsInConvertedSchema(*schema, *originalSchema);
     bvector<Utf8String> expectedRefSchemas;
-    expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
-    expectedRefSchemas.push_back("Units.01.00.00");
-    expectedRefSchemas.push_back("Formats.01.00.00");
+    expectedRefSchemas.push_back("ECv3ConversionAttributes");
+    expectedRefSchemas.push_back("Units");
+    expectedRefSchemas.push_back("Formats");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
@@ -282,9 +282,9 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecifications)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(originalSchema, testSchemaPath.c_str(), *context2));
     validateUnitsInConvertedSchema(*schema, *originalSchema);
     bvector<Utf8String> expectedRefSchemas;
-    expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
-    expectedRefSchemas.push_back("Units.01.00.00");
-    expectedRefSchemas.push_back("Formats.01.00.00");
+    expectedRefSchemas.push_back("ECv3ConversionAttributes");
+    expectedRefSchemas.push_back("Units");
+    expectedRefSchemas.push_back("Formats");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
@@ -847,9 +847,9 @@ TEST_F(UnitsCustomAttributesConversionTests, OldUnitsWithKoqNameConflicts)
     ASSERT_TRUE(ECSchemaConverter::Convert(*schema, schemaContext.get())) << "Failed to convert schema";
     validateUnitsInConvertedSchema(*schema, *originalSchema);
     bvector<Utf8String> expectedRefSchemas;
-    expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
-    expectedRefSchemas.push_back("Units.01.00.00");
-    expectedRefSchemas.push_back("Formats.01.00.00");
+    expectedRefSchemas.push_back("ECv3ConversionAttributes");
+    expectedRefSchemas.push_back("Units");
+    expectedRefSchemas.push_back("Formats");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
@@ -923,8 +923,8 @@ TEST_F(UnitSpecificationConversionTest, DisplayUnitSpecificationIsRemovedWhenNoU
     EXPECT_TRUE(koq->HasPresentationFormats());
 
     bvector<Utf8String> expectedRefSchemas;
-    expectedRefSchemas.push_back("Units.01.00.00");
-    expectedRefSchemas.push_back("Formats.01.00.00");
+    expectedRefSchemas.push_back("Units");
+    expectedRefSchemas.push_back("Formats");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
@@ -1001,9 +1001,9 @@ TEST_F(UnitSpecificationConversionTest, DisplayUnitSpecificationUsesSameKOQNameA
     EXPECT_STREQ("IN", koq->GetDefaultPresentationFormat()->GetCompositeMajorUnit()->GetName().c_str());
 
     bvector<Utf8String> expectedRefSchemas;
-    expectedRefSchemas.push_back("Units.01.00.00");
-    expectedRefSchemas.push_back("Formats.01.00.00");
-    expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
+    expectedRefSchemas.push_back("Units");
+    expectedRefSchemas.push_back("Formats");
+    expectedRefSchemas.push_back("ECv3ConversionAttributes");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
@@ -1135,9 +1135,9 @@ TEST_F(UnitsCustomAttributesConversionTests, SchemaWithIsUnitSystemSchema_Attrib
     ASSERT_TRUE(ECSchemaConverter::Convert(*schema, schemaContext.get())) << "Failed to convert schema";
     validateUnitsInConvertedSchema(*schema, *originalSchema);
     bvector<Utf8String> expectedRefSchemas;
-    expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
-    expectedRefSchemas.push_back("Units.01.00.00");
-    expectedRefSchemas.push_back("Formats.01.00.00");
+    expectedRefSchemas.push_back("ECv3ConversionAttributes");
+    expectedRefSchemas.push_back("Units");
+    expectedRefSchemas.push_back("Formats");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
@@ -1203,7 +1203,7 @@ TEST_F(UnitsCustomAttributesConversionTests, EC3KOQsConvertBackToUnitSpecificati
     ASSERT_TRUE(ECSchemaDownConverter::Convert(*schema));
 
     bvector<Utf8String> expectedRefSchemas;
-    expectedRefSchemas.push_back("Unit_Attributes.01.00.00");
+    expectedRefSchemas.push_back("Unit_Attributes");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     EXPECT_STREQ("CENTIMETRE", getUnitName(schema.get(), "A", "PropA", "UnitSpecificationAttr", "UnitName").c_str());
     EXPECT_FALSE(schema->GetClassCP("A")->GetPropertyP("PropA")->GetCustomAttribute("OldPersistenceUnit").IsValid());
