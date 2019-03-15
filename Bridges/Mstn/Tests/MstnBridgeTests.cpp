@@ -70,9 +70,25 @@ TEST_F(MstnBridgeTests, TestDenySchemaLock)
     iModelBridgeFwk fwk;
     
     ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
+
+    bool fatalFwkMsgFound = false;
+    bool lockDeniedHttpMsgFound = false;
+    LogProcessor processLog(
+        [] (BentleyApi::Utf8StringCR ns, BentleyApi::NativeLogging::SEVERITY sev) {
+            return ns.Equals("WSClient") || ns.Equals("iModelBridge");
+        },
+        [&] (BentleyApi::Utf8StringCR ns, BentleyApi::NativeLogging::SEVERITY sev, BentleyApi::Utf8StringCR msg) {
+            if ((BentleyApi::NativeLogging::SEVERITY::LOG_FATAL == sev) && ns.Equals("iModelBridge") && msg.ContainsI("schema"))
+                fatalFwkMsgFound = true;
+            else if ((BentleyApi::NativeLogging::SEVERITY::LOG_INFO == sev) && ns.Equals("WSClient") && msg.ContainsI(R"({"errorId":"iModelHub.UserDoesNotHavePermission","errorMessage":"user: user1, request: Lock/Create"})"))
+                lockDeniedHttpMsgFound = true;
+        }
+    );
+
     ASSERT_NE(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV())) << "Expect bridge to fail";
 
-    // TODO: Somehow verify that the failure was due to the schema lock being denied.
+    ASSERT_TRUE(fatalFwkMsgFound);
+    ASSERT_TRUE(lockDeniedHttpMsgFound);
     }
     }
 
@@ -137,6 +153,9 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
     // -------------------------------------------------------
     CreateImodelBankRepository(GetSeedFile());
 
+    bool bridge_a_sawRetryMsg = false;
+    BentleyApi::BeFileName bridge_a_briefcaseName;
+    BentleyApi::BeFileName bridge_b_briefcaseName;
     {
     std::unique_ptr<BentleyApi::Dgn::IModelBankClient> bankClient(CreateIModelBankClient(""));
     { // make sure server is stopped before releasing bankClient, as that is used by runningServer's Stop method.
@@ -168,13 +187,26 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
     
         iModelBridgeFwk fwk;
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
+
+        LogProcessor processLog(
+            [] (BentleyApi::Utf8StringCR ns, BentleyApi::NativeLogging::SEVERITY sev) {
+                return ns.StartsWith("iModelBridge") && (BentleyApi::NativeLogging::SEVERITY::LOG_INFO == sev);
+            },
+            [&] (BentleyApi::Utf8StringCR ns, BentleyApi::NativeLogging::SEVERITY sev, BentleyApi::Utf8StringCR msg) {
+                if (msg.ContainsI("retrying"))
+                    bridge_a_sawRetryMsg = true;
+            }
+        );
+
         ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
+
+        bridge_a_briefcaseName = fwk.GetBriefcaseName();
         });
 
     // -------------------------------------------------------
     // Bridge B
     // -------------------------------------------------------
-    // Note: You cannot run multiple fwk's concurrently in the process, as they fight over globals such as DgnViewLibHost.
+    // Note: You cannot run multiple fwk's concurrently in the same process, as they fight over globals such as DgnViewLibHost.
     // That's why we have to run the second bridge in a separate process.
         {
         BeFileName bDir(testDir);
@@ -198,7 +230,12 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
 
         createFile(b_can_run);      // b runs first
         ASSERT_EQ(BSISUCCESS, bridge_b.Stop(5*60*1000));   // wait for up to 5 minutes for b to finish
-        // TODO: Verify that b ran successfully
+                
+        ASSERT_EQ(0, bridge_b.GetExitCode());
+
+        bridge_b_briefcaseName = bDir;
+        bridge_b_briefcaseName.AppendToPath(DEFAULT_IMODEL_NAME);
+        bridge_b_briefcaseName.append(L".bim");
         }
     
     createFile(a_can_run);      // then a runs
@@ -210,8 +247,32 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
     runningServer.Stop(10*1000);    // must wait long enough for imodel-bank server to shut down. The time required can vary unpredictably but seems to increase when a second process has been running.
     }
     }
+
     // ASSERT_EQ(0, ProcessRunner::FindProcessId("node.exe"));
-    ASSERT_EQ(0, ProcessRunner::FindProcessId("iModelBridgeFwk.exe"));
+    // ASSERT_EQ(0, ProcessRunner::FindProcessId("iModelBridgeFwk.exe"));
+    ASSERT_TRUE(bridge_a_sawRetryMsg);
+
+    if (true)
+        {
+        // Since bridge A ran second, must have had to pull bridge B's changesets before it could push.
+        // Therefore, A's briefcase should contain the RepositoryLink for B's input file as well as its own. 
+        DbFileInfo info(bridge_a_briefcaseName);
+        auto aSourceFileId = info.GetRepositoryLinkByFileNameLike("%test3d_a.dgn");
+        auto bSourceFileId = info.GetRepositoryLinkByFileNameLike("%test3d_b.dgn");
+        ASSERT_TRUE(aSourceFileId.IsValid());
+        ASSERT_TRUE(bSourceFileId.IsValid());
+        }
+
+    if (true)
+        {
+        // Since bridge B ran first and finished before A could run, B's briefcase should not have a record of A's input file.
+        DbFileInfo info(bridge_b_briefcaseName);
+        auto aSourceFileId = info.GetRepositoryLinkByFileNameLike("%test3d_a.dgn");
+        auto bSourceFileId = info.GetRepositoryLinkByFileNameLike("%test3d_b.dgn");
+        ASSERT_FALSE(aSourceFileId.IsValid());
+        ASSERT_TRUE(bSourceFileId.IsValid());
+        }
+
     }
 
 /*---------------------------------------------------------------------------------**//**

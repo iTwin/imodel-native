@@ -17,6 +17,8 @@
 #include "V8FileEditor.h"
 #include <Bentley/Base64Utilities.h>
 
+MstnBridgeTestsLogProvider MstnBridgeTestsFixture::s_logProvider;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -98,6 +100,8 @@ BentleyApi::BeFileName MstnBridgeTestsFixture::GetSeedFile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MstnBridgeTestsFixture::SetUpTestCase()
     {
+    BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(&s_logProvider);
+
     BentleyApi::BeFileName tmpDir;
     BentleyApi::BeTest::GetHost().GetTempDir(tmpDir);
     BentleyApi::BeFileName::CreateNewDirectory(tmpDir.c_str());
@@ -206,6 +210,19 @@ int64_t MstnBridgeTestsFixture::AddLine(BentleyApi::BeFileName& inputFile, int n
     v8editor.Save();
     
     return elementId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::Dgn::DgnElementId MstnBridgeTestsFixture::DbFileInfo::GetRepositoryLinkByFileNameLike(BentleyApi::Utf8StringCR fn)
+    {
+    BentleyApi::BeSQLite::EC::ECSqlStatement stmt;
+    EXPECT_EQ(BentleyApi::BeSQLite::EC::ECSqlStatus::Success, stmt.Prepare(*m_db, "select Element.Id from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " where (kind='DocumentWithBeGuid' AND identifier LIKE ?)"));
+    stmt.BindText(1, fn.c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    if (stmt.Step() != BentleyApi::BeSQLite::BE_SQLITE_ROW)
+        return BentleyApi::Dgn::DgnElementId();
+    return stmt.GetValueId<BentleyApi::Dgn::DgnElementId>(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1219,4 +1236,3 @@ void SynchInfoTests::ValidateElementSynchInfo (BentleyApi::BeFileName& dbFile, i
     id = estmt.GetValueId<int64_t> (1);
     ASSERT_TRUE (id == srcId);
 }
-

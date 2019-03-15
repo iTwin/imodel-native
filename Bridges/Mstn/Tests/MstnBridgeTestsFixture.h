@@ -13,6 +13,7 @@
 #include <iModelBridge/IModelClientForBridges.h>
 #include <iModelBridge/TestIModelHubClientForBridges.h>
 #include <WebServices/iModelHub/Client/Client.h>
+#include "MstnBridgeTestsLogProvider.h"
 
 struct RevisionStats
     {
@@ -97,12 +98,16 @@ struct ProcessRunner
     int GetExitCode() const {return m_exitCode;}
     };
 
+struct LogProcessor;
+
 //=======================================================================================
 // @bsistruct                              
 //=======================================================================================
 struct MstnBridgeTestsFixture : ::testing::Test
     {
+    friend struct LogProcessor;
     protected:
+    static MstnBridgeTestsLogProvider s_logProvider;
     BentleyApi::BeFileName m_briefcaseName;
     BentleyApi::Dgn::IModelClientForBridges* m_client {};
     BentleyApi::BeFileName GetIModelParentDir();
@@ -182,6 +187,7 @@ struct MstnBridgeTestsFixture : ::testing::Test
         int32_t GetBISClassCount(CharCP className);
         int32_t GetModelProvenanceCount(BentleyApi::BeSQLite::BeGuidCR fileGuid);
         BentleyApi::BentleyStatus GetiModelElementByDgnElementId(BentleyApi::Dgn::DgnElementId& elementId, int64_t srcElementId);
+        BentleyApi::Dgn::DgnElementId MstnBridgeTestsFixture::DbFileInfo::GetRepositoryLinkByFileNameLike(BentleyApi::Utf8StringCR);
         };
     
 
@@ -192,6 +198,29 @@ struct MstnBridgeTestsFixture : ::testing::Test
     static void SetupTestDirectory(BentleyApi::BeFileNameR dirPath,  BentleyApi::WCharCP dirName, BentleyApi::WCharCP iModelName,
                                    BentleyApi::BeFileNameCR input1, BentleyApi::BeSQLite::BeGuidCR inputGuid, 
                                    BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid);
+    };
+
+//=======================================================================================
+// @bsistruct                              
+//=======================================================================================
+struct LogProcessor
+    {
+    std::function<MstnBridgeTestsLogProvider::T_IsSeverityEnabled> m_wasSev;
+    std::function<MstnBridgeTestsLogProvider::T_LogMessage> m_wasProc;
+    
+    LogProcessor(std::function<MstnBridgeTestsLogProvider::T_IsSeverityEnabled> sevf, std::function<MstnBridgeTestsLogProvider::T_LogMessage> logf)
+        {
+        m_wasSev = MstnBridgeTestsFixture::s_logProvider.m_sev;
+        MstnBridgeTestsFixture::s_logProvider.m_sev = sevf;
+        m_wasProc = MstnBridgeTestsFixture::s_logProvider.m_proc;
+        MstnBridgeTestsFixture::s_logProvider.m_proc = logf;
+        }
+
+    ~LogProcessor()
+        {
+        MstnBridgeTestsFixture::s_logProvider.m_sev = m_wasSev;
+        MstnBridgeTestsFixture::s_logProvider.m_proc = m_wasProc;
+        }
     };
 
 //=======================================================================================
