@@ -8,7 +8,7 @@ export class DatasetManager {
     public latestRoot: string;
     public previousRoot: string;
     public baseRoot: string;
-    public ver: string;
+    public ver: string[];
     public constructor(jsonFile: string) {
         const datasetStr = fs.readFileSync(path.join("./lib/config", jsonFile), "utf8");
         const datasetJson: any = JSON.parse(datasetStr);
@@ -17,7 +17,18 @@ export class DatasetManager {
         this.latestRoot = path.join(this.dataRoot, datasetJson.latest);
         this.previousRoot = path.join(this.dataRoot, datasetJson.previous);
         this.baseRoot = path.join(this.dataRoot, datasetJson.base);
-        this.ver = datasetJson.version;
+        this.ver = datasetJson.versions;
+    }
+    public ignore(sub: string): boolean {
+        let ignore = false;
+        if (sub.startsWith("ElementsInSubject")) {
+            for (const v of this.ver) {
+                if (sub.includes(v)) {
+                    ignore = true;
+                }
+            }
+        }
+        return ignore;
     }
     public matchDatasetMulti(info: IModelInfo) {
         let ds = "";

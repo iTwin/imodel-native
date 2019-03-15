@@ -10,7 +10,6 @@ describe("DataValidationTests", () => {
     it("MSTN Bridge Smoke compare", () => {
         let pass = true;
         const dsManager = new DatasetManager("mstnbridge.dataset.json");
-        const ver = dsManager.ver;
         const reporter = new Reporter("././lib");
         const dataset: any[] = [];
         // tslint:disable-next-line:no-console
@@ -78,7 +77,7 @@ describe("DataValidationTests", () => {
                 let mml = mms.length;
                 while (mml--) {
                     const mm = mms[mml];
-                    if (mm.name.startsWith("ElementsInSubject") && mm.name.includes(ver)) {
+                    if (dsManager.ignore(mm.name)) {
                         mms.splice(mml, 1);
                     } 
                 }        
