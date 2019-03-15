@@ -260,6 +260,12 @@ NAPI_NO_RETURN void napi_fatal_error(const char* location,
   node::FatalError(location_string.c_str(), message_string.c_str());
 }
 
+void FinalizeFunctionCallback(JSObjectRef function) {
+    auto funcCBData = (JSCFunctionCallbackData*)JSObjectGetPrivate(function);
+    if (funcCBData) {
+        delete funcCBData;
+    }
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -279,7 +285,7 @@ napi_status napi_create_function(napi_env env,
     if (utf8name != nullptr) {
         classDef.className = utf8name;
     }
-    
+    classDef.finalize = FinalizeFunctionCallback;
     classDef.callAsFunction = JSCFunctionCallbackWrapper::CallAsFunction;
     JSClassRef classRef = JSClassCreate(&classDef);
     auto funcCBData = new JSCFunctionCallbackData(env,cb,callback_data);
@@ -338,7 +344,7 @@ napi_status napi_define_class(napi_env env,
     classDef.className = utf8name;
     classDef.callAsConstructor = JSCFunctionCallbackWrapper::CallAsConstructor;
     classDef.hasInstance = JSCFunctionCallbackWrapper::HasInstance;
-    
+    classDef.finalize = FinalizeFunctionCallback;
     JSClassRef classRef = JSClassCreate(&classDef);
     auto classCBData = new JSClassCallbackData(env,constructor,callback_data,prototypeObj);
     *result = JSObjectMake(ctx,classRef,classCBData);
@@ -626,6 +632,7 @@ napi_status napi_define_properties(napi_env env,
                 JSClassDefinition methodDef = kJSClassDefinitionEmpty;
                 methodDef.className = p->utf8name;
                 methodDef.callAsFunction = JSCFunctionCallbackWrapper::CallAsFunction;
+                methodDef.finalize = FinalizeFunctionCallback;
                 JSClassRef methodRef = JSClassCreate(&methodDef);
                 auto funcCBData = new JSCFunctionCallbackData(env,p->method,p->data);
                 JSObjectRef method = JSObjectMake(ctx,methodRef,funcCBData);

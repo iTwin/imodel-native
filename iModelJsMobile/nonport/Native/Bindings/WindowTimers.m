@@ -23,7 +23,7 @@
     context[@"clearInterval"] = self.clearTimeout;
 }
 
-- (NSNumber *)intervalWithCallable:(JSManagedValue *)function
+- (NSNumber *)intervalWithCallable:(JSValue *)function
                            timeout:(JSValue *)timeout
                          arguments:(NSArray *)arguments
                         isInterval:(bool)isInterval {
@@ -38,11 +38,11 @@
         }
         // Unfortunately, JavaScript allows it that the first argument is a string which will be
         // evaluated as callback.
-        if ([function.value isString]) {
-            [function.value.context evaluateScript:[function.value toString]];
+        if ([function isString]) {
+            [function.context evaluateScript:[function toString]];
             // In all other cases, execute the callback. TODO explain the arguments.
         } else {
-            [function.value callWithArguments:arguments];
+            [function callWithArguments:arguments];
         }
 
     });
@@ -66,8 +66,8 @@
             arguments = [originalArguments subarrayWithRange:NSMakeRange(2,
                     [originalArguments count] - 2)];
         }
-        JSManagedValue * func = [[JSManagedValue alloc] initWithValue:function];
-        return [self intervalWithCallable:func
+        // JSManagedValue * func = [[JSManagedValue alloc] initWithValue:function];
+        return [self intervalWithCallable:function
                                   timeout:timeout
                                 arguments:arguments
                                isInterval:NO];
@@ -91,8 +91,8 @@
             arguments = [originalArguments subarrayWithRange:NSMakeRange(2,
                     [originalArguments count] - 2)];
         }
-        JSManagedValue * func = [[JSManagedValue alloc] initWithValue:function];
-        return [self intervalWithCallable:func
+        // JSManagedValue * func = [[JSManagedValue alloc] initWithValue:function];
+        return [self intervalWithCallable:function
                                   timeout:timeout
                                 arguments:arguments
                                isInterval:YES];
