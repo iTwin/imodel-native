@@ -70,7 +70,7 @@ always:
     !~@mkdir ${PublishApiOutput}
 
 always:
-    ~linkdir "$(DOXYGEN_INPUT)include = $(_MakeFilePath)..\src\PublicAPI
+    ~linkdir "$(DOXYGEN_INPUT)include = $(_MakeFilePath)..\src\PublicAPI"
 
 $(PublishApiStamp) : $[@wildcard $(DOXYGEN_INPUT)include\*]
     $(msg)
@@ -87,7 +87,7 @@ always:
 #----------------------------------------------------------------------------------------
 #   Run Doxygen
 #----------------------------------------------------------------------------------------
-$(OUT_DOXYGEN_ARTIFACTS)doxygen.cfg : $(PublishApiStamp) $(DOXYGEN_CONFIG_FILES) $(_MakeFileSpec)
+$(OUT_DOXYGEN_ARTIFACTS)doxygen.cfg : $(PublishApiStamp) $(DOXYGEN_CONFIG_FILES) $(_MakeFileSpec) $(_MakeFilePath)ProfilesDoc.remarks.md
     $(msg)
     > $(OUT_DOXYGEN_ARTIFACTS)doxygen.cfg
     @INCLUDE                = $(BENTLEY_DOXYGEN_CONFIG)

@@ -176,13 +176,16 @@ public:
 
     //! @beginGroup
     //! Get all CardinalPoint's of this profile.
+    //! @details CardinalPoints are created during an Insert operation, so calling this function before the profile is inserted
+    //! will return an empy vector.
     //! @returns Empty vector if profile has zero CardinalPoint's.
     PROFILES_EXPORT bvector<CardinalPoint> GetCardinalPoints() const;
     //! Get standard CardinalPoint by @ref StandardCardinalPoint "enumeration".
+    //! @details See GetCardinalPoints.
     //! @returns DgnDbStatus::Success if CardinalPoint exists, error code otherwise.
     PROFILES_EXPORT Dgn::DgnDbStatus GetCardinalPoint (StandardCardinalPoint standardType, CardinalPoint& cardinalPoint) const;
     //! Get any CardinalPoint by its name.
-    //! @details This method can be used to query user-defined/custom CardinalPoint's.
+    //! @details This method can be used to query user-defined/custom CardinalPoint's. See GetCardinalPoints.
     //! @returns DgnDbStatus::Success if CardinalPoint exists, error code otherwise.
     PROFILES_EXPORT Dgn::DgnDbStatus GetCardinalPoint (Utf8String const& name, CardinalPoint& cardinalPoint) const;
     //! Add a user-defined/custom CardinalPoint for this profile.
