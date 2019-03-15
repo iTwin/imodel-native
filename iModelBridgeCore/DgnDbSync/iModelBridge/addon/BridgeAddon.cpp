@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <cstdio>
 #include <json/value.h>
-#include <node-addon-api/napi.h>
+#include <Napi/napi.h>
 #include <iModelBridge/iModelBridgeFwk.h>
 
 #include "OidcTokenProvider.h"
@@ -116,12 +116,11 @@ static Napi::Object RegisterModule(Napi::Env env, Napi::Object exports)
     {
     Napi::HandleScope scope(env);
 
-    exports.Set(String::New(env, "RunBridge"), Napi::Function::New(env, _RunBridge));
 
     exports.DefineProperties(
         {
-        Napi::PropertyDescriptor::Accessor("logger", &BridgeNative::GetLogger, &BridgeNative::SetLogger),
-        Napi::PropertyDescriptor::Accessor("JobUtility", &BridgeNative::GetJobUtility, &BridgeNative::SetJobUtility),
+        Napi::PropertyDescriptor::Accessor(env, exports, "logger", &BridgeNative::GetLogger, &BridgeNative::SetLogger),
+        Napi::PropertyDescriptor::Accessor(env, exports, "JobUtility", &BridgeNative::GetJobUtility, &BridgeNative::SetJobUtility),
         });
 
     return exports;
