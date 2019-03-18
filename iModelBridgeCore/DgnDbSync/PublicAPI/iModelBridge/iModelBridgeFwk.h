@@ -368,6 +368,8 @@ public:
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void SetBridgeForTesting(iModelBridge&);
     //! @private
+    IMODEL_BRIDGE_FWK_EXPORT static void ClearIModelClientForBridgesForTesting();
+    //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void SetRegistryForTesting(IModelBridgeRegistry&);
 
     IMODEL_BRIDGE_FWK_EXPORT void SetTokenProvider(WebServices::IConnectTokenProviderPtr provider);

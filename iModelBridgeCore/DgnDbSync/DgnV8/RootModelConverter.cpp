@@ -1080,13 +1080,7 @@ RootModelConverter::~RootModelConverter()
     if (!m_params.GetKeepHostAlive())
         {
         ClearV8ProgressMeter();
-
-        if (DgnV8Api::Raster::RasterCoreLib::IsInitialized())
-            DgnV8Api::Raster::RasterCoreLib::GetHost().Terminate(false);
-
-        DgnV8Api::DgnViewLib::Host* host = dynamic_cast<DgnV8Api::DgnViewLib::Host*>(DgnV8Api::DgnPlatformLib::QueryHost());
-        if (NULL != host)
-            host->Terminate(false);
+        Terminate(m_params);
         }
     }
 

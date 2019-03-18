@@ -955,21 +955,23 @@ void iModelBridgeRegistryBase::EnsureDocumentPropertiesFor(BeFileNameCR fn, BeGu
     if (BSISUCCESS == _GetDocumentProperties(_props, fn))
         return;
 
-#define TEST_REGISTRY_FAKE_GUIDS
-#ifdef TEST_REGISTRY_FAKE_GUIDS
     BeGuid testGuid;
     if (guid)
         testGuid = *guid;
+#ifdef TEST_REGISTRY_FAKE_GUIDS
     else
         testGuid.Create();
+#endif
 
     auto stmt = m_stateDb.GetCachedStatement("INSERT INTO DocumentProperties (LocalFilePath,DocGuid,DesktopURN,WebURN,AttributesJSON,SpatialRootTransformJSON) VALUES(?,?,'', '', '', '')");
     stmt->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
-    stmt->BindText(2, testGuid.ToString(), Statement::MakeCopy::Yes);
-#else
-    auto stmt = m_stateDb.GetCachedStatement("INSERT INTO DocumentProperties (LocalFilePath) VALUES(?)");
-    stmt->BindText(1, Utf8String(fn).c_str(), Statement::MakeCopy::Yes);
-#endif
+    if (testGuid.IsValid())
+        stmt->BindText(2, testGuid.ToString(), Statement::MakeCopy::Yes);
+    else
+        {
+        stmt->BindNull(2);
+        LOG.errorv(L"no guid for %ls", fn.c_str());
+        }
     stmt->Step();
     }
 

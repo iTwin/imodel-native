@@ -671,6 +671,23 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
     DgnV8Api::ElementHandlerManager::EnumerateAvailableHandlers(caller);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::Terminate(iModelBridge::Params const& params)
+    {
+    auto cparams = static_cast<Converter::Params const&>(params);
+    if (cparams.GetKeepHostAlive())
+        return;
+
+    if (DgnV8Api::Raster::RasterCoreLib::IsInitialized())
+        DgnV8Api::Raster::RasterCoreLib::GetHost().Terminate(false);
+
+    DgnV8Api::DgnViewLib::Host* host = dynamic_cast<DgnV8Api::DgnViewLib::Host*>(DgnV8Api::DgnPlatformLib::QueryHost());
+    if (NULL != host)
+        host->Terminate(false);
+    }
+
 /*=================================================================================**//**
 * @bsiclass                                     Sam.Wilson                      07/14
 +===============+===============+===============+===============+===============+======*/

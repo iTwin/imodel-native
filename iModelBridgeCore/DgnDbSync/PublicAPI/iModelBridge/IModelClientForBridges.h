@@ -101,9 +101,17 @@ public:
 };
 
 // ========================================================================================================
+// Exposes the ability to cleanly shutdown an iModel server
+// ========================================================================================================
+struct IMODEL_BRIDGE_FWK_EXPORT IShutdownIModelServer
+    {
+    virtual BentleyStatus Shutdown() = 0;
+    };
+
+// ========================================================================================================
 // Provides access to an iModelBank
 // ========================================================================================================
-struct IMODEL_BRIDGE_FWK_EXPORT IModelBankClient : IModelClientBase
+struct IMODEL_BRIDGE_FWK_EXPORT IModelBankClient : IModelClientBase, IShutdownIModelServer
     {
     Utf8String m_iModelId;
 
@@ -112,7 +120,7 @@ struct IMODEL_BRIDGE_FWK_EXPORT IModelBankClient : IModelClientBase
     iModel::Hub::iModelInfoPtr GetIModelInfo() override;
     void SetUrlAndAccessToken(iModelBridgeFwk::IModelBankArgs const&);
 
-    BentleyStatus Shutdown();
+    BentleyStatus Shutdown() override;
     };
 
 // ========================================================================================================

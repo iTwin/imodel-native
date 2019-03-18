@@ -1015,6 +1015,12 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
             }
 
         PhysicalPartitionPtr ed = PhysicalPartition::Create(parentSubject, partitionCode.GetValueUtf8CP());
+
+        Json::Value modelProps(Json::nullValue);
+        auto isRef = parentSubject.GetSubjectJsonProperties(Subject::json_Model()).GetMember("Type") == "References";
+        modelProps["Content"] = isRef? "Reference": "Master";
+        ed->SetPhysicalPartitionJsonProperties(PhysicalPartition::json_Model(), modelProps);
+
         PhysicalPartitionCPtr partition = ed->InsertT<PhysicalPartition>();
         if (!partition.IsValid())
             {
