@@ -170,7 +170,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName, uint32_t 
     m_scalableMeshFileLock = nullptr;
 
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
-    SetThreadingOptions(false, true, false);
+    SetThreadingOptions(false, false, false);
     SetShareable(true);
     ScalableMeshDb::SetEnableSharedDatabase(true);
 #ifdef TRACE_ON	    
@@ -190,7 +190,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr, uin
     m_scalableMeshFileLock = nullptr;
 
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
-    SetThreadingOptions(false, true, false);
+    SetThreadingOptions(false, false, false);
     SetShareable(true);
     ScalableMeshDb::SetEnableSharedDatabase(true);
 #ifdef TRACE_ON		    
@@ -374,9 +374,14 @@ struct NodesToGenerate
                     {
                     bvector<IScalableMeshNodePtr> neighborNodes = node->GetNeighborAt(relativePosX, relativePosY, relativePosZ);
                     for (auto& neighborNode : neighborNodes)
-                        {
-                        if (!FindNode(neighborNode->GetNodeId()))
+                        {                                                         
+                        ScalableMeshNode<DPoint3d>* smNeighborNode(dynamic_cast<ScalableMeshNode<DPoint3d>*>(neighborNode.get()));
+
+                        if ((smNeighborNode->GetNodePtr()->GetCount() > 0) && !FindNode(neighborNode->GetNodeId()))
+                            {
                             areAllNeighborFound = false;
+                            break;
+                            }
                         }
                     }
 
@@ -506,10 +511,12 @@ struct NodeTask : public RefCountedBase
             }
 
 
+        /*TBD_G : Currently empty node needs to be return to take into account empty neighbor node when computing stitchable nodes.
         ScalableMeshNode<DPoint3d>* smNode(dynamic_cast<ScalableMeshNode<DPoint3d>*>(currentNode.get()));
 
         if (smNode->GetNodePtr()->GetCount() == 0)
             return;
+			*/
 
         groupNodes.push_back(currentNode);
         
@@ -522,15 +529,14 @@ struct NodeTask : public RefCountedBase
         }
 
 
-
-
     void AddNode(IScalableMeshNodePtr& currentNode)
         {                
         ScalableMeshNode<DPoint3d>* smNode(dynamic_cast<ScalableMeshNode<DPoint3d>*>(currentNode.get()));
 
-        m_resolutionToGenerate[currentNode->GetLevel()].m_nodeIds.push_back(currentNode->GetNodeId());
+        uint64_t nbObjects = GetNbObjectsEstimate(smNode->GetNodePtr(), m_resolutionToGenerate.size());
 
-        m_totalNbPoints += GetNbObjectsEstimate(smNode->GetNodePtr(), m_resolutionToGenerate.size());
+		m_resolutionToGenerate[currentNode->GetLevel()].m_nodeIds.push_back(currentNode->GetNodeId());
+		m_totalNbPoints += nbObjects;
         }  
 
 
@@ -593,7 +599,7 @@ struct GenerationTask : public NodeTask
             }
         }
 		
-		    void MergeGenerationTask(const GenerationTaskPtr& newGenerationTask, HFCPtr<MeshIndexType> pDataIndex)
+    void MergeGenerationTask(const GenerationTaskPtr& newGenerationTask, HFCPtr<MeshIndexType> pDataIndex)
         {                        
         assert(newGenerationTask->m_resolutionToGenerate.size() == m_resolutionToGenerate.size());
         assert(newGenerationTask->m_orderId == m_orderId);
@@ -740,9 +746,7 @@ void GroupNodes(bvector<NodeTaskPtr>& toExecuteTasks, IScalableMeshNodePtr& curr
 
     //if (smNode->GetNodePtr()->GetCount() < pointThreshold)
     if (GetTotalCountWithSubResolutions(smNode->GetNodePtr(), nbResolutions, nbResolutions - 1) < pointThreshold)
-        {        
-        CreateNodeTask(toExecuteTasks, currentNode, nbResolutions,pointThreshold, pDataIndex, t);
-
+        {                
         childrenGroupingSize = smNode->GetNodePtr()->GetCount();
         //Dont add empty branch.
         if (childrenGroupingSize > 0)
@@ -961,7 +965,7 @@ void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<NodeTask
 
     GroupNodes(toExecuteTasks, meshRootNode, maxGroupSize, childrenGroupingSize, nbResolutions, pDataIndex, NodeTaskType::GENERATION);
              
-#if !defined(NDEBUG) && defined(_WIN32)                            
+#if defined(_WIN32)                            
 
     size_t totalNbNodes = 0;
     size_t totalNbNodesToStitch = 0;
@@ -980,6 +984,10 @@ void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<NodeTask
     wchar_t text_buffer[1000] = { 0 }; //temporary buffer
     swprintf(text_buffer, _countof(text_buffer), L"Nb Nodes To Mesh : %zd    Nb Nodes To Stich : %zd   Ratio : %.2f \r\n", totalNbNodes, totalNbNodesToStitch, independentStitchingPercentage); 
     OutputDebugStringW(text_buffer); // print
+
+#ifdef NDEBUG
+    wprintf(text_buffer);
+#endif
 
 #endif
 
@@ -1022,11 +1030,16 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
     uint32_t maxPriority = 0;
     
     for (size_t ind = 0; ind < generationTasks.size(); ind++)    
-        {                                      
+        {                                              
         BeFileName meshTaskFile(taskDirectory);
-        
-        maxPriority = max(maxPriority, generationTasks[ind]->m_orderId);
 
+        /*
+        if (generationTasks[ind]->m_orderId > 0)
+            continue;
+            */
+                
+        maxPriority = max(maxPriority, generationTasks[ind]->m_orderId);
+        
         if (generationTasks[ind]->m_orderId > 0)
             {            
             swprintf(stringBuffer, L"\\%s%i\\", TASK_PRIORITY_FOLDER_NAME, generationTasks[ind]->m_orderId);
@@ -1165,14 +1178,18 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTextureTasks(uint32_t ma
 
     CloseSqlFiles();
 
-
     wchar_t stringBuffer[100000];
-
+    uint32_t nbBitsForGrouping = ceil(log(textureTasks.size()) / log(2));
+    
     for (size_t ind = 0; ind < textureTasks.size(); ind++)
         {
         BeFileName meshTaskFile(taskDirectory);
         
         //assert(textureTasks[ind]->m_orderId == 0);        
+        /*
+        if (textureTasks[ind]->m_orderId > 0)
+            continue;
+        */
 
         if (basePriority > 0)
             {            
@@ -1193,7 +1210,13 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTextureTasks(uint32_t ma
         BeXmlNodeP workerNode(xmlDomPtr->AddNewElement("workerTask", nullptr, nullptr));
         workerNode->AddAttributeStringValue("type", "texture");
         workerNode->AddAttributeStringValue("jobName", jobName.c_str());
-        workerNode->AddAttributeStringValue("smName", smFileName.c_str());
+        workerNode->AddAttributeStringValue("smName", smFileName.c_str());    
+
+        //Node IDs are saved as signed 32 bits in 3sm file, so cannot go above 31 bits.
+        uint64_t baseNodeId = (ind + 1) << (31 - nbBitsForGrouping);
+        assert(baseNodeId >= (((uint64_t)1) << (31 - nbBitsForGrouping)) && baseNodeId < std::numeric_limits<int32_t>::max());
+
+        workerNode->AddAttributeUInt64Value("newBaseNodeId", baseNodeId);
 
         for (int resInd = (int)textureTasks[ind]->m_resolutionToGenerate.size() - 1; resInd >= 0; resInd--)
         {
@@ -1427,6 +1450,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateFilterTasks(uint32_t res
     return SUCCESS;
     }
 
+static bool s_doMultiThreadFiltering = true;
+static bool s_doMultiThreadMeshing = true;
+static bool s_doMultiThreadStitching = true;
 
 StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP pXmlTaskNode)
     {
@@ -1665,23 +1691,47 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                 }
             }
             
-                    
+
         if (needFiltering)
             {
             for (auto& node : nodesToMesh)
-                {                  
-#ifndef NDEBUG
-                uint32_t pointCount = node->GetNbObjects();
-#endif
-                node->Filter((int)node->GetLevel(), nullptr);                
-                node->SetDirty(true);
+                {            
+                if (s_doMultiThreadFiltering)
+                    {
+                    RunOnNextAvailableThread(std::bind([] (SMPointIndexNode<DPoint3d, DRange3d>* node, size_t threadId) ->void
+                        {
+                        node->Filter((int)node->GetLevel(), nullptr);                
+                        node->SetDirty(true);                            
+                        SetThreadAvailableAsync(threadId);
+                        }, node,std::placeholders::_1));
+                    }
+                else
+                    {
 
 #ifndef NDEBUG
-                uint32_t newPointCount = node->GetNbObjects();
-                assert(pointCount <= newPointCount);
-                assert(newPointCount > 0);
-                assert(node->m_nodeHeader.m_nodeCount == newPointCount);
+                    //uint32_t pointCount = node->GetNbObjects();
 #endif
+                    node->Filter((int)node->GetLevel(), nullptr);                
+                    node->SetDirty(true);
+
+#ifndef NDEBUG
+/*
+                    if (!s_useThreadsInFiltering)
+                        {
+                        uint32_t newPointCount = node->GetNbObjects();
+                        assert(pointCount <= newPointCount);
+                        assert(newPointCount > 0);
+                        assert(node->m_nodeHeader.m_nodeCount == newPointCount);
+                        }
+    */
+#endif
+
+                    }
+                }
+
+            if (s_doMultiThreadFiltering)
+                {
+                WaitForThreadStop();
                 }
             }
             
@@ -1692,12 +1742,34 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                 {
                 assert(!node->m_nodeHeader.m_arePoints3d);
 
-                bool isMeshed = pDataIndex->GetMesher2_5d()->Mesh(node);
-
-                if (isMeshed)
+                if (s_doMultiThreadMeshing)
                     {
-                    node->SetDirty(true);
+                    RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<DPoint3d, DRange3d>* node, HFCPtr<MeshIndexType> pDataIndex, size_t threadId ) ->void
+                        {                        
+                        bool isMeshed = pDataIndex->GetMesher2_5d()->Mesh(node);
+
+                        if (isMeshed)
+                            {
+                            node->SetDirty(true);
+                            }
+
+                        SetThreadAvailableAsync(threadId);
+                        }, node, pDataIndex, std::placeholders::_1));
                     }
+                else
+                    {
+                    bool isMeshed = pDataIndex->GetMesher2_5d()->Mesh(node);
+
+                    if (isMeshed)
+                        {
+                        node->SetDirty(true);
+                        }
+                    }
+                }
+
+             if (s_doMultiThreadMeshing)
+                {
+                WaitForThreadStop();
                 }
             }
 
@@ -1710,29 +1782,52 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
                 if (node->GetBlockID().m_integerID == tileId)
                     {        
-#ifndef NDEBUG
-                    uint32_t pointCount = node->GetNbObjects();
-                    assert(node->m_nodeHeader.m_nodeCount == pointCount);
-#endif
-
-                    bool isStitched = pDataIndex->GetMesher2_5d()->Stitch(node);
-                    assert(isStitched == true);
-                    
-                    if (isStitched)
+                    if (s_doMultiThreadStitching)
                         {
-                        node->SetDirty(true);
-                        }
+                        RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<DPoint3d, DRange3d>* node, HFCPtr<MeshIndexType> pDataIndex, size_t threadId ) ->void
+                            {    
+                            bool isStitched = pDataIndex->GetMesher2_5d()->Stitch(node);
+                            assert(isStitched == true);
+                    
+                            if (isStitched)
+                                {
+                                node->SetDirty(true);
+                                }
 
-#ifndef NDEBUG
-                    uint32_t newPointCount = node->GetNbObjects();
-                    assert(pointCount <= newPointCount);
-                    assert(newPointCount > 0);
-                    assert(node->m_nodeHeader.m_nodeCount == newPointCount);
-#endif
+                            SetThreadAvailableAsync(threadId);
+                            }, node, pDataIndex, std::placeholders::_1));
+                        }
+                    else
+                        {                                    
+    #ifndef NDEBUG
+                        uint32_t pointCount = node->GetNbObjects();
+                        assert(node->m_nodeHeader.m_nodeCount == pointCount);
+    #endif
+
+                        bool isStitched = pDataIndex->GetMesher2_5d()->Stitch(node);
+                        assert(isStitched == true);
+                    
+                        if (isStitched)
+                            {
+                            node->SetDirty(true);
+                            }
+
+    #ifndef NDEBUG
+                        uint32_t newPointCount = node->GetNbObjects();
+                        assert(pointCount <= newPointCount);
+                        assert(newPointCount > 0);
+                        assert(node->m_nodeHeader.m_nodeCount == newPointCount);
+    #endif
+                        }
 
                     break;
                     }
                 }
+            }
+
+        if (s_doMultiThreadStitching && stitchTileIds.size())
+            {
+            WaitForThreadStop();
             }
 
 #ifndef NDEBUG
@@ -1837,6 +1932,10 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
 StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP pXmlTaskNode)
     {
+    uint64_t baseNodeId = 0;
+    BeXmlStatus xmlStatus = pXmlTaskNode->GetAttributeUInt64Value(baseNodeId, "newBaseNodeId");    
+    assert(xmlStatus == BEXML_Success);
+
     BeXmlNodeP pChildNode = pXmlTaskNode->GetFirstChild();
     
     GetScalableMeshFileLock(true);
@@ -1853,11 +1952,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
 #endif
 
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
+    pDataIndex->SetNextID(baseNodeId);
 
     ReleaseScalableMeshFileLock();    
 
     bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>> nodesToMesh;
-    bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>>     generatedNodes;
+    bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>> generatedNodes;
 
     SMMeshDataToLoad meshDataToLoad;
 
@@ -2008,7 +2108,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
 
         nodesToMesh.clear();
 
-        GetScalableMeshFileLock(true);
+        GetScalableMeshFileLock(false);
 
         //Flush all the data on disk    
         OpenSqlFiles(false, true);
