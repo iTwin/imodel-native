@@ -157,14 +157,18 @@ public:
 struct CustomFunctionsManager : NonCopyableClass, IUserSettingsChangeListener
 {
 private:
-    mutable bvector<CustomFunctionsContext*> m_contexts;
-
+    mutable BeThreadLocalStorage* m_contexts;
+    mutable bvector<bvector<CustomFunctionsContext*>*> m_allContexts;
+    bvector<CustomFunctionsContext*>& GetContexts() const;
 public:
-    static CustomFunctionsManager& GetManager();
+    CustomFunctionsManager();
+    ~CustomFunctionsManager();
+    ECPRESENTATION_EXPORT static CustomFunctionsManager& GetManager();
     void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override;
-    CustomFunctionsContext& GetCurrentContext() const;
+    ECPRESENTATION_EXPORT CustomFunctionsContext& GetCurrentContext() const;
     void PushContext(CustomFunctionsContext& context);
-    CustomFunctionsContext* PopContext();
+    ECPRESENTATION_EXPORT CustomFunctionsContext* PopContext();
+    ECPRESENTATION_EXPORT bool IsContextEmpty();
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

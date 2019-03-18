@@ -4,7 +4,7 @@
     "latest": "BridgeOutputLatest",
     "previous": "BridgeOutputPrevious",
     "base": "BridgeOutputBaselines",
-    "version": "2.",
+    "versions": ["2.0", "2.1", "2019"],
     "ds": [
         {
             "name": "iDgn",

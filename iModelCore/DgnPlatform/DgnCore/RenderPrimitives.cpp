@@ -813,8 +813,8 @@ bool SurfaceMaterial::IsLessThan(SurfaceMaterialCR rhs, ComparePurpose purpose) 
     TEST_LESS_THAN(GetTextureMapping().GetTexture());
 
     // NB: ComparePurpose::Instance requires equal UV transform.
-    if (ComparePurpose::Merge == purpose)
-        return true;
+    if (ComparePurpose::Merge == purpose || !GetTextureMapping().IsValid())
+        return false;
 
     auto tol = DoubleOps::SmallCoordinateRelTol();
     auto const& lmat = GetTextureMapping().GetParams().m_textureMat2x3;
@@ -882,7 +882,10 @@ bool SurfaceMaterial::IsEqualTo(SurfaceMaterialCR rhs, ComparePurpose purpose) c
     TEST_EQUAL(GetTextureMapping().GetTexture());
 
     // NB: ComparePurpose::Instance requires equal UV transform
-    return ComparePurpose::Merge == purpose || GetTextureMapping().GetParams().m_textureMat2x3.AlmostEqual(rhs.GetTextureMapping().GetParams().m_textureMat2x3);
+    if (ComparePurpose::Merge != purpose && GetTextureMapping().IsValid())
+        return GetTextureMapping().GetParams().m_textureMat2x3.AlmostEqual(rhs.GetTextureMapping().GetParams().m_textureMat2x3);
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

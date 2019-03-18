@@ -1346,7 +1346,6 @@ void DisplayStyle::_OnLoadedJsonProperties()
 
         OverrideSubCategory(subCategoryId, DgnSubCategory::Override(val));
         }
-
     JsonValueCR excludedElementsJson = GetStyle(json_excludedElements());
     m_excludedElements.clear();
     for (Json::ArrayIndex i = 0; i < excludedElementsJson.size(); ++i)

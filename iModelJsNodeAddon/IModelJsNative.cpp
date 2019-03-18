@@ -142,7 +142,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 #define DEFINE_CONSTRUCTOR static Napi::FunctionReference& Constructor() { static Napi::FunctionReference s_ctor; return s_ctor; }
 
-// Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor 
+// Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
 // from running at program shutdown time, which would attempt to reset the reference when the environment is no longer valid.
 #define SET_CONSTRUCTOR(t) Constructor() = Napi::Persistent(t); Constructor().SuppressDestruct();
 
@@ -687,7 +687,7 @@ struct BriefcaseManagerResourcesRequest : Napi::ObjectWrap<BriefcaseManagerResou
         }
 };
 
-static void initializeGcs() 
+static void initializeGcs()
     {
     bool s_initialized = false;
     if (s_initialized)
@@ -807,7 +807,7 @@ public:
     template<typename STATUSTYPE>
     Napi::Object CreateBentleyReturnErrorObject(STATUSTYPE errCode, Utf8CP msg = nullptr) {return NapiUtils::CreateBentleyReturnErrorObject(errCode, msg, Env());}
 
-    template<typename STATUSTYPE> 
+    template<typename STATUSTYPE>
     Napi::Object CreateBentleyReturnObject(STATUSTYPE errCode, Napi::Value goodValue) {return ((STATUSTYPE)0 != errCode) ? CreateBentleyReturnErrorObject(errCode) : CreateBentleyReturnSuccessObject(goodValue); }
 
     template<typename STATUSTYPE>
@@ -1165,7 +1165,7 @@ public:
         {
         // make sure GCS library is initialized.
         initializeGcs();
-        
+
         // Use the macro to get the argument (which is JSON string containing an array of points) from the info argument.
         REQUIRE_ARGUMENT_STRING(0, iModelCoordStr, Env().Undefined());
         // get a Json::Value from the string.
@@ -2065,7 +2065,7 @@ struct NativeChangedElementsECDb : Napi::ObjectWrap<NativeChangedElementsECDb>
 
             if (GetECDb().IsReadonly())
                 return Napi::Number::New(Env(), (int) BE_SQLITE_READONLY);
-            
+
             if (!m_manager)
                 m_manager = std::make_unique<ChangedElementsManager>(&mainDb->GetDgnDb());
 
@@ -2076,7 +2076,7 @@ struct NativeChangedElementsECDb : Napi::ObjectWrap<NativeChangedElementsECDb>
             RevisionStatus status = JsInterop::ReadChangeSets(revisionPtrs, containsSchemaChanges, dbGuid, jsonChangeSetTokens);
             if (RevisionStatus::Success != status)
                 return Napi::Number::New(Env(), (int)status);
-            
+
             m_manager->SetFilterSpatial(filterSpatial);
             DbResult result = m_manager->ProcessChangesets(GetECDb(), Utf8String(rulesetId), revisionPtrs);
             return Napi::Number::New(Env(), (int) result);
@@ -3754,7 +3754,7 @@ private:
     bool m_stepForInsert;
     void Execute() override
         {
-        if (m_stmt.IsPrepared()) 
+        if (m_stmt.IsPrepared())
             {
             if (m_stepForInsert)
                 m_status = m_stmt.Step(m_instanceKey);
@@ -3779,7 +3779,7 @@ private:
 
             Callback().MakeCallback(Receiver().Value(), {retval});
             }
-        else 
+        else
             {
             Napi::Number retval = Napi::Number::New(Env(), (int)m_status);
             Callback().MakeCallback(Receiver().Value(), {retval});
@@ -3811,7 +3811,7 @@ private:
     int m_status;
     void Execute() override
         {
-        if (m_stmt.IsPrepared()) 
+        if (m_stmt.IsPrepared())
             m_status = m_stmt.Step();
         else
             m_status = (int) BE_SQLITE_MISUSE;
@@ -4339,38 +4339,47 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
 
         ResponseSender* responseSender = new ResponseSender(responseCallback);
         responseSender->Queue();
-        folly::Future<ECPresentationResult> result = folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "request.requestId");});
-
-        if (0 == strcmp("GetRootNodesCount", requestId))
-            result = ECPresentationUtils::GetRootNodesCount(*m_presentationManager, db->GetDgnDb(), params);
-        else if (0 == strcmp("GetRootNodes", requestId))
-            result = ECPresentationUtils::GetRootNodes(*m_presentationManager, db->GetDgnDb(), params);
-        else if (0 == strcmp("GetChildrenCount", requestId))
-            result = ECPresentationUtils::GetChildrenCount(*m_presentationManager, db->GetDgnDb(), params);
-        else if (0 == strcmp("GetChildren", requestId))
-            result = ECPresentationUtils::GetChildren(*m_presentationManager, db->GetDgnDb(), params);
-        else if (0 == strcmp("GetNodePaths", requestId))
-            result = ECPresentationUtils::GetNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
-        else if (0 == strcmp("GetFilteredNodePaths", requestId))
-            result = ECPresentationUtils::GetFilteredNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
-        else if (0 == strcmp("GetContentDescriptor", requestId))
-            result = ECPresentationUtils::GetContentDescriptor(*m_presentationManager, db->GetDgnDb(), params);
-        else if (0 == strcmp("GetContent", requestId))
-            result = ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params);
-        else if (0 == strcmp("GetContentSetSize", requestId))
-            result = ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params);
-        else if(0 == strcmp("GetDistinctValues", requestId))
-            result = ECPresentationUtils::GetDistinctValues(*m_presentationManager, db->GetDgnDb(), params);
-        else if(0 == strcmp("GetDisplayLabel", requestId))
-            result = ECPresentationUtils::GetDisplayLabel(*m_presentationManager, db->GetDgnDb(), params);
-
-        result.then([responseSender](ECPresentationResult result)
+        try
             {
-            responseSender->SetResult(std::move(result));
-            }).onError([responseSender](folly::exception_wrapper)
+            folly::Future<ECPresentationResult> result = folly::makeFutureWith([]() {return ECPresentationResult(ECPresentationStatus::InvalidArgument, "request.requestId"); });
+
+            if (0 == strcmp("GetRootNodesCount", requestId))
+                result = ECPresentationUtils::GetRootNodesCount(*m_presentationManager, db->GetDgnDb(), params);
+            else if (0 == strcmp("GetRootNodes", requestId))
+                result = ECPresentationUtils::GetRootNodes(*m_presentationManager, db->GetDgnDb(), params);
+            else if (0 == strcmp("GetChildrenCount", requestId))
+                result = ECPresentationUtils::GetChildrenCount(*m_presentationManager, db->GetDgnDb(), params);
+            else if (0 == strcmp("GetChildren", requestId))
+                result = ECPresentationUtils::GetChildren(*m_presentationManager, db->GetDgnDb(), params);
+            else if (0 == strcmp("GetNodePaths", requestId))
+                result = ECPresentationUtils::GetNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
+            else if (0 == strcmp("GetFilteredNodePaths", requestId))
+                result = ECPresentationUtils::GetFilteredNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
+            else if (0 == strcmp("GetContentDescriptor", requestId))
+                result = ECPresentationUtils::GetContentDescriptor(*m_presentationManager, db->GetDgnDb(), params);
+            else if (0 == strcmp("GetContent", requestId))
+                result = ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params);
+            else if (0 == strcmp("GetContentSetSize", requestId))
+                result = ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params);
+            else if (0 == strcmp("GetDistinctValues", requestId))
+                result = ECPresentationUtils::GetDistinctValues(*m_presentationManager, db->GetDgnDb(), params);
+            else if (0 == strcmp("GetDisplayLabel", requestId))
+                result = ECPresentationUtils::GetDisplayLabel(*m_presentationManager, db->GetDgnDb(), params);
+
+            result
+            .then([responseSender](ECPresentationResult result)
+                {
+                responseSender->SetResult(std::move(result));
+                })
+            .onError([responseSender](folly::exception_wrapper)
+                {
+                responseSender->SetResult(ECPresentationResult(ECPresentationStatus::Error, "Unknown error handling request"));
+                });
+            }
+        catch (...)
             {
-            responseSender->SetResult(ECPresentationResult(ECPresentationStatus::Error, "Unknown error"));
-            });
+            responseSender->SetResult(ECPresentationResult(ECPresentationStatus::Error, "Unknown error creating request"));
+            }
         }
 
     Napi::Value SetupRulesetDirectories(Napi::CallbackInfo const& info)
@@ -4801,8 +4810,8 @@ static Utf8String s_mobileTempDir;
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Satyakam.Khadilkar    03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-extern "C" 
-    { 
+extern "C"
+    {
     void imodeljs_addon_setMobileResourcesDir(Utf8CP d) {s_mobileResourcesDir = d;}
     void imodeljs_addon_setMobileTempDir(Utf8CP d) {s_mobileTempDir = d;}
     }

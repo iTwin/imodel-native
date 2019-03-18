@@ -350,6 +350,7 @@ ENUM_IS_FLAGS(DgnTile::Flags);
 //      1.4: Fixed duplication of polyline and simple edges.
 //  Major version 2:
 //      2.0: Introduction of major version 2
+//      2.1: Fixed SurfaceMaterial::isLessThan() incorrectly returning true resulting in failure to batch meshes having materials.
 // @bsistruct                                                   Paul.Connelly   09/18
 //=======================================================================================
 struct IModelTile
@@ -372,7 +373,7 @@ struct IModelTile
 
         static constexpr Version Invalid() { return Version(0, 0); }
         static constexpr Version V1() { return Version(1, 4); }
-        static constexpr Version V2() { return Version(2, 0); }
+        static constexpr Version V2() { return Version(2, 1); }
         static constexpr Version Current() { return V2(); }
 
         static Version FromMajorVersion(uint16_t major);
