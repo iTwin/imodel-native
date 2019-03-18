@@ -222,3 +222,25 @@ Http::Response MockHttpHandler::StubHttpResponse()
 
     return Response(HttpResponseContent::Create(HttpStringBody::Create()), "", status, httpStatus);
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Http::Response MockHttpHandler::StubHttpResponse(Utf8StringCR body)
+    {
+    HttpStatus httpStatus = HttpStatus::OK;
+    ConnectionStatus status = ConnectionStatus::OK;
+
+    return Response(HttpResponseContent::Create(HttpStringBody::Create(body)), "", status, httpStatus);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Http::Response MockHttpHandler::StubHttpFailureResponse()
+    {
+    HttpStatus httpStatus = HttpStatus::NotFound;
+    ConnectionStatus status = ConnectionStatus::None;
+
+    return Response(HttpResponseContent::Create(HttpStringBody::Create()), "", status, httpStatus);
+    }
