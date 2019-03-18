@@ -88,7 +88,7 @@ BentleyStatus Client::StopApplication()
  /*--------------------------------------------------------------------------------------+
  * @bsimethod
  +---------------+---------------+---------------+---------------+---------------+------*/
- BentleyStatus Client::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData)
+ BentleyStatus Client::MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData)
      {
      return m_impl->MarkFeature(featureId, featureUserData);
      }

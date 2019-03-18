@@ -22,6 +22,7 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 typedef std::map<Utf8String, Utf8String> Utf8StringMap;
 typedef bvector<Utf8String> Utf8StringVector;
+typedef std::shared_ptr<struct FeatureUserDataMap> FeatureUserDataMapPtr;
 
 struct FeatureUserDataMap
     {

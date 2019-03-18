@@ -5,31 +5,34 @@
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
-FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId, FeatureUserDataMap * featureUserData)
+FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId, FeatureUserDataMapPtr featureUserData)
 	: m_featureId(featureId),
 	m_version(version),
 	m_projectId(projectId),
 	m_featureUserData(featureUserData)
 {}
 
-FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version, FeatureUserDataMap * featureUserData)
+FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version, FeatureUserDataMapPtr featureUserData)
 	: m_featureId(featureId),
 	m_version(version),
 	m_featureUserData(featureUserData)
 {}
 
 FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId)
-	: m_featureId(featureId),
-	m_version(version),
-	m_projectId(projectId),
-	m_featureUserData()
-{}
+    : m_featureId(featureId),
+    m_version(version),
+    m_projectId(projectId)
+    {
+    m_featureUserData = std::make_shared<FeatureUserDataMap>();
+    }
 
 FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version)
 	: m_featureId(featureId),
-	m_version(version),
-	m_featureUserData()
-{}
+	m_version(version)
+    {
+    m_featureUserData = std::make_shared<FeatureUserDataMap>();
+    }
+
 
 Utf8String FeatureEvent::ToJson(
 	int productId,
@@ -44,20 +47,27 @@ Utf8String FeatureEvent::ToJson(
     Json::Value requestJson(Json::objectValue);
 	Json::Value userDataJson(Json::arrayValue);
 
-	Utf8StringVector keys;
-	m_featureUserData->GetKeys(keys);
+    if (!m_featureUserData->Empty())
+        {
+        Utf8StringVector keys;
+        m_featureUserData->GetKeys(keys);
 
-	for (Utf8StringVector::iterator keys_it = keys.begin(); keys_it != keys.end(); keys_it++)
-	{
-		Json::Value userDataObj(Json::objectValue);
-		Utf8String value;
-		auto key = keys_it->c_str();
-		m_featureUserData->GetValue(key, value);
+        for (Utf8StringVector::iterator keys_it = keys.begin(); keys_it != keys.end(); keys_it++)
+            {
+            Json::Value userDataObj(Json::objectValue);
+            Utf8String value;
+            auto key = keys_it->c_str();
+            m_featureUserData->GetValue(key, value);
 
-		userDataObj["name"] = Utf8String(key);
-		userDataObj["value"] = value;
-		userDataJson.append(userDataObj);
-	}
+            userDataObj["name"] = Utf8String(key);
+            userDataObj["value"] = value;
+            userDataJson.append(userDataObj);
+            }
+        }
+    else
+        {
+        userDataJson = Json::Value::GetNull();
+        }
 
     requestJson["hID"] = deviceId;
     requestJson["polID"] = BeSQLite::BeGuid(true).ToString();

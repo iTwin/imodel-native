@@ -366,7 +366,7 @@ void ClientImpl::StopLogPostingHeartbeat()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData)
+BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData)
     {
     LOG.debug("ClientImpl::MarkFeature");
 

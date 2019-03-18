@@ -102,7 +102,7 @@ public:
     //! Marks a feature as used
     //! @param[in] featureId Feature GUID to mark
     //! @param[in] featureUserData Feature tracking metadata
-    LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData);
+    LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData);
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

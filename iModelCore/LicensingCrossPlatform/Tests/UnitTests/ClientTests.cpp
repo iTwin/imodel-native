@@ -699,11 +699,11 @@ TEST_F(ClientTests, MarkFeature_Success)
     GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
     GetLicensingDbMock().MockRecordFeature(SUCCESS);
 
-    FeatureUserDataMap* featureAttribute = new FeatureUserDataMap();
+    FeatureUserDataMapPtr featureAttribute = std::make_shared<FeatureUserDataMap>();
 
-    EXPECT_SUCCESS(featureAttribute->AddAttribute("Manufacturer", "Bentley Systems, Inc."));
-    EXPECT_SUCCESS(featureAttribute->AddAttribute("Website", "https://www.w3schools.com"));
-    EXPECT_SUCCESS(featureAttribute->AddAttribute("Title", "Mobile App"));
+    featureAttribute->AddAttribute("Manufacturer", "Bentley Systems, Inc.");
+    featureAttribute->AddAttribute("Website", "https://www.w3schools.com");
+    featureAttribute->AddAttribute("Title", "Mobile App");
 
     EXPECT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
     EXPECT_SUCCESS(client->MarkFeature("FeatureId", featureAttribute));
@@ -715,7 +715,6 @@ TEST_F(ClientTests, MarkFeature_Success)
     EXPECT_LE(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
 
     EXPECT_SUCCESS(client->StopApplication());
-    delete featureAttribute;
     EXPECT_EQ(1, GetLicensingDbMock().CloseCount());
     }
 
