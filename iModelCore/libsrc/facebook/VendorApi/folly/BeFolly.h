@@ -16,16 +16,17 @@
 #include <folly/Executor.h>
 #include <folly/futures/Future.h>
 
-namespace BeFolly {
+namespace BeFolly
+{
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ThreadPool : folly::Executor
-    {
-private:
+{
+  private:
     struct Worker : BentleyApi::RefCountedBase
-        {
+    {
         int m_id;
         ThreadPool& m_pool;
 
@@ -35,7 +36,7 @@ private:
         void Start();
         void SetName();
         THREAD_MAIN_DECL Main(void* arg);
-        };
+    };
     typedef RefCountedPtr<Worker> WorkerPtr;
 
     friend struct Worker;
@@ -45,20 +46,29 @@ private:
     BentleyApi::BeConditionVariable m_cv;
     bool m_stop = false;
 
-    Utf8CP GetName() const {return m_name.c_str();}
-    bool HasWork() const {return !m_tasks.empty();}
-    bool IsStopped() const {return m_stop;}
-    virtual void addWithPriority(folly::Func func, int8_t) override {add(std::move(func));}
+    Utf8CP GetName() const { return m_name.c_str(); }
+    bool HasWork() const { return !m_tasks.empty(); }
+    bool IsStopped() const { return m_stop; }
+    virtual void addWithPriority(folly::Func func, int8_t) override { add(std::move(func)); }
     BE_FOLLY_EXPORT virtual void add(folly::Func func) override;
 
-protected:
+  protected:
     BE_FOLLY_EXPORT ThreadPool(int nThreads, Utf8CP name);
-    BE_FOLLY_EXPORT ~ThreadPool();
+    // Note:
+    // It might seem tempting to wait for the threads to terminate in the destructor. That doesn't work
+    // for static pools that are only destroyed on program exit. In that case, on Windows, all of the other threads
+    // are killed by the system before the destructor is called, leading to chaos. On Linux the threads are still
+    // alive, so we signal them to stop. If you want to use a non-static thread pool, call `StopAndWait` if you want to clear the threads
+    // and wait for them to finish. For static thread pools, there's no point in waiting anyway, since the
+    // program is ending.
+    ~ThreadPool() { Stop(); }
 
-public:
+  public:
     BE_FOLLY_EXPORT static ThreadPool& GetIoPool();
     BE_FOLLY_EXPORT static ThreadPool& GetCpuPool();
+    BE_FOLLY_EXPORT void Stop();
     BE_FOLLY_EXPORT void WaitForIdle();
+    void StopAndWait() { Stop(); WaitForIdle(); }
 };
 
 //=======================================================================================
@@ -67,8 +77,8 @@ public:
 //=======================================================================================
 template <typename Result_T>
 struct LimitingTaskQueue
-    {
-private:
+{
+  private:
     typedef std::function<folly::Future<Result_T>()> TaskType;
     typedef std::deque<std::pair<TaskType, std::shared_ptr<folly::Promise<Result_T>>>> DequeType;
     BeMutex m_mutex;
@@ -77,9 +87,9 @@ private:
     BeAtomic<uint32_t> m_runningTasks;
     folly::Executor& m_executor;
 
-private:
+  private:
     void CheckQueue()
-        {
+    {
         if (m_runningTasks >= m_limit)
             return;
 
@@ -87,36 +97,34 @@ private:
 
         auto tasksToRun = m_limit - m_runningTasks;
         while (tasksToRun-- && !m_tasks.empty())
-            {
+        {
             auto task = m_tasks.front();
             m_tasks.pop_front();
             RunTaskAsync(task);
-            }
         }
+    }
 
     void RunTaskAsync(typename DequeType::value_type task)
-        {
+    {
         ++m_runningTasks;
 
-        folly::via(&m_executor, [=]
-            {
-            return task.first();        // execute task
-            }).then([=](Result_T result)
-            {
-            --m_runningTasks;
-            task.second->setValue(result);  // fulfill the promise            
-            CheckQueue();
+        folly::via(&m_executor, [=] {
+            return task.first(); // execute task
+        })
+            .then([=](Result_T result) {
+                --m_runningTasks;
+                task.second->setValue(result); // fulfill the promise
+                CheckQueue();
             });
     }
 
-public:
-    LimitingTaskQueue(folly::Executor& executor, uint32_t limit) :
-        m_executor(executor), m_limit(limit), m_runningTasks(0) {BeAssert(limit > 0);}
+  public:
+    LimitingTaskQueue(folly::Executor& executor, uint32_t limit) : m_executor(executor), m_limit(limit), m_runningTasks(0) { BeAssert(limit > 0); }
 
-    //! Schedule a task for execution. 
+    //! Schedule a task for execution.
     template <class Func>
     folly::Future<Result_T> Push(Func&& func)
-        {
+    {
         auto follyPromise = std::make_shared<folly::Promise<Result_T>>();
 
         BeMutexHolder _lock(m_mutex);
@@ -124,8 +132,8 @@ public:
 
         CheckQueue();
         return follyPromise->getFuture();
-        }
-    };
+    }
+};
 
 } // namespace BeFolly
 

@@ -109,7 +109,7 @@ void ThreadPool::WaitForIdle()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThreadPool::~ThreadPool()
+void ThreadPool::Stop()
     {
     if (true)
         {
@@ -117,8 +117,6 @@ ThreadPool::~ThreadPool()
         m_stop = true;
         }
     m_cv.notify_all();
-
-    WaitForIdle();
     }
 
 BEGIN_UNNAMED_NAMESPACE
