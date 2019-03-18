@@ -102,7 +102,6 @@
     <ClInclude Include="PublicAPI\DgnPlatform\DgnJsApi.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnLight.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnLink.h" />
-    <ClInclude Include="PublicAPI\DgnPlatform\DgnMarkupProject.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnMaterial.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnModel.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\DgnPlatform.h" />
@@ -307,7 +306,6 @@
     <ClCompile Include="DgnCore\DgnFont.cpp" />
     <ClCompile Include="DgnCore\DgnIModel.cpp" />
     <ClCompile Include="DgnCore\DgnLight.cpp" />
-    <ClCompile Include="DgnCore\DgnMarkupProject.cpp" />
     <ClCompile Include="DgnCore\DgnMaterial.cpp" />
     <ClCompile Include="DgnCore\DgnModel.cpp" />
     <ClCompile Include="DgnCore\DgnPropertyJson.cpp" />

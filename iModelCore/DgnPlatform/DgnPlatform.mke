@@ -299,8 +299,6 @@ $(CoreObjs)CodeSpec$(oext) :                        $(DgnCoreDir)CodeSpec.cpp $(
 
 $(coreObjs)SearchableText$(oext) :                  $(DgnCoreDir)SearchableText.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
-$(CoreObjs)DgnMarkupProject$(oext) :                $(DgnCoreDir)DgnMarkupProject.cpp $(DgnPlatformAPISrc)DgnMarkupProject.h $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
-
 $(CoreObjs)DgnDomain$(oext) :                       $(DgnCoreDir)DgnDomain.cpp $(DgnPlatformAPISrc)DgnDomain.h ${MultiCompileDepends}
 
 $(CoreObjs)BisCoreDomain$(oext) :                   $(DgnCoreDir)BisCoreDomain.cpp ${MultiCompileDepends}

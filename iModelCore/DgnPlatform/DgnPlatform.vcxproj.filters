@@ -332,9 +332,6 @@
     <ClInclude Include="PublicAPI\DgnPlatform\DgnLink.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\DgnPlatform\DgnMarkupProject.h">
-      <Filter>PublicAPI</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\DgnPlatform\DgnMaterial.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
@@ -810,9 +807,6 @@
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\DgnLight.cpp">
-      <Filter>DgnCore</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnCore\DgnMarkupProject.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\DgnMaterial.cpp">

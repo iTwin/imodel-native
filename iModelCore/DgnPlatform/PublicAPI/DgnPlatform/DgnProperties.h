@@ -42,7 +42,6 @@ struct DgnProjectProperty
     static ProjectProperty ProjectType()     {return ProjectProperty("ProjectType");}
     static ProjectProperty LastEditor()      {return ProjectProperty("LastEditor");}
     static ProjectProperty Extents()         {return ProjectProperty("Extents");}
-    static ProjectProperty IsSpatialRedline() {return ProjectProperty("IsSpatialRedline");}
     static ProjectProperty Units()           {return ProjectProperty("Units");}
     static ProjectProperty DgnGCS()          {return ProjectProperty("DgnGCS");}
     static ProjectProperty LastSchemaUpgradeInPhase() { return ProjectProperty("LastSchemaUpgradeInPhase"); }

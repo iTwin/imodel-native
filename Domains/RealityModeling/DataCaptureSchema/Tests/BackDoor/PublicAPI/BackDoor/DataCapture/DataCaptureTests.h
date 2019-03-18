@@ -9,7 +9,6 @@
 
 #include <DataCaptureSchema/DataCaptureSchemaApi.h>
 #include <Bentley/BeTest.h>
-#include <DgnPlatform/DgnMarkupProject.h>
 #include <DgnPlatform/GenericDomain.h>
 
 

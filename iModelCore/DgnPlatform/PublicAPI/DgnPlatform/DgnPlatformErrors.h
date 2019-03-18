@@ -23,7 +23,6 @@ enum DgnErrorCategories
     VIEWPORT_ERROR_BASE             = 0x11000,
     LINESTYLE_ERROR_BASE            = 0x12000,
     GEOREFERENCE_ERROR_BASE         = 0x13000,
-    MARKUPPROJECT_ERROR_BASE        = 0x14000,
     REPOSITORY_ERROR_BASE           = 0x15000,
     REVISION_ERROR_BASE             = 0x16000,
     };
@@ -69,7 +68,6 @@ enum class DgnDbStatus : int
     MissingId              = DGNDB_ERROR_BASE + 33,
     NoGeometry             = DGNDB_ERROR_BASE + 34,
     NoMultiTxnOperation    = DGNDB_ERROR_BASE + 35,
-    NotDgnMarkupProject    = DGNDB_ERROR_BASE + 36,
     NotEnabled             = DGNDB_ERROR_BASE + 37,
     NotFound               = DGNDB_ERROR_BASE + 38,
     NotOpen                = DGNDB_ERROR_BASE + 39,

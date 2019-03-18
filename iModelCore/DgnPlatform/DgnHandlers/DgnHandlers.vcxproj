@@ -179,7 +179,6 @@
     <None Include="DigitalSignatureUntrustedSprite.ico" />
     <None Include="DigitalSignatureUnverifiedSprite.ico" />
     <None Include="DigitalSignatureVerifiedSprite.ico" />
-    <None Include="Markup\MarkupPlacemark.ico" />
     <None Include="WordBreakDataGenerator.py" />
     <None Include="WordBreakProperty.txt" />
   </ItemGroup>

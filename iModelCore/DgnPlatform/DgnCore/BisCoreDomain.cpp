@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnMarkupProject.h>
 #include <DgnPlatform/LinkElement.h>
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
 #include <DgnPlatform/VolumeElement.h>

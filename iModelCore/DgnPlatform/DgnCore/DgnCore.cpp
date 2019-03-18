@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnProgressMeter.h>
-#include <DgnPlatform/DgnMarkupProject.h>
 #include <ECDb/ECDb.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DgnECSymbolProvider.h>
@@ -520,5 +519,4 @@ void PrintfProgressMeter::_SetCurrentStepName(Utf8CP stepName)
     UpdateDisplay();
     }
 
-DEFINE_KEY_METHOD(DgnMarkupProject)
 

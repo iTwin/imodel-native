@@ -418,7 +418,6 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE SpatialViewController : ViewController3d, BeSQLite::VirtualSet
 {
     DEFINE_T_SUPER(ViewController3d);
-    friend struct SpatialRedlineViewController;
     friend struct SpatialViewDefinition;
 
 public:
