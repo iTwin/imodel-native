@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UlasProviderTests.h"
+#include "DummyPolicyHelper.h"
 
 #include <BeHttp/HttpClient.h>
 #include <BeHttp/ProxyHttpHandler.h>
@@ -23,7 +24,8 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 UlasProviderTests::UlasProviderTests() :
     m_handlerMock(std::make_shared<MockHttpHandler>()),
-    m_buddiMock(std::make_shared<BuddiProviderMock>())
+    m_buddiMock(std::make_shared<BuddiProviderMock>()),
+    m_licensingDbMock(std::make_shared<LicensingDbMock>())
     {
     m_ulasProvider = std::make_shared<UlasProvider>(m_buddiMock, m_handlerMock);
     }
@@ -31,6 +33,16 @@ UlasProviderTests::UlasProviderTests() :
 UlasProvider& UlasProviderTests::GetUlasProvider() const
     {
     return *m_ulasProvider;
+    }
+
+LicensingDbMock&  UlasProviderTests::GetLicensingDbMock() const
+    {
+    return *m_licensingDbMock;
+    }
+
+std::shared_ptr<LicensingDbMock> UlasProviderTests::GetLicensingDbMockPtr() const
+    {
+    return m_licensingDbMock;
     }
 
 MockHttpHandler& UlasProviderTests::GetMockHttp() const
@@ -83,8 +95,30 @@ Utf8String UlasProviderTests::MockUlasUrl()
     return mockUrl;
     }
 
-// need PostUsageLogs and SendUsageLogs tests
-// just post? (will call send...) -> wait and see
+TEST_F(UlasProviderTests, PostUsageLogs_Success)
+    {
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
+    BeFileName dbPath("TestPath");
+    auto userId = "UserId";
+    auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
+    auto validPolicy = Policy::Create(jsonPolicyValid);
+
+    GetLicensingDbMock().MockWriteUsageToCSVFile(SUCCESS);
+    GetLicensingDbMock().MockCleanUpUsages(SUCCESS);
+
+    const auto mockUrl = MockUlasUrl();
+    Utf8String expectedUrl = mockUrl + Utf8PrintfString("/usageLog?ultId=%s&prdId=%s&lng=%s", "1004175881", TEST_PRODUCT_ID, "en");
+
+    const auto epUri = "https://locationmockurl.bentley.com/";
+    const auto sharedAccessSignature = "MockSharedAccessSignature";
+    Utf8String expectedUploadUrl = epUri + Utf8PrintfString(sharedAccessSignature);
+
+    // does not call SendUsageLogs since there are no logs in the CSV
+    GetUlasProvider().PostUsageLogs(clientInfo, dbPath, GetLicensingDbMock(), validPolicy);
+
+    EXPECT_EQ(1, GetLicensingDbMock().WriteUsageToCSVFileCount());
+    EXPECT_EQ(1, GetLicensingDbMock().CleanUpUsagesCount());
+    }
 
 TEST_F(UlasProviderTests, SendUsageLogs_Success)
     {
@@ -119,6 +153,31 @@ TEST_F(UlasProviderTests, SendUsageLogs_Success)
     GetUlasProvider().SendUsageLogs(clientInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
     }
 
+TEST_F(UlasProviderTests, PostFeatureLogs_Success)
+    {
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
+    BeFileName dbPath("TestPath");
+    auto userId = "UserId";
+    auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
+    auto validPolicy = Policy::Create(jsonPolicyValid);
+
+    GetLicensingDbMock().MockWriteFeatureToCSVFile(SUCCESS);
+    GetLicensingDbMock().MockCleanUpFeatures(SUCCESS);
+
+    const auto mockUrl = MockUlasUrl();
+    Utf8String expectedUrl = mockUrl + Utf8PrintfString("/featureLog?ultId=%s&prdId=%s&lng=%s", "1004175881", TEST_PRODUCT_ID, "en");
+
+    const auto epUri = "https://locationmockurl.bentley.com/";
+    const auto sharedAccessSignature = "MockSharedAccessSignature";
+    Utf8String expectedUploadUrl = epUri + Utf8PrintfString(sharedAccessSignature);
+
+    // does not call SendFeatureLogs since there are no logs in the CSV
+    GetUlasProvider().PostFeatureLogs(clientInfo, dbPath, GetLicensingDbMock(), validPolicy);
+
+    EXPECT_EQ(1, GetLicensingDbMock().WriteFeatureToCSVFileCount());
+    EXPECT_EQ(1, GetLicensingDbMock().CleanUpFeaturesCount());
+    }
+
 TEST_F(UlasProviderTests, SendFeatureLogs_Success)
     {
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
@@ -151,3 +210,5 @@ TEST_F(UlasProviderTests, SendFeatureLogs_Success)
 
     GetUlasProvider().SendFeatureLogs(clientInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
     }
+
+

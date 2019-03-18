@@ -102,6 +102,8 @@ public:
     int GetLastUsageRecordedTime() const { return m_getLastUsageRecordedTimeCalls; }
     int GetUsageRecordCountCount() const { return m_getUsageRecordCountCalls; }
     int GetFeatureRecordCountCount() const { return m_getFeatureRecordCountCalls; }
+    int CleanUpUsagesCount() const { return m_cleanUpUsagesCalls; }
+    int CleanUpFeaturesCount() const { return m_cleanUpFeaturesCalls; }
     int RecordUsageCount() const { return m_recordUsageCalls; }
     int RecordFeatureCount() const { return m_recordFeatureCalls; }
 
