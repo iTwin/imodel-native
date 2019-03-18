@@ -62,7 +62,15 @@ struct CompositeElement : Dgn::SpatialLocationElement
         //! @return status
         SPATIALCOMPOSITION_EXPORT Dgn::DgnDbStatus RemoveOverlapedElement (Dgn::DgnElementId overlapedElementId);
 
-        SPATIALCOMPOSITION_EXPORT double GetFootprintArea() const { return dynamic_cast<Dgn::DgnElementCP>(this)->GetPropertyValueDouble(prop_FootprintArea()); }
+        //! Get element's footprint area
+        //! @return   element's footprint area
+        SPATIALCOMPOSITION_EXPORT double GetFootprintArea() const;
+
+        //! Change element's shape with a new curve
+        //! @param[in] curveVector             curve vector that will be set as element's new shape
+        //! @param[in] updatePlacementOrigin   true if origin of this extrusion should be updated
+        //! @return                            true if there were no errors while updating element shape
+        virtual SPATIALCOMPOSITION_EXPORT bool SetFootprintShape(CurveVectorCPtr pCurve, bool updatePlacementOrigin = true);
     };
 
 END_SPATIALCOMPOSITION_NAMESPACE

@@ -191,4 +191,21 @@ Dgn::DgnDbStatus CompositeElement::_OnDelete() const
     return __super::_OnDelete();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+double CompositeElement::GetFootprintArea() const
+    {
+    return dynamic_cast<Dgn::DgnElementCP>(this)->GetPropertyValueDouble(prop_FootprintArea());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CompositeElement::SetFootprintShape(CurveVectorCPtr curveVector, bool updatePlacementOrigin)
+    {
+    BeAssert(!"CompositeElement::SetFootprintShape should be implemented in children classes");
+    return false;
+    }
+
 END_SPATIALCOMPOSITION_NAMESPACE
