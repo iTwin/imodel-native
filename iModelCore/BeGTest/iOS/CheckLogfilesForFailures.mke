@@ -2,7 +2,7 @@
 #
 #     $Source: iOS/CheckLogfilesForFailures.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -17,13 +17,9 @@ baseDir             = $(_MakeFilePath)
     %error Define LogFilesDir as the directory that contaings the logfiles to analyze
 %endif
 
+# At this point, always break on failure (no auto-ignore support).
 breakOnFailure = 1
-
-#Allowed to ignore failures 
-%if defined(AllowIgnore)
-    breakOnFailure = 0
-%endif
 
 always:
     python $(baseDIr)CheckLogFilesForFailures.py $(LogFilesDir) $(breakOnFailure)
-    
+

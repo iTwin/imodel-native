@@ -2,7 +2,7 @@
 #
 #     $Source: gtest/CheckLogfilesForFailures.py $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 import os, sys, re
@@ -99,11 +99,6 @@ def checkLogFileForFailures(logfilename):
                     failedtestlist_temp.append(failed.group(1))
                     continue
        
-    if not anyFailures and foundSummary:
-        printLogFile(logfilename)
-        return '',summarystr,failedTestsList
-        
-
     #advicestr = '************ Failures from: ' + logfilename + ' ******************'
     advicestr = ''
 
