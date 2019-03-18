@@ -33,7 +33,7 @@
   </ProductDirectoryList>
 
   <Part Name="bridge-addon-lib" BentleyBuildMakeFile="./iModelBridge/addon/bridge-addon.mke" >
-    <SubPart PartName="node-addon-api" PartFile="node-addon-api/node-addon-api" Repository="imodel02"/>
+    <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
     <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
     <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" Repository="imodel02"/>
     <Bindings>

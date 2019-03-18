@@ -2,7 +2,7 @@
 |
 |     $Source: BeHttp/Curl/NotificationPipe.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -47,8 +47,7 @@ NotificationPipe::NotificationPipe ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 NotificationPipe& NotificationPipe::GetDefault ()
     {
-    static NotificationPipe s_notificationPipe = NotificationPipe ();
-
+    static NotificationPipe s_notificationPipe;
     return s_notificationPipe;
     }
 
@@ -94,6 +93,11 @@ BentleyStatus NotificationPipe::MakeSocketPair (SOCKET fds[2])
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus NotificationPipe::Open ()
     {
+    BeMutexHolder lock(m_notifyMutex);
+
+    if (IsOpen())
+        return SUCCESS;
+
     // m_pipe[0] - read, m_pipe[1] - write
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     if (SUCCESS != MakeSocketPair (m_pipe))
@@ -119,6 +123,11 @@ BentleyStatus NotificationPipe::Open ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus NotificationPipe::Close ()
     {
+    BeMutexHolder lock(m_notifyMutex);
+
+    if (!IsOpen())
+        return SUCCESS;
+
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     closesocket (m_pipe[0]);
     closesocket (m_pipe[1]);
@@ -135,13 +144,20 @@ BentleyStatus NotificationPipe::Close ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void NotificationPipe::Clear()
     {
-#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     m_pipe[0] = 0;
     m_pipe[1] = 0;
-#else
+#if !defined (BENTLEY_WIN32) && !defined (BENTLEY_WINRT)
     m_writeStream = nullptr;
     m_readStream = nullptr;
 #endif
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NotificationPipe::IsOpen()
+    {
+    return 0 != m_pipe[0] && 0 != m_pipe[1];
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -265,5 +281,7 @@ BentleyStatus NotificationPipe::WaitForNotifications ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus NotificationPipe::Notify ()
     {
+    // Notify() can be called from any other thread, thus need to ensure that pipe is either fully open or fully closed.
+    BeMutexHolder lock(m_notifyMutex);
     return Send ();
     }

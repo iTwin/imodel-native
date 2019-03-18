@@ -397,7 +397,8 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         {
         if (nullptr == m_elementAspectConverter)
             m_elementAspectConverter = new ElementAspectConverter(*this);
-        if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(results, ecContent.m_secondaryV8Instances))
+        SyncInfo::V8ElementExternalSourceAspect* nonConstXsa = const_cast<SyncInfo::V8ElementExternalSourceAspect*>(&sectionedElementXsa);
+        if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(nonConstXsa, results, ecContent.m_secondaryV8Instances))
             {
             //ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicBuildFailure(), "", sectionedElementXsa.m_v8ElementId, model.GetName().c_str());
 

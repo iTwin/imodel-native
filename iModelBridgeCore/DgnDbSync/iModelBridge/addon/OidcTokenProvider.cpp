@@ -11,7 +11,7 @@ USING_NAMESPACE_BENTLEY_DGN
 #include <Bentley/Tasks/AsyncTask.h>
 USING_NAMESPACE_BENTLEY_TASKS
 
-#include <node-addon-api/napi.h>
+#include <Napi/napi.h>
 using namespace Napi;
 Napi::Function RequestTokenFunction();
 

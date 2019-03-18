@@ -71,8 +71,6 @@ void ConverterTestBaseFixture::SetUp()
     m_params.SetConfigFile(configFileName);
     m_params.SetSkipUnchangedFiles(false);  // file time granularity is 1 second. That's too long for an automated test.
     m_params.SetWantThumbnails(false); // It takes too long, and most tests do not look at them
-    if (getenv("IMODEL_BRIDGE_WANT_PROVENANCE_IN_BIM"))
-        m_params.SetWantProvenanceInBim(true);
     m_count = 0;
     m_opts.m_useTiledConverter = false;
     BentleyApi::BeFileName::CreateNewDirectory(GetOutputDir());
@@ -549,7 +547,7 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        auto stmt = db->GetPreparedECSqlStatement("SELECT COUNT(*) FROM " XTRN_SRC_ASPCT_FULLCLASSNAME " WHERE (Kind=?)");
+        auto stmt = db->GetPreparedECSqlStatement("SELECT COUNT(*) FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE (Kind=?)");
         stmt->BindText(1, SyncInfo::ExternalSourceAspect::Kind::Model, BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         ASSERT_EQ(BentleyApi::BeSQLite::BE_SQLITE_ROW, stmt->Step());
         int count = stmt->GetValueInt(0);
@@ -678,10 +676,10 @@ RepositoryLinkId ConverterTestBaseFixture::FindRepositoryLinkIdByFilename(DgnDbR
 DgnElementCPtr ConverterTestBaseFixture::FindV8ElementInDgnDb(DgnDbR db, DgnV8Api::ElementId eV8Id, RepositoryLinkId rlinkId)
     {
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
-    estmt.Prepare(db, "SELECT sourceInfo.Element.Id FROM "
+    estmt.Prepare(db, "SELECT xsa.Element.Id FROM "
                     BIS_SCHEMA(BIS_CLASS_Element) " AS g,"
-                    XTRN_SRC_ASPCT_FULLCLASSNAME " AS sourceInfo"
-                    " WHERE (sourceInfo.Element.Id=g.ECInstanceId) AND (CAST(sourceInfo.Identifier AS INT) = ?)");
+                    BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " AS xsa"
+                    " WHERE (xsa.Element.Id=g.ECInstanceId) AND (CAST(xsa.Identifier AS INT) = ?)");
     estmt.BindInt64(1, eV8Id);
 
     while (BE_SQLITE_ROW == estmt.Step())

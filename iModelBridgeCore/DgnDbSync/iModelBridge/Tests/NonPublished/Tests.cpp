@@ -14,7 +14,7 @@
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include <DgnPlatform/UnitTests/DgnDbTestUtils.h>
 #include <DgnPlatform/GenericDomain.h>
-#include <iModelBridge/Fwk/IModelClientForBridges.h>
+#include <iModelBridge/IModelClientForBridges.h>
 #include <Bentley/BeFileName.h>
 #include <iModelBridge/FakeRegistry.h>
 #include <iModelBridge/TestiModelHubClientForBridges.h>
@@ -79,8 +79,6 @@ struct iModelBridgeTests : ::testing::Test
         DgnDbTestUtils::InsertPhysicalModel(*db, "PhysicalModel");
         DgnDbTestUtils::InsertSpatialCategory(*db, "SpatialCategory");
 
-        DgnV8FileProvenance::CreateTable(*db);
-        DgnV8ModelProvenance::CreateTable(*db);
         // Force the seed db to have non-zero briefcaseid, so that changes made to it will be in a txn
         db->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
         db->SaveChanges();
@@ -125,7 +123,7 @@ struct iModelBridgeTests : ::testing::Test
 //=======================================================================================
 // @bsistruct                                                   Sam.Wilson   04/17
 //=======================================================================================
-struct iModelBridgeSyncInfoFileTester : iModelBridgeBase
+struct iModelBridgeSyncInfoFileTester : iModelBridgeWithSyncInfoBase
 {
     WString _SupplySqlangRelPath() override {return L"sqlang/DgnPlatform_en.sqlang.db3";}
     BentleyStatus _Initialize(int argc, WCharCP argv[]) override {return BSISUCCESS;}
@@ -136,7 +134,30 @@ struct iModelBridgeSyncInfoFileTester : iModelBridgeBase
 
     void DoTests(SubjectCR jobSubject);
 
-    iModelBridgeSyncInfoFileTester() : iModelBridgeBase() {}
+    iModelBridgeSyncInfoFileTester() : iModelBridgeWithSyncInfoBase() {}
+
+    void _OnDocumentDeleted(Utf8StringCR docId, iModelBridgeSyncInfoFile::ROWID docrid) override
+        {
+        Utf8String ecsql("SELECT ECInstanceId, Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE (Scope.Id=?)");
+
+        auto stmt = GetDgnDbR().GetPreparedECSqlStatement(ecsql.c_str());
+
+        if (!stmt.IsValid())
+            return;
+
+        stmt->BindId(1, BeInt64Id(docrid));
+       
+        while  (BeSQLite::BE_SQLITE_ROW == stmt->Step())
+            {
+            DgnElementId id = stmt->GetValueId<DgnElementId>(1);
+            if (!id.IsValid())
+                continue; // not every record in syncinfo is an element
+            auto el = GetDgnDbR().Elements().GetElement(id);
+            ASSERT_TRUE(el.IsValid());
+            el->Delete();
+            }
+        }
+
 };
 
 //=======================================================================================
@@ -194,12 +215,21 @@ static bpair<size_t,size_t> countItemsInSyncInfo(iModelBridgeSyncInfoFile& syncI
     {
     size_t count = 0;
     size_t countThoseWithIds = 0;
-    for (auto i : syncInfo.MakeIterator())
+
+    Utf8String ecsql("SELECT ECInstanceId, Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect));
+    auto stmt = syncInfo.GetDgnDb().GetPreparedECSqlStatement(ecsql.c_str());
+    if (!stmt.IsValid())
+        return make_bpair(count, countThoseWithIds);
+
+    while (BeSQLite::BE_SQLITE_ROW == stmt->Step())
         {
         ++count;
-        if (!i.GetSourceIdentity().GetId().empty())
-            ++countThoseWithIds;
+        DgnElementId id = stmt->GetValueId<DgnElementId>(1);
+        if (!id.IsValid())
+            continue; // not every record in syncinfo is an element
+        ++countThoseWithIds;
         }
+
     return make_bpair(count, countThoseWithIds);
     }
 
@@ -209,8 +239,7 @@ static bpair<size_t,size_t> countItemsInSyncInfo(iModelBridgeSyncInfoFile& syncI
 void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
     {
     DgnDbR db = *m_db;
-    iModelBridgeSyncInfoFile syncInfo;
-    ASSERT_EQ(BentleyStatus::SUCCESS, syncInfo.AttachToBIM(db));
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_syncInfo.AttachToBIM(db));
 
     // Items in scope1
     iModelBridgeSyncInfoFile::ROWID scope1;
@@ -226,17 +255,18 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
 
     if (true)
         {
-        iModelBridgeSyncInfoFile::ChangeDetector nullChangeDetector(&syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector nullChangeDetector(db);
         // put the two scope items into syncinfo to start with.
         // Note that I don't have to create elements in order to put records into syncinfo. These records will
         // just serve as "scopes" to partition the items that I will "convert" below.
-        iModelBridgeSyncInfoFile::SourceState noState(0.0, "");
-        iModelBridgeSyncInfoFile::ConversionResults noElem;
-        syncInfo.WriteResults(iModelBridgeSyncInfoFile::ROWID(), noElem, iModelBridgeSyncInfoFile::SourceIdentity(0, "Scope", "1"), noState, nullChangeDetector);
-        scope1 = noElem.m_syncInfoRecord.GetROWID();
-        noElem = iModelBridgeSyncInfoFile::ConversionResults(); // clear the previous results
-        syncInfo.WriteResults(iModelBridgeSyncInfoFile::ROWID(), noElem, iModelBridgeSyncInfoFile::SourceIdentity(0, "Scope", "2"), noState, nullChangeDetector);
-        scope2 = noElem.m_syncInfoRecord.GetROWID();
+        iModelBridgeSyncInfoFile::SourceState noState(0.0, "");;
+        iModelBridgeSyncInfoFile::ConversionResults docLink1 = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), BeFileName( L"First One"), nullptr,
+            "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID(jobSubject.GetElementId().GetValue()));
+        
+        scope1 = docLink1.m_syncInfoRecord.GetROWID();
+        iModelBridgeSyncInfoFile::ConversionResults docLink2 = RecordDocument(*GetSyncInfo().GetChangeDetectorFor(*this), BeFileName(L"Second One"), nullptr,
+            "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID(jobSubject.GetElementId().GetValue()));
+        scope2 = docLink2.m_syncInfoRecord.GetROWID();
         }
 
     bvector<iModelBridgeSyncInfoFile::ROWID> scopes = {scope1, scope2};
@@ -245,7 +275,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
 
     if (true)
         {
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(db);
 
         // verify that the item does not exist in the BIM or in syncinfo
         iModelBridgeSyncInfoFile::ChangeDetector::Results change = changeDetector._DetectChange(scope1, itemKind, i0NoId);
@@ -255,16 +285,8 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         change = changeDetector._DetectChange(scope1, itemKind, i0NoId);
         ASSERT_EQ(iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New, change.GetChangeType());
 
-        ASSERT_EQ(expected_counts, countItemsInSyncInfo(syncInfo));
+        ASSERT_EQ(expected_counts, countItemsInSyncInfo(m_syncInfo));
         ASSERT_EQ(expected_counts.first-2, countElementsOfClass(iModelBridgeTests::GetGenericPhysicalObjectClassId(db), db));
-
-        // Do the same thing, only with a direct query on syncinfo
-        if (true)
-            {
-            auto elems = syncInfo.MakeIteratorByHash(scope1, itemKind, i0NoId._GetHash());
-            auto foundi0 = elems.begin();
-            ASSERT_TRUE(foundi0 == elems.end());
-            }
 
         // Write item and the element to which it was "converted"
         if (true)
@@ -278,19 +300,16 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         change = changeDetector._DetectChange(scope1, itemKind, i0NoId);
         ASSERT_EQ(iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged, change.GetChangeType());
 
-        // Do the same thing, only with a direct query on syncinfo
-        if (true)
-            {
-            auto elems = syncInfo.MakeIteratorByHash(scope1, itemKind, i0NoId._GetHash());
-            auto foundi0 = elems.begin();
-            ASSERT_TRUE(foundi0 != elems.end());
-            ASSERT_TRUE(foundi0.GetSourceState().GetHash().Equals(i0NoId._GetHash()));
-            }
-
         ASSERT_EQ(1, changeDetector.GetElementsConverted());
 
+        //  Now tell syncinfo to garbage-collect the elements that were abandoned.
+        changeDetector._DeleteElementsNotSeenInScopes(scopes);
+
+        ASSERT_EQ(1, changeDetector.GetElementsConverted()) << "conversion count should be 1 insert";
+
         ++expected_counts.first;
-        ASSERT_EQ(expected_counts, countItemsInSyncInfo(syncInfo));
+        ++expected_counts.second;
+        ASSERT_EQ(expected_counts, countItemsInSyncInfo(m_syncInfo));
         ASSERT_EQ(expected_counts.first-2, countElementsOfClass(iModelBridgeTests::GetGenericPhysicalObjectClassId(db), db));
         }
 
@@ -300,7 +319,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
     // Now update the BIM, based on this new input
     if (true)
         {
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(db);
 
         // Verify that change detector sees the change and updates the bim and syncinfo
         // Note that, since this item has no ID, it will look like it's new.
@@ -321,7 +340,8 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         // We have actually added a new element and syncinfo record for the original item and abandoned the first. 
         // It will get cleaned up when we call DeleteElementsNotSeenInScope later on.
         ++expected_counts.first;
-        ASSERT_EQ(expected_counts, countItemsInSyncInfo(syncInfo));
+        ++expected_counts.second;
+        ASSERT_EQ(expected_counts, countItemsInSyncInfo(m_syncInfo));
         ASSERT_EQ(expected_counts.first-2, countElementsOfClass(iModelBridgeTests::GetGenericPhysicalObjectClassId(db), db));
 
         //  Now tell syncinfo to garbage-collect the elements that were abandoned.
@@ -331,15 +351,16 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
 
         //  That should have dropped the count back down to 1 item and 1 element
         --expected_counts.first;
+        --expected_counts.second;
         }
 
-    ASSERT_EQ(expected_counts, countItemsInSyncInfo(syncInfo));
+    ASSERT_EQ(expected_counts, countItemsInSyncInfo(m_syncInfo));
     ASSERT_EQ(expected_counts.first-2, countElementsOfClass(iModelBridgeTests::GetGenericPhysicalObjectClassId(db), db));
 
     if (true)
         {
         // verify that a second item does not exist in the BIM or in syncinfo
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(db);
         iModelBridgeSyncInfoFile::ChangeDetector::Results change = changeDetector._DetectChange(scope1, itemKind, i1NoId);
         ASSERT_EQ(iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New, change.GetChangeType());
         }
@@ -351,7 +372,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
 
     if (true)
         {
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(db);
         changeDetector._OnScopeSkipped(scope1);
 
         // verify that the item does not exist in the BIM or in syncinfo
@@ -387,7 +408,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         ASSERT_EQ(1, changeDetector.GetElementsConverted());
         }
 
-    ASSERT_EQ(expected_counts, countItemsInSyncInfo(syncInfo));
+    ASSERT_EQ(expected_counts, countItemsInSyncInfo(m_syncInfo));
     ASSERT_EQ(expected_counts.first-2, countElementsOfClass(iModelBridgeTests::GetGenericPhysicalObjectClassId(db), db));
 
     // Now "change" the input ...
@@ -396,7 +417,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
     // Now update the BIM, based on this new input
     if (true)
         {
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(db);
         changeDetector._OnScopeSkipped(scope1);
 
         // Verify that change detector sees the change and updates the bim and syncinfo
@@ -418,13 +439,13 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         // The update should NOT have added a new item or element, so the total should be unchanged.
         }
 
-    ASSERT_EQ(expected_counts, countItemsInSyncInfo(syncInfo));
+    ASSERT_EQ(expected_counts, countItemsInSyncInfo(m_syncInfo));
     ASSERT_EQ(expected_counts.first-2, countElementsOfClass(iModelBridgeTests::GetGenericPhysicalObjectClassId(db), db));
 
     if (true)
         {
         // verify that a second item does not exist in the BIM or in syncinfo
-        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(&syncInfo);
+        iModelBridgeSyncInfoFile::ChangeDetector changeDetector(db);
         changeDetector._OnScopeSkipped(scope1);
         iModelBridgeSyncInfoFile::ChangeDetector::Results change = changeDetector._DetectChange(scope2, itemKind, i1WithId);
         ASSERT_EQ(iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New, change.GetChangeType());
@@ -564,16 +585,26 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
         {
         ASSERT_TRUE(std::find(m_expect.docsDeleted.begin(), m_expect.docsDeleted.end(), docId) != m_expect.docsDeleted.end());
 
-        for (auto rec : m_syncInfo.MakeIteratorByScope(docrid))
+        Utf8String ecsql("SELECT ECInstanceId, Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE (Scope.Id=?)");
+
+        auto stmt = GetDgnDbR().GetPreparedECSqlStatement(ecsql.c_str());
+
+        if (!stmt.IsValid())
+            return;
+
+        stmt->BindId(1, BeInt64Id(docrid));
+       
+        while  (BeSQLite::BE_SQLITE_ROW == stmt->Step())
             {
             ASSERT_TRUE(m_expect.anyDeleted);
-            if (!rec.GetDgnElementId().IsValid())
+            DgnElementId id = stmt->GetValueId<DgnElementId>(1);
+            if (!id.IsValid())
                 continue; // not every record in syncinfo is an element
-            auto el = GetDgnDbR().Elements().GetElement(rec.GetDgnElementId());
+            auto el = GetDgnDbR().Elements().GetElement(id);
             ASSERT_TRUE(el.IsValid());
             el->Delete();
             }
-
+    
         m_testIModelHubClientForBridges.m_expect.push_back(m_expect.anyDeleted);
         }
 
@@ -603,10 +634,6 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
         m_testIModelHubClientForBridges.m_expect.push_back(true);
         m_expect.findJobSubject = true;
 
-        if (!GetDgnDbR().TableExists(DGN_TABLE_ProvenanceFile))
-            DgnV8FileProvenance::CreateTable(GetDgnDbR());
-        if (!GetDgnDbR().TableExists(DGN_TABLE_ProvenanceModel))
-            DgnV8ModelProvenance::CreateTable(GetDgnDbR());
         SubjectCPtr subj =  subjectObj->InsertT<Subject>();
 
         // register the document. This then becomes the scope for all of my items.
@@ -753,11 +780,7 @@ void iModelBridgeTests_Test1_Bridge::DoConvertToBim(SubjectCR jobSubject)
     iModelBridgeSyncInfoFile::ConversionResults docLink = RecordDocument(*changeDetector, _GetParams().GetInputFileName(), nullptr,
         "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID(jobSubject.GetElementId().GetValue()));
 
-    bool useNewAspect = TestFeatureFlag(iModelBridgeFeatureFlag::WantProvenanceInBim);
-    if (!useNewAspect)
-        m_docScopeId = docLink.m_syncInfoRecord.GetROWID();
-    else
-        m_docScopeId = docLink.m_element->GetElementId().GetValue();
+    m_docScopeId = docLink.m_element->GetElementId().GetValue();
 
     Transform _newTrans, _oldTrans;
     m_jobTransChanged = DetectSpatialDataTransformChange(_newTrans, _oldTrans, *changeDetector, m_docScopeId, "JT", "JT");
@@ -811,7 +834,6 @@ TEST_F(iModelBridgeTests, Test1)
     args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str()));     // must refer to a path that exists! 
     args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());      // must be consistent with testRegistry.m_bridgeRegSubKey
-    args.push_back(L"--fwk-storeElementIdsInBIM");
     BeFileName platformAssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
@@ -932,7 +954,6 @@ TEST_F(iModelBridgeTests, DelDocTest1)
     args.push_back(L"--server-password=\"password><!@\"");                  // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());  // must be consistent with testRegistry.m_bridgeRegSubKey
     args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str())); // must refer to a path that exists! 
-    //args.push_back(L"--fwk-storeElementIdsInBIM");
     BeFileName platformAssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
@@ -1074,7 +1095,6 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
     args.push_back(L"--server-password=\"password><!@\"");                  // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());  // must be consistent with testRegistry.m_bridgeRegSubKey
     args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str())); // must refer to a path that exists! 
-    args.push_back(L"--fwk-storeElementIdsInBIM");
     BeFileName platformAssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
@@ -1403,4 +1423,77 @@ TEST_F(iModelBridgeTests, DISABLED_TestMultipleRootsSameSubject_ToyTile) // disa
 		ASSERT_EQ(jobSubjects.size(), 1) << "Still just one job subject";
 		ASSERT_STREQ(jobSubjects[0]->GetCode().GetValueUtf8CP(), "TestMultipleRootsSameSubject_ToyTile");
 		}
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelBridgeTests, LaunchDarklyQa)
+    {
+    auto bridgeRegSubKey = L"iModelBridgeTests_LDarkly_Bridge";
+
+    auto testDir = getiModelBridgeTestsOutputDir(L"LDarkly");
+
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
+
+    // I have to create a file that I represent as the bridge "library", so that the fwk's argument validation logic will see that it exists.
+    // The fwk won't try to load this file, since we will register a fake bridge.
+    BeFileName fakeBridgeName(testDir);
+    fakeBridgeName.AppendToPath(L"iModelBridgeTests-LDarkly");
+    BeFile fakeBridgeFile;
+    ASSERT_EQ(BeFileStatus::Success, fakeBridgeFile.Create(fakeBridgeName, true));
+    fakeBridgeFile.Close();
+
+    bvector<WString> args;
+    args.push_back(L"iModelBridgeTests.LDarkly");                                                 // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir.c_str()));
+    args.push_back(L"--server-environment=Qa");
+    args.push_back(L"--server-repository=iModelBridgeTests_LDarkly");                             // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(L"--server-project-guid=iModelBridgeTests_Project");                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(L"--fwk-create-repository-if-necessary");
+    args.push_back(L"--fwk-revision-comment=\"comment in quotes\"");
+    args.push_back(L"--server-user=username=username");                                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str()));     // must refer to a path that exists! 
+    args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());      // must be consistent with testRegistry.m_bridgeRegSubKey
+    BeFileName platformAssetsDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
+    args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
+    args.push_back(L"--fwk-input=Foo");
+
+    // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
+    TestIModelHubFwkClientForBridges testIModelHubClientForBridges(testDir);
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
+
+    // Register the test bridge that fwk should run
+    iModelBridgeTests_Test1_Bridge testBridge(testIModelHubClientForBridges);
+    iModelBridgeFwk::SetBridgeForTesting(testBridge);
+
+    BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(L"LDarklyAssignments.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
+
+    testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
+    iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
+
+    if (true)
+        {
+        testIModelHubClientForBridges.m_expect.push_back(false);// Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = false;
+        testBridge.m_expect.anyChanges = true;
+        testBridge.m_expect.anyDeleted = false;
+        // Ask the framework to run our test bridge to do the initial conversion and create the repo
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        testIModelHubClientForBridges.m_expect.clear();
+        }
+
+    bool abdTestFlag = testBridge.TestFeatureFlag("abd-bridge-dynamic-schema-style-properties-without-structs");
+    EXPECT_EQ(true, abdTestFlag);
+
     }

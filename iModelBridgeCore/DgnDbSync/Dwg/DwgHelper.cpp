@@ -1841,6 +1841,22 @@ bool    DwgHelper::GetTransformForSharedParts (TransformP out, double* uniformSc
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    DwgHelper::NegateScaleForSharedParts (double& partScale, TransformCR blockTrans)
+    {
+    // if the zAxis has z=-1, negate the part scale
+    auto    zAxis = blockTrans.GetMatrixColumn (2);
+    zAxis.Normalize ();
+    if (fabs(zAxis.z + 1.0) < 0.01)
+        {
+        partScale *= -1.0;
+        return  true;
+        }
+    return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          09/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DwgHelper::CompareSubcatAppearance (DgnSubCategory::Appearance const& a1, DgnSubCategory::Appearance const& a2)

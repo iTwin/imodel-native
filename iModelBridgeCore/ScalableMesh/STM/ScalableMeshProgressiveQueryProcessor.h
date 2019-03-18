@@ -30,6 +30,8 @@ private:
     bool m_invertClip;
     int                                              m_threadId;
     const bset<uint64_t>& m_activeClips;
+    size_t                                           m_maxLevel;
+    bool                                             m_useMaxLevel;
 
 
 
@@ -51,6 +53,30 @@ private:
         m_invertClip = invertClip;
         m_threadId = threadId;
         m_foundNodesP = foundNodesP;
+        m_useMaxLevel = false;
+    }
+
+    NodeQueryProcessor(HFCPtr<SMPointIndexNode<POINT, EXTENT>> queryNode,
+        ISMPointIndexQuery<POINT, EXTENT>*      queryObject,
+        StopQueryCallbackFP                     stopQueryCallbackFP,
+        bool                                    loadTexture,
+        bool invertClip,
+        ProducedNodeContainer<POINT, EXTENT>*   foundNodesP,
+        int                                     threadId,
+        const bset<uint64_t>& activeClips,
+        size_t maxLevel)
+        :m_activeClips(activeClips)
+    {
+        m_queryNode = queryNode;
+        m_pQueryObject = queryObject;
+        m_stopQueryCallbackFP = stopQueryCallbackFP;
+        m_stopQuery = false;
+        m_loadTexture = loadTexture;
+        m_invertClip = invertClip;
+        m_threadId = threadId;
+        m_foundNodesP = foundNodesP;
+        m_maxLevel = maxLevel;
+        m_useMaxLevel = true;
     }
 
 public:
@@ -64,8 +90,11 @@ public:
 
     void DoQuery()
     {
+        if (m_useMaxLevel)
+            m_pQueryObject->ToggleLimitToLevel(m_useMaxLevel, m_maxLevel);
         if (!m_stopQuery)
             m_queryNode->Query(m_pQueryObject, *m_foundNodesP, this);
+        m_pQueryObject->ToggleLimitToLevel(false, m_maxLevel);
     }
 
     void SetStopQuery(bool stopQuery)
@@ -83,6 +112,19 @@ public:
         const bset<uint64_t>& activeClips)
     {
         return new NodeQueryProcessor(queryNode, queryObject, stopQueryCallbackFP, loadTexture, invertClip, foundNodesP, threadId, activeClips);
+    }
+
+    static Ptr Create(HFCPtr<SMPointIndexNode<POINT, EXTENT>> queryNode,
+        ISMPointIndexQuery<POINT, EXTENT>*      queryObject,
+        StopQueryCallbackFP                     stopQueryCallbackFP,
+        bool                                    loadTexture,
+        bool invertClip,
+        ProducedNodeContainer<POINT, EXTENT>*   foundNodesP,
+        int                                     threadId,
+        const bset<uint64_t>& activeClips,
+        size_t maxLevel)
+    {
+        return new NodeQueryProcessor(queryNode, queryObject, stopQueryCallbackFP, loadTexture, invertClip, foundNodesP, threadId, activeClips, maxLevel);
     }
 };
 
@@ -126,6 +168,8 @@ protected:
         m_toLoadNodeMutexes = new std::mutex[nbWorkingThreads];
         m_foundMeshNodes.resize(nbWorkingThreads);
         m_foundMeshNodeMutexes = new std::mutex[nbWorkingThreads];
+        m_updatedOverviewNodes.resize(nbWorkingThreads);
+        m_updatedOverviewNodeMutexes = new std::mutex[nbWorkingThreads];
         m_nodeQueryProcessors.resize(nbWorkingThreads);
         m_nodeQueryProcessorMutexes = new std::mutex[nbWorkingThreads];
 
@@ -150,6 +194,7 @@ public:
         delete[] m_searchingNodeMutexes;
         delete[] m_toLoadNodeMutexes;
         delete[] m_foundMeshNodeMutexes;
+        delete[] m_updatedOverviewNodeMutexes;
         delete[] m_nodeQueryProcessorMutexes;
         delete m_queryObjectP;
         if (nullptr != m_collectCallback)
@@ -276,6 +321,13 @@ public:
         m_toLoadNodeMutexes[threadInd].unlock();
     }
 
+    void OnLoadedOverviewNode(IScalableMeshCachedDisplayNodePtr& overviewNodePtr, size_t threadInd)
+    {
+        m_updatedOverviewNodeMutexes[threadInd].lock();
+        m_updatedOverviewNodes[threadInd].push_back(overviewNodePtr);
+        m_updatedOverviewNodeMutexes[threadInd].unlock();
+    }
+
     void SetCollectCallback(CollectLoadedNodesCallback* func)
     {
         if (nullptr != m_collectCallback)
@@ -291,6 +343,8 @@ public:
     ProducedNodeContainer<POINT, EXTENT>                      m_producedFoundNodes;
     bvector<bvector<IScalableMeshCachedDisplayNodePtr>>       m_foundMeshNodes;
     std::mutex*                                               m_foundMeshNodeMutexes;
+    bvector<bvector<IScalableMeshCachedDisplayNodePtr>>       m_updatedOverviewNodes;
+    std::mutex*                                               m_updatedOverviewNodeMutexes;
 
     bvector<NodeQueryProcessor<DPoint3d, Extent3dType>::Ptr>  m_nodeQueryProcessors;
     std::mutex*                                                    m_nodeQueryProcessorMutexes;
@@ -398,6 +452,8 @@ public:
     void Stop();
 
     StatusInt GetFoundNodes(bvector<IScalableMeshCachedDisplayNodePtr>& foundNodes, int queryId);
+
+    StatusInt GetUpdatedOverviewNodes(bvector<IScalableMeshCachedDisplayNodePtr>& overviewNodes, int queryId);
 };
 
 

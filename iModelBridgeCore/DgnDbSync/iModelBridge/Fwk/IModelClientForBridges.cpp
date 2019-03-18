@@ -5,9 +5,8 @@
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <iModelBridge/Fwk/IModelClientForBridges.h>
+#include <iModelBridge/IModelClientForBridges.h>
 #include <DgnPlatform/DgnProgressMeter.h>
-
 #include <WebServices/iModelHub/Client/Client.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/Configuration/UrlProvider.h>
@@ -47,6 +46,14 @@ IModelClientBase::IModelClientBase(WebServices::ClientInfoPtr info, uint8_t maxR
 IModelBankClient::IModelBankClient(iModelBridgeFwk::IModelBankArgs const& args, WebServices::ClientInfoPtr info) : 
     IModelClientBase(info, args.m_maxRetryCount, WebServices::UrlProvider::Environment::Release, INT64_MAX),
     m_iModelId(args.m_iModelId)
+    {
+    SetUrlAndAccessToken(args);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void IModelBankClient::SetUrlAndAccessToken(iModelBridgeFwk::IModelBankArgs const& args)
     {
     ClientHelper::GetInstance()->SetUrl(args.m_url);
     m_client = ClientHelper::GetInstance()->SignInWithStaticHeader(args.m_accessToken);
@@ -103,6 +110,44 @@ IModelHubClient::IModelHubClient(iModelBridgeFwk::IModelHubArgs const& args, Web
 IRepositoryManagerP IModelClientBase::GetRepositoryManager(DgnDbR db)
     {
     return m_client->GetiModelAdmin()->_GetRepositoryManager(db);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IModelBankClient::Shutdown()
+    {
+    Http::HttpClient::Reinitialize();
+
+    auto info = GetIModelInfo();
+    if (!info.IsValid())
+        return BSIERROR;
+
+    auto result = m_client->DeleteiModel(m_iModelId, *info)->GetResult();
+    if (result.IsSuccess())
+        return BSISUCCESS;
+    
+    m_lastServerError = result.GetError();
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IModelHubClient::DeleteRepository()
+    {
+    Http::HttpClient::Reinitialize();
+
+    auto info = GetIModelInfo();
+    if (!info.IsValid())
+        return BSIERROR;
+
+    auto result = m_client->DeleteiModel(m_projectId, *info)->GetResult();
+    if (result.IsSuccess())
+        return BSISUCCESS;
+    
+    m_lastServerError = result.GetError();
+    return BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

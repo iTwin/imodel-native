@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/GraphiteResourceUri.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -547,8 +547,6 @@ Utf8String DgnResourceURI::GetFragment() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus makeElementByProvenance(Utf8StringR uriStr, DgnElementCR el)
     {
-    DgnDbR dgndb = el.GetDgnDb();
-
     /*
      * Notes:
      * A fileName and an ElementId is sufficient to unambiguously refer to a V8 Element. 
@@ -560,20 +558,31 @@ static BentleyStatus makeElementByProvenance(Utf8StringR uriStr, DgnElementCR el
      * In the case of N-1 mapping between V8 and DgnDb Elements, the URIs may just not 
      * capture the right V8 element. 
      */
-    BeSQLite::BeGuid v8FileId;
-    int64_t v8ElementId;
-    if (SUCCESS != DgnV8ElementProvenance::FindFirst(&v8FileId, nullptr, &v8ElementId, el.GetElementId(), dgndb))
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("SELECT Identifier, Scope.Id FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE Element.Id=? AND Kind='Element'");
+    if (!stmt.IsValid())
         return ERROR;
 
-    Utf8String v8UniqueName;
-    if (SUCCESS != DgnV8FileProvenance::Find(nullptr, &v8UniqueName, v8FileId, dgndb))
+    if (BE_SQLITE_ROW != stmt->Step())
+        return ERROR;
+
+    DgnModelId scopeId;
+    scopeId = stmt->GetValueId<DgnModelId>(1);
+    if (!scopeId.IsValid())
+        return ERROR;
+
+    CachedECSqlStatementPtr stmt2 = el.GetDgnDb().GetPreparedECSqlStatement("select xsa1.Identifier from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " xsa1, " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " xsa2 WHERE xsa1.Element.Id = xsa2.Scope.Id AND xsa2.Element.Id=?");
+    if (!stmt2.IsValid())
+        return ERROR;
+
+    stmt2->BindId(1, scopeId);
+    if (BE_SQLITE_ROW != stmt2->Step())
         return ERROR;
 
     DgnResourceURI::Builder builder;
     builder.AppendEncodedPath(RT_DgnDb);
-    builder.AppendQueryParameter("FileName", v8UniqueName);
+    builder.AppendQueryParameter("FileName", stmt2->GetValueText(0));
     builder.AppendAndOperator();
-    builder.AppendQueryParameter("ElementId", Utf8PrintfString("%lld", v8ElementId));
+    builder.AppendQueryParameter("ElementId", stmt->GetValueText(0));
 
     uriStr = builder.ToEncodedString();
     return SUCCESS;
@@ -596,21 +605,16 @@ static DgnElementId findElementIdByProvenance(DgnDbR db, DgnResourceURI::QueryPa
         return DgnElementId();
         }
 
-    //  This query is one of mine. From here on, I return SUCCESS to indicate that I handled it (even if the provenance can't be found).
-    BeSQLite::BeGuid v8FileId;
-    bool findByUniqueName = !isGraphiteUri; // Unfortunately Graphite05 stored references to non-unique names!!!
-    if (SUCCESS != DgnV8FileProvenance::FindFirst(&v8FileId, v8NameOrUniqueName, findByUniqueName, db))
-        {
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT xsa1.Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " xsa1, " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " xsa2, " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " xsa3 WHERE xsa1.Scope.Id = xsa2.Element.Id AND xsa3.Element.Id = xsa2.Scope.Id AND xsa3.Identifier=? AND xsa1.Identifier=?;");
+    if (!stmt.IsValid())
         return DgnElementId();
-        }
 
-    DgnElementId elementId;
-    if (SUCCESS != DgnV8ElementProvenance::FindFirst(&elementId, v8FileId, (int64_t) v8ElementId.GetUInt64(), db))
-        {
+    stmt->BindText(1, v8NameOrUniqueName, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    stmt->BindText(2, v8ElementId.GetString().c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    if (BE_SQLITE_ROW != stmt->Step())
         return DgnElementId();
-        }
 
-    return elementId;
+    return stmt->GetValueId<DgnElementId>(0);
     }
 
 /*---------------------------------------------------------------------------------**//**

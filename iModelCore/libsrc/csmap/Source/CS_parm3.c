@@ -136,16 +136,24 @@ int EXP_LVL9 CSparm3I3 (struct csParm3_ *parm3,double* trgLl,Const double* srcLl
 {
 	int status;
 
+#ifndef GEOCOORD_ENHANCEMENT
 	double xx, yy, zz;
+#endif
 	double xyz [3];
 
 	/* Convert the geographic coordinates to geocentric XYZ coordinates. */
 	CS_llhToXyz (xyz,srcLl,parm3->trgERad,parm3->trgESqr);
 
 	/* Invert the scaling and translation. */
+#ifdef GEOCOORD_ENHANCEMENT
+    xyz[XX] -= parm3->deltaX;
+    xyz[YY] -= parm3->deltaY;
+    xyz[ZZ] -= parm3->deltaZ;
+#else
 	xx = xyz [XX] - parm3->deltaX;
 	yy = xyz [YY] - parm3->deltaY;
 	zz = xyz [ZZ] - parm3->deltaZ;
+#endif
 
 	/* Convert the new X, Y, and Z back to latitude and longitude. */
 	status = CS_xyzToLlh (trgLl,xyz,parm3->srcERad,parm3->srcESqr);

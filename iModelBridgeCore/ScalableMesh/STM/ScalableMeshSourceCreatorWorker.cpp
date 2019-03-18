@@ -167,6 +167,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName, uint32_t 
     m_smSisterDb = nullptr;
     m_nbWorkers = nbWorkers;
     m_lockSleeper = BeDuration::FromSeconds(0.5);
+    m_scalableMeshFileLock = nullptr;
 
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
     SetThreadingOptions(false, true, false);
@@ -186,6 +187,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr, uin
     m_smSisterDb = nullptr;
     m_nbWorkers = nbWorkers;
     m_lockSleeper = BeDuration::FromSeconds(0.5);
+    m_scalableMeshFileLock = nullptr;
 
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
     SetThreadingOptions(false, true, false);
@@ -206,12 +208,70 @@ IScalableMeshSourceCreatorWorker::Impl::~Impl()
     CachedDataEventTracer::GetInstance()->analyze(::_getpid());
 #endif	
     }
-   
+
+
+void IScalableMeshSourceCreatorWorker::Impl::GetScalableMeshFileLock(bool readOnly)
+    {
+    assert(m_scalableMeshFileLock == nullptr);
+
+    BeDuration sleeper(BeDuration::FromSeconds(0.5));
+
+    BeFileName lockFileName(m_scmFileName);
+    lockFileName.AppendString(L".lock");
+
+    int accessMode;
+
+    if (readOnly)
+        {
+        accessMode = _SH_DENYWR;
+        }
+    else
+        {
+        accessMode = _SH_DENYRW;
+        }
+    
+    while ((m_scalableMeshFileLock  = _wfsopen(lockFileName, L"ab+", accessMode)) == nullptr)
+        {
+        sleeper.Sleep();            
+        }        
+    }
+
+void IScalableMeshSourceCreatorWorker::Impl::ReleaseScalableMeshFileLock()
+    {
+    assert(m_scalableMeshFileLock != nullptr);
+    fclose(m_scalableMeshFileLock);
+    m_scalableMeshFileLock = nullptr;
+    }
+                   
 HFCPtr<MeshIndexType> IScalableMeshSourceCreatorWorker::Impl::GetDataIndex()
     {
     if (m_pDataIndex.GetPtr() == nullptr)
-        {       
+        {     
+        /*
+        BeFileName lockFileName(m_scmFileName);
+        lockFileName.AppendString(L".lock");
+
+        FILE* lockFile; 
+        BeDuration sleeper(BeDuration::FromSeconds(0.5));
+
+        while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+            {
+            sleeper.Sleep();            
+            }
+            */
         StatusInt status = IScalableMeshCreator::Impl::CreateDataIndex(m_pDataIndex, true, SM_ONE_SPLIT_THRESHOLD);
+
+        //fclose(lockFile);
+
+/*
+#ifndef NDEBUG
+        if (m_mainFilePtr != nullptr)
+            m_mainFilePtr->GetDb()->SetCanReopenShared(false);
+
+        if (m_sisterFilePtr != nullptr)
+            m_sisterFilePtr->GetDb()->SetCanReopenShared(false);
+#endif
+*/
 
         assert(m_pDataIndex.GetPtr() != nullptr);   
         assert(status == SUCCESS);
@@ -656,6 +716,8 @@ void CreateNodeTask(bvector<NodeTaskPtr>& toExecuteTasks, IScalableMeshNodePtr& 
             toExecuteTasks.push_back(newGenerationTask);
             }
 		}
+        else
+            toExecuteTasks.push_back(newGenerationTask);
 
 #ifndef NDEBUG
     else
@@ -925,13 +987,12 @@ void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<NodeTask
     maxGroupSize = maxGroupSize;
     }
 
+
 StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName)
     {
     BeFileName taskDirectory(m_scmFileName);
 
     taskDirectory = taskDirectory.GetDirectoryName();
-
-    HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
     bvector<uint64_t> nodesToMesh;
     
@@ -944,9 +1005,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
     GetGenerationTasks(generationTasks, maxGroupSize);
         
     CloseSqlFiles();
-
-    FreeDataIndex();
-
+    
     uint64_t totalNodes = 0;
     uint64_t totalStichableNodes = 0;
 
@@ -963,9 +1022,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
     uint32_t maxPriority = 0;
     
     for (size_t ind = 0; ind < generationTasks.size(); ind++)    
-        {                              
+        {                                      
         BeFileName meshTaskFile(taskDirectory);
-
+        
         maxPriority = max(maxPriority, generationTasks[ind]->m_orderId);
 
         if (generationTasks[ind]->m_orderId > 0)
@@ -1067,56 +1126,32 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks(uint32_t
         assert(status == BEXML_Success);
         }
 
+    bvector<IDTMSource*> rasterSources;
+
+    GetRasterSources(rasterSources);
+    
+    if (rasterSources.size() > 0)
+        {
+        maxPriority++;
+                        
+        StatusInt statusTexturing = CreateTextureTasks(maxGroupSize, jobName, smFileName, maxPriority);
+
+        assert(statusTexturing == SUCCESS);
+        }
+
+    generationTasks.clear();
+    FreeDataIndex();
 
     CreateTaskPlanForTaskGrouping(maxPriority, jobName, smFileName);
-
-
-#if 0
-    wchar_t stringBuffer[100000];
-
-    pDataIndex->Mesh(&nodesToMesh);
-
-    uint32_t nbNodesPerTask = GetNbNodesPerTask(nodesToMesh.size());
-
-    for (size_t ind = 0; ind < nodesToMesh.size();)
-            {
-        BeFileName meshTaskFile(taskDirectory);
-
-        swprintf(stringBuffer, L"Mesh%zi.xml", ind);
-        meshTaskFile.AppendString(stringBuffer);
-        BeXmlDomPtr xmlDomPtr(BeXmlDom::CreateEmpty());
-
-        BeXmlNodeP workerNode(xmlDomPtr->AddNewElement("workerTask", nullptr, nullptr));
-        workerNode->AddAttributeStringValue("type", "mesh");
-
-        for (size_t nodeInd = 0; nodeInd < nbNodesPerTask; nodeInd++)
-            {
-            BeXmlNodeP tileNode(xmlDomPtr->AddNewElement("tile", nullptr, workerNode));
-            tileNode->AddAttributeUInt64Value("id", nodesToMesh[ind]);
-            ind++;
-
-            if (ind >= nodesToMesh.size())
-                break;
-            
-
-        BeXmlDom::ToStringOption toStrOption = (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Formatted | BeXmlDom::TO_STRING_OPTION_Indent);
-
-        BeXmlStatus status = xmlDomPtr->ToFile(meshTaskFile, toStrOption, BeXmlDom::FILE_ENCODING_Utf8);
-        assert(status == BEXML_Success);
-        }
-#endif
     
-
     return SUCCESS;
     }
 
-StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTextureTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName)
+StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTextureTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName, int basePriority)
     {
     BeFileName taskDirectory(m_scmFileName);
 
     taskDirectory = taskDirectory.GetDirectoryName();
-
-    HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
     bvector<uint64_t> initialTextureNodes;
 
@@ -1134,11 +1169,22 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateTextureTasks(uint32_t ma
     wchar_t stringBuffer[100000];
 
     for (size_t ind = 0; ind < textureTasks.size(); ind++)
-    {
-        if (textureTasks[ind]->m_orderId > 0)
-            continue;
-
+        {
         BeFileName meshTaskFile(taskDirectory);
+        
+        //assert(textureTasks[ind]->m_orderId == 0);        
+
+        if (basePriority > 0)
+            {            
+            swprintf(stringBuffer, L"\\%s%i\\", TASK_PRIORITY_FOLDER_NAME, basePriority);
+            meshTaskFile.AppendToPath(stringBuffer);            
+
+            if (!meshTaskFile.DoesPathExist())
+                {
+                BeFileNameStatus status = BeFileName::CreateNewDirectory(meshTaskFile.c_str());
+                assert(status == BeFileNameStatus::Success);                
+                }
+            }
 
         swprintf(stringBuffer, L"Texture%zi.xml", ind);
         meshTaskFile.AppendString(stringBuffer);
@@ -1386,9 +1432,41 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
     {
     BeXmlNodeP pChildNode = pXmlTaskNode->GetFirstChild();
 
+    if (pChildNode == nullptr)
+        return SUCCESS;
     assert(m_pDataIndex.GetPtr() == nullptr);
 
+
+
+    GetScalableMeshFileLock(true);
+    
+#ifndef NDEBUG
+
+    if (m_mainFilePtr == nullptr)
+        m_mainFilePtr = GetFile(true);
+                
+    if (m_mainFilePtr != nullptr)
+        m_mainFilePtr->GetDb()->SetCanReopenShared(true);
+
+    if (m_sisterFilePtr != nullptr)
+        m_sisterFilePtr->GetDb()->SetCanReopenShared(true);    
+
+
+#endif
+
+
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
+
+    ReleaseScalableMeshFileLock();
+    
+#ifndef NDEBUG
+    if (m_mainFilePtr != nullptr)
+        m_mainFilePtr->GetDb()->SetCanReopenShared(false);
+
+    if (m_sisterFilePtr != nullptr)
+        m_sisterFilePtr->GetDb()->SetCanReopenShared(false);    
+#endif
+
 
     ScalableMeshQuadTreeBCLIBMeshFilter1<DPoint3d, DRange3d>* filter = dynamic_cast<ScalableMeshQuadTreeBCLIBMeshFilter1<DPoint3d, DRange3d>*>(pDataIndex->GetFilter());
     if (filter != nullptr)
@@ -1409,6 +1487,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
     SMMeshDataToLoad meshDataToFiltering;
     meshDataToFiltering.m_ptIndices = false;
+    meshDataToFiltering.m_features = true;
                         
     do
         {
@@ -1463,21 +1542,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         assert(xmlStatus == BEXML_Success);
 
         
-
-/*
-        BeDuration sleeper(BeDuration::FromSeconds(0.5));
-
-        BeFileName lockFileName(m_scmFileName);
-        lockFileName.AppendString(L".lock");
-
-        FILE* lockFile; 
-
-        while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
-            {
-            sleeper.Sleep();            
-            }
-            */
-         
+        GetScalableMeshFileLock(true);
+        
+ 
         //TBD_G : Need lock file?        
         StatusInt status = OpenSqlFiles(true, true);
         assert(status == SUCCESS);
@@ -1568,7 +1635,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
         CloseSqlFiles();
 
-        //fclose(lockFile);
+        ReleaseScalableMeshFileLock();
 
         for (auto& node : nodesToMesh)
             {
@@ -1705,20 +1772,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
         } while (pChildNode != nullptr);
             
 
-/*
-    BeDuration sleeper(BeDuration::FromSeconds(0.5));
+    GetScalableMeshFileLock(false);
 
-    BeFileName lockFileName(m_scmFileName);
-    lockFileName.AppendString(L".lock");
-
-    FILE* lockFile; 
-
-    while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
-        {
-        sleeper.Sleep();
-        }
-*/
-
+    
     //Flush all the data on disk    
     OpenSqlFiles(false, true);
 
@@ -1746,9 +1802,8 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
     FreeDataIndex();
 
-   // fclose(lockFile);
-
-    
+    ReleaseScalableMeshFileLock();
+        
 
     //m_pDataIndex->UnloadAllNodes();
 
@@ -1783,8 +1838,23 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP pXmlTaskNode)
     {
     BeXmlNodeP pChildNode = pXmlTaskNode->GetFirstChild();
+    
+    GetScalableMeshFileLock(true);
+    
+#ifndef NDEBUG
+    if (m_mainFilePtr == nullptr)
+        m_mainFilePtr = GetFile(true);
+                
+    if (m_mainFilePtr != nullptr)
+        m_mainFilePtr->GetDb()->SetCanReopenShared(true);
+
+    if (m_sisterFilePtr != nullptr)
+        m_sisterFilePtr->GetDb()->SetCanReopenShared(true);
+#endif
 
     HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
+
+    ReleaseScalableMeshFileLock();    
 
     bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>> nodesToMesh;
     bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>>     generatedNodes;
@@ -1793,7 +1863,10 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
 
     meshDataToLoad.m_features = false;
     meshDataToLoad.m_graph = false;
-
+    meshDataToLoad.m_ptIndices = true;
+    meshDataToLoad.m_textureIndices = true;
+    meshDataToLoad.m_texture = true;
+    
    /* ITextureProviderPtr textureStreamProviderPtr;
     WString url(L"http://www.bing.com/maps/Aerial");
     IScalableMeshPtr nullSmPtr;
@@ -1801,7 +1874,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
 
     ITextureProviderPtr textureProviderPtr;
     IScalableMeshPtr nullSmPtr;
-    GetTextureProvider(textureProviderPtr, nullSmPtr, pDataIndex);
+    GetTextureProvider(textureProviderPtr, nullSmPtr, pDataIndex);   
+
+    bvector<HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>>> nodesCreated;
     do
         {
         assert(pChildNode != nullptr);
@@ -1821,6 +1896,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
             tileIds.push_back(BeStringUtilities::ParseUInt64(Utf8String(idStr).c_str()));
         }
 
+
+
+        GetScalableMeshFileLock(true);
 
         assert(tileIds.size() > 0);
 
@@ -1855,10 +1933,34 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
 
         CloseSqlFiles();
 
+        ReleaseScalableMeshFileLock();    
+
         for (auto& node : nodesToMesh)
         {
+            bool hasNoChildren = false;
+            node->DisableMultiThreadTexturingCutting();
             //node->TextureFromRaster(textureStreamProviderPtr);
+            if (node->IsLeaf())
+                hasNoChildren = true;
             node->TextureFromRaster(textureProviderPtr);
+            if (hasNoChildren && !node->IsLeaf()) 
+            {
+                //add newly created nodes
+                HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>> subNodeNoSplit(node->GetSubNodeNoSplit());
+
+                if (subNodeNoSplit != nullptr)
+                {
+                    nodesCreated.push_back((SMMeshIndexNode<DPoint3d, DRange3d>*)(&*subNodeNoSplit));
+                }
+                else
+                {
+                    vector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>> childrenNodes(node->GetSubNodes());
+
+                    for (auto& childNode : childrenNodes)
+                        nodesCreated.push_back((SMMeshIndexNode<DPoint3d, DRange3d>*)(&*childNode));
+                }
+
+            }
         }
 
         generatedNodes.insert(generatedNodes.end(), nodesToMesh.begin(), nodesToMesh.end());
@@ -1867,22 +1969,77 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessTextureTask(BeXmlNodeP 
         pChildNode = pChildNode->GetNextSibling();
     } while (pChildNode != nullptr);
 
-    //Flush all the data on disk    
-    OpenSqlFiles(false, true);
 
-    for (auto& node : generatedNodes)
-    {
-        node->Discard();
-        // pDataIndex->ClearNodeMap();
 
-        node->Unload();
-    }
 
-    generatedNodes.clear();
 
-    pDataIndex->Store();
+    do
+    { 
+        //at the moment just process newly created nodes in the same task
+        for (auto& node : nodesToMesh)
+        {
+            bool hasNoChildren = false;
+            node->DisableMultiThreadTexturingCutting();
+            //node->TextureFromRaster(textureStreamProviderPtr);
+            if (node->IsLeaf())
+                hasNoChildren = true;
+            node->TextureFromRaster(textureProviderPtr);
+            if (hasNoChildren && !node->IsLeaf())
+            {
+                //add newly created nodes
+                HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>> subNodeNoSplit(node->GetSubNodeNoSplit());
 
-    CloseSqlFiles();
+                if (subNodeNoSplit != nullptr)
+                {
+                    nodesCreated.push_back((SMMeshIndexNode<DPoint3d, DRange3d>*)(&*subNodeNoSplit));
+                }
+                else
+                {
+                    vector<HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>>> childrenNodes(node->GetSubNodes());
+
+                    for (auto& childNode : childrenNodes)
+                        nodesCreated.push_back((SMMeshIndexNode<DPoint3d, DRange3d>*)(&*childNode));
+                }
+
+            }
+        }
+
+        generatedNodes.insert(generatedNodes.end(), nodesToMesh.begin(), nodesToMesh.end());
+
+        nodesToMesh.clear();
+
+        GetScalableMeshFileLock(true);
+
+        //Flush all the data on disk    
+        OpenSqlFiles(false, true);
+
+        for (auto& node : generatedNodes)
+        {
+            node->Discard();
+            // pDataIndex->ClearNodeMap();
+            node->Unload();
+        }
+
+        pDataIndex->Store();
+
+        generatedNodes.clear();
+
+        for (auto& node : nodesCreated)
+        {
+            node->NeedToLoadNeighbors(false);
+
+            node->Load();
+            node->LoadData(&meshDataToLoad);
+            nodesToMesh.push_back(node);
+        }
+
+        nodesCreated.clear();
+        
+        CloseSqlFiles();
+
+        ReleaseScalableMeshFileLock();    
+
+    } while (!nodesToMesh.empty());
 
     return SUCCESS;
     }
@@ -2060,7 +2217,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::OpenSqlFiles(bool readOnly, bo
         {
         SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(GetDataIndex()->GetDataStore().get()));
         assert(pSqliteStore != nullptr);
-        
+                
         m_mainFilePtr = GetFile(true);
 
         if (m_smDb == nullptr)
@@ -2092,6 +2249,11 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::OpenSqlFiles(bool readOnly, bo
             }
         }
                 
+#ifndef NDEBUG
+    m_smDb->SetCanReopenShared(true);
+    m_smSisterDb->SetCanReopenShared(true);    
+#endif
+
     bool dbOpResult = true;
 
     if (!m_smDb->IsDbOpen() || !m_smDb->IsReadonly())
@@ -2117,8 +2279,7 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::OpenSqlFiles(bool readOnly, bo
         while (!m_smSisterDb->ReOpenShared(readOnly, true));
         }
 		*/
-
-
+    
     if (needSisterMainLockFile)
         {
         fclose(lockFile);
@@ -2139,6 +2300,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CloseSqlFiles()
 
     m_smSisterDb->CloseShared(wasTransactionAbandoned);
     assert(wasTransactionAbandoned == false);
+
+#ifndef NDEBUG
+    m_smDb->SetCanReopenShared(false);
+    m_smSisterDb->SetCanReopenShared(false);    
+#endif
+
 
     return SUCCESS;
     }

@@ -95,7 +95,7 @@ DLM_NO_CONTEXT_LINK = 1
 
     DLM_OBJECT_FILES  + $(BRIDGE_ADDON_LIBS)
 
-    LINKER_LIBRARIES +  $(ContextSubpartsLibs)$(stlibprefix)node$(stlibext)
+    LINKER_LIBRARIES  + $(ContextSubpartsLibs)napi.lib
 
     # Always produce a .SO (even though this is a static build)
     %undef CREATE_STATIC_LIBRARIES

@@ -2,7 +2,7 @@
 #
 #  $Source: Tests/MstnBridgeTests.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 programName = MstnBridgeTests
@@ -17,6 +17,7 @@ dirToSearch = $(BuildContext)SubParts/UnitTests/include
 %include cincapnd.mki
 
 # -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK --
+# We reach into privateapi to get TestIModelHubClientForBridges.h
 iModelBridgePrivateAPISrc = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PrivateAPI/
 dirToSearch  = $(iModelBridgePrivateAPISrc)
 %include cincapnd.mki

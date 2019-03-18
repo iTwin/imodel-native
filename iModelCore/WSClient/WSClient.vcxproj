@@ -552,9 +552,6 @@
     <None Include="Connect\Connect.mki" />
     <None Include="ClientPrewire.mke" />
     <None Include="CacheSchemasDelivery.mke" />
-    <None Include="CWSClientCLib.mke" />
-    <None Include="CWSClientCLibOptions.mki" />
-    <None Include="CWSClientCPrewire.mke" />
     <None Include="FakeServerLib.mke" />
     <None Include="FakeServerPrewire.mke" />
     <None Include="iModelHubClient.NuGetPackage.mke" />

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeHttp/AuthenticationHandler.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -53,7 +53,8 @@ protected:
     virtual Tasks::AsyncTaskPtr<AuthorizationResult> _RetrieveAuthorization(AttemptCR previousAttempt) = 0;
 
 public:
-    AuthenticationHandler(IHttpHandlerPtr customHttpHandler = nullptr) : m_defaultHttpHandler(customHttpHandler == nullptr ? DefaultHttpHandler::GetInstance() : customHttpHandler) {}
+    AuthenticationHandler(IHttpHandlerPtr customHttpHandler = nullptr) : 
+        m_defaultHttpHandler(customHttpHandler == nullptr ? DefaultHttpHandler::GetInstance() : customHttpHandler) {}
     virtual ~AuthenticationHandler() {}
 
     BEHTTP_EXPORT virtual Tasks::AsyncTaskPtr<Response> _PerformRequest(RequestCR request) override;

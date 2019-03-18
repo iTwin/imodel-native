@@ -2,7 +2,7 @@
 |
 |     $Source: iModelDmsSupport/PWWorkspaceHelper.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,16 +21,18 @@ struct PWWorkspaceHelper : public IDmsSupport
         bool        InitPwApi();
         virtual bool _Initialize() override;
         virtual bool _UnInitialize() override;
+        StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR destination, bool isv8i, bvector<WString> const & additonalFilePatterns);
         virtual bool _InitializeSession(WStringCR pwMoniker) override;
         virtual bool _UnInitializeSession() override;
         virtual bool _InitializeSessionFromDataSource(WStringCR dataSource) override;
+        virtual bool _StageInputFile(BeFileNameCR fileLocation) override { return true; }
+        StatusInt  StageDocument(long folderId, long documentId, BeFileNameCR dirPath);
     public:
         PWWorkspaceHelper(DmsSession& session);
         ~PWWorkspaceHelper();
-        virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR destination, bool isv8i) override;
         StatusInt GetFileName(WString fileName, int folderId, int documentId);
         StatusInt GetFolderIdFromMoniker(int& folderId, int& documentId, WStringCR pwMoniker);
-        virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pWMoniker, BeFileNameCR workspaceDir, bool isv8i) override;
+        virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pWMoniker, BeFileNameCR workspaceDir, bool isv8i, bvector<WString> const & additonalFilePatterns) override;
         virtual  void SetApplicationResourcePath(BeFileNameCR applicationResourcePath) override;
         virtual Bentley::DgnPlatform::DgnDocumentManager* _GetDgnDocumentManager() override;
     };

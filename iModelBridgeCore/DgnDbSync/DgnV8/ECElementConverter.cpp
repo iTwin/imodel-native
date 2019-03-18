@@ -243,12 +243,12 @@ Utf8String ElementConverter::UnitResolver::_ResolveUnitName(ECPropertyCR ecPrope
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ElementAspectConverter::ConvertToAspects(ElementConversionResults& results,
+BentleyStatus ElementAspectConverter::ConvertToAspects(SyncInfo::V8ElementExternalSourceAspect* aspect, ElementConversionResults& results,
                                                        std::vector<std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule>> const& secondaryInstances) const
     {
     for (std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule> const& v8SecondaryInstance : secondaryInstances)
         {
-        if (BSISUCCESS != ConvertToAspect(results, *v8SecondaryInstance.first, BisConversionRuleHelper::GetAspectClassSuffix(v8SecondaryInstance.second)))
+        if (BSISUCCESS != ConvertToAspect(aspect, results, *v8SecondaryInstance.first, BisConversionRuleHelper::GetAspectClassSuffix(v8SecondaryInstance.second)))
             return BSIERROR;
         }
 
@@ -259,7 +259,7 @@ BentleyStatus ElementAspectConverter::ConvertToAspects(ElementConversionResults&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ElementAspectConverter::ConvertToAspect(ElementConversionResults& results, ECObjectsV8::IECInstance const& v8Instance, Utf8CP aspectClassSuffix) const
+BentleyStatus ElementAspectConverter::ConvertToAspect(SyncInfo::V8ElementExternalSourceAspect* aspect, ElementConversionResults& results, ECObjectsV8::IECInstance const& v8Instance, Utf8CP aspectClassSuffix) const
     {
     BECN::ECClassCP aspectClass = GetDgnDbClass(v8Instance, aspectClassSuffix);
     if (aspectClass == nullptr)
@@ -279,7 +279,26 @@ BentleyStatus ElementAspectConverter::ConvertToAspect(ElementConversionResults& 
         return BSIERROR;
         }
 
-    DgnElement::GenericMultiAspect::AddAspect(*results.m_element, *targetInstance);
+    // Need to see if there is an existing aspect or if we are updating
+    bool found = false;
+    if (m_converter.IsUpdating() && nullptr != aspect)
+        {
+        auto propData = aspect->GetProperties();
+        if (propData.HasMember("SecondaryInstances"))
+            {
+            Utf8String v8Id(v8Instance.GetInstanceId().c_str());
+            auto& secondary = propData["SecondaryInstances"];
+            if (secondary.HasMember(rapidjson::StringRef(v8Id.c_str())))
+                {
+                BeSQLite::EC::ECInstanceId id(secondary[v8Id.c_str()].GetUint64());
+                DgnElement::GenericMultiAspect::SetAspect(*results.m_element, *targetInstance, id);
+                found = true;
+                }
+            }
+        }
+
+    if (!found)
+        DgnElement::GenericMultiAspect::AddAspect(*results.m_element, *targetInstance);
 
     results.m_v8SecondaryInstanceMappings.push_back(bpair<V8ECInstanceKey, BECN::IECInstancePtr>(
         V8ECInstanceKey(ECClassName(v8Instance.GetClass()), v8Instance.GetInstanceId().c_str()),

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -40,7 +40,9 @@ struct IScalableMeshGroundExtractor: virtual public RefCountedBase
 
         virtual StatusInt _SetExtractionArea(const bvector<DPoint3d>& area) = 0;
 
-		virtual StatusInt _SetLimitTextureResolution(bool limitTextureResolution) = 0;
+        virtual StatusInt _SetReprojectElevation(bool doReproject) = 0;
+
+        virtual StatusInt _SetLimitTextureResolution(bool limitTextureResolution) = 0;
 
         virtual StatusInt _SetGroundPreviewer(IScalableMeshGroundPreviewerPtr& groundPreviewer) = 0;       
         
@@ -52,6 +54,8 @@ struct IScalableMeshGroundExtractor: virtual public RefCountedBase
         BENTLEY_SM_IMPORT_EXPORT StatusInt SetDestinationGcs(GeoCoordinates::BaseGCSPtr& destinationGcs);
         
         BENTLEY_SM_IMPORT_EXPORT StatusInt SetExtractionArea(const bvector<DPoint3d>& area);
+
+        BENTLEY_SM_IMPORT_EXPORT StatusInt SetReprojectElevation(bool doReproject);
 
         BENTLEY_SM_IMPORT_EXPORT StatusInt SetLimitTextureResolution(bool limitTextureResolution);
 

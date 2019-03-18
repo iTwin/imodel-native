@@ -42,7 +42,7 @@ struct MultiBridgeTestDocumentAccessor : iModelBridge::IDocumentPropertiesAccess
         }
 
     BentleyApi::BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BentleyApi::BeFileNameR localFilePath, BentleyApi::BeSQLite::BeGuid const& docGuid) override {BeAssert(false); return BentleyApi::BSIERROR;}
-    BentleyApi::BentleyStatus _AssignFileToBridge(BentleyApi::BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override {BeAssert(false); return BentleyApi::BSIERROR;}
+    BentleyApi::BentleyStatus _AssignFileToBridge(BentleyApi::BeFileNameCR fn, wchar_t const* bridgeRegSubKey, BeGuidCP guid) override {BeAssert(false); return BentleyApi::BSIERROR;}
     };
 
 //---------------------------------------------------------------------------------------

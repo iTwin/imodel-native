@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelBridge/iModelBridgeBimHost.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,11 +21,13 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeKnownLocationsAdmin : Dgn::DgnPlatfor
 {
     BeFileName        m_fwkAssetsDir;
     static BeFileName s_tempDirectory;
+    BeFileName        m_geoCoordDataDir;
 
-    iModelBridgeKnownLocationsAdmin(BeFileNameCR fa) : m_fwkAssetsDir(fa) {}
+    iModelBridgeKnownLocationsAdmin(BeFileNameCR fa, BeFileNameCR geo) : m_fwkAssetsDir(fa), m_geoCoordDataDir(geo) {}
 
     IMODEL_BRIDGE_EXPORT BeFileNameCR _GetLocalTempDirectoryBaseName() override;
     IMODEL_BRIDGE_EXPORT BeFileNameCR _GetDgnPlatformAssetsDirectory() override {return m_fwkAssetsDir;}
+    BeFileNameCR _GetGeoCoordinateDataDirectory() override { return m_geoCoordDataDir.empty() ? m_fwkAssetsDir : m_geoCoordDataDir; }
 };
 
 //=======================================================================================
@@ -55,10 +57,11 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeBimHost : Dgn::DgnPlatformLib::Host
     RepositoryAdmin*    m_repoAdmin;
     BeFileName          m_fwkSqlangPath;
     BeFileName          m_fwkAssetsDir;
+    BeFileName          m_geoCoordDataDir;
     Utf8String          m_productName;
 
     IMODEL_BRIDGE_EXPORT void _SupplyProductName(Utf8StringR name) override {name = m_productName;}
-    IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override {return *new iModelBridgeKnownLocationsAdmin(m_fwkAssetsDir);}
+    IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override {return *new iModelBridgeKnownLocationsAdmin(m_fwkAssetsDir, m_geoCoordDataDir);}
     IMODEL_BRIDGE_EXPORT BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
     RepositoryAdmin& _SupplyRepositoryAdmin() override {return *m_repoAdmin;}
     FontAdmin& _SupplyFontAdmin() override {return *new iModelBridgeFontAdmin;}
@@ -71,6 +74,8 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeBimHost : Dgn::DgnPlatformLib::Host
     //! @param productName      The name of the product that is using this host
     iModelBridgeBimHost(RepositoryAdmin* ra, BeFileNameCR fwkAssetsDir, BeFileNameCR fwkSqlangPath, Utf8StringCR productName)
         : m_repoAdmin(ra), m_fwkAssetsDir(fwkAssetsDir), m_fwkSqlangPath(fwkSqlangPath), m_productName(productName) {}
+
+    void SetGeoCoordinateDataDir(BeFileNameCR geoCoordDir) { m_geoCoordDataDir = geoCoordDir; }
 };
 
 //=======================================================================================

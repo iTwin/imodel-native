@@ -7,6 +7,11 @@ ThreadSafetyTests.*     # Experimental tests for thread safety. Should not run w
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 
+FileFormatCompatibilityTests.CompareDdl_NewFile
+
+    # VSTS#86601
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSARM64, Device: iPadAir2, Date: 03/04/2019
+
 #TFS 720060 Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
 
@@ -38,4 +43,3 @@ DbMappingTestFixture.SharedColumnCasting
 
 # Very hard to update this test as index where statement hold text
 FileFormatCompatibilityTests.CompareDdl_UpgradedFile
-FileFormatCompatibilityTests.CompareDdl_NewFile #Affan

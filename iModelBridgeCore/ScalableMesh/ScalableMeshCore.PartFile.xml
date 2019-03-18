@@ -50,6 +50,8 @@
       <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies>
       <Files ProductDirectoryName="ScalableMeshAssemblies" Required="true">delivery/ScalableMeshCacert.pem</Files>
       <Files ProductDirectoryName="PPNativeAssemblies" Required="true">delivery/ScalableMeshCacert.pem</Files>
+      <Files ProductDirectoryName="ScalableMeshAssemblies" Required="true">delivery/ScalableMeshLogging.config.xml</Files>
+      <Files ProductDirectoryName="PPNativeAssemblies" Required="true">delivery/ScalableMeshLogging.config.xml</Files>
       <PublicAPI Domain="ScalableMesh" />
     </Bindings>
   </Part>
@@ -84,6 +86,8 @@
       <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">delivery/$(shlibprefix)ScalableMeshCore$(libext)</Libs>
       <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)ScalableMeshCore$(shlibext)</Assemblies>
       <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMeshCore$(shlibext)</Assemblies>
+      <Files ProductDirectoryName="ScalableMeshAssemblies" Required="true">delivery/ScalableMeshLogging.config.xml</Files>
+      <Files ProductDirectoryName="PPNativeAssemblies" Required="true">delivery/ScalableMeshLogging.config.xml</Files>
       <PublicAPI Domain="ScalableMesh" />
     </Bindings>
   </Part>
@@ -107,7 +111,8 @@
   <Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe_Vancouver.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">    
     <SubPart PartName="ScalableMeshCore"  />
     <SubPart PartName="ScalableMeshCreator"  />
-    <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+    <SubPart PartName="DgnView"              PartFile="DgnDisplay"       Repository="DgnDisplay"/>
+    <SubPart PartName="LoggingNativeLog4cxx" PartFile="iModelCore/LoggingSDK/LoggingSDK"/>
     <Bindings>
       <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshATPexe.exe</Files>
     </Bindings>
@@ -293,7 +298,7 @@
     <ProductDirectory Name="TerrainModelNativeAssemblies" Path="Dlls"/>
     <ProductDirectory Name="PointoolsAssemblies" Path="Dlls"/>
     <ProductDirectory Name="PointCloudCoreAssemblies" Path="Dlls"/>
-    <ProductDirectory Name="LoggingNativeAssemblies" Deliver="false"/>
+    <ProductDirectory Name="LoggingNativeAssemblies" Path="Dlls"/>
     <ProductDirectory Name="PCLAssemblies" Path="Dlls"/>
     <ProductDirectory Name="CGALAssemblies" Path="Dlls"/>
     <ProductDirectory Name="PPNativeAssemblies" Path="Dlls" Deliver="true"/>

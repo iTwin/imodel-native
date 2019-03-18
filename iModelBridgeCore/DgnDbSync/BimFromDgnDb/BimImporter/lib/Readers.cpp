@@ -2093,15 +2093,18 @@ BentleyStatus SchemaReader::ValidateBaseClasses(ECN::ECSchemaP schema)
         // Even these are the 'root' relationships, they can still have a BIS base class
         if (relClass->GetBaseClasses().size() != 0)
             {
-            ECN::ECClassCP source = relClass->GetSource().GetConstraintClasses()[0];
-            if (source->Is(m_uniqueAspectClass) || source->Is(m_multiAspectClass))
+            if (relClass->GetSource().GetConstraintClasses().size() != 0)
                 {
-                for (ECClassCP baseClass : relClass->GetBaseClasses())
+                ECN::ECClassCP source = relClass->GetSource().GetConstraintClasses()[0];
+                if (source->Is(m_uniqueAspectClass) || source->Is(m_multiAspectClass))
                     {
-                    if (baseClass == m_elementToElement || baseClass == m_elementToMulti || baseClass == m_elementToUnique)
+                    for (ECClassCP baseClass : relClass->GetBaseClasses())
                         {
-                        relClass->RemoveBaseClass(*baseClass);
-                        break;
+                        if (baseClass == m_elementToElement || baseClass == m_elementToMulti || baseClass == m_elementToUnique)
+                            {
+                            relClass->RemoveBaseClass(*baseClass);
+                            break;
+                            }
                         }
                     }
                 }

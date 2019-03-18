@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportPolyline.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -210,6 +210,25 @@ GeometricPrimitivePtr   PolylineFactory::ApplyThicknessTo (CurveVectorPtr const&
         extruded = GeometricPrimitive::Create (solid.get());
 
     return  extruded;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr  PolylineFactory::ApplyConstantWidthTo (CurveVectorPtr const& plineCurve)
+    {
+    if (m_constantWidth < 1.0e-5 || !m_hasConstantWidth || !m_ecs.IsIdentity())
+        return  nullptr;
+
+    double  halfWidth = 0.5 * m_constantWidth;
+
+    auto shape = plineCurve->ThickenXYPathToArea (plineCurve, halfWidth, halfWidth);
+    if (!shape.IsValid())
+        return  nullptr;
+
+    m_isClosed = true;
+
+    return  shape;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -11905,5 +11905,72 @@ TEST_F(SchemaUpgradeTestFixture, SchemaDiff)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                  03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, UpdateReferencesFromDifferentContext)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("failingImport.ecdb"));
+    if (true) // first schema set
+        {
+        ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+        ctx->AddSchemaLocater(m_ecdb.GetSchemaLocater());
+        ECSchemaPtr myRef, mySchema;
+        // newer references 1.0.1
+        ECSchema::ReadFromXmlString(myRef, R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="MyRef" alias="myref" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="MyRefClass"  modifier="none">
+                <ECProperty propertyName="MyRefProperty" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml", *ctx);
+
+        // reference older version (1.0.0)
+        ECSchema::ReadFromXmlString(mySchema, R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="MySchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="MyRef" version="01.00.00" alias="myref" />
+            <ECEntityClass typeName="MyClass"  modifier="none">
+		        <BaseClass>myref:MyRefClass</BaseClass>
+                <ECProperty propertyName="MyProperty" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml", *ctx);
+
+        ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas()));
+        m_ecdb.SaveChanges();
+        }
+
+
+    if (true) // second without locator
+        {
+        ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+        
+        // no locator
+        // ctx->AddSchemaLocater(m_ecdb.GetSchemaLocater()); 
+        ECSchemaPtr myRef, mySchema;
+        // newer references 1.0.1
+        ECSchema::ReadFromXmlString(myRef, R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="MyRef" alias="myref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="MyRefClass"  modifier="none">
+                <ECProperty propertyName="MyRefProperty" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml", *ctx);
+
+        // reference older version (1.0.0)
+        ECSchema::ReadFromXmlString(mySchema, R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="MySchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="MyRef" version="01.00.00" alias="myref" />
+            <ECEntityClass typeName="MyClass"  modifier="none">
+		        <BaseClass>myref:MyRefClass</BaseClass>
+                <ECProperty propertyName="MyProperty" typeName="int" />
+                <ECProperty propertyName="MyProperty1" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml", *ctx);
+
+        ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas())) << "This should fail";
+        m_ecdb.SaveChanges();
+        }
+    }
+  
+
+
 
 END_ECDBUNITTESTS_NAMESPACE

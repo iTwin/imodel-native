@@ -115,7 +115,7 @@ DwgDbObjectId       DwgDbDatabase::GetActiveModelspaceViewportId ()
     OdDbObjectPtr   obj = vportTableRecordId.safeOpenObject ();
     if (obj.isNull() || !obj->isKindOf(OdDbViewportTableRecord::desc()))
         {
-        // return the
+        // return the active viewport ID by OpenDWG's API:
         OdDbViewportTablePtr    vportTable = this->getViewportTableId().safeOpenObject ();
         vportTableRecordId = vportTable.isNull() ? DwgDbObjectId() : vportTable->getActiveViewportId();
         }

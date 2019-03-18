@@ -52,11 +52,11 @@
 #include <ImagePP/all/h/HVEClipShape.h>
 #include <ImagePP/all/h/HUTDEMRasterXYZPointsExtractor.h>
 
-#ifdef VANCOUVER_API
+/*#ifdef VANCOUVER_API
 #include <RasterCore/DgnRaster.h>
 #include <RasterCore/RasterDEMFilters.h>
 #include <RasterCore/msrastercore.h>
-#endif
+#endif*/
 #include "../mki/StaticAnalysisWarningsPop.h"
 
 #ifndef VANCOUVER_API

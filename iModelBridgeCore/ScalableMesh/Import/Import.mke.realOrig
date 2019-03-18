@@ -2,7 +2,7 @@
 #
 #  $Source: Import/Import.mke.realOrig $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -38,8 +38,8 @@ always:
 #   Symlink APIs
 #----------------------------------------------------------------------
 always:
-   @CreateSymLinks.py -d"$(PublicAPITarget)=$(PublicAPISrc)"
-#   @CreateSymLinks.py -d"$(PrivateAPITarget)=$(PrivateAPISrc)"
+   ~linkdir "$(PublicAPITarget)=$(PublicAPISrc)"
+#   ~linkdir "$(PrivateAPITarget)=$(PrivateAPISrc)"
 
 #----------------------------------------------------------------------
 #   Add to include paths

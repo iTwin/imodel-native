@@ -2578,7 +2578,7 @@ uint32_t        DwgImporter::Options::GetDgnLineWeight (DwgDbLineWeight dwgWeigh
 * @bsimethod                                                    Don.Fu          09/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgImporter::ElementImportInputs::ElementImportInputs (DgnModelR model) 
-    : m_targetModel(model), m_spatialFilter(nullptr), m_parentEntity(nullptr)
+    : m_targetModel(model), m_spatialFilter(nullptr), m_parentEntity(nullptr), m_templateEntity(nullptr)
     {
     m_transformToDgn.InitIdentity ();
     }
@@ -2593,6 +2593,7 @@ DwgImporter::ElementImportInputs::ElementImportInputs (DgnModelR model, DwgDbEnt
     this->SetTransform (other.GetTransform());
     this->SetEntityId (other.GetEntityId());
     this->SetParentEntity (other.GetParentEntity());
+    this->SetTemplateEntity (other.GetTemplateEntity());
     this->SetSpatialFilter (other.GetSpatialFilter());
     this->SetModelMapping (other.GetModelMapping());
     this->GetEntityPtrR() = entity;

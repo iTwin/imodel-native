@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/ICurvePrimitive.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -91,7 +91,8 @@ void ICurvePrimitive::FinishClone (ICurvePrimitiveCR parent)
 ICurvePrimitivePtr ICurvePrimitive::Clone () const
     {
     ICurvePrimitivePtr result = _Clone ();
-    result->FinishClone (*this);
+    if (result.IsValid ())
+        result->FinishClone (*this);
     return result;
     }
 
@@ -101,7 +102,8 @@ ICurvePrimitivePtr ICurvePrimitive::Clone () const
 ICurvePrimitivePtr ICurvePrimitive::CloneComponent (ptrdiff_t componentIndex) const
     {
     ICurvePrimitivePtr result = _CloneComponent (componentIndex);
-    result->FinishClone (*this);
+    if (result.IsValid ())
+        result->FinishClone (*this);
     return result;
     }
 
@@ -162,6 +164,7 @@ ICurvePrimitivePtr ICurvePrimitive::CloneBetweenFractions (double fractionA, dou
     bool isFullClone = DoubleOps::AlmostEqual (fractionA, 0.0) && DoubleOps::AlmostEqual (fractionB, 1.0);
        
     ICurvePrimitivePtr result = isFullClone ? _Clone () : _CloneBetweenFractions (fractionA, fractionB, allowExtension);
+    if (result.IsValid ())
     result->FinishClone (*this);
     return result;
     }
@@ -1445,7 +1448,8 @@ ICurvePrimitivePtr ICurvePrimitive::CloneAsBspline (double fraction0, double fra
 ICurvePrimitivePtr ICurvePrimitive::Clone (TransformCR transform) const
     {
     auto clone = Clone ();
-    clone->TransformInPlace (transform);
+    if (clone.IsValid ())
+        clone->TransformInPlace (transform);
     return clone;
     }
 

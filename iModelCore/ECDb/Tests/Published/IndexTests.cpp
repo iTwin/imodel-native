@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/IndexTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -2597,6 +2597,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnSharedColumns)
         </ECSchema>)xml")));
 
             ECClassId baseClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Base");
+            // ECClassId sub1Id = m_ecdb.Schemas().GetClassId("TestSchema", "Sub1");
             ASSERT_TRUE(baseClassId.IsValid());
 
             Utf8CP expectedIndexName = "ix_Base_Prop2";

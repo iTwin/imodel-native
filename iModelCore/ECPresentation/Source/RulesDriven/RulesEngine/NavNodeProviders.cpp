@@ -1228,49 +1228,42 @@ struct SpecificationChildrenChecker : PresentationRuleSpecificationVisitor
         bool m_result = false;
 
     private:
-        void DetermineChildren(RelatedInstanceNodesSpecification const& specification)
+        bool AlwaysHasRelatedInstance(SupportedRelationshipClassInfo const& relationshipInfo, RelatedInstanceNodesSpecification const& spec) const
             {
-            RequiredRelationDirection ruleDirection = specification.GetRequiredRelationDirection();
-
-            Utf8StringCR allSchemaClassNames = specification.GetRelationshipClassNames();
-            SupportedRelationshipClassInfos relationships = m_context.GetSchemaHelper().GetECRelationshipClasses(allSchemaClassNames);
-
-            for (SupportedRelationshipClassInfo const& relationshipInfo : relationships)
+            ECRelationshipClassCR relationshipClass = relationshipInfo.GetClass();
+            if (RequiredRelationDirection::RequiredRelationDirection_Both == spec.GetRequiredRelationDirection())
                 {
-                // Retrieve relationship class
-                ECRelationshipClassCR relationshipClass = relationshipInfo.GetClass();
-
-                if (RequiredRelationDirection::RequiredRelationDirection_Both == ruleDirection)
-                    {
-                    // If either source or target has multiplicity higher than 0, return true
-                    ECRelationshipConstraintCR sourceConstraint = relationshipClass.GetSource();
-                    ECRelationshipConstraintCR targetConstraint = relationshipClass.GetTarget();
-
-                    if (sourceConstraint.GetMultiplicity().GetLowerLimit() > 0 ||
-                        targetConstraint.GetMultiplicity().GetLowerLimit() > 0)
-                        {
-                        m_result = true;
-                        return;
-                        }
-                    }
-                else
-                    {
-                    // If target has multiplicity higher than 0, return true
-                    // Note. If both relationship and rule are reversed or both are not reversed, target = rel.Target. Otherwise target = rel.Source. 
-                    bool ruleDirectionForward = ruleDirection == RequiredRelationDirection::RequiredRelationDirection_Forward;
-                    bool relDirectionForward = relationshipClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward;
-                    ECRelationshipConstraintCR targetConstraint = (ruleDirectionForward == relDirectionForward) ? relationshipClass.GetTarget() : relationshipClass.GetSource();
-                    if (targetConstraint.GetMultiplicity().GetLowerLimit() > 0)
-                        {
-                        m_result = true;
-                        return;
-                        }
-                    }
+                // If either source or target has multiplicity higher than 0, return true
+                bool bothConstraintsMustMatch = (spec.GetSkipRelatedLevel() > 0);
+                ECRelationshipConstraintCR sourceConstraint = relationshipClass.GetSource();
+                ECRelationshipConstraintCR targetConstraint = relationshipClass.GetTarget();
+                if (bothConstraintsMustMatch && (sourceConstraint.GetMultiplicity().GetLowerLimit() > 0 && targetConstraint.GetMultiplicity().GetLowerLimit() > 0)
+                    || !bothConstraintsMustMatch && (sourceConstraint.GetMultiplicity().GetLowerLimit() > 0 || targetConstraint.GetMultiplicity().GetLowerLimit() > 0))
+                    return true;
                 }
+            else
+                {
+                // If target has multiplicity higher than 0, return true
+                // Note. If both relationship and rule are reversed or both are not reversed, target = rel.Target. Otherwise target = rel.Source. 
+                bool ruleDirectionForward = (spec.GetRequiredRelationDirection() == RequiredRelationDirection::RequiredRelationDirection_Forward);
+                bool relDirectionForward = (relationshipClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward);
+                ECRelationshipConstraintCR targetConstraint = (ruleDirectionForward == relDirectionForward) ? relationshipClass.GetTarget() : relationshipClass.GetSource();
+                if (targetConstraint.GetMultiplicity().GetLowerLimit() > 0)
+                    return true;
+                }
+            return false;
+            }
+        void DetermineChildren(RelatedInstanceNodesSpecification const& spec)
+            {
+            SupportedRelationshipClassInfos relationships = m_context.GetSchemaHelper().GetECRelationshipClasses(spec.GetRelationshipClassNames());
+            if (spec.GetSkipRelatedLevel() == 0)
+                m_result = std::any_of(relationships.begin(), relationships.end(), [&](SupportedRelationshipClassInfo const& r) {return AlwaysHasRelatedInstance(r, spec); });
+            else
+                m_result = std::all_of(relationships.begin(), relationships.end(), [&](SupportedRelationshipClassInfo const& r) {return AlwaysHasRelatedInstance(r, spec); });
             }
 
     protected:
-        void _Visit(RelatedInstanceNodesSpecification const& specification) override { DetermineChildren(specification); }
+        void _Visit(RelatedInstanceNodesSpecification const& spec) override { DetermineChildren(spec); }
 
     public:
         SpecificationChildrenChecker(NavNodesProviderContextCR context) : m_context(context) {}
