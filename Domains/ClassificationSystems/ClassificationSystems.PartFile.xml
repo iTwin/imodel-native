@@ -30,9 +30,7 @@
     </ProductDirectoryList>
 
     <Part Name="ClassificationSystemsSchema" BentleyBuildMakeFile="ClassificationSystemsSchema.prewire.mke">
-      <Bindings>
-        <Files ProductDirectoryName="Assets"        ProductSubDirectory="ECSchemas/Domain">ECSchemas/Domain/ClassificationSystems*.xml</Files>
-      </Bindings>
+      <SubPart PartName="ClassificationSystems" Repository="BisSchemas" PartFile="BisSchemas"/>
     </Part>
 
     <Part Name="ClassificationSystemsApi" BentleyBuildMakeFile="ClassificationSystemsAPI.prewire.mke">
