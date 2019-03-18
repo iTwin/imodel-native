@@ -28,6 +28,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ThreadPool : folly::Executor
     struct Worker : BentleyApi::RefCountedBase
     {
         int m_id;
+        bool m_finished = false;
         ThreadPool& m_pool;
 
         Worker(ThreadPool& pool, int id) noexcept : m_pool(pool), m_id(id) {}
@@ -46,6 +47,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ThreadPool : folly::Executor
     BentleyApi::BeConditionVariable m_cv;
     bool m_stop = false;
 
+    bool AllStopped() const;
     Utf8CP GetName() const { return m_name.c_str(); }
     bool HasWork() const { return !m_tasks.empty(); }
     bool IsStopped() const { return m_stop; }
@@ -68,7 +70,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ThreadPool : folly::Executor
     BE_FOLLY_EXPORT static ThreadPool& GetCpuPool();
     BE_FOLLY_EXPORT void Stop();
     BE_FOLLY_EXPORT void WaitForIdle();
-    void StopAndWait() { Stop(); WaitForIdle(); }
+    BE_FOLLY_EXPORT void StopAndWait();
+    
 };
 
 //=======================================================================================

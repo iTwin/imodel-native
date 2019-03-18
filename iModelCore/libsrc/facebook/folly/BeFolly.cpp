@@ -29,7 +29,7 @@ void ThreadPool::Worker::Work()
                 m_pool.m_cv.InfiniteWait(lock);
 
             if (m_pool.IsStopped())
-                return;
+                break;
 
             task = std::move(m_pool.m_tasks.front());
             m_pool.m_tasks.pop();
@@ -38,6 +38,9 @@ void ThreadPool::Worker::Work()
         task();
         m_pool.m_cv.notify_one();
         }
+
+    m_finished = true;
+    m_pool.m_cv.notify_one();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -118,6 +121,27 @@ void ThreadPool::Stop()
         }
     m_cv.notify_all();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ThreadPool::AllStopped() const {
+    for (auto& worker : m_workers) {
+        if (!worker->m_finished)
+            return false;
+    }
+    return true;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void ThreadPool::StopAndWait() {
+    Stop();
+    BeMutexHolder holder(m_cv.GetMutex());
+    while (!AllStopped())
+        m_cv.InfiniteWait(holder);
+}
 
 BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
