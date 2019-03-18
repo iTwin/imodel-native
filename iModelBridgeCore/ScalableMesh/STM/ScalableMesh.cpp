@@ -2524,6 +2524,7 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
         trans.InverseOf(m_reprojectionTransform);
         trans.Multiply(&reprojectedPts[0], pts, (int)ptsSize);
         targetPts = reprojectedPts.data();
+        extent = DRange3d::From(targetPts, (int)ptsSize);
         }
     else targetPts = pts;
 
