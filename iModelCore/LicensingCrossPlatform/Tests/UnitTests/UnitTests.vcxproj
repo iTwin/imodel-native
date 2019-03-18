@@ -8,6 +8,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ClientTests.cpp" />
+    <ClCompile Include="ClientWithKeyTests.cpp" />
     <ClCompile Include="DummyPolicyHelper.cpp" />
     <ClCompile Include="DummyUserInfoHelper.cpp" />
     <ClCompile Include="GenerateSIDTests.cpp" />
@@ -17,6 +18,7 @@
     <ClCompile Include="Mocks\PolicyProviderMock.cpp" />
     <ClCompile Include="Mocks\UlasProviderMock.cpp" />
     <ClCompile Include="PolicyTests.cpp" />
+    <ClCompile Include="SaasClientTests.cpp" />
     <ClCompile Include="TestsHelper.cpp" />
     <ClCompile Include="JsonHelper.cpp" />
     <ClCompile Include="UlasProviderTests.cpp" />
@@ -32,6 +34,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClientTests.h" />
+    <ClInclude Include="ClientWithKeyTests.h" />
     <ClInclude Include="DummyPolicyHelper.h" />
     <ClInclude Include="DummyUserInfoHelper.h" />
     <ClInclude Include="GenerateSIDTests.h" />
@@ -41,6 +44,7 @@
     <ClInclude Include="Mocks\UlasProviderMock.h" />
     <ClInclude Include="Mocks\LicensingDbMock.h" />
     <ClInclude Include="PolicyTests.h" />
+    <ClInclude Include="SaasClientTests.h" />
     <ClInclude Include="TestsHelper.h" />
     <ClInclude Include="JsonHelper.h" />
     <ClInclude Include="UlasProviderTests.h" />

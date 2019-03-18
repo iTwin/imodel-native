@@ -1,151 +1,55 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
+    <ClCompile Include="ClientTests.cpp" />
+    <ClCompile Include="DummyPolicyHelper.cpp" />
+    <ClCompile Include="DummyUserInfoHelper.cpp" />
+    <ClCompile Include="GenerateSIDTests.cpp" />
+    <ClCompile Include="Mocks\AuthHandlerProviderMock.cpp" />
+    <ClCompile Include="Mocks\BuddiProviderMock.cpp" />
+    <ClCompile Include="Mocks\LicensingDbMock.cpp" />
+    <ClCompile Include="Mocks\PolicyProviderMock.cpp" />
+    <ClCompile Include="Mocks\UlasProviderMock.cpp" />
+    <ClCompile Include="PolicyTests.cpp" />
+    <ClCompile Include="TestsHelper.cpp" />
+    <ClCompile Include="JsonHelper.cpp" />
+    <ClCompile Include="UlasProviderTests.cpp" />
+    <ClCompile Include="LicensingDbTests.cpp" />
+    <ClCompile Include="PolicyProviderTests.cpp" />
+    <ClCompile Include="Utils\DelayedExecutorTests.cpp" />
+    <ClCompile Include="Utils\FeatureUserDataMapTests.cpp" />
+    <ClCompile Include="Utils\JWTokenTests.cpp" />
+    <ClCompile Include="Utils\LogFileHelperTests.cpp" />
+    <ClCompile Include="Utils\MockHttpHandler.cpp" />
+    <ClCompile Include="Utils\SCVWritterTests.cpp" />
+    <ClCompile Include="Utils\UrlSafeBase64UtilitiesTests.cpp" />
+    <ClCompile Include="ClientWithKeyTests.cpp" />
+    <ClCompile Include="SaasClientTests.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="TestsHelper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ClientTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils\DelayedExecutorTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils\JWTokenTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils\SCVWritterTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils\UrlSafeBase64UtilitiesTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GenerateSIDTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PolicyTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils\LogFileHelperTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DummyPolicyHelper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils\FeatureUserDataMapTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PolicyProviderTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="UlasProviderTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils\MockHttpHandler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="LicensingDbTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DummyUserInfoHelper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Mocks\PolicyProviderMock.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JsonHelper.cpp">
-    <ClCompile Include="Mocks\BuddiProviderMock.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Mocks\AuthHandlerProviderMock.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Mocks\UlasProviderMock.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Mocks\LicensingDbMock.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="TestsHelper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ClientTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utils\UrlSafeBase64UtilitiesTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utils\DelayedExecutorTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utils\JWTokenTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utils\SCVWritterTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GenerateSIDTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PolicyTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utils\LogFileHelperTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DummyPolicyHelper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utils\FeatureUserDataMapTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Mocks\BuddiProviderMock.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Mocks\PolicyProviderMock.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PolicyProviderTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Mocks\UlasProviderMock.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Mocks\AuthHandlerProviderMock.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="UlasProviderTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utils\MockHttpHandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="LicensingDbTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Mocks\LicensingDbMock.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DummyUserInfoHelper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JsonHelper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <ClInclude Include="ClientTests.h" />
+    <ClInclude Include="DummyPolicyHelper.h" />
+    <ClInclude Include="DummyUserInfoHelper.h" />
+    <ClInclude Include="GenerateSIDTests.h" />
+    <ClInclude Include="Mocks\AuthHandlerProviderMock.h" />
+    <ClInclude Include="Mocks\BuddiProviderMock.h" />
+    <ClInclude Include="Mocks\PolicyProviderMock.h" />
+    <ClInclude Include="Mocks\UlasProviderMock.h" />
+    <ClInclude Include="Mocks\LicensingDbMock.h" />
+    <ClInclude Include="PolicyTests.h" />
+    <ClInclude Include="TestsHelper.h" />
+    <ClInclude Include="JsonHelper.h" />
+    <ClInclude Include="UlasProviderTests.h" />
+    <ClInclude Include="LicensingDbTests.h" />
+    <ClInclude Include="PolicyProviderTests.h" />
+    <ClInclude Include="Utils\DelayedExecutorTests.h" />
+    <ClInclude Include="Utils\FeatureUserDataMapTests.h" />
+    <ClInclude Include="Utils\JWTokenTests.h" />
+    <ClInclude Include="Utils\LogFileHelperTests.h" />
+    <ClInclude Include="Utils\MockHttpHandler.h" />
+    <ClInclude Include="Utils\SCVWritterTests.h" />
+    <ClInclude Include="Utils\UrlSafeBase64UtilitiesTests.h" />
+    <ClInclude Include="ClientWithKeyTests.h" />
+    <ClInclude Include="SaasClientTests.h" />
   </ItemGroup>
 </Project>
