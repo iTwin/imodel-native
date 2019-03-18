@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceAddTriangulation.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -566,6 +566,7 @@ bvector<DPoint3d> const *isolatedPoints
         worldToLocal.Multiply (localPoints, *isolatedPoints);
         vu_insertAndRetriangulate (graph, &localPoints[0], (int)localPoints.size (), false);
         }
+    vu_parityFloodFromNegativeAreaFaces(graph, VU_BOUNDARY_EDGE, VU_EXTERIOR_EDGE);
 
     PolyfaceHeaderPtr polyface = vu_toPolyface (graph, VU_EXTERIOR_EDGE);
     bvector<DPoint3d> &outputPoints = polyface->Point ();
