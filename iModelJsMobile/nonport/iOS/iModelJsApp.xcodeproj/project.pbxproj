@@ -10,6 +10,7 @@
 		2699BBA220779DAF00F763EE /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA120779DAF00F763EE /* CFNetwork.framework */; };
 		2699BBA420779DB500F763EE /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA320779DB500F763EE /* JavaScriptCore.framework */; };
 		2699BBA620779DBF00F763EE /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA520779DBE00F763EE /* CoreFoundation.framework */; };
+		26A7C847223C15D700AC1B8F /* AppRegistry.m in Sources */ = {isa = PBXBuildFile; fileRef = 26A7C845223C15D700AC1B8F /* AppRegistry.m */; };
 		26E6C0B62076B63E0031769D /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 26E6C0B52076B63E0031769D /* AppDelegate.mm */; };
 		26E6C0B92076B63E0031769D /* ViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 26E6C0B82076B63E0031769D /* ViewController.mm */; };
 		26E6C0BC2076B63E0031769D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 26E6C0BA2076B63E0031769D /* Main.storyboard */; };
@@ -18,7 +19,6 @@
 		26E6C0C42076B63F0031769D /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 26E6C0C32076B63F0031769D /* main.m */; };
 		26E6C0CC2076B8200031769D /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 26E6C0CB2076B8200031769D /* WebKit.framework */; };
 		4122C1BF21ED31920073674D /* libiModelJsHost.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4122C1BE21ED31920073674D /* libiModelJsHost.a */; };
-		4122C1C221F8BF350073674D /* AppRegistry.m in Sources */ = {isa = PBXBuildFile; fileRef = 4122C1C121F8BF350073674D /* AppRegistry.m */; };
 		41876CBB21CBEDBF00A62096 /* AssetHandler.m in Sources */ = {isa = PBXBuildFile; fileRef = 41876CBA21CBEDBF00A62096 /* AssetHandler.m */; };
 		41B023E021CD8F16009FF9CB /* AppAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41B023CF21CD8EFF009FF9CB /* AppAuth.framework */; };
 		41B023E221DD080B009FF9CB /* AppAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41B023CF21CD8EFF009FF9CB /* AppAuth.framework */; };
@@ -175,6 +175,8 @@
 		2699BBA120779DAF00F763EE /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
 		2699BBA320779DB500F763EE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		2699BBA520779DBE00F763EE /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		26A7C845223C15D700AC1B8F /* AppRegistry.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppRegistry.m; sourceTree = "<group>"; };
+		26A7C846223C15D700AC1B8F /* AppRegistry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppRegistry.h; sourceTree = "<group>"; };
 		26E6C0B12076B63E0031769D /* iModelJsApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iModelJsApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		26E6C0B42076B63E0031769D /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		26E6C0B52076B63E0031769D /* AppDelegate.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
@@ -192,8 +194,6 @@
 		4122C1BA21E7EA1E0073674D /* system */ = {isa = PBXFileReference; lastKnownFileType = folder; name = system; path = ../Native/system; sourceTree = "<group>"; };
 		4122C1BB21E7EA1E0073674D /* PublicAPI */ = {isa = PBXFileReference; lastKnownFileType = folder; name = PublicAPI; path = ../Native/PublicAPI; sourceTree = "<group>"; };
 		4122C1BE21ED31920073674D /* libiModelJsHost.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libiModelJsHost.a; path = ../../../../../out/debug/iOSARM64/static/build/iModelJsHost/libiModelJsHost.a; sourceTree = "<group>"; };
-		4122C1C021F8BF350073674D /* AppRegistry.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = AppRegistry.h; path = /Users/Affan.Khan/imodel02/src/imodel02/iModelJsMobile/nonport/iOS/iModelJsApp/AppRegistry.h; sourceTree = "<absolute>"; };
-		4122C1C121F8BF350073674D /* AppRegistry.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = AppRegistry.m; path = /Users/Affan.Khan/imodel02/src/imodel02/iModelJsMobile/nonport/iOS/iModelJsApp/AppRegistry.m; sourceTree = "<absolute>"; };
 		41876CB921CBEDBF00A62096 /* AssetHandler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AssetHandler.h; sourceTree = "<group>"; };
 		41876CBA21CBEDBF00A62096 /* AssetHandler.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AssetHandler.m; sourceTree = "<group>"; };
 		41A8E0982112444000B3FB1E /* iModelJsApp.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = iModelJsApp.xcconfig; sourceTree = "<group>"; };
@@ -278,8 +278,8 @@
 		26E6C0B32076B63E0031769D /* iModelJsApp */ = {
 			isa = PBXGroup;
 			children = (
-				4122C1C021F8BF350073674D /* AppRegistry.h */,
-				4122C1C121F8BF350073674D /* AppRegistry.m */,
+				26A7C846223C15D700AC1B8F /* AppRegistry.h */,
+				26A7C845223C15D700AC1B8F /* AppRegistry.m */,
 				41A8E0982112444000B3FB1E /* iModelJsApp.xcconfig */,
 				26E6C0B42076B63E0031769D /* AppDelegate.h */,
 				26E6C0B52076B63E0031769D /* AppDelegate.mm */,
@@ -622,8 +622,8 @@
 				26E6C0B92076B63E0031769D /* ViewController.mm in Sources */,
 				26E6C0C42076B63F0031769D /* main.m in Sources */,
 				26E6C0B62076B63E0031769D /* AppDelegate.mm in Sources */,
-				4122C1C221F8BF350073674D /* AppRegistry.m in Sources */,
 				41876CBB21CBEDBF00A62096 /* AssetHandler.m in Sources */,
+				26A7C847223C15D700AC1B8F /* AppRegistry.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -783,7 +783,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = WLDT6Q3PUY;
 				ENABLE_BITCODE = NO;
-				HEADER_SEARCH_PATHS = "$(OutRoot)$(BuildArchitecture)/Product/iModelJsHost/includes/";
+				HEADER_SEARCH_PATHS = "$(OutRoot)iOSARM64/Product/iModelJsHost/includes/";
 				INFOPLIST_FILE = iModelJsApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -793,7 +793,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)",
 					"$(PROJECT_DIR)/Libs",
-					"$(OutRoot)$(BuildArchitecture)/Product/iModelJsHost/libs",
+					"$(OutRoot)iOSARM64/Product/iModelJsHost/libs",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.bentley.imodeljsapp.iModelJsApp;
 				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)1";
@@ -814,7 +814,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = WLDT6Q3PUY;
 				ENABLE_BITCODE = NO;
-				HEADER_SEARCH_PATHS = "$(OutRoot)$(BuildArchitecture)/Product/iModelJsHost/includes/";
+				HEADER_SEARCH_PATHS = "$(OutRoot)iOSARM64/Product/iModelJsHost/includes/";
 				INFOPLIST_FILE = iModelJsApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -824,7 +824,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)",
 					"$(PROJECT_DIR)/Libs",
-					"$(OutRoot)$(BuildArchitecture)/Product/iModelJsHost/libs",
+					"$(OutRoot)iOSARM64/Product/iModelJsHost/libs",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.bentley.imodeljsapp.iModelJsApp;
 				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)2";

@@ -1,0 +1,10 @@
+// Clone this file (iModelJsApp.xcconfig.cloneme) and remove the .cloneme extension
+// The resulting iModelJsApp.xcconfig is used inside iModelJsApp.xcodeproj for setting up various paths.
+// Set the paths to match paths on your machine
+// iModelJsApp.xcconfig has been added to .gitignore and should not be checked in to git since it is different for each user.
+// Remove these comments from your copy of iModelJsApp.xcconfig to avoid confusion
+
+SrcRoot = /Users/YourUsername/imodel02/src/
+OutRoot = /Users/YourUsername/imodel02/out/debug/
+AssetRoot = /Users/YourUsername/imodeljs-apps
+
