@@ -25,7 +25,7 @@
         <SubPart PartName="Licensing-Winx64-Only" />
         <SubPart PartName="Licensing-iOSARMActive-Only" />
         <SubPart PartName="Licensing-iOSARM64-Only" />
-        <SubPart PartName="Licensing-AndroidARM64-Only" LibType="Static" />
+        <SubPart PartName="Licensing-AndroidARM64-Only" />
     </Part>
 
     <Part Name="Licensing-Winx64-Only" OnlyPlatforms="x64">
