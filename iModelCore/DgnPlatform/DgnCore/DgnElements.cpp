@@ -884,6 +884,8 @@ ECSqlClassInfo& DgnElements::FindClassInfo(DgnClassId classId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 JsonECSqlSelectAdapter const& DgnElements::GetJsonSelectAdapter(BeSQLite::EC::ECSqlStatement const& stmt) const
     {
+    BeMutexHolder _v(m_mutex);
+
     auto it = m_jsonSelectAdapterCache.find(stmt.GetHashCode());
     if (it != m_jsonSelectAdapterCache.end())
         return *it->second;
