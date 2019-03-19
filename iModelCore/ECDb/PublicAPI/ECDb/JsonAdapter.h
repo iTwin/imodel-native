@@ -240,6 +240,8 @@ struct JsonECSqlSelectAdapter final
         //! @return SUCCESS or ERROR
         ECDB_EXPORT BentleyStatus GetRow(JsonValueR json, bool appendToJson = false) const;
 
+        ECDB_EXPORT BentleyStatus GetRow(JsonValueR json, ECSqlStatement const& stmt, bool appendToJson = false) const;
+
         //! Gets the current row as JSON object with pairs of property name value for each
         //! item in the ECSQL select clause.
         //! 

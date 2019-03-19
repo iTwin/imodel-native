@@ -168,6 +168,15 @@ BentleyStatus JsonECSqlSelectAdapter::GetRow(JsonValueR rowJson, bool appendToJs
     return AdapterHelper::GetRow(json, m_uniqueMemberNames, appendToJson, m_ecsqlStatement, m_ecsqlHash, m_formatOptions, m_copyMemberNames);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus JsonECSqlSelectAdapter::GetRow(JsonValueR rowJson, ECSqlStatement const& stmt, bool appendToJson) const
+    {
+    JsonRef json(rowJson);
+    return AdapterHelper::GetRow(json, m_uniqueMemberNames, appendToJson, stmt, stmt.GetHashCode(), m_formatOptions, m_copyMemberNames);
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                11/2018
 //+---------------+---------------+---------------+---------------+---------------+------

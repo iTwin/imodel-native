@@ -1283,7 +1283,7 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
 
 
     JsonECSqlSelectAdapter const& adapter = elem.GetDgnDb().Elements().GetJsonSelectAdapter(*stmt);
-    adapter.GetRow(elementJson, true);
+    adapter.GetRow(elementJson, *stmt, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
