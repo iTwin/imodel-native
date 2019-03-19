@@ -1,4 +1,3 @@
-
 [imodel02\imodelcore\ecobjects\src\expressionnode.cpp]
 %OutRoot%Winx64\Product\ECObjects-GTest\ECObjectsTest.exe --gtest_filter=ArrayExpressionTests.*:CalculatedPropertyTests.*:LiteralExpressionTests.*:InstanceListExpressionTests.*:RoundtripExpressionTests.*:SchemaXmlSerializationTest.SerializeComprehensiveSchema:MethodsReturningInstancesTests.*:ExpressionRemappingTest.*:FullyQualifiedExpressionTests.*:
 [imodel02\imodelcore\ecobjects\src\expressioncontext.cpp]
