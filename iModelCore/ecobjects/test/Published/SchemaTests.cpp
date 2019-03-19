@@ -2199,7 +2199,7 @@ TEST_F(SchemaChecksumTest, ComputeCheckSumSameAsSerializedXmlStringCheckSum)
     Utf8String serializedXml;
     ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedXml, ecXmlVersion));
     Utf8String serializedXmlChecksum = ECSchema::ComputeSchemaXmlStringCheckSum(serializedXml.c_str(), sizeof(Utf8Char) * serializedXml.length());
-    EXPECT_STREQ("564583fb981f70f32e37abaf45e3c544735c0bbc", serializedXmlChecksum.ToLower().c_str());
+    EXPECT_STREQ("85436c33a75b65ca8f4a5acee30ec7b73f525aa3", serializedXmlChecksum.ToLower().c_str());
 
     Utf8String checksum = schema->ComputeCheckSum();
     EXPECT_STREQ(serializedXmlChecksum.ToLower().c_str(), checksum.ToLower().c_str());
