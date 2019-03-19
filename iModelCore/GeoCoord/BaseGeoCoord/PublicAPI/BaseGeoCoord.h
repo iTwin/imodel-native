@@ -2,7 +2,7 @@
 |
 |     $Source: BaseGeoCoord/PublicAPI/BaseGeoCoord.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1725,6 +1725,26 @@ BASEGEOCOORD_EXPORTED int               GetEPSGEllipsoidCode
 (
 bool            noSearch = false
 ) const;
+
+/*---------------------------------------------------------------------------------**//**
+* Returns the EPSG code as stored in the coordinate system definition.
+* @return   The EPSG code as stored in the definition. A value of 0 indicates it is undefined.
+* @bsimethod                                                    Alain.Robert   03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED int               GetStoredEPSGCode
+(
+) const;
+
+/*---------------------------------------------------------------------------------**//**
+* Sets the EPSG code in the coordinate system definition.
+* @param    value IN     The new EPSG code. Can be 0 to 32768
+* @return   SUCCESS is successful
+* @bsimethod                                                    Alain.Robert   03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED StatusInt         SetStoredEPSGCode
+(
+short value
+);
 
 /*__PUBLISH_SECTION_END__*/
 // These Methods are related to the ability to have a local coordinate system that is

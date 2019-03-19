@@ -11733,6 +11733,32 @@ bool    noSearch
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alain.Robert                   03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+int             BaseGCS::GetStoredEPSGCode () const
+    {
+    if (NULL == m_csParameters)
+        return 0;
+
+    return m_csParameters->csdef.epsgNbr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alain.Robert                   03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt   BaseGCS::SetStoredEPSGCode (short value)
+    {
+    if (NULL == m_csParameters)
+        return GEOCOORDERR_InvalidCoordSys;
+
+    if (value < 0)
+        return GEOCOORDERR_BadArg;
+
+    m_csParameters->csdef.epsgNbr = value;
+    return SUCCESS;
+    }
+
 // ----------------------------------------------------------------------------------
 // These Methods are related to the ability to have a local coordinate system that is
 // related to the Cartesian coordinate system by the LocalTransformerP
