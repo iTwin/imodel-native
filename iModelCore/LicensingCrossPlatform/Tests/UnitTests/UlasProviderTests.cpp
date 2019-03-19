@@ -8,6 +8,7 @@
 
 #include "UlasProviderTests.h"
 #include "DummyPolicyHelper.h"
+#include "JsonHelper.h"
 
 #include <BeHttp/HttpClient.h>
 #include <BeHttp/ProxyHttpHandler.h>
@@ -153,6 +154,52 @@ TEST_F(UlasProviderTests, SendUsageLogs_Success)
     GetUlasProvider().SendUsageLogs(clientInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
     }
 
+TEST_F(UlasProviderTests, SendUsageLogs_Failure)
+    {
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
+    BeFileName dbPath("TestPath");
+
+    const auto mockUrl = MockUlasUrl();
+    Utf8String expectedUrl = mockUrl + Utf8PrintfString("/usageLog?ultId=%s&prdId=%s&lng=%s", "1004175881", TEST_PRODUCT_ID, "en");
+
+    const auto epUri = "https://locationmockurl.bentley.com/";
+    const auto sharedAccessSignature = "MockSharedAccessSignature";
+    Utf8String expectedUploadUrl = epUri + Utf8PrintfString(sharedAccessSignature);
+
+    GetMockHttp().ExpectRequests(2);
+    // return a mock location response
+    GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
+        {
+        EXPECT_EQ(expectedUrl, request.GetUrl());
+        Json::Value responseJson(Json::objectValue);
+        responseJson["epUri"] = epUri;
+        responseJson["epInfo"]["SharedAccessSignature"] = sharedAccessSignature;
+
+        return Response(HttpStatus::OK, "", HttpResponseContent::Create(HttpStringBody::Create(Json::FastWriter().write(responseJson))));
+        });
+    // expected url is from the response of request 1
+    GetMockHttp().ForRequest(2, [=](Http::RequestCR uploadRequest)
+        {
+        EXPECT_EQ(expectedUploadUrl, uploadRequest.GetUrl());
+        return MockHttpHandler::StubHttpFailureResponse();
+        });
+    try
+        {
+        const auto result = GetUlasProvider().SendUsageLogs(clientInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
+        FAIL() << "Expected an execption to be thrown";
+        }
+    catch (HttpError error)
+        {
+        // expect connection and http status to be the same as StubHttpFailureResponse
+        EXPECT_EQ(error.GetConnectionStatus(), MockHttpHandler::StubHttpFailureResponse().GetConnectionStatus());
+        EXPECT_EQ(error.GetHttpStatus(), MockHttpHandler::StubHttpFailureResponse().GetHttpStatus());
+        }
+    catch (...)
+        {
+        FAIL() << "Expected exception to be an HttpError";
+        }
+    }
+
 TEST_F(UlasProviderTests, PostFeatureLogs_Success)
     {
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
@@ -211,6 +258,53 @@ TEST_F(UlasProviderTests, SendFeatureLogs_Success)
     GetUlasProvider().SendFeatureLogs(clientInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
     }
 
+TEST_F(UlasProviderTests, SendFeatureLogs_Failure)
+    {
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
+    BeFileName dbPath("TestPath");
+
+    const auto mockUrl = MockUlasUrl();
+    Utf8String expectedUrl = mockUrl + Utf8PrintfString("/featureLog?ultId=%s&prdId=%s&lng=%s", "1004175881", TEST_PRODUCT_ID, "en");
+
+    const auto epUri = "https://locationmockurl.bentley.com/";
+    const auto sharedAccessSignature = "MockSharedAccessSignature";
+    Utf8String expectedUploadUrl = epUri + Utf8PrintfString(sharedAccessSignature);
+
+    GetMockHttp().ExpectRequests(2);
+    // return a mock location response
+    GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
+        {
+        EXPECT_EQ(expectedUrl, request.GetUrl());
+        Json::Value responseJson(Json::objectValue);
+        responseJson["epUri"] = epUri;
+        responseJson["epInfo"]["SharedAccessSignature"] = sharedAccessSignature;
+
+        return Response(HttpStatus::OK, "", HttpResponseContent::Create(HttpStringBody::Create(Json::FastWriter().write(responseJson))));
+        });
+    // expected url is from the response of request 1
+    GetMockHttp().ForRequest(2, [=](Http::RequestCR uploadRequest)
+        {
+        EXPECT_EQ(expectedUploadUrl, uploadRequest.GetUrl());
+        return MockHttpHandler::StubHttpFailureResponse();
+        });
+
+    try
+        {
+        const auto result = GetUlasProvider().SendFeatureLogs(clientInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
+        FAIL() << "Expected an execption to be thrown";
+        }
+    catch (HttpError error)
+        {
+        // expect connection and http status to be the same as StubHttpFailureResponse
+        EXPECT_EQ(error.GetConnectionStatus(), MockHttpHandler::StubHttpFailureResponse().GetConnectionStatus());
+        EXPECT_EQ(error.GetHttpStatus(), MockHttpHandler::StubHttpFailureResponse().GetHttpStatus());
+        }
+    catch (...)
+        {
+        FAIL() << "Expected exception to be an HttpError";
+        }
+    }
+
 TEST_F(UlasProviderTests, RealtimeTrackUsage_Success)
     {
     Utf8String mockUrl("https://ulasmockurl.bentley.com");
@@ -227,6 +321,24 @@ TEST_F(UlasProviderTests, RealtimeTrackUsage_Success)
         });
 
     EXPECT_SUCCESS(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId").get());
+    }
+
+TEST_F(UlasProviderTests, RealtimeTrackUsage_Failure)
+    {
+    Utf8String mockUrl("https://ulasmockurl.bentley.com");
+
+    GetMockBuddi().MockUlasRealtimeLoggingBaseUrl(mockUrl);
+
+    GetMockHttp().ExpectRequests(1);
+    // return a mock location response
+    GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
+        {
+        EXPECT_EQ(mockUrl, request.GetUrl());
+
+        return MockHttpHandler::StubHttpFailureResponse();
+        });
+
+    EXPECT_ERROR(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId").get());
     }
 
 TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Success)
@@ -248,6 +360,27 @@ TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Success)
         });
 
     EXPECT_SUCCESS(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId").get());
+    }
+
+TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Failure)
+    {
+    const auto version = BeVersion(1, 0);
+    FeatureEvent featureEvent = FeatureEvent("TestFeatureId", version);
+
+    Utf8String mockUrl("https://ulasmockurl.bentley.com/feature");
+
+    GetMockBuddi().MockUlasRealtimeFeatureUrl(mockUrl);
+
+    GetMockHttp().ExpectRequests(1);
+    // return a mock location response
+    GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
+        {
+        EXPECT_EQ(mockUrl, request.GetUrl());
+
+        return MockHttpHandler::StubHttpFailureResponse();
+        });
+
+    EXPECT_ERROR(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId").get());
     }
 
 TEST_F(UlasProviderTests, RealtimeTrackUsageWithUserData_Success)
@@ -274,4 +407,60 @@ TEST_F(UlasProviderTests, RealtimeTrackUsageWithUserData_Success)
         });
 
     EXPECT_SUCCESS(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId").get());
+    }
+
+TEST_F(UlasProviderTests, GetAccessKeyInfo_Success)
+    {
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
+    Utf8String accessKey = "TestAccessKey";
+    Utf8String mockUrl("https://ulasaccesskeymockurl.bentley.com");
+
+    BeFileName testJsonFile;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJsonFile);
+    testJsonFile.AppendToPath(L"TestAssets/test.json");
+
+    Json::Value testJson = ReadJsonFile(testJsonFile);
+    Utf8String testJsonString = testJson.asString();
+
+    GetMockBuddi().MockUlasAccessKeyBaseUrl(mockUrl);
+    Utf8String expectedUrl = mockUrl + "/info";
+
+    GetMockHttp().ExpectRequests(1);
+    // return a mock location response
+    GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
+        {
+        EXPECT_EQ(expectedUrl, request.GetUrl());
+
+        return MockHttpHandler::StubHttpResponse(testJsonString);
+        });
+
+    EXPECT_NE(Json::Value::GetNull(), GetUlasProvider().GetAccessKeyInfo(clientInfo, accessKey).get());
+    }
+
+TEST_F(UlasProviderTests, GetAccessKeyInfo_Failure)
+    {
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
+    Utf8String accessKey = "TestAccessKey";
+    Utf8String mockUrl("https://ulasaccesskeymockurl.bentley.com");
+
+    BeFileName testJsonFile;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJsonFile);
+    testJsonFile.AppendToPath(L"TestAssets/test.json");
+
+    Json::Value testJson = ReadJsonFile(testJsonFile);
+    Utf8String testJsonString = testJson.asString();
+
+    GetMockBuddi().MockUlasAccessKeyBaseUrl(mockUrl);
+    Utf8String expectedUrl = mockUrl + "/info";
+
+    GetMockHttp().ExpectRequests(1);
+    // return a mock location response
+    GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
+        {
+        EXPECT_EQ(expectedUrl, request.GetUrl());
+
+        return MockHttpHandler::StubHttpFailureResponse();
+        });
+
+    EXPECT_EQ(Json::Value::GetNull(), GetUlasProvider().GetAccessKeyInfo(clientInfo, accessKey).get());
     }
