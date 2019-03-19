@@ -61,11 +61,6 @@
     <None Include="ProfilesDomainDLL.prewire.mke" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="Profiles.ecschema.xml">
-      <SubType>Designer</SubType>
-    </Xml>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="src\ArbitraryCompositeProfileAspect.cpp" />
     <ClCompile Include="src\AsymmetricIShapeProfile.cpp" />
     <ClCompile Include="src\BentPlateProfile.cpp" />
@@ -155,6 +150,9 @@
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\TTShapeProfile.h" />
     <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ZShapeProfile.h" />
     <ClInclude Include="src\ProfilesPch.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="$(SRCROOT)\BisSchemas\Domains\Profiles\Profiles.ecschema.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

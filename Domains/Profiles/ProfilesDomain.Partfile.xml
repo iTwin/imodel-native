@@ -21,6 +21,12 @@
         <Directories DirectoryListName="ProfilesTestsDirs" />
     </Product>
 
+    <Part Name="ProfilesDomainTestedDev">
+        <!-- DgnDbTestingScripts are needed in order to run tests from the shell with a filter (GTEST_FILTER) -->
+        <RequiredRepository>DgnDbTestingScripts</RequiredRepository>
+        <SubProduct ProductName="ProfilesDomainTested" />
+    </Part>
+
     <Part Name="ProfilesDomainDLL" BentleyBuildMakeFile="Profiles/ProfilesDomainDLL.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform" />
         <SubPart PartName="ProfilesPublicAPI" />

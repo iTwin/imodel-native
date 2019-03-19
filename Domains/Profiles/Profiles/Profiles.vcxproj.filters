@@ -348,6 +348,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="Profiles.ecschema.xml" />
+    <Xml Include="$(SRCROOT)\BisSchemas\Domains\Profiles\Profiles.ecschema.xml" />
   </ItemGroup>
 </Project>
