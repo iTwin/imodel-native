@@ -225,7 +225,7 @@ def adjustMapFiles(map_dir):
 def copyMapFiles(mapDir, comps):
     srcDir = os.path.join(os.getenv('SrcRoot'), 'imodel02', 'TestingScripts', 'TestImpactAnalysis', 'TIAMaps')
     for comp in comps:
-        compMapDir = os.path.join(mapDir, comp, 'TIAMaps')
+        compMapDir = os.path.join(mapDir)
         if os.path.exists(compMapDir):
             for file in os.listdir(compMapDir):
                 shutil.copy2(os.path.join(compMapDir, file), srcDir)
