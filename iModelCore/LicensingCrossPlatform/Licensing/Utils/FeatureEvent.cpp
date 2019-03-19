@@ -5,47 +5,47 @@
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
-FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId, FeatureUserDataMapPtr featureUserData)
-	: m_featureId(featureId),
-	m_version(version),
-	m_projectId(projectId),
-	m_featureUserData(featureUserData)
-{}
+FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId, FeatureUserDataMapPtr featureUserData) :
+    m_featureId(featureId),
+    m_version(version),
+    m_projectId(projectId),
+    m_featureUserData(featureUserData)
+    {}
 
-FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version, FeatureUserDataMapPtr featureUserData)
-	: m_featureId(featureId),
-	m_version(version),
-	m_featureUserData(featureUserData)
-{}
+FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version, FeatureUserDataMapPtr featureUserData) :
+    m_featureId(featureId),
+    m_version(version),
+    m_featureUserData(featureUserData)
+    {}
 
-FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId)
-    : m_featureId(featureId),
+FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId) :
+    m_featureId(featureId),
     m_version(version),
     m_projectId(projectId)
     {
     m_featureUserData = std::make_shared<FeatureUserDataMap>();
     }
 
-FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version)
-	: m_featureId(featureId),
-	m_version(version)
+FeatureEvent::FeatureEvent(Utf8StringCR featureId, BeVersionCR version) :
+    m_featureId(featureId),
+    m_version(version)
     {
     m_featureUserData = std::make_shared<FeatureUserDataMap>();
     }
 
-
-Utf8String FeatureEvent::ToJson(
-	int productId,
-	Utf8StringCR featureString,
-	Utf8StringCR deviceId
-)
+Utf8String FeatureEvent::ToJson
+    (
+    int productId,
+    Utf8StringCR featureString,
+    Utf8StringCR deviceId
+    )
     {
     const uint64_t versionNumber = UINT64_C(1000000000000) * m_version.GetMajor() + UINT64_C(100000000) * m_version.GetMinor() + UINT64_C(10000) * m_version.GetSub1() + ((uint64_t) m_version.GetSub2());
     Utf8String ver;
     ver.Sprintf("%" PRIu64 "", versionNumber);
 
     Json::Value requestJson(Json::objectValue);
-	Json::Value userDataJson(Json::arrayValue);
+    Json::Value userDataJson(Json::arrayValue);
 
     if (!m_featureUserData->Empty())
         {
@@ -82,7 +82,7 @@ Utf8String FeatureEvent::ToJson(
     requestJson["lVer"] = 1;
     requestJson["lSrc"] = "RealTime";
     requestJson["uType"] = "Production";
-	requestJson["uData"] = userDataJson;
+    requestJson["uData"] = userDataJson;
 
     return Json::FastWriter().write(requestJson);
     }
