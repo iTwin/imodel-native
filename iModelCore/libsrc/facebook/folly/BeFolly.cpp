@@ -18,29 +18,40 @@ using namespace BeFolly;
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ThreadPool::Worker::Work()
     {
+    // This keeps this object alive until we return from this method. Otherwise this object may be deleted when its pool
+    // is deleted and this method may access members of a deleted object. 
+    // On some systems (Windows, optimized) the worker threads are stopped before the static pool object is destroyed.
+    // In that case we'll release this reference when this thread is terminated, because C++ guarantees destructors 
+    // are called when the callstack is unwound. This object will then be deleted in the pool destructor
+    // since this refcount will be dropped, even though this thread is gone.
+    // On other systems (Linux) the threads are not stopped until after static destructors are called. In that
+    // case this object will get freed when the thread reacts to the "stop" message, which may happen after the
+    // pool is deleted.
+    RefCountedPtr<Worker> me(this);
+
+    // this keeps the condition variable alive until we return
+    std::shared_ptr<BeConditionVariable> cv(m_pool.m_cv);
+
     SetName();
 
     for (;;)
         {
         folly::Function<void()> task;
             {
-            BeMutexHolder lock(m_pool.m_cv.GetMutex());
-            while (!m_pool.HasWork() && !m_pool.IsStopped())
-                m_pool.m_cv.InfiniteWait(lock);
+            BeMutexHolder lock(cv->GetMutex());
+            while (!m_stopped && !m_pool.HasWork())
+                cv->InfiniteWait(lock);
 
-            if (m_pool.IsStopped())
-                break;
+            if (m_stopped) 
+                return; // if this flag is on, the pool object has been freed and we can't access it
 
             task = std::move(m_pool.m_tasks.front());
             m_pool.m_tasks.pop();
             }
 
         task();
-        m_pool.m_cv.notify_one();
+        cv->notify_one();
         }
-
-    m_finished = true;
-    m_pool.m_cv.notify_one();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -73,6 +84,9 @@ void ThreadPool::Worker::Start()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ThreadPool::ThreadPool(int nThreads, Utf8CP name) : m_name(name)
     {
+    // use a shared_ptr so each thread can keep it alive until they all exit
+    m_cv = std::make_shared<BeConditionVariable>();
+
     for (int i=0; i<nThreads; ++i)
         m_workers.emplace_back(new Worker(*this, i+1));
 
@@ -87,16 +101,11 @@ void ThreadPool::add(folly::Func func)
     {
     if (true)
         {
-        BeMutexHolder lock(m_cv.GetMutex());
-        if (IsStopped())
-            {
-            BeAssert(false);
-            return;
-            }
+        BeMutexHolder lock(m_cv->GetMutex());
         m_tasks.emplace(std::move(func));
         }
 
-    m_cv.notify_one();
+    m_cv->notify_one();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -104,44 +113,32 @@ void ThreadPool::add(folly::Func func)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ThreadPool::WaitForIdle()
     {
-    BeMutexHolder holder(m_cv.GetMutex());
+    BeMutexHolder holder(m_cv->GetMutex());
     while (!m_tasks.empty())
-        m_cv.InfiniteWait(holder);
+        m_cv->InfiniteWait(holder);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ThreadPool::Stop()
+ThreadPool::~ThreadPool()
     {
+    // Note:
+    // It might seem tempting to wait for the threads to terminate here. That doesn't work
+    // for static pools that are only destroyed on program exit. In that case, on Windows, all of the other threads
+    // are killed by the system before the destructor is called, leading to chaos. On Linux the threads are still
+    // alive, so we signal them to stop. If you want to use a non-static thread pool, call `WaitForIdle` if you want to clear the threads
+    // and wait for them to finish before you delete your pool. For static thread pools, there's no point in waiting anyway, since the
+    // program is ending.
+
     if (true)
         {
-        BeMutexHolder holder(m_cv.GetMutex());
-        m_stop = true;
+        BeMutexHolder holder(m_cv->GetMutex());
+        for (auto& worker : m_workers)
+            worker->m_stopped = true;
         }
-    m_cv.notify_all();
+    m_cv->notify_all(); // condition variable will be valid until last thread exits
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ThreadPool::AllStopped() const {
-    for (auto& worker : m_workers) {
-        if (!worker->m_finished)
-            return false;
-    }
-    return true;
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ThreadPool::StopAndWait() {
-    Stop();
-    BeMutexHolder holder(m_cv.GetMutex());
-    while (!AllStopped())
-        m_cv.InfiniteWait(holder);
-}
 
 BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
@@ -150,7 +147,6 @@ BEGIN_UNNAMED_NAMESPACE
 struct IoThreadPoolImp : ThreadPool
     {
     IoThreadPoolImp() : ThreadPool(std::max<uint32_t>(10, BeThreadUtilities::GetHardwareConcurrency()*2), "IO"){}
-    ~IoThreadPoolImp() {}
     };
 
 //=======================================================================================
@@ -159,7 +155,6 @@ struct IoThreadPoolImp : ThreadPool
 struct CpuThreadPoolImp : ThreadPool
     {
     CpuThreadPoolImp() : ThreadPool(BeThreadUtilities::GetHardwareConcurrency(), "CPU"){}
-    ~CpuThreadPoolImp() {}
     };
 
 END_UNNAMED_NAMESPACE

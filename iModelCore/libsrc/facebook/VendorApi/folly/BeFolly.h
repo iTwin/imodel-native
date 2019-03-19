@@ -28,7 +28,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ThreadPool : folly::Executor
     struct Worker : BentleyApi::RefCountedBase
     {
         int m_id;
-        bool m_finished = false;
+        bool m_stopped = false;
         ThreadPool& m_pool;
 
         Worker(ThreadPool& pool, int id) noexcept : m_pool(pool), m_id(id) {}
@@ -44,38 +44,25 @@ struct EXPORT_VTABLE_ATTRIBUTE ThreadPool : folly::Executor
     Utf8String m_name;
     std::vector<WorkerPtr> m_workers;
     std::queue<folly::Func> m_tasks;
-    BentleyApi::BeConditionVariable m_cv;
-    bool m_stop = false;
+    std::shared_ptr<BentleyApi::BeConditionVariable> m_cv;
 
-    bool AllStopped() const;
     Utf8CP GetName() const { return m_name.c_str(); }
     bool HasWork() const { return !m_tasks.empty(); }
-    bool IsStopped() const { return m_stop; }
     virtual void addWithPriority(folly::Func func, int8_t) override { add(std::move(func)); }
     BE_FOLLY_EXPORT virtual void add(folly::Func func) override;
 
   protected:
     BE_FOLLY_EXPORT ThreadPool(int nThreads, Utf8CP name);
-    // Note:
-    // It might seem tempting to wait for the threads to terminate in the destructor. That doesn't work
-    // for static pools that are only destroyed on program exit. In that case, on Windows, all of the other threads
-    // are killed by the system before the destructor is called, leading to chaos. On Linux the threads are still
-    // alive, so we signal them to stop. If you want to use a non-static thread pool, call `StopAndWait` if you want to clear the threads
-    // and wait for them to finish. For static thread pools, there's no point in waiting anyway, since the
-    // program is ending.
-    ~ThreadPool() { Stop(); }
+    BE_FOLLY_EXPORT ~ThreadPool();
 
   public:
     BE_FOLLY_EXPORT static ThreadPool& GetIoPool();
     BE_FOLLY_EXPORT static ThreadPool& GetCpuPool();
-    BE_FOLLY_EXPORT void Stop();
     BE_FOLLY_EXPORT void WaitForIdle();
-    BE_FOLLY_EXPORT void StopAndWait();
-    
 };
 
 //=======================================================================================
-// A queue that limit the number of parallel execution of tasks.
+// A queue that limits the number of parallel execution of tasks.
 // @bsiclass                                                    Mathieu.Marchand 10/17
 //=======================================================================================
 template <typename Result_T>
