@@ -639,14 +639,14 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Where(Utf8CP w
     if (!m_whereClause.empty() && append)
         {
         m_whereClauseBindings.insert(m_whereClauseBindings.end(), bindings.begin(), bindings.end());
-        m_whereClause.append(" AND ").append(whereClause);
+        m_whereClause.append(" AND (").append(whereClause).append(")");
         }
     else
         {
         for (BoundQueryValue const* value : m_whereClauseBindings)
             DELETE_AND_CLEAR(value);
         m_whereClauseBindings = bindings;
-        m_whereClause = whereClause;
+        m_whereClause = Utf8String("(").append(whereClause).append(")");
         }
     return *this;
     }

@@ -46,6 +46,19 @@ struct ComplexNavigationQueryTests : NavigationQueryTests
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComplexNavigationQueryTests, ToString_Where_WrapsConditionWithBraces)
+    {
+    ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
+    query->Where("Test1", BoundQueryValuesList());
+    query->Where("Test2", BoundQueryValuesList(), true);
+
+    Utf8String str = query->ToString();
+    ASSERT_STREQ(" WHERE (Test1) AND (Test2)", str.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_ForwardRelationship)

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -71,12 +71,13 @@
     <NMakeIncludeSearchPath>$(SrcRoot)Bentley\PublicAPI\;$(SrcRoot)libsrc\jsoncpp\PublicAPI;$(SrcRoot)libsrc\jsoncpp\include;$(SrcRoot)libsrc\libxml2\BeXml\PublicApi;$(SrcRoot)libsrc\libxml2\include;$(SrcRoot)libsrc\rapidjson\include\;$(SrcRoot)libsrc\facebook\VendorApi\;$(SrcRoot)BeGTest\PublicAPI\;$(SrcRoot)util\gtest\include;$(SrcRoot)BeSQLite\PublicAPI;$(SrcRoot)ecobjects\PublicApi;$(SrcRoot)GeomLibs\PublicAPI;$(SrcRoot)ECDb\PublicAPI\;$(SrcRoot)ECPresentation\PublicAPI;$(OutRoot)Winx64\BuildContexts\ECPresentation\SubParts\UnitTests\include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeBuildCommandLine>bb -r ECPresentation -f ECPresentation -p ECPresentation-Gtest build</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb build</NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\Product\ECPresentation-Gtest\ECPresentationTest.exe</NMakeOutput>
-    <NMakeCleanCommandLine>bb -r ECPresentation -f ECPresentation -p ECPresentation-Gtest clean ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>bb -r ECPresentation -f ECPresentation -p ECPresentation-Gtest rebuild ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeReBuildCommandLine>
-    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(SrcRoot)Bentley\PublicAPI\;$(SrcRoot)libsrc\jsoncpp\PublicAPI;$(SrcRoot)libsrc\jsoncpp\include;$(SrcRoot)libsrc\libxml2\BeXml\PublicApi;$(SrcRoot)libsrc\libxml2\include;$(SrcRoot)libsrc\rapidjson\include\;$(SrcRoot)libsrc\facebook\VendorApi\;$(SrcRoot)BeGTest\PublicAPI\;$(SrcRoot)util\gtest\include;$(SrcRoot)BeSQLite\PublicAPI;$(SrcRoot)ecobjects\PublicApi;$(SrcRoot)GeomLibs\PublicAPI;$(SrcRoot)ECDb\PublicAPI\;$(SrcRoot)ECPresentation\PublicAPI;$(OutRoot)Winx64\BuildContexts\ECPresentation\SubParts\UnitTests\include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeCleanCommandLine>bb clean ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb rebuild ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>BENTLEY_WIN32;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(SrcRoot)imodel02\iModelCore\Bentley\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeHttp\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeSecurity\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeSQLite\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECPresentation\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECPresentation\Source\;$(SrcRoot)imodel02\iModelCore\ECPresentation\Tests\TestHelpers\;$(SrcRoot)imodel02\iModelCore\ECDb\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECObjects\PublicAPI\;$(SrcRoot)imodel02\iModelCore\GeomLibs\PublicAPI\;$(SrcRoot)imodel02\iModelCore\libsrc\facebook\VendorAPI\;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\include\;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\PublicAPI\;$(SrcRoot)imodel02\iModelCore\Units\PublicAPI\;$(SrcRoot)imodel02\iModelCore\WSClient\PublicAPI\;$(SrcRoot)imodel02\iModelJsNodeAddon\;$(SrcRoot)nuget\RapidJsonNuget_x64.2.0.2.34\native\include\;$(OutRoot)Winx64\BuildContexts\ECPresentation\SubParts\UnitTests\include\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <ExcludePath />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeBuildCommandLine>bb -r ECPresentation -f ECPresentation -p ECPresentation-Gtest build</NMakeBuildCommandLine>

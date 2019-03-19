@@ -13,6 +13,7 @@
 #include <folly/Unit.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <ECDb/ECDbApi.h>
+#include <rapidjson/document.h>
 
 //-----------------------------------------------------------------------------------------
 // Define export/import macros

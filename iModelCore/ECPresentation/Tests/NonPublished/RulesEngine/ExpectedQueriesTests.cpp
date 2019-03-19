@@ -430,9 +430,8 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         NavigationQueryPtr nestedQueries = RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(expectedQueryClasses, "this", [](ComplexNavigationQuery& query)
             {
-            query.Where("[this].[ECInstanceId] IN (?) AND "
-                "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[Name], '[]') = ?",
-                {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
+            query.Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)1))});
+            query.Where("GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[Name], '[]') = ?", {new BoundQueryECValue(ECValue("MyLabel"))});
             });
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -464,9 +463,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
         nested->From(b1_Class1A, false, "this");
-        nested->Where("[this].[ECInstanceId] IN (?) AND "
-            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[Name], '[]') = ?",
-            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nested->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)1))});
+        nested->Where("GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[Name], '[]') = ?", {new BoundQueryECValue(ECValue("Label Grouping Node"))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1174,17 +1172,15 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery1->SelectContract(*contract, "this");
         nestedQuery1->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
-        nestedQuery1->Where("[this].[ECInstanceId] IN (?) AND "
-            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            { new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel")) });
+        nestedQuery1->Where("[this].[ECInstanceId] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)1)) });
+        nestedQuery1->Where("GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?", { new BoundQueryECValue(ECValue("MyLabel")) });
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
         nestedQuery2->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery2->Where("[this].[ECInstanceId] IN (?) AND "
-            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
+        nestedQuery2->Where("[this].[ECInstanceId] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)1)) });
+        nestedQuery2->Where("GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?", { new BoundQueryECValue(ECValue("MyLabel")) });
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1248,33 +1244,29 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery1->SelectContract(*contract, "this");
         nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery1->Where("[this].[ECInstanceId] IN (?) AND "
-            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nestedQuery1->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)1))});
+        nestedQuery1->Where("GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?", {new BoundQueryECValue(ECValue("Label Grouping Node"))});
     
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
         nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery2->Where("[this].[ECInstanceId] IN (?) AND "
-            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nestedQuery2->Where("[this].[ECInstanceId] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)1)) });
+        nestedQuery2->Where("GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?", { new BoundQueryECValue(ECValue("Label Grouping Node")) });
         
         ComplexNavigationQueryPtr nestedQuery3 = ComplexNavigationQuery::Create();
         nestedQuery3->SelectContract(*contract, "this");
         nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", true, false));
         nestedQuery3->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery3->Where("[this].[ECInstanceId] IN (?) AND "
-            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nestedQuery3->Where("[this].[ECInstanceId] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)1)) });
+        nestedQuery3->Where("GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?", { new BoundQueryECValue(ECValue("Label Grouping Node")) });
         
         ComplexNavigationQueryPtr nestedQuery4 = ComplexNavigationQuery::Create();
         nestedQuery4->SelectContract(*contract, "this");
         nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", true, false));
         nestedQuery4->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery4->Where("[this].[ECInstanceId] IN (?) AND "
-            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nestedQuery4->Where("[this].[ECInstanceId] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)1)) });
+        nestedQuery4->Where("GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?", { new BoundQueryECValue(ECValue("Label Grouping Node")) });
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1370,9 +1362,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery->SelectContract(*contract, "this");
         nestedQuery->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget", true, false));
         nestedQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery->Where("[this].[ECInstanceId] IN (?) AND "
-            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
+        nestedQuery->Where("[this].[ECInstanceId] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)1)) });
+        nestedQuery->Where("GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?", { new BoundQueryECValue(ECValue("MyLabel")) });
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1394,9 +1385,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery->SelectContract(*contract, "this");
         nestedQuery->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget", true, false));
         nestedQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery->Where("[this].[ECInstanceId] IN (?) AND "
-            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
-            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nestedQuery->Where("[this].[ECInstanceId] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)1)) });
+        nestedQuery->Where("GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?", { new BoundQueryECValue(ECValue("Label Grouping Node")) });
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1927,16 +1917,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*ECInstanceNodesQueryContract::Create(&b1_Class1A), "this");
         nestedQuery1->From(b1_Class1A, false, "this");
-        nestedQuery1->Where("[this].[ECInstanceId] IN (?) AND "
-            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[Name], '[]') = ?",
-            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
+        nestedQuery1->Where("[this].[ECInstanceId] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)1)) });
+        nestedQuery1->Where("GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[Name], '[]') = ?", { new BoundQueryECValue(ECValue("MyLabel")) });
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*ECInstanceNodesQueryContract::Create(&b1_Class1B), "this");
         nestedQuery2->From(b1_Class1B, false, "this");
-        nestedQuery2->Where("[this].[ECInstanceId] IN (?) AND "
-            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[Name], '[]') = ?",
-            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
+        nestedQuery2->Where("[this].[ECInstanceId] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)1)) });
+        nestedQuery2->Where("GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[Name], '[]') = ?", { new BoundQueryECValue(ECValue("MyLabel")) });
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1967,9 +1955,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nestedQuery = ComplexNavigationQuery::Create();
         nestedQuery->SelectContract(*contract, "this");
         nestedQuery->From(b1_Class1A, false, "this");
-        nestedQuery->Where("[this].[ECInstanceId] IN (?) AND "
-            "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[Name], '[]') = ?",
-            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        nestedQuery->Where("[this].[ECInstanceId] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)1)) });
+        nestedQuery->Where("GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], [this].[Name], '[]') = ?", { new BoundQueryECValue(ECValue("Label Grouping Node")) });
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -2227,9 +2214,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr instancesQuery = ComplexNavigationQuery::Create();
         instancesQuery->SelectContract(*contract, SEARCH_QUERY_Alias);
         instancesQuery->From(*searchQuery, SEARCH_QUERY_Alias);
-        instancesQuery->Where("[" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECInstanceId "] IN (?) AND "
-            "GetECInstanceDisplayLabel([" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECClassId "], [" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECInstanceId "], '', '[]') = ?",
-            {new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("MyLabel"))});
+        instancesQuery->Where("[" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECInstanceId "] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)1)) });
+        instancesQuery->Where("GetECInstanceDisplayLabel([" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECClassId "], [" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECInstanceId "], '', '[]') = ?", { new BoundQueryECValue(ECValue("MyLabel")) });
 
         ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
         ordered->SelectAll();
@@ -2274,10 +2260,10 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr instancesQuery = ComplexNavigationQuery::Create();
         instancesQuery->SelectContract(*contract, SEARCH_QUERY_Alias);
         instancesQuery->From(*searchQuery, SEARCH_QUERY_Alias);
-        instancesQuery->Where("[" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECClassId "] = ?"
-            " AND [" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECInstanceId "] IN (?)"
-            " AND GetECInstanceDisplayLabel([" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECClassId "], [" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECInstanceId "], '', '[]') = ?",
-            {new BoundQueryId(ret_Widget.GetId()), new BoundQueryId(ECInstanceId((uint64_t)1)), new BoundQueryECValue(ECValue("Label Grouping Node"))});
+        instancesQuery->Where("[" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECClassId "] = ?", { new BoundQueryId(ret_Widget.GetId()) });
+        instancesQuery->Where("[" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECInstanceId "] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)1)) });
+        instancesQuery->Where("GetECInstanceDisplayLabel([" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECClassId "], [" SEARCH_QUERY_Alias "].[" SEARCH_QUERY_FIELD_ECInstanceId "], '', '[]') = ?",
+            { new BoundQueryECValue(ECValue("MyLabel")) });
 
         ComplexNavigationQueryPtr ordered = ComplexNavigationQuery::Create();
         ordered->SelectAll();
@@ -2853,9 +2839,10 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
         nested->From(b1_Class1A, false, "this");
-        nested->Where("[this].[Name] NOT BETWEEN ? AND ?", {new BoundQueryECValue(ECValue(1)), new BoundQueryECValue(ECValue(5))});
-        nested->Where("[this].[Name] NOT BETWEEN ? AND ?", {new BoundQueryECValue(ECValue(7)), new BoundQueryECValue(ECValue(9))});
-        nested->Where("[this].[Name] NOT BETWEEN ? AND ?", {new BoundQueryECValue(ECValue(10)), new BoundQueryECValue(ECValue(15))});
+        nested->Where("[this].[Name] NOT BETWEEN ? AND ? AND [this].[Name] NOT BETWEEN ? AND ? AND [this].[Name] NOT BETWEEN ? AND ?", 
+            {new BoundQueryECValue(ECValue(1)), new BoundQueryECValue(ECValue(5)), 
+            new BoundQueryECValue(ECValue(7)), new BoundQueryECValue(ECValue(9)),
+            new BoundQueryECValue(ECValue(10)), new BoundQueryECValue(ECValue(15))});
 
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
         grouped->SelectAll();
@@ -3336,8 +3323,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         nested->SelectContract(*contract, "this");
         nested->From(b4_ClassB, false, "this");
         nested->Join(RelatedClass(b4_ClassB, b4_ClassC, b4_ClassBHasClassC, true, "c", "rel_b4_ClassBHasClassC_0"));
-        nested->Where("[this].[Description] = ? AND [this].[SomeProperty] = ?", 
-            {new BoundQueryECValue(ECValue("TestGroupingDescription")), new BoundQueryECValue(ECValue(9))});
+        nested->Where("[this].[Description] = ?", {new BoundQueryECValue(ECValue("TestGroupingDescription"))});
+        nested->Where("[this].[SomeProperty] = ?", {new BoundQueryECValue(ECValue(9))});
 
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
         grouped->SelectAll();
@@ -3359,8 +3346,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         nested->SelectContract(*contract, "this");
         nested->From(b4_ClassB, false, "this");
         nested->Join(relatedInstanceClass);
-        nested->Where("[c].[SomeProperty] = ? AND [this].[Description] = ? AND [this].[SomeProperty] = ?",
-            {new BoundQueryECValue(ECValue(99)), new BoundQueryECValue(ECValue("TestGroupingDescription")), new BoundQueryECValue(ECValue(9))});
+        nested->Where("[c].[SomeProperty] = ?", { new BoundQueryECValue(ECValue(99)) });
+        nested->Where("[this].[Description] = ?", { new BoundQueryECValue(ECValue("TestGroupingDescription")) });
+        nested->Where("[this].[SomeProperty] = ?", { new BoundQueryECValue(ECValue(9)) });
 
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
         grouped->SelectAll();
@@ -3379,24 +3367,15 @@ void ExpectedQueries::RegisterExpectedQueries()
         RelatedClass relatedInstanceClass(b4_ClassB, b4_ClassC, b4_ClassBHasClassC, true, "c", "rel_b4_ClassBHasClassC_0");
         NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(&b4_ClassB, {relatedInstanceClass});
     
-        Utf8PrintfString whereClause("[this].[ECInstanceId] IN (?) "
-            "AND GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[{\"Alias\":\"c\",\"ECClassId\":' || CAST(IFNULL([c].[ECClassId], %" PRIu64 ") AS TEXT) || ',\"ECInstanceId\":' || CAST(IFNULL([c].[ECInstanceId], 0) AS TEXT) || '}]') = ? "
-            "AND [c].[SomeProperty] = ? "
-            "AND [this].[Description] = ? "
-            "AND [this].[SomeProperty] = ?", b4_ClassC.GetId().GetValue());
-
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
         nested->From(b4_ClassB, false, "this");
         nested->Join(relatedInstanceClass);
-        nested->Where(whereClause.c_str(),
-            {
-            new BoundQueryId(ECInstanceId((uint64_t)1)),
-            new BoundQueryECValue(ECValue("test")),
-            new BoundQueryECValue(ECValue(99)),
-            new BoundQueryECValue(ECValue("TestGroupingDescription")),
-            new BoundQueryECValue(ECValue(9))
-            });
+        nested->Where("[this].[ECInstanceId] IN (?)", { new BoundQueryId(ECInstanceId((uint64_t)1)) });
+        nested->Where(Utf8PrintfString("GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[{\"Alias\":\"c\",\"ECClassId\":' || CAST(IFNULL([c].[ECClassId], %" PRIu64 ") AS TEXT) || ',\"ECInstanceId\":' || CAST(IFNULL([c].[ECInstanceId], 0) AS TEXT) || '}]') = ?", b4_ClassC.GetId().GetValue()).c_str(), { new BoundQueryECValue(ECValue("test")) });
+        nested->Where("[c].[SomeProperty] = ?", { new BoundQueryECValue(ECValue(99)) });
+        nested->Where("[this].[Description] = ?", { new BoundQueryECValue(ECValue("TestGroupingDescription")) });
+        nested->Where("[this].[SomeProperty] = ?", { new BoundQueryECValue(ECValue(9)) });
 
         ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
         sorted->SelectAll();

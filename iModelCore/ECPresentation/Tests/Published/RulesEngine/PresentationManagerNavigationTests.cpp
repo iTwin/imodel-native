@@ -24,14 +24,14 @@ struct RulesDrivenECPresentationManagerNavigationTests : RulesDrivenECPresentati
     ECClassCP m_gadgetClass;
     ECClassCP m_sprocketClass;
     ECSchemaCP m_schema;
-    
+
     void SetUp() override
         {
         RulesDrivenECPresentationManagerTests::SetUp();
         m_manager->SetLocalizationProvider(new SQLangLocalizationProvider());
         m_schema = s_project->GetECDb().Schemas().GetSchema("RulesEngineTest");
         ASSERT_TRUE(nullptr != m_schema);
-        
+
         m_widgetClass = m_schema->GetClassCP("Widget");
         m_gadgetClass = m_schema->GetClassCP("Gadget");
         m_sprocketClass = m_schema->GetClassCP("Sprocket");
@@ -67,6 +67,18 @@ static DataContainer<NavNodeCPtr> GetVerifiedNodes(std::function<DataContainer<N
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static CustomNodeSpecificationP CreateCustomNodeSpecification(Utf8String typeAndLabel, std::function<void(CustomNodeSpecificationR)> configure = nullptr)
+    {
+    CustomNodeSpecificationP spec = new CustomNodeSpecification(1, false, typeAndLabel, typeAndLabel, typeAndLabel, typeAndLabel);
+    spec->SetHasChildren(ChildrenHint::Unknown);
+    if (nullptr != configure)
+        configure(*spec);
+    return spec;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, NavigationOptions_GetRuleSetId)
@@ -100,11 +112,11 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_NotGro
     RootNodeRule* rule = new RootNodeRule();
     rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
-    
+
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("AllInstanceNodes_NotGrouped", TargetTree_MainTree);
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
-    
+
     // expect two nodes
     ASSERT_EQ(2, nodes.GetSize());
 
@@ -135,7 +147,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Groupe
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("AllInstanceNodes_GroupedByClass", TargetTree_MainTree);
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
-    
+
     // make sure we have 2 class grouping nodes
     ASSERT_EQ(2, nodes.GetSize());
 
@@ -163,7 +175,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_AlwaysR
     {
     // insert widget instance
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -187,7 +199,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_AlwaysR
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_DoNotSort_ReturnsUnsortedNodes)
-    {    
+    {
     // insert some widget instances
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget2"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
@@ -298,7 +310,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideNod
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
-    
+
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
 
@@ -407,7 +419,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
     NavNodeCPtr labelGroupingNode = labelGroupingNodes[0];
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, labelGroupingNode->GetType().c_str());
     ASSERT_STREQ("GadgetID", labelGroupingNode->GetLabel().c_str());
-    
+
     // make sure we have 2 gadget instances
     DataContainer<NavNodeCPtr> instanceNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get();
     ASSERT_EQ(2, instanceNodes.GetSize());
@@ -431,33 +443,33 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
 TEST_F (RulesDrivenECPresentationManagerNavigationTests, RemovesLabelGroupingNodeIfOnlyOneChild)
     {
     // make sure there are instances with unique labels and instances with same labels
-    IECInstancePtr instanceWithUniqueLabel = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
+    IECInstancePtr instanceWithUniqueLabel = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass,
         [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("GetRootNodes_RemovesLabelGroupingNodeIfOnlyOneChild: Unique Label")); });
-    IECInstancePtr instanceWithSameLabel = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
+    IECInstancePtr instanceWithSameLabel = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass,
         [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("GetRootNodes_RemovesLabelGroupingNodeIfOnlyOneChild: Same Label")); });
-    instanceWithSameLabel = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
+    instanceWithSameLabel = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass,
         [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("GetRootNodes_RemovesLabelGroupingNodeIfOnlyOneChild: Same Label")); });
-    instanceWithSameLabel = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
+    instanceWithSameLabel = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass,
         [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("GetRootNodes_RemovesLabelGroupingNodeIfOnlyOneChild: Same Label")); });
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
-    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));    
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     RootNodeRule* rule = new RootNodeRule();
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, true, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
-    
+
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("RemovesLabelGroupingNodeIfOnlyOneChild", TargetTree_MainTree);
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
-        
+
     // make sure we have one instance node and one display label grouping node
     ASSERT_EQ(2, nodes.GetSize());
 
     NavNodeCPtr labelGroupingNode = nodes[0];
     NavNodeCPtr instanceNode = nodes[1];
-    
+
     ASSERT_TRUE(nullptr != instanceNode->GetKey()->AsECInstanceNodeKey());
     EXPECT_EQ(instanceWithUniqueLabel->GetInstanceId(), instanceNode->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString());
 
@@ -472,7 +484,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AlwaysReturnsResultsFla
     {
     // insert a widget
     IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -528,7 +540,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Return
     {
     // insert a widget
     IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    
+
 
     // insert a gadget
     IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
@@ -550,7 +562,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Return
     RulesDrivenECPresentationManager::NavigationOptions options("HideIfNoChildren_ReturnsNodesIfHasChildren", TargetTree_MainTree);
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
 
-    // make sure the node was not hidden 
+    // make sure the node was not hidden
     ASSERT_EQ(1, nodes.GetSize());
     }
 
@@ -561,7 +573,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Ignore
     {
     // insert a widget
     IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-        
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -573,7 +585,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Ignore
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("HideIfNoChildren_IgnoredIfHasAlwaysReturnsNodesFlag", TargetTree_MainTree);
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
-    
+
     // make sure the node was not hidden
     ASSERT_EQ(1, nodes.GetSize());
     }
@@ -582,13 +594,13 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Ignore
 * @betest                                       Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideNodesInHierarchy_ReturnsChildNodes)
-    {    
+    {
     // add a widget
     IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
-    // add a gadget    
+    // add a gadget
     IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -616,13 +628,13 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideNodesInHierarchy_Re
 * @betest                                       Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideNodesInHierarchy_ReturnsNoChildrenWhenThereAreNoChildSpecifications)
-    {    
+    {
     // add a widget
     IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
-    // add a gadget    
+    // add a gadget
     IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
-        
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -668,14 +680,14 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsSpecifiedNu
     rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     RootNodeRule* rule = new RootNodeRule();
-    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
-    
+
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_MainTree);
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(2), options.GetJson()).get();
-    
+
     // expect 3 nodes: C, D, E
     ASSERT_EQ(3, nodes.GetSize());
     EXPECT_STREQ("C", nodes[0]->GetLabel().c_str());
@@ -700,14 +712,14 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsSpecifiedNu
     m_locater->AddRuleSet(*rules);
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     RootNodeRule* rule = new RootNodeRule();
-    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
-    
+
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("Paging_SkipsSpecifiedNumberOfNodes", TargetTree_MainTree);
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(2), options.GetJson()).get();
-    
+
     // expect 3 nodes: C, D, E
     ASSERT_EQ(3, nodes.GetSize());
     EXPECT_STREQ("C", nodes[0]->GetLabel().c_str());
@@ -732,14 +744,14 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkippingMoreThan
     m_locater->AddRuleSet(*rules);
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     RootNodeRule* rule = new RootNodeRule();
-    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
-    
+
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("Paging_SkippingMoreThanExists", TargetTree_MainTree);
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(5), options.GetJson()).get();
-    
+
     // expect 0 nodes
     ASSERT_EQ(0, nodes.GetSize());
     ASSERT_TRUE(nodes[0].IsNull());
@@ -762,14 +774,14 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_ReturnsSpecified
     m_locater->AddRuleSet(*rules);
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     RootNodeRule* rule = new RootNodeRule();
-    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
-    
+
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("Paging_ReturnsSpecifiedNumberOfNodes", TargetTree_MainTree);
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(0, 2), options.GetJson()).get();
-    
+
     // expect 2 nodes: A, B
     ASSERT_EQ(2, nodes.GetSize());
     EXPECT_STREQ("A", nodes[0]->GetLabel().c_str());
@@ -790,14 +802,14 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_PageSizeHigherTh
     m_locater->AddRuleSet(*rules);
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     RootNodeRule* rule = new RootNodeRule();
-    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
-    
+
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("Paging_PageSizeHigherThanTheNumberOfNodes", TargetTree_MainTree);
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(0, 5), options.GetJson()).get();
-    
+
     // expect 2 nodes: A, B
     ASSERT_EQ(2, nodes.GetSize());
     EXPECT_STREQ("A", nodes[0]->GetLabel().c_str());
@@ -818,14 +830,14 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_IndexHigherThanP
     m_locater->AddRuleSet(*rules);
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     RootNodeRule* rule = new RootNodeRule();
-    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
-    
+
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("Paging_PageSizeHigherThanTheNumberOfNodes", TargetTree_MainTree);
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(0, 2), options.GetJson()).get();
-    
+
     // expect nullptr
     EXPECT_TRUE(nodes[2].IsNull());
     }
@@ -847,14 +859,14 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsAndReturnsS
     m_locater->AddRuleSet(*rules);
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     RootNodeRule* rule = new RootNodeRule();
-    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
-    
+
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("Paging_SkipsAndReturnsSpecifiedNumberOfNodes", TargetTree_MainTree);
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(1, 3), options.GetJson()).get();
-    
+
     // expect 3 nodes: B, C, D
     ASSERT_EQ(3, nodes.GetSize());
     EXPECT_STREQ("B", nodes[0]->GetLabel().c_str());
@@ -875,7 +887,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_Type_Label_D
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "type", "label", "description", "imageid");
     rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CustomNodes_Type_Label_Description_ImageId", TargetTree_MainTree).GetJson();
     DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
@@ -899,16 +911,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideIfNoChil
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, true, "type", "label", "description", "imageid");
-    customNodeSpecification->SetHasChildren(ChildrenHint::Unknown);
-
-    rule->AddSpecification(*customNodeSpecification);
+    rule->AddSpecification(*CreateCustomNodeSpecification("a"));
     rules->AddPresentationRule(*rule);
 
     ChildNodeRule* childRule = new ChildNodeRule();
-    CustomNodeSpecificationP customNodeSpecificationChild = new CustomNodeSpecification(1, false, "test", "test", "test", "test");
-    childRule->AddSpecification(*customNodeSpecificationChild);
-    customNodeSpecification->AddNestedRule(*childRule);
+    childRule->AddSpecification(*CreateCustomNodeSpecification("b"));
+    rules->AddPresentationRule(*childRule);
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CustomNodes_HideIfNoChildren_ReturnsNodesIfHasChildren", TargetTree_MainTree).GetJson();
@@ -922,16 +930,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideIfNoChil
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideIfNoChildren_ReturnsEmptyListIfNoChildren)
-    {    
+    {
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, true, "type", "label", "description", "imageid");
-    customNodeSpecification->SetHasChildren(ChildrenHint::Unknown);
-
-    rule->AddSpecification(*customNodeSpecification);
+    rule->AddSpecification(*CreateCustomNodeSpecification("type", [](CustomNodeSpecificationR spec) { spec.SetHideIfNoChildren(true); }));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -946,16 +951,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideIfNoChil
 * @betest                                       Grigas.Petraitis                10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideNodesInHierarchy_ReturnsEmptyList)
-    {    
+    {
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "type", "label", "description", "imageid");
-    customNodeSpecification->SetHideNodesInHierarchy(true);
-
-    rule->AddSpecification(*customNodeSpecification);
+    rule->AddSpecification(*CreateCustomNodeSpecification("type", [](CustomNodeSpecificationR spec) {spec.SetHideNodesInHierarchy(true); }));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -973,16 +975,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideNodesInH
     {
     // insert widget instance
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule();
-    CustomNodeSpecificationP spec = new CustomNodeSpecification(1, false, "type", "label", "description", "imageid");
-    spec->SetHasChildren(ChildrenHint::Unknown);
-    spec->SetHideNodesInHierarchy(true);
-    rootRule->AddSpecification(*spec);
+    rootRule->AddSpecification(*CreateCustomNodeSpecification("type", [](CustomNodeSpecificationR spec) {spec.SetHideNodesInHierarchy(true); }));
     rules->AddPresentationRule(*rootRule);
 
     // request for nodes
@@ -1000,15 +999,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_AlwaysReturn
     {
     // insert widget instance
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule = new RootNodeRule();
-    CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "type", "label", "description", "imageid");
-    customNodeSpecification->SetHasChildren(ChildrenHint::Always);
-    rule->AddSpecification(*customNodeSpecification);
+    rule->AddSpecification(*CreateCustomNodeSpecification("type", [](CustomNodeSpecificationR spec) {spec.SetHasChildren(ChildrenHint::Always); }));
     rules->AddPresentationRule(*rule);
 
     // request for nodes
@@ -1036,26 +1033,21 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_ReturnsCorre
     {
     // insert widget instance
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule();
-    CustomNodeSpecificationP rootSpec = new CustomNodeSpecification(1, false, "root", "label", "description", "imageid");
-    rootSpec->SetHasChildren(ChildrenHint::Unknown);
-    rootRule->AddSpecification(*rootSpec);
+    rootRule->AddSpecification(*CreateCustomNodeSpecification("root"));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type = \"root\"", 1, false, TargetTree_Both);
-    CustomNodeSpecificationP childSpec1 = new CustomNodeSpecification(1, false, "child1", "label", "description", "imageid");
-    childSpec1->SetHasChildren(ChildrenHint::Unknown);
-    childSpec1->SetHideNodesInHierarchy(true);
-    childRule->AddSpecification(*childSpec1);
-    childRule->AddSpecification(*new CustomNodeSpecification(1, false, "child2", "label", "description", "imageid"));
-    childRule->AddSpecification(*new CustomNodeSpecification(1, false, "child3", "label", "description", "imageid"));
+    childRule->AddSpecification(*CreateCustomNodeSpecification("child1", [](CustomNodeSpecificationR spec) {spec.SetHideNodesInHierarchy(true); }));
+    childRule->AddSpecification(*CreateCustomNodeSpecification("child2"));
+    childRule->AddSpecification(*CreateCustomNodeSpecification("child3"));
     rules->AddPresentationRule(*childRule);
-    
+
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
@@ -1078,7 +1070,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     {
     // insert widget instance
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -1205,7 +1197,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecific
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_GroupedByClass", TargetTree_MainTree).GetJson();
     DataContainer<NavNodeCPtr> classGroupingNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
-    
+
     // make sure we have 2 class grouping nodes
     ASSERT_EQ(2, classGroupingNodes.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, classGroupingNodes[0]->GetType().c_str());
@@ -1438,7 +1430,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificClasses_DoNotSort_ReturnsUnsortedNodes)
-    {    
+    {
     // insert some widget instances
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget2"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
@@ -1474,7 +1466,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificClasses_ArePolymorphic)
-    {    
+    {
     // insert some ClassE & ClassF instances
     ECClassCP classE = m_schema->GetClassCP("ClassE");
     ECClassCP classF = m_schema->GetClassCP("ClassF");
@@ -1502,7 +1494,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificClasses_AreNotPolymorphic)
-    {    
+    {
     // insert some ClassE & ClassF instances
     ECClassCP classE = m_schema->GetClassCP("ClassE");
     ECClassCP classF = m_schema->GetClassCP("ClassF");
@@ -1530,7 +1522,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificClasses_InstanceFilter)
-    {    
+    {
     // insert some widget instances
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) { instance.SetValue("IntProperty", ECValue(10)); });
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) { instance.SetValue("IntProperty", ECValue(5)); });
@@ -1561,24 +1553,22 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     {
     // insert widget instance
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule();
-    CustomNodeSpecificationP rootSpec = new CustomNodeSpecification(1, false, "root", "label", "description", "imageid");
-    rootSpec->SetHasChildren(ChildrenHint::Unknown);
-    rootRule->AddSpecification(*rootSpec);
+    rootRule->AddSpecification(*CreateCustomNodeSpecification("root"));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type = \"root\"", 1, false, TargetTree_Both);
     childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false,
         true, false, false, false, "", m_widgetClass->GetFullName(), false));
-    childRule->AddSpecification(*new CustomNodeSpecification(1, false, "child2", "label", "description", "imageid"));
-    childRule->AddSpecification(*new CustomNodeSpecification(1, false, "child3", "label", "description", "imageid"));
+    childRule->AddSpecification(*CreateCustomNodeSpecification("child2"));
+    childRule->AddSpecification(*CreateCustomNodeSpecification("child3"));
     rules->AddPresentationRule(*childRule);
-    
+
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
@@ -1596,7 +1586,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
 /*---------------------------------------------------------------------------------**//**
 * Note: In this test we initialize data providers for the first spec when determining
-* root node's children. The first spec returns its child nodes and the second one returns 
+* root node's children. The first spec returns its child nodes and the second one returns
 * 1 node. Overall the root node should have 2 children - 2'nd and 3'rd.
 * @betest                                       Grigas.Petraitis                10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1604,27 +1594,25 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     {
     // insert widget instance
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule();
-    CustomNodeSpecificationP rootSpec = new CustomNodeSpecification(1, false, "root", "label", "description", "imageid");
-    rootSpec->SetHasChildren(ChildrenHint::Unknown);
-    rootRule->AddSpecification(*rootSpec);
+    rootRule->AddSpecification(*CreateCustomNodeSpecification("root"));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.Type = \"root\"", 1, false, TargetTree_Both);
     childRule1->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, true,
         false, false, false, false, "", m_widgetClass->GetFullName(), false));
-    childRule1->AddSpecification(*new CustomNodeSpecification(1, false, "child3", "label", "description", "imageid"));
+    childRule1->AddSpecification(*CreateCustomNodeSpecification("child3"));
     rules->AddPresentationRule(*childRule1);
-    
+
     ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.IsInstanceNode", 1, false, TargetTree_Both);
-    childRule2->AddSpecification(*new CustomNodeSpecification(1, false, "child2", "label", "description", "imageid"));
+    childRule2->AddSpecification(*CreateCustomNodeSpecification("child2"));
     rules->AddPresentationRule(*childRule2);
-    
+
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
@@ -1650,7 +1638,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Al
     IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
-   
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -1839,7 +1827,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_G
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_GroupedByClass", TargetTree_MainTree).GetJson();
     DataContainer<NavNodeCPtr> widgetNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
-    
+
     // make sure we have 1 widget node
     ASSERT_EQ(1, widgetNodes.GetSize());
     NavNodeCPtr widgetNode = widgetNodes[0];
@@ -1897,7 +1885,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_GroupedByLabel_Groups3InstancesWith1GroupingNode)
-    {        
+    {
     // insert widget, gadget & sprocket instances with relationships
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
     IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
@@ -1951,7 +1939,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_DoNotSort_ReturnsUnsortedNodes)
-    {    
+    {
     // insert some gadget & sprocket instances with relationships
     ECClassCP sprocketClass = m_schema->GetClassCP("Sprocket");
     ECRelationshipClassCR relationshipGadgetHasSprockets = *m_schema->GetClassCP("GadgetHasSprockets")->GetRelationshipClassCP();
@@ -2060,12 +2048,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Sk
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule();
-    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "this.IntProperty = 1", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childrenRule = new ChildNodeRule("ParentNode.IsOfClass(\"Widget\", \"RulesEngineTest\")", 1, false, TargetTree_Both);
-    childrenRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 1, 
+    childrenRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 1,
         "", RequiredRelationDirection_Both, "RulesEngineTest", "RulesEngineTest:WidgetsHaveGadgets", "RulesEngineTest:Widget"));
     rules->AddPresentationRule(*childrenRule);
 
@@ -2093,7 +2081,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Sk
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_InstanceFilter)
-    {    
+    {
     // insert some gadget & sprocket instances with relationships
     ECClassCP sprocketClass = m_schema->GetClassCP("Sprocket");
     ECRelationshipClassCR relationshipGadgetHasSprockets = *m_schema->GetClassCP("GadgetHasSprockets")->GetRelationshipClassCP();
@@ -2134,10 +2122,63 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_In
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(RelatedInstancesNodes_InstanceFilter_AppliesOnlyToMatchingInstances, R"*(
+    <ECEntityClass typeName="ClassA">
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AHasB" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="True">
+            <Class class="ClassA"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="True">
+            <Class class="ClassB"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_InstanceFilter_AppliesOnlyToMatchingInstances)
+    {
+    ECEntityClassCP classA = GetClass("ClassA")->GetEntityClassCP();
+    ECEntityClassCP classB = GetClass("ClassB")->GetEntityClassCP();
+    ECRelationshipClassCP relationship = GetClass("AHasB")->GetRelationshipClassCP();
+
+    // insert some gadget & sprocket instances with relationships
+    IECInstancePtr instanceA1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceA2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("Name", ECValue("One")); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationship, *instanceA1, *instanceB1);
+    IECInstancePtr instanceB2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {instance.SetValue("Name", ECValue("Two")); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationship, *instanceA2, *instanceB2);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", classA->GetFullName(), false));
+    rules->AddPresentationRule(*rule);
+
+    ChildNodeRule* relatedNodeRule = new ChildNodeRule("ParentNode.ClassName = \"ClassA\"", 1000, false, TargetTree_Both);
+    relatedNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
+        "this.Name = \"One\" OR this.Name = \"Two\"", RequiredRelationDirection_Both, "", relationship->GetFullName(), classB->GetFullName()));
+    rules->AddPresentationRule(*relatedNodeRule);
+
+    // request for nodes
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId(), TargetTree_MainTree).GetJson();
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    ASSERT_EQ(2, rootNodes.GetSize());
+
+    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    ASSERT_EQ(1, childNodes.GetSize());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_GroupedByLabel_GroupsByClassAndByLabel)
-    {    
+    {
     // insert widget, gadget & sprocket instances with relationships
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
     IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
@@ -2194,7 +2235,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
     // make sure we have 1 Sprocket2 instance node
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, sprocketNodes[1]->GetType().c_str());
     EXPECT_STREQ("Sprocket2", sprocketNodes[1]->GetLabel().c_str());
-    
+
     // make sure we have 1 widget instance node
     DataContainer<NavNodeCPtr> widgetInstanceNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[1], PageOptions(), options).get();
     ASSERT_EQ(1, widgetInstanceNodes.GetSize());
@@ -2206,7 +2247,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
 * @betest                                       Aidas.Vaiksnoras               01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_GroupedByLabel_GroupsByClassAndByLabel_InstanceLabelOverride)
-    {    
+    {
     // insert widget, gadget & sprocket instances with relationships
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
     IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
@@ -2566,7 +2607,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_DoNotSort_ReturnsUnsortedNodes)
-    {    
+    {
     // insert some widget instances
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget2"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
@@ -2632,7 +2673,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, UsesRelatedInstanceInIma
     {
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
     IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, 
+    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass,
         [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Gadget ID"));});
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
 
@@ -2819,7 +2860,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, StyleOverride)
     RootNodeRule* rule = new RootNodeRule();
 
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "customType", "label", "description", "imageId");
-    
+
     rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
 
@@ -2840,7 +2881,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, StyleOverride)
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas               02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, LocalizationResourceKeyDefinition_WithExistingKey)       
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, LocalizationResourceKeyDefinition_WithExistingKey)
     {
     InitTestL10N();
 
@@ -2869,7 +2910,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LocalizationResourceKeyD
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas               02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerNavigationTests, LocalizationResourceKeyDefinition_KeyNotFound)       
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, LocalizationResourceKeyDefinition_KeyNotFound)
     {
     InitTestL10N();
 
@@ -2900,7 +2941,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LocalizationResourceKeyD
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_UsesDefaultValueIfPropertyIsNull)
     {
-    // insert some widget & gadget instances 
+    // insert some widget & gadget instances
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
 
@@ -2924,7 +2965,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_UsesDefault
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, nodes.GetSize());
-    
+
     // make sure we have 1 gadget node
     ASSERT_STREQ("GadgetID", nodes[0]->GetLabel().c_str());
     ASSERT_FALSE(nodes[0]->IsCheckboxVisible());
@@ -2971,7 +3012,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_WithoutProp
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_UsesInversedPropertyName)
     {
-    // insert some widget & gadget instances 
+    // insert some widget & gadget instances
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){
         instance.SetValue("BoolProperty", ECValue(false));
         instance.SetValue("MyID", ECValue("WidgetID"));
@@ -3001,7 +3042,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_UsesInverse
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, nodes.GetSize());
-    
+
     // make sure we have 1 gadget node
     ASSERT_STREQ("GadgetID", nodes[0]->GetLabel().c_str());
     ASSERT_FALSE(nodes[0]->IsCheckboxVisible());
@@ -3018,7 +3059,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_UsesInverse
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_DoesNotUseInversedPropertyName)
     {
-    // insert some widget & gadget instances 
+    // insert some widget & gadget instances
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){
         instance.SetValue("BoolProperty", ECValue(false));
         instance.SetValue("MyID", ECValue("WidgetID"));
@@ -3049,7 +3090,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_DoesNotUseI
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, nodes.GetSize());
-    
+
     // make sure we have 1 gadget node
     ASSERT_STREQ("GadgetID", nodes[0]->GetLabel().c_str());
     ASSERT_FALSE(nodes[0]->IsCheckboxVisible());
@@ -3069,7 +3110,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget2"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget3"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SortingRule_SortingAscending", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3080,7 +3121,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     SortingRuleP sortingRule = new SortingRule("", 1, "RulesEngineTest", "Widget", "MyID", true, false, false);
     rules->AddPresentationRule(*sortingRule);
 
@@ -3104,7 +3145,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("widget2"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget3"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3114,7 +3155,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     SortingRuleP sortingRule = new SortingRule("", 1, "RulesEngineTest", "Widget", "MyID", true, false, false);
     rules->AddPresentationRule(*sortingRule);
 
@@ -3138,7 +3179,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingDesce
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("widget2"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget3"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3148,7 +3189,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingDesce
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     SortingRuleP sortingRule = new SortingRule("", 1, "RulesEngineTest", "Widget", "MyID", false, false, false);
     rules->AddPresentationRule(*sortingRule);
 
@@ -3172,7 +3213,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_DoNotSort)
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget2"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget3"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3182,7 +3223,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_DoNotSort)
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     SortingRuleP sortingRule = new SortingRule("", 1, "RulesEngineTest", "Widget", "DoNotSortByWidgetLabel", false, true, false);
     rules->AddPresentationRule(*sortingRule);
 
@@ -3209,7 +3250,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
     ECClassCP classF = m_schema->GetClassCP("ClassF");
     IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF, [](IECInstanceR instance) { instance.SetValue("IntProperty", ECValue(1)); });
     IECInstancePtr instance4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF, [](IECInstanceR instance) { instance.SetValue("IntProperty", ECValue(3)); });
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3219,7 +3260,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     SortingRuleP sortingRule = new SortingRule("", 1, "RulesEngineTest", "ClassE", "IntProperty", true, false, true);
     rules->AddPresentationRule(*sortingRule);
 
@@ -3235,10 +3276,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
 
     EXPECT_EQ(instance1->GetInstanceId(), nodes[1]->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString());
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instance1).c_str(), nodes[1]->GetLabel().c_str());
-    
+
     EXPECT_EQ(instance4->GetInstanceId(), nodes[2]->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString());
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instance4).c_str(), nodes[2]->GetLabel().c_str());
-    
+
     EXPECT_EQ(instance2->GetInstanceId(), nodes[3]->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString());
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instance2).c_str(), nodes[3]->GetLabel().c_str());
     }
@@ -3274,7 +3315,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingByTwo
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     SortingRuleP sortingRule = new SortingRule("", 1, "RulesEngineTest", "Widget", "IntProperty", true, false, false);
     rules->AddPresentationRule(*sortingRule);
     sortingRule = new SortingRule("", 1, "RulesEngineTest", "Widget", "DoubleProperty", false, false, false);
@@ -3316,7 +3357,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingByEnu
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     SortingRuleP sortingRule = new SortingRule("", 1, "RulesEngineTest", "ClassQ", "IntEnum", true, false, false);
     rules->AddPresentationRule(*sortingRule);
 
@@ -3340,7 +3381,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
     IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
     ECClassCP classG = m_schema->GetClassCP("ClassG");
     IECInstancePtr instanceG = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classG);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3350,7 +3391,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassE", "", "", "");
     ClassGroupP classGroup = new ClassGroup("", false, "RulesEngineTest", "ClassE");
     groupingRule->AddGroup(*classGroup);
@@ -3382,7 +3423,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Does
     // insert ClassF instance
     ECClassCP classF = m_schema->GetClassCP("ClassF");
     IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3392,7 +3433,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Does
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassE", "", "", "");
     ClassGroupP classGroup = new ClassGroup("", false, "RulesEngineTest", "ClassE");
     groupingRule->AddGroup(*classGroup);
@@ -3416,7 +3457,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Crea
     // insert ClassF instance
     ECClassCP classF = m_schema->GetClassCP("ClassF");
     IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3426,7 +3467,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Crea
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassE", "", "", "");
     ClassGroupP classGroup = new ClassGroup("", true, "RulesEngineTest", "ClassE");
     groupingRule->AddGroup(*classGroup);
@@ -3455,7 +3496,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_D
     {
     // insert widget instance
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3466,7 +3507,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_D
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", false, "MyID", "");
     groupingRule->AddGroup(*propertyGroup);
@@ -3489,7 +3530,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_D
     {
     // insert widget instance
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Grouping_PropertyGroup_DoesNotCreateGroupForSingleItem", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3499,7 +3540,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_D
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", false, "MyID", "");
     groupingRule->AddGroup(*propertyGroup);
@@ -3522,7 +3563,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_C
     {
     // insert widget instance
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3532,7 +3573,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_C
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "MyID", "");
     groupingRule->AddGroup(*propertyGroup);
@@ -3555,7 +3596,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_S
     {
     // insert widget instance
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3565,7 +3606,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_S
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "changedImageId", true, "MyID", "");
     groupingRule->AddGroup(*propertyGroup);
@@ -3592,7 +3633,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     // insert 2 instances
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3600,7 +3641,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     RootNodeRule* rule = new RootNodeRule();
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true));
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassE", "", "", "");
     groupingRule->AddGroup(*new PropertyGroup("", "", true, "IntProperty", ""));
     rules->AddPresentationRule(*groupingRule);
@@ -3636,7 +3677,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classDHasClassE, *instanceD, *instanceE);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classDHasClassE, *instanceD, *instanceF);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3645,7 +3686,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     RootNodeRule* rule = new RootNodeRule();
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true));
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassE", "", "", "");
     groupingRule->AddGroup(*new PropertyGroup("", "", true, "ClassD", ""));
     rules->AddPresentationRule(*groupingRule);
@@ -3685,7 +3726,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     // insert some instances
     IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance){instance.SetValue("MyProp", ECValue("My Value"));});
     IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance){instance.SetValue("MyProp", ECValue("My Value"));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3693,7 +3734,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     RootNodeRule* rule = new RootNodeRule();
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", ecClass->GetFullName(), true));
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, ecClass->GetSchema().GetName(), ecClass->GetName(), "", "", "");
     groupingRule->AddGroup(*new PropertyGroup("", "", true, "MyProp", ""));
     rules->AddPresentationRule(*groupingRule);
@@ -3723,7 +3764,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classQ, [](IECInstanceR instance){instance.SetValue("IntEnum", ECValue(3));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classQ, [](IECInstanceR instance){instance.SetValue("IntEnum", ECValue(1));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3731,7 +3772,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     RootNodeRule* rule = new RootNodeRule();
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassQ", false));
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassQ", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "IntEnum", "");
     propertyGroup->SetPropertyGroupingValue(PropertyGroupingValue::PropertyValue);
@@ -3748,7 +3789,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[0]->GetType().c_str());
     ASSERT_STREQ("A", nodes[0]->GetLabel().c_str());
-    
+
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[1]->GetType().c_str());
     ASSERT_STREQ("Z", nodes[1]->GetLabel().c_str());
     }
@@ -3762,7 +3803,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classQ, [](IECInstanceR instance){instance.SetValue("StrEnum", ECValue("Three"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classQ, [](IECInstanceR instance){instance.SetValue("StrEnum", ECValue("One"));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3770,7 +3811,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     RootNodeRule* rule = new RootNodeRule();
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassQ", false));
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassQ", "", "", "");
     groupingRule->AddGroup(*new PropertyGroup("", "", true, "StrEnum", ""));
     rules->AddPresentationRule(*groupingRule);
@@ -3784,7 +3825,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[0]->GetType().c_str());
     ASSERT_STREQ("1", nodes[0]->GetLabel().c_str());
-    
+
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, nodes[1]->GetType().c_str());
     ASSERT_STREQ("3", nodes[1]->GetLabel().c_str());
     }
@@ -3798,7 +3839,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // insert an instance with null foreign key to ClassD
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3806,7 +3847,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     RootNodeRule* rule = new RootNodeRule();
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:ClassE", true));
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassE", "", "", "");
     groupingRule->AddGroup(*new PropertyGroup("", "", true, "ClassD", ""));
     rules->AddPresentationRule(*groupingRule);
@@ -3832,7 +3873,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *widget, *gadget, [](IECInstanceR instance){instance.SetValue("Priority", ECValue(5));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3845,7 +3886,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     childNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget"));
     rules->AddPresentationRule(*childNodeRule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "WidgetHasGadget", "", "", "");
     groupingRule->AddGroup(*new PropertyGroup("", "", true, "Priority", ""));
     rules->AddPresentationRule(*groupingRule);
@@ -3887,7 +3928,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
         {
         instance.SetValue("InstanceU", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceU).GetId(), rel_stu));
         });
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3900,7 +3941,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     childNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:ClassSHasClassT", "RulesEngineTest:ClassT"));
     rules->AddPresentationRule(*childNodeRule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassSHasClassT", "", "", "");
     groupingRule->AddGroup(*new PropertyGroup("", "", true, "InstanceU", ""));
     rules->AddPresentationRule(*groupingRule);
@@ -3925,7 +3966,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, childNodes[0]->GetType().c_str());
     EXPECT_STREQ("Label 3", childNodes[0]->GetLabel().c_str());
-    
+
     // request for grandchildren
     DataContainer<NavNodeCPtr> grandchildNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get();
 
@@ -3955,7 +3996,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
         {
         instance.SetValue("InstanceU", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceU).GetId(), rel_stu));
         });
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Grouping_PropertyGroup_GroupsByRelationshipNavigationProperty_InstanceLabelOverride", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3968,7 +4009,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     childNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:ClassSHasClassT", "RulesEngineTest:ClassT"));
     rules->AddPresentationRule(*childNodeRule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassSHasClassT", "", "", "");
     groupingRule->AddGroup(*new PropertyGroup("", "", true, "InstanceU", ""));
     rules->AddPresentationRule(*groupingRule);
@@ -3991,7 +4032,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, childNodes[0]->GetType().c_str());
     EXPECT_STREQ("3", childNodes[0]->GetLabel().c_str());
-    
+
     // request for grandchildren
     DataContainer<NavNodeCPtr> grandchildNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get();
 
@@ -4014,7 +4055,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel1, *widget, *gadget, [](IECInstanceR instance){instance.SetValue("Priority", ECValue(5));});
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel2, *gadget, *sprocket);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4027,7 +4068,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     childNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 1,
         "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket"));
     rules->AddPresentationRule(*childNodeRule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "WidgetHasGadget", "", "", "");
     groupingRule->AddGroup(*new PropertyGroup("", "", true, "Priority", ""));
     rules->AddPresentationRule(*groupingRule);
@@ -4066,13 +4107,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     IECInstancePtr instanceG = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classG);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instanceD, *instanceF, [](IECInstanceR instance){instance.SetValue("Priority", ECValue(5));});
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instanceD, *instanceG, [](IECInstanceR instance){instance.SetValue("Priority", ECValue(5));});
-        
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootNodeRule = new RootNodeRule();
-    rootNodeRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+    rootNodeRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:ClassD", false));
     rules->AddPresentationRule(*rootNodeRule);
 
@@ -4080,7 +4121,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     childNodeRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "RulesEngineTest", "RulesEngineTest:ClassDReferencesClassE", "RulesEngineTest:ClassF,ClassG"));
     rules->AddPresentationRule(*childNodeRule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassDReferencesClassE", "", "", "");
     groupingRule->AddGroup(*new PropertyGroup("", "", true, "Priority", ""));
     rules->AddPresentationRule(*groupingRule);
@@ -4128,7 +4169,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     SameLabelInstanceGroupP sameLabelInstanceGroup = new SameLabelInstanceGroup("");
     groupingRule->AddGroup(*sameLabelInstanceGroup);
@@ -4162,7 +4203,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_InstanceLabelOv
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     SameLabelInstanceGroupP sameLabelInstanceGroup = new SameLabelInstanceGroup("");
     groupingRule->AddGroup(*sameLabelInstanceGroup);
@@ -4185,7 +4226,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     {
     // insert some widget instances
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(7));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4195,7 +4236,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "IntProperty", "");
     PropertyRangeGroupSpecificationP propertyRangeGroupSpecification = new PropertyRangeGroupSpecification("", "", "1", "5");
@@ -4226,7 +4267,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     {
     // insert an instance
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(4));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4235,7 +4276,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "IntProperty", "");
     PropertyRangeGroupSpecificationP propertyRangeGroupSpecification = new PropertyRangeGroupSpecification("Range", "", "1", "5");
@@ -4266,7 +4307,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     {
     // insert an instance
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("DoubleProperty", ECValue(4.5));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4275,7 +4316,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "DoubleProperty", "");
     PropertyRangeGroupSpecificationP propertyRangeGroupSpecification = new PropertyRangeGroupSpecification("Range", "", "1", "5");
@@ -4306,7 +4347,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     {
     // insert an instance
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("LongProperty", ECValue((int64_t)4));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4315,7 +4356,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "LongProperty", "");
     PropertyRangeGroupSpecificationP propertyRangeGroupSpecification = new PropertyRangeGroupSpecification("Range", "", "1", "5");
@@ -4346,7 +4387,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     {
     // insert an instance
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("DateProperty", ECValue(DateTime(2017, 5, 30)));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4355,7 +4396,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
         "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "DateProperty", "");
     PropertyRangeGroupSpecificationP propertyRangeGroupSpecification = new PropertyRangeGroupSpecification("Range", "", "2017-05-01", "2017-06-01");
@@ -4389,7 +4430,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(4));});
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgetClass, *widget, *gadget);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4403,7 +4444,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Backward, "", "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget"));
     rules->AddPresentationRule(*childRule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
     PropertyGroupP propertyGroup = new PropertyGroup("", "", true, "IntProperty", "");
     PropertyRangeGroupSpecificationP propertyRangeGroupSpecification = new PropertyRangeGroupSpecification("", "", "1", "5");
@@ -4436,7 +4477,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
     // insert some widget instances
     ECClassCP classF = m_schema->GetClassCP("ClassF");
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4446,7 +4487,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, true, false, "RulesEngineTest");
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
-    
+
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassE", "", "", "");
     ClassGroupP classGroup = new ClassGroup("", true, "RulesEngineTest", "ClassE");
     groupingRule->AddGroup(*classGroup);
@@ -4481,7 +4522,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DoesNotReturnECInstanceN
     ECClassCP classE = m_schema->GetClassCP("ClassE");
     IECInstancePtr classEInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationship, *classDInstance, *classEInstance);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4495,7 +4536,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DoesNotReturnECInstanceN
     RelatedInstanceNodesSpecificationP relatedInstanceNodesSpecification = new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, "", RequiredRelationDirection_Both, "RulesEngineTest", "RulesEngineTest:ClassDHasClassE", "RulesEngineTest:ClassD,ClassE");
     relatedNodeRule->AddSpecification(*relatedInstanceNodesSpecification);
     rules->AddPresentationRule(*relatedNodeRule);
-    
+
     // make sure we have 1 ClassD root node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("DoesNotReturnECInstanceNodesOfTheSameSpecificationAlreadyExistingInHierarchy", TargetTree_MainTree).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
@@ -4508,7 +4549,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DoesNotReturnECInstanceN
     ASSERT_EQ(1, classDChildNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, classDChildNodes[0]->GetType().c_str());
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*classEInstance).c_str(), classDChildNodes[0]->GetLabel().c_str());
-    
+
     // ClassE instance node has 1 ClassD instance node. There's such a node already in the hierarchy, but it's based on
     // different (root node rule) specification, so we allow it
     DataContainer<NavNodeCPtr> classEChildNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classDChildNodes[0], PageOptions(), options).get();
@@ -4540,7 +4581,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingWorksCorrectlyWi
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), widgetHasGadgetsRelationship, *widget, *gadget);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4559,7 +4600,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingWorksCorrectlyWi
     PropertyGroup* propertyGroupSpec = new PropertyGroup("", "", true, "MyID");
     groupingRule->AddGroup(*propertyGroupSpec);
     rules->AddPresentationRule(*groupingRule);
-    
+
     // make sure we have 1 property grouping node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
@@ -4579,7 +4620,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingWorksCorrectlyWi
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomizesNodesWhenCustomizationRulesDefinedInSupplementalRuleset)
     {
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    
+
     // create the rule sets
     PresentationRuleSetPtr primaryRules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*primaryRules);
@@ -4591,7 +4632,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomizesNodesWhenCusto
 
     PresentationRuleSetPtr supplementalRules = PresentationRuleSet::CreateInstance(primaryRules->GetRuleSetId(), 1, 0, true, "Customization", "", "", false);
     m_locater->AddRuleSet(*supplementalRules);
-    
+
     LabelOverride* customizationRule = new LabelOverride("", 1, "\"Test\"", "");
     supplementalRules->AddPresentationRule(*customizationRule);
 
@@ -4624,7 +4665,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
     IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("test"));});
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), widgetHasGadgetsRelationship, *widget, *gadget);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), gadgetHasSprocketsRelationship, *gadget, *sprocket);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4645,7 +4686,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
     PropertyGroup* propertyGroupSpec = new PropertyGroup("", "", true, "Description");
     groupingRule->AddGroup(*propertyGroupSpec);
     rules->AddPresentationRule(*groupingRule);
-    
+
     // make sure we have 1 widget
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
@@ -4684,7 +4725,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
     IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("test"));});
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), widgetHasGadgetsRelationship, *widget, *gadget);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), gadgetHasSprocketsRelationship, *gadget, *sprocket);
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("GroupingChildrenByRelatedInstanceProperty", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4704,7 +4745,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
     PropertyGroup* propertyGroupSpec = new PropertyGroup("", "", true, "Description");
     groupingRule->AddGroup(*propertyGroupSpec);
     rules->AddPresentationRule(*groupingRule);
-    
+
     // make sure we have 1 widget
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
     DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
@@ -4736,10 +4777,9 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, ReturnsChildNodesWhenTh
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
-    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID")); 
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     RootNodeRule* rule = new RootNodeRule();
-    InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget", false);
-    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", "RulesEngineTest:Widget", false));
     rules->AddPresentationRule(*rule);
 
     // make sure we have 2 widget nodes
@@ -4764,14 +4804,12 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, ReturnsChildrenUsingAll
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rootRule = new RootNodeRule();
-    CustomNodeSpecificationP spec = new CustomNodeSpecification(1, true, "a", "a", "a", "a");
-    spec->SetHasChildren(ChildrenHint::Unknown);
-    rootRule->AddSpecification(*spec);
+    rootRule->AddSpecification(*CreateCustomNodeSpecification("a"));
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type=\"a\"", 1, false, TargetTree_Both);
-    childRule->AddSpecification(*new CustomNodeSpecification(1, false, "b", "b", "b", "b"));
-    childRule->AddSpecification(*new CustomNodeSpecification(1, false, "c", "c", "c", "c"));
+    childRule->AddSpecification(*CreateCustomNodeSpecification("b"));
+    childRule->AddSpecification(*CreateCustomNodeSpecification("c"));
     rules->AddPresentationRule(*childRule);
 
     // make sure we have 1 root node
@@ -4936,14 +4974,14 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, FiltersNodesByParentNod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoubleProperty_NoDigitsAfterDecimalPointAppendTwoZeroes)
     {
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
-        instance.SetValue("DoubleProperty", ECValue(2.)); 
+        instance.SetValue("DoubleProperty", ECValue(2.));
         instance.SetValue("MyID", ECValue("WidgetID"));
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
-        instance.SetValue("DoubleProperty", ECValue(2.)); 
+        instance.SetValue("DoubleProperty", ECValue(2.));
         instance.SetValue("MyID", ECValue("WidgetID"));
         });
 
@@ -4981,14 +5019,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoubleProperty_OneDigitAfterDecimalPointAppendOneZero)
     {
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
-        instance.SetValue("DoubleProperty", ECValue(2.5)); 
+        instance.SetValue("DoubleProperty", ECValue(2.5));
         instance.SetValue("MyID", ECValue("WidgetID"));
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
-        instance.SetValue("DoubleProperty", ECValue(2.5)); 
+        instance.SetValue("DoubleProperty", ECValue(2.5));
         instance.SetValue("MyID", ECValue("WidgetID"));
         });
 
@@ -5026,19 +5064,19 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoubleProperty_MorePreciseNumbersRoundsSecondDigitAfterDecimalPointSameResult)
     {
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("DoubleProperty", ECValue(0.00546));
-        instance.SetValue("MyID", ECValue("WidgetID")); 
+        instance.SetValue("MyID", ECValue("WidgetID"));
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("DoubleProperty", ECValue(0.00798));
         instance.SetValue("MyID", ECValue("WidgetID"));
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
-        instance.SetValue("DoubleProperty", ECValue(0.00899)); 
+        instance.SetValue("DoubleProperty", ECValue(0.00899));
         instance.SetValue("MyID", ECValue("WidgetID"));
         });
 
@@ -5077,12 +5115,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoubleProperty_MorePreciseNumbersRoundsSecondDigitAfterDecimalPointDifferentResult)
     {
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("DoubleProperty", ECValue(2.505f));
-        instance.SetValue("MyID", ECValue("WidgetID")); 
+        instance.SetValue("MyID", ECValue("WidgetID"));
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("DoubleProperty", ECValue(2.504f));
         instance.SetValue("MyID", ECValue("WidgetID"));
@@ -5128,12 +5166,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoubleProperty_MorePreciseNumbersRoundsFirstDigitAfterDecimalPointSameResult)
     {
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("DoubleProperty", ECValue(2.59999999));
-        instance.SetValue("MyID", ECValue("WidgetID")); 
+        instance.SetValue("MyID", ECValue("WidgetID"));
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("DoubleProperty", ECValue(2.59999999));
         instance.SetValue("MyID", ECValue("WidgetID"));
@@ -5173,12 +5211,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoubleProperty_MorePreciseNumbersRoundsFirstDigitAfterDecimalPointDifferentResult)
     {
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("DoubleProperty", ECValue(2.595));
-        instance.SetValue("MyID", ECValue("WidgetID")); 
+        instance.SetValue("MyID", ECValue("WidgetID"));
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("DoubleProperty", ECValue(2.594));
         instance.SetValue("MyID", ECValue("WidgetID"));
@@ -5571,7 +5609,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 * @betest                                       Aidas.Vaiksnoras               10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsFilteredNodesFromNotExpandedHierarchy)
-    {    
+    {
     // insert some widget instances
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
@@ -5596,7 +5634,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsFilteredNodesFrom
 * @betest                                       Haroldas.Vitunskas             09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsFilteredNodesMatchingPercentSymbol)
-    {    
+    {
     // insert some widget instances
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("%")); });
 
@@ -5621,7 +5659,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsFilteredNodesMatc
 * @betest                                       Haroldas.Vitunskas             09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsFilteredNodesMatchingUnderscoreSymbol)
-    {    
+    {
     // insert some widget instances
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("_")); });
 
@@ -5646,7 +5684,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsFilteredNodesMatc
 * @betest                                       Haroldas.Vitunskas             09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, DoesNotReturnFilteredNodesNotMatchingPercentSymbol)
-    {    
+    {
     // insert some widget instances
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
@@ -5670,7 +5708,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DoesNotReturnFilteredNod
 * @betest                                       Haroldas.Vitunskas             09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, DoesNotReturnFilteredNodesNotMatchingUnderscoreSymbol)
-    {    
+    {
     // insert some widget instances
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
@@ -5694,7 +5732,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DoesNotReturnFilteredNod
 * @betest                                       Aidas.Vaiksnoras               01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_OverridesInstanceLabelAsFirstNotEmptyParameter)
-    {    
+    {
     // insert some widget instances
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget2"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
@@ -5728,7 +5766,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Ov
 * @betest                                       Aidas.Vaiksnoras               01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_FindsCorrectPropertyWithLowerCasePropertyNameAndOverridesLabel)
-    {    
+    {
     // insert some widget instances
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
 
@@ -5758,7 +5796,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Fi
 * @betest                                       Aidas.Vaiksnoras               01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_AssertsWhenPropertyNameIsInvalid)
-    {    
+    {
     // insert some widget instances
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
 
@@ -5923,7 +5961,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecific
     ECClassCP classC = GetClass("ClassC");
     IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("ClassC_CodeValue"));});
     IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("ClassA1_CodeValue"));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -5970,7 +6008,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecific
     ECClassCP classC = GetClass("ClassC");
     IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("UserLabel", ECValue("1_Instance_C"));});
     IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("2_Instance_A"));});
-    
+
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
