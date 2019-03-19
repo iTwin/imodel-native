@@ -211,4 +211,67 @@ TEST_F(UlasProviderTests, SendFeatureLogs_Success)
     GetUlasProvider().SendFeatureLogs(clientInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
     }
 
+TEST_F(UlasProviderTests, RealtimeTrackUsage_Success)
+    {
+    Utf8String mockUrl("https://ulasmockurl.bentley.com");
 
+    GetMockBuddi().MockUlasRealtimeLoggingBaseUrl(mockUrl);
+
+    GetMockHttp().ExpectRequests(1);
+    // return a mock location response
+    GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
+        {
+        EXPECT_EQ(mockUrl, request.GetUrl());
+
+        return MockHttpHandler::StubHttpResponse();
+        });
+
+    EXPECT_SUCCESS(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId").get());
+    }
+
+TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Success)
+    {
+    const auto version = BeVersion(1, 0);
+    FeatureEvent featureEvent = FeatureEvent("TestFeatureId", version);
+
+    Utf8String mockUrl("https://ulasmockurl.bentley.com/feature");
+
+    GetMockBuddi().MockUlasRealtimeFeatureUrl(mockUrl);
+
+    GetMockHttp().ExpectRequests(1);
+    // return a mock location response
+    GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
+        {
+        EXPECT_EQ(mockUrl, request.GetUrl());
+
+        return MockHttpHandler::StubHttpResponse();
+        });
+
+    EXPECT_SUCCESS(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId").get());
+    }
+
+TEST_F(UlasProviderTests, RealtimeTrackUsageWithUserData_Success)
+    {
+    const auto version = BeVersion(1, 0);
+
+    FeatureUserDataMapPtr featureAttribute = std::make_shared<FeatureUserDataMap>();
+    featureAttribute->AddAttribute("Manufacturer", "Bentley Systems, Inc.");
+    featureAttribute->AddAttribute("Website", "https://www.w3schools.com");
+    featureAttribute->AddAttribute("Title", "Mobile App");
+    FeatureEvent featureEvent = FeatureEvent(Utf8String("TestFeatureId"), version, featureAttribute);
+
+    Utf8String mockUrl("https://ulasmockurl.bentley.com/feature");
+
+    GetMockBuddi().MockUlasRealtimeFeatureUrl(mockUrl);
+
+    GetMockHttp().ExpectRequests(1);
+    // return a mock location response
+    GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
+        {
+        EXPECT_EQ(mockUrl, request.GetUrl());
+
+        return MockHttpHandler::StubHttpResponse();
+        });
+
+    EXPECT_SUCCESS(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId").get());
+    }
