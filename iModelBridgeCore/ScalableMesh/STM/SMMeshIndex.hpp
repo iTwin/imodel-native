@@ -4623,6 +4623,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     {
         bool expected = true;
         while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
+        return;
     }
 
     {
@@ -4630,13 +4631,16 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         {
             expected = true;
             while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
+            return;
         }
+
         for (const auto& diffSet : *diffSetPtr)
         {
             if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate)
             {
                 expected = true;
                 while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
+                return;
             }
         }
     //std::cout << "Merging clips for " << this->GetBlockID().m_integerID << " we have " << diffSetPtr->size() << "clips" << std::endl;
