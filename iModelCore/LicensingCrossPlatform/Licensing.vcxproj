@@ -33,7 +33,6 @@
   <ItemGroup>
     <ClInclude Include="Licensing\SaasClientImpl.h" />
     <ClInclude Include="Licensing\ClientImpl.h" />
-    <ClInclude Include="Licensing\IClient.h" />
     <ClInclude Include="Licensing\AccessKeyClientImpl.h" />
     <ClInclude Include="Licensing\ISaasClient.h" />
     <ClInclude Include="Licensing\ILicensingDb.h" />
