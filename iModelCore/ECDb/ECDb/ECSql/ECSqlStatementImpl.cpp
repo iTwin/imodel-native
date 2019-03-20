@@ -12,12 +12,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //********************************************************** 
 // ECSqlStatement::Impl
 //**********************************************************
+#ifndef NDEBUG
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
 //static
 NativeLogging::ILogger* ECSqlStatement::Impl::s_prepareDiagnosticsLogger = nullptr;
-
+#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        03/17
 //---------------------------------------------------------------------------------------
@@ -59,8 +60,9 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb,
         return ECSqlStatus::InvalidECSql;
         }
 
+#ifndef NDEBUG
     Diagnostics diag(ecsql, GetPrepareDiagnosticsLogger(), true);
-
+#endif
     //Step 1: parse the ECSQL
     ECSqlParser parser;
     std::unique_ptr<Exp> exp = parser.Parse(ecdb, ecsql, issues);
@@ -326,6 +328,7 @@ IECSqlPreparedStatement& ECSqlStatement::Impl::CreatePreparedStatement(ECDbCR ec
     return *m_preparedStatement;
     }
 
+#ifndef NDEBUG
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
@@ -338,7 +341,9 @@ NativeLogging::ILogger& ECSqlStatement::Impl::GetPrepareDiagnosticsLogger()
     BeAssert(s_prepareDiagnosticsLogger != nullptr);
     return *s_prepareDiagnosticsLogger;
     }
+#endif
 
+#ifndef NDEBUG
 //********************************************************** 
 // ECSqlStatement::Impl::Diagnostics
 //**********************************************************
@@ -381,4 +386,5 @@ bool ECSqlStatement::Impl::Diagnostics::CanLog() const
     {
     return m_logger.isSeverityEnabled(LOG_SEVERITY);
     }
+#endif
 END_BENTLEY_SQLITE_EC_NAMESPACE

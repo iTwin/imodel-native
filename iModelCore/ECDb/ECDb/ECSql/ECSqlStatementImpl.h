@@ -28,7 +28,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECSqlStatement::Impl final
     {
     private:
-        
+#ifndef NDEBUG        
         struct Diagnostics final
             {
             private:
@@ -47,9 +47,8 @@ struct ECSqlStatement::Impl final
                 Diagnostics(Utf8CP ecsql, NativeLogging::ILogger& logger, bool startTimer);
                 ~Diagnostics() { Log(); }
             };
-
         static NativeLogging::ILogger* s_prepareDiagnosticsLogger;
-
+#endif
         std::unique_ptr<IECSqlPreparedStatement> m_preparedStatement;
 
         //not copyable
@@ -60,8 +59,9 @@ struct ECSqlStatement::Impl final
 
         ECSqlStatus FailIfNotPrepared(Utf8CP errorMessage) const;
         ECSqlStatus FailIfWrongType(ECSqlType expectedType, Utf8CP errorMessage) const;
-
+#ifndef NDEBUG
         static NativeLogging::ILogger& GetPrepareDiagnosticsLogger();
+#endif
         mutable Nullable<uint64_t> m_hash64;
         
     public:
