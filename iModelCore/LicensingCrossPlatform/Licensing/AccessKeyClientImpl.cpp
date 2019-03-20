@@ -84,7 +84,7 @@ LicenseStatus AccessKeyClientImpl::StartApplication()
         }
 
     // Get product status
-    LicenseStatus licStatus = GetProductStatus();
+    LicenseStatus licStatus = GetLicenseStatus();
 
     if ((LicenseStatus::Ok == licStatus) ||
         (LicenseStatus::Offline == licStatus) ||
@@ -140,7 +140,7 @@ void AccessKeyClientImpl::PolicyHeartbeat(int64_t currentTime)
                 m_policy = policyToken;
                 }
 
-            CleanUpPolicies(); // if policy is expired or invalid, this will result in GetProductStatus() returning NotEntitled
+            CleanUpPolicies(); // if policy is expired or invalid, this will result in GetLicenseStatus() returning NotEntitled
             m_lastRunningPolicyheartbeatStartTime = currentTime;
             }
 
@@ -210,9 +210,9 @@ std::shared_ptr<Policy> AccessKeyClientImpl::GetPolicyToken()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-LicenseStatus AccessKeyClientImpl::GetProductStatus()
+LicenseStatus AccessKeyClientImpl::GetLicenseStatus()
     {
-    LOG.debug("AccessKeyClientImpl::GetProductStatus");
+    LOG.debug("AccessKeyClientImpl::GetLicenseStatus");
 
     if (!ValidateAccessKey())
         {
@@ -220,7 +220,7 @@ LicenseStatus AccessKeyClientImpl::GetProductStatus()
         return LicenseStatus::NotEntitled;
         }
 
-    return ClientImpl::GetProductStatus();
+    return ClientImpl::GetLicenseStatus();
     }
 
 /*--------------------------------------------------------------------------------------+

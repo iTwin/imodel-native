@@ -143,7 +143,7 @@ public:
     LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicy();
 
     // Product status
-    virtual LICENSING_EXPORT LicenseStatus GetProductStatus();
+    virtual LICENSING_EXPORT LicenseStatus GetLicenseStatus();
 
     // Used in tests
     LICENSING_EXPORT ILicensingDb& GetLicensingDb();

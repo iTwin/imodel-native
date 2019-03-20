@@ -328,7 +328,7 @@ TEST_F(ClientTests, GetCertificate_Success_HttpMock)
     auto cert = client.CreateGetRequest(url).Perform().get();
     }
 
-TEST_F(ClientTests, GetProductStatusEmpty_Test)
+TEST_F(ClientTests, GetLicenseStatusEmpty_Test)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
@@ -339,11 +339,11 @@ TEST_F(ClientTests, GetProductStatusEmpty_Test)
     GetLicensingDbMock().MockUserPolicyFiles(userId, emptyPolicyList);
 
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
-    EXPECT_EQ(static_cast<int>(client->GetProductStatus()), static_cast<int>(LicenseStatus::NotEntitled));
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::NotEntitled));
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     }
 
-TEST_F(ClientTests, GetProductStatusValid_Test)
+TEST_F(ClientTests, GetLicenseStatusValid_Test)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
@@ -357,12 +357,12 @@ TEST_F(ClientTests, GetProductStatusValid_Test)
     GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
 
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
-    EXPECT_EQ(static_cast<int>(client->GetProductStatus()), static_cast<int>(LicenseStatus::Ok));
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok));
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     EXPECT_EQ(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
     }
 
-TEST_F(ClientTests, GetProductStatusValidTrial_Test)
+TEST_F(ClientTests, GetLicenseStatusValidTrial_Test)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
@@ -375,11 +375,11 @@ TEST_F(ClientTests, GetProductStatusValidTrial_Test)
     GetLicensingDbMock().MockUserPolicyFiles(userId, validTrialPolicyList);
 
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
-    EXPECT_EQ(static_cast<int>(client->GetProductStatus()), static_cast<int>(LicenseStatus::Trial));
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Trial));
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     }
 
-TEST_F(ClientTests, GetProductStatusExpiredTrial_Test)
+TEST_F(ClientTests, GetLicenseStatusExpiredTrial_Test)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
@@ -392,11 +392,11 @@ TEST_F(ClientTests, GetProductStatusExpiredTrial_Test)
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredTrialPolicyList);
 
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
-    EXPECT_EQ(static_cast<int>(client->GetProductStatus()), static_cast<int>(LicenseStatus::Expired));
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Expired));
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     }
 
-TEST_F(ClientTests, GetProductStatusExpired_Test)
+TEST_F(ClientTests, GetLicenseStatusExpired_Test)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
@@ -409,11 +409,11 @@ TEST_F(ClientTests, GetProductStatusExpired_Test)
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredPolicyList);
 
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
-    EXPECT_EQ(static_cast<int>(client->GetProductStatus()), static_cast<int>(LicenseStatus::NotEntitled)); // not valid, so SearchForPolicy returns nullptr
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::NotEntitled)); // not valid, so SearchForPolicy returns nullptr
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     }
 
-TEST_F(ClientTests, GetProductStatusNoSecurables_Test)
+TEST_F(ClientTests, GetLicenseStatusNoSecurables_Test)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
@@ -426,11 +426,11 @@ TEST_F(ClientTests, GetProductStatusNoSecurables_Test)
     GetLicensingDbMock().MockUserPolicyFiles(userId, noSecurablesPolicyList);
 
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
-    EXPECT_EQ(static_cast<int>(client->GetProductStatus()), static_cast<int>(LicenseStatus::NotEntitled));
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::NotEntitled));
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     }
 
-TEST_F(ClientTests, GetProductStatusNoACLs_Test)
+TEST_F(ClientTests, GetLicenseStatusNoACLs_Test)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
@@ -443,11 +443,11 @@ TEST_F(ClientTests, GetProductStatusNoACLs_Test)
     GetLicensingDbMock().MockUserPolicyFiles(userId, noACLsPolicyList);
 
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
-    EXPECT_EQ(static_cast<int>(client->GetProductStatus()), static_cast<int>(LicenseStatus::NotEntitled));
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::NotEntitled));
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     }
 
-TEST_F(ClientTests, GetProductStatusNoUserData_Test)
+TEST_F(ClientTests, GetLicenseStatusNoUserData_Test)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
@@ -460,11 +460,11 @@ TEST_F(ClientTests, GetProductStatusNoUserData_Test)
     GetLicensingDbMock().MockUserPolicyFiles(userId, noUserDataPolicyList);
 
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
-    EXPECT_EQ(static_cast<int>(client->GetProductStatus()), static_cast<int>(LicenseStatus::NotEntitled));
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::NotEntitled));
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     }
 
-TEST_F(ClientTests, GetProductStatusNoRequestData_Test)
+TEST_F(ClientTests, GetLicenseStatusNoRequestData_Test)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
@@ -477,11 +477,11 @@ TEST_F(ClientTests, GetProductStatusNoRequestData_Test)
     GetLicensingDbMock().MockUserPolicyFiles(userId, noRequestDataPolicyList);
 
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
-    EXPECT_EQ(static_cast<int>(client->GetProductStatus()), static_cast<int>(LicenseStatus::NotEntitled));
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::NotEntitled));
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     }
 
-TEST_F(ClientTests, GetProductStatusIdBad_Test)
+TEST_F(ClientTests, GetLicenseStatusIdBad_Test)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
@@ -496,11 +496,11 @@ TEST_F(ClientTests, GetProductStatusIdBad_Test)
     GetLicensingDbMock().MockUserPolicyFiles(userId, idBadPolicyList);
 
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
-    EXPECT_EQ(static_cast<int>(client->GetProductStatus()), static_cast<int>(LicenseStatus::NotEntitled));
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::NotEntitled));
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     }
 
-TEST_F(ClientTests, GetProductStatusOfflineNotAllowed_Test)
+TEST_F(ClientTests, GetLicenseStatusOfflineNotAllowed_Test)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
@@ -514,12 +514,12 @@ TEST_F(ClientTests, GetProductStatusOfflineNotAllowed_Test)
     GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
 
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
-    EXPECT_EQ(static_cast<int>(client->GetProductStatus()), static_cast<int>(LicenseStatus::Ok));
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok));
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     EXPECT_EQ(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
     }
 
-TEST_F(ClientTests, GetProductStatusGracePeriodStartedOfflineNotAllowed_Test)
+TEST_F(ClientTests, GetLicenseStatusGracePeriodStartedOfflineNotAllowed_Test)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
@@ -534,12 +534,12 @@ TEST_F(ClientTests, GetProductStatusGracePeriodStartedOfflineNotAllowed_Test)
     GetLicensingDbMock().MockUserPolicyFiles(userId, offlineNotAllowedPolicyList);
     GetLicensingDbMock().MockGetOfflineGracePeriodStart(timestamp);
 
-    EXPECT_EQ(static_cast<int>(client->GetProductStatus()), static_cast<int>(LicenseStatus::DisabledByPolicy)); // Grace Period started; should be disabled
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::DisabledByPolicy)); // Grace Period started; should be disabled
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     EXPECT_EQ(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
     }
 
-TEST_F(ClientTests, GetProductStatusGracePeriodStarted_Test)
+TEST_F(ClientTests, GetLicenseStatusGracePeriodStarted_Test)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
@@ -554,12 +554,12 @@ TEST_F(ClientTests, GetProductStatusGracePeriodStarted_Test)
     GetLicensingDbMock().MockUserPolicyFiles(userId, validPolicyList);
     GetLicensingDbMock().MockGetOfflineGracePeriodStart(timestamp);
 
-    EXPECT_EQ(static_cast<int>(client->GetProductStatus()), static_cast<int>(LicenseStatus::Offline)); // Valid status should be Offline now
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Offline)); // Valid status should be Offline now
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     EXPECT_EQ(2, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
     }
 
-TEST_F(ClientTests, GetProductStatusExpiredGracePeriod_Test)
+TEST_F(ClientTests, GetLicenseStatusExpiredGracePeriod_Test)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
@@ -574,7 +574,7 @@ TEST_F(ClientTests, GetProductStatusExpiredGracePeriod_Test)
     GetLicensingDbMock().MockUserPolicyFiles(userId, validPolicyList);
     GetLicensingDbMock().MockGetOfflineGracePeriodStart(timestampPast);
 
-    EXPECT_EQ(static_cast<int>(client->GetProductStatus()), static_cast<int>(LicenseStatus::Expired)); // Valid status should be Expired now, since offline grace period has expired
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Expired)); // Valid status should be Expired now, since offline grace period has expired
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     EXPECT_LE(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
     }

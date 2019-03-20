@@ -74,5 +74,5 @@ BentleyStatus AccessKeyClient::MarkFeature(Utf8StringCR featureId, FeatureUserDa
 +---------------+---------------+---------------+---------------+---------------+------*/
 LicenseStatus AccessKeyClient::GetLicenseStatus()
     {
-    return m_impl->GetProductStatus();
+    return m_impl->GetLicenseStatus();
     }

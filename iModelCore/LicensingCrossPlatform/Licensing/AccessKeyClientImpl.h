@@ -44,7 +44,7 @@ public:
     LICENSING_EXPORT LicenseStatus StartApplication();
     LICENSING_EXPORT BentleyStatus StopApplication();
 
-    LICENSING_EXPORT LicenseStatus GetProductStatus();
+    LICENSING_EXPORT LicenseStatus GetLicenseStatus();
 
     LICENSING_EXPORT void DeleteAllOtherPoliciesByKey(std::shared_ptr<Policy> policy);
     };

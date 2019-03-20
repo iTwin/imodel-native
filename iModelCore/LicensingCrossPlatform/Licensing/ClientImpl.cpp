@@ -121,7 +121,7 @@ LicenseStatus ClientImpl::StartApplication()
         }
 
     // Get product status
-    LicenseStatus licStatus = GetProductStatus();
+    LicenseStatus licStatus = GetLicenseStatus();
 
     if ((LicenseStatus::Ok == licStatus) ||
         (LicenseStatus::Offline == licStatus) ||
@@ -388,7 +388,7 @@ BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap
         return ERROR;
         }
 
-    LicenseStatus licStatus = GetProductStatus();
+    LicenseStatus licStatus = GetLicenseStatus();
 
     if ((LicenseStatus::Ok != licStatus) &&
         (LicenseStatus::Offline != licStatus) &&
@@ -778,9 +778,9 @@ int64_t ClientImpl::GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> poli
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-LicenseStatus ClientImpl::GetProductStatus()
+LicenseStatus ClientImpl::GetLicenseStatus()
 	{
-    LOG.debug("ClientImpl::GetProductStatus");
+    LOG.debug("ClientImpl::GetLicenseStatus");
 
     const auto productId = m_clientInfo->GetApplicationProductId();
 
