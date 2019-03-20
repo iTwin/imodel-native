@@ -778,77 +778,69 @@ int64_t ClientImpl::GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> poli
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-LicenseStatus ClientImpl::GetProductStatus(int requestedProductId)
+LicenseStatus ClientImpl::GetProductStatus()
 	{
     LOG.debug("ClientImpl::GetProductStatus");
 
-	// productId to look for; allow custom product to be searched for (for testing purposes)
-	Utf8String productId;
-	if (requestedProductId < 0)
-		productId = m_clientInfo->GetApplicationProductId();
-	else
-		productId = Utf8String(std::to_string(requestedProductId).c_str());
-	// get valid policy for user
+    const auto productId = m_clientInfo->GetApplicationProductId();
+
 	auto policy = SearchForPolicy(productId);
-	// if null, NotEntitled
-	if (policy == nullptr)
+
+    if (policy == nullptr)
 		{
 		return LicenseStatus::NotEntitled;
 		}
-	// get PolicyStatus
-	auto policyStatus = policy->GetPolicyStatus();
-	// if not valid, return LicenseStatus::DisabledByPolicy
-	if (policyStatus != Policy::PolicyStatus::Valid)
+
+    // if policy not valid, return LicenseStatus::DisabledByPolicy
+	if (policy->GetPolicyStatus() != Policy::PolicyStatus::Valid)
 		{
 		return LicenseStatus::DisabledByPolicy;
 		}
-	// get GetProductLicenseStatus
-	auto productStatus = policy->GetProductStatus(productId, m_featureString);
-	// if prodStatus is TrialExpired, return LicenseStatus::Expired
-	if (productStatus == Policy::ProductStatus::TrialExpired)
+
+	const auto productStatus = policy->GetProductStatus(productId, m_featureString);
+
+    if (productStatus == Policy::ProductStatus::TrialExpired)
 		{
 		return LicenseStatus::Expired;
 		}
-	// if prodStatus is Denied, return LicenseStatus::AccessDenied
-	if (productStatus == Policy::ProductStatus::Denied)
+
+    if (productStatus == Policy::ProductStatus::Denied)
 		{
 		return LicenseStatus::AccessDenied;
 		}
-	// if prodStatus is NoLicense, return LicenseStatus::NotEntitled
-	if (productStatus == Policy::ProductStatus::NoLicense)
+
+    if (productStatus == Policy::ProductStatus::NoLicense)
 		{
 		return LicenseStatus::NotEntitled;
 		}
-	// if prodStatus is Allowed
-	if (productStatus == Policy::ProductStatus::Allowed)
+
+    if (productStatus == Policy::ProductStatus::Allowed)
 		{
-		// if (IsTrial) return LicenseStatus::Trial
-		if (policy->IsTrial(productId, m_featureString))
+
+        if (policy->IsTrial(productId, m_featureString))
 			{
 			return LicenseStatus::Trial;
 			}
-		// if (hasOfflineGracePeriodStarted && daysLeftInOfflineGracePeriod > 0
-		if (HasOfflineGracePeriodStarted())
+
+        if (HasOfflineGracePeriodStarted())
 			{
-			// if not allowed to use offline, return LicenseStatus::DisabledByPolicy
-			if (!policy->IsAllowedOfflineUsage(productId, m_featureString))
+
+            if (!policy->IsAllowedOfflineUsage(productId, m_featureString))
 				{
 				return LicenseStatus::DisabledByPolicy;
 				}
-			// if still has time left for offline usage, return LicenseStatus::Offline
-			if (GetDaysLeftInOfflineGracePeriod(policy, productId, m_featureString) > 0)
+
+            if (GetDaysLeftInOfflineGracePeriod(policy, productId, m_featureString) > 0)
 				{
 				return LicenseStatus::Offline;
 				}
-			// else offline grace period has expired, return LicenseStatus::Expired
-			else
-				{
-				return LicenseStatus::Expired;
-				}
+			
+            // else offline grace period has expired, return LicenseStatus::Expired
+			return LicenseStatus::Expired;
 			}
-		// else return LicenseStatus::Ok
+
 		return LicenseStatus::Ok;
 		}
-	// return DisabledByPolicy
-	return LicenseStatus::DisabledByPolicy;
+
+    return LicenseStatus::DisabledByPolicy;
 	}

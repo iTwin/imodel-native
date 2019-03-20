@@ -210,7 +210,7 @@ std::shared_ptr<Policy> ClientWithKeyImpl::GetPolicyToken()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-LicenseStatus ClientWithKeyImpl::GetProductStatus(int requestedProductId)
+LicenseStatus ClientWithKeyImpl::GetProductStatus()
     {
     LOG.debug("ClientWithKeyImpl::GetProductStatus");
 
@@ -220,7 +220,7 @@ LicenseStatus ClientWithKeyImpl::GetProductStatus(int requestedProductId)
         return LicenseStatus::NotEntitled;
         }
 
-    return ClientImpl::GetProductStatus(requestedProductId);
+    return ClientImpl::GetProductStatus();
     }
 
 /*--------------------------------------------------------------------------------------+
