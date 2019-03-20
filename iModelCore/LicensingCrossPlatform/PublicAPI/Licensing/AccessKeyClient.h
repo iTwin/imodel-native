@@ -29,11 +29,11 @@ typedef std::shared_ptr<struct AccessKeyClient> AccessKeyClientPtr;
 struct AccessKeyClient
     {
     private:
-        std::shared_ptr<struct IClient> m_impl;
+        std::shared_ptr<struct AccessKeyClientImpl> m_impl;
 
         AccessKeyClient
         (
-            std::shared_ptr<struct IClient> implementation
+            std::shared_ptr<struct AccessKeyClientImpl> implementation
         );
 
     public:
@@ -79,6 +79,14 @@ struct AccessKeyClient
         //! @param[in] featureId Feature GUID to mark
         //! @param[in] featureUserData Feature tracking metadata
         LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData);
+
+        //! GetLicenseStatus returns the LicenseStatus of the cached policy
+        /*!
+        * This method should be used to check the license status of the current cached policy.
+        * It does NOT start the policy heartbeat, and will NOT refresh the policy.
+        * StartApplication should be called to fetch a policy and start the policy heartbeat.
+        */
+        LICENSING_EXPORT LicenseStatus GetLicenseStatus();
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

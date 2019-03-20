@@ -30,11 +30,11 @@ typedef std::shared_ptr<struct Client> ClientPtr;
 struct Client
     {
 private:
-    std::shared_ptr<struct IClient> m_impl;
+    std::shared_ptr<struct ClientImpl> m_impl;
 
     Client
         (
-        std::shared_ptr<struct IClient> implementation
+        std::shared_ptr<struct ClientImpl> implementation
         );
 
 public:

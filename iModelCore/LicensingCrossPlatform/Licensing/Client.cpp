@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_LICENSING
 +---------------+---------------+---------------+---------------+---------------+------*/
 Client::Client
     (
-    std::shared_ptr<struct IClient> implementation
+    std::shared_ptr<struct ClientImpl> implementation
     )
     {
     m_impl = implementation;

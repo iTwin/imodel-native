@@ -9,7 +9,6 @@
 %include MultiCppCompileRule.mki
 
 Headers =
-Headers + $(SourceDir)IClient.h
 Headers + $(SourceDir)ClientImpl.h
 Headers + $(SourceDir)AccessKeyClientImpl.h
 Headers + $(SourceDir)ISaasClient.h

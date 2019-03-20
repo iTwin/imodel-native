@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_LICENSING
 +---------------+---------------+---------------+---------------+---------------+------*/
 AccessKeyClient::AccessKeyClient
 (
-    std::shared_ptr<struct IClient> implementation
+    std::shared_ptr<struct AccessKeyClientImpl> implementation
 )
     {
     m_impl = implementation;
@@ -67,4 +67,12 @@ BentleyStatus AccessKeyClient::StopApplication()
 BentleyStatus AccessKeyClient::MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData)
     {
     return m_impl->MarkFeature(featureId, featureUserData);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+LicenseStatus AccessKeyClient::GetLicenseStatus()
+    {
+    return m_impl->GetProductStatus();
     }
