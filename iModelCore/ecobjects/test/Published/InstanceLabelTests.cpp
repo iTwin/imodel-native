@@ -17,7 +17,7 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct InstanceLabelTest : ECTestFixture
     {
-    StandaloneECEnablerP m_customAttributeEnabler;
+    StandaloneECEnablerPtr m_customAttributeEnabler;
     ECSchemaPtr m_schema;
     Utf8Char m_className[2] = "A";
 

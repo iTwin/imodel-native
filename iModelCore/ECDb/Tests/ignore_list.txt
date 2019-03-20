@@ -43,3 +43,11 @@ DbMappingTestFixture.SharedColumnCasting
 
 # Very hard to update this test as index where statement hold text
 FileFormatCompatibilityTests.CompareDdl_UpgradedFile
+
+# Calculated EC property support fully removed
+# Custom attribute was removed from the EC3 schemas; tests were using EC2 schemas.
+ECDbSymbolProviderTests.Path
+ECDbSymbolProviderTests.Name
+ECDbSymbolProviderTests.GetECClassId
+ECDbExpressionSymbolContextTests.SymbolsAreInjectedWhenDeserializingSchemas
+ECInstanceUpdaterTests.ReadonlyAndCalculatedProperties

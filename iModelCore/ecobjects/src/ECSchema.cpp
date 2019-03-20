@@ -298,10 +298,10 @@ ECSchema::~ECSchema ()
 
     m_refSchemaList.clear();
 
-    memset ((void*)this, 0xececdead, 4);// Replaced sizeof(this) with 4. There is value 
-                                        // in trying to make this logic "correct" for a 64-bit build. 
-                                        // This memset is clearly just intended to aid in debugging. 
-                                        // Attempting to use this object with the high 4 bytes of the vtable 
+    memset ((void*)this, 0xececdead, 4);// Replaced sizeof(this) with 4. There is value
+                                        // in trying to make this logic "correct" for a 64-bit build.
+                                        // This memset is clearly just intended to aid in debugging.
+                                        // Attempting to use this object with the high 4 bytes of the vtable
                                         // pointer set to 0xececdead will crash just as reliably.
     }
 
@@ -316,10 +316,10 @@ void ECSchema::SetErrorHandling (bool showMessages, bool doAssert)
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetName (Utf8StringCR name)
-    {        
+    {
     if (m_immutable)
         return ECObjectsStatus::SchemaIsImmutable;
     else if (!ECNameValidation::IsValidName (name.c_str()))
@@ -342,7 +342,7 @@ ECObjectsStatus ECSchema::SetAlias (Utf8StringCR alias)
 
     else if (Utf8String::IsNullOrEmpty(alias.c_str()))
         return ECObjectsStatus::InvalidName;
-          
+
     else if (!ECNameValidation::IsValidName(alias.c_str()))
         return ECObjectsStatus::InvalidName;
 
@@ -366,8 +366,8 @@ ECObjectsStatus ECSchema::SetDescription (Utf8StringCR description)
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ECSchema::GetDescription() const
-    { 
-    return m_localizedStrings.GetSchemaDescription(this, m_description); 
+    {
+    return m_localizedStrings.GetSchemaDescription(this, m_description);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -385,7 +385,7 @@ ECObjectsStatus ECSchema::SetDisplayLabel (Utf8StringCR displayLabel)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECSchema::GetDisplayLabel() const 
+Utf8StringCR ECSchema::GetDisplayLabel() const
     {
     return m_localizedStrings.GetSchemaDisplayLabel(this, GetInvariantDisplayLabel());
     }
@@ -609,6 +609,18 @@ bool ECSchema::Validate(bool resolveIssues)
             isValid = false;
         }
 
+    // Workaround:  This evaluate makes sure that each UnitSymbol is evaluated immediately after deserialization happens.  Otherwise, it could happen whenever
+    // a call to do a conversion happens.  This could lead to a threading issue...
+    for (auto const& unit : GetUnits())
+        {
+        unit->Evaluate();
+        }
+
+    for (auto const& phen : GetPhenomena())
+        {
+        phen->Evaluate();
+        }
+
     if (OriginalECXmlVersionLessThan(ECVersion::V3_1) && resolveIssues && ECClass::SchemaAllowsOverridingArrays(this))
         {
         for (ECClassP ecClass : GetClasses())
@@ -753,7 +765,7 @@ ECObjectsStatus ECSchema::CreateEntityClass (ECEntityClassP& pClass, Utf8StringC
         delete pClass;
         pClass = nullptr;
         }
-    
+
     return status;
     }
 
@@ -821,7 +833,7 @@ ECObjectsStatus ECSchema::CreateMixinClass (ECEntityClassP& pClass, Utf8StringCR
         delete pClass;
         pClass = nullptr;
         }
-    
+
     return status;
     }
 
@@ -846,7 +858,7 @@ ECObjectsStatus ECSchema::CreateStructClass (ECStructClassP& pClass, Utf8StringC
         delete pClass;
         pClass = nullptr;
         }
-    
+
     return status;
     }
 
@@ -871,7 +883,7 @@ ECObjectsStatus ECSchema::CreateCustomAttributeClass (ECCustomAttributeClassP& p
         delete pClass;
         pClass = nullptr;
         }
-    
+
     return status;
     }
 
@@ -925,7 +937,7 @@ ECObjectsStatus ECSchema::CreateRelationshipClass(ECRelationshipClassP& relation
         relationshipClass = nullptr;
         return status;
         }
-    
+
     status = relationshipClass->GetTarget().AddClass(target);
     if (ECObjectsStatus::Success != status)
         {
@@ -933,7 +945,7 @@ ECObjectsStatus ECSchema::CreateRelationshipClass(ECRelationshipClassP& relation
         relationshipClass = nullptr;
         return status;
         }
-    
+
     status = relationshipClass->GetTarget().SetRoleLabel(targetRoleLabel);
     if (ECObjectsStatus::Success != status)
         {
@@ -1025,7 +1037,7 @@ ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf
         return ECObjectsStatus::Error;
 
     ECObjectsStatus status = ECObjectsStatus::Success;
-    
+
     if (nullptr != displayLabel)
         status = system->SetDisplayLabel(displayLabel);
 
@@ -1062,7 +1074,7 @@ ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf
 ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name, Utf8CP definition, Utf8CP displayLabel, Utf8CP description)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
-    
+
     phenomenon = new Phenomenon(*this, name, definition);
 
     ECObjectsStatus status = ECObjectsStatus::Success;
@@ -1142,14 +1154,14 @@ ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definiti
             unit = nullptr;
             }
         };
-    
+
     if(nullptr != label)
         {
         unit->SetDisplayLabel(label);
         cleanupIfNecessary();
-        } 
+        }
     if(nullptr != label)
-        { 
+        {
         status = unit->SetDescription(description);
         cleanupIfNecessary();
         if(status != ECObjectsStatus::Success) return status;
@@ -1196,13 +1208,13 @@ ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf
     unit =  new ECUnit(*this, parent, unitSystem, name);
 
     if (nullptr != label)
-        { 
+        {
         unit->SetDisplayLabel(label);
         cleanupIfNecessary();
         }
-    
+
     if (nullptr != description)
-        { 
+        {
         status = unit->SetDescription(description);
         cleanupIfNecessary();
         if(status != ECObjectsStatus::Success) return status;
@@ -1242,7 +1254,7 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
     constant = new ECUnit(*this, phenom, name, definition, numerator, denominator);
 
     if (nullptr != label)
-        { 
+        {
         constant->SetDisplayLabel(label);
         cleanupIfNecessary();
         }
@@ -1345,7 +1357,7 @@ ECObjectsStatus ECSchema::AddUnitType(T* child, ECSchemaElementType childType)
         LOG.errorv("Cannot create %s '%s' because a named element with the same identifier already exists in the schema", SchemaParseUtils::SchemaElementTypeToString(childType), child->GetName().c_str());
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
-    
+
     ECObjectsStatus status = m_unitsContext.Add<T>(child, childType);
     if (ECObjectsStatus::Success != status)
         {
@@ -1425,7 +1437,7 @@ ECObjectsStatus ECSchema::SetECVersion(ECVersion ecVersion)
 
     return status;
     }
-    
+
 //-------------------------------------------------------------------------------------//
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+----//
@@ -1543,7 +1555,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
                     }
                 }
             }
-            
+
         // Not validating the class to be added since it should already be valid schema. Also this avoids some of the inheritance rule checking
         // for Mixins and Relationships
         status = targetClass->_AddBaseClass(*targetBaseClass, false, false, false);
@@ -1741,7 +1753,7 @@ ECObjectsStatus ECSchema::CopyPhenomenon(PhenomenonP& targetPhenom, PhenomenonCR
 
     if (sourcePhenom.GetIsDisplayLabelDefined())
         targetPhenom->SetDisplayLabel(sourcePhenom.GetInvariantDisplayLabel().c_str());
-    
+
     if (sourcePhenom.GetIsDescriptionDefined())
         targetPhenom->SetDescription(sourcePhenom.GetInvariantDescription().c_str());
 
@@ -1772,10 +1784,10 @@ ECObjectsStatus ECSchema::CopyUnit(ECUnitP& targetUnit, ECUnitCR sourceUnit)
         {
         ECUnitCP parent = sourceUnit.GetInvertingUnit();
         if (parent->GetSchema().GetSchemaKey().Matches(GetSchemaKey(), SchemaMatchType::Exact))
-            { 
+            {
             ECUnitP copiedParent = this->GetUnitP(sourceUnit.GetInvertingUnit()->GetName().c_str());
             if (nullptr == copiedParent)
-                { 
+                {
                 status = this->CopyUnit(copiedParent, *sourceUnit.GetInvertingUnit());
                 if(ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
                     return status;
@@ -2352,7 +2364,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
     if (schemaIterator == m_refSchemaList.end())
         return ECObjectsStatus::SchemaNotFound;
 
-    // Check for referenced schema in custom attribute 
+    // Check for referenced schema in custom attribute
     ECSchemaPtr foundSchema = schemaIterator->second;
     for (auto ca : GetCustomAttributes(false))
         {
@@ -2586,7 +2598,7 @@ void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
     {
     m_supplementalSchemaInfo = info;
     if (nullptr == info)
-        this->RemoveCustomAttribute(SupplementalSchemaInfo::GetCustomAttributeSchemaName(), 
+        this->RemoveCustomAttribute(SupplementalSchemaInfo::GetCustomAttributeSchemaName(),
                                     SupplementalSchemaInfo::GetCustomAttributeAccessor());
     else
         {
@@ -2612,7 +2624,7 @@ ECSchemaPtr ECSchema::LocateSchema(SchemaKeyR key, ECSchemaReadContextR schemaCo
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus LogXmlLoadError(BeXmlDomP xmlDom)
     {
@@ -2635,7 +2647,7 @@ BentleyStatus LogXmlLoadError(BeXmlDomP xmlDom)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   
+// @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 static void AddFilePathToSchemaPaths(ECSchemaReadContextR schemaContext, WCharCP ecSchemaXmlFile)
     {
@@ -2825,7 +2837,7 @@ void SearchPathSchemaFileLocater::FindEligibleSchemaFiles(bvector<CandidateSchem
 
     Utf8String twoVersionSuffix;
     Utf8String threeVersionSuffix;
-    
+
     if (matchType == SchemaMatchType::Latest)
         {
         twoVersionSuffix = ".*.*.ecschema.xml";
@@ -2874,7 +2886,7 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
 
     bvector<CandidateSchema> eligibleSchemaFiles;
     FindEligibleSchemaFiles(eligibleSchemaFiles, key, matchType, schemaContext);
-    
+
     size_t resultCount = eligibleSchemaFiles.size();
     if (resultCount == 0)
         {
@@ -2892,7 +2904,7 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
         m_knownSchemas.Insert(make_bpair<SchemaKey, SchemaMatchType>(key, SchemaMatchType::Exact), schemaOut);
         return schemaOut;
         }
-     
+
     if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(schemaOut, schemaToLoad.FileName.c_str(), schemaContext))
         {
         m_knownSchemas.Insert(lookup, nullptr);
@@ -3018,7 +3030,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSch
             LOG.errorv(L"Failed to read XML file: %ls.  \nSchema already loaded.  Use ECSchemaReadContext::LocateSchema to load schema", ecSchemaXmlFile);
         else
             LOG.errorv(L"Failed to read XML file: %ls", ecSchemaXmlFile);
-        
+
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
         }
@@ -3053,7 +3065,7 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
         LogXmlLoadError (xmlDom.get());
         return SchemaReadStatus::FailedToParseXml;
         }
-    
+
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
     status = reader.Deserialize(schemaOut, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForString(ecSchemaXml, stringByteCount).c_str() : nullptr);
 
@@ -3655,7 +3667,7 @@ ECObjectsStatus SchemaKey::ParseVersionString (uint32_t& versionRead, uint32_t& 
         return ECObjectsStatus::Success;
         }
 
-    
+
     chars = tokens[2].c_str();
     uint32_t third = strtoul(chars, &end, 10);
     //We have to support this case because some callers pass stuff like "1.5.ecschema.xml" to this method, which used to work
@@ -3998,6 +4010,16 @@ bool SchemaNameClassNamePair::Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaR
         }
 
     return remapped;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BeMutex& ECObjectsMutexHolder::GetECObjectsMutex()
+    {
+    // Yes, this is thread-safe since C++11
+    static BeMutex s_mutex;
+    return s_mutex;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

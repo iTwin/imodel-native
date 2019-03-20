@@ -16,21 +16,21 @@ static  bool        s_noAssert = false;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECProperty::SetErrorHandling (bool doAssert) 
-    { 
-    s_noAssert = !doAssert; 
+void ECProperty::SetErrorHandling (bool doAssert)
+    {
+    s_noAssert = !doAssert;
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                 
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::ECProperty (ECClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(nullptr), m_forSupplementation(false),
-                                                m_cachedTypeAdapter(nullptr), m_maximumLength(0), m_minimumLength(0), m_kindOfQuantity(nullptr), m_propertyCategory(nullptr),
+                                                m_maximumLength(0), m_minimumLength(0), m_kindOfQuantity(nullptr), m_propertyCategory(nullptr),
                                                 m_priority(0), m_priorityExplicitlySet(false)
     {}
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                 
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::~ECProperty () {}
 
@@ -60,12 +60,11 @@ ECObjectsStatus ECProperty::SetBaseProperty (ECPropertyCP baseProperty)
         }
 
     m_baseProperty = baseProperty;
-    SetCachedTypeAdapter (NULL);
     return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCR ECProperty::GetClass () const
     {
@@ -73,7 +72,7 @@ ECClassCR ECProperty::GetClass () const
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ECProperty::GetName () const
     {
@@ -90,7 +89,7 @@ ECPropertyId ECProperty::GetId () const
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetName (Utf8StringCR name)
     {
@@ -101,7 +100,7 @@ ECObjectsStatus ECProperty::SetName (Utf8StringCR name)
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ECProperty::GetDescription () const
     {
@@ -109,7 +108,7 @@ Utf8StringCR ECProperty::GetDescription () const
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ECProperty::GetInvariantDescription () const
     {
@@ -117,10 +116,10 @@ Utf8StringCR ECProperty::GetInvariantDescription () const
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetDescription (Utf8StringCR description)
-    {        
+    {
     m_description = description;
     return ECObjectsStatus::Success;
     }
@@ -356,7 +355,7 @@ int32_t ECProperty::GetPriority() const
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ECProperty::GetDisplayLabel () const
     {
@@ -364,7 +363,7 @@ Utf8StringCR ECProperty::GetDisplayLabel () const
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ECProperty::GetInvariantDisplayLabel () const
     {
@@ -372,33 +371,27 @@ Utf8StringCR ECProperty::GetInvariantDisplayLabel () const
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetDisplayLabel (Utf8StringCR displayLabel)
-    {        
+    {
     m_validatedName.SetDisplayLabel (displayLabel.c_str());
     return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECProperty::GetIsReadOnly () const
     {
-    //CalculatedPropertySpecificationCP calcSpec;
-    if (m_readOnly)
-        return true;
-    //else if (GetIsPrimitive() && NULL != (calcSpec = GetAsPrimitiveProperty()->GetCalculatedPropertySpecification()))
-    //    return calcSpec->IsReadOnly();
-    else
-        return false;
+    return m_readOnly;
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetIsReadOnly (bool readOnly)
-    {        
+    {
     if (m_readOnly != readOnly)
         {
         m_readOnly = readOnly;
@@ -409,10 +402,10 @@ ECObjectsStatus ECProperty::SetIsReadOnly (bool readOnly)
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetIsReadOnly (Utf8CP isReadOnly)
-    {        
+    {
     PRECONDITION (NULL != isReadOnly, ECObjectsStatus::PreconditionViolated);
 
     bool bReadOnly;
@@ -421,12 +414,12 @@ ECObjectsStatus ECProperty::SetIsReadOnly (Utf8CP isReadOnly)
         LOG.errorv (L"Failed to parse the isReadOnly string '%s' for ECProperty '%s'.", isReadOnly, this->GetName().c_str());
     else
         SetIsReadOnly (bReadOnly);
-        
+
     return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECProperty::GetIsDisplayLabelDefined () const
     {
@@ -434,7 +427,7 @@ bool ECProperty::GetIsDisplayLabelDefined () const
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ECProperty::GetTypeName () const
     {
@@ -450,7 +443,7 @@ Utf8String ECProperty::GetTypeFullName() const
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetTypeName (Utf8String typeName)
     {
@@ -499,19 +492,6 @@ ECObjectsStatus ECProperty::SetCategory(PropertyCategoryCP propertyCategory)
 
     m_propertyCategory = propertyCategory;
     return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECProperty::SetCalculatedPropertySpecification (IECInstanceP spec)
-    {
-    bool wasCalculated = IsCalculated();
-    bool set = _SetCalculatedPropertySpecification (spec);
-    if (set && wasCalculated != IsCalculated())
-        InvalidateClassLayout();
-    
-    return set;
     }
 
 //---------------------------------------------------------------------------------------
@@ -583,7 +563,7 @@ bool ECProperty::_IsSame(ECPropertyCR target) const
 
     if (IsMinimumLengthDefined() != target.IsMinimumLengthDefined())
         return false;
-    
+
     if (IsMinimumLengthDefined() && GetMinimumLength() != target.GetMinimumLength())
         return false;
 
@@ -729,14 +709,14 @@ ECObjectsStatus resolvePropertyCategory(PropertyCategoryCP& propertyCategory, Ut
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR context)
-    {  
+    {
     Utf8String value;
     READ_REQUIRED_XML_ATTRIBUTE(propertyNode, PROPERTY_NAME_ATTRIBUTE, this, Name, propertyNode.GetName())
 
-    // OPTIONAL attributes - If these attributes exist they MUST be valid    
+    // OPTIONAL attributes - If these attributes exist they MUST be valid
     READ_OPTIONAL_XML_ATTRIBUTE(propertyNode, DESCRIPTION_ATTRIBUTE, this, Description)
 
     uint32_t priority;
@@ -872,7 +852,7 @@ ECObjectsStatus ECProperty::SetKindOfQuantity(KindOfQuantityCP kindOfQuantity)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
@@ -880,7 +860,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXml
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* additionalAttributes, bool writeType)
     {
@@ -918,7 +898,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
                 xmlWriter.WriteAttribute(ECXML_MINIMUM_VALUE_ATTRIBUTE, minValue.c_str());
             }
         }
-        
+
     if (IsMaximumValueDefined())
         {
         Utf8String maxValue;
@@ -1036,14 +1016,14 @@ bool ECProperty::_ToJson(Json::Value& outValue, bool isInherited, bvector<bpair<
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR context)
-    {  
+    {
     SchemaReadStatus status = T_Super::_ReadXml (propertyNode, context);
     if (status != SchemaReadStatus::Success)
         return status;
-    
+
     // typeName is a required attribute.  If it is missing, an error will be returned.
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
     Utf8String value;
@@ -1154,7 +1134,7 @@ SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersi
         attributes.push_back(make_bpair(EXTENDED_TYPE_NAME_ATTRIBUTE, GetExtendedTypeName().c_str()));
 
     Utf8String koqQualifiedName;
-    if (ecXmlVersion >= ECVersion::V3_0 && IsKindOfQuantityDefinedLocally()) 
+    if (ecXmlVersion >= ECVersion::V3_0 && IsKindOfQuantityDefinedLocally())
         {
         koqQualifiedName = GetKindOfQuantity()->GetQualifiedName(GetClass().GetSchema());
         attributes.push_back(make_bpair(KIND_OF_QUANTITY_ATTRIBUTE, koqQualifiedName.c_str()));
@@ -1184,7 +1164,7 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8StringR e
                    baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
         }
-    
+
     // normally, we do not allow a primitive property to override an array property.  However, there is a set of schemas that
     // have been delivered that allow this behavior.  If the primitive property type is the same as the type used in the array, then
     // we allow it to be overridden.
@@ -1196,7 +1176,7 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8StringR e
         return false;
     else
         basePrimitiveType = baseProperty.GetAsPrimitiveProperty()->GetType();
-        
+
     if (basePrimitiveType != m_primitiveType)
         {
         errMsg.Sprintf("The ECProperty %s:%s has a primitive type '%s' that does not match the primitive type '%s' of ECProperty %s:%s.",
@@ -1207,9 +1187,9 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8StringR e
 
     return isKindOfQuantityCompatible(*this, &baseProperty, this->GetKindOfQuantity());
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String PrimitiveECProperty::_GetTypeName (bool useFullName) const
     {
@@ -1257,26 +1237,26 @@ ECObjectsStatus ResolveEnumerationType(ECEnumerationCP& enumeration, Utf8StringC
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PrimitiveECProperty::_SetTypeName (Utf8StringCR typeName)
     {
     PrimitiveType primitiveType;
     ECObjectsStatus status = SchemaParseUtils::ParsePrimitiveType (primitiveType, typeName);
     if (ECObjectsStatus::Success == status)
-        {            
+        {
         if (PRIMITIVETYPE_IGeometry == primitiveType)
             m_originalTypeName = typeName; // Internally we treat everything as the common Bentley.Geometry.Common.IGeometry, but we need to preserve the actual type
 
         return SetType(primitiveType);
         }
-    
+
     ECEnumerationCP enumeration;
     if (ECObjectsStatus::Success == ResolveEnumerationType(enumeration, typeName, this->GetClass().GetSchema()))
         {
         return SetType(*enumeration);
         }
-        
+
     m_originalTypeName = typeName; // Remember this for when we serialize the ECSchema again, later.
     LOG.warningv("Unrecognized typeName '%s' found in '%s:%s.%s'. A type of 'string' will be used.",
                  typeName.c_str(),
@@ -1300,7 +1280,7 @@ bool PrimitiveECProperty::_IsSame(ECPropertyCR target) const
 
     if (GetType() != rhs->GetType())
         return false;
-    
+
     if (IsExtendedTypeDefinedLocally())
         return false;
 
@@ -1308,7 +1288,7 @@ bool PrimitiveECProperty::_IsSame(ECPropertyCR target) const
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
     {
@@ -1316,8 +1296,7 @@ ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
 
     if (m_primitiveType != primitiveType)
         {
-        m_primitiveType = primitiveType;        
-        SetCachedTypeAdapter (NULL);
+        m_primitiveType = primitiveType;
         _AdjustMinMaxAfterTypeChange();
         InvalidateClassLayout();
         }
@@ -1326,7 +1305,7 @@ ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PrimitiveECProperty::SetType (ECEnumerationCR enumerationType)
     {
@@ -1339,8 +1318,7 @@ ECObjectsStatus PrimitiveECProperty::SetType (ECEnumerationCR enumerationType)
     auto primitiveType = enumerationType.GetType();
     if (m_primitiveType != primitiveType)
         {
-        m_primitiveType = primitiveType;        
-        SetCachedTypeAdapter (nullptr);
+        m_primitiveType = primitiveType;
         InvalidateClassLayout();
         }
 
@@ -1381,76 +1359,22 @@ ECObjectsStatus PrimitiveECProperty::SetExtendedTypeName(Utf8CP extendedTypeName
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-CalculatedPropertySpecificationCP PrimitiveECProperty::_GetCalculatedPropertySpecification() const
-    {
-    // It's possible in pathological cases where schema specifies an invalid CalculatedECPropertySpecification we will attempt to evaluate
-    // it every time this method is called, but do we need to cater to such cases by avoiding doing so?
-    if (m_calculatedSpec.IsNull())
-        m_calculatedSpec = CalculatedPropertySpecification::Create (*this, GetType());
-
-    return m_calculatedSpec.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool setCalculatedPropertySpecification (CalculatedPropertySpecificationPtr& spec, IECInstanceP attr, ECPropertyR ecprop, PrimitiveType primitiveType)
-    {
-    if (NULL == attr)
-        {
-        spec = NULL;
-        return true;
-        }
-    else
-        {
-        IECInstancePtr oldAttr = ecprop.GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification");
-        ecprop.SetCustomAttribute (*attr);
-        CalculatedPropertySpecificationPtr newSpec = CalculatedPropertySpecification::Create (ecprop, primitiveType);
-        if (newSpec.IsValid())
-            {
-            spec = newSpec;
-            return true;
-            }
-        else
-            {
-            // retain old specification
-            if (oldAttr.IsValid())
-                ecprop.SetCustomAttribute (*oldAttr);
-            else
-                ecprop.RemoveCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification");
-
-            return false;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PrimitiveECProperty::_SetCalculatedPropertySpecification (IECInstanceP attr)
-    {
-    return setCalculatedPropertySpecification (m_calculatedSpec, attr, *this, GetType());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus StructECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR context)
-    {  
+    {
     SchemaReadStatus status = T_Super::_ReadXml (propertyNode, context);
     if (status != SchemaReadStatus::Success)
         return status;
 
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
     Utf8String value;  // needed for macro.
-    READ_REQUIRED_XML_ATTRIBUTE (propertyNode, TYPE_NAME_ATTRIBUTE, this, TypeName, propertyNode.GetName())        
+    READ_REQUIRED_XML_ATTRIBUTE (propertyNode, TYPE_NAME_ATTRIBUTE, this, TypeName, propertyNode.GetName())
 
     return SchemaReadStatus::Success;
     }
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
@@ -1498,9 +1422,9 @@ bool StructECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8StringR errM
 
     return isKindOfQuantityCompatible(*this, &baseProperty, this->GetKindOfQuantity());
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String StructECProperty::_GetTypeName (bool useFullName) const
     {
@@ -1530,7 +1454,7 @@ bool StructECProperty::_IsSame(ECPropertyCR target) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ResolveStructType (ECStructClassCP& structClass, Utf8StringCR typeName, ECClassCR containingClass, bool doLogging = true)
     {
@@ -1544,7 +1468,7 @@ ECObjectsStatus ResolveStructType (ECStructClassCP& structClass, Utf8StringCR ty
             LOG.errorv("Cannot resolve the type name '%s' as a struct type because the typeName could not be parsed.", typeName.c_str());
         return status;
         }
-    
+
     ECSchemaCP resolvedSchema = containingClass.GetSchema().GetSchemaByAliasP (alias);
     if (NULL == resolvedSchema)
         {
@@ -1576,7 +1500,7 @@ ECObjectsStatus ResolveStructType (ECStructClassCP& structClass, Utf8StringCR ty
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus StructECProperty::_SetTypeName (Utf8StringCR typeName)
     {
@@ -1584,7 +1508,7 @@ ECObjectsStatus StructECProperty::_SetTypeName (Utf8StringCR typeName)
     ECObjectsStatus status = ResolveStructType (structClass, typeName, this->GetClass());
     if (ECObjectsStatus::Success != status)
         {
-        LOG.errorv ("Failed to set the type name of ECStructProperty '%s' to '%s' because the typeName could not be parsed into a resolvable ECClass.", this->GetName().c_str(), typeName.c_str());        
+        LOG.errorv ("Failed to set the type name of ECStructProperty '%s' to '%s' because the typeName could not be parsed into a resolvable ECClass.", this->GetName().c_str(), typeName.c_str());
         return status;
         }
     else
@@ -1592,29 +1516,28 @@ ECObjectsStatus StructECProperty::_SetTypeName (Utf8StringCR typeName)
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECStructClassCR StructECProperty::GetType () const
-    {        
+    {
     DEBUG_EXPECT (NULL != m_structType);
     return *m_structType;
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus StructECProperty::SetType (ECStructClassCR structType)
-    {            
+    {
     if (&(structType.GetSchema()) != &(this->GetClass().GetSchema()))
         {
         if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), structType.GetSchema()))
             return ECObjectsStatus::SchemaNotFound;
         }
-    
+
     if (m_structType != &structType)
         {
         m_structType = &structType;
-        SetCachedTypeAdapter (NULL);
         InvalidateClassLayout();
         }
 
@@ -1657,8 +1580,8 @@ SchemaReadStatus ECProperty::ReadMinMaxXml(BeXmlNodeR propertyNode)
         ECValue minECValue(minValue.c_str());
         PrimitiveType pt;
         ResolvePrimitiveType(this, pt);
-        
-        if ((!minECValue.ConvertToPrimitiveType(pt) || ECObjectsStatus::Success != SetMinimumValue(minECValue)) && 
+
+        if ((!minECValue.ConvertToPrimitiveType(pt) || ECObjectsStatus::Success != SetMinimumValue(minECValue)) &&
             GetContainerSchema()->OriginalECXmlVersionAtLeast(ECVersion::V3_0))
             {
             LOG.errorv("Cannot set the minimum value attribute on ECProperty, %s.%s, because the datatype is not supported. Minimum value can only be set on a property with a primitive type of double, int, or long.",
@@ -1680,7 +1603,7 @@ SchemaReadStatus ECProperty::ReadMinMaxXml(BeXmlNodeR propertyNode)
 
         ECValue maxECValue(maxValue.c_str());
 
-        if ((!maxECValue.ConvertToPrimitiveType(pt) || ECObjectsStatus::Success != SetMaximumValue(maxECValue)) && 
+        if ((!maxECValue.ConvertToPrimitiveType(pt) || ECObjectsStatus::Success != SetMaximumValue(maxECValue)) &&
             GetContainerSchema()->OriginalECXmlVersionAtLeast(ECVersion::V3_0))
             {
             LOG.errorv("Cannot set the maximum value attribute on ECProperty, %s.%s, because the datatype is not supported. Maximum value can only be set on a property with a primitive type of double, int, or long.",
@@ -1693,10 +1616,10 @@ SchemaReadStatus ECProperty::ReadMinMaxXml(BeXmlNodeR propertyNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR context)
-    {  
+    {
     SchemaReadStatus status = T_Super::_ReadXml (propertyNode, context);
     if (status != SchemaReadStatus::Success)
         return status;
@@ -1705,11 +1628,11 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
     // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
     ECObjectsStatus setterStatus;   // needed for macro.
     Utf8String         value;          // needed for macro.
-    READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, MIN_OCCURS_ATTRIBUTE, this, MinOccurs)    
+    READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, MIN_OCCURS_ATTRIBUTE, this, MinOccurs)
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, MAX_OCCURS_ATTRIBUTE, this, MaxOccurs)
 
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
-    READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, TYPE_NAME_ATTRIBUTE, this, TypeName, propertyNode.GetName())  
+    READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, TYPE_NAME_ATTRIBUTE, this, TypeName, propertyNode.GetName())
 
     status = ReadMinMaxXml(propertyNode);
     if (SchemaReadStatus::Success != status)
@@ -1725,7 +1648,7 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
@@ -1799,7 +1722,7 @@ bool ArrayECProperty::_IsSame(ECPropertyCR target) const
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ArrayECProperty::SetMinOccurs (uint32_t minOccurs)
     {
@@ -1814,24 +1737,24 @@ ECObjectsStatus ArrayECProperty::SetMinOccurs (uint32_t minOccurs)
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ArrayECProperty::SetMinOccurs (Utf8StringCR minOccurs)
-    {    
+    {
     uint32_t iMinOccurs;
     int count = BE_STRING_UTILITIES_UTF8_SSCANF (minOccurs.c_str(), "%u", &iMinOccurs);
     if (count != 1)
         {
         LOG.errorv ("Failed to set MinOccurs of ECProperty '%s' to '%s' because the value could not be parsed.  It must be a valid unsigned integer.",
-                 this->GetName().c_str(), minOccurs.c_str());        
+                 this->GetName().c_str(), minOccurs.c_str());
         return ECObjectsStatus::ParseError;
-        }    
+        }
     SetMinOccurs (iMinOccurs);
     return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ArrayECProperty::SetMaxOccurs (uint32_t maxOccurs)
     {
@@ -1849,10 +1772,10 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (uint32_t maxOccurs)
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ArrayECProperty::SetMaxOccurs (Utf8StringCR maxOccurs)
-    {    
+    {
     uint32_t iMaxOccurs;
     int count = BE_STRING_UTILITIES_UTF8_SSCANF (maxOccurs.c_str(), "%u", &iMaxOccurs);
     if (count != 1)
@@ -1862,7 +1785,7 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (Utf8StringCR maxOccurs)
         else
             {
             LOG.errorv ("Failed to set MaxOccurs of ECProperty '%s' to '%s' because the value could not be parsed.  It must be a valid unsigned integer or the string 'unbounded'.",
-                     this->GetName().c_str(), maxOccurs.c_str());        
+                     this->GetName().c_str(), maxOccurs.c_str());
             return ECObjectsStatus::ParseError;
             }
         }
@@ -1881,7 +1804,7 @@ bool PrimitiveArrayECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8Stri
                    baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
         }
-    
+
     // Apparently this is a thing...overriding a primitive property with a primitive array of same type.
     PrimitiveType basePrimitiveType;
     if (baseProperty.GetIsPrimitive())
@@ -1901,10 +1824,10 @@ bool PrimitiveArrayECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8Stri
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String PrimitiveArrayECProperty::_GetTypeName (bool useFullName) const
-    {    
+    {
     if (nullptr == m_enumeration)
         return SchemaParseUtils::PrimitiveTypeToString (m_primitiveType);
     if (useFullName)
@@ -1913,7 +1836,7 @@ Utf8String PrimitiveArrayECProperty::_GetTypeName (bool useFullName) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String PrimitiveArrayECProperty::_GetTypeNameForXml(ECVersion ecXmlVersion) const
     {
@@ -1924,7 +1847,7 @@ Utf8String PrimitiveArrayECProperty::_GetTypeNameForXml(ECVersion ecXmlVersion) 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PrimitiveArrayECProperty::_SetTypeName (Utf8StringCR typeName)
     {
@@ -1932,7 +1855,7 @@ ECObjectsStatus PrimitiveArrayECProperty::_SetTypeName (Utf8StringCR typeName)
     ECObjectsStatus status = SchemaParseUtils::ParsePrimitiveType (primitiveType, typeName);
     if (ECObjectsStatus::Success == status)
         return SetPrimitiveElementType (primitiveType);
-    
+
     ECEnumerationCP enumeration;
     if (ECObjectsStatus::Success == ResolveEnumerationType(enumeration, typeName, this->GetClass().GetSchema()))
         {
@@ -1956,8 +1879,6 @@ ECObjectsStatus PrimitiveArrayECProperty::SetPrimitiveElementType(PrimitiveType 
     m_arrayKind = ARRAYKIND_Primitive;
     m_primitiveType = value;
 
-    SetCachedTypeAdapter(NULL);
-    SetCachedMemberTypeAdapter(NULL);
     _AdjustMinMaxAfterTypeChange();
     InvalidateClassLayout();
 
@@ -1965,10 +1886,10 @@ ECObjectsStatus PrimitiveArrayECProperty::SetPrimitiveElementType(PrimitiveType 
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PrimitiveArrayECProperty::SetType (ECEnumerationCR enumerationType)
-    {        
+    {
     if (&(enumerationType.GetSchema()) != &(this->GetClass().GetSchema()))
         {
         if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), enumerationType.GetSchema()))
@@ -1978,33 +1899,13 @@ ECObjectsStatus PrimitiveArrayECProperty::SetType (ECEnumerationCR enumerationTy
     auto primitiveType = enumerationType.GetType();
     if (m_primitiveType != primitiveType)
         {
-        m_primitiveType = primitiveType;        
-        SetCachedTypeAdapter (nullptr);
+        m_primitiveType = primitiveType;
         InvalidateClassLayout();
         }
 
     m_enumeration = &enumerationType;
 
     return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-CalculatedPropertySpecificationCP PrimitiveArrayECProperty::_GetCalculatedPropertySpecification() const
-    {
-    if (m_calculatedSpec.IsNull())
-        m_calculatedSpec = CalculatedPropertySpecification::Create (*this, GetPrimitiveElementType());
-
-    return m_calculatedSpec.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PrimitiveArrayECProperty::_SetCalculatedPropertySpecification (IECInstanceP attr)
-    {
-    return setCalculatedPropertySpecification (m_calculatedSpec, attr, *this, GetPrimitiveElementType());
     }
 
 //---------------------------------------------------------------------------------------
@@ -2078,7 +1979,7 @@ bool StructArrayECProperty::_CanOverride (ECPropertyCR baseProperty, Utf8StringR
                    baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
         }
-    
+
     // if the struct type hasn't been set yet, we will say it cannot override
     if (nullptr == m_structType)
         return false;
@@ -2139,7 +2040,7 @@ Utf8String StructArrayECProperty::_GetTypeName(bool useFullName) const
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECStructClassCR StructArrayECProperty::GetStructElementType () const
     {
@@ -2148,10 +2049,10 @@ ECStructClassCR StructArrayECProperty::GetStructElementType () const
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus StructArrayECProperty::SetStructElementType (ECStructClassCR structType)
-    {        
+    {
     if (&(structType.GetSchema()) != &(this->GetClass().GetSchema()))
         {
         if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), structType.GetSchema()))
@@ -2162,8 +2063,6 @@ ECObjectsStatus StructArrayECProperty::SetStructElementType (ECStructClassCR str
     if (m_structType != &structType)
         {
         m_structType = &structType;
-        SetCachedTypeAdapter(NULL);
-        SetCachedMemberTypeAdapter(NULL);
         InvalidateClassLayout();
         }
 
@@ -2193,7 +2092,7 @@ ECObjectsStatus NavigationECProperty::SetRelationshipClassName(Utf8CP relationsh
                      relationshipName, alias.c_str());
         return ECObjectsStatus::SchemaNotFound;
         }
-    
+
     ECClassCP ecClass = resolvedSchema->GetClassCP(relClassName.c_str());
     if (nullptr == ecClass)
         {
@@ -2201,7 +2100,7 @@ ECObjectsStatus NavigationECProperty::SetRelationshipClassName(Utf8CP relationsh
                      relationshipName, relClassName.c_str(), resolvedSchema->GetName().c_str());
         return ECObjectsStatus::ClassNotFound;
         }
-    
+
     m_relationshipClass = ecClass->GetRelationshipClassCP();
     if (nullptr == m_relationshipClass)
         {
@@ -2209,7 +2108,7 @@ ECObjectsStatus NavigationECProperty::SetRelationshipClassName(Utf8CP relationsh
                      relClassName.c_str(), resolvedSchema->GetName().c_str());
         return ECObjectsStatus::ECClassNotSupported;
         }
-    
+
     m_valueKind = ValueKind::VALUEKIND_Uninitialized;
 
     return ECObjectsStatus::Success;
@@ -2252,7 +2151,7 @@ bool NavigationECProperty::Verify()
     if (nullptr == m_relationshipClass)
         return false;
 
-    if (m_relationshipClass->HasBaseClasses()) 
+    if (m_relationshipClass->HasBaseClasses())
         {
         LOG.errorv("The referenced relationship '%s' used in NavigationECProperty %s.%s is not the root relationship.",
             m_relationshipClass->GetFullName(), GetClass().GetFullName(), GetName().c_str());
@@ -2352,7 +2251,7 @@ bool NavigationECProperty::_ToJson(Json::Value& outValue, bool isInherited) cons
     ECRelatedInstanceDirection direction = GetDirection();
     Utf8String directionString;
     attributes.push_back(bpair<Utf8String, Json::Value>(DIRECTION_ATTRIBUTE, SchemaParseUtils::DirectionToJsonString(direction)));
-    
+
     return T_Super::_ToJson(outValue, isInherited, attributes);
     }
 
@@ -2413,14 +2312,13 @@ ECObjectsStatus NavigationECProperty::SetRelationshipClass(ECRelationshipClassCR
     if (verify && !Verify())
         return ECObjectsStatus::RelationshipConstraintsNotCompatible;
 
-    SetCachedTypeAdapter(nullptr);
     InvalidateClassLayout();
 
     return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+ @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECTypeAdapter::HasStandardValues() const                                                      { return _HasStandardValues(); }
 bool IECTypeAdapter::CanConvertFromString (IECTypeAdapterContextCR context) const                   { return _CanConvertFromString (context); }
@@ -2477,18 +2375,9 @@ ECObjectsStatus IECTypeAdapterContext::_GetInstanceValue (ECValueR v, Utf8CP acc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static IECTypeAdapter::Factory const* s_typeAdapterFactory;
-void IECTypeAdapter::SetFactory (Factory const& factory)                { s_typeAdapterFactory = &factory; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/13
-+---------------+---------------+---------------+---------------+---------------+------*/
 IECTypeAdapter* ECProperty::GetTypeAdapter() const
     {
-    if (NULL != GetCachedTypeAdapter())
-        return GetCachedTypeAdapter();
-    
-    return NULL != s_typeAdapterFactory ? &s_typeAdapterFactory->GetForProperty (*this) : NULL;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2496,10 +2385,7 @@ IECTypeAdapter* ECProperty::GetTypeAdapter() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECTypeAdapter* ArrayECProperty::GetMemberTypeAdapter() const
     {
-    if (NULL != GetCachedMemberTypeAdapter())
-        return GetCachedMemberTypeAdapter();
-
-    return NULL != s_typeAdapterFactory ? &s_typeAdapterFactory->GetForArrayMember (*this) : NULL;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -691,7 +691,7 @@ TEST_F (InstanceTests, TestSetDisplayLabel)
     SchemaKey schemaKey ("Bentley_Standard_CustomAttributes", 1, 5);
     ECSchemaPtr customAttributesSchema = context->LocateSchema (schemaKey, SchemaMatchType::Latest);
 
-    StandaloneECEnablerP m_customAttributeEnabler = customAttributesSchema->GetClassP ("InstanceLabelSpecification")->GetDefaultStandaloneEnabler ();
+    StandaloneECEnablerPtr m_customAttributeEnabler = customAttributesSchema->GetClassP ("InstanceLabelSpecification")->GetDefaultStandaloneEnabler ();
     CreateSchema ();
     m_schema->AddReferencedSchema (*customAttributesSchema);
 
@@ -1194,7 +1194,7 @@ TEST_F(InstanceTests, TestJsonAndXmlInstanceCompatibility)
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECTestFixture::DeserializeSchema(schema, *context, SchemaItem::CreateForFile("BasicTest.ecschema.xml"));
 
-    StandaloneECEnablerP enabler = schema->GetClassCP("Company")->GetDefaultStandaloneEnabler();
+    StandaloneECEnablerPtr enabler = schema->GetClassCP("Company")->GetDefaultStandaloneEnabler();
     IECInstancePtr testInstanceXml = enabler->CreateInstance();
 
     ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*schema);

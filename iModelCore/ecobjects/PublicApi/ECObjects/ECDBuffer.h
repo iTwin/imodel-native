@@ -104,8 +104,6 @@ struct less_classLayout
 bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
 };
 
- typedef bmap<ClassLayoutCP, bool, less_classLayout>   CompatibleClassLayoutsMap;
-
  /*=================================================================================**//**
 * @bsistruct
 * Responsible for managing the layout of the portion of an ECD buffer storing property
@@ -144,8 +142,7 @@ private:
     int                               m_propertyIndexOfSourceECPointer;
     int                               m_propertyIndexOfTargetECPointer;
     int                               m_uniqueId;
-    mutable CompatibleClassLayoutsMap m_compatibleClassLayouts;
-    mutable uint32_t                  m_checkSum;
+    CachedValue<uint32_t>             m_checkSum;
 
     void                            CheckForECPointers (Utf8CP accessString);
 
@@ -273,11 +270,6 @@ public:
 
     //! Determines the number of bytes used for property data, so far
     ECOBJECTS_EXPORT uint32_t       CalculateBytesUsed(Byte const * propertyData) const;
-
-    //! Checks the given classLayout to see if it is equal to, or a subset of, this layout
-    //! @param[in]  layout  The ClassLayout to test compatibility of
-    //! @returns true if the given ClassLayout is equal to or a subset of this layout, false otherwise
-    ECOBJECTS_EXPORT bool           IsCompatible(ClassLayoutCR layout) const;
 
     //! Returns a string containing a description of the class and its properties
     ECOBJECTS_EXPORT Utf8String       ToString() const;

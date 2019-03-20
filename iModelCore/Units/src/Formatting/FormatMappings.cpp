@@ -15,8 +15,6 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 // AliasMappings
 //=======================================================================================
 
-AliasMappings * AliasMappings::s_mappings = nullptr;
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
@@ -31,9 +29,9 @@ AliasMappings::AliasMappings()
 // static
 AliasMappings * AliasMappings::GetMappings()
     {
-    if (nullptr == s_mappings)
-        s_mappings = new AliasMappings();
-    return s_mappings;
+    // Thread-safe per C++11
+    static AliasMappings s_mappings;
+    return &s_mappings;
     }
 
 //--------------------------------------------------------------------------------------
@@ -147,8 +145,6 @@ void AliasMappings::AddMappings()
 // LegacyNameMappings
 //=======================================================================================
 
-LegacyNameMappings* LegacyNameMappings::s_mappings = nullptr;
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    04/2018
 //--------------------------------------------------------------------------------------
@@ -163,9 +159,9 @@ LegacyNameMappings::LegacyNameMappings()
 // static
 LegacyNameMappings* LegacyNameMappings::GetMappings()
     {
-    if (nullptr == s_mappings)
-        s_mappings = new LegacyNameMappings();
-    return s_mappings;
+    // Thread-safe per C++11
+    static LegacyNameMappings s_mappings;
+    return &s_mappings;
     }
 
 //--------------------------------------------------------------------------------------

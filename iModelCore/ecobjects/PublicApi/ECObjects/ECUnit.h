@@ -32,7 +32,7 @@ private:
     bool m_hasExplicitDisplayLabel;
     Utf8String m_displayLabel;
     Utf8String m_description;
-    mutable Utf8String m_fullName; // Cached when GetFullName is called the first time.
+    CachedSchemaQualifiedName m_fullName; // Cached when GetFullName is called the first time.
     mutable UnitSystemId m_unitSystemId;
 
     ECObjectsStatus SetDisplayLabel(Utf8StringCR value) {m_displayLabel = value.c_str(); m_hasExplicitDisplayLabel = true; return ECObjectsStatus::Success;}
@@ -87,7 +87,7 @@ private:
     Utf8String m_description;
     ECSchemaCR m_schema;
     PhenomenonId m_phenomenonId;
-    mutable Utf8String m_fullName;
+    CachedSchemaQualifiedName m_fullName;
 
     ECObjectsStatus SetDisplayLabel(Utf8StringCR value) {Units::Phenomenon::SetLabel(value.c_str()); m_isDisplayLabelExplicitlyDefined = true; return ECObjectsStatus::Success;}
     ECObjectsStatus SetDescription(Utf8StringCR value) {m_description = value; return ECObjectsStatus::Success;}
@@ -149,7 +149,7 @@ private:
     bool m_isOffsetExplicitlyDefined = false;
 
     Utf8String m_description;
-    mutable Utf8String m_fullName;
+    CachedSchemaQualifiedName m_fullName;
 
     ECObjectsStatus SetDescription(Utf8StringCR value) {m_description = value; return ECObjectsStatus::Success;}
     BentleyStatus SetNumerator(double value) override {m_isNumeratorExplicitlyDefined = true; return Units::Unit::SetNumerator(value);}
@@ -248,7 +248,7 @@ friend struct SchemaJsonWriter; // needed for the ToJson() method
 private:
     ECSchemaCP m_schema;
     bool m_isDisplayLabelExplicitlyDefined;
-    mutable Utf8String m_fullName;
+    CachedSchemaQualifiedName m_fullName;
     Utf8String m_displayLabel;
     Utf8String m_description;
     mutable FormatId m_formatId;

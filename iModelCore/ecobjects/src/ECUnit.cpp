@@ -43,10 +43,7 @@ ECUnit::ECUnit(ECSchemaCR schema,Units::PhenomenonCR phenomenon, Utf8CP name, Ut
 //--------------------------------------------------------------------------------------
 Utf8StringCR ECUnit::GetFullName() const
     {
-    if (m_fullName.size() == 0)
-        m_fullName = GetSchema().GetName() + ":" + GetName();
-
-    return m_fullName;
+    return m_fullName.GetName(*this);
     }
 
 //--------------------------------------------------------------------------------------

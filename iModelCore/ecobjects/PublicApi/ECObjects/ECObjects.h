@@ -11,6 +11,8 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeId.h>
+#include <Bentley/BeThread.h>
+#include <Bentley/BeAtomic.h>
 
 #ifdef __ECOBJECTS_BUILD__
     #define ECOBJECTS_EXPORT EXPORT_ATTRIBUTE
@@ -602,5 +604,66 @@ struct FormatId : BeInt64Id
     {
     BEINT64_ID_DECLARE_MEMBERS(FormatId, BeInt64Id)
     };
+
+//=======================================================================================
+//! Holds the global mutex used for synchronization throughout ECObjects.
+//! The thread holding this mutex must acquire no other mutexes while it is held.
+//! If it requires other mutexes, they must be acquired before this one.
+// @bsistruct                                                   Paul.Connelly   03/19
+//=======================================================================================
+struct ECObjectsMutexHolder : BeMutexHolder
+{
+    ECObjectsMutexHolder() : BeMutexHolder(GetECObjectsMutex()) { }
+
+    ECOBJECTS_EXPORT static BeMutex& GetECObjectsMutex();
+};
+
+//=======================================================================================
+//! Many types in ECObjects store members which are computed on first access and cached
+//! thereafter. CachedValue<T> supplies a reasonably efficient, thread-safe
+//! implementation of this concept.
+//! Thread-safety is guaranteed only if the value is never modified while any other thread
+//! may be accessing it.
+// @bsistruct                                                   Paul.Connelly   03/19
+//=======================================================================================
+template<typename T> struct CachedValue
+{
+private:
+    mutable T m_value;
+    mutable BeAtomic<bool> m_initialized;
+
+    void SetInternal(T&& value, bool valueIsInitialized) const
+        {
+        ECObjectsMutexHolder lock;
+        m_value = std::move(value);
+        m_initialized.store(valueIsInitialized);
+        }
+public:
+    // NB: The APIs which expose these kinds of cached values all assert that the value will remain valid forever once
+    // it's computed. That is not actually true, but we will interpret them to mean that they promise
+    // not to modify in contexts in which it would produce a race condition.
+    // So for example, folks cache a Utf8String and expose an API to obtain a Utf8CP from it, claiming that pointer will
+    // remain valid as long as the owner of it does.
+    template<typename ComputeValue> T const& Get(ComputeValue computeValue) const
+        {
+        auto initialized = m_initialized.load(std::memory_order_relaxed);
+        if (initialized)
+            return m_value;
+
+        ECObjectsMutexHolder lock;
+        if (!m_initialized.load())
+            {
+            m_value = computeValue();
+            m_initialized.store(true);
+            }
+
+        return m_value;
+        }
+
+    void Set(T&& value) const { SetInternal(std::move(value), true); }
+    void Invalidate() const { SetInternal(T(), false); }
+};
+
+using CachedUtf8String = CachedValue<Utf8String>;
 
 END_BENTLEY_ECOBJECT_NAMESPACE

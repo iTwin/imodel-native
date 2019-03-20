@@ -2379,11 +2379,6 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
 
         if (SUCCESS != LoadCAFromDb(*prop, ctx, ECContainerId(rowInfo.m_id), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property))
             return ERROR;
-
-        // For ECDb symbol provider ensure the calculated property specification is created (must do that after
-        // custom attributes are loaded)
-        if (prop->IsCalculated())
-            prop->GetCalculatedPropertySpecification();
         }
 
     return SUCCESS;

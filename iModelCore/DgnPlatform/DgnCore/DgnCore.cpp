@@ -10,7 +10,6 @@
 #include <ECDb/ECDb.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DgnECSymbolProvider.h>
-#include <DgnPlatform/DgnECTypes.h>
 
 BeThreadLocalStorage g_threadId;
 

@@ -84,7 +84,10 @@ bool NamedFormat::_ToJson(Json::Value& out, bool verbose) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-ECFormat::ECFormat(ECSchemaCR schema, Utf8StringCR name) : NamedFormat(name.c_str(), this), m_isDisplayLabelExplicitlyDefined(false), m_schema(&schema), m_fullName(schema.GetName() + ":" + name) {}
+ECFormat::ECFormat(ECSchemaCR schema, Utf8StringCR name) : NamedFormat(name.c_str(), this), m_isDisplayLabelExplicitlyDefined(false), m_schema(&schema)
+    {
+    GetFullName();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                  02/2018
@@ -100,9 +103,7 @@ ECObjectsStatus ECFormat::SetSchema(ECSchemaCR schema)
 //---------------+---------------+---------------+---------------+---------------+-------
 Utf8StringCR ECFormat::GetFullName() const
     {
-    if (m_fullName.size() == 0)
-        m_fullName = GetSchema().GetName() + ":" + GetName();
-    return m_fullName;
+    return m_fullName.GetName(*this);
     }
 
 //---------------------------------------------------------------------------------------

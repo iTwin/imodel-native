@@ -288,8 +288,8 @@ struct StandardValueToEnumConversionTest : CustomAttributeRemovalTest
 
     IECInstancePtr GetStandardValuesInstance(std::map<int, Utf8String> valueMap, ECSchemaPtr& customAttributesSchema, bool mustBedefined = false, bool mustBeFromList = true)
         {
-        StandaloneECEnablerP customAttributeEnabler = customAttributesSchema->GetClassP("StandardValues")->GetDefaultStandaloneEnabler();
-        StandaloneECEnablerP valueMapEnabler = customAttributesSchema->GetClassP("ValueMap")->GetDefaultStandaloneEnabler();
+        StandaloneECEnablerPtr customAttributeEnabler = customAttributesSchema->GetClassP("StandardValues")->GetDefaultStandaloneEnabler();
+        StandaloneECEnablerPtr valueMapEnabler = customAttributesSchema->GetClassP("ValueMap")->GetDefaultStandaloneEnabler();
 
         StandaloneECInstancePtr sdValueAttr = customAttributeEnabler->CreateInstance();
         sdValueAttr->AddArrayElements("ValueMap", (uint32_t)valueMap.size());

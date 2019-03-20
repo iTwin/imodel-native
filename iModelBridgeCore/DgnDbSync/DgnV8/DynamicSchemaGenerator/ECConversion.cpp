@@ -1227,7 +1227,7 @@ void DynamicSchemaGenerator::RemoveDgnV8CustomAttributes(ECN::IECCustomAttribute
         ECN::ECPropertyP prop = dynamic_cast<ECN::ECPropertyP> (&container);
         if (nullptr != prop)
             {
-            if (prop->IsCalculated())
+            if (prop->GetCustomAttribute("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid())
                 {
                 ECN::ECValue v;
                 if (ECN::ECObjectsStatus::Success == instance->GetValue(v, "ECExpression") && !v.IsNull())

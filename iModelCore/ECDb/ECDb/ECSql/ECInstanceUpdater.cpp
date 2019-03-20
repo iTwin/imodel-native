@@ -159,7 +159,7 @@ void ECInstanceUpdater::Impl::Initialize(ECCrudWriteToken const* writeToken, bve
     {
     bvector<ECPropertyCP> properties;
     bvector<Utf8CP> propertyAccessStrings;
-    ECEnablerP enabler = m_ecClass.GetDefaultStandaloneEnabler();
+    ECEnablerPtr enabler = m_ecClass.GetDefaultStandaloneEnabler();
     for (uint32_t propertyIndex : propertyIndexesToBind)
         {
         ECPropertyCP ecProperty = enabler->LookupECProperty(propertyIndex);
@@ -214,7 +214,7 @@ void ECInstanceUpdater::Impl::Initialize(ECCrudWriteToken const* writeToken, bve
     ecsql.append(m_ecClass.GetECSqlName()).append(" SET ");
 
     const size_t propCount = properties.size();
-    ECEnablerP enabler = m_ecClass.GetDefaultStandaloneEnabler();
+    ECEnablerPtr enabler = m_ecClass.GetDefaultStandaloneEnabler();
     int parameterIndex = 1;
     for (size_t ix = 0; ix < propCount; ix++)
         {

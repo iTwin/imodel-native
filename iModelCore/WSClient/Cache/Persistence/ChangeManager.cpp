@@ -1318,14 +1318,7 @@ void ChangeManager::RemoveReadOnlyProperties(JsonValueR propertiesJson, ECClassC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChangeManager::RemoveCalculatedProperties(JsonValueR propertiesJson, ECClassCR ecClass)
     {
-    for (Utf8StringCR member : propertiesJson.getMemberNames())
-        {
-        ECPropertyCP ecProperty = ecClass.GetPropertyP(member.c_str());
-        if (nullptr != ecProperty->GetCalculatedPropertySpecification())
-            {
-            propertiesJson.removeMember(member);
-            }
-        }
+    // No such thing as calculated properties on imodel02
     }
 
 /*--------------------------------------------------------------------------------------+

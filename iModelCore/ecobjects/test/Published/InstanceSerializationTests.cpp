@@ -1048,7 +1048,7 @@ TEST_F(InstanceSerializationTest, TestInstanceJsonRoundtrip)
     Json::Value jsonRoot(Json::objectValue);
     EXPECT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(jsonRoot, *testInstance, "$Instance", false));
 
-    StandaloneECEnablerP enabler = testInstance->GetClass().GetDefaultStandaloneEnabler();
+    StandaloneECEnablerPtr enabler = testInstance->GetClass().GetDefaultStandaloneEnabler();
     IECInstancePtr readbackInstance = enabler->CreateInstance();
     ASSERT_TRUE(readbackInstance.IsValid());
     InSchemaClassLocater classLocater(*schema);
@@ -1085,7 +1085,7 @@ TEST_F(InstanceSerializationTest, TestInstanceRapidJsonRoundtrip)
     rapidjson::ParseResult parseResult = rapidJsonRoot.Parse(writer.ToString(jsonRoot).c_str());
     EXPECT_FALSE(parseResult.IsError());
 
-    StandaloneECEnablerP enabler = testInstance->GetClass().GetDefaultStandaloneEnabler();
+    StandaloneECEnablerPtr enabler = testInstance->GetClass().GetDefaultStandaloneEnabler();
     IECInstancePtr readbackInstance = enabler->CreateInstance();
     ASSERT_TRUE(readbackInstance.IsValid());
     InSchemaClassLocater classLocater(*schema);
@@ -1195,7 +1195,7 @@ TEST_F(InstanceSerializationTest, TestSerializeNullValues)
     Json::StyledWriter writer = Json::StyledWriter();
     LOG.error(writer.write(instanceJson).c_str());
 
-    StandaloneECEnablerP enabler = instance->GetClass().GetDefaultStandaloneEnabler();
+    StandaloneECEnablerPtr enabler = instance->GetClass().GetDefaultStandaloneEnabler();
     IECInstancePtr readbackInstance = enabler->CreateInstance();
     ASSERT_TRUE(readbackInstance.IsValid());
     InSchemaClassLocater classLocater(*schema);

@@ -440,7 +440,7 @@ BentleyStatus ECDbTestProject::GetInstances (bvector<IECInstancePtr>& instances,
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr ECDbTestProject::CreateECInstance(ECClassCR ecClass)
     {
-    StandaloneECEnablerP instanceEnabler = ecClass.GetDefaultStandaloneEnabler ();
+    StandaloneECEnablerPtr instanceEnabler = ecClass.GetDefaultStandaloneEnabler ();
     POSTCONDITION (instanceEnabler != nullptr, nullptr);
     IECInstancePtr instance = instanceEnabler->CreateInstance ();
     POSTCONDITION (instance != nullptr, nullptr);

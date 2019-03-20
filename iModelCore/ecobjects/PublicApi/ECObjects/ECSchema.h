@@ -10,8 +10,8 @@
 
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
-#include <ECObjects/ECName.h>
 #include <ECObjects/CalculatedProperty.h>
+#include <ECObjects/ECName.h>
 #include <ECObjects/SchemaLocalizedStrings.h>
 #include <ECObjects/ECUnit.h>
 #include <Bentley/RefCounted.h>
@@ -116,7 +116,7 @@ public:
     ECOBJECTS_EXPORT ECSchemaP                           GetContainerSchema();
     Utf8CP                              GetContainerName() const { return _GetContainerName(); }
 
-    //! Retrieves the local custom attribute matching the class name.  If the attribute is not 
+    //! Retrieves the local custom attribute matching the class name.  If the attribute is not
     //! a supplemented attribute it will be copied and added to the supplemented list before it is returned.
     IECInstancePtr                      GetLocalAttributeAsSupplemented(Utf8StringCR schemaName, Utf8StringCR className);
 
@@ -289,7 +289,7 @@ struct ECTypeDescriptor
 {
 private:
     ValueKind m_typeKind;
-    
+
     union
         {
         ArrayKind       m_arrayKind;
@@ -382,7 +382,7 @@ public:
 };
 
 typedef RefCountedPtr<IECTypeAdapterContext> IECTypeAdapterContextPtr;
-    
+
 /*=================================================================================**//**
 Base class for an object which adapts the internal value of an ECProperty to a user-friendly string representation.
 @bsiclass
@@ -422,14 +422,6 @@ protected:
 
     virtual bool                _IsOrdinalType () const = 0;
 public:
-    // For DgnPlatform interop
-    struct Factory
-        {
-        virtual IECTypeAdapter& GetForProperty (ECPropertyCR ecproperty) const = 0;
-        virtual IECTypeAdapter& GetForArrayMember (ArrayECPropertyCR ecproperty) const = 0;
-        };
-    ECOBJECTS_EXPORT static void          SetFactory (Factory const& factory);
-
     //! "Display Type" refers to the type that the user would associate with the displayed value of the property.
     //! For example, a value of type "Area" may be stored as a double in UORs, with a string representation in working units with unit label.
     //! In some contexts the user wants to operate on the displayed value as a double, but in working units. In this case the "display type"
@@ -561,7 +553,6 @@ private:
     bool                    m_readOnly;
     ECClassCR               m_class;
     ECPropertyCP            m_baseProperty;
-    mutable IECTypeAdapter* m_cachedTypeAdapter;
 
     static void     SetErrorHandling (bool doAssert);
 protected:
@@ -620,20 +611,11 @@ protected:
     ECSchemaCP _GetContainerSchema() const override;
     Utf8CP _GetContainerName() const override;
 
-    virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const {return NULL;}
-    virtual bool                                _IsCalculated() const {return false;}
-    virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) {return false;}
-
     virtual bool _IsSame(ECPropertyCR target) const;
 
     void                                InvalidateClassLayout();
 
 public:
-    // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
-    //!<@private
-    IECTypeAdapter*                     GetCachedTypeAdapter() const { return m_cachedTypeAdapter; }
-    //!<@private
-    void                                SetCachedTypeAdapter (IECTypeAdapter* adapter) const { m_cachedTypeAdapter = adapter; }
     //!<@private
     IECTypeAdapter*                     GetTypeAdapter() const;
 
@@ -647,16 +629,7 @@ public:
     //! returns true if this property has an id defined
     bool HasId() const { return m_ecPropertyId.IsValid(); };
 
-    //! Returns the CalculatedPropertySpecification associated with this ECProperty, if any
-     CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const { return _GetCalculatedPropertySpecification(); }
-    //! Returns true if this ECProperty has a CalculatedECPropertySpecification custom attribute applied to it.
-     bool               IsCalculated() const { return _IsCalculated(); }
-
-    //! Sets or removes the CalculatedECPropertySpecification custom attribute associated with this ECProperty.
-    //! @param[in] expressionAttribute  An IECInstance of the ECClass CalculatedECPropertySpecification, or NULL to remove the specification.
-    //! @return true if the specification was successfully updated.
-    //! @remarks Call this method rather than setting the custom attribute directly, to ensure internal state is updated.
-    ECOBJECTS_EXPORT bool                                SetCalculatedPropertySpecification(IECInstanceP expressionAttribute);
+    bool IsCalculated() const { return false; }
 
     //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
     ECOBJECTS_EXPORT ECPropertyId       GetId() const;
@@ -680,7 +653,7 @@ public:
     bool                                GetIsPrimitiveArray() const { return _IsPrimitiveArray(); }
     //! Returns whether this property is a NavigationECProperty
     bool                                GetIsNavigation() const { return _IsNavigation(); }
-    
+
     //! Sets the ECXML typename for the property.  @see GetTypeName()
     ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(Utf8String value);
     //! The ECXML typename for the property.
@@ -831,7 +804,6 @@ private:
     Utf8String          m_extendedTypeName;
     PrimitiveType       m_primitiveType;
     ECEnumerationCP     m_enumeration;
-    mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;   // lazily-initialized
 
     PrimitiveECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_enumeration(nullptr) {};
 protected:
@@ -848,22 +820,19 @@ protected:
     ECObjectsStatus _SetTypeName(Utf8StringCR typeName) override;
     bool _HasExtendedType() const override {return GetExtendedTypeName().size() > 0;}
     bool _CanOverride(ECPropertyCR baseProperty, Utf8StringR errMsg) const override;
-    CalculatedPropertySpecificationCP _GetCalculatedPropertySpecification() const override;
-    bool _IsCalculated() const override {return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();}
-    bool _SetCalculatedPropertySpecification(IECInstanceP expressionAttribute) override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::PrimitiveProperty;}
     bool _IsSame(ECPropertyCR target) const override;
 
 public:
     //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
     ECOBJECTS_EXPORT ECObjectsStatus SetType(PrimitiveType value);
-    
+
     //! Gets the PrimitiveType of this ECProperty
     PrimitiveType GetType() const {return m_primitiveType;}
-    
+
     //! Sets an ECEnumeration as type of this ECProperty.
     ECOBJECTS_EXPORT ECObjectsStatus SetType(ECEnumerationCR value);
-    
+
     //! Gets the Enumeration of this ECProperty or nullptr if none used.
     ECEnumerationCP GetEnumeration() const {return m_enumeration;}
 
@@ -914,7 +883,7 @@ public:
     //! This type must be an ECStructClass.
     ECOBJECTS_EXPORT ECObjectsStatus SetType(ECStructClassCR value);
     //! Gets the ECStructClass that defines the type for this property
-    ECOBJECTS_EXPORT ECStructClassCR GetType() const; 
+    ECOBJECTS_EXPORT ECStructClassCR GetType() const;
 };
 
 //=======================================================================================
@@ -929,12 +898,11 @@ friend struct ECClass;
 private:
     uint32_t                                    m_minOccurs;
     uint32_t                                    m_maxOccurs;    // D-106653 we store this as read from the schema, but all arrays are considered to be of unbounded size
-    mutable IECTypeAdapter*                     m_cachedMemberTypeAdapter;
 
 protected:
     ArrayKind m_arrayKind;
 
-    ArrayECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_minOccurs(0), m_maxOccurs(UINT_MAX), m_cachedMemberTypeAdapter(nullptr) {};
+    ArrayECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_minOccurs(0), m_maxOccurs(UINT_MAX) { };
 
     ECObjectsStatus                     SetMinOccurs(Utf8StringCR minOccurs);
     ECObjectsStatus                     SetMaxOccurs(Utf8StringCR maxOccurs);
@@ -948,11 +916,6 @@ protected:
     bool _IsSame(ECPropertyCR target) const override;
 
 public:
-    // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
-    //!<@private
-    IECTypeAdapter*                     GetCachedMemberTypeAdapter() const  { return m_cachedMemberTypeAdapter; }
-    //!<@private
-    void                                SetCachedMemberTypeAdapter (IECTypeAdapter* adapter) const { m_cachedMemberTypeAdapter = adapter; }
     //!<@private
     IECTypeAdapter*                     GetMemberTypeAdapter() const;
 
@@ -964,10 +927,10 @@ public:
 
     //! Gets the minimum number of array members.
     uint32_t GetMinOccurs() const {return m_minOccurs;}
-    
+
     //! Sets the maximum number of array members.
     ECOBJECTS_EXPORT ECObjectsStatus    SetMaxOccurs(uint32_t value);
-    
+
     //! Gets the maximum number of array members.
     uint32_t GetMaxOccurs() const {return /* m_maxOccurs; */ UINT_MAX;} // D-106653
 
@@ -988,11 +951,10 @@ struct PrimitiveArrayECProperty : ArrayECProperty
 DEFINE_T_SUPER(ArrayECProperty)
 friend struct ECClass;
 
-private: 
+private:
     Utf8String          m_extendedTypeName;
     PrimitiveType       m_primitiveType;
     ECEnumerationCP     m_enumeration;
-    mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;
 
 protected:
     PrimitiveArrayECProperty(ECClassCR ecClass) : ArrayECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_enumeration(nullptr)
@@ -1012,10 +974,6 @@ protected:
 
     bool _CanOverride(ECPropertyCR baseProperty, Utf8StringR errMsg) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::PrimitiveArrayProperty;}
-
-    CalculatedPropertySpecificationCP _GetCalculatedPropertySpecification() const override;
-    bool _IsCalculated() const override {return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();}
-    bool _SetCalculatedPropertySpecification(IECInstanceP expressionAttribute) override;
 
 public:
     //! Sets the PrimitiveType if this ArrayProperty contains PrimitiveType elements
@@ -1128,8 +1086,8 @@ public:
     // @returns     Returns Success if validation successful or not performed, SchemaNotFound if the schema containing the relationship class is not referenced and RelationshipConstraintsNotCompatible if validation
     //              is performed but not successfull
     ECOBJECTS_EXPORT ECObjectsStatus            SetRelationshipClass(ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction, bool verify = true);
-    
-    // !Verifies that the relationship class and direction is valid.  
+
+    // !Verifies that the relationship class and direction is valid.
     ECOBJECTS_EXPORT bool       Verify();
     // !Returns true if the Verify method has been called on this Navigation Property, false if it has not.
     bool                        IsVerified() const { return ValueKind::VALUEKIND_Uninitialized != m_valueKind; }
@@ -1204,7 +1162,7 @@ public:
 struct EnumeratorIterable : NonCopyableClass
 {
 friend struct ECEnumeration;
-    
+
 private:
     EnumeratorList const& m_list;
     explicit EnumeratorIterable(EnumeratorList const& list) : m_list(list) {}
@@ -1264,7 +1222,7 @@ public:
 
     //!Returns true if this enumerator holds an integer value
     ECOBJECTS_EXPORT bool IsInteger() const;
-    //! Returns the integer value, if this ECEnumerator holds an Integer 
+    //! Returns the integer value, if this ECEnumerator holds an Integer
     int32_t GetInteger() const {return m_intValue;}
     //! Sets the value of this ECEnumerator to the given integer
     //! @param[in] integer  The value to set
@@ -1299,7 +1257,7 @@ friend struct SchemaJsonWriter; // needed for the ToJson() method
 
 private:
     ECSchemaCR m_schema;
-    mutable Utf8String m_fullName;
+    CachedSchemaQualifiedName m_fullName;
     ECValidatedName m_validatedName;
     PrimitiveType m_primitiveType;
     Utf8String m_description;
@@ -1310,7 +1268,7 @@ private:
 
     //  Lifecycle management:  The schema implementation will
     //  serve as a factory for enumerations and will manage their lifecycle.
-    explicit ECEnumeration(ECSchemaCR schema) : m_schema(schema), m_primitiveType(PrimitiveType::PRIMITIVETYPE_Integer), 
+    explicit ECEnumeration(ECSchemaCR schema) : m_schema(schema), m_primitiveType(PrimitiveType::PRIMITIVETYPE_Integer),
         m_isStrict(true), m_enumeratorList(), m_enumeratorIterable(m_enumeratorList) { }
     ~ECEnumeration()
         {
@@ -1342,7 +1300,7 @@ public:
     void SetId(ECEnumerationId id) {BeAssert(!m_ecEnumerationId.IsValid()); m_ecEnumerationId = id;} //!< Intended to be called by ECDb or a similar system
     ECEnumerationId GetId() const {BeAssert(HasId()); return m_ecEnumerationId;} //!< Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
     bool HasId() const {return m_ecEnumerationId.IsValid();}
-    
+
     Utf8StringCR GetName() const {return m_validatedName.GetName();} //!< The name of this Enumeration
     ECOBJECTS_EXPORT Utf8StringCR GetFullName() const; //!< The full name of this ECEnumeration in the format {SchemaName}:{EnumerationName}.
     //!< Gets a qualified name of the ECEnumeration, prefixed by the schema alias if it does not match the primary schema.
@@ -1378,7 +1336,7 @@ public:
     ECOBJECTS_EXPORT ECEnumeratorP FindEnumerator(int32_t value) const; //!< Finds the enumerator with the provided integer value, returns nullptr if none found.
     ECOBJECTS_EXPORT ECEnumeratorP FindEnumerator(Utf8CP value) const; //!< Finds the enumerator with the provided string value, returns nullptr if none found.
 
-    ECOBJECTS_EXPORT ECObjectsStatus DeleteEnumerator(ECEnumeratorCR enumerator); //!< Removes the provided enumerator from this enumeration    
+    ECOBJECTS_EXPORT ECObjectsStatus DeleteEnumerator(ECEnumeratorCR enumerator); //!< Removes the provided enumerator from this enumeration
     ECOBJECTS_EXPORT void Clear(); //!< Removes all enumerators in this enumeration
 
     //! Write the Enumeration as a standalone schema child in the ECSchemaJSON format.
@@ -1396,7 +1354,7 @@ public:
 //=======================================================================================
 struct KindOfQuantity : NonCopyableClass
 {
-friend struct ECSchema; // needed for SetName() method 
+friend struct ECSchema; // needed for SetName() method
 friend struct SchemaXmlWriter; // needed for WriteXml() method
 friend struct SchemaXmlReaderImpl; // needed for ReadXml() method
 friend struct SchemaJsonWriter; // needed for the ToJson() method
@@ -1404,7 +1362,7 @@ friend struct SchemaJsonWriter; // needed for the ToJson() method
 typedef bvector<bpair<ECUnitCP, Nullable<Utf8String>>> UnitAndLabelPairs;
 private:
     ECSchemaCR m_schema;
-    mutable Utf8String m_fullName; //cached nsprefix:name representation
+    CachedSchemaQualifiedName m_fullName; //cached nsprefix:name representation
     ECValidatedName m_validatedName; //wraps name and displaylabel
     Utf8String m_description;
     mutable bpair<Utf8String, bvector<Utf8String>> m_descriptorCache;
@@ -1595,7 +1553,7 @@ private:
     ECSchemaCR m_schema;
 
     mutable PropertyCategoryId m_propertyCategoryId;
-    mutable Utf8String m_fullName;
+    CachedSchemaQualifiedName m_fullName;
 
     PropertyCategory(ECSchemaCR schema) : m_schema(schema), m_priority(0) {};
     ~PropertyCategory() {};
@@ -1684,8 +1642,8 @@ friend struct ECProperty; // for access to InvalidateDefaultStandaloneEnabler() 
 friend struct ECSchemaConverter;
 
 private:
-    mutable Utf8String              m_fullName;
-    mutable Utf8String              m_ecsqlName;
+    CachedSchemaQualifiedName m_fullName;
+    CachedUtf8String        m_ecsqlName;
     Utf8String                      m_description;
     ECValidatedName                 m_validatedName;
     mutable ECClassId               m_ecClassId;
@@ -1696,9 +1654,8 @@ private:
 
     PropertyMap                     m_propertyMap;
     PropertyList                    m_propertyList;
-    mutable bool                    m_propertyCountCached;
-    mutable uint16_t                m_propertyCount;
-    mutable StandaloneECEnablerPtr  m_defaultStandaloneEnabler;
+    CachedValue<uint16_t>   m_propertyCount;
+    CachedValue<StandaloneECEnablerPtr> m_defaultStandaloneEnabler;
     bvector<Utf8String> m_xmlComments;
     bmap<Utf8String, bvector<Utf8String>> m_contentXmlComments;
     bmap<int, bvector<Utf8String>> m_customAttributeXmlComments;
@@ -1820,7 +1777,7 @@ public:
     bool GetIsDisplayLabelDefined() const {return m_validatedName.IsDisplayLabelDefined();} //!< Whether the display label is explicitly defined or not.
 
     //! Returns the StandaloneECEnabler for this class
-    ECOBJECTS_EXPORT StandaloneECEnablerP GetDefaultStandaloneEnabler() const;
+    ECOBJECTS_EXPORT StandaloneECEnablerPtr GetDefaultStandaloneEnabler() const;
 
     ECClassType GetClassType() const {return _GetClassType();} //!< The type of derived ECClass this is
 
@@ -1873,7 +1830,7 @@ public:
     //! so will return an error.
     //! Note: baseClass must be of same derived class type
     //! @param[in] baseClass The class to derive from
-    //! @param[in] insertAtBeginning true, if @p baseClass is inserted at the beginning of the list. 
+    //! @param[in] insertAtBeginning true, if @p baseClass is inserted at the beginning of the list.
     //! @param[in] resolveConflicts if true, will automatically resolve conflicts with property names by renaming the property in the current (and derived) class
     //!                             false if @p baseClass is added to the end of the list
     //! @param[in] validate if true, will validate the class hierarchy
@@ -1970,7 +1927,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus RenameProperty(ECPropertyR ecProperty, Utf8CP newName);
     ECOBJECTS_EXPORT ECObjectsStatus ReplaceProperty(ECPropertyP& newProperty, ValueKind valueKind, ECPropertyR propertyToRemove);
     ECOBJECTS_EXPORT ECObjectsStatus DeleteProperty(ECPropertyR ecProperty);
-    
+
     //! Get the property that stores the instance label for the class.
     //! @return A pointer to ECN::ECProperty if the instance label has been specified; otherwise, nullptr.
     ECOBJECTS_EXPORT ECPropertyP GetInstanceLabelProperty() const;
@@ -2002,7 +1959,7 @@ public:
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
 
-    //! Given a qualified class name, will parse out the schema's alias and the class name. 
+    //! Given a qualified class name, will parse out the schema's alias and the class name.
     //!
     //! If anything other than a qualified class name is provided it will it will be split on the first `:` found.
     //! @param[out] alias       The alias of the schema
@@ -2065,14 +2022,14 @@ public:
     // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
     ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true);
 
-    //! Returns true if the provided mixin class can be applied to this class. 
+    //! Returns true if the provided mixin class can be applied to this class.
     //! @remarks The mixin class can be applied to this class if this class is derived from the AppliesToEntityClass property defined in IsMixin custom attribute.
     //! @param[in] mixinClass The ECEntityClass to check if it can be add as a mixin to this class.
     ECOBJECTS_EXPORT bool CanApply(ECEntityClassCR mixinClass) const;
 
-    //! If the class is a mixin, returns the ECEntityClass which restricts where the mixin can be applied, else nullptr. 
+    //! If the class is a mixin, returns the ECEntityClass which restricts where the mixin can be applied, else nullptr.
     ECOBJECTS_EXPORT ECEntityClassCP GetAppliesToClass() const;
-    
+
     //! Returns true if the class is the type specified, derived from it or is a mixin which applies to the type specified
     ECOBJECTS_EXPORT bool IsOrAppliesTo(ECEntityClassCP entityClass) const;
 };
@@ -2276,11 +2233,11 @@ public:
     //! @param[in] roleLabel The role label to be set on this relationship constraint
     //! @returns An ::Error is returned if the given label is null or empty
     ECOBJECTS_EXPORT ECObjectsStatus SetRoleLabel(Utf8CP roleLabel);
-    
+
     //! Get the label of the constraint role in the relationship.
     //! @remarks If the role label is not defined on this constraint it will be inherited from its base constraint, if one exists.
     ECOBJECTS_EXPORT Utf8String const GetRoleLabel() const;
-    
+
     //! Get the invariant label of the constraint role in the relationship.
     //! @remarks If the role label is not defined on this constraint it will be inherited from its base constraint, if one exists.
     Utf8String const GetInvariantRoleLabel() const {return m_roleLabel;}
@@ -2292,11 +2249,11 @@ public:
     //! @param[in] isPolymorphic String representation of true/false
     //! @return ::Success if the string is parsed into a bool
     ECOBJECTS_EXPORT ECObjectsStatus SetIsPolymorphic(Utf8CP isPolymorphic);
-    
+
     //! Sets whether this constraint can also relate to instances of subclasses of classes applied to the constraint.
     //! @param[in] isPolymorphic The boolean value to set as the polymorphic flag
     ECObjectsStatus SetIsPolymorphic(bool isPolymorphic) {m_isPolymorphic = isPolymorphic; return ECObjectsStatus::Success;}
-    
+
     //! Determine whether the constraint can also relate to instances of subclasses of classes applied to the constraint.
     bool GetIsPolymorphic() const {return m_isPolymorphic;}
 
@@ -2317,35 +2274,35 @@ public:
     //! Get the RelationshipMultiplicity of the constraint in the relationship
     RelationshipMultiplicityCR GetMultiplicity() const {return *m_multiplicity;}
 
-    //! Set the abstract constraint class by input string of format {SchemaName}:{ClassName}. All of the constraint classes must be or derive from. 
+    //! Set the abstract constraint class by input string of format {SchemaName}:{ClassName}. All of the constraint classes must be or derive from.
     //! @param[in] abstractConstraint String representation of the full name of an ECEntityClass
     //! @return ::Success if the abstract constraint can be parsed into a valid ECEntityClass
     ECOBJECTS_EXPORT ECObjectsStatus SetAbstractConstraint(Utf8CP abstractConstraint);
-    
-    //! Set the abstract constraint class of the constraint in the relationship. 
+
+    //! Set the abstract constraint class of the constraint in the relationship.
     //! @remarks The specified class must be a base class class of all constraint classes defined in
     //! @param[in] abstractConstraint The ECEntityClass to be set as the abstract constraint of the constraint in the relationship
     ECOBJECTS_EXPORT ECObjectsStatus SetAbstractConstraint(ECEntityClassCR abstractConstraint);
 
-    //! Set the abstract constraint class of the constraint in the relationship. 
+    //! Set the abstract constraint class of the constraint in the relationship.
     //! @remarks The specified class must be a base class class of all constraint classes defined in
     //! @param[in] abstractConstraint The ECRelationshipClass to be set as the abstract constraint of the constraint in the relationship
     ECOBJECTS_EXPORT ECObjectsStatus SetAbstractConstraint(ECRelationshipClassCR abstractConstraint);
 
-    //! Get the abstract constraint class for this ECRelationshipConstraint. 
+    //! Get the abstract constraint class for this ECRelationshipConstraint.
     //! @remarks If the abstract constraint is not explicitly defined locally, it will be inherited from its base constraint, if one exists.
     //! If one does not exist and there is only one constraint class, that constraint class will be returned. If fail to find a valid class
     //! nullptr will be returned.
     //! @return The abstract constraint, an ECEntityClass or ECRelationshipClass, if one is defined, if one cannot be found nullptr is returned.
     ECOBJECTS_EXPORT ECClassCP const GetAbstractConstraint() const;
-    
+
     //! Determine whether the abstract constraint is set in this constraint.
     bool IsAbstractConstraintDefined() const {return nullptr != m_abstractConstraint;}
 
     //! Remove the abstract constraint
     void RemoveAbstractConstraint() { m_abstractConstraint = nullptr; }
 
-    //! Add the specified entity class to the constraint. 
+    //! Add the specified entity class to the constraint.
     //! @param[in] classConstraint  The ECEntityClass to add as a constraint class
     //! @note If the class does not derive from the abstract constraint it will fail to be added and an error will be returned.
     ECOBJECTS_EXPORT ECObjectsStatus AddClass(ECEntityClassCR classConstraint);
@@ -2354,7 +2311,7 @@ public:
     //! @param[in] classConstraint  The ECEntityClass to remove from the constraint class list
     ECOBJECTS_EXPORT ECObjectsStatus RemoveClass(ECEntityClassCR classConstraint);
 
-    //! Add the specified relationship class to the constraint. 
+    //! Add the specified relationship class to the constraint.
     //! @param[in] classConstraint  The ECRelationshipClass to add as a constraint class
     //! @note If the class does not derive from the abstract constraint it will fail to be added and an error will be returned.
     ECOBJECTS_EXPORT ECObjectsStatus AddClass(ECRelationshipClassCR classConstraint);
@@ -2370,7 +2327,7 @@ public:
     ECRelationshipConstraintClassList const & GetConstraintClasses() const {return m_constraintClasses;}
 
     ECOBJECTS_EXPORT bool SupportsClass(ECClassCR ecClass) const;
-    
+
     //! Copies this constraint to the destination
     //! @param[out] toRelationshipConstraint The relationship constraint to copy to
     //! @param[in] copyReferences If false, a shallow copy of the source relationship constraint will be made meaning it will not copy over any constraint classes or abstract constraint that does not live within the target schema. Instead it will create a schema reference back to the source schema if necessary.
@@ -2440,10 +2397,10 @@ public:
     ECRelationshipConstraintR GetSource() const {return *m_source;} //!< Gets the ECRelationshipConstraint at the source end of the relationship
     ECRelationshipConstraintR GetTarget() const {return *m_target;} //!< Gets the ECRelationshipConstraint at the target end of the relationship
 
-    //! Sets the ::StrengthType of this relationship. 
+    //! Sets the ::StrengthType of this relationship.
     //! @remarks The ::StrengthType must be consistent with its base class's strength type. If it is not, Verify() will return false.
     //! @return ::Success if the strength is set, otherwise ::RelationshipConstraintsNotCompatible.
-    ECOBJECTS_EXPORT ECObjectsStatus SetStrength(StrengthType value); 
+    ECOBJECTS_EXPORT ECObjectsStatus SetStrength(StrengthType value);
     StrengthType GetStrength() const {return m_strength;} //!< Gets the ::StrengthType of this ECRelationshipClass.
 
     //! Sets the strength direction for this relationship.
@@ -2496,9 +2453,9 @@ enum class SchemaMatchType
 
 //=======================================================================================
 //! Fully defines a schema with its name, read, write and minor versions.
-//! 
+//!
 //! The following table shows how schema version changes over time
-//! 
+//!
 //! |                             | Changes Write Compatible | Changes Read Compatible | Version Number |
 //! |-----------------------------|--------------------------|-------------------------|----------------|
 //! | Initial schema release      | N/A                      | N/A                     | 1.0.0          |
@@ -2510,7 +2467,7 @@ enum class SchemaMatchType
 //! | Additions to schema         | Yes                      | Yes                     | 1.1.3          |
 //! | Additions to schema         | Yes                      | Yes                     | 1.2.0          |
 //! | Significant schema revision | No                       | No                      | 2.0.0          |
-//! 
+//!
 //! The general logic for an application written for a particular version of a schema working with a repository that potentially
 //! has a different version of the schema would be:
 //!   - If schema in the repository is newer (or same):
@@ -2519,7 +2476,7 @@ enum class SchemaMatchType
 //!   - If schema in the repository is older:
 //!       - If first two digits match, app can upgrade repository schema without breaking read or write for other apps
 //!       - If only first digit matches, app can upgrade repository, but upgrade will prevent some older apps from writing
-//! 
+//!
 //! For traditional EC developers it may be difficult to envision when a schema change would require a change
 //! to the middle version number. Consider in schema 1 that we have a Student class that stores grades and has (double) properties:
 //!   - Language
@@ -2527,7 +2484,7 @@ enum class SchemaMatchType
 //!   - Science
 //!   - Music
 //!   - Overall GPA (an average of the previous 4 properties)
-//! 
+//!
 //! If schema 2 adds to Student a double property Psychology, the meaning of Overall GPA changes slightly and hence, applications written for Schema 1:
 //!   - Can still safely read all the values that were in schema 1
 //!   - Cannot modify any values that were in schema 1 because they will likely set Overall GPA incorrectly.
@@ -2649,7 +2606,7 @@ struct SchemaKey
     //! @li SchemaMatchType::LatestWriteCompatible - This will first test the names and then the read and write versions.
     //! @li SchemaMatchType::Latest - Returns whether the current schema's name is less than the target's.
     ECOBJECTS_EXPORT bool LessThan(SchemaKeyCR rhs, SchemaMatchType matchType) const;
-    
+
     //! Compares two SchemaKeys and returns whether the target schema matches this SchemaKey, where "matches" is dependent on the match type
     //! @param[in]  rhs         The SchemaKey to compare to
     //! @param[in]  matchType   The type of match to compare for
@@ -2904,7 +2861,7 @@ protected:
     SchemaItemContainer(CONTAINER_MAP_TYPE const& map) : m_map(map) {};
 
 public:
-    
+
     //=======================================================================================
     // @bsistruct
     //=======================================================================================
@@ -2937,17 +2894,17 @@ public:
             m_state->m_mapIterator++;
             return *this;
             }
-        
+
         bool operator!=(const_iterator const& rhs) const
             {
             return (m_state->m_mapIterator != rhs.m_state->m_mapIterator);
             }
-        
+
         bool operator==(const_iterator const& rhs) const
             {
             return (m_state->m_mapIterator == rhs.m_state->m_mapIterator);
             }
-        
+
         MAP_TYPE const& operator* () const
             {
             #ifdef CREATES_A_TEMP
@@ -3496,7 +3453,7 @@ public:
     uint32_t GetOriginalECXmlVersionMajor() const {return m_originalECXmlVersionMajor;} //!< Gets the original major xml version.
     uint32_t GetOriginalECXmlVersionMinor() const {return m_originalECXmlVersionMinor;} //!< Gets the original minor xml version.
 
-    //! Sets the original ECXml version of the schema. 
+    //! Sets the original ECXml version of the schema.
     //! @remarks This method is intended for internal use only.
     //! @param[in] major The version number to set as the major ECXml version
     //! @param[in] minor The version number to set as the minor ECXml version
@@ -3520,7 +3477,7 @@ public:
     KindOfQuantityContainerCR GetKindOfQuantities() const {return m_kindOfQuantityContainer;} //!< Returns an iterable container of ECClasses sorted by name.
     uint32_t GetKindOfQuantityCount() const {return (uint32_t) m_kindOfQuantityMap.size();} //!< Gets the number of kind of quantity in the schema
     ECObjectsStatus DeleteKindOfQuantity(KindOfQuantityR kindOfQuantity) {return DeleteSchemaChild<KindOfQuantity, KindOfQuantityMap>(kindOfQuantity, &m_kindOfQuantityMap);} //!< Removes a kind of quantity from this schema.
-    
+
     PropertyCategoryContainerCR GetPropertyCategories() const {return m_propertyCategoryContainer;} //!< Returns an iterable container of PropertyCategories sorted by name.
     uint32_t GetPropertyCategoryCount() const {return (uint32_t) m_propertyCategoryMap.size();} //!< Gets the number of PropertyCategories in the schema.
     ECObjectsStatus DeletePropertyCategory(PropertyCategoryR propertyCategory) {return DeleteSchemaChild<PropertyCategory, PropertyCategoryMap>(propertyCategory, &m_propertyCategoryMap);} //!< Removes a PropertyCategory from this schema.
@@ -3553,7 +3510,7 @@ public:
     //! @return true, if this schema is a system schema. false, otherwise
     bool IsSystemSchema() const {return IsDefined("Bentley_Standard_Custom_Attributes", "SystemSchema");}
 
-    //! Validates the schema against the latest version of EC.  
+    //! Validates the schema against the latest version of EC.
     //! @remarks This method will not attempt to resolve issues found during validation.  Use the overload ECSchema::Validate(bool) to use automatic issue resolution.
     bool Validate() {return Validate(false);}
 
@@ -3621,8 +3578,8 @@ public:
     //! If the class name is valid, will create an ECRelationshipClass object and add the new class to the schema
     //! @param[out] relationshipClass If successful, will contain a new ECRelationshipClass object
     //! @param[in]  name    Name of the class to create
-    //! @param[in]  verify  If true the relationship class will be verified during all in-memory operations. Default is true. 
-    //!                     If not verified either the Validate method on the ECSchema or Verify method on the ECRelationshipClass 
+    //! @param[in]  verify  If true the relationship class will be verified during all in-memory operations. Default is true.
+    //!                     If not verified either the Validate method on the ECSchema or Verify method on the ECRelationshipClass
     //!                     must be called in order to insure the schema is valid. It is not recommended to set this to false.
     //! @return A status code indicating whether or not the class was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus CreateRelationshipClass(ECRelationshipClassP& relationshipClass, Utf8StringCR name, bool verify = true);
@@ -3659,7 +3616,7 @@ public:
 
     //! Creates a new UnitSystem and adds it to the schema.
     //! @param[out] unitSystem If successful, will contain a new UnitSystem object
-    //! @param[in] name        Name of the unit system to create 
+    //! @param[in] name        Name of the unit system to create
     //! @param[in] label       Display label of the unit system
     //! @param[in] description Description of the unit system
     //! @return A status code indicating whether or not the Unit Systems was successfully created and added to the schema
@@ -3681,7 +3638,7 @@ public:
     //! @param[in] label        Display label of the format
     //! @param[in] description  Description of the format
     //! @param[in] nfs          A NumericFormatSpec to use to create.
-    //! @param[in] composite    A CompositeValueSpec to create this use to create. 
+    //! @param[in] composite    A CompositeValueSpec to create this use to create.
     ECOBJECTS_EXPORT ECObjectsStatus CreateFormat(ECFormatP& format, Utf8CP name, Utf8CP label = nullptr, Utf8CP description = nullptr, Formatting::NumericFormatSpecCP nfs = nullptr, Formatting::CompositeValueSpecCP composite = nullptr);
 
     //! Creates a new ECUnit and adds it to the schema.
@@ -3705,7 +3662,7 @@ public:
     //! @param[in] unitSystem   Name of the unit system this unit is associated with
     //! @param[in] label        Display label of the unit
     //! @param[in] description  Description of the unit
-    ECObjectsStatus CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Utf8CP label = nullptr, Utf8CP description = nullptr) 
+    ECObjectsStatus CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Utf8CP label = nullptr, Utf8CP description = nullptr)
         {return CreateUnit(unit, name, definition, phenom, unitSystem, nullptr, nullptr, nullptr, label, description);}
 
     //! Creates a new ECUnit and adds it to the schema.
@@ -3717,9 +3674,9 @@ public:
     //! @param[in] numerator    Numerator for unit factor
     //! @param[in] label        Display label of the unit
     //! @param[in] description  Description of the unit
-    ECObjectsStatus CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Nullable<double> numerator, Utf8CP label = nullptr, Utf8CP description = nullptr) 
+    ECObjectsStatus CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Nullable<double> numerator, Utf8CP label = nullptr, Utf8CP description = nullptr)
         {return CreateUnit(unit, name, definition, phenom, unitSystem, numerator, nullptr, nullptr, label, description);}
-    
+
     //! Creates a new inverted ECUnit and adds it to the schema.
     //! @param[out] unit        If successful, will contain a new inverted ECUnit object
     //! @param[in] parent       Parent unit of this inverted unit
@@ -3748,7 +3705,7 @@ public:
     //! @param[in] numerator    Numerator for unit factor
     //! @param[in] label        Display label of the constant
     //! @param[in] description  Description of the constant
-    ECOBJECTS_EXPORT ECObjectsStatus CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, double numerator, Utf8CP label = nullptr, Utf8CP description = nullptr) 
+    ECOBJECTS_EXPORT ECObjectsStatus CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, double numerator, Utf8CP label = nullptr, Utf8CP description = nullptr)
         {return CreateConstant(constant, name, definition, phenom, numerator, nullptr, label, description);}
 
     //! Get a schema by alias within the context of this schema and its referenced schemas.
@@ -3806,7 +3763,7 @@ public:
     //! @param[in]  name     The name of the kind of quantity to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::KindOfQuantity if the named enumeration exists in within the current schema; otherwise, nullptr
     KindOfQuantityP GetKindOfQuantityP(Utf8CP name) {return GetSchemaChild<KindOfQuantity, KindOfQuantityMap>(name, &m_kindOfQuantityMap);}
-    
+
     //! Get a KindOfQuantity by name within the context of this schema and all schemas referenced by this schema.
     //! @param[in]  name        The name of schema item to lookup.  This can be either an qualified or unqualified (short) name (qualified name: [alias]:[item name])
     //! @param[in]  useFullName useFullName If true, name must be fully qualified ([schema name]:[item name]). The lookup will treat the part to the
@@ -4069,8 +4026,8 @@ public:
     //! @param[in]  versionMinor    The minor version number.
     //! @param[in]  ecVersion       The EC version of the schema to be created.
     //! @return A status code indicating whether the call was succesful or not
-    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, 
-                                                         Utf8StringCR alias, uint32_t versionRead, uint32_t versionWrite, uint32_t versionMinor, 
+    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName,
+                                                         Utf8StringCR alias, uint32_t versionRead, uint32_t versionWrite, uint32_t versionMinor,
                                                          ECVersion ecVersion = ECVersion::Latest);
 
     //! Generate a schema version string given the read and minor version values.
@@ -4183,7 +4140,7 @@ public:
 
     //! Locate a schema using the provided schema locators and paths. If not found in those by either of those parameters standard schema paths
     //! relative to the executing dll will be searched.
-    //! @remarks This will attempt to deserialize the provided schema xml file. 
+    //! @remarks This will attempt to deserialize the provided schema xml file.
     //! @param[in]    schemaXmlFile       The absolute path of the schema that is being looked for
     //! @param[in]    schemaContext       Required to create schemas
     //! @return A valid ECSchemaPtr, IsValid() will be true, if the schema can be found or deserialized within the provided ECSchemaReadContext
@@ -4227,10 +4184,10 @@ public:
     //!           contain the read schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlString(ECSchemaPtr& schemaOut, WCharCP ecSchemaXml, ECSchemaReadContextR schemaContext);
 
-    //! Serializes the schema as EC2 Xml with the standard EC3 attributes converted to EC2 standard custom attributes.  
+    //! Serializes the schema as EC2 Xml with the standard EC3 attributes converted to EC2 standard custom attributes.
     //! @param[out] ec2SchemaXml        The string containing the EC2 Xml for the input schema
     //! @param[in]  schemaToSerialize   The schema to serialize as EC2 Xml.  See ECSchemaDownConverter for details of conversion.
-    //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml will contain the serialized schema.  
+    //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then ecSchemaXml will contain the serialized schema.
     //!             Otherwise, ecSchemaXml will be unmodified.  Schema is always unmodified.
     ECOBJECTS_EXPORT static SchemaWriteStatus WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSchemaP schemaToSerialize);
 
@@ -4266,11 +4223,11 @@ struct EXPORT_VTABLE_ATTRIBUTE IECClassLocater
     {
 protected:
     virtual ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) = 0;
-    virtual ECClassId _LocateClassId(Utf8CP schemaName, Utf8CP className) 
-        { 
+    virtual ECClassId _LocateClassId(Utf8CP schemaName, Utf8CP className)
+        {
         ECClassCP ecClass = LocateClass(schemaName, className);
         if (ecClass == nullptr || !ecClass->HasId())
-            return ECClassId(); 
+            return ECClassId();
 
         return ecClass->GetId();
         }
@@ -4291,7 +4248,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECClassLocatorByClassId : NonCopyableClass
     {
 protected:
     ECSchemaCP m_schema;
-    
+
     virtual ECClassCP LocateClassHelper(ECClassId const& classId) const
         {
         if (nullptr == m_schema)
@@ -4310,7 +4267,7 @@ protected:
 
         return *it;
         }
- 
+
 public:
     ECClassLocatorByClassId(ECSchemaCP schema = nullptr) : m_schema(schema) {}
     virtual ~ECClassLocatorByClassId() {}

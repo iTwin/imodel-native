@@ -130,6 +130,7 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     EXPECT_EQ(SchemaWriteStatus::Success, status);
     }
 
+#if defined(NEEDSWORK_CALCULATED_PROPERTIES)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Robert.Schili                       12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -295,6 +296,7 @@ TEST_F(SchemaXmlSerializationTest, SerializeComprehensiveSchema)
     SchemaWriteStatus status4 = schema->WriteToXmlString(ecSchemaXmlString);
     EXPECT_EQ(SchemaWriteStatus::Success, status4);
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                            Caleb.Shafer                           09/2016

@@ -436,21 +436,12 @@ $(o)w32tools$(oext) :                               $(ToolsDir)nonport/winnt/w32
 DgnECDepends = \
     $(DgnPlatformAPISrc)DgnChangeSummary.h \
     $(DgnPlatformAPISrc)DgnECSymbolProvider.h \
-    $(DgnPlatformAPISrc)DgnECTypes.h \
-    $(DgnHandlersDir)DgnECTypeAdapters.h \
-    $(DgnHandlersDir)DgnECInteropStringFormatter.h \
     $(DgnPlatformAPISrc)VersionCompareChangeSummary.h \
 
 
 $(CoreObjs)DgnChangeSummary$(oext) : $(DgnHandlersDir)DgnChangeSummary.cpp $(DgnECDepends) ${MultiCompileDepends}
 
 $(CoreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnECDepends) ${MultiCompileDepends}
-
-$(CoreObjs)DgnECTypes$(oext) : $(DgnHandlersDir)DgnECTypes.cpp $(DgnECDepends) ${MultiCompileDepends}
-
-$(CoreObjs)DgnECTypeAdapters$(oext) : $(DgnHandlersDir)DgnECTypeAdapters.cpp $(DgnECDepends) ${MultiCompileDepends}
-
-$(CoreObjs)DgnECInteropStringFormatter$(oext) : $(DgnHandlersDir)DgnECInteropStringFormatter.cpp $(DgnECDepends) ${MultiCompileDepends}
 
 $(CoreObjs)VersionCompareChangeSummary$(oext) : $(DgnHandlersDir)VersionCompareChangeSummary.cpp $(DgnECDepends) ${MultiCompileDepends}
 

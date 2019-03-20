@@ -33,15 +33,6 @@ const uint32_t BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8);
 #define PROPERTYLAYOUT_Target_ECPointer "Target ECPointer"
 
 /*---------------------------------------------------------------------------------**//**
-* used in compatible class layout map
-* @bsimethod                                    Bill.Steinbock                  10/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool less_classLayout::operator()(ClassLayoutCP s1, ClassLayoutCP s2) const
-    {
-    return (s1->GetUniqueId() < s2->GetUniqueId());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int      randomValue  ()
@@ -341,10 +332,7 @@ uint32_t ClassLayout::ComputeCheckSum () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t        ClassLayout::GetChecksum () const
     {
-    if (0 == m_checkSum)
-        m_checkSum = ComputeCheckSum ();
-
-    return  m_checkSum;
+    return m_checkSum.Get([&]() { return ComputeCheckSum(); });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -353,7 +341,7 @@ uint32_t        ClassLayout::GetChecksum () const
 void ClassLayout::SetPropertyLayoutModifierData (PropertyLayoutCR layout, uint32_t data)
     {
     const_cast<PropertyLayoutR>(layout).m_modifierData = data;
-    m_checkSum = 0;
+    m_checkSum.Invalidate();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -370,15 +358,11 @@ bool            ClassLayout::Equals (ClassLayoutCR other, bool compareNames) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayout::ClassLayout()
-    :
-    m_sizeOfFixedSection(0), 
-    m_isRelationshipClass(false), m_propertyIndexOfSourceECPointer(-1), m_propertyIndexOfTargetECPointer(-1)
+ClassLayout::ClassLayout() : m_sizeOfFixedSection(0), m_isRelationshipClass(false), m_propertyIndexOfSourceECPointer(-1), m_propertyIndexOfTargetECPointer(-1)
     {
     m_uniqueId = randomValue();
-    m_checkSum = 0;
     };
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -537,76 +521,6 @@ void            ClassLayout::InitializeMemoryForInstance(Byte * data, uint32_t b
         }
     }
   
-/*---------------------------------------------------------------------------------**//**
-* Checks testLayout layout to see if equal to or a  subset of classlayout
-* @bsimethod                                    Bill.Steinbock                  10/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool            areLayoutsCompatible (ClassLayoutCR testLayout, ClassLayoutCR classLayout) 
-    {
-    uint32_t nProperties = testLayout.GetPropertyCount ();
-
-    // see if every property in testLayout can be found in classLayout and is the same type
-    for (uint32_t i = 0; i < nProperties; i++)
-        {
-        PropertyLayoutCP testPropertyLayout;
-        ECObjectsStatus status = testLayout.GetPropertyLayoutByIndex (testPropertyLayout, i);
-        if (ECObjectsStatus::Success != status)
-            return false;
-
-        PropertyLayoutCP propertyLayout;
-        status = classLayout.GetPropertyLayout (propertyLayout, testPropertyLayout->GetAccessString());
-        if (ECObjectsStatus::Success != status)
-            return false;
-
-        if (testPropertyLayout->GetTypeDescriptor().GetTypeKind() != propertyLayout->GetTypeDescriptor().GetTypeKind())
-            return false;
-
-        if (testPropertyLayout->GetTypeDescriptor().IsStructArray() != propertyLayout->GetTypeDescriptor().IsStructArray())
-            return false;
-
-        if (testPropertyLayout->GetTypeDescriptor().IsPrimitiveArray())
-            {
-            if (!propertyLayout->GetTypeDescriptor().IsPrimitiveArray())
-                return false;
-
-            if (testPropertyLayout->GetTypeDescriptor().GetPrimitiveType() != propertyLayout->GetTypeDescriptor().GetPrimitiveType())
-                return false;
-            }
-
-        if (testPropertyLayout->GetTypeDescriptor().IsPrimitive())
-            {
-            if (!propertyLayout->GetTypeDescriptor().IsPrimitive())
-                return false;
-
-            if (testPropertyLayout->GetTypeDescriptor().GetPrimitiveType() != propertyLayout->GetTypeDescriptor().GetPrimitiveType())
-                return false;
-            }
-        }
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  03/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            ClassLayout::IsCompatible (ClassLayoutCR classLayout) const
-    {
-    if (this == &classLayout)
-        return true;
-
-    CompatibleClassLayoutsMap::const_iterator compatibeLayoutIter = m_compatibleClassLayouts.find(&classLayout);
-    if (m_compatibleClassLayouts.end() != compatibeLayoutIter)
-        return compatibeLayoutIter->second;
-
-    if (0 != BeStringUtilities::StricmpAscii(GetECClassName().c_str(), classLayout.GetECClassName().c_str()))
-        return false;
-
-    bool isCompatible = areLayoutsCompatible (*this, classLayout);
-    m_compatibleClassLayouts[&classLayout] = isCompatible;
-
-    return isCompatible;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -918,7 +832,7 @@ ClassLayoutPtr    ClassLayout::Factory::DoBuildClassLayout ()
         }
 
     m_underConstruction->FinishLayout ();
-    m_underConstruction->m_checkSum = m_underConstruction->ComputeCheckSum ();
+    m_underConstruction->GetChecksum();
 
     return m_underConstruction;
     }
@@ -3379,20 +3293,7 @@ ECObjectsStatus       ECDBuffer::SetValueToMemory (uint32_t propertyIndex, ECVal
 +---------------+---------------+---------------+---------------+---------------+------*/
 CalculatedPropertySpecificationCP ECDBuffer::LookupCalculatedPropertySpecification (IECInstanceCR instance, PropertyLayoutCR propLayout) const
     {
-    ClassLayoutCR classLayout = GetClassLayout();
-    uint32_t propertyIndex;
-    ECPropertyCP ecprop;
-    if (ECObjectsStatus::Success == classLayout.GetPropertyLayoutIndex (propertyIndex, propLayout) && NULL != (ecprop = instance.GetEnabler().LookupECProperty (propertyIndex)))
-        {
-        PrimitiveECPropertyCP primProp;
-        PrimitiveArrayECPropertyCP arrayProp;
-        if (NULL != (primProp = ecprop->GetAsPrimitiveProperty()))
-            return primProp->GetCalculatedPropertySpecification();
-        else if (NULL != (arrayProp = ecprop->GetAsPrimitiveArrayProperty()))
-            return arrayProp->GetCalculatedPropertySpecification();
-        }
-
-    return NULL;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
