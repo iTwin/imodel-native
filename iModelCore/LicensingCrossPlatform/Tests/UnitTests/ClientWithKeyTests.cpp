@@ -67,24 +67,24 @@ ClientWithKeyImplPtr CreateWithKeyTestClient(IPolicyProviderPtr policyProvider, 
         );
     }
 
-// Note: cannot use mocks with clients created with the factory
-ClientPtr CreateWithKeyTestClientFromFactory(Utf8StringCR productId = TEST_PRODUCT_ID)
-    {
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
-
-    BeFileName dbPath = GetWithKeyLicensingDbPath();
-
-    return Client::CreateWithKey
-        (
-        TEST_ACCESSKEY,
-        clientInfo,
-        dbPath,
-        true,
-        "",
-        "",
-        nullptr
-        );
-    }
+// TODO: move to Integration tests
+//ClientPtr CreateWithKeyTestClientFromFactory(Utf8StringCR productId = TEST_PRODUCT_ID)
+//    {
+//    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+//
+//    BeFileName dbPath = GetWithKeyLicensingDbPath();
+//
+//    return Client::CreateWithKey
+//        (
+//        TEST_ACCESSKEY,
+//        clientInfo,
+//        dbPath,
+//        true,
+//        "",
+//        "",
+//        nullptr
+//        );
+//    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -191,12 +191,13 @@ TEST_F(ClientWithKeyTests, DISABLED_JsonExample)
     EXPECT_NE(c, 0);
     }
 
-TEST_F(ClientWithKeyTests, CreateWithKeyClientFromFactory_Success)
-    {
-    auto client = CreateWithKeyTestClientFromFactory();
-
-    EXPECT_NE(nullptr, client);
-    }
+// TODO: move to Integration tests
+//TEST_F(ClientWithKeyTests, CreateWithKeyClientFromFactory_Success)
+//    {
+//    auto client = CreateWithKeyTestClientFromFactory();
+//
+//    EXPECT_NE(nullptr, client);
+//    }
 
 TEST_F(ClientWithKeyTests, WithKeyStartApplication_Error)
     {

@@ -1,16 +1,15 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/Client.cpp $
+|     $Source: Licensing/AccessKeyClient.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Licensing/Client.h>
-#include "Providers/AuthHandlerProvider.h"
+#include <Licensing/AccessKeyClient.h>
+
 #include "Providers/BuddiProvider.h"
 #include "Providers/PolicyProvider.h"
 #include "Providers/UlasProvider.h"
-#include "ClientImpl.h"
 #include "ClientWithKeyImpl.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
@@ -18,10 +17,10 @@ USING_NAMESPACE_BENTLEY_LICENSING
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Client::Client
-    (
+AccessKeyClient::AccessKeyClient
+(
     std::shared_ptr<struct IClient> implementation
-    )
+)
     {
     m_impl = implementation;
     }
@@ -29,30 +28,27 @@ Client::Client
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClientPtr Client::Create
-    (
-    const ConnectSignInManager::UserInfo& userInfo,
+AccessKeyClientPtr AccessKeyClient::Create
+(
+    Utf8StringCR accessKey,
     ClientInfoPtr clientInfo,
-    std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
     BeFileNameCR dbPath,
     bool offlineMode,
     Utf8StringCR projectId,
     Utf8StringCR featureString,
-    IHttpHandlerPtr httpHandler,
-    AuthType authType
-    )
+    IHttpHandlerPtr httpHandler
+)
     {
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
-    IAuthHandlerProviderPtr authHandlerProvider = std::make_shared<AuthHandlerProvider>(authenticationProvider, httpHandler);
-    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, clientInfo, httpHandler, authType, authHandlerProvider);
+    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, clientInfo, httpHandler, AuthType::None);
     IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, httpHandler);
-    return std::shared_ptr<Client>(new Client(std::make_shared<ClientImpl>(userInfo, clientInfo, dbPath, offlineMode, policyProvider, ulasProvider, projectId, featureString, nullptr)));
+    return std::shared_ptr<AccessKeyClient>(new AccessKeyClient(std::make_shared<ClientWithKeyImpl>(accessKey, clientInfo, dbPath, offlineMode, policyProvider, ulasProvider, projectId, featureString, nullptr)));
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-LicenseStatus Client::StartApplication()
+LicenseStatus AccessKeyClient::StartApplication()
     {
     return m_impl->StartApplication();
     }
@@ -60,15 +56,15 @@ LicenseStatus Client::StartApplication()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Client::StopApplication()
+BentleyStatus AccessKeyClient::StopApplication()
     {
     return m_impl->StopApplication();
     }
 
- /*--------------------------------------------------------------------------------------+
- * @bsimethod
- +---------------+---------------+---------------+---------------+---------------+------*/
- BentleyStatus Client::MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData)
-     {
-     return m_impl->MarkFeature(featureId, featureUserData);
-     }
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus AccessKeyClient::MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData)
+    {
+    return m_impl->MarkFeature(featureId, featureUserData);
+    }

@@ -20,6 +20,7 @@ Headers + $(SourceDir)ILicensingDb.h
 Headers + $(SourceDir)LicensingDb.h
 Headers + $(SourceDir)FreeApplicationPolicyHelper.h
 Headers + $(PublicApiDir)Client.h
+Headers + $(PublicApiDir)AccessKeyClient.h
 Headers + $(PublicApiDir)SaasClient.h
 Headers + $(PublicApiDir)LicenseStatus.h
 Headers + $(PublicApiDir)Licensing.h
@@ -49,6 +50,8 @@ Headers + $(SourceDir)Utils/FeatureEvent.h
 $(o)Client$(oext)                    : $(SourceDir)Client.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)ClientImpl$(oext)                : $(SourceDir)ClientImpl.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)AccessKeyClient$(oext)           : $(SourceDir)AccessKeyClient.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)SaasClient$(oext)                : $(SourceDir)SaasClient.cpp $(Headers) ${MultiCompileDepends}
 

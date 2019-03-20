@@ -10,6 +10,7 @@
 #include "ClientIntegrationTests.h"
 
 #include <Licensing/Client.h>
+#include <Licensing/AccessKeyClient.h>
 #include <Licensing/SaasClient.h>
 #include <Licensing/Utils/DateHelper.h>
 #include "../../Licensing/ClientImpl.h"
@@ -205,7 +206,7 @@ public:
 //         proxy);
 //     }
 
- ClientPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+ AccessKeyClientPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     //RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
@@ -219,7 +220,7 @@ public:
 
     Utf8String accesskey = "3469AD8D095A53F3CBC9A905A8FF8926"; // valid accessKey
 
-    return Client::CreateWithKey(
+    return AccessKeyClient::Create(
         accesskey,
         clientInfo,
         dbPath,
@@ -254,7 +255,7 @@ public:
 //     return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, ulasProvider);
 //     }
 
-ClientPtr CreateWithKeyTestClient(bool signIn)
+AccessKeyClientPtr CreateWithKeyTestClient(bool signIn)
     {
     //return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
     return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, "1000");
