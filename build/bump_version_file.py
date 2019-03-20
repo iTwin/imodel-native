@@ -1,4 +1,8 @@
-import argparse, os, sys
+import argparse, os, subprocess, sys
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+def set_vsts_env(key, value):
+    print('##vso[task.setvariable variable={0}]{1}'.format(key, value))
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 def main():
@@ -70,6 +74,12 @@ def main():
     print(cmd)
     if not args.dryRun:
         os.system(cmd)
+
+    cmd = 'git rev-parse HEAD'
+    print(cmd)
+    if not args.dryRun:
+        rev = subprocess.check_output(cmd.split(' '))
+        set_vsts_env("NewHeadRevision", rev)
 
     return 0
 
