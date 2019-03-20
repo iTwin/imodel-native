@@ -23,9 +23,9 @@
     <ClCompile Include="Utils\MockHttpHandler.cpp" />
     <ClCompile Include="Utils\SCVWritterTests.cpp" />
     <ClCompile Include="Utils\UrlSafeBase64UtilitiesTests.cpp" />
-    <ClCompile Include="ClientWithKeyTests.cpp" />
     <ClCompile Include="SaasClientTests.cpp" />
     <ClCompile Include="BuddiProviderTests.cpp" />
+    <ClCompile Include="AccessKeyClientTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClientTests.h" />
@@ -50,8 +50,8 @@
     <ClInclude Include="Utils\MockHttpHandler.h" />
     <ClInclude Include="Utils\SCVWritterTests.h" />
     <ClInclude Include="Utils\UrlSafeBase64UtilitiesTests.h" />
-    <ClInclude Include="ClientWithKeyTests.h" />
     <ClInclude Include="SaasClientTests.h" />
     <ClInclude Include="BuddiProviderTests.h" />
+    <ClInclude Include="AccessKeyClientTests.h" />
   </ItemGroup>
 </Project>

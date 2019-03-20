@@ -11,7 +11,6 @@
 #include "Providers/PolicyProvider.h"
 #include "Providers/UlasProvider.h"
 #include "ClientImpl.h"
-#include "ClientWithKeyImpl.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 

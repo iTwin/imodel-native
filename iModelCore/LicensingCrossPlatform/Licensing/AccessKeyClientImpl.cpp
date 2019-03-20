@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/ClientWithKeyImpl.cpp $
+|     $Source: Licensing/AccessKeyClientImpl.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ClientWithKeyImpl.h"
+#include "AccessKeyClientImpl.h"
 #include "GenerateSID.h"
 #include "Logging.h"
 #include "LicensingDb.h"
@@ -21,7 +21,7 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_LICENSING
 
-ClientWithKeyImpl::ClientWithKeyImpl
+AccessKeyClientImpl::AccessKeyClientImpl
     (
     Utf8StringCR accessKey,
     ClientInfoPtr clientInfo,
@@ -65,13 +65,13 @@ ClientWithKeyImpl::ClientWithKeyImpl
         }
     }
 
-LicenseStatus ClientWithKeyImpl::StartApplication()
+LicenseStatus AccessKeyClientImpl::StartApplication()
     {
-    LOG.trace("ClientWithKeyImpl::StartApplication");
+    LOG.trace("AccessKeyClientImpl::StartApplication");
 
     if (SUCCESS != m_licensingDb->OpenOrCreate(m_dbPath))
         {
-        LOG.error("ClientWithKeyImpl::StartApplication ERROR - Database creation failed.");
+        LOG.error("AccessKeyClientImpl::StartApplication ERROR - Database creation failed.");
         return LicenseStatus::Error;
         }
 
@@ -79,7 +79,7 @@ LicenseStatus ClientWithKeyImpl::StartApplication()
 
     if (m_policy == nullptr)
         {
-        LOG.error("ClientWithKeyImpl::StartApplication ERROR - Policy token object is null.");
+        LOG.error("AccessKeyClientImpl::StartApplication ERROR - Policy token object is null.");
         return LicenseStatus::Error;
         }
 
@@ -102,9 +102,9 @@ LicenseStatus ClientWithKeyImpl::StartApplication()
     return licStatus;
     }
 
-BentleyStatus ClientWithKeyImpl::StopApplication()
+BentleyStatus AccessKeyClientImpl::StopApplication()
     {
-    LOG.trace("ClientWithKeyImpl::StopApplication");
+    LOG.trace("AccessKeyClientImpl::StopApplication");
     StopPolicyHeartbeat(); // This will stop Policy heartbeat
 
     m_licensingDb->Close();
@@ -115,9 +115,9 @@ BentleyStatus ClientWithKeyImpl::StopApplication()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientWithKeyImpl::PolicyHeartbeat(int64_t currentTime)
+void AccessKeyClientImpl::PolicyHeartbeat(int64_t currentTime)
     {
-    LOG.debug("ClientWithKeyImpl::PolicyHeartbeat");
+    LOG.debug("AccessKeyClientImpl::PolicyHeartbeat");
 
     if (m_startPolicyHeartbeat)
         {
@@ -160,23 +160,23 @@ void ClientWithKeyImpl::PolicyHeartbeat(int64_t currentTime)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ClientWithKeyImpl::ValidateAccessKey()
+bool AccessKeyClientImpl::ValidateAccessKey()
     {
-    LOG.debug("ClientWithKeyImpl::ValidateAccessKey");
+    LOG.debug("AccessKeyClientImpl::ValidateAccessKey");
 
     auto responseJson = m_ulasProvider->GetAccessKeyInfo(m_clientInfo, m_accessKey).get();
 
     if (Json::Value::GetNull() == responseJson)
         {
         // call failed, so assume access key is unchanged since the last check
-        LOG.error("ClientWithKeyImpl::ValidateAccessKey - Call to AccessKey service failed");
+        LOG.error("AccessKeyClientImpl::ValidateAccessKey - Call to AccessKey service failed");
         return m_isAccessKeyValid;
         }
 
     if ("Success" != responseJson["status"].asString())
         {
         // unsuccessful if AccessKey is expired, not active, or not found - clear out policy from database
-        LOG.errorv("ClientWithKeyImpl::ValidateAccessKey - %s", responseJson["msg"].asString().c_str());
+        LOG.errorv("AccessKeyClientImpl::ValidateAccessKey - %s", responseJson["msg"].asString().c_str());
         m_isAccessKeyValid = false;
         }
     else
@@ -190,10 +190,10 @@ bool ClientWithKeyImpl::ValidateAccessKey()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<Policy> ClientWithKeyImpl::GetPolicyToken()
+std::shared_ptr<Policy> AccessKeyClientImpl::GetPolicyToken()
     {
     // TODO: rename this method? (and ClientImpl::GetPolicyToken) we are getting policy, not the token, and are storing the policy in the db...
-    LOG.debug("ClientWithKeyImpl::GetPolicyToken");
+    LOG.debug("AccessKeyClientImpl::GetPolicyToken");
 
     // returns nullptr if accesskey is inactive or expired
     auto policy = m_policyProvider->GetPolicyWithKey(m_accessKey).get();
@@ -210,9 +210,9 @@ std::shared_ptr<Policy> ClientWithKeyImpl::GetPolicyToken()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-LicenseStatus ClientWithKeyImpl::GetProductStatus()
+LicenseStatus AccessKeyClientImpl::GetProductStatus()
     {
-    LOG.debug("ClientWithKeyImpl::GetProductStatus");
+    LOG.debug("AccessKeyClientImpl::GetProductStatus");
 
     if (!ValidateAccessKey())
         {
@@ -226,9 +226,9 @@ LicenseStatus ClientWithKeyImpl::GetProductStatus()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientWithKeyImpl::DeleteAllOtherPoliciesByKey(std::shared_ptr<Policy> policy)
+void AccessKeyClientImpl::DeleteAllOtherPoliciesByKey(std::shared_ptr<Policy> policy)
     {
-    LOG.debug("ClientWithKeyImpl::DeleteAllOtherPoliciesByKey");
+    LOG.debug("AccessKeyClientImpl::DeleteAllOtherPoliciesByKey");
 
     m_licensingDb->DeleteAllOtherPolicyFilesByKey(policy->GetPolicyId(),
         policy->GetRequestData()->GetAccessKey());
@@ -237,9 +237,9 @@ void ClientWithKeyImpl::DeleteAllOtherPoliciesByKey(std::shared_ptr<Policy> poli
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::list<std::shared_ptr<Policy>> ClientWithKeyImpl::GetUserPolicies()
+std::list<std::shared_ptr<Policy>> AccessKeyClientImpl::GetUserPolicies()
     {
-    LOG.debug("ClientWithKeyImpl::GetUserPolicies");
+    LOG.debug("AccessKeyClientImpl::GetUserPolicies");
 
     std::list<std::shared_ptr<Policy>> policyList;
     auto jsonpolicies = m_licensingDb->GetPolicyFilesByKey(m_accessKey);

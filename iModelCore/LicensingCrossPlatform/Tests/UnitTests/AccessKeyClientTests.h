@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/ClientWithKeyTests.h $
+|     $Source: Tests/UnitTests/AccessKeyClientTests.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -15,7 +15,7 @@
 
 USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS
 
-class ClientWithKeyTests : public ::testing::Test
+class AccessKeyClientTests : public ::testing::Test
     {
     private:
         std::shared_ptr<LicensingDbMock>         m_licensingDbMock;
@@ -23,7 +23,7 @@ class ClientWithKeyTests : public ::testing::Test
         std::shared_ptr<UlasProviderMock>        m_ulasProviderMock;
 
     public:
-        ClientWithKeyTests();
+        AccessKeyClientTests();
         static void SetUpTestCase();
 
         PolicyProviderMock&                      GetPolicyProviderMock() const;

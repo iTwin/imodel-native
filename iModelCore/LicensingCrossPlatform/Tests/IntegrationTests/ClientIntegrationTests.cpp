@@ -15,7 +15,7 @@
 #include <Licensing/Utils/DateHelper.h>
 #include "../../Licensing/ClientImpl.h"
 #include "../../Licensing/SaasClientImpl.h"
-#include "../../Licensing/ClientWithKeyImpl.h"
+#include "../../Licensing/AccessKeyClientImpl.h"
 #include "../../Licensing/LicensingDb.h"
 #include "../../PublicAPI/Licensing/Utils/SCVWritter.h"
 
@@ -137,7 +137,7 @@ public:
 //         buddiProvider);
 //     }
 
-// ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IUlasProviderPtr ulasProvider)
+// AccessKeyClientImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IUlasProviderPtr ulasProvider)
 //     {
 //     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
 //     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
@@ -153,7 +153,7 @@ public:
 
 //     Utf8String accesskey = "somekey";
 
-//     return std::make_shared<ClientWithKeyImpl>(
+//     return std::make_shared<AccessKeyClientImpl>(
 //         accesskey,
 //         clientInfo,
 //         dbPath,
@@ -250,7 +250,7 @@ public:
  //    return CreateFreeTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
  //    }
 
-// ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IUlasProviderPtr ulasProvider)
+// AccessKeyClientImplPtr CreateWithKeyTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IUlasProviderPtr ulasProvider)
 //     {
 //     return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, ulasProvider);
 //     }
@@ -382,14 +382,14 @@ TEST_F(ClientIntegrationTests, DISABLED_Equality_Test)
     ASSERT_EQ((int)1, (int)1); // Mock policy should result in NotEntitled
     }
 
-TEST_F(ClientIntegrationTests, DISABLED_ClientWithKeyStartApplicationStopApplication_Success)
+TEST_F(ClientIntegrationTests, DISABLED_AccessKeyClientStartApplicationStopApplication_Success)
     {
     auto client = CreateWithKeyTestClient(true);
     EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
     client->StopApplication();
     }
 
-//TEST_F(ClientIntegrationTests, ClientWithKeyTestPolicyHeartbeat_Test)
+//TEST_F(ClientIntegrationTests, AccessKeyClientTestPolicyHeartbeat_Test)
 //    {
 //    // I am using this test to manually debug/test the heartbeat to make sure of the following:
 //    // - policy heartbeat does in fact run as expected (heartbeat every 1 second, refresh policy by PolicyInterval)

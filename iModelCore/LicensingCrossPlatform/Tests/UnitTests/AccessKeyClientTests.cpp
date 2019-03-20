@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/ClientWithKeyTests.cpp $
+|     $Source: Tests/UnitTests/AccessKeyClientTests.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,13 +8,13 @@
 
 #include "TestsHelper.h"
 #include "JsonHelper.h"
-#include "ClientWithKeyTests.h"
+#include "AccessKeyClientTests.h"
 #include "DummyPolicyHelper.h"
 #include "DummyUserInfoHelper.h"
 
 #include <Licensing/Client.h>
 #include <Licensing/Utils/DateHelper.h>
-#include "../../Licensing/ClientWithKeyImpl.h"
+#include "../../Licensing/AccessKeyClientImpl.h"
 #include "../../Licensing/LicensingDb.h"
 #include "../../PublicAPI/Licensing/Utils/SCVWritter.h"
 
@@ -47,13 +47,13 @@ BeFileName GetWithKeyLicensingDbPath()
     return path;
     }
 
-ClientWithKeyImplPtr CreateWithKeyTestClient(IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb, Utf8StringCR productId = TEST_PRODUCT_ID)
+AccessKeyClientImplPtr CreateWithKeyTestClient(IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb, Utf8StringCR productId = TEST_PRODUCT_ID)
     {
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
     BeFileName dbPath = GetWithKeyLicensingDbPath();
 
-    return std::make_shared<ClientWithKeyImpl>
+    return std::make_shared<AccessKeyClientImpl>
         (
         TEST_ACCESSKEY,
         clientInfo,
@@ -89,7 +89,7 @@ ClientWithKeyImplPtr CreateWithKeyTestClient(IPolicyProviderPtr policyProvider, 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClientWithKeyTests::ClientWithKeyTests() :
+AccessKeyClientTests::AccessKeyClientTests() :
     m_policyProviderMock(std::make_shared<PolicyProviderMock>()),
     m_ulasProviderMock(std::make_shared<UlasProviderMock>()),
     m_licensingDbMock(std::make_shared<LicensingDbMock>())
@@ -98,7 +98,7 @@ ClientWithKeyTests::ClientWithKeyTests() :
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolicyProviderMock&  ClientWithKeyTests::GetPolicyProviderMock() const
+PolicyProviderMock&  AccessKeyClientTests::GetPolicyProviderMock() const
     {
     return *m_policyProviderMock;
     }
@@ -106,7 +106,7 @@ PolicyProviderMock&  ClientWithKeyTests::GetPolicyProviderMock() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<PolicyProviderMock> ClientWithKeyTests::GetPolicyProviderMockPtr() const
+std::shared_ptr<PolicyProviderMock> AccessKeyClientTests::GetPolicyProviderMockPtr() const
     {
     return m_policyProviderMock;
     }
@@ -114,7 +114,7 @@ std::shared_ptr<PolicyProviderMock> ClientWithKeyTests::GetPolicyProviderMockPtr
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-UlasProviderMock&  ClientWithKeyTests::GetUlasProviderMock() const
+UlasProviderMock&  AccessKeyClientTests::GetUlasProviderMock() const
     {
     return *m_ulasProviderMock;
     }
@@ -122,7 +122,7 @@ UlasProviderMock&  ClientWithKeyTests::GetUlasProviderMock() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<UlasProviderMock> ClientWithKeyTests::GetUlasProviderMockPtr() const
+std::shared_ptr<UlasProviderMock> AccessKeyClientTests::GetUlasProviderMockPtr() const
     {
     return m_ulasProviderMock;
     }
@@ -130,7 +130,7 @@ std::shared_ptr<UlasProviderMock> ClientWithKeyTests::GetUlasProviderMockPtr() c
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-LicensingDbMock&  ClientWithKeyTests::GetLicensingDbMock() const
+LicensingDbMock&  AccessKeyClientTests::GetLicensingDbMock() const
     {
     return *m_licensingDbMock;
     }
@@ -138,7 +138,7 @@ LicensingDbMock&  ClientWithKeyTests::GetLicensingDbMock() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<LicensingDbMock> ClientWithKeyTests::GetLicensingDbMockPtr() const
+std::shared_ptr<LicensingDbMock> AccessKeyClientTests::GetLicensingDbMockPtr() const
     {
     return m_licensingDbMock;
     }
@@ -146,9 +146,9 @@ std::shared_ptr<LicensingDbMock> ClientWithKeyTests::GetLicensingDbMockPtr() con
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientWithKeyTests::TearDown() { }
+void AccessKeyClientTests::TearDown() { }
 
-void ClientWithKeyTests::SetUpTestCase()
+void AccessKeyClientTests::SetUpTestCase()
     {
     // This is only an example of how to set logging severity and see info logs. Usually should be set more globally than in TestCase SetUp
     // NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
@@ -168,7 +168,7 @@ void ClientWithKeyTests::SetUpTestCase()
     EXPECT_EQ(SUCCESS, L10N::Initialize(BeSQLite::L10N::SqlangFiles(path)));
     }
 
-TEST_F(ClientWithKeyTests, DISABLED_JsonExample)
+TEST_F(AccessKeyClientTests, DISABLED_JsonExample)
     {
     BeFileName testJson;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);
@@ -192,14 +192,14 @@ TEST_F(ClientWithKeyTests, DISABLED_JsonExample)
     }
 
 // TODO: move to Integration tests
-//TEST_F(ClientWithKeyTests, CreateWithKeyClientFromFactory_Success)
+//TEST_F(AccessKeyClientTests, CreateWithKeyClientFromFactory_Success)
 //    {
 //    auto client = CreateWithKeyTestClientFromFactory();
 //
 //    EXPECT_NE(nullptr, client);
 //    }
 
-TEST_F(ClientWithKeyTests, WithKeyStartApplication_Error)
+TEST_F(AccessKeyClientTests, WithKeyStartApplication_Error)
     {
     auto client = CreateWithKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
@@ -212,7 +212,7 @@ TEST_F(ClientWithKeyTests, WithKeyStartApplication_Error)
     EXPECT_EQ(1, GetLicensingDbMock().CloseCount());
     }
 
-TEST_F(ClientWithKeyTests, WithKeyStartApplicationNullPolicy_Error)
+TEST_F(AccessKeyClientTests, WithKeyStartApplicationNullPolicy_Error)
     {
     auto client = CreateWithKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
@@ -230,7 +230,7 @@ TEST_F(ClientWithKeyTests, WithKeyStartApplicationNullPolicy_Error)
     EXPECT_EQ(1, GetLicensingDbMock().CloseCount());
     }
 
-TEST_F(ClientWithKeyTests, WithKeyStartApplicationInvalidKey_Success)
+TEST_F(AccessKeyClientTests, WithKeyStartApplicationInvalidKey_Success)
     {
     auto client = CreateWithKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 
@@ -265,7 +265,7 @@ TEST_F(ClientWithKeyTests, WithKeyStartApplicationInvalidKey_Success)
     EXPECT_EQ(1, GetLicensingDbMock().CloseCount());
     }
 
-TEST_F(ClientWithKeyTests, WithKeyStartApplication_StopApplication_Success)
+TEST_F(AccessKeyClientTests, WithKeyStartApplication_StopApplication_Success)
     {
     auto client = CreateWithKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
 

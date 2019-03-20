@@ -12,7 +12,7 @@
     <ClCompile Include="Licensing\SaasClient.cpp" />
     <ClCompile Include="Licensing\SaasClientImpl.cpp" />
     <ClCompile Include="Licensing\ClientImpl.cpp" />
-    <ClCompile Include="Licensing\ClientWithKeyImpl.cpp" />
+    <ClCompile Include="Licensing\AccessKeyClientImpl.cpp" />
     <ClCompile Include="Licensing\Policy.cpp" />
     <ClCompile Include="Licensing\PolicyToken.cpp" />
     <ClCompile Include="Licensing\Providers\AuthHandlerProvider.cpp" />
@@ -34,7 +34,7 @@
     <ClInclude Include="Licensing\SaasClientImpl.h" />
     <ClInclude Include="Licensing\ClientImpl.h" />
     <ClInclude Include="Licensing\IClient.h" />
-    <ClInclude Include="Licensing\ClientWithKeyImpl.h" />
+    <ClInclude Include="Licensing\AccessKeyClientImpl.h" />
     <ClInclude Include="Licensing\ISaasClient.h" />
     <ClInclude Include="Licensing\ILicensingDb.h" />
     <ClInclude Include="Licensing\Providers\AuthHandlerProvider.h" />

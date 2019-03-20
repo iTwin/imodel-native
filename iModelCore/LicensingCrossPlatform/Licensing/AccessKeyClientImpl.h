@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/ClientWithKeyImpl.h $
+|     $Source: Licensing/AccessKeyClientImpl.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -15,9 +15,9 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-typedef std::shared_ptr<struct ClientWithKeyImpl> ClientWithKeyImplPtr;
+typedef std::shared_ptr<struct AccessKeyClientImpl> AccessKeyClientImplPtr;
 
-struct ClientWithKeyImpl : ClientImpl
+struct AccessKeyClientImpl : ClientImpl
     {
 protected:
     Utf8String m_accessKey;
@@ -29,7 +29,7 @@ protected:
     void PolicyHeartbeat(int64_t currentTime);
 
 public:
-    LICENSING_EXPORT ClientWithKeyImpl
+    LICENSING_EXPORT AccessKeyClientImpl
         (
         Utf8StringCR accessKey,
         ClientInfoPtr clientInfo,

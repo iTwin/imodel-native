@@ -11,9 +11,9 @@
 Headers =
 Headers + $(SourceDir)IClient.h
 Headers + $(SourceDir)ClientImpl.h
+Headers + $(SourceDir)AccessKeyClientImpl.h
 Headers + $(SourceDir)ISaasClient.h
 Headers + $(SourceDir)SaasClientImpl.h
-Headers + $(SourceDir)ClientWithKeyImpl.h
 Headers + $(SourceDir)GenerateSID.h
 Headers + $(SourceDir)Policy.h
 Headers + $(SourceDir)ILicensingDb.h
@@ -53,11 +53,11 @@ $(o)ClientImpl$(oext)                : $(SourceDir)ClientImpl.cpp $(Headers) ${M
 
 $(o)AccessKeyClient$(oext)           : $(SourceDir)AccessKeyClient.cpp $(Headers) ${MultiCompileDepends}
 
+$(o)AccessKeyClientImpl$(oext)       : $(SourceDir)AccessKeyClientImpl.cpp $(Headers) ${MultiCompileDepends}
+
 $(o)SaasClient$(oext)                : $(SourceDir)SaasClient.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)SaasClientImpl$(oext)            : $(SourceDir)SaasClientImpl.cpp $(Headers) ${MultiCompileDepends}
-
-$(o)ClientWithKeyImpl$(oext)         : $(SourceDir)ClientWithKeyImpl.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)LicensingDb$(oext)               : $(SourceDir)LicensingDb.cpp $(Headers) ${MultiCompileDepends}
 

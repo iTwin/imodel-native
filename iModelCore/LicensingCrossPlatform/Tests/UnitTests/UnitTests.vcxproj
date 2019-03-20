@@ -9,7 +9,7 @@
   <ItemGroup>
     <ClCompile Include="BuddiProviderTests.cpp" />
     <ClCompile Include="ClientTests.cpp" />
-    <ClCompile Include="ClientWithKeyTests.cpp" />
+    <ClCompile Include="AccessKeyClientTests.cpp" />
     <ClCompile Include="DummyPolicyHelper.cpp" />
     <ClCompile Include="DummyUserInfoHelper.cpp" />
     <ClCompile Include="GenerateSIDTests.cpp" />
@@ -36,7 +36,7 @@
   <ItemGroup>
     <ClInclude Include="BuddiProviderTests.h" />
     <ClInclude Include="ClientTests.h" />
-    <ClInclude Include="ClientWithKeyTests.h" />
+    <ClInclude Include="AccessKeyClientTests.h" />
     <ClInclude Include="DummyPolicyHelper.h" />
     <ClInclude Include="DummyUserInfoHelper.h" />
     <ClInclude Include="GenerateSIDTests.h" />

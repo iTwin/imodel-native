@@ -302,7 +302,7 @@ folly::Future<Json::Value> UlasProvider::GetAccessKeyInfo(ClientInfoPtr clientIn
         if (!response.IsSuccess())
             {
             // call failed
-            LOG.errorv("ClientWithKeyImpl::ValidateAccessKey - %s", HttpError(response).GetMessage().c_str());
+            LOG.errorv("UlasProvider::GetAccessKeyInfo - %s", HttpError(response).GetMessage().c_str());
             return Json::Value::GetNull();
             }
 

@@ -10,7 +10,7 @@
 #include "Providers/BuddiProvider.h"
 #include "Providers/PolicyProvider.h"
 #include "Providers/UlasProvider.h"
-#include "ClientWithKeyImpl.h"
+#include "AccessKeyClientImpl.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 
@@ -42,7 +42,7 @@ AccessKeyClientPtr AccessKeyClient::Create
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
     IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, clientInfo, httpHandler, AuthType::None);
     IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, httpHandler);
-    return std::shared_ptr<AccessKeyClient>(new AccessKeyClient(std::make_shared<ClientWithKeyImpl>(accessKey, clientInfo, dbPath, offlineMode, policyProvider, ulasProvider, projectId, featureString, nullptr)));
+    return std::shared_ptr<AccessKeyClient>(new AccessKeyClient(std::make_shared<AccessKeyClientImpl>(accessKey, clientInfo, dbPath, offlineMode, policyProvider, ulasProvider, projectId, featureString, nullptr)));
     }
 
 /*--------------------------------------------------------------------------------------+

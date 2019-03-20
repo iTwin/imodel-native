@@ -18,7 +18,6 @@
 #include <Licensing/Utils/DateHelper.h>
 #include "../../Licensing/ClientImpl.h"
 #include "../../Licensing/SaasClientImpl.h"
-#include "../../Licensing/ClientWithKeyImpl.h"
 #include "../../Licensing/LicensingDb.h"
 #include "../../PublicAPI/Licensing/Utils/SCVWritter.h"
 
