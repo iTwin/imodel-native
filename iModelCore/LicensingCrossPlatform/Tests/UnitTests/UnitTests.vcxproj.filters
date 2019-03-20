@@ -25,6 +25,7 @@
     <ClCompile Include="Utils\UrlSafeBase64UtilitiesTests.cpp" />
     <ClCompile Include="ClientWithKeyTests.cpp" />
     <ClCompile Include="SaasClientTests.cpp" />
+    <ClCompile Include="BuddiProviderTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClientTests.h" />
@@ -51,5 +52,6 @@
     <ClInclude Include="Utils\UrlSafeBase64UtilitiesTests.h" />
     <ClInclude Include="ClientWithKeyTests.h" />
     <ClInclude Include="SaasClientTests.h" />
+    <ClInclude Include="BuddiProviderTests.h" />
   </ItemGroup>
 </Project>

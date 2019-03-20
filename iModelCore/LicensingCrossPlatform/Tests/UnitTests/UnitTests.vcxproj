@@ -7,6 +7,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BuddiProviderTests.cpp" />
     <ClCompile Include="ClientTests.cpp" />
     <ClCompile Include="ClientWithKeyTests.cpp" />
     <ClCompile Include="DummyPolicyHelper.cpp" />
@@ -33,6 +34,7 @@
     <ClCompile Include="Utils\UrlSafeBase64UtilitiesTests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BuddiProviderTests.h" />
     <ClInclude Include="ClientTests.h" />
     <ClInclude Include="ClientWithKeyTests.h" />
     <ClInclude Include="DummyPolicyHelper.h" />
