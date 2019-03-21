@@ -778,7 +778,7 @@ public:
     //! @return non-zero if you recognize an argument and its value is invalid or if a required argument is not supplied.
     //! @remarks Do not return error if you encounter an unrecognized argument
     //! @see _ParseCommandLineArg for handling an individual argument
-    virtual BentleyStatus _ParseCommandLine(int argc, WCharCP argv[]) {return BSISUCCESS;}
+    IMODEL_BRIDGE_EXPORT virtual BentleyStatus _ParseCommandLine(int argc, WCharCP argv[]);
 
     //! The bridge should register domains and handlers and do any other initilization that is not specific to a particular BIM.
     //! @note The framework will have already registered the DgnPlatformLib::Host. The bridge does not do that.

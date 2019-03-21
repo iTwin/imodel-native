@@ -985,7 +985,7 @@ DgnV8Api::ModelId RootModelConverter::_GetRootModelIdFromViewGroup()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnV8Api::ModelId RootModelConverter::_GetRootModelId()
     {
-    if (IsUpdating() && !m_params.GetRootModelChoice().IsSet()) // (Note: Some of our unit tests converter various models from the same file.)
+    if (IsUpdating() && !m_params.GetRootModelChoice().IsSet()) // (Note: Some of our unit tests convert various models from the same file.)
         {
         auto sourceMasterModelSubject = FindSourceMasterModelSubject(m_rootFile->GetDictionaryModel()); // we must assume that there is only one SourceMasterModel Subject for this file.
         if (sourceMasterModelSubject.IsValid())
