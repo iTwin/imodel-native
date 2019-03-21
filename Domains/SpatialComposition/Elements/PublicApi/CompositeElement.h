@@ -71,6 +71,29 @@ struct CompositeElement : Dgn::SpatialLocationElement
         //! @param[in] updatePlacementOrigin   true if origin of this extrusion should be updated
         //! @return                            true if there were no errors while updating element shape
         virtual SPATIALCOMPOSITION_EXPORT bool SetFootprintShape(CurveVectorCPtr pCurve, bool updatePlacementOrigin = true);
+
+        //! Gets name of this composite element
+        //! @return name of this composite element
+        SPATIALCOMPOSITION_EXPORT Utf8String GetName() const { return GetUserLabel(); }
+
+        //! Sets name of this composite element
+        //! @param[in]  name    new name for this composite element
+        SPATIALCOMPOSITION_EXPORT void SetName(Utf8CP name) { SetUserLabel(name); };
+
+        //---------------------------------------------------------------------------------------
+        // Queries
+        //---------------------------------------------------------------------------------------
+        //! Get the model containing conflicts related to this element
+        //! @return confilting model
+        virtual SPATIALCOMPOSITION_EXPORT Dgn::DgnModelPtr GetConflictsModel() const { return nullptr; }
+
+        //---------------------------------------------------------------------------------------
+        // Other
+        //---------------------------------------------------------------------------------------
+        //! Draws outline for given geometry and graphic builder
+        //! @param[in]  curves  geometry to draw outline from
+        //! @param[in]  graphic graphic builder to draw outline with
+        SPATIALCOMPOSITION_EXPORT static void DrawOutline(CurveVectorCR curves, Dgn::Render::GraphicBuilderR graphic);
     };
 
 END_SPATIALCOMPOSITION_NAMESPACE

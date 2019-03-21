@@ -19,6 +19,8 @@
 #define SPATIALCOMPOSITION_CLASS_CompositeVolume                "CompositeVolume"
 #define SPATIALCOMPOSITION_CLASS_CompositeElement               "CompositeElement"
 
+#define SPATIALCOMPOSITION_CATEGORY_CODE_CompositeVolume        "CompositeVolume"
+
 #define SPATIALCOMPOSITION_REL_CompositeComposesSubComposites   "CompositeComposesSubComposites"
 #define SPATIALCOMPOSITION_REL_CompositeOverlapsSpatialElements "CompositeOverlapsSpatialElements"
 

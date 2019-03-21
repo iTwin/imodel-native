@@ -208,4 +208,41 @@ bool CompositeElement::SetFootprintShape(CurveVectorCPtr curveVector, bool updat
     return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Brien.Bastings              09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void CompositeElement::DrawOutline(CurveVectorCR curves, Dgn::Render::GraphicBuilderR graphic)
+    {
+    if (1 > curves.size())
+        {
+        return;
+        }
+
+    if (curves.IsUnionRegion() || curves.IsParityRegion())
+        {
+        for (ICurvePrimitivePtr curve : curves)
+            {
+            if (curve.IsNull() || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curve->GetCurvePrimitiveType())
+                {
+                continue;
+                }
+
+            DrawOutline(*curve->GetChildCurveVectorCP(), graphic);
+            }
+        }
+    else if (curves.IsClosedPath())
+        {
+        CurveVector::BoundaryType  saveType = curves.GetBoundaryType();
+
+        const_cast <CurveVectorR> (curves).SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
+        graphic.AddCurveVector(curves, false);
+        const_cast <CurveVectorR> (curves).SetBoundaryType(saveType);
+        }
+    else
+        {
+        // Open and none path types ok...
+        graphic.AddCurveVector(curves, false);
+        }
+}
+
 END_SPATIALCOMPOSITION_NAMESPACE
