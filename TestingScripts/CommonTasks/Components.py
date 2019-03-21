@@ -223,6 +223,12 @@ def AllComps():
         if comp not in comps:
             comps.append(comp.lower())
     return comps
+def AllCompsProper():
+    comps = []
+    for comp in Components:
+        if comp not in comps:
+            comps.append(comp)
+    return comps
 
 def GetName(compName):
 	for comp in Components:

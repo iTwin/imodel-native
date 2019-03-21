@@ -296,8 +296,8 @@ def main():
     if not os.path.exists(covRoot):
         os.mkdir(covRoot)
     if comp == None:
-        comps = cmp.AllComps()
-        comps.remove('behttp')
+        comps = cmp.AllCompsProper()
+        comps.remove('BeHttp')
 
     else:
         comps.append(comp)
