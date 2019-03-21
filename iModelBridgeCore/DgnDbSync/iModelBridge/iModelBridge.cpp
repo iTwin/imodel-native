@@ -1091,7 +1091,7 @@ bool iModelBridge::TestFeatureFlag(CharCP ff)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridge::_ParseCommandLine(int argc, WCharCP argv[])
+BentleyStatus iModelBridge::doParseCommandLine(int argc, WCharCP argv[])
     {
     for (int i=1; i<argc; ++i)  // no point in processing argv[0] as that is just the program name
         {
@@ -1107,5 +1107,14 @@ BentleyStatus iModelBridge::_ParseCommandLine(int argc, WCharCP argv[])
         // return BSIERROR;
         }
 
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridge::_ParseCommandLine(int argc, WCharCP argv[])
+    {
+    // return doParseCommandLine(argc, argv);
     return BSISUCCESS;
     }

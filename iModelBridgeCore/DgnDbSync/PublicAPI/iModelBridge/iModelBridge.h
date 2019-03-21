@@ -769,6 +769,9 @@ public:
     //! @return an indication of whether the argument was handled and if so if it was valid
     virtual CmdLineArgStatus _ParseCommandLineArg(int iarg, int argc, WCharCP argv[]) {return CmdLineArgStatus::NotRecognized;}
 
+    //! This utility function calls _ParseCommandLineArg on each argument. This function can be used by a bridge as a simple way to override and implement _ParseCommandLine. 
+    IMODEL_BRIDGE_EXPORT BentleyStatus doParseCommandLine(int argc, WCharCP argv[]);
+
     //! The bridge should parse any bridge-specific command-line arguments. The framework takes care of the standard
     //! bridge command-line arguments. Note that the BIM is not yet open.
     //! @note standalone converters only
