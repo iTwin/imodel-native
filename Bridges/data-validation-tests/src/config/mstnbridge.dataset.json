@@ -93,6 +93,23 @@
             "markerFiles": [
                 "EWR_OSGB_Master.dgn"
             ]
+        }, 
+		{
+            "name": "Multi",
+            "description": "Has Multiple Bridges File",
+            "markerFiles": [
+                "MS_Terrain.dgn",
+				"ABD_Structural_00.dgn",
+				"AutoCAD_Road.dwg",
+				"REVIT_Architecture.rvt"
+            ]
+        },
+        {
+            "name": "CS",
+            "description": "Chain Sets",
+            "markerFiles": [
+                "Scenario.dgn",
+            ]
         }
     ]
 }
