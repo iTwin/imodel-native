@@ -1513,6 +1513,7 @@ void Converter::_OnConversionComplete()
     {
     if (!m_onConversionStartCalled)
         {
+        LOG.error ("_OnConversionComplete called without _OnConversionStart");
         BeAssert(false && "_OnConversionComplete called without _OnConversionStart");
         return;
         }
@@ -1580,10 +1581,13 @@ SubjectCPtr Converter::GetJobHierarchySubject()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::ValidateJob()
     {
+    LOG.trace ("Converter::ValidateJob");
+
     auto const& jobsubj = _GetJobSubject();
     if (!jobsubj.GetElementId().IsValid())
         {
         BeAssert(false && "job subject must be persistent in the BIM");
+        LOG.error ("Job subject must be persistent in the BIM.");
         _OnFatalError();
         return;
         }
@@ -1598,6 +1602,7 @@ void Converter::ValidateJob()
     if (hcount != 1)
         {
         BeAssert(false && "there should be exactly 1 job hierarchy subject under the job subject");
+        LOG.error ("There should be exactly 1 job hierarchy subject under the job subject.");
         _OnFatalError();
         return;
         }
@@ -1613,6 +1618,7 @@ void Converter::ValidateJob()
     if ((rcount != 0) && (rcount != 1))
         {
         BeAssert(false && "there should be 0 or 1 references subject under the hierarchy subject");
+        LOG.error ("There should be 0 or 1 references subject under the hierarchy subject.");
         _OnFatalError();
         return;
         }

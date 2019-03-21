@@ -1744,6 +1744,7 @@ void RootModelConverter::_FinishConversion()
     {
     if (!m_beginConversionCalled)
         {
+        LOG.error ("_FinishConversion called without _BeginConversion");
         BeAssert(false && "_FinishConversion called without _BeginConversion");
         return;
         }
@@ -1890,14 +1891,23 @@ BentleyStatus RootModelConverter::DoFinishConversion()
     {
     _FinishConversion();
     if (WasAborted())
+        {
+        LOG.error ("DoFinishConversion was aborted");
         return BSIERROR;
+        }
 
     _OnConversionComplete();
 
     if (ShouldCreateIntermediateRevisions())
         PushChangesForFile(*GetRootV8File(), ConverterDataStrings::GlobalProperties());
 
-    return WasAborted()? BSIERROR: BSISUCCESS;
+    if (WasAborted())
+        {
+        LOG.error ("DoFinishConversion was aborted!");//note the exclamation, it is a hint where it got aborted.
+        return BSIERROR;
+        }
+    
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
