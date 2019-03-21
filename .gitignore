@@ -6,3 +6,4 @@
 *.xcuserstate
 xcuserdata
 iModelJsApp.xcconfig
+.vscode

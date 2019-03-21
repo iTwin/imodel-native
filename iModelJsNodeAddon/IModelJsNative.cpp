@@ -838,18 +838,7 @@ public:
         DgnDbPtr db;
         DbResult status = JsInterop::OpenDgnDb(db, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
         if (BE_SQLITE_OK == status)
-            {
             OnDgnDbOpened(*db);
-            if (SUCCESS != UlasClient::Get().TrackUsage(accessToken, appVersion, projectId))
-                {
-                // For now we don't yet fail when usage tracking fails as
-                // apps need to switch to OIDC authentication first.
-                JsInterop::GetLogger().warningv("Failed to track usage for opening the iModel of project '%s'.", projectId.c_str());
-                // WIP_FAIL_ON_USAGETRACKING_ERRORS
-                // CloseDgnDb();
-                // return Napi::Number::New(Env(), ERROR_UsageTrackingFailed);
-                }
-            }
 
         return Napi::Number::New(Env(), (int)status);
         }
@@ -878,19 +867,7 @@ public:
         DbResult status;
         DgnDbPtr db = JsInterop::CreateIModel(status, fileName, Json::Value::From(args), Env());
         if (db.IsValid())
-            {
             OnDgnDbOpened(*db);
-
-            if (SUCCESS != UlasClient::Get().TrackUsage(accessToken, appVersion, projectId))
-                {
-                // For now we don't yet fail when usage tracking fails as
-                // apps need to switch to OIDC authentication first.
-                JsInterop::GetLogger().warningv("Failed to track usage for creating iModel in project '%s'.", projectId.c_str());
-                // WIP_FAIL_ON_USAGETRACKING_ERRORS
-                // CloseDgnDb();
-                // return Napi::Number::New(Env(), ERROR_UsageTrackingFailed);
-                }
-            }
 
         return Napi::Number::New(Env(), (int)status);
         }
