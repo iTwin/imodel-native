@@ -2,7 +2,7 @@
 |
 |     $Source: DgnUtils/BuildingUtils.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -23,12 +23,12 @@
 #define ROADWAY_CENTERLINE_STYLE_NAME "RoadwayCenterline1"
 #define BUILDING_SPACEPLANNING_CLASS_Building                                 "Building"
 #define BUILDING_SPACEPLANNING_CLASS_Site                                     "Site"
-#define BUILDING_SPACEPLANNING_CATEGORY_CODE_AllocatedVolume              "AllocatedVolume"
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_Story                        "Story"
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_SharedStory                  "SharedStory"
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_SpatialZone                  "SpatialZone"
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_Space                        "Space"
 #define BUILDING_SPACEPLANNING_SUBCATEGORY_CODE_SpatialElementLabels      "Labels"
+#define SPATIALCOMPOSITION_CATEGORY_CODE_CompositeVolume                  "CompositeVolume"
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_ConflictVolume               "ConflictVolume"
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_PlanarShape                  "PlanarShape"
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_Site                         "Site"
@@ -169,7 +169,7 @@ CategorySelectorPtr  BuildingUtils::CreateDefaultCategorySelector (DgnDbR db)
     DgnCategoryIdSet categories;
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Site));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_BuildableVolume));
-    categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_AllocatedVolume));
+    categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), SPATIALCOMPOSITION_CATEGORY_CODE_CompositeVolume));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_ConflictVolume));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Story));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Space));

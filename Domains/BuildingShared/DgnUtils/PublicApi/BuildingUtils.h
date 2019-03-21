@@ -2,7 +2,7 @@
 |
 |     $Source: DgnUtils/PublicApi/BuildingUtils.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -74,6 +74,28 @@ public:
     
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::DefinitionModelCPtr GetOrCreateDefinitionModel (Dgn::DgnDbR db, Utf8CP partitionName);
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::DefinitionPartitionCPtr GetOrCreateDefinitionPartition (Dgn::DgnDbR db, Utf8CP partitionName);
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                    Haroldas.Vitunskas              04/2017
+    //---------------------------------------------------------------------------------------
+    template<typename T> static bvector<RefCountedCPtr<T>> ExtractElementsFromHitList(Dgn::HitListCP hitList, const std::function< bool(RefCountedCPtr<T>) >& optionalPredicate = [](RefCountedCPtr<T> element) {return true; })
+        {
+        bvector<RefCountedCPtr<T>> activeElementVector;
+        if (nullptr != hitList)
+            {
+            for (uint32_t i = 0; i < hitList->GetCount(); ++i)
+                {
+                if (Dgn::HitDetailP hit = hitList->GetHit(i))
+                    {
+                    RefCountedCPtr<T> element = dynamic_cast<T const*>(hit->GetElement().get());
+                    if (element.IsValid() && std::find_if(activeElementVector.begin(), activeElementVector.end(), [&](auto el) {return el->GetElementId() == element->GetElementId(); }) == activeElementVector.end() && optionalPredicate(element))
+                        activeElementVector.push_back(element);
+                    }
+                }
+            }
+
+        return activeElementVector;
+        }
 };
 
 class BuildingElementsUtils
