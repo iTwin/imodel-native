@@ -1,0 +1,12 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: PointCloudSchema/PointCloud.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+
+$(BuildContext)PublicAPI/PointCloud : $(_MakeFilePath)../PublicApi/PointCloud
+    $(LinkFirstDepToFirstTargetAsDirectory)
