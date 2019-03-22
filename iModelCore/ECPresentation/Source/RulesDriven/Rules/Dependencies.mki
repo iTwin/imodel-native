@@ -1,0 +1,62 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Source/RulesDriven/Rules/Dependencies.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------------
+# Directories
+#--------------------------------------------------------------------------------------
+PresentationRulesSourceDirectory    = $(RulesDrivenSourceDirectory)Rules/
+PresentationRulesPublicApiDirectory = $(RulesDrivenPublicApiDirectory)Rules/
+PresentationRulesOutputDirectory    = $(OutputDirectory)Rules/
+
+#--------------------------------------------------------------------------------------
+# Dependencies
+#--------------------------------------------------------------------------------------
+PresentationRulesPublicHeaders    = $(PresentationRulesPublicApiDirectory)PresentationRules.h \
+                                    $(PresentationRulesPublicApiDirectory)ChildNodeSpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)ChildNodeRule.h \
+                                    $(PresentationRulesPublicApiDirectory)CheckBoxRule.h \
+                                    $(PresentationRulesPublicApiDirectory)ContentRule.h \
+                                    $(PresentationRulesPublicApiDirectory)ImageIdOverride.h \
+                                    $(PresentationRulesPublicApiDirectory)PresentationRule.h \
+                                    $(PresentationRulesPublicApiDirectory)PresentationRuleSet.h \
+                                    $(PresentationRulesPublicApiDirectory)LabelOverride.h \
+                                    $(PresentationRulesPublicApiDirectory)InstanceLabelOverride.h \
+                                    $(PresentationRulesPublicApiDirectory)StyleOverride.h \
+                                    $(PresentationRulesPublicApiDirectory)LocalizationResourceKeyDefinition.h \
+                                    $(PresentationRulesPublicApiDirectory)UserSettingsGroup.h \
+                                    $(PresentationRulesPublicApiDirectory)GroupingRule.h \
+                                    $(PresentationRulesPublicApiDirectory)SortingRule.h \
+                                    $(PresentationRulesPublicApiDirectory)AllInstanceNodesSpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)AllRelatedInstanceNodesSpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)CustomNodeSpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)InstanceNodesOfSpecificClassesSpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)RelatedInstanceNodesSpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)SearchResultInstanceNodesSpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)ContentSpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)ContentInstancesOfSpecificClassesSpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)ContentRelatedInstancesSpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)PropertiesDisplaySpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)SelectedNodeInstancesSpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)CalculatedPropertySpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)RelatedInstanceSpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)CustomizationRules.h \
+                                    $(PresentationRulesPublicApiDirectory)ContentModifier.h \
+                                    $(PresentationRulesPublicApiDirectory)PropertyEditorsSpecification.h
+
+
+PresentationRulesInternalHeaders  = $(PresentationRulesSourceDirectory)PresentationRuleXmlConstants.h \
+                                    $(PresentationRulesSourceDirectory)PresentationRuleJsonConstants.h \
+                                    $(PresentationRulesSourceDirectory)CommonToolsInternal.h
+                                    
+PresentationRulesHeaders          = $(PresentationRulesPublicHeaders) $(PresentationRulesInternalHeaders) $(RulesDrivenECPresentationHeaders)
+
+PresentationRulesMkis             = $(PresentationRulesSourceDirectory)Dependencies.mki $(PresentationRulesSourceDirectory)Rules.mki
+
+PresentationRulesDependencies     = $(PresentationRulesHeaders) $(PresentationRulesMkis) $(RulesDrivenECPresentationDependencies)
+
+ECPresentationMakefiles           + $(PresentationRulesMkis)
