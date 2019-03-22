@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="HS2_AIR_V3Conversion" nameSpacePrefix="AS2AIRv3" version="1.1" description="CSim Product Data" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECRelationshipClass typeName="RelationshipClass" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+</ECSchema>
+

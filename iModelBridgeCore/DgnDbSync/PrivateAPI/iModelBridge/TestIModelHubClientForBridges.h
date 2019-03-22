@@ -1,0 +1,253 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  $Source: PrivateAPI/iModelBridge/TestIModelHubClientForBridges.h $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+#include <iModelBridge/IModelClientForBridges.h>
+#include <BeSQLite/BeSQLite.h>
+//=======================================================================================
+// @bsistruct                                                   Sam.Wilson   10/17
+//=======================================================================================
+BEGIN_BENTLEY_DGN_NAMESPACE
+
+struct TestRepositoryAdmin : IRepositoryManager
+    {
+    BeSQLite::BeBriefcaseId m_holdsSchemaLock;
+
+    static DgnLock GetSchemaLock(DgnDbR db) {return DgnLock(db.Schemas(), LockLevel::Exclusive);}
+
+    virtual Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly)
+        {
+        Response response(queryOnly ? IBriefcaseManager::RequestPurpose::Query : IBriefcaseManager::RequestPurpose::Acquire, req.Options());
+        response.SetResult(RepositoryStatus::Success);
+        if (req.Locks().GetLockSet().find(GetSchemaLock(db)) != req.Locks().GetLockSet().end())
+            {
+            if (m_holdsSchemaLock == db.GetBriefcaseId())
+                response.SetResult(RepositoryStatus::LockAlreadyHeld);
+            else
+                m_holdsSchemaLock = db.GetBriefcaseId();
+            }
+        return response;
+        }
+
+    virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db)
+        {
+        if (locks.find(GetSchemaLock(db)) != locks.end())
+            {
+            if (m_holdsSchemaLock != db.GetBriefcaseId())
+                return RepositoryStatus::LockNotHeld;
+            m_holdsSchemaLock = BeSQLite::BeBriefcaseId();
+            }
+        return RepositoryStatus::Success;
+        }
+    virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db)
+        {
+        if (Resources::Locks == (which & Resources::Locks))
+            {
+            if (m_holdsSchemaLock == db.GetBriefcaseId())
+                m_holdsSchemaLock = BeSQLite::BeBriefcaseId();
+            }
+        return RepositoryStatus::Success;
+        }
+    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db)
+        {
+        if (m_holdsSchemaLock == db.GetBriefcaseId())
+            {
+            locks.insert(GetSchemaLock(db));
+            }
+        return RepositoryStatus::Success;
+        }
+    virtual RepositoryStatus _QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes)
+        {
+        if (m_holdsSchemaLock.IsValid())
+            lockStates.insert(DgnLockInfo(LockableId(LockableType::Schemas, BeInt64Id((uint64_t)1))));
+        return RepositoryStatus::Success;
+        }
+    };
+
+struct TestIModelHubClientForBridges : IModelHubClientForBridges
+    {
+    bool anyTxnsInFile(DgnDbR db)
+        {
+        BeSQLite::Statement stmt;
+        stmt.Prepare(db, "SELECT Id FROM " DGN_TABLE_Txns " LIMIT 1");
+        return (BeSQLite::BE_SQLITE_ROW == stmt.Step());
+        }
+
+    iModel::Hub::Error m_lastServerError;
+    BeFileName m_serverRepo;
+    BeFileName m_testWorkDir;
+    bvector<DgnRevisionPtr> m_revisions;
+    DgnDbP m_briefcase{};
+    BeSQLite::BeBriefcaseId m_currentBriefcaseId;
+    TestRepositoryAdmin m_admin;
+    TestIModelHubClientForBridges(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir), m_currentBriefcaseId(BeSQLite::BeBriefcaseId::Standalone())
+        {}
+    
+    static BeFileName MakeFakeRepoPath(BeFileNameCR testWorkDir, Utf8CP repoName)
+        {
+        BeFileName repoPath = testWorkDir;
+        repoPath.AppendToPath(L"iModelHub");
+        repoPath.AppendToPath(WString(repoName, true).c_str());
+        return repoPath;
+        }
+
+    iModel::Hub::iModelInfoPtr GetIModelInfo() override {BeAssert(false && "not implemented"); return nullptr;}
+    
+    bvector<DgnRevisionPtr> GetDgnRevisions(size_t start = 0, size_t end = -1)
+        {
+        if (end < 0 || end > m_revisions.size())
+            end = m_revisions.size();
+        bvector<DgnRevisionPtr> revs;
+        for (size_t i = start; i < end; ++i)
+            revs.push_back(m_revisions[i].get());
+        return revs;
+        }
+
+    bool IsConnected() const override { return true; }
+
+    BentleyStatus DeleteRepository() override
+        {
+        BeAssert(nullptr == m_briefcase);
+        if (m_serverRepo.empty() || !m_serverRepo.DoesPathExist())
+            {
+            m_lastServerError = iModel::Hub::Error::Id::iModelDoesNotExist;
+            return BSIERROR;
+            }
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(m_serverRepo.GetDirectoryName()));
+        m_serverRepo.clear();
+        m_revisions.clear();
+        m_briefcase = nullptr;
+        m_currentBriefcaseId = BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone());
+        return BSISUCCESS;
+        }
+
+    StatusInt CreateRepository(Utf8CP repoName, BeFileNameCR localDgnDb) override
+        {
+        BeAssert(nullptr == m_briefcase);
+        if (!m_serverRepo.empty() && m_serverRepo.DoesPathExist())
+            {
+            BeAssert(false);
+            m_lastServerError = iModel::Hub::Error::Id::iModelAlreadyExists;
+            return BSIERROR;
+            }
+        m_serverRepo = MakeFakeRepoPath(m_testWorkDir, repoName);
+        if (!m_serverRepo.EndsWith(L".bim"))
+            m_serverRepo.append(L".bim");
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(m_serverRepo.GetDirectoryName()));
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(localDgnDb, m_serverRepo, false));
+        return BSISUCCESS;
+        }
+
+    StatusInt AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName) override
+        {
+        BeAssert(nullptr == m_briefcase);
+        if (m_serverRepo.empty())
+            {
+            m_lastServerError = iModel::Hub::Error::Id::iModelDoesNotExist;
+            return BSIERROR;
+            }
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(m_serverRepo, bcFileName, false));
+
+        bvector<DgnRevisionCP> revisions;
+        for (DgnRevisionPtr rev : m_revisions)
+            revisions.push_back(rev.get());
+
+        auto db = DgnDb::OpenDgnDb(nullptr, bcFileName, DgnDb::OpenParams (DgnDb::OpenMode::ReadWrite));
+        m_currentBriefcaseId = m_currentBriefcaseId.GetNextBriefcaseId();
+        db->SetAsBriefcase(m_currentBriefcaseId);
+        db->SaveChanges();
+        db = nullptr;
+        if (revisions.empty())
+            return BSISUCCESS;
+
+        SchemaUpgradeOptions option(revisions);
+        option.SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);// We only want to merge schema revisions. We don't also want to import or upgrade required revisions.
+        DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, option);
+
+        db = DgnDb::OpenDgnDb(nullptr, bcFileName, params);
+        db->SaveChanges();
+
+        return BSISUCCESS;
+        }
+
+    StatusInt OpenBriefcase(Dgn::DgnDbR db) override
+        {
+        BeAssert(nullptr == m_briefcase);
+        m_briefcase = &db;
+        return BSISUCCESS;
+        }
+
+    void CloseBriefcase() override
+        {
+        m_briefcase = nullptr;
+        }
+
+    StatusInt JustCaptureRevision(Utf8CP comment)
+        {
+        BeAssert(nullptr != m_briefcase);
+
+        DgnRevisionPtr revision = CaptureChangeSet(m_briefcase, comment);
+        if (revision.IsNull())
+            return BSISUCCESS;
+        m_revisions.push_back(revision);
+        return BSISUCCESS;
+        }
+
+    StatusInt Push(Utf8CP comment) override {return JustCaptureRevision(comment);}
+    StatusInt PullMergeAndPush(Utf8CP comment) override {return JustCaptureRevision(comment);}
+    StatusInt RestoreBriefcase (BeFileNameCR, Utf8CP, BeSQLite::BeBriefcaseId) override {return ERROR;}
+    virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db, Utf8CP comment)
+        {
+        BeAssert(db != nullptr);
+
+        BeAssert(db->IsBriefcase());
+
+        DgnRevisionPtr changeSet = db->Revisions().StartCreateRevision();
+
+        if (!changeSet.IsValid())
+            return changeSet;
+
+        if (comment)
+            changeSet->SetSummary(comment);
+
+        Dgn::RevisionStatus status = db->Revisions().FinishCreateRevision();
+        BeAssert(Dgn::RevisionStatus::Success == status);
+        BeSQLite::DbResult result = db->SaveChanges();
+        BeAssert(BeSQLite::BE_SQLITE_OK == result);
+
+        // *** TBD: test for expected changes
+        // printf("CaptureChangeset contains_schema_changes? %d user:[%s] desc:[%s]\n", changeSet->ContainsSchemaChanges(*db), changeSet->GetUserName().c_str(), changeSet->GetSummary().c_str());
+        //changeSet->Dump(*db);
+        return changeSet;
+        }
+
+    StatusInt PullAndMerge() override
+        {
+        return BSISUCCESS;
+        }
+
+    StatusInt PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db) override
+        {
+        return BSISUCCESS;
+        }
+
+    iModel::Hub::Error const& GetLastError() const override
+        {
+        return m_lastServerError;
+        }
+
+    IRepositoryManagerP GetRepositoryManager(DgnDbR db) override
+        {
+        return &m_admin;
+        }
+
+    StatusInt AcquireLocks(LockRequest&, DgnDbR) override
+        {
+        return BSISUCCESS;
+        }
+    };
+END_BENTLEY_DGN_NAMESPACE

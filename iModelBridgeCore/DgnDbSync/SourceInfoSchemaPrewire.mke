@@ -1,0 +1,17 @@
+#----------------------------------------------------------------------
+#
+#     $Source: SourceInfoSchemaPrewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+baseDir         = $(_MakeFilePath)
+schemaOutDir    = $(o)
+schemaLinkDir    = $(BuildContext)Delivery/
+
+%include mdl.mki
+
+$(schemaLinkDir)SourceInfo.ecschema.xml : $(baseDir)ECSchemas\Application\SourceInfo.ecschema.xml
+    !~@mkdir $(schemaLinkDir)
+    $(LinkFirstDepToFirstTarget)
+
