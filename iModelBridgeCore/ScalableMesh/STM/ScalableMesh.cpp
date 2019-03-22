@@ -2754,9 +2754,24 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
 template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
     {
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
-    bvector<DPoint3d> clipData;
-    m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipData);
-    DRange3d extent = DRange3d::From(&clipData[0], (int)clipData.size());
+    bvector<DPoint3d> clipPolyData;
+    m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipPolyData);
+
+    DRange3d extent = DRange3d::From(&clipPolyData[0], (int)clipPolyData.size());
+
+    ClipVectorPtr clipVectorData;
+    SMClipGeometryType geom;
+    SMNonDestructiveClipType type;
+    bool isActive;
+    m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(clipID, clipVectorData, geom, type, isActive);
+
+    if(clipVectorData.IsValid() && !clipVectorData->empty())
+        {
+        DRange3d clipVectorRange;
+        clipVectorData->GetRange(clipVectorRange, nullptr);
+        extent.Extend(clipVectorRange);
+        }
+
     if (extent.Volume() == 0)
         {
         if (extent.XLength() == 0)

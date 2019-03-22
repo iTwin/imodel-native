@@ -4813,7 +4813,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             for (size_t i = 0; i < nOfLoops; ++i)
                 metadata.push_back(make_bpair(importance, nDimensions));
             }
-        else if (!diffSet.toggledForID)
+        else if (diffSet.clientID < ((uint64_t)-1) && diffSet.clientID != 0 && !diffSet.toggledForID)
             {
             skirts.push_back(diffSet);
             }
@@ -4827,12 +4827,12 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         //create a clipvector with infinite z dimensions for the polygons
         for (size_t index = 0; index < polys.size(); index++)
             {
-            if (!polys[index].empty())
-            {
+            if(!polys[index].empty())
+                {
                 auto curvePtr = ICurvePrimitive::CreateLineString(polys[index]);
                 CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
                 clips[index] = ClipVector::CreateFromCurveVector(*cv, 0.0, 0.1);
-            }
+                }
             }
         for (size_t index : useVolumeClips)
         {
@@ -4869,12 +4869,6 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         const int32_t* uvIndices = uvIndexes.IsValid() ? &(*uvIndexes)[0] : 0;
         const DPoint2d* uvBuffer= uvCoords.IsValid() ? &(*uvCoords)[0] : 0;        
     
-
-        Clipper clipNode(&points[0], points.size(), (int32_t*)&(*ptIndices)[0], ptIndices->size(), nodeRange, this->m_nodeHeader.m_nodeExtent, uvBuffer, uvIndices);
-        
-        if(this->m_nodeHeader.m_isTextured && this->m_SMIndex->IsTextured() == SMTextureType::Streaming)
-            clipNode.SetTextureDimensions(256,256);
-
         bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
         auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
         IScalableMeshNodePtr nodeP(
@@ -4888,6 +4882,11 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         bool hasClip = false;
         if (useVolumeClips.empty())
         {
+            Clipper clipNode(&points[0], points.size(), (int32_t*)&(*ptIndices)[0], ptIndices->size(), nodeRange, this->m_nodeHeader.m_nodeExtent, uvBuffer, uvIndices);
+
+            if(this->m_nodeHeader.m_isTextured && this->m_SMIndex->IsTextured() == SMTextureType::Streaming)
+                clipNode.SetTextureDimensions(256, 256);
+
             if (!this->m_nodeHeader.m_arePoints3d && dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(this->m_SMIndex)->IsTerrain() && !polyInclusion && !this->m_SMIndex->IsFromCesium() && dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(this->m_SMIndex)->m_canUseBcLibClips)
             {
                 BcDTMPtr dtm = nodeP->GetBcDTM().get();
@@ -4918,7 +4917,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
                     polyHeader->Transform(tr);
                 }
                 if (meshP.get() != nullptr)
-                    hasClip = GetRegionsFromClipPolys3D(polyfaces, polys, this->m_SMIndex->IsFromCesium() ? polyHeader.get() : polyfaceQuery);
+                    hasClip = GetRegionsFromClipPolys3D(polyfaces, polys, this->m_SMIndex->IsFromCesium() ? polyHeader.get() : polyfaceQuery, isMask);
             }
         }
         else
@@ -4937,8 +4936,12 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             bvector<bool> isMaskPrimitive;
             for (auto&clip : clips)
             {
-                for (size_t i =0; i < clip->size(); ++i)
-                    isMaskPrimitive.push_back(true/*isMask[&clip - clips.data()]*/);
+                if(clip == nullptr) continue;
+                for(size_t i = 0; i < clip->size(); ++i)
+                    {
+                    isMaskPrimitive.push_back(isMask[&clip - clips.data()]);
+                    (*clip)[i]->SetIsMask(isMask[&clip - clips.data()]);
+                    }
                 clipComplete->Append(*clip);
             }
             bvector<size_t> polyfaceIndices;
@@ -5266,6 +5269,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
 
     if (pointsPtr->size() == 0 || this->m_nodeHeader.m_nbFaceIndexes < 3) return true;
     bool found = false;
+    bool shouldClearDiffsets = true;
     bvector<size_t> indices;
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
 
@@ -5285,19 +5289,25 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
             const_cast<DifferenceSet&>(*it).upToDate = false;
             diffSetPtr->SetDirty(true);
             }
+        else if(it->clientID != 0)
+            shouldClearDiffsets = false;
         }
     if (found)
         {
-        diffSetPtr->erase(indices);
         /* //force commit
          GetMemoryPool()->RemoveItem(m_diffSetsItemId, this->GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)this->m_SMIndex);
          m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;*/
-        if (m_nbClips == 0)
+        if (shouldClearDiffsets)
             {
+            diffSetPtr->clear();
             ISDiffSetDataStorePtr nodeDiffsetStore;
             bool result = this->m_SMIndex->GetDataStore()->GetSisterNodeDataStore(nodeDiffsetStore, &this->m_nodeHeader, false);
             BeAssert(result == true);
             if (nodeDiffsetStore.IsValid()) nodeDiffsetStore->DestroyBlock(this->GetBlockID());
+            }
+        else
+            {
+            diffSetPtr->erase(indices);
             }
         }
 
