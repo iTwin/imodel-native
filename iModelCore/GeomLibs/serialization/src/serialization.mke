@@ -1,0 +1,122 @@
+#--------------------------------------------------------------------------------------
+#     $Source: serialization/src/serialization.mke $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+AppName             = BentleyGeomSerialization
+CompileOptionsMki   = $(SrcRoot)GeomLibs/serialization/mki/GeomLibsSerialization.mki
+
+%include $(CompileOptionsMki)
+
+BuildContext        = $(OutBuildContexts)geomlibs/
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Convenience variables for our paths
+
+MySrc               = $(SrcRoot)GeomLibs/serialization/src/
+MyPublicApi         = $(SrcRoot)GeomLibs/PublicAPI/GeomSerialization/
+
+o                   = $(PartBuildDir)
+ContextDelivery     = $(BuildContext)Delivery/
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# Bootstrap
+
+always:
+    !~@mkdir $(o)
+    !~@mkdir $(BuildDelivery)
+
+$(BuildContext)PublicApi/GeomSerialization : ${MyPublicApi}
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+#--------------------------------------------------------------------------------
+#  Bring our precompiled header up-to-date.  After including PreCompileHeader.mki
+#  $(UsePrecompiledHeaderOptions) will contain the /Yu and /Fp options that we
+#  need to consume the .pch.
+#----------------------------------------------------------------------
+PchExtraOptions + $(commonCOpts)
+%ifdef COMPILE_PLATFORM_GEOMETRY
+PchExtraOptions + -DCOMPILE_PLATFORM_GEOMETRY=1
+%endif
+PchCompiland    = $(_MakeFilePath)serializationPCH.cpp
+PchOutputDir    = $(o)
+
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts  = $(UsePrecompiledHeaderOptions)
+CPchOpts   = $(UsePrecompiledHeaderOptions)
+
+#----------------------------------------------------------------------
+# Prepare to multi-compile using a uniform set of dependency blocks.
+# Note that you CANNOT change compiler options for just some of the
+# below compilands. The entire set of compilands must be content with
+# uniform treatment for multi-compilation to work.
+#----------------------------------------------------------------------
+MultiCompileDepends=$(_MakeFileSpec) 
+%include MultiCppCompileRule.mki
+
+nameToDefine = BuildCGJsonValueBuilder
+%include cdefapnd.mki
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+CommonDependencies = \
+    $(SrcRoot)GeomLibs/PublicAPI/Geom/GeomApi.h \
+    $(SrcRoot)GeomLibs/PublicAPI/GeomSerialization/GeomLibsFlatBufferApi.h \
+    $(SrcRoot)GeomLibs/PublicAPI/GeomSerialization/BeXmlCommonGeometry.h \
+    $(SrcRoot)GeomLibs/PublicAPI/GeomSerialization/GeomLibsSerialization.h \
+    $(_MakeFilePath)CGNativeFactoryImplementations.h
+
+
+
+$(o)FixedStructs$(oext)             : $(MySrc)FlatBuffer/FixedStructs.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+$(o)BeXmlCGStreamReader$(oext)      :$(MySrc)BeXmlCGStreamReader.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+$(o)BeXmlCGWriter$(oext)            :$(MySrc)BeXmlCGWriter.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+$(o)BeCGWriter$(oext)               :$(MySrc)BeCGWriter.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+$(o)BeStructuredDataWriter$(oext)   :$(MySrc)BeStructuredDataWriter.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+$(o)BeJsonToCG$(oext)               : $(MySrc)BeJsonToCG.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+$(o)BeJsonValueBuilder$(oext)       : $(MySrc)BeJsonValueBuilder.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+$(o)IModelJsonWriter$(oext)       : $(MySrc)IModelJsonWriter.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+$(o)IModelJsonReader$(oext)       : $(MySrc)IModelJsonReader.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+# MSXml
+$(o)MSXmlBinaryWriter$(oext)        : $(MySrc)MSXmlBinary/MSXmlBinaryWriter.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+$(o)MSXmlBinaryReader$(oext)        : $(MySrc)MSXmlBinary/MSXmlBinaryReader.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_OBJECT_PCH = $(o)serializationPch$(oext)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(MultiCompileObjectList)
+DLM_NAME = BentleyGeomSerialization
+DLM_NOENTRY = 1
+DLM_NOINITFUNC = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(MultiCompileObjectList)
+
+LINKER_LIBRARIES = $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(stlibprefix)BeJsonCpp$(stlibext)
+
+# The static build has undefined externals referenced from Bentley.lib unless these 3 libraries are also included
+%if $(TARGET_PROCESSOR_ARCHITECTURE)=="x64" ||  $(TARGET_PROCESSOR_ARCHITECTURE)=="x86"
+    %if defined (CREATE_STATIC_LIBRARIES)
+        LINKER_LIBRARIES            +  wininet.lib Advapi32.lib shlwapi.lib
+    %endif
+%endif
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%include $(sharedMki)linkLibrary.mki
