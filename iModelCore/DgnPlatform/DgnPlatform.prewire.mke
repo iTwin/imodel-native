@@ -1,0 +1,61 @@
+#----------------------------------------------------------------------------------------
+#
+#     $Source: DgnPlatform.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+SrcDgnPlatform                  = $(SrcRoot)DgnPlatform/
+DgnPlatformPublicAPISrc         = $(SrcDgnPlatform)PublicAPI/
+
+%include mdl.mki
+
+#----------------------------------------------------------------------------------------
+#   Wire in my own public header files.
+#----------------------------------------------------------------------------------------
+always:
+    ~linkdir "$(BuildContext)PublicAPI/DgnPlatform=$(DgnPlatformPublicAPISrc)DgnPlatform"
+
+#----------------------------------------------------------------------------------------
+#   Wire in my own private header files (for unit tests).
+#----------------------------------------------------------------------------------------
+DgnPlatformInternalApiSrc = $(SrcDgnPlatform)PrivateApi/DgnPlatformInternal/
+
+always:
+    ~linkdir "$(BuildContext)PrivateAPI/DgnPlatformInternal=$(DgnPlatformInternalApiSrc)"
+
+#----------------------------------------------------------------------------------------
+#   Wire in raw material for input into Doxygen by consuming SDKs
+#----------------------------------------------------------------------------------------
+$(BuildContext)Dox/Pages/DgnPlatform/CategoryOverview.doxpage : $(_MakeFilePath)docs/overview/CategoryOverview.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/DgnPlatform/DgnPlatformOverview.doxpage : $(_MakeFilePath)docs/overview/DgnPlatformOverview.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/DgnPlatform/DgnDbInformationHierarchy.doxpage : $(_MakeFilePath)docs/overview/DgnDbInformationHierarchy.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/DgnPlatform/CodingConventions.doxpage : $(_MakeFilePath)docs/overview/CodingConventions.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/DgnPlatform/ElementOverview.doxpage : $(_MakeFilePath)docs/overview/ElementOverview.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/DgnPlatform/CustomElement.doxpage : $(_MakeFilePath)docs/overview/CustomElement.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/DgnPlatform/ModelOverview.doxpage : $(_MakeFilePath)docs/overview/ModelOverview.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/DgnPlatform/CustomModel.doxpage : $(_MakeFilePath)docs/overview/CustomModel.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/DgnPlatform/GeometryPartOverview.doxpage : $(_MakeFilePath)docs/overview/GeometryPartOverview.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/DgnPlatform/ViewOverview.doxpage : $(_MakeFilePath)docs/overview/ViewOverview.doxpage
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Dox/Pages/DgnPlatform/DgnSqlFuncs.doxpage : $(_MakeFilePath)DgnCore/DgnSqlFuncs.cpp
+    $(LinkFirstDepToFirstTarget)
