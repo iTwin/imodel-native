@@ -1,0 +1,42 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: mki/imageppdirs.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%if defined (__ImagePPDirs_mki__)
+    %warn ImagePPDirs.mki is being included redundantly in $(_MakeFileSpec)
+    %if defined (DebugRedundantMkiIncludes)
+        %error DebugRedundantMkiIncludes is defined.
+    %endif  
+    %return
+%endif
+__ImagePPDirs_mki__=1
+
+# ------------------------------------
+# Source directories
+# ------------------------------------
+ippAllDir           = $(SrcImagepp)all/
+
+ippGraDir           = $(ippAllDir)gra/
+ippUtlDir           = $(ippAllDir)utl/
+
+ippPublicAPISrc     = $(SrcImagepp)PublicApi/ImagePP/
+ippInc              = $(ippPublicAPISrc)h/
+ippAllInc           = $(ippPublicAPISrc)all/h/
+ippInterfaceInc     = $(ippAllInc)interface/
+
+ippPrivateAPISrc    = $(SrcImagepp)PrivateApi/
+ippGraPrivateAPISrc = $(SrcImagepp)PrivateApi/ImagePPInternal/gra/
+
+# ------------------------------------
+# Output directories
+# ------------------------------------
+OutImagePP          = $(OutBuildDir)ImagePP/
+o                   = $(PartBuildDir)
+
+ippOutPrivateLibs   = $(OutImagePP)PrivateLibs/
+ippOutPrivateApi    = $(OutImagePP)PrivateApi/
+
+
