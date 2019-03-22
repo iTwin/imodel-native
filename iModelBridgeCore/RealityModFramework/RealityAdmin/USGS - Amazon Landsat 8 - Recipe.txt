@@ -1,0 +1,3 @@
+AwsTraverser -cs:Driver="{SQL Server};Server=NAOU10922QBC\SQLSERVER2012;Database=RMIndex20170130-Test1;" -f:D:\scene_list.csv
+
+Where scene_list.csv must be downloaded from https://pages.awscloud.com/public-data-sets-landsat.html (usually the direct link is http://landsat-pds.s3.amazonaws.com/scene_list.gz)
