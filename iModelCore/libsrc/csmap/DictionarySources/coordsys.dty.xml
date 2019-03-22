@@ -8998,10 +8998,15 @@
                   </Member>         
                   <Member>
                     <KeyName>HeathrowAirportGrid2007</KeyName>
-                  </Member>           
+                  </Member>
+                  <Member>
+                    <KeyName>HS2_Snake_2015</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>HS2_Snake_2002</KeyName>
+                  </Member>
                 </Members>
               </Group>
-
               <Group>
                 <Name>UTM-TM-GK Zones</Name>
                 <Groups>
