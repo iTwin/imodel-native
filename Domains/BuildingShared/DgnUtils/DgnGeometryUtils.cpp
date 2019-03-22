@@ -795,7 +795,7 @@ CurveVectorPtr DgnGeometryUtils::GetBaseShape(Dgn::GeometricElement3dCR extrusio
             return planePtr;
             }
 
-        auto geomStream = (const_cast <Dgn::SpatialLocationElementR>(extrusionThatIsSolid)).ToGeometrySourceP ()->GetGeometryStream ();
+        Dgn::GeometryStream geomStream = (const_cast <Dgn::GeometricElement3dR>(extrusionThatIsSolid)).ToGeometrySourceP ()->GetGeometryStream ();
         if (geomStream.empty())
             {
             return planePtr;
