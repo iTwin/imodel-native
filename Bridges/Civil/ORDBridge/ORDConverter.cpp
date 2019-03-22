@@ -1105,16 +1105,39 @@ void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceC
     {
     bool isTopMesh = cifCorridorSurface.IsTopMesh();
     bool isBottomMesh = cifCorridorSurface.IsBottomMesh();
+    auto description = Utf8String(cifCorridorSurface.GetDescription().c_str());
 
     if (auto corridorSurfaceAspectP = DgnV8ORDBim::CorridorSurfaceAspect::GetP(element))
         {
         corridorSurfaceAspectP->SetIsTopMesh(isTopMesh);
         corridorSurfaceAspectP->SetIsBottomMesh(isBottomMesh);
+        corridorSurfaceAspectP->SetDescription(description.c_str());
         }
     else
         {
-        auto corridorSurfaceAspectPtr = DgnV8ORDBim::CorridorSurfaceAspect::Create(isTopMesh, isBottomMesh, nullptr);
+        auto corridorSurfaceAspectPtr = DgnV8ORDBim::CorridorSurfaceAspect::Create(isTopMesh, isBottomMesh, description.c_str());
         DgnV8ORDBim::CorridorSurfaceAspect::Set(element, *corridorSurfaceAspectPtr);
+        }
+
+    auto startStationAsWStr = cifCorridorSurface.GetStartStation();
+    auto endStationAsWStr = cifCorridorSurface.GetEndStation();
+
+    WCharP startStationNextCharP, endStationNextCharP;
+    double startStation = wcstod(startStationAsWStr.c_str(), &startStationNextCharP);
+    double endStation = wcstod(endStationAsWStr.c_str(), &endStationNextCharP);
+
+    if (startStationAsWStr.c_str() != startStationNextCharP && endStationAsWStr.c_str() != endStationNextCharP)
+        {
+        if (auto stationRangeAspectP = DgnV8ORDBim::StationRangeAspect::GetP(element))
+            {
+            stationRangeAspectP->SetStartStation(startStation);
+            stationRangeAspectP->SetEndStation(endStation);
+            }
+        else
+            {
+            auto stationRangeAspectPtr = DgnV8ORDBim::StationRangeAspect::Create(startStation, endStation);
+            DgnV8ORDBim::StationRangeAspect::Set(element, *stationRangeAspectPtr);
+            }
         }
     }
 
@@ -1493,7 +1516,7 @@ void ORDConverter::CreateRoadRailElements()
         linearsAlignmentModelPtr->SetIsPrivate(false);
         linearsAlignmentModelPtr->Update();
 
-        bvector<DgnCategoryId> additionalCategoriesForSelector;
+        /*bvector<DgnCategoryId> additionalCategoriesForSelector;
         for (auto categoryId : additionalCategories)
             additionalCategoriesForSelector.push_back(categoryId);
 
@@ -1508,7 +1531,7 @@ void ORDConverter::CreateRoadRailElements()
             modelSelectorPtr->AddModel(designAlignmentModelPtr->GetModelId());
             modelSelectorPtr->AddModel(linearsAlignmentModelPtr->GetModelId());
             modelSelectorPtr->Update();
-            }
+            }*/
         }
     }
 
