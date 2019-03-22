@@ -789,10 +789,21 @@ CurveVectorPtr DgnGeometryUtils::GetBaseShape(Dgn::GeometricElement3dCR extrusio
     CurveVectorPtr planePtr = DgnGeometryUtils::ExtractBottomFaceShape(extrusionThatIsSolid);
     if (!planePtr.IsValid())
         {
+        DRange3d range = extrusionThatIsSolid.GetPlacement ().CalculateRange ();
+        if (range.IsEmpty ())
+            {
+            return planePtr;
+            }
+
+        auto geomStream = (const_cast <Dgn::SpatialLocationElementR>(extrusionThatIsSolid)).ToGeometrySourceP ()->GetGeometryStream ();
+        if (geomStream.empty())
+            {
+            return planePtr;
+            }
+        
         BeAssert(false && "Failed to extract base shape");
         BentleyApi::NativeLogging::LoggingManager::GetLogger(L"BuildingSpacePlanning")->error("DgnGeometryUtils::Failed to extract base shape.\n");
 
-        DRange3d range = extrusionThatIsSolid.GetPlacement().CalculateRange();
         bvector<DPoint3d> points =
             {
             range.low,
