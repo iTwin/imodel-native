@@ -581,7 +581,7 @@ void Tile::Request::Process()
     SetState(State::Loading);
 
     auto tree = JsInterop::GetTileTree(*m_model, m_treeId, true);
-    auto content = tree.IsValid() ? tree->RequestContent(m_contentId) : nullptr;
+    auto content = tree.IsValid() ? tree->RequestContent(m_contentId, JsInterop::GetUseTileCache()) : nullptr;
     if (content.IsValid())
         SetContent(*content);
     else

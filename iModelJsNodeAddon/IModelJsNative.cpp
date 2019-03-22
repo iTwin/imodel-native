@@ -4076,7 +4076,7 @@ private:
 
         // JsInterop::GetLogger().debugv("GetTileContentWorker::Execute: %s %s", m_treeId.ToString().c_str(), m_contentId.ToString().c_str());
         auto tree = GetTileTree();
-        m_result = tree.IsValid() ? tree->RequestContent(m_contentId) : nullptr;
+        m_result = tree.IsValid() ? tree->RequestContent(m_contentId, JsInterop::GetUseTileCache()) : nullptr;
         m_status = m_result.IsValid() ? DgnDbStatus::Success : DgnDbStatus::NotFound;
         }
 
@@ -4643,6 +4643,16 @@ static void initializeRegion(Napi::CallbackInfo const& info)
     UlasClient::Get().Initialize(region);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void setUseTileCache(Napi::CallbackInfo const& info)
+    {
+    if (info.Length() != 1 || !info[0].IsBoolean())
+        JsInterop::GetLogger().error("Invalid argument for setUseTileCache.");
+    else
+        JsInterop::SetUseTileCache(info[0].As<Napi::Boolean>().Value());
+    }
 
 static Napi::ObjectReference s_logger;
 struct LogMessage {Utf8String m_category; Utf8String m_message; NativeLogging::SEVERITY m_severity;};
@@ -4829,7 +4839,8 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
         {
         Napi::PropertyDescriptor::Value("version", Napi::String::New(env, PACKAGE_VERSION), PROPERTY_ATTRIBUTES),
         Napi::PropertyDescriptor::Function(env, exports, "initializeRegion", &initializeRegion),
-        Napi::PropertyDescriptor::Accessor(env, exports, "logger", &getLogger, &setLogger)
+        Napi::PropertyDescriptor::Accessor(env, exports, "logger", &getLogger, &setLogger),
+        Napi::PropertyDescriptor::Function(env, exports, "setUseTileCache", &setUseTileCache)
         });
 
     return exports;

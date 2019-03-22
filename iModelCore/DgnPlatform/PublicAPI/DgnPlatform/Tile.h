@@ -234,6 +234,7 @@ private:
     BeAtomic<bool> m_canceled;
     uint64_t m_createTime; // time of most recent change to any element in model when this Loader was created.
     State m_state;
+    bool m_useCache;
 
     void SetState(State state) { m_state = state; }
     void SetCanceled() { m_canceled.store(true); }
@@ -251,7 +252,7 @@ private:
     State ReadFromModel();
     void Perform();
 protected:
-    DGNPLATFORM_EXPORT Loader(TreeR tree, ContentIdCR contentId);
+    DGNPLATFORM_EXPORT Loader(TreeR tree, ContentIdCR contentId, bool useCache);
 public:
     DGNPLATFORM_EXPORT ~Loader();
 
@@ -384,7 +385,7 @@ private:
 protected:
     Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, RootTile rootTile);
 
-    DGNPLATFORM_EXPORT LoaderPtr CreateLoader(ContentIdCR contentId);
+    DGNPLATFORM_EXPORT LoaderPtr CreateLoader(ContentIdCR contentId, bool useCache);
     void LoadNodeMapFromAnimation();
 public:
     DGNPLATFORM_EXPORT ~Tree();
@@ -424,7 +425,7 @@ public:
     // If the content is available in the RealityData::Cache, it will be retrieved from there.
     // Otherwise, it will be generated from the geometry within the content range, added to the cache, and returned.
     // If the content cannot be retrieved, or the loading process is canceled, returns nullptr.
-    DGNPLATFORM_EXPORT ContentCPtr RequestContent(ContentIdCR contentId);
+    DGNPLATFORM_EXPORT ContentCPtr RequestContent(ContentIdCR contentId, bool useCache);
 
     Id GetId() const { return m_id; }
 

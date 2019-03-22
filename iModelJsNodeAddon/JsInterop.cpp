@@ -18,6 +18,7 @@
 static Utf8String s_lastECDbIssue;
 static BeFileName s_addonDllDir;
 static BeFileName s_tempDir;
+static bool s_useTileCache = true;
 
 using namespace ElementDependency;
 
@@ -722,6 +723,12 @@ ECInstanceId JsInterop::GetInstanceIdFromInstance(ECDbCR ecdb, JsonValueCR jsonI
 * @bsimethod                                    Sam.Wilson                      01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::ThrowJsException(Utf8CP msg) { Napi::Error::New(Env(), msg).ThrowAsJavaScriptException(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::SetUseTileCache(bool use) { s_useTileCache = use; }
+bool JsInterop::GetUseTileCache() { return s_useTileCache; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      02/18

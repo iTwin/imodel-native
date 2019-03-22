@@ -177,6 +177,8 @@ public:
     static void GetTileTree(ICancellationTokenPtr, DgnDbR db, Utf8StringCR id, Napi::Function& callback);
     static void GetTileContent(ICancellationTokenPtr, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId, Napi::Function& callback);
     static Tile::PollResult PollTileContent(ICancellationTokenPtr, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId);
+    static void SetUseTileCache(bool use);
+    static bool GetUseTileCache();
 
     static void ThrowJsException(Utf8CP msg);
     static Json::Value ExecuteTest(DgnDbR, Utf8StringCR testName, Utf8StringCR params);

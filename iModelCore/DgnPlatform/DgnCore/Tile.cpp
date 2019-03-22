@@ -94,7 +94,7 @@ private:
     virtual uint64_t GetNodeId(DgnElementId elementId) const final { return elementId.GetValue(); }
 
 public:
-    VolumeClassificationLoader(Tree& tree, ContentIdCR contentId);
+    VolumeClassificationLoader(Tree& tree, ContentIdCR contentId, bool useCache);
 };
 
 //=======================================================================================
@@ -108,7 +108,7 @@ private:
     void  Preprocess(PolyfaceList& polyfaces, StrokesList& strokes) const final;
 
 public:
-    PlanarClassificationLoader(Tree& tree, ContentIdCR contentId);
+    PlanarClassificationLoader(Tree& tree, ContentIdCR contentId, bool useCache);
 };
 
 
@@ -1695,25 +1695,25 @@ void Tree::CancelAllTileLoads()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-LoaderPtr Tree::CreateLoader(ContentIdCR contentId)
+LoaderPtr Tree::CreateLoader(ContentIdCR contentId, bool useCache)
     {
     switch (GetType())
         {
         case Type::VolumeClassifier:
-            return new VolumeClassificationLoader(*this, contentId);
+            return new VolumeClassificationLoader(*this, contentId, useCache);
 
         case Type::PlanarClassifier:
-            return new PlanarClassificationLoader(*this, contentId);
+            return new PlanarClassificationLoader(*this, contentId, useCache);
 
         default:
-            return new Loader(*this, contentId);
+            return new Loader(*this, contentId, useCache);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentCPtr Tree::RequestContent(ContentIdCR contentId)
+ContentCPtr Tree::RequestContent(ContentIdCR contentId, bool useCache)
     {
     LoaderPtr loader;
     BeMutexHolder lock(m_cv.GetMutex());
@@ -1721,7 +1721,7 @@ ContentCPtr Tree::RequestContent(ContentIdCR contentId)
     if (iter == m_activeLoads.end())
         {
         // Load the tile content synchronously on this thread
-        loader = CreateLoader(contentId);
+        loader = CreateLoader(contentId, useCache);
         LoaderScope scope(*loader, lock);
         }
     else
@@ -1846,8 +1846,8 @@ Tree::LoaderScope::~LoaderScope()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Loader::Loader(TreeR tree, ContentIdCR contentId) : m_contentId(contentId), m_tree(tree), m_cacheKey(tree.ConstructCacheKey(contentId)),
-    m_createTime(tree.FetchModel()->GetLastElementModifiedTime())
+Loader::Loader(TreeR tree, ContentIdCR contentId, bool useCache) : m_contentId(contentId), m_tree(tree), m_cacheKey(tree.ConstructCacheKey(contentId)),
+    m_createTime(tree.FetchModel()->GetLastElementModifiedTime()), m_useCache(useCache)
     {
     SetState(State::Loading);
     }
@@ -1931,6 +1931,9 @@ BentleyStatus Loader::DropFromDb(RealityData::CacheR cache)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::SaveToDb()
     {
+    if (!m_useCache)
+        return SUCCESS;
+
     if (m_content.IsNull())
         return ERROR;
 
@@ -2034,6 +2037,9 @@ void Loader::Perform()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Loader::State Loader::ReadFromCache()
     {
+    if (!m_useCache)
+        return State::NotFound;
+
     BeAssert(IsLoading());
     auto cache = GetTree().GetCache();
     if (nullptr == cache)
@@ -2168,7 +2174,7 @@ Loader::State Loader::ReadFromModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-VolumeClassificationLoader::VolumeClassificationLoader(Tree& tree, ContentIdCR contentId) : T_Super(tree, contentId)
+VolumeClassificationLoader::VolumeClassificationLoader(Tree& tree, ContentIdCR contentId, bool useCache) : T_Super(tree, contentId, useCache)
     {
     BeAssert(tree.IsVolumeClassifier());
     Transform fromDgn;
@@ -2180,11 +2186,12 @@ VolumeClassificationLoader::VolumeClassificationLoader(Tree& tree, ContentIdCR c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-PlanarClassificationLoader::PlanarClassificationLoader(Tree& tree, ContentIdCR contentId) : T_Super(tree, contentId)
+PlanarClassificationLoader::PlanarClassificationLoader(Tree& tree, ContentIdCR contentId, bool useCache) : T_Super(tree, contentId, useCache)
     {
     BeAssert(tree.IsPlanarClassifier());
     m_expansion = tree.GetId().GetClassifierExpansion();
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
