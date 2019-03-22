@@ -753,7 +753,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Unload
             Discard();
             }
 
-        // If there are sub-nodes we must create them
+        // If there are sub-nodes we must stop referencing them.
         if (!UNCONSTTHIS->m_nodeHeader.m_IsLeaf)
             {
             if (UNCONSTTHIS->m_pSubNodeNoSplit != NULL)
@@ -766,11 +766,11 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Unload
                 {
                 for (size_t indexNode = 0 ; indexNode <UNCONSTTHIS->m_apSubNodes.size(); indexNode++)
                     {
-                    if (UNCONSTTHIS->m_apSubNodes[indexNode] != NULL) {
-                        if(UNCONSTTHIS->m_apSubNodes[indexNode]->IsLoaded())
-                            UNCONSTTHIS->m_apSubNodes[indexNode]->SetParentNodePtr(0);
+                    if (UNCONSTTHIS->m_apSubNodes[indexNode] != NULL) 
+                        {                        
+                        UNCONSTTHIS->m_apSubNodes[indexNode]->SetParentNodePtr(0);
                         UNCONSTTHIS->m_apSubNodes[indexNode] = NULL;
-                    }
+                        }
                     }
                 }
             }
@@ -9110,6 +9110,7 @@ template<class POINT, class EXTENT>
 void SMPointIndex<POINT, EXTENT>::SetTextured(SMTextureType textureState)
     {
     m_indexHeader.m_textured = textureState;
+    m_indexHeaderDirty = true;
     }
 
 template<class POINT, class EXTENT>

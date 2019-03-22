@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:13 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -46,7 +46,9 @@ struct ScalableMeshGroundExtractor : public RefCounted<IScalableMeshGroundExtrac
         double            m_smGcsRatioToMeter; 
         ScalableMeshProgress m_createProgress;
         BaseGCSPtr           m_destinationGcs;
-		bool m_limitTextureResolution;
+		bool                 m_limitTextureResolution;
+        bool                 m_reprojectElevation;
+        BeFileName           m_dataSourceDir;        
         
         
         void AddXYZFilePointsAsSeedPoints(TerrainModel::GroundDetection::GroundDetectionParametersPtr& params, const BeFileName& coverageTempDataFolder);
@@ -60,8 +62,12 @@ struct ScalableMeshGroundExtractor : public RefCounted<IScalableMeshGroundExtrac
         virtual SMStatus                   _ExtractAndEmbed(const BeFileName& coverageTempDataFolder) override;
 
         virtual StatusInt                   _SetDestinationGcs(GeoCoordinates::BaseGCSPtr& destinationGcs) override;
-
+                
         virtual StatusInt                   _SetExtractionArea(const bvector<DPoint3d>& area) override;
+
+        virtual StatusInt                   _SetDataSourceDir(const BeFileName& dataSourceDir) override;
+
+        virtual StatusInt                   _SetReprojectElevation(bool doReproject) override;
 
 		virtual StatusInt                   _SetLimitTextureResolution(bool limitTextureResolution) override;
 

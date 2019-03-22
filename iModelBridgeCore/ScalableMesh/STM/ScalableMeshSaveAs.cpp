@@ -349,6 +349,7 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
             }
         }
     }
+
     // Create store for 3DTiles output
     typedef SMStreamingStore<DRange3d>::SMStreamingSettings StreamingSettingsType;
     SMStreamingStore<DRange3d>::SMStreamingSettingsPtr settings = new StreamingSettingsType();
@@ -439,7 +440,6 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     strategy->AddGroup(rootNodeGroup.get());
     index->SetRootNodeGroup(rootNodeGroup);
 
-
     SMSAVEAS_LOG.debug("Publishing index...");
 
     // Saving groups isn't parallelized therefore we run it in a single separate thread so that we can properly update the listener with the progress
@@ -495,7 +495,7 @@ bool s_stream_from_wsg;
 bool s_stream_from_grouped_store;
 bool s_is_virtual_grouping;
 
-StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, const WString& outContainerName, const Transform& tileToECEF, const Transform& dbToTile, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId)
+StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, const WString& outContainerName, const Transform& transform, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId)
     {
     if (!meshP.IsValid()) return ERROR;
 
@@ -604,7 +604,6 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
     if (status != SUCCESS || textureInfo->IsUsingBingMap())
         outputTexture = false;
 
-
     status = Publish3DTiles((SMMeshIndex<DPoint3d, DRange3d>*)(mesh->GetMainIndexP().GetPtr()), path, clips, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), meshP->GetGCS().GetGeoRef().GetBasePtr(), outputTexture, (ScalableMeshProgress*)(mesh->GetMainIndexP()->m_progress.get()));
     SMNodeGroupPtr rootTileset = mesh->GetMainIndexP()->GetRootNodeGroup();
     BeAssert(rootTileset.IsValid()); // something wrong in the publish
@@ -631,7 +630,7 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
         }
 StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId)
     {
-    return IScalableMeshSaveAs::Generate3DTiles(meshP, outContainerName, Transform::FromIdentity(), Transform::FromIdentity(), outDatasetName, server, progress, clips, coverageId);
+    return IScalableMeshSaveAs::Generate3DTiles(meshP, outContainerName, Transform::FromIdentity(), outDatasetName, server, progress, clips, coverageId);
     }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

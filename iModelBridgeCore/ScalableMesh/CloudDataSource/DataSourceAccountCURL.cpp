@@ -18,6 +18,8 @@
 #define DATASOURCEACCOUNTCURLLOGNAME L"ScalableMesh::CloudDataSourceAccountCURL"
 #define DATASOURCEACCOUNTCURL_LOG (*NativeLogging::LoggingManager::GetLogger(DATASOURCEACCOUNTCURLLOGNAME))
 
+#pragma warning(disable:4840)
+
 
 #ifdef VANCOUVER_API
 #define ISURL(filename) BeFileName::IsUrl(filename)

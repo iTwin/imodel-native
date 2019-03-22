@@ -125,7 +125,7 @@ BentleyStatus MyImageppLibAdmin::_GetLocalCacheDirPath(BeFileName& tempPath, boo
 BentleyStatus MyImageppLibAdmin::_GetGDalDataPath(BeFileNameR gdalDataPath) const
     {
     BeFileName path = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    path.AppendToPath(L"GDal_Data");
+    path.AppendToPath(L"Gdal_Data");
 
     // Convert BeFileName to WString
     BeFileName::BuildName(gdalDataPath, path.GetDevice().c_str(), path.GetDirectoryWithoutDevice().c_str(), path.GetFileNameWithoutExtension().c_str(), path.GetExtension().c_str());
@@ -231,7 +231,7 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
             return PrintUsage(argv[0]);        
         if (argv[iArg] == wcsstr(argv[iArg], L"-taskFolder=") || argv[iArg] == wcsstr(argv[iArg], L"-tf="))
             {            
-            m_taskFolderName.assign(GetArgValueW(argv[iArg]).c_str());
+            BeFileName::FixPathName(m_taskFolderName, GetArgValueW(argv[iArg]).c_str());
             if (!BeFileName::DoesPathExist(m_taskFolderName.c_str()))
                 {
                 fwprintf(stderr, L"%ls is not an existing folder\n", m_taskFolderName.c_str());
@@ -279,8 +279,8 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
             }
 
         if (argv[iArg] == wcsstr(argv[iArg], L"-resultFolder=") || argv[iArg] == wcsstr(argv[iArg], L"-rf="))
-            {            
-            m_resultFolderName.assign(GetArgValueW(argv[iArg]).c_str());
+            {         
+            BeFileName::FixPathName(m_resultFolderName, GetArgValueW(argv[iArg]).c_str());            
             if (!BeFileName::DoesPathExist(m_resultFolderName.c_str()))
                 {
                 fwprintf(stderr, L"%ls is not an existing folder\n", m_resultFolderName.c_str());
@@ -301,8 +301,7 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
 //ScalableMeshStep
 
 void ScalableMeshWorker::Start()
-    {
-
+    {     
 #ifdef TRACE_ON	
     BeFileNameStatus fileStatus = BeFileName::EmptyDirectory(L"D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\");
     assert(fileStatus == BeFileNameStatus::Success);
@@ -329,7 +328,7 @@ void ScalableMeshWorker::Start()
         if (m_useGroupingStrategy)
             {
             cmdStr.append(Utf8PrintfString(" -gr"));
-            cmdStr.append(Utf8PrintfString(" -gs=%ui", m_groupingSize));
+            cmdStr.append(Utf8PrintfString(" -gs=%u", m_groupingSize));
             }
         
         if (!m_resultFolderName.empty())

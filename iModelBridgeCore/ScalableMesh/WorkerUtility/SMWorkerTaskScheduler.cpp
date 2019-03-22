@@ -4,6 +4,7 @@
 
 #include <ctime> 
 #include <process.h>
+#include <string.h>
 
 #include <Bentley\BeDirectoryIterator.h>
 #include <BeXml\BeXml.h>
@@ -365,6 +366,7 @@ void TaskScheduler::Start()
 
             BeFileName name;
             bool isDir;
+            int  fileOpReturnCode = 0; 
         
             for (; SUCCESS == dirIter.GetCurrentEntry(name, isDir); dirIter.ToNext())        
                 {                                
@@ -386,7 +388,12 @@ void TaskScheduler::Start()
                                 
                     //struct _stat64i32 buffer;
 
-                    if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) continue;
+                    if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0)
+                        {
+                        fileOpReturnCode = fclose(lockFile);
+                        assert(fileOpReturnCode == 0);
+                        continue;
+                        }
                                 
                     FILE* file = nullptr;
                 
@@ -394,10 +401,17 @@ void TaskScheduler::Start()
                     errno_t err = 0;
                     file = _wfsopen(name, L"ab+", _SH_DENYRW);
                 
-                    if (file == nullptr) continue;
+                    if (file == nullptr) 
+                        {                        
+                        fileOpReturnCode = fclose(lockFile);
+                        assert(fileOpReturnCode == 0);
+                        continue;
+                        }
 
                     if (err != 0)
                         {
+                        fileOpReturnCode = fclose(lockFile);
+                        assert(fileOpReturnCode == 0);
                         assert(file == nullptr);
                         continue;
                         }
@@ -409,7 +423,10 @@ void TaskScheduler::Start()
 
                     if (startingChar == 0 || readSize == 0)
                         {
-                        fclose(file);
+                        fileOpReturnCode = fclose(file);
+                        assert(fileOpReturnCode == 0);
+                        fileOpReturnCode = fclose(lockFile);
+                        assert(fileOpReturnCode == 0);
                         continue;
                         }
 
@@ -422,11 +439,19 @@ void TaskScheduler::Start()
                         {                    
 					    }
 
-                    fclose(lockFile);
-
-                    while (0 != _wremove(lockFileName))
+                    while (0 != fclose(lockFile))
                         {
-			            sleeper.Sleep();
+                        }
+
+                    int retRemoveCode; 
+
+                    while (0 != (retRemoveCode = _wremove(lockFileName)))
+                        {
+                        retRemoveCode = retRemoveCode;
+
+                        char buffer[1024];
+                        strerror_s(buffer, 1024, errno);
+                        sleeper.Sleep();
                         }                                
                     }
 
@@ -434,27 +459,27 @@ void TaskScheduler::Start()
         
             if (!isThereTaskAvailable)
                 {
-                BeFileName testPlanFile(m_taskFolderName);
+                BeFileName taskPlanFileName(m_taskFolderName);
 
-                testPlanFile.AppendString(L"\\Tasks.xml.Plan");
+                taskPlanFileName.AppendString(L"\\Tasks.xml.Plan");
 
                 struct _stat64i32 buffer;
 
                 //No task plan, no more task to execute
-                if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) 
+                if (_wstat(taskPlanFileName.c_str(), &buffer) != 0 || buffer.st_size == 0) 
                     continue;
 
-                BeFileName testPlanLockFile(m_taskFolderName);
+                BeFileName taskPlanLockFile(m_taskFolderName);
 
-                testPlanLockFile.AppendString(L"\\Tasks.xml.Plan.lock");
+                taskPlanLockFile.AppendString(L"\\Tasks.xml.Plan.lock");
 
-                FILE* lockFile = _wfsopen(testPlanLockFile.c_str(), L"ab+", _SH_DENYRW);
+                FILE* lockFile = _wfsopen(taskPlanLockFile.c_str(), L"ab+", _SH_DENYRW);
 
                 if (lockFile == nullptr)
                     {
                     isThereTaskAvailable = true;
                     continue;
-                    }
+                    }                
 
                 BeDirectoryIterator dirIter(m_taskFolderName);
 
@@ -472,20 +497,31 @@ void TaskScheduler::Start()
                         }
                     }
 
+                //Check if the task plan still exists.
+                if (_wstat(taskPlanFileName.c_str(), &buffer) != 0 || buffer.st_size == 0) 
+                    {
+                    needExecuteTaskPlan = false;
+                    }
+
                 StatusInt status = SUCCESS;
             
                 if (needExecuteTaskPlan)
-                    {
-                    assert(!"Need to extract job info");
-                    //status = GetSourceCreatorWorker()->ExecuteNextTaskInTaskPlan();        
+                    {        
+                    status = ExecuteTaskPlanNextTask(taskPlanFileName);
                     }
 
-                fclose(lockFile);
-            
                 if (status == SUCCESS_TASK_PLAN_COMPLETE)
-                    break;           
-
-                isThereTaskAvailable = true;
+                    {
+                    while (0 != _wremove(taskPlanFileName))
+                        {                    
+                        }
+                    }
+                else
+                    {
+                    isThereTaskAvailable = true;
+                    }
+                   
+                fclose(lockFile);
                 }
 
             sleeper.Sleep();
@@ -589,6 +625,12 @@ void TaskScheduler::OutputJobStat()
                     case WorkerTaskType::GENERATE:
                         taskTypeStr.AssignOrClear(L"GENERATE");
                         break;
+                    case WorkerTaskType::TEXTURE:
+                        taskTypeStr.AssignOrClear(L"TEXTURE");
+                        break;
+                    case WorkerTaskType::CREATETEXTURE:
+                        taskTypeStr.AssignOrClear(L"CREATETEXTURE");
+                        break;
                     default : 
                         assert(!"Unknown task type");
                         break;
@@ -626,11 +668,25 @@ IScalableMeshSourceCreatorWorkerPtr TaskScheduler::GetSourceCreatorWorker(const 
 
         GetScalableMeshFileName(smFileNameAbsolutePath, smFileName);
 
+        BeDuration sleeper(BeDuration::FromSeconds(0.5));
+
+        BeFileName lockFileName(smFileNameAbsolutePath);
+        lockFileName.AppendString(L".lock");
+
+        FILE* lockFile; 
+
+        while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+            {
+            sleeper.Sleep();            
+            }    
+
         StatusInt status;
         
         m_sourceCreatorWorkerPtr = IScalableMeshSourceCreatorWorker::GetFor(smFileNameAbsolutePath.c_str(), m_nbWorkers, status);        
 
-        assert(m_sourceCreatorWorkerPtr.IsValid());            
+        assert(m_sourceCreatorWorkerPtr.IsValid());         
+
+        fclose(lockFile);
         }
 
     return m_sourceCreatorWorkerPtr;
@@ -654,7 +710,11 @@ bool TaskScheduler::ParseWorkerTaskType(BeXmlNodeP pXmlTaskNode, WorkerTaskType&
             else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"stitch"))
                 t = WorkerTaskType::STITCH;            
             else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"generate"))
-                t = WorkerTaskType::GENERATE;                        
+                t = WorkerTaskType::GENERATE;                   
+            else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"texture"))
+                t = WorkerTaskType::TEXTURE;
+            else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"createTexture"))
+                t = WorkerTaskType::CREATETEXTURE;
             else return false;
         }
         else return false;
@@ -679,6 +739,7 @@ JobProcessingStat& TaskScheduler::GetJobStat(const WString& jobName)
     }
 
 
+
 bool TaskScheduler::ProcessTask(FILE* file)
     {
     assert(file != nullptr);
@@ -699,7 +760,7 @@ bool TaskScheduler::ProcessTask(FILE* file)
 
     if (pXmlDom == 0)
         {
-        assert(false && "Invalid test plan filename");
+        assert(false && "Invalid task filename");
         return false;
         }
 
@@ -759,6 +820,12 @@ bool TaskScheduler::ProcessTask(FILE* file)
             case WorkerTaskType::GENERATE:
                 PerformGenerateTask(pXmlTaskNode/*, pResultFile*/);
                 break;                
+            case WorkerTaskType::TEXTURE:
+                PerformTextureTask(pXmlTaskNode/*, pResultFile*/);
+                break;
+            case WorkerTaskType::CREATETEXTURE:
+                PerformCreateTextureTask(pXmlTaskNode/*, pResultFile*/);
+                break;
 
             default: break;
             }
@@ -786,7 +853,62 @@ bool TaskScheduler::ProcessTask(FILE* file)
     fflush(file);
 
     return true;
+    }
+        
 
+StatusInt TaskScheduler::ExecuteTaskPlanNextTask(const BeFileName& taskPlanFileName)
+    {
+    struct _stat64i32 buffer;
+
+    //If task plan doesn't exist. 
+    if (_wstat(taskPlanFileName.c_str(), &buffer) != 0)
+        return SUCCESS_TASK_PLAN_COMPLETE;    
+
+    FILE* file = nullptr;
+
+    errno_t err = 0;
+    file = _wfsopen(taskPlanFileName.c_str(), L"ab+", _SH_DENYRW);
+                    
+    assert(file != nullptr);
+
+    fseek(file, 0, SEEK_END);
+    long size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    BeXmlStatus xmlStatus;
+    WString     errorMsg;
+
+    bvector<char> xmlFileContent(size);
+    size_t readSize = fread(&xmlFileContent[0], 1, size, file);
+    assert(readSize == size);
+    
+    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromMemory(xmlStatus, &xmlFileContent[0], xmlFileContent.size(), &errorMsg);
+
+    if (pXmlDom == 0)
+        {
+        assert(!"Invalid task plan filename");
+        return SUCCESS_TASK_PLAN_COMPLETE;
+        }
+
+    BeXmlNodeP pXmlTaskNode(pXmlDom->GetRootElement());
+    if (0 != BeStringUtilities::Stricmp(pXmlTaskNode->GetName(), "taskPlan"))
+        {
+        assert("Invalid task plan format");
+        return SUCCESS_TASK_PLAN_COMPLETE;    
+        }
+
+    WString jobName;
+    BeFileName smFileName;
+
+    ParseJobInfo(jobName, smFileName, pXmlTaskNode);
+
+    IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker(smFileName));               
+
+    fclose(file);
+
+    StatusInt status = creatorWorkerPtr->ExecuteNextTaskInTaskPlan(); 
+    
+    return status;
     }
 
 
@@ -1003,6 +1125,91 @@ void TaskScheduler::PerformGenerateTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/
 
     assert(status == SUCCESS);
     }
+
+void TaskScheduler::PerformTextureTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
+    {
+    WString    jobName;
+    BeFileName smFileName;
+
+    ParseJobInfo(jobName, smFileName, pXmlTaskNode);
+
+    IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker(smFileName));
+    StatusInt status = SUCCESS;
+    if (ParseSourceSubNodes(creatorWorkerPtr->EditSources(), pXmlTaskNode) == true)
+    {
+        status = creatorWorkerPtr->ProcessTextureTask(pXmlTaskNode);
+    }
+
+    assert(status == SUCCESS);
+    }
+
+void TaskScheduler::PerformCreateTextureTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
+{
+    WString    jobName;
+    BeFileName smFileName;
+
+    ParseJobInfo(jobName, smFileName, pXmlTaskNode);
+
+    IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker(smFileName));
+    StatusInt status = SUCCESS;
+
+    WString gcsKeyName;
+
+    auto statusRead = pXmlTaskNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
+
+    if (statusRead == BEXML_Success)
+    {
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
+        status = creatorWorkerPtr->SetBaseGCS(baseGCSPtr);
+        assert(status == SUCCESS);
+    }
+
+    bool streamFromMapBox = false;
+    bool streamFromBingMap = false;
+
+    WString streamAttr;
+    statusRead = pXmlTaskNode->GetAttributeStringValue(streamAttr, "textureStreaming");
+
+    if (statusRead == BEXML_Success)
+    {
+        if (0 == BeStringUtilities::Wcsicmp(streamAttr.c_str(), L"mapbox"))
+        {
+            streamFromMapBox = true;
+        }
+        else
+            if (0 == BeStringUtilities::Wcsicmp(streamAttr.c_str(), L"bingmap"))
+            {
+                streamFromBingMap = true;
+            }
+            else
+            {
+                //assert(!"Unknown textureStreaming value");
+            }
+    }
+
+    if (ParseSourceSubNodes(creatorWorkerPtr->EditSources(), pXmlTaskNode) == true)
+    {
+        if (streamFromBingMap)
+        {
+            Utf8String streamingRasterUrl = "http://www.bing.com/maps/Aerial";
+            ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_IMAGE,
+                WString(streamingRasterUrl.c_str(), true).c_str());
+            BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(L"EPSG:900913"));
+
+            GeoCoords::GCS gcs(GetGCSFactory().Create(baseGCSPtr));
+
+            SourceImportConfig& sourceImportConfig = sourceP->EditConfig();
+
+            sourceImportConfig.SetReplacementGCS(gcs);
+            creatorWorkerPtr->EditSources().Add(sourceP);
+
+        }
+        creatorWorkerPtr->SaveToFile();
+        status = creatorWorkerPtr->CreateTextureTasks(m_groupingSize, jobName, smFileName);
+    }
+
+    assert(status == SUCCESS);
+}
 
 
 END_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE

@@ -228,8 +228,8 @@ void ScalableMeshRDSProvider::InitializeRealityDataService(const Utf8String& ser
     // Set the error callback in RDS (will be called when errors occur)
     RealityDataService::SetErrorCallback([](Utf8String basicMessage, const RawServerResponse& rawResponse)
         {
-        SMRDSPROVIDER_LOG.errorv("%s", basicMessage);
-        SMRDSPROVIDER_LOG.errorv("RealityDataService request body: %s", rawResponse.body);
+        SMRDSPROVIDER_LOG.errorv("%s", basicMessage.c_str());
+        SMRDSPROVIDER_LOG.errorv("RealityDataService request body: %s", rawResponse.body.c_str());
         });
 
     }
@@ -277,9 +277,9 @@ void ScalableMeshRDSProvider::UpdateToken()
         // Try again after 50 minutes...
         DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(m_AzureConnection.m_tokenTimer);
         m_AzureConnection.m_tokenTimer += 1000 * 60 * 50;
-        SMRDSPROVIDER_LOG.errorv("UpdateToken() : Request URL: %s", m_AzureConnection.m_handshake->GetHttpRequestString());
+        SMRDSPROVIDER_LOG.errorv("UpdateToken() : Request URL: %s", m_AzureConnection.m_handshake->GetHttpRequestString().c_str());
         SMRDSPROVIDER_LOG.errorv("UpdateToken() : RealityDataService failed with response code [%d]", rawResponse.responseCode);
-        SMRDSPROVIDER_LOG.errorv("UpdateToken() : RealityDataService body: %s", rawResponse.body);
+        SMRDSPROVIDER_LOG.errorv("UpdateToken() : RealityDataService body: %s", rawResponse.body.c_str());
         BeAssert(!"ScalableMeshRDSProvider failed to update token");
         }
     }    
@@ -431,7 +431,7 @@ Utf8String ScalableMeshRDSProvider::GetRootDocumentName()
     if(entity == nullptr || rawResponse.status == RequestStatus::BADREQ)
         {
         SMRDSPROVIDER_LOG.errorv("GetRootDocumentName() : RealityDataService failed with response code [%d]", rawResponse.responseCode);
-        SMRDSPROVIDER_LOG.errorv("GetRootDocumentName() : RealityDataService body: %s", rawResponse.body);
+        SMRDSPROVIDER_LOG.errorv("GetRootDocumentName() : RealityDataService body: %s", rawResponse.body.c_str());
         return Utf8String();
         }
 

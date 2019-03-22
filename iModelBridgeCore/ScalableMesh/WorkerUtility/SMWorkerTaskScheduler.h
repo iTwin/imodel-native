@@ -65,6 +65,8 @@ struct TaskScheduler
 
         bool ParseWorkerTaskType(BeXmlNodeP pXmlTaskNode, WorkerTaskType& t);
 
+        StatusInt ExecuteTaskPlanNextTask(const BeFileName& taskPlanFileName);
+                
         bool ProcessTask(FILE* file);
 
         void PerformCutTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
@@ -78,6 +80,10 @@ struct TaskScheduler
         void PerformStitchTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
 
         void PerformGenerateTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
+
+        void PerformTextureTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
+
+        void PerformCreateTextureTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
         
     
     public:

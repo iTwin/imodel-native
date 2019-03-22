@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -25,6 +25,7 @@
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh/IScalableMeshTextureGenerator.h>
 #include <ScalableMesh/ScalableMeshLib.h>
+#include <ScalableMesh/IScalableMeshPolicy.h>
 
 #include "..\GeoCoords\ReprojectionUtils.h"
 
@@ -116,6 +117,16 @@ StatusInt IScalableMeshGroundExtractor::SetExtractionArea(const bvector<DPoint3d
     {
     return _SetExtractionArea(area);
     }  
+
+StatusInt IScalableMeshGroundExtractor::SetDataSourceDir(const BeFileName& dataSourceDir) 
+    {
+    return _SetDataSourceDir(dataSourceDir);
+    }  
+
+StatusInt IScalableMeshGroundExtractor::SetReprojectElevation(bool doReproject) 
+    {
+    return _SetReprojectElevation(doReproject);
+    }
 
 StatusInt IScalableMeshGroundExtractor::SetLimitTextureResolution(bool limitTextureResolution)
 {
@@ -276,6 +287,7 @@ ScalableMeshGroundExtractor::ScalableMeshGroundExtractor(const WString& smTerrai
     m_scalableMesh = scalableMesh;
     m_smTerrainPath = smTerrainPath;
 	m_limitTextureResolution = false;
+    m_reprojectElevation = false;    
 
     const GeoCoords::GCS& gcs(m_scalableMesh->GetGCS());    
     m_smGcsRatioToMeter = m_scalableMesh->IsCesium3DTiles() ? 1.0 : gcs.GetUnit().GetRatioToBase();
@@ -436,7 +448,7 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
     
     if (m_groundPreviewer.IsValid())
         m_groundPreviewer->UpdateProgress(&m_createProgress);
-
+                                               
     if (m_destinationGcs.IsValid())
         {
         status = terrainCreator->SetBaseGCS(m_destinationGcs) == SUCCESS ? SMStatus::S_SUCCESS : SMStatus::S_ERROR;
@@ -447,16 +459,36 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
 
     assert(status == SMStatus::S_SUCCESS);
 
+    BaseGCSCPtr destinationGcsPtr(terrainCreator->GetBaseGCS());
+    const GCS& gcs(terrainCreator->GetGCS());
+        
     BeFileName xyzFile(GetTempXyzFilePath());
+    BeFileName xyzSourceFile(xyzFile); 
 
-    IDTMLocalFileSourcePtr groundPtsSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_POINT, xyzFile.c_str()));
+    if (!m_dataSourceDir.empty())
+        {
+        assert(BeFileName::DoesPathExist(m_dataSourceDir.c_str()));
+        BeFileName newXyzFileName(m_dataSourceDir); 
+        newXyzFileName.AppendString(BeFileName::GetFileNameAndExtension(xyzFile.c_str()).c_str());
+                    
+        BeFileNameStatus statusCopy = BeFileName::BeCopyFile(xyzFile.c_str(), newXyzFileName.c_str());
+        assert(statusCopy == BeFileNameStatus::Success);
+
+        xyzSourceFile = newXyzFileName;
+        }
+
+    IDTMLocalFileSourcePtr groundPtsSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_POINT, xyzSourceFile.c_str()));
+     
     SourceImportConfig& sourceImportConfig = groundPtsSource->EditConfig();
     Import::ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
 
     data.SetRepresenting3dData(false);
 
     sourceImportConfig.SetReplacementSMData(data);
-    terrainCreator->EditSources().Add(groundPtsSource);
+    sourceImportConfig.SetReplacementGCS(gcs, true, false, false);
+     
+
+    terrainCreator->EditSources().Add(groundPtsSource);    
 
     //Add texture if any        
     BeFileName currentTextureDir(coverageTempDataFolder);
@@ -501,7 +533,21 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
                 0 == BeFileName::GetExtension(currentTextureName.c_str()).CompareToI(L"itiff64"))
 #endif
                 {
+                if (!m_dataSourceDir.empty())
+                    {
+                    assert(BeFileName::DoesPathExist(m_dataSourceDir.c_str()));
+                    BeFileName newTextureName(directory); 
+                    newTextureName.AppendString(BeFileName::GetFileNameAndExtension(currentTextureName.c_str()).c_str());
+                    
+                    BeFileNameStatus statusCopy = BeFileName::BeCopyFile(currentTextureName.c_str(), newTextureName.c_str());
+                    assert(statusCopy == BeFileNameStatus::Success);
+
+                    currentTextureName = newTextureName;                
+                    }
+
                 IDTMLocalFileSourcePtr textureSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_IMAGE, currentTextureName.c_str()));            
+                textureSource->EditConfig().SetReplacementGCS(gcs, true, false, false);
+                
                 terrainCreator->EditSources().Add(textureSource);                       
                 }        
 
@@ -527,8 +573,22 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
     if (BeFileName::DoesPathExist(coverageBreaklineFile.c_str()))
 #endif     
         {        
+        if (!m_dataSourceDir.empty())
+            {
+            assert(BeFileName::DoesPathExist(m_dataSourceDir.c_str()));
+            BeFileName newCoverageBreaklineFileName(m_dataSourceDir); 
+            newCoverageBreaklineFileName.AppendString(BeFileName::GetFileNameAndExtension(coverageBreaklineFile.c_str()).c_str());
+                    
+            BeFileNameStatus statusCopy = BeFileName::BeCopyFile(coverageBreaklineFile.c_str(), newCoverageBreaklineFileName.c_str());
+            assert(statusCopy == BeFileNameStatus::Success);
+
+            coverageBreaklineFile = newCoverageBreaklineFileName;                
+            }
+
         IDTMLocalFileSourcePtr coverageBreaklineSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_BREAKLINE, coverageBreaklineFile.c_str()));
-        terrainCreator->EditSources().Add(coverageBreaklineSource);                               
+        coverageBreaklineSource->EditConfig().SetReplacementGCS(gcs, true, false, false);
+        
+        terrainCreator->EditSources().Add(coverageBreaklineSource); 
         }
 
     if (m_groundPreviewer.IsValid())
@@ -614,6 +674,12 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
         if (!m_scalableMesh->GetGCS().IsNull() && m_destinationGcs.IsValid() && !m_scalableMesh->IsCesium3DTiles())
             {
             sourceGcs = BaseGCS::CreateGCS(*m_scalableMesh->GetGCS().GetGeoRef().GetBasePtr());
+
+            if (m_reprojectElevation)
+                {
+                sourceGcs->SetReprojectElevation(true);
+                m_destinationGcs->SetReprojectElevation(true);
+                }
             }
             
         for (int ptInd = 0; ptInd < dtmPtr->GetPointCount(); ptInd++)
@@ -715,6 +781,12 @@ SMStatus ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverag
         {
         BaseGCSPtr sourceGcs(BaseGCS::CreateGCS(*m_scalableMesh->GetGCS().GetGeoRef().GetBasePtr()));
 
+        if (m_reprojectElevation)
+            {
+            sourceGcs->SetReprojectElevation(true);
+            }
+        
+
         auto coordInterp = m_scalableMesh->IsCesium3DTiles() ? GeoCoordInterpretation::XYZ : GeoCoordInterpretation::Cartesian;
 
         smPtsProviderCreator = ScalableMeshPointsProviderCreator::Create(m_scalableMesh, sourceGcs, m_destinationGcs, coordInterp);
@@ -748,6 +820,11 @@ SMStatus ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverag
         auto coordInterp = m_scalableMesh->IsCesium3DTiles() ? GeoCoordInterpretation::XYZ : GeoCoordInterpretation::Cartesian;
 
         BaseGCSPtr sourceGcs(BaseGCS::CreateGCS(*m_scalableMesh->GetGCS().GetGeoRef().GetBasePtr()));
+
+        if (m_reprojectElevation)
+            {
+            sourceGcs->SetReprojectElevation(true);
+            }
         
         ((ScalableMeshPointsAccumulator*)accumPtr.get())->SetReprojGCS(coordInterp, sourceGcs, m_destinationGcs);
         }
@@ -881,6 +958,24 @@ StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d
 */
         }
 
+    return SUCCESS;
+    }
+
+StatusInt ScalableMeshGroundExtractor::_SetDataSourceDir(const BeFileName& dataSourceDir) 
+    {
+    if (!BeFileName::DoesPathExist(dataSourceDir.c_str()))
+        {
+        BeFileNameStatus dirCreateStatus = BeFileName::CreateNewDirectory(dataSourceDir.c_str());
+        assert(BeFileNameStatus::Success == dirCreateStatus);
+        }            
+
+    m_dataSourceDir = dataSourceDir;    
+    return SUCCESS;
+    }  
+
+StatusInt ScalableMeshGroundExtractor::_SetReprojectElevation(bool doReproject)
+    {
+    m_reprojectElevation = doReproject;
     return SUCCESS;
     }
 
