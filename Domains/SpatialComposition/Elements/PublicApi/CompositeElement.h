@@ -13,7 +13,7 @@ struct CompositeElement : Dgn::SpatialLocationElement
 
         void SetFootprintArea(const double area) { dynamic_cast<Dgn::DgnElementP>(this)->SetPropertyValue(prop_FootprintArea(), area); }
 
-        virtual SPATIALCOMPOSITION_EXPORT void CalculateProperties () {};
+        virtual SPATIALCOMPOSITION_EXPORT void CalculateProperties ();
         virtual SPATIALCOMPOSITION_EXPORT Dgn::DgnDbStatus _LoadFromDb ();
         virtual SPATIALCOMPOSITION_EXPORT void _CopyFrom (Dgn::DgnElementCR source) override;
         virtual SPATIALCOMPOSITION_EXPORT Dgn::DgnDbStatus _OnInsert () override;

@@ -1,4 +1,8 @@
 #include <SpatialComposition/Elements/SpatialCompositionElementsApi.h>
+#include <BuildingShared/BuildingSharedApi.h>
+
+
+USING_NAMESPACE_BUILDING_SHARED
 
 BEGIN_SPATIALCOMPOSITION_NAMESPACE
 
@@ -197,6 +201,29 @@ Dgn::DgnDbStatus CompositeElement::_OnDelete() const
 double CompositeElement::GetFootprintArea() const
     {
     return dynamic_cast<Dgn::DgnElementCP>(this)->GetPropertyValueDouble(prop_FootprintArea());
+    }
+    
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void            CompositeElement::CalculateProperties
+(
+)
+    {
+    CurveVectorPtr curveVec = DgnGeometryUtils::GetBaseShape(*this);
+    if (!curveVec.IsValid ())
+        {
+        SetFootprintArea (0.0);
+        return;
+        }
+
+    double area;
+    DVec3d normal;
+    DPoint3d centroid;
+    curveVec->CentroidNormalArea (centroid, normal, area);
+
+    SetFootprintArea(area);
     }
 
 /*---------------------------------------------------------------------------------**//**
