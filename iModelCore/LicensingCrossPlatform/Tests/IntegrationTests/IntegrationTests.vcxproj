@@ -45,10 +45,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ClientIntegrationTests.cpp" />
+    <ClCompile Include="DummyPolicyHelper.cpp" />
     <ClCompile Include="TestsHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClientIntegrationTests.h" />
+    <ClInclude Include="DummyPolicyHelper.h" />
     <ClInclude Include="TestsHelper.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

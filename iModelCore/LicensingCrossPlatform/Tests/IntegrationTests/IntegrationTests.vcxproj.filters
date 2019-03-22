@@ -3,9 +3,11 @@
   <ItemGroup>
     <ClCompile Include="ClientIntegrationTests.cpp" />
     <ClCompile Include="TestsHelper.cpp" />
+    <ClCompile Include="DummyPolicyHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClientIntegrationTests.h" />
     <ClInclude Include="TestsHelper.h" />
+    <ClInclude Include="DummyPolicyHelper.h" />
   </ItemGroup>
 </Project>

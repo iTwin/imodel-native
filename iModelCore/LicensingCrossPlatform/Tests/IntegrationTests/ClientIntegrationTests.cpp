@@ -6,8 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "TestsHelper.h"
 #include "ClientIntegrationTests.h"
+#include "TestsHelper.h"
+#include "../UnitTests/DummyPolicyHelper.h" // TODO: copy this to Integration tests project?
 
 #include <Licensing/Utils/DateHelper.h>
 #include "../../Licensing/LicensingDb.h"
@@ -279,25 +280,192 @@ SaasClientImplPtr ClientIntegrationTests::CreateTestSaasClientImpl(int productId
         );
     }
 
-TEST_F(ClientIntegrationTests, StartApplication_StopApplication_Success)
-    {
-    auto client = CreateTestClient(true, TEST_PRODUCT_ID);
-    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
-    EXPECT_SUCCESS(client->StopApplication());
-    }
-
-// Need to fix this to have mock return a valid policy (or reevaluate the logic here...)
 TEST_F(ClientIntegrationTests, DISABLED_Equality_Test)
     {
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
     ASSERT_EQ((int)1, (int)1); // Mock policy should result in NotEntitled
     }
 
-TEST_F(ClientIntegrationTests, AccessKeyClientStartApplicationStopApplication_Success)
+// Tests using the Clients' Create methods
+TEST_F(ClientIntegrationTests, FactoryStartStopApplication_Success)
+    {
+    auto client = CreateTestClient(true, TEST_PRODUCT_ID);
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, AccessKeyFactoryStartStopApplication_Success)
     {
     auto client = CreateTestAccessKeyClient(TEST_PRODUCT_ID, TEST_VALID_ACCESSKEY);
-    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
     EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, SaasFactoryTrackUsage_Success)
+    {
+    auto client = CreateTestSaasClient(std::atoi(TEST_PRODUCT_ID));
+
+    //Utf8String tokenstring = "5e1518a2d48671ce2c75d76b35b6324329ad61b0c6570dfa8781a016177e7ec4";
+    Utf8String tokenString = "0cd2c3d2b0b813ce8c8e1b297f173f9e42f775ca32a2ee32a27b0a55daff1db9";
+    auto version = BeVersion(1, 0);
+    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
+
+    EXPECT_NE(static_cast<int>(client->TrackUsage(tokenString, version, projectId).get()), static_cast<int>(LicenseStatus::Error));
+    }
+
+// Tests using the Clients' implementation
+TEST_F(ClientIntegrationTests, StartStopApplication_Success)
+    {
+    auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, MarkFeature_Success)
+    {
+    auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+
+    // need to add valid policy to the DB for MarkFeature to succeed
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
+
+    FeatureUserDataMapPtr featureData = std::make_shared<FeatureUserDataMap>();
+
+    featureData->AddAttribute("Manufacturer", "Bentley Systems, Inc.");
+    featureData->AddAttribute("Website", "https://www.w3schools.com");
+    featureData->AddAttribute("Title", "Mobile App");
+
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+
+    client->AddPolicyToDb(Policy::Create(jsonPolicyValid));
+
+    EXPECT_EQ(static_cast<int>(client->MarkFeature("TestFeatureId", featureData)), static_cast<int>(BentleyStatus::SUCCESS));
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, GetLicenseStatusValidTrialPolicy_Test)
+    {
+    auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+
+    // need to add valid policy to the DB for MarkFeature to succeed
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto jsonPolicyValidTrial = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, true);
+
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+
+    client->AddPolicyToDb(Policy::Create(jsonPolicyValidTrial));
+
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Trial));
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, GetLicenseStatusValidExpiredTrialPolicy_Test)
+    {
+    auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+
+    // need to add valid policy to the DB for MarkFeature to succeed
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto jsonPolicyValidTrialExpired = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(-1), userId, std::atoi(TEST_PRODUCT_ID), "", 1, true);
+
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+
+    client->AddPolicyToDb(Policy::Create(jsonPolicyValidTrialExpired));
+
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Expired));
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, GetLicenseStatusValidPolicyWithGracePeriod_Test)
+    {
+    auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+
+    // need to add valid policy to the DB for MarkFeature to succeed
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
+
+    auto timestamp = DateHelper::GetCurrentTime();
+    auto timestampPast = DateHelper::AddDaysToCurrentTime(-14); // Two weeks ago; default offline period allowed is only 1 week
+
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+
+    client->AddPolicyToDb(Policy::Create(jsonPolicyValid));
+
+    client->GetLicensingDb().SetOfflineGracePeriodStart(timestamp);
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Offline)); // Valid status should be Offline now
+    client->GetLicensingDb().ResetOfflineGracePeriod();
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok)); // Should be back to Ok
+    client->GetLicensingDb().SetOfflineGracePeriodStart(timestampPast);
+    EXPECT_EQ(client->GetLicensingDb().GetOfflineGracePeriodStart(), timestampPast);
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Expired)); // Valid status should be Expired now, since offline grace period has expired
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, GetLicenseStatusOfflineNotAllowedPolicy_Test)
+    {
+    auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+
+    // need to add valid policy to the DB for MarkFeature to succeed
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto jsonPolicyOfflineNotAllowed = DummyPolicyHelper::CreatePolicyOfflineNotAllowed(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
+
+    auto timestamp = DateHelper::GetCurrentTime();
+
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+
+    client->AddPolicyToDb(Policy::Create(jsonPolicyOfflineNotAllowed));
+
+    client->GetLicensingDb().SetOfflineGracePeriodStart(timestamp);
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::DisabledByPolicy)); // Grace Period started; should be disabled
+    client->GetLicensingDb().ResetOfflineGracePeriod();
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok)); // Should be back to Ok
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+// TODO: heartbeat tests, different LicenseStatus situations
+
+TEST_F(ClientIntegrationTests, AccessKeyStartStopApplication_Success)
+    {
+    auto client = CreateTestAccessKeyClientImpl(TEST_PRODUCT_ID, TEST_VALID_ACCESSKEY);
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, AccessKeyMarkFeature_Success)
+    {
+    auto client = CreateTestAccessKeyClientImpl("1000"); // TEST_VALID_ACCESSKEY is entitled to microstation (1000)
+
+    FeatureUserDataMapPtr featureData = std::make_shared<FeatureUserDataMap>();
+
+    featureData->AddAttribute("Manufacturer", "Bentley Systems, Inc.");
+    featureData->AddAttribute("Website", "https://www.w3schools.com");
+    featureData->AddAttribute("Title", "Mobile App");
+
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    EXPECT_EQ(static_cast<int>(client->MarkFeature("TestFeatureId", featureData)), static_cast<int>(BentleyStatus::SUCCESS));
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, AccessKeyGetLicenseStatusValidPolicy_Success)
+    {
+    auto client = CreateTestAccessKeyClientImpl("1000"); // TEST_VALID_ACCESSKEY is entitled to microstation (1000)
+
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok));
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+// TODO: heartbeat tests, different LicenseStatus situations
+
+TEST_F(ClientIntegrationTests, SaasTrackUsage_Success)
+    {
+    auto client = CreateTestSaasClientImpl(std::atoi(TEST_PRODUCT_ID));
+
+    Utf8String tokenString = "0cd2c3d2b0b813ce8c8e1b297f173f9e42f775ca32a2ee32a27b0a55daff1db9";
+    auto version = BeVersion(1, 0);
+    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
+
+    EXPECT_NE(static_cast<int>(client->TrackUsage(tokenString, version, projectId).get()), static_cast<int>(LicenseStatus::Error));
     }
 
 //TEST_F(ClientIntegrationTests, AccessKeyClientTestPolicyHeartbeat_Test)
@@ -321,33 +489,4 @@ TEST_F(ClientIntegrationTests, AccessKeyClientStartApplicationStopApplication_Su
 //    std::this_thread::sleep_for(std::chrono::seconds(10));
 //
 //    EXPECT_EQ(1, 0);
-//    }
-
-
-// Below are "start from factory tests", some might be redundant since the client is already made from the factory here
-
-//TEST_F(ClientTests, StartApplicationFromFactory_Success)
-//    {
-//    // Note: cannot use mocks with the factory-created clients
-//    auto client = CreateTestClientFromFactory(true);
-//    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
-//    client->StopApplication();
-//    }
-//
-//TEST_F(ClientTests, DISABLED_TrackUsage_FreeApplicationFromFactory_Success)
-//    {
-//    // Note: cannot use mocks with the factory-created clients
-//    auto client = CreateFreeTestClientFromFactory(true);
-//    Utf8String tokenstring = "0cd2c3d2b0b813ce8c8e1b297f173f9e42f775ca32a2ee32a27b0a55daff1db9";
-//    auto version = BeVersion(1, 0);
-//    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
-//    EXPECT_SUCCESS(client->TrackUsage(tokenstring, version, projectId).get());
-//    }
-//
-//TEST_F(ClientTests, StartWithKeyApplicationFromFactory_Success)
-//    {
-//    // Note: cannot use mocks with the factory-created clients
-//    auto client = CreateWithKeyTestClientFromFactory(true);
-//    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
-//    client->StopApplication();
 //    }
