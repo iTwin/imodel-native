@@ -624,6 +624,14 @@ void iModelBridgeFwk::SetIModelClientForBridgesForTesting(IModelClientForBridges
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::ClearIModelClientForBridgesForTesting()
+    {
+    s_clientForTesting = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
     {
     if (nullptr == DgnPlatformLib::QueryHost())

@@ -90,64 +90,6 @@ struct BeGTestHost : RefCounted<BeTest::Host>
     static RefCountedPtr<BeGTestHost> Create (char const* progDir) {return new BeGTestHost (progDir);}
     };
 
-static wchar_t const* s_configFileName = L"MstnBridgeTests.logging.config.xml";
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus getEnv (BeFileName& fn, WCharCP envname)
-    {
-    wchar_t filepath[MAX_PATH];
-    if ((0 == GetEnvironmentVariableW (envname, filepath, MAX_PATH)))
-        return ERROR;
-    fn.SetName (filepath);
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus getLogConfigurationFilename (BeFileName& configFile, char const* argv0)
-    {
-    if (SUCCESS == getEnv (configFile, L"BEGTEST_LOGGING_CONFIG"))
-        {
-        if (BeFileName::DoesPathExist (configFile))
-            {
-            wprintf (L"BeGTest configuring logging with %s (Set by BEGTEST_LOGGING_CONFIG environment variable.)\n", configFile.GetName());
-            return SUCCESS;
-            }
-        }
-
-    configFile = BeFileName (BeFileName::DevAndDir, WString(argv0,true).c_str());
-    configFile.AppendToPath (s_configFileName);
-    configFile.BeGetFullPathName ();
-    if (BeFileName::DoesPathExist (configFile))
-        {
-        wprintf (L"BeGTest configuring logging using %s. Override by setting BEGTEST_LOGGING_CONFIG in environment.\n", configFile.GetName());
-        return SUCCESS;
-        }
-
-    return ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void initLogging (char const* argv0)
-    {
-    BeFileName configFile;
-    if (SUCCESS == getLogConfigurationFilename(configFile, argv0))
-        {
-        NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_CONFIG_FILE, configFile);
-        NativeLogging::LoggingConfig::ActivateProvider (NativeLogging::LOG4CXX_LOGGING_PROVIDER);
-        }
-    else
-        {
-        wprintf (L"Logging.config.xml not found. BeGTest configuring default logging using console provider.\n");
-        NativeLogging::LoggingConfig::ActivateProvider (NativeLogging::CONSOLE_LOGGING_PROVIDER);
-        NativeLogging::LoggingConfig::SetSeverity (L"Performance", NativeLogging::LOG_TRACE);
-        }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * This is the TestListener that can act on certain events
@@ -300,7 +242,8 @@ extern "C" int main (int argc, char **argv)
     ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
     listeners.Append(new BeGTestListener);
 
-    initLogging (argv[0]);
+     // Don't initialize a log provider. The tests do that, so that they can monitor and analyze log messages
+
 
     auto hostPtr = BeGTestHost::Create(argv[0]);
     
