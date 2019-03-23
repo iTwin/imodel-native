@@ -81,6 +81,7 @@
     </Part>
 
     <Product Name="MstnBridgeTests">
+        <SubProduct ProductName="iModelBridgeFwk" Repository="imodel02" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
         <SubPart PartName="MstnBridgeTestsExe"/>
         <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>

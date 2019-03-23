@@ -76,7 +76,7 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
 
         virtual bool _SupplyAuthHeaderValue(Utf8StringR value, Utf8StringCR scope) const { return false; }
 
-        virtual uint32_t _SupplyRegionID() const { return 0; }
+        virtual uint32_t _SupplyRegionID() const { return uint32_t(-1); }
 
         virtual ProxyInfo _GetProxyInfo() const { return ProxyInfo(); }
 

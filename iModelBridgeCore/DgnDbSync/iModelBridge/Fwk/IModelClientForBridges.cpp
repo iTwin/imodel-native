@@ -10,6 +10,7 @@
 #include <WebServices/iModelHub/Client/Client.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/Configuration/UrlProvider.h>
+#include <Bentley/Base64Utilities.h >
 
 #include "OidcSignInManager.h"
 USING_NAMESPACE_BENTLEY_DGN
@@ -57,6 +58,8 @@ void IModelBankClient::SetUrlAndAccessToken(iModelBridgeFwk::IModelBankArgs cons
     {
     ClientHelper::GetInstance()->SetUrl(args.m_url);
     m_client = ClientHelper::GetInstance()->SignInWithStaticHeader(args.m_accessToken);
+    auto atok = Base64Utilities::Decode(args.m_accessToken);
+    GetLogger().infov("IModelBankClient accessToken=%s", atok.c_str());
     ClientHelper::GetInstance()->SetUrl("");
     }
 

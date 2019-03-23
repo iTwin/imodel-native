@@ -6,7 +6,7 @@
 |       $Date: 2015/10/29 15:38:13 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -46,9 +46,9 @@ class LightThreadPool
 
 
 bool TryReserveNodes(std::map<void*, std::shared_ptr<std::atomic<unsigned int>>>& map, void** reservedNodes, size_t nNodesToReserve, unsigned int id);
-void SetThreadAvailableAsync(size_t threadId);
-void RunOnNextAvailableThread(std::function<void(size_t threadId)> lambda);
-void WaitForThreadStop(IScalableMeshProgress* p =nullptr);
+BENTLEY_SM_EXPORT void SetThreadAvailableAsync(size_t threadId);
+BENTLEY_SM_EXPORT void RunOnNextAvailableThread(std::function<void(size_t threadId)> lambda);
+BENTLEY_SM_EXPORT void WaitForThreadStop(IScalableMeshProgress* p =nullptr);
 
 
 struct WorkerThreadPool;

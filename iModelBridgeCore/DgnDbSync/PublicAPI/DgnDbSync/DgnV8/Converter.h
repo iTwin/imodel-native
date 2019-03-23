@@ -1855,6 +1855,7 @@ public:
                                             BentleyApi::BeFileNameCR v8DllsRelativeDir, BentleyApi::BeFileNameCP realdwgAbsoluteDir, 
                                             bool isPowerPlatformBased, int argc, WCharCP argv[],
                                             BentleyApi::Dgn::IDmsSupport*);
+    DGNDBSYNC_EXPORT static void Terminate(iModelBridge::Params const&);
     static BentleyStatus InitializeDwgHost (BentleyApi::BeFileNameCR v8dir, BentleyApi::BeFileNameCR realdwgDir);
     static BentleyStatus InitializeDwgSettings (Converter* v8converter);
     static void InitV8ForeignFileTypes (Converter* v8converter);

@@ -1,23 +1,27 @@
 {
-  "loggerConfig": {
-    "defaultLevel": "Info",
-    "categoryLevels": [
-      {
-        "category": "iModelBank",
-        "logLevel": "Trace"
-      },
-      {
-        "category": "BeSQLite",
-        "logLevel": "Error"
-      },
-      {
-        "category": "ULAS",
-        "logLevel": "Error"
-      }
-    ]
-  },
-  "seq": {
-    "hostURL": "http://localhost",
-    "port": "5341"
-  }
+    "loggerConfig": {
+        "defaultLevel": "Info",
+        "categoryLevels": [
+            {
+                "category": "iModelBank",
+                "logLevel": "Trace"
+            },
+            {
+                "category": "iModelBank.Permission",
+                "logLevel": "Trace"
+            },
+            {
+                "category": "BeSQLite",
+                "logLevel": "Error"
+            },
+            {
+                "category": "ULAS",
+                "logLevel": "Error"
+            }
+        ]
+    },
+    "seq": {
+        "hostURL": "http://localhost",
+        "port": "5341"
+    }
 }

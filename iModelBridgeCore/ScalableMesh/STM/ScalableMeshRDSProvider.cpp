@@ -299,7 +299,7 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
 
 #ifndef DGNDB06_API
     uint32_t connectRegion = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyRegionID();
-    if(connectRegion > 0)
+    if(connectRegion != uint32_t(-1))
         {
         Utf8String buddiUrl((DEFAULT_BUDDI_RDS_URL + std::to_string(connectRegion)).c_str());
         BENTLEY_HTTP_NAMESPACE_NAME::HttpClient client;
