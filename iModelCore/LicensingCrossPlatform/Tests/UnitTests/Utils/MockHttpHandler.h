@@ -67,6 +67,8 @@ struct MockHttpHandler : public IHttpHandler
         MockHttpHandler& ForAnyRequest(Http::ResponseCR response);
 
         static Http::Response StubHttpResponse();
+        static Http::Response StubHttpResponse(Utf8StringCR body);
+        static Http::Response StubHttpFailureResponse();
     };
 
 END_BENTLEY_LICENSING_UNIT_TESTS_NAMESPACE

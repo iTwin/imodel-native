@@ -6,17 +6,23 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "TestsHelper.h"
 #include "ClientIntegrationTests.h"
+#include "TestsHelper.h"
+#include "../UnitTests/DummyPolicyHelper.h" // TODO: copy this to Integration tests project?
 
-#include <Licensing/Client.h>
-#include <Licensing/SaasClient.h>
 #include <Licensing/Utils/DateHelper.h>
-#include "../../Licensing/ClientImpl.h"
-#include "../../Licensing/SaasClientImpl.h"
-#include "../../Licensing/ClientWithKeyImpl.h"
 #include "../../Licensing/LicensingDb.h"
 #include "../../PublicAPI/Licensing/Utils/SCVWritter.h"
+
+#include "../../Licensing/Providers/IAuthHandlerProvider.h"
+#include "../../Licensing/Providers/IBuddiProvider.h"
+#include "../../Licensing/Providers/IPolicyProvider.h"
+#include "../../Licensing/Providers/IUlasProvider.h"
+
+#include "../../Licensing/Providers/AuthHandlerProvider.h"
+#include "../../Licensing/Providers/BuddiProvider.h"
+#include "../../Licensing/Providers/PolicyProvider.h"
+#include "../../Licensing/Providers/UlasProvider.h"
 
 #include <BeHttp/HttpClient.h>
 #include <BeHttp/ProxyHttpHandler.h>
@@ -28,13 +34,8 @@
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 
-using ::testing::AtLeast;
-using ::testing::Return;
-using ::testing::ByMove;
-using ::testing::A;
-using ::testing::_;
-
-#define TEST_PRODUCT_ID     "2545"
+#define TEST_PRODUCT_ID      "2545"
+#define TEST_VALID_ACCESSKEY "3469AD8D095A53F3CBC9A905A8FF8926"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 USING_NAMESPACE_BENTLEY_LICENSING_INTEGRATION_TESTS
@@ -83,133 +84,83 @@ public:
         }
     };
 
- BeFileName GetLicensingDbPathIntegration()
-     {
-     BeFileName path;
-     BeTest::GetHost().GetTempDir(path);
-     path.AppendToPath(L"License.db");
+BeFileName GetLicensingDbPathIntegration()
+    {
+    BeFileName path;
+    BeTest::GetHost().GetTempDir(path);
+    path.AppendToPath(L"License.db");
 
-     return path;
-     }
+    return path;
+    }
 
- ClientPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
- {
-	 InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-	 UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ClientIntegrationTests::ClientIntegrationTests() {}
 
-	 auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClientIntegrationTests::TearDown() {}
 
-	 auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-	 auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
-	 if (signIn)
-	 {
-		 Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
-		 if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
-			 return nullptr;
-	 }
-	 BeFileName dbPath = GetLicensingDbPathIntegration();
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClientIntegrationTests::SetUpTestCase()
+    {
+    // This is only an example of how to set logging severity and see info logs. Usually should be set more globally than in TestCase SetUp
+    // NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
 
-	 return std::shared_ptr<Client>(Client::Create(manager->GetUserInfo(),
-		 clientInfo,
-		 manager,
-		 dbPath,
-		 true,
-		 "",
-		 "",
-		 proxy));
- }
+    BeFileName asssetsDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(asssetsDir);
+    HttpClient::Initialize(asssetsDir);
 
- ClientPtr CreateTestClient(bool signIn)
-     {
-	 return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
-     }
+    BeFileName tmpDir;
+    BeTest::GetHost().GetTempDir(tmpDir);
+    BeSQLiteLib::Initialize(tmpDir);
 
-// SaasClientImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider)
-//     {
-//     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-//     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
-//     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    BeFileName path;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(path);
+    path.AppendToPath(L"TestAssets/sqlang/DgnClientFx_en.sqlang.db3");
 
-//     return std::make_shared<SaasClientImpl>(
-//         "",
-//         proxy,
-//         buddiProvider);
-//     }
+    ASSERT_EQ(SUCCESS, L10N::Initialize(BeSQLite::L10N::SqlangFiles(path)));
+    }
 
-// ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId, IBuddiProviderPtr buddiProvider, IUlasProviderPtr ulasProvider)
-//     {
-//     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-//     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
+ClientPtr ClientIntegrationTests::CreateTestClient(bool signIn, Utf8StringCR productId) const
+    {
+    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
 
-//     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
-//     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
+    if (signIn)
+        {
+        Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
+        if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
+            return nullptr;
+        }
+    BeFileName dbPath = GetLicensingDbPathIntegration();
 
+    return Client::Create
+        (
+        manager->GetUserInfo(),
+        clientInfo,
+        manager,
+        dbPath,
+        true,
+        "",
+        "",
+        proxy
+        );
+    }
 
-//     auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
-
-//     BeFileName dbPath = GetLicensingDbPath();
-
-//     Utf8String accesskey = "somekey";
-
-//     return std::make_shared<ClientWithKeyImpl>(
-//         accesskey,
-//         clientInfo,
-//         dbPath,
-//         true,
-//         buddiProvider,
-//         ulasProvider,
-//         "",
-//         "",
-//         proxy);
-//     }
-
-// // Note: cannot use BuddiProvider mocks with clients created with the factory
-// ClientPtr CreateTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
-//     {
-//     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-//     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
-
-//     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
-
-//     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-//     auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
-//     if (signIn)
-//     {
-//         Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
-//         if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
-//             return nullptr;
-//     }
-//     BeFileName dbPath = GetLicensingDbPath();
-
-//     return Client::Create(
-//         manager->GetUserInfo(),
-//         clientInfo,
-//         manager,
-//         dbPath,
-//         true,
-//         "",
-//         "",
-//         proxy);
-//     }
-
-// SaasClientPtr CreateFreeTestClientFromFactory(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
-//     {
-//     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-//     UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
-
-//     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-//     return SaasClient::Create(
-//         "",
-//         proxy);
-//     }
-
- ClientPtr CreateWithKeyTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+AccessKeyClientPtr ClientIntegrationTests::CreateTestAccessKeyClient(Utf8StringCR productId, Utf8StringCR accessKey) const
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     //RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
-    UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
 
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
@@ -217,178 +168,307 @@ public:
 
     BeFileName dbPath = GetLicensingDbPathIntegration();
 
-    Utf8String accesskey = "3469AD8D095A53F3CBC9A905A8FF8926"; // valid accessKey
-
-    return Client::CreateWithKey(
-        accesskey,
+    return AccessKeyClient::Create
+        (
+        accessKey,
         clientInfo,
         dbPath,
         true,
         "",
         "",
-        proxy);
+        proxy
+        );
     }
 
-// ClientImplPtr CreateTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider)
-//     {
-//     return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, policyProvider, ulasProvider);
-//     }
-
-// ClientPtr CreateTestClientFromFactory(bool signIn)
-//     {
-//     return CreateTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
-//     }
-
-// SaasClientImplPtr CreateFreeTestClient(bool signIn, IBuddiProviderPtr buddiProvider)
-//     {
-//     return CreateFreeTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider);
-//     }
-
- //SaasClientPtr CreateFreeTestClientFromFactory(bool signIn)
- //    {
- //    return CreateFreeTestClientFromFactory(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
- //    }
-
-// ClientWithKeyImplPtr CreateWithKeyTestClient(bool signIn, IBuddiProviderPtr buddiProvider, IUlasProviderPtr ulasProvider)
-//     {
-//     return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID, buddiProvider, ulasProvider);
-//     }
-
-ClientPtr CreateWithKeyTestClient(bool signIn)
+SaasClientPtr ClientIntegrationTests::CreateTestSaasClient(int productId) const
     {
-    //return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
-    return CreateWithKeyTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, "1000");
+    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
+
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    return SaasClient::Create
+        (
+        productId,
+        "",
+        proxy
+        );
     }
 
- ///*--------------------------------------------------------------------------------------+
- //* @bsimethod
- //+---------------+---------------+---------------+---------------+---------------+------*/
- //ClientIntegrationTests::ClientIntegrationTests() :
- //    m_handler(std::make_shared<IHttpHandler>()),
- //    m_buddiProvider(std::make_shared<IBuddiProvider>()),
- //    m_policyProvider(std::make_shared<IPolicyProvider>()),
- //    m_ulasProvider(std::make_shared<IUlasProvider>())
- //    {}
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClientIntegrationTests::ClientIntegrationTests() {}
 
-// /*--------------------------------------------------------------------------------------+
-// * @bsimethod
-// +---------------+---------------+---------------+---------------+---------------+------*/
-// MockHttpHandler& ClientIntegrationTests::GetHandler() const
-//     {
-//     return *m_handler;
-//     }
-
-///*--------------------------------------------------------------------------------------+
-//* @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//std::shared_ptr<IHttpHandler> ClientIntegrationTests::GetHandlerPtr() const
-//    {
-//    return m_handler;
-//    }
-//
-///*--------------------------------------------------------------------------------------+
-//* @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//IBuddiProvider&  ClientIntegrationTests::GetBuddiProvider() const
-//    {
-//    return *m_buddiProvider;
-//    }
-//
-///*--------------------------------------------------------------------------------------+
-//* @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//std::shared_ptr<IBuddiProvider> ClientIntegrationTests::GetBuddiProviderPtr() const
-//    {
-//    return m_buddiProvider;
-//    }
-//
-///*--------------------------------------------------------------------------------------+
-//* @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//IPolicyProvider&  ClientIntegrationTests::GetPolicyProvider() const
-//    {
-//    return *m_policyProvider;
-//    }
-//
-///*--------------------------------------------------------------------------------------+
-//* @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//std::shared_ptr<IPolicyProvider> ClientIntegrationTests::GetPolicyProviderPtr() const
-//    {
-//    return m_policyProvider;
-//    }
-//
-///*--------------------------------------------------------------------------------------+
-//* @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//IUlasProvider&  ClientIntegrationTests::GetUlasProvider() const
-//    {
-//    return *m_ulasProvider;
-//    }
-//
-///*--------------------------------------------------------------------------------------+
-//* @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//std::shared_ptr<IUlasProvider> ClientIntegrationTests::GetUlasProviderPtr() const
-//    {
-//    return m_ulasProvider;
-//    }
-
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ClientIntegrationTests::TearDown()
+ClientImplPtr ClientIntegrationTests::CreateTestClientImpl(bool signIn, Utf8StringCR productId) const
     {
-    // m_handler->ValidateAndClearExpectations();
+    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
+
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
+    if (signIn)
+        {
+        Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
+        if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
+            return nullptr;
+        }
+    BeFileName dbPath = GetLicensingDbPathIntegration();
+
+    AuthType authType = AuthType::SAML;
+
+    IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
+    IAuthHandlerProviderPtr authHandlerProvider = std::make_shared<AuthHandlerProvider>(manager, proxy);
+    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, clientInfo, proxy, authType, authHandlerProvider);
+    IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, proxy);
+
+    return std::make_shared<ClientImpl>
+        (
+        manager->GetUserInfo(),
+        clientInfo,
+        dbPath,
+        true,
+        policyProvider,
+        ulasProvider,
+        "",
+        "",
+        nullptr
+        );
     }
 
-void ClientIntegrationTests::SetUpTestCase()
+AccessKeyClientImplPtr ClientIntegrationTests::CreateTestAccessKeyClientImpl(Utf8StringCR productId, Utf8StringCR accessKey) const
     {
-    // This is only an example of how to set logging severity and see info logs. Usually should be set more globally than in TestCase SetUp
-    // NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
+    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
 
-     BeFileName asssetsDir;
-     BeTest::GetHost().GetDgnPlatformAssetsDirectory(asssetsDir);
-     HttpClient::Initialize(asssetsDir);
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
-     BeFileName tmpDir;
-     BeTest::GetHost().GetTempDir(tmpDir);
-     BeSQLiteLib::Initialize(tmpDir);
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-     BeFileName path;
-     BeTest::GetHost().GetDgnPlatformAssetsDirectory(path);
-     path.AppendToPath(L"sqlang/DgnClientFx_en.sqlang.db3");
+    BeFileName dbPath = GetLicensingDbPathIntegration();
 
-     ASSERT_EQ(SUCCESS, L10N::Initialize(BeSQLite::L10N::SqlangFiles(path)));
+    IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
+    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, clientInfo, proxy, AuthType::None);
+    IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, proxy);
+
+    return std::make_shared<AccessKeyClientImpl>
+        (
+        accessKey,
+        clientInfo,
+        dbPath,
+        true,
+        policyProvider,
+        ulasProvider,
+        "",
+        "",
+        nullptr
+        );
     }
 
-TEST_F(ClientIntegrationTests, DISABLED_StartApplication_StopApplication_Success)
-{
-	auto client = CreateTestClient(true);
-	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
-	EXPECT_SUCCESS(client->StopApplication());
-}
+SaasClientImplPtr ClientIntegrationTests::CreateTestSaasClientImpl(int productId) const
+    {
+    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-// Need to fix this to have mock return a valid policy (or reevaluate the logic here...)
+    IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
+    IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, proxy);
+
+    return std::make_shared<SaasClientImpl>
+        (
+        productId,
+        "",
+        ulasProvider
+        );
+    }
+
 TEST_F(ClientIntegrationTests, DISABLED_Equality_Test)
     {
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
     ASSERT_EQ((int)1, (int)1); // Mock policy should result in NotEntitled
     }
 
-TEST_F(ClientIntegrationTests, DISABLED_ClientWithKeyStartApplicationStopApplication_Success)
+// Tests using the Clients' Create methods
+TEST_F(ClientIntegrationTests, FactoryStartStopApplication_Success)
     {
-    auto client = CreateWithKeyTestClient(true);
-    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
-    client->StopApplication();
+    auto client = CreateTestClient(true, TEST_PRODUCT_ID);
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    EXPECT_SUCCESS(client->StopApplication());
     }
 
-//TEST_F(ClientIntegrationTests, ClientWithKeyTestPolicyHeartbeat_Test)
+TEST_F(ClientIntegrationTests, AccessKeyFactoryStartStopApplication_Success)
+    {
+    auto client = CreateTestAccessKeyClient(TEST_PRODUCT_ID, TEST_VALID_ACCESSKEY);
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, SaasFactoryTrackUsage_Success)
+    {
+    auto client = CreateTestSaasClient(std::atoi(TEST_PRODUCT_ID));
+
+    //Utf8String tokenstring = "5e1518a2d48671ce2c75d76b35b6324329ad61b0c6570dfa8781a016177e7ec4";
+    Utf8String tokenString = "0cd2c3d2b0b813ce8c8e1b297f173f9e42f775ca32a2ee32a27b0a55daff1db9";
+    auto version = BeVersion(1, 0);
+    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
+
+    EXPECT_NE(static_cast<int>(client->TrackUsage(tokenString, version, projectId).get()), static_cast<int>(LicenseStatus::Error));
+    }
+
+// Tests using the Clients' implementation
+TEST_F(ClientIntegrationTests, StartStopApplication_Success)
+    {
+    auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, MarkFeature_Success)
+    {
+    auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+
+    // need to add valid policy to the DB for MarkFeature to succeed
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
+
+    FeatureUserDataMapPtr featureData = std::make_shared<FeatureUserDataMap>();
+
+    featureData->AddAttribute("Manufacturer", "Bentley Systems, Inc.");
+    featureData->AddAttribute("Website", "https://www.w3schools.com");
+    featureData->AddAttribute("Title", "Mobile App");
+
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+
+    client->AddPolicyToDb(Policy::Create(jsonPolicyValid));
+
+    EXPECT_EQ(static_cast<int>(client->MarkFeature("TestFeatureId", featureData)), static_cast<int>(BentleyStatus::SUCCESS));
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, GetLicenseStatusValidTrialPolicy_Test)
+    {
+    auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+
+    // need to add valid policy to the DB for MarkFeature to succeed
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto jsonPolicyValidTrial = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, true);
+
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+
+    client->AddPolicyToDb(Policy::Create(jsonPolicyValidTrial));
+
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Trial));
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, GetLicenseStatusValidExpiredTrialPolicy_Test)
+    {
+    auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+
+    // need to add valid policy to the DB for MarkFeature to succeed
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto jsonPolicyValidTrialExpired = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(-1), userId, std::atoi(TEST_PRODUCT_ID), "", 1, true);
+
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+
+    client->AddPolicyToDb(Policy::Create(jsonPolicyValidTrialExpired));
+
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Expired));
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, GetLicenseStatusValidPolicyWithGracePeriod_Test)
+    {
+    auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+
+    // need to add valid policy to the DB for MarkFeature to succeed
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
+
+    auto timestamp = DateHelper::GetCurrentTime();
+    auto timestampPast = DateHelper::AddDaysToCurrentTime(-14); // Two weeks ago; default offline period allowed is only 1 week
+
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+
+    client->AddPolicyToDb(Policy::Create(jsonPolicyValid));
+
+    client->GetLicensingDb().SetOfflineGracePeriodStart(timestamp);
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Offline)); // Valid status should be Offline now
+    client->GetLicensingDb().ResetOfflineGracePeriod();
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok)); // Should be back to Ok
+    client->GetLicensingDb().SetOfflineGracePeriodStart(timestampPast);
+    EXPECT_EQ(client->GetLicensingDb().GetOfflineGracePeriodStart(), timestampPast);
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Expired)); // Valid status should be Expired now, since offline grace period has expired
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, GetLicenseStatusOfflineNotAllowedPolicy_Test)
+    {
+    auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+
+    // need to add valid policy to the DB for MarkFeature to succeed
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto jsonPolicyOfflineNotAllowed = DummyPolicyHelper::CreatePolicyOfflineNotAllowed(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
+
+    auto timestamp = DateHelper::GetCurrentTime();
+
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+
+    client->AddPolicyToDb(Policy::Create(jsonPolicyOfflineNotAllowed));
+
+    client->GetLicensingDb().SetOfflineGracePeriodStart(timestamp);
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::DisabledByPolicy)); // Grace Period started; should be disabled
+    client->GetLicensingDb().ResetOfflineGracePeriod();
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok)); // Should be back to Ok
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+// TODO: heartbeat tests, different LicenseStatus situations
+
+TEST_F(ClientIntegrationTests, AccessKeyStartStopApplication_Success)
+    {
+    auto client = CreateTestAccessKeyClientImpl(TEST_PRODUCT_ID, TEST_VALID_ACCESSKEY);
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, AccessKeyMarkFeature_Success)
+    {
+    auto client = CreateTestAccessKeyClientImpl("1000"); // TEST_VALID_ACCESSKEY is entitled to microstation (1000)
+
+    FeatureUserDataMapPtr featureData = std::make_shared<FeatureUserDataMap>();
+
+    featureData->AddAttribute("Manufacturer", "Bentley Systems, Inc.");
+    featureData->AddAttribute("Website", "https://www.w3schools.com");
+    featureData->AddAttribute("Title", "Mobile App");
+
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    EXPECT_EQ(static_cast<int>(client->MarkFeature("TestFeatureId", featureData)), static_cast<int>(BentleyStatus::SUCCESS));
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, AccessKeyGetLicenseStatusValidPolicy_Success)
+    {
+    auto client = CreateTestAccessKeyClientImpl("1000"); // TEST_VALID_ACCESSKEY is entitled to microstation (1000)
+
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok));
+    EXPECT_SUCCESS(client->StopApplication());
+    }
+
+// TODO: heartbeat tests, different LicenseStatus situations
+
+TEST_F(ClientIntegrationTests, SaasTrackUsage_Success)
+    {
+    auto client = CreateTestSaasClientImpl(std::atoi(TEST_PRODUCT_ID));
+
+    Utf8String tokenString = "0cd2c3d2b0b813ce8c8e1b297f173f9e42f775ca32a2ee32a27b0a55daff1db9";
+    auto version = BeVersion(1, 0);
+    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
+
+    EXPECT_NE(static_cast<int>(client->TrackUsage(tokenString, version, projectId).get()), static_cast<int>(LicenseStatus::Error));
+    }
+
+//TEST_F(ClientIntegrationTests, AccessKeyClientTestPolicyHeartbeat_Test)
 //    {
 //    // I am using this test to manually debug/test the heartbeat to make sure of the following:
 //    // - policy heartbeat does in fact run as expected (heartbeat every 1 second, refresh policy by PolicyInterval)
@@ -409,33 +489,4 @@ TEST_F(ClientIntegrationTests, DISABLED_ClientWithKeyStartApplicationStopApplica
 //    std::this_thread::sleep_for(std::chrono::seconds(10));
 //
 //    EXPECT_EQ(1, 0);
-//    }
-
-
-// Below are "start from factory tests", some might be redundant since the client is already made from the factory here
-
-//TEST_F(ClientTests, StartApplicationFromFactory_Success)
-//    {
-//    // Note: cannot use mocks with the factory-created clients
-//    auto client = CreateTestClientFromFactory(true);
-//    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
-//    client->StopApplication();
-//    }
-//
-//TEST_F(ClientTests, DISABLED_TrackUsage_FreeApplicationFromFactory_Success)
-//    {
-//    // Note: cannot use mocks with the factory-created clients
-//    auto client = CreateFreeTestClientFromFactory(true);
-//    Utf8String tokenstring = "0cd2c3d2b0b813ce8c8e1b297f173f9e42f775ca32a2ee32a27b0a55daff1db9";
-//    auto version = BeVersion(1, 0);
-//    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
-//    EXPECT_SUCCESS(client->TrackUsage(tokenstring, version, projectId).get());
-//    }
-//
-//TEST_F(ClientTests, StartWithKeyApplicationFromFactory_Success)
-//    {
-//    // Note: cannot use mocks with the factory-created clients
-//    auto client = CreateWithKeyTestClientFromFactory(true);
-//    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
-//    client->StopApplication();
 //    }

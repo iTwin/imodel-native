@@ -33,3 +33,14 @@ o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 # Deliver 
 $(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
     $(LinkFirstDepToFirstTargetAsDirectory)
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE)=="x64"
+    arch=Winx64
+%elif $(TARGET_PROCESSOR_ARCHITECTURE)=="x86"
+    arch=Winx86
+%else
+    arch=$(TARGET_PROCESSOR_ARCHITECTURE)
+%endif
+
+always:
+    CreateSymLinks.py -d $(OutRoot)$(arch)\Product\Licensing-IntegrationTests\Assets\TestAssets=$(SrcRoot)licensingcrossplatform\Tests\IntegrationTests\Assets

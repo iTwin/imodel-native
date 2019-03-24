@@ -7,10 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <folly/BeFolly.h>
 #include <Licensing/Licensing.h>
 #include <Licensing/LicenseStatus.h>
-
-//#include <WebServices/Configuration/UrlProvider.h>
 
 #include "../Policy.h"
 

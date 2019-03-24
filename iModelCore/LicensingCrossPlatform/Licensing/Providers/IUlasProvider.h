@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <folly/BeFolly.h>
 #include <Licensing/Licensing.h>
 #include <Licensing/LicenseStatus.h>
 

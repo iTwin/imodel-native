@@ -111,15 +111,10 @@
     <Part Name="RunGtestUnit" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Licensing-GtestUnit -dGTEST_NAME=LicensingUnitTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Licensing-GtestUnit" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
-        <SubPart PartName="UnitTestL10n"/>
 
         <Bindings>
           <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/LicensingUnitTest.log</Files>
         </Bindings>
-    </Part>
-
-    <Part Name="UnitTestL10n" BMakeFile="CopyTestingL10nDb.mke">
-        <SubProduct ProductName="Licensing-GtestUnit" />
     </Part>
 
     <!--<Part Name="NativeClient.Docs" BMakeFile="Licensing/docs.mke" OnlyPlatforms="x64">

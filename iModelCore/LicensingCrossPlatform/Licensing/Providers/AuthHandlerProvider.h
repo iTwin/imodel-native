@@ -15,17 +15,17 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
 struct AuthHandlerProvider : IAuthHandlerProvider
-{
+    {
     protected:
         std::shared_ptr<IConnectAuthenticationProvider> m_authProvider;
         IHttpHandlerPtr m_httpHandler;
     public:
-        AuthHandlerProvider
+        LICENSING_EXPORT AuthHandlerProvider
             (
             std::shared_ptr<IConnectAuthenticationProvider> authProvider,
             IHttpHandlerPtr httpHandler
             );
-        IHttpHandlerPtr GetAuthHandler(Utf8StringCR serverUrl, IConnectAuthenticationProvider::HeaderPrefix prefix);
-};
+        LICENSING_EXPORT IHttpHandlerPtr GetAuthHandler(Utf8StringCR serverUrl, IConnectAuthenticationProvider::HeaderPrefix prefix);
+    };
 
 END_BENTLEY_LICENSING_NAMESPACE

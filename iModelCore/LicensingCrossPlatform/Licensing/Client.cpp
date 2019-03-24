@@ -11,7 +11,6 @@
 #include "Providers/PolicyProvider.h"
 #include "Providers/UlasProvider.h"
 #include "ClientImpl.h"
-#include "ClientWithKeyImpl.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 
@@ -20,7 +19,7 @@ USING_NAMESPACE_BENTLEY_LICENSING
 +---------------+---------------+---------------+---------------+---------------+------*/
 Client::Client
     (
-    std::shared_ptr<struct IClient> implementation
+    std::shared_ptr<struct ClientImpl> implementation
     )
     {
     m_impl = implementation;
@@ -52,26 +51,6 @@ ClientPtr Client::Create
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClientPtr Client::CreateWithKey
-    (
-    Utf8StringCR accessKey,
-    ClientInfoPtr clientInfo,
-    BeFileNameCR dbPath,
-    bool offlineMode,
-    Utf8StringCR projectId,
-    Utf8StringCR featureString,
-    IHttpHandlerPtr httpHandler
-    )
-    {
-    IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
-    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, clientInfo, httpHandler, AuthType::None);
-    IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, httpHandler);
-    return std::shared_ptr<Client>(new Client(std::make_shared<ClientWithKeyImpl>(accessKey, clientInfo, dbPath, offlineMode, policyProvider, ulasProvider, projectId, featureString, nullptr)));
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 LicenseStatus Client::StartApplication()
     {
     return m_impl->StartApplication();
@@ -88,7 +67,7 @@ BentleyStatus Client::StopApplication()
  /*--------------------------------------------------------------------------------------+
  * @bsimethod
  +---------------+---------------+---------------+---------------+---------------+------*/
- BentleyStatus Client::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData)
+ BentleyStatus Client::MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData)
      {
      return m_impl->MarkFeature(featureId, featureUserData);
      }

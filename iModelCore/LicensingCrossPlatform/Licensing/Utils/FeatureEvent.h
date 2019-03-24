@@ -5,21 +5,26 @@
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
-struct FeatureEvent {
-	public:
-		Utf8StringCR m_featureId;
-		BeVersionCR m_version;
-		Utf8String m_projectId = "";
-		FeatureUserDataMap* m_featureUserData;
-		FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId, FeatureUserDataMap* featureUserData);
-		FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId);
-		FeatureEvent(Utf8StringCR featureId, BeVersionCR version, FeatureUserDataMap* featureUserData);
-		FeatureEvent(Utf8StringCR featureId, BeVersionCR version);
-		LICENSING_EXPORT Utf8String ToJson(
-			int productId,
-			Utf8StringCR featureString,
-			Utf8StringCR deviceId
-		);
-};
+struct FeatureEvent
+    {
+private:
+    Utf8String m_featureId;
+    BeVersion m_version;
+    Utf8String m_projectId = "";
+    FeatureUserDataMapPtr m_featureUserData;
+
+public:
+    LICENSING_EXPORT FeatureEvent() {};
+    LICENSING_EXPORT FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId, FeatureUserDataMapPtr featureUserData);
+    LICENSING_EXPORT FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId);
+    LICENSING_EXPORT FeatureEvent(Utf8StringCR featureId, BeVersionCR version, FeatureUserDataMapPtr featureUserData);
+    LICENSING_EXPORT FeatureEvent(Utf8StringCR featureId, BeVersionCR version);
+    LICENSING_EXPORT Utf8String ToJson
+        (
+        int productId,
+        Utf8StringCR featureString,
+        Utf8StringCR deviceId
+        );
+    };
 
 END_BENTLEY_LICENSING_NAMESPACE

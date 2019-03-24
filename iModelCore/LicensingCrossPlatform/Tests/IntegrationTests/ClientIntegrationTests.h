@@ -10,34 +10,34 @@
 #include "TestsHelper.h"
 #include "../UnitTests/Utils/MockHttpHandler.h"
 
+#include <Licensing/Client.h>
+#include <Licensing/AccessKeyClient.h>
+#include <Licensing/SaasClient.h>
 
-#include "../../Licensing/Providers/IBuddiProvider.h"
-#include "../../Licensing/Providers/IPolicyProvider.h"
-#include "../../Licensing/Providers/IUlasProvider.h"
+#include "../../Licensing/ClientImpl.h"
+#include "../../Licensing/AccessKeyClientImpl.h"
+#include "../../Licensing/SaasClientImpl.h"
+
 #include <BeHttp/HttpClient.h>
 
 USING_NAMESPACE_BENTLEY_LICENSING_INTEGRATION_TESTS
 
+#define TEST_PRODUCT_ID      "2545"
+#define TEST_VALID_ACCESSKEY "3469AD8D095A53F3CBC9A905A8FF8926"
+
 class ClientIntegrationTests : public ::testing::Test
     {
-    private:
-        //std::shared_ptr<IHttpHandler>    m_handler;
-        //std::shared_ptr<IBuddiProvider>  m_buddiProvider;
-        //std::shared_ptr<IPolicyProvider> m_policyProvider;
-        //std::shared_ptr<IUlasProvider>   m_ulasProvider;
     public:
         ClientIntegrationTests();
         static void SetUpTestCase();
 
-        //IHttpHandler& GetHandler() const;
-        //std::shared_ptr<IHttpHandler> GetHandlerPtr() const;
+        Licensing::ClientPtr          CreateTestClient(bool signIn, Utf8StringCR productId = TEST_PRODUCT_ID) const;
+        Licensing::AccessKeyClientPtr CreateTestAccessKeyClient(Utf8StringCR productId = TEST_PRODUCT_ID, Utf8StringCR accessKey = TEST_VALID_ACCESSKEY) const;
+        Licensing::SaasClientPtr      CreateTestSaasClient(int productId = std::atoi(TEST_PRODUCT_ID)) const;
 
-        //IBuddiProvider& GetBuddiProvider() const;
-        //std::shared_ptr<IBuddiProvider>  GetBuddiProviderPtr() const;
-        //IPolicyProvider& GetPolicyProvider() const;
-        //std::shared_ptr<IPolicyProvider> GetPolicyProviderPtr() const;
-        //IUlasProvider& GetUlasProvider() const;
-        //std::shared_ptr<IUlasProvider>   GetUlasProviderPtr() const;
+        Licensing::ClientImplPtr          CreateTestClientImpl(bool signIn, Utf8StringCR productId = TEST_PRODUCT_ID) const;
+        Licensing::AccessKeyClientImplPtr CreateTestAccessKeyClientImpl(Utf8StringCR productId = TEST_PRODUCT_ID, Utf8StringCR accessKey = TEST_VALID_ACCESSKEY) const;
+        Licensing::SaasClientImplPtr      CreateTestSaasClientImpl(int productId = std::atoi(TEST_PRODUCT_ID)) const;
 
         void TearDown();
     };

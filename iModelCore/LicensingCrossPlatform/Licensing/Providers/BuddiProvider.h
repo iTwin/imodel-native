@@ -17,11 +17,11 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 struct BuddiProvider : IBuddiProvider
 {
 public:
-    Utf8String UlasLocationBaseUrl();
-    Utf8String EntitlementPolicyBaseUrl();
-    Utf8String UlasRealtimeLoggingBaseUrl();
-    Utf8String UlasRealtimeFeatureUrl();
-    Utf8String UlasAccessKeyBaseUrl();
+    LICENSING_EXPORT Utf8String UlasLocationBaseUrl();
+    LICENSING_EXPORT Utf8String EntitlementPolicyBaseUrl();
+    LICENSING_EXPORT Utf8String UlasRealtimeLoggingBaseUrl();
+    LICENSING_EXPORT Utf8String UlasRealtimeFeatureUrl();
+    LICENSING_EXPORT Utf8String UlasAccessKeyBaseUrl();
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

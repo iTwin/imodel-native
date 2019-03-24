@@ -241,7 +241,7 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage(Utf8StringCR acces
 folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, int productId, Utf8StringCR featureString, Utf8StringCR deviceId)
     {
     LOG.debug("UlasProvider::RealtimeMarkFeature");
-    LOG.tracev("MarkFeature - Called with featureId: %s, version: %s, projectId: %s", featureEvent.m_featureId.c_str(), featureEvent.m_version.ToString().c_str(), featureEvent.m_projectId.c_str());
+    //LOG.tracev("MarkFeature - Called with featureId: %s, version: %s, projectId: %s", featureEvent.m_featureId.c_str(), featureEvent.m_version.ToString().c_str(), featureEvent.m_projectId.c_str());
 
     auto url = m_buddiProvider->UlasRealtimeFeatureUrl();
 
@@ -267,7 +267,7 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature(Utf8StringCR acce
             LOG.errorv("UlasProvider::RealtimeMarkFeature ERROR: Unable to post %s - %s", jsonBody.c_str(), response.GetBody().AsString().c_str());
             return BentleyStatus::ERROR;
             }
-        LOG.tracev("MarkFeature - Successfully marked featureId: %s, version: %s, projectId: %s", featureEvent.m_featureId.c_str(), featureEvent.m_version.ToString().c_str(), featureEvent.m_projectId.c_str());
+        //LOG.tracev("MarkFeature - Successfully marked featureId: %s, version: %s, projectId: %s", featureEvent.m_featureId.c_str(), featureEvent.m_version.ToString().c_str(), featureEvent.m_projectId.c_str());
         return BentleyStatus::SUCCESS;
         });
     }
@@ -302,7 +302,7 @@ folly::Future<Json::Value> UlasProvider::GetAccessKeyInfo(ClientInfoPtr clientIn
         if (!response.IsSuccess())
             {
             // call failed
-            LOG.errorv("ClientWithKeyImpl::ValidateAccessKey - %s", HttpError(response).GetMessage().c_str());
+            LOG.errorv("UlasProvider::GetAccessKeyInfo - %s", HttpError(response).GetMessage().c_str());
             return Json::Value::GetNull();
             }
 

@@ -30,11 +30,11 @@ typedef std::shared_ptr<struct Client> ClientPtr;
 struct Client
     {
 private:
-    std::shared_ptr<struct IClient> m_impl;
+    std::shared_ptr<struct ClientImpl> m_impl;
 
     Client
         (
-        std::shared_ptr<struct IClient> implementation
+        std::shared_ptr<struct ClientImpl> implementation
         );
 
 public:
@@ -61,25 +61,6 @@ public:
         AuthType authType = AuthType::SAML
         );
 
-    //! Creates a client that uses accesskey
-    //! @param[in] accessKey Access key generated for the ultimate to track usage against
-    //! @param[in] clientInfo ClientInfoPtr from WSClient
-    //! @param[in] dbPath Path for LicenseClient database
-    //! @param[in] offlineMode ignored for now, no usage in this client yet
-    //! @param[in] projectId ProjectID string, defaults to an empty string
-    //! @param[in] featureString product feature string, defaults to an empty string
-    //! @param[in] customHttpHandler CustomHttpHandler, defaults to a nullptr
-    LICENSING_EXPORT static ClientPtr CreateWithKey
-        (
-        Utf8StringCR accessKey,
-        ClientInfoPtr clientInfo,
-        BeFileNameCR dbPath,
-        bool offlineMode,
-        Utf8StringCR projectId = "",
-        Utf8StringCR featureString = "",
-        IHttpHandlerPtr customHttpHandler = nullptr
-        );
-
     //! StartApplication performs actions and creates threads required for usage posting and policy requests, returns LicenseStatus
     // TODO: Return more than BentleyStatus to indicate to the app if the user has rights to use this app or it's crippled etc...
     /*!
@@ -102,7 +83,7 @@ public:
     //! Marks a feature as used
     //! @param[in] featureId Feature GUID to mark
     //! @param[in] featureUserData Feature tracking metadata
-    LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMap* featureUserData);
+    LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData);
     };
 
 END_BENTLEY_LICENSING_NAMESPACE
