@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmcleanup.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/Core/bcDTMBaseDef.h>
@@ -597,7 +597,7 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
                             }
                         ++numVoids ;
                     }
-                sp = np ;
+                sp = nodeAddrP(polyDtmP,sp)->hPtr ;
                 } while ( sp != polyDtmP->hullPoint ) ;
                 isLookingForVoids = !isLookingForVoids;
                 /*
