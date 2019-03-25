@@ -336,14 +336,12 @@ BentleyStatus ORDBridge::_OnOpenBim(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ORDBridge::_OnCloseBim(BentleyStatus, ClosePurpose)
+void ORDBridge::_OnCloseBim(BentleyStatus status, ClosePurpose purpose)
     {
     // this also has the side effect of closing the source files
     if (m_converter != nullptr)
         {
         //calling delete on the ORDConverter will result in source files closing, which is important for the unit tests to run properly
-        if (m_isUnitTesting)
-        {
             IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
             {
                 // TODO: Some CIF object smart pointers are blowing up after deleting 
@@ -355,7 +353,8 @@ void ORDBridge::_OnCloseBim(BentleyStatus, ClosePurpose)
             }
             m_converter = nullptr;
         }
-        }
+
+        T_Super::_OnCloseBim(status, purpose);
     }
 
 /*---------------------------------------------------------------------------------**//**
