@@ -28,6 +28,7 @@
 #include <DgnPlatform/Tile.h>
 #include <DgnPlatform/ChangedElementsManager.h>
 #include "UlasClient.h"
+#include <Bentley/BeThreadLocalStorage.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -148,10 +149,199 @@ USING_NAMESPACE_BENTLEY_EC
 
 namespace IModelJsNative {
 
+static void doDeferredLogging();
+
 Napi::String toJsString(Napi::Env env, Utf8CP val, size_t len) { return Napi::String::New(env, val, len); }
 Napi::String toJsString(Napi::Env env, Utf8CP val) { return toJsString(env, val, std::strlen(val)); }
 Napi::String toJsString(Napi::Env env, Utf8StringCR str) { return toJsString(env, str.c_str(), str.length()); }
 Napi::String toJsString(Napi::Env env, BeInt64Id id) { return toJsString(env, id.ToHexStr()); }
+
+// An ObjRefVault is place to store Napi::ObjectReferences. It holds onto the references as long as they
+// are in use. ObjectReferences are stored in "slots" in the vault. Code running on any thread can hold a reference
+// to a slot, so as to keep that slot and its ObjectReference alive. Only code running on the main thread can 
+// access the ObjectReference in a slot.
+//
+// Vault operations are guarded by the BeSystemMutex.
+//
+// Details: A slot has its own reference count. A reference to a slot is a claim to keep the slot alive.
+// A reference to a slot can be incremented/decremented by code running on any thread. When the 
+// last reference to a slot is released, that means that the slot should release the ObjectReference itself.
+// The last decrement of the slot's can occur on any thread. The actual release of the JS object can 
+// happen only on the main thread. Therefore, the release of the slot is handled as a request to release the JS object.
+// This request is noticed and carried out later on the main thread.
+struct ObjRefVault
+{
+  private:
+    struct Slot
+        {
+        uint32_t m_refCount{};
+        Napi::ObjectReference m_objRef;
+
+        Slot() {}
+        Slot(Slot const &) = delete;
+        Slot &operator=(Slot const &) = delete;
+        Slot(Slot &&r)
+            {
+            m_refCount = std::move(r.m_refCount);
+            m_objRef = std::move(r.m_objRef);
+            }
+        };
+
+    std::map<Utf8String, Slot> m_slotMap;
+
+  public:
+    Utf8String StoreObjectRef(Napi::Object obj)
+        {
+        BeAssert(JsInterop::IsMainThread());
+
+        BeSystemMutexHolder ___;
+
+        Utf8PrintfString id("%" PRIx64, (intptr_t)(napi_value)obj);
+
+        BeAssert(m_slotMap.find(id) == m_slotMap.end());
+
+        auto &slot = m_slotMap[id];
+        slot.m_objRef.Reset(obj, 1); // Slot holds the one and only reference to the JS object.
+        slot.m_refCount = 0;      // The slot itself is initially unreferenced
+
+        return id;
+        }
+
+    // Return the object in the slot or Undefined of id is empty or invalid
+    Napi::Value GetObject_Locked(Napi::Env env, Utf8StringCR id)
+        {
+        // Caller must hold the BeSystemMutex!
+
+        BeAssert(JsInterop::IsMainThread());
+
+        if (id.empty())
+            return env.Undefined();
+
+        auto slotIt = m_slotMap.find(id);
+        if (slotIt == m_slotMap.end())
+        {
+            BeAssert(false && "Invalid slot id");
+            return env.Undefined();
+        }
+
+        Slot& slot = slotIt->second;
+        return slot.m_objRef.Value();
+        }
+
+    void ReleaseUnreferencedObjects()
+        {
+        BeAssert(JsInterop::IsMainThread());
+
+        bvector<Utf8String> unrefd;
+
+        BeSystemMutexHolder ___;
+        for (auto &slot : m_slotMap)
+            {
+            if (slot.second.m_refCount == 0)
+                unrefd.push_back(slot.first);
+            }
+
+        for (auto &slotId : unrefd)
+            {
+            m_slotMap.erase(slotId);
+            }
+        }
+
+    void AddRefToObject(Utf8StringCR id)
+        {
+        if (id.empty())
+            return;
+
+        BeSystemMutexHolder ___;
+        auto slotIt = m_slotMap.find(id);
+        if (slotIt == m_slotMap.end())
+            {
+            BeAssert(false);
+            return;
+            }
+        slotIt->second.m_refCount++;
+        // DO NOT TRY TO ACCESS slot.m_objRef!!!
+        }
+
+    void ReleaseRefToObject(Utf8StringCR id)
+        {
+        if (id.empty())
+            return;
+
+        BeSystemMutexHolder ___;
+        auto slotIt = m_slotMap.find(id);
+        if (slotIt == m_slotMap.end())
+            {
+            BeAssert(false);
+            return;
+            }
+        if (slotIt->second.m_refCount == 0)
+            {
+            BeAssert(false && "ObjectReferenceClaimCheck refers to slot that is already supposed to be unref'd!!");
+            return;
+            }
+        slotIt->second.m_refCount--;
+        // DO NOT TRY TO ACCESS slot.m_objRef!!!
+        }
+};
+
+static ObjRefVault s_objRefVault;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+JsInterop::ObjectReferenceClaimCheck::ObjectReferenceClaimCheck()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+JsInterop::ObjectReferenceClaimCheck::ObjectReferenceClaimCheck(Utf8StringCR id) : m_id(id)
+    {
+    s_objRefVault.AddRefToObject(m_id);
+
+    if (JsInterop::IsMainThread())
+        s_objRefVault.ReleaseUnreferencedObjects();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+JsInterop::ObjectReferenceClaimCheck::ObjectReferenceClaimCheck(JsInterop::ObjectReferenceClaimCheck const& rhs) : m_id(rhs.m_id)
+    {
+    s_objRefVault.AddRefToObject(m_id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+JsInterop::ObjectReferenceClaimCheck&  JsInterop::ObjectReferenceClaimCheck::operator=(JsInterop::ObjectReferenceClaimCheck const& rhs)
+    {
+    if (this == &rhs)
+        return *this;
+    s_objRefVault.ReleaseRefToObject(m_id);
+    m_id = rhs.m_id;
+    s_objRefVault.AddRefToObject(m_id);
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+JsInterop::ObjectReferenceClaimCheck::ObjectReferenceClaimCheck(JsInterop::ObjectReferenceClaimCheck&& rhs) : m_id(rhs.m_id)
+    {
+    // rhs is going away. I take over its reference to the slot. I don't add another ref.
+    rhs.m_id.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+JsInterop::ObjectReferenceClaimCheck::~ObjectReferenceClaimCheck()
+    {
+    s_objRefVault.ReleaseRefToObject(m_id);
+    }
 
 //=======================================================================================
 //! @bsiclass
@@ -756,6 +946,9 @@ public:
         m_dgndb->m_jsIModelDb.Reset(); // disconnect the iModelDb object
         JsInterop::CloseDgnDb(*m_dgndb);
         m_dgndb = nullptr;
+
+        doDeferredLogging();
+        s_objRefVault.ReleaseUnreferencedObjects();
         }
 
     void OnDgnDbOpened(DgnDbR dgndb)
@@ -3729,8 +3922,14 @@ private:
     int m_status;
     ECInstanceKey m_instanceKey;
     bool m_stepForInsert;
+    JsInterop::ObjectReferenceClaimCheck m_requestContext;
+
     void Execute() override
         {
+        JsInterop::SetCurrentClientRequestContextForWorkerThread(m_requestContext);
+
+        NativeLogging::LoggingManager::GetLogger("ECSqlStepWorkerTestCategory")->error("ECSqlStepWorker: In worker thread");
+
         if (m_stmt.IsPrepared())
             {
             if (m_stepForInsert)
@@ -3747,6 +3946,9 @@ private:
 
     void OnOK() override
         {
+        // Warning! If you want to log in a specific ClientRequestContext, then you can't use NativeLogging directly. You must call this helper function:
+        JsInterop::LogMessageInContext("ECSqlStepWorkerTestCategory", NativeLogging::LOG_ERROR, "ECSqlStepWorker: Back on main thread", m_requestContext);
+
         if (m_stepForInsert)
             {
             Napi::Object retval = Napi::Object::New(Env());
@@ -3766,6 +3968,8 @@ public:
     ECSqlStepWorker( Napi::Function& callback, ECSqlStatement& stmt, bool stepForInsert)
         : Napi::AsyncWorker(callback), m_stmt(stmt), m_stepForInsert(stepForInsert)
         {
+        m_requestContext = JsInterop::GetCurrentClientRequestContextForMainThread();
+        NativeLogging::LoggingManager::GetLogger("ECSqlStepWorkerTestCategory")->error("ECSqlStepWorker: Start on main thread");
         }
 };
 
@@ -4656,7 +4860,8 @@ static void setUseTileCache(Napi::CallbackInfo const& info)
 
 static Napi::ObjectReference s_logger;
 struct LogMessage {Utf8String m_category; Utf8String m_message; NativeLogging::SEVERITY m_severity;};
-static bvector<LogMessage>* s_deferredLogging;
+static bmap<Utf8String, bvector<LogMessage>>* s_deferredLogging;
+static BeThreadLocalStorage* s_currentClientRequestContext;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/18
@@ -4689,7 +4894,7 @@ static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP 
     auto method = s_logger.Get(fname).As<Napi::Function>();
     if (method == env.Undefined())
         {
-        Napi::Error::New(JsInterop::Env(), "Invalid Logger").ThrowAsJavaScriptException();
+        Napi::Error::New(JsInterop::Env(), Utf8PrintfString("Invalid Logger -- missing %s function", fname).c_str()).ThrowAsJavaScriptException();
         return;
         }
 
@@ -4697,6 +4902,104 @@ static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP 
     auto msgJS = toJsString(env, msg);
 
     method({catJS, msgJS});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus JsInterop::SetCurrentClientRequestContextForWorkerThread(ObjectReferenceClaimCheck const& ctx)
+    {
+    if (IsMainThread())
+        {
+        BeAssert(false && "SetCurrentClientRequestContextForThread should be called only on non-main threads");
+        return BSIERROR;
+        }
+
+    if (s_currentClientRequestContext == nullptr)
+        s_currentClientRequestContext = new BeThreadLocalStorage();
+
+    ObjectReferenceClaimCheck* current = (ObjectReferenceClaimCheck*) s_currentClientRequestContext->GetValueAsPointer();
+    if (current != nullptr)
+        delete current;
+    
+    s_currentClientRequestContext->SetValueAsPointer(new ObjectReferenceClaimCheck(ctx));
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+JsInterop::ObjectReferenceClaimCheck const&     JsInterop::GetCurrentClientRequestContextForWorkerThread()
+    {
+    if (nullptr != s_currentClientRequestContext)
+        {
+        ObjectReferenceClaimCheck* current = s_currentClientRequestContext? (ObjectReferenceClaimCheck*) s_currentClientRequestContext->GetValueAsPointer(): nullptr;
+        if (nullptr != current)
+            return *current;
+        }
+
+    // Caller did not set a context for this thread. Assume he knows what he's doing. Use an empty context.
+    static ObjectReferenceClaimCheck* s_missingCtx;
+    if (nullptr == s_missingCtx)
+        s_missingCtx = new ObjectReferenceClaimCheck("");
+
+    return *s_missingCtx;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void callSetCurrentClientRequestContext(Napi::Env env, Napi::Value ctxObj)
+    {
+    // WARNING! Caller must manage the HandleScope in which this runs!
+
+    auto method = s_logger.Get("setCurrentClientRequestContext").As<Napi::Function>();
+    if (method == env.Undefined())
+        {
+        Napi::Error::New(JsInterop::Env(), "Invalid Logger -- missing 'setCurrentClientRequestContext' function").ThrowAsJavaScriptException();
+        return;
+        }
+
+    method({ctxObj});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static Napi::Object callGetCurrentClientRequestContext(Napi::Env env)
+    {
+    // WARNING! Caller must manage the HandleScope in which this runs!
+    
+    auto method = s_logger.Get("getCurrentClientRequestContext").As<Napi::Function>();
+    if (method == env.Undefined())
+        {
+        Napi::Error::New(JsInterop::Env(), "Invalid Logger -- missing getCurrentClientRequestContext function").ThrowAsJavaScriptException();
+        return Napi::Object::New(env);
+        }
+
+    return method({}).ToObject();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+JsInterop::ObjectReferenceClaimCheck JsInterop::GetCurrentClientRequestContextForMainThread()
+    {
+    if (s_logger.IsEmpty() || !IsMainThread())
+        {
+        BeAssert(false && "GetCurrentClientRequestContextForMainThread must be called on the main thread only.");
+        return ObjectReferenceClaimCheck();
+        }
+
+    auto env = s_logger.Env();
+    Napi::HandleScope scope(env);
+
+    auto obj = callGetCurrentClientRequestContext(env);
+
+    auto slotId = s_objRefVault.StoreObjectRef(obj);
+    
+    return ObjectReferenceClaimCheck(slotId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4730,18 +5033,26 @@ static bool callIsLogLevelEnabledJs(Utf8CP category, NativeLogging::SEVERITY sev
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void deferLogging(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
+static void pushDeferredLoggingMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg, JsInterop::ObjectReferenceClaimCheck const& ctx)
     {
     BeSystemMutexHolder ___;
 
     if (!s_deferredLogging)
-        s_deferredLogging = new bvector<LogMessage>();
+        s_deferredLogging = new bmap<Utf8String, bvector<LogMessage>>();
 
     LogMessage lm;
     lm.m_category = category;
     lm.m_message = msg;
     lm.m_severity = sev;
-    s_deferredLogging->push_back(lm);
+    (*s_deferredLogging)[ctx.GetId()].push_back(lm);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void deferLogging(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
+    {
+    pushDeferredLoggingMessage(category, sev, msg, JsInterop::GetCurrentClientRequestContextForWorkerThread());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4749,27 +5060,73 @@ static void deferLogging(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP ms
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void doDeferredLogging()
     {
+    if (s_logger.Env().IsExceptionPending())
+        return;
+
+    s_objRefVault.ReleaseUnreferencedObjects();
+
     BeSystemMutexHolder ___;
+    
     if (!s_deferredLogging)
         return;
 
-    for (auto const& lm : *s_deferredLogging)
+    for (auto const& contextAndMessages : *s_deferredLogging)
         {
-        logMessageToJs(lm.m_category.c_str(), lm.m_severity, lm.m_message.c_str());
+        auto env = s_logger.Env();
+        Napi::HandleScope scope(env);
+
+        auto wasCtx = callGetCurrentClientRequestContext(env);
+
+        auto ctxObj = s_objRefVault.GetObject_Locked(env, contextAndMessages.first);
+        callSetCurrentClientRequestContext(env, ctxObj);
+        
+        for (auto const& lm : contextAndMessages.second)
+            {
+            logMessageToJs(lm.m_category.c_str(), lm.m_severity, lm.m_message.c_str());
+            }
+
+        callSetCurrentClientRequestContext(env, wasCtx);
         }
 
     delete s_deferredLogging;
     s_deferredLogging = nullptr;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::LogMessageInContext(Utf8StringCR category, NativeLogging::SEVERITY sev, Utf8StringCR msg, ObjectReferenceClaimCheck const& ctx)
+    {
+    if (IsMainThread())
+        {
+        doDeferredLogging();
+        }
 
+    if (!IsMainThread() || s_logger.Env().IsExceptionPending())
+        {
+        pushDeferredLoggingMessage(category.c_str(), sev, msg.c_str(), ctx);
+        return;
+        }
+
+    auto env = s_logger.Env();
+    Napi::HandleScope scope(env);
+
+    auto wasCtx = callGetCurrentClientRequestContext(env);
+
+    auto ctxObj = s_objRefVault.GetObject_Locked(env, ctx.GetId());
+    callSetCurrentClientRequestContext(env, ctxObj);
+    
+    logMessageToJs(category.c_str(), sev, msg.c_str());
+
+    callSetCurrentClientRequestContext(env, wasCtx);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
     {
-    if (s_logger.IsEmpty() || !IsMainThread())
+    if (s_logger.IsEmpty() || !IsMainThread() || s_logger.Env().IsExceptionPending())
         {
         deferLogging(category, sev, msg);
         return;
@@ -4784,7 +5141,7 @@ void JsInterop::LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool JsInterop::IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev)
     {
-    if (s_logger.IsEmpty() || !IsMainThread())
+    if (s_logger.IsEmpty() || !IsMainThread() || s_logger.Env().IsExceptionPending())
         return true;
 
     doDeferredLogging();

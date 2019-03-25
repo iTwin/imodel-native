@@ -79,6 +79,27 @@ void handleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions
 
 struct JsInterop
 {
+    // An indirect reference to an ObjectReference. Keeps the ObjectReference alive. Can be redeemed
+    //  only on the main thread. Can be copied on other threads.
+    struct ObjectReferenceClaimCheck
+        {
+        private:
+        friend struct JsInterop;
+
+        Utf8String m_id;
+
+        explicit ObjectReferenceClaimCheck(Utf8StringCR);
+
+        public:
+        ObjectReferenceClaimCheck();
+        ~ObjectReferenceClaimCheck();
+        ObjectReferenceClaimCheck(ObjectReferenceClaimCheck const&);
+        ObjectReferenceClaimCheck(ObjectReferenceClaimCheck&&);
+        ObjectReferenceClaimCheck& operator=(ObjectReferenceClaimCheck const&);
+
+        Utf8StringCR GetId() const {return m_id;}
+        };
+
     BE_JSON_NAME(briefcaseId)
     BE_JSON_NAME(openMode)
     BE_JSON_NAME(client)
@@ -186,6 +207,10 @@ public:
 
     static void LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg);
     static bool IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev);
+    static ObjectReferenceClaimCheck GetCurrentClientRequestContextForMainThread();
+    static BentleyStatus SetCurrentClientRequestContextForWorkerThread(ObjectReferenceClaimCheck const&);
+    static ObjectReferenceClaimCheck const& GetCurrentClientRequestContextForWorkerThread();
+    static void LogMessageInContext(Utf8StringCR category, NativeLogging::SEVERITY sev, Utf8StringCR msg, ObjectReferenceClaimCheck const& ctx);
 
     static Napi::Env& Env() { static Napi::Env s_env(nullptr); return s_env; }
     static intptr_t& MainThreadId() {static intptr_t s_mainThreadId; return s_mainThreadId;}
