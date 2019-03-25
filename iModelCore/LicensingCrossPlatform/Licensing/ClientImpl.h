@@ -153,6 +153,8 @@ public:
 	// clean up policies; used internally, but also used in unit tests
 	LICENSING_EXPORT void CleanUpPolicies();
 	LICENSING_EXPORT void DeleteAllOtherPoliciesByUser(std::shared_ptr<Policy> policy);
+
+	virtual ~ClientImpl() {}; // make sure to cleanup
 };
 
 END_BENTLEY_LICENSING_NAMESPACE
