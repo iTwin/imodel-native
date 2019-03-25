@@ -8,7 +8,7 @@
 
 #include "ClientIntegrationTests.h"
 #include "TestsHelper.h"
-#include "../UnitTests/DummyPolicyHelper.h" // TODO: copy this to Integration tests project?
+#include "DummyPolicyHelper.h"
 
 #include <Licensing/Utils/DateHelper.h>
 #include "../../Licensing/LicensingDb.h"
@@ -35,7 +35,6 @@
 #include <WebServices/Connect/ConnectSignInManager.h>
 
 #define TEST_PRODUCT_ID      "2545"
-#define TEST_VALID_ACCESSKEY "3469AD8D095A53F3CBC9A905A8FF8926"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 USING_NAMESPACE_BENTLEY_LICENSING_INTEGRATION_TESTS
@@ -43,48 +42,7 @@ USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_SQLITE
 
-struct TestTimeRetriever : ITimeRetriever
-    {
-public:
-    int64_t time = 0;
-
-public:
-    static std::shared_ptr<TestTimeRetriever> Create()
-        {
-        return std::shared_ptr<TestTimeRetriever>(new TestTimeRetriever());
-        }
-
-    virtual int64_t GetCurrentTimeAsUnixMillis() override
-        {
-        return time;
-        }
-    };
-
-struct TestDelayedExecutor : IDelayedExecutor
-    {
-private:
-    std::queue<folly::Promise<folly::Unit>> m_promises;
-
-public:
-    static std::shared_ptr<TestDelayedExecutor> Create()
-        {
-        return std::shared_ptr<TestDelayedExecutor>(new TestDelayedExecutor());
-        }
-
-    virtual folly::Future<folly::Unit> Delayed(uint64_t ms) override
-        {
-        m_promises.emplace();
-        return m_promises.back().getFuture();
-        }
-
-    void Execute()
-        {
-        m_promises.front().setValue();
-        m_promises.pop();
-        }
-    };
-
-BeFileName GetLicensingDbPathIntegration()
+BeFileName ClientIntegrationTests::GetLicensingDbPathIntegration() const
     {
     BeFileName path;
     BeTest::GetHost().GetTempDir(path);
@@ -156,46 +114,6 @@ ClientPtr ClientIntegrationTests::CreateTestClient(bool signIn, Utf8StringCR pro
         );
     }
 
-AccessKeyClientPtr ClientIntegrationTests::CreateTestAccessKeyClient(Utf8StringCR productId, Utf8StringCR accessKey) const
-    {
-    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-    //RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
-    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
-
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
-
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    BeFileName dbPath = GetLicensingDbPathIntegration();
-
-    return AccessKeyClient::Create
-        (
-        accessKey,
-        clientInfo,
-        dbPath,
-        true,
-        "",
-        "",
-        proxy
-        );
-    }
-
-SaasClientPtr ClientIntegrationTests::CreateTestSaasClient(int productId) const
-    {
-    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
-
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    return SaasClient::Create
-        (
-        productId,
-        "",
-        proxy
-        );
-    }
-
-
 ClientImplPtr ClientIntegrationTests::CreateTestClientImpl(bool signIn, Utf8StringCR productId) const
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
@@ -234,83 +152,18 @@ ClientImplPtr ClientIntegrationTests::CreateTestClientImpl(bool signIn, Utf8Stri
         );
     }
 
-AccessKeyClientImplPtr ClientIntegrationTests::CreateTestAccessKeyClientImpl(Utf8StringCR productId, Utf8StringCR accessKey) const
-    {
-    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
-
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
-
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    BeFileName dbPath = GetLicensingDbPathIntegration();
-
-    IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
-    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, clientInfo, proxy, AuthType::None);
-    IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, proxy);
-
-    return std::make_shared<AccessKeyClientImpl>
-        (
-        accessKey,
-        clientInfo,
-        dbPath,
-        true,
-        policyProvider,
-        ulasProvider,
-        "",
-        "",
-        nullptr
-        );
-    }
-
-SaasClientImplPtr ClientIntegrationTests::CreateTestSaasClientImpl(int productId) const
-    {
-    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
-    IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, proxy);
-
-    return std::make_shared<SaasClientImpl>
-        (
-        productId,
-        "",
-        ulasProvider
-        );
-    }
-
 TEST_F(ClientIntegrationTests, DISABLED_Equality_Test)
     {
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
     ASSERT_EQ((int)1, (int)1); // Mock policy should result in NotEntitled
     }
 
-// Tests using the Clients' Create methods
+// Tests using the Client's Create method
 TEST_F(ClientIntegrationTests, FactoryStartStopApplication_Success)
     {
     auto client = CreateTestClient(true, TEST_PRODUCT_ID);
     ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
     EXPECT_SUCCESS(client->StopApplication());
-    }
-
-TEST_F(ClientIntegrationTests, AccessKeyFactoryStartStopApplication_Success)
-    {
-    auto client = CreateTestAccessKeyClient(TEST_PRODUCT_ID, TEST_VALID_ACCESSKEY);
-    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
-    EXPECT_SUCCESS(client->StopApplication());
-    }
-
-TEST_F(ClientIntegrationTests, SaasFactoryTrackUsage_Success)
-    {
-    auto client = CreateTestSaasClient(std::atoi(TEST_PRODUCT_ID));
-
-    //Utf8String tokenstring = "5e1518a2d48671ce2c75d76b35b6324329ad61b0c6570dfa8781a016177e7ec4";
-    Utf8String tokenString = "0cd2c3d2b0b813ce8c8e1b297f173f9e42f775ca32a2ee32a27b0a55daff1db9";
-    auto version = BeVersion(1, 0);
-    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
-
-    EXPECT_NE(static_cast<int>(client->TrackUsage(tokenString, version, projectId).get()), static_cast<int>(LicenseStatus::Error));
     }
 
 // Tests using the Clients' implementation
@@ -423,70 +276,3 @@ TEST_F(ClientIntegrationTests, GetLicenseStatusOfflineNotAllowedPolicy_Test)
 
 // TODO: heartbeat tests, different LicenseStatus situations
 
-TEST_F(ClientIntegrationTests, AccessKeyStartStopApplication_Success)
-    {
-    auto client = CreateTestAccessKeyClientImpl(TEST_PRODUCT_ID, TEST_VALID_ACCESSKEY);
-    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
-    EXPECT_SUCCESS(client->StopApplication());
-    }
-
-TEST_F(ClientIntegrationTests, AccessKeyMarkFeature_Success)
-    {
-    auto client = CreateTestAccessKeyClientImpl("1000"); // TEST_VALID_ACCESSKEY is entitled to microstation (1000)
-
-    FeatureUserDataMapPtr featureData = std::make_shared<FeatureUserDataMap>();
-
-    featureData->AddAttribute("Manufacturer", "Bentley Systems, Inc.");
-    featureData->AddAttribute("Website", "https://www.w3schools.com");
-    featureData->AddAttribute("Title", "Mobile App");
-
-    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
-    EXPECT_EQ(static_cast<int>(client->MarkFeature("TestFeatureId", featureData)), static_cast<int>(BentleyStatus::SUCCESS));
-    EXPECT_SUCCESS(client->StopApplication());
-    }
-
-TEST_F(ClientIntegrationTests, AccessKeyGetLicenseStatusValidPolicy_Success)
-    {
-    auto client = CreateTestAccessKeyClientImpl("1000"); // TEST_VALID_ACCESSKEY is entitled to microstation (1000)
-
-    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
-
-    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok));
-    EXPECT_SUCCESS(client->StopApplication());
-    }
-
-// TODO: heartbeat tests, different LicenseStatus situations
-
-TEST_F(ClientIntegrationTests, SaasTrackUsage_Success)
-    {
-    auto client = CreateTestSaasClientImpl(std::atoi(TEST_PRODUCT_ID));
-
-    Utf8String tokenString = "0cd2c3d2b0b813ce8c8e1b297f173f9e42f775ca32a2ee32a27b0a55daff1db9";
-    auto version = BeVersion(1, 0);
-    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
-
-    EXPECT_NE(static_cast<int>(client->TrackUsage(tokenString, version, projectId).get()), static_cast<int>(LicenseStatus::Error));
-    }
-
-//TEST_F(ClientIntegrationTests, AccessKeyClientTestPolicyHeartbeat_Test)
-//    {
-//    // I am using this test to manually debug/test the heartbeat to make sure of the following:
-//    // - policy heartbeat does in fact run as expected (heartbeat every 1 second, refresh policy by PolicyInterval)
-//    // - policy heartbeat cleans up as expected (after StopApplication is called, it doens't try to access disposed resources)
-//    // - maybe: policy heartbeat handles going offline well (keeps using old policy and access key until policy expires)
-//    auto client = CreateWithKeyTestClient(true);
-//    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
-//
-//    // use std::chrono::seconds(2); to wait in tests
-//    // PolicyRefresh: make a custom policy with a fast refresh! -> right now it is set for 60 days!
-//    // Heartbeat: check that function is entered multiple times [GOOD]
-//    // Cleanup: stop application and wait and check if anything is accessed [double check!]
-//
-//    std::this_thread::sleep_for(std::chrono::seconds(10));
-//
-//    EXPECT_SUCCESS(client->StopApplication());
-//
-//    std::this_thread::sleep_for(std::chrono::seconds(10));
-//
-//    EXPECT_EQ(1, 0);
-//    }

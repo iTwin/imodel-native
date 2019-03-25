@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/IntegrationTests/ClientIntegrationTests.h $
+|     $Source: Tests/IntegrationTests/SaasClientIntegrationTests.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,8 +10,8 @@
 #include "TestsHelper.h"
 #include "../UnitTests/Utils/MockHttpHandler.h"
 
-#include <Licensing/Client.h>
-#include "../../Licensing/ClientImpl.h"
+#include <Licensing/SaasClient.h>
+#include "../../Licensing/SaasClientImpl.h"
 
 #include <BeHttp/HttpClient.h>
 
@@ -19,16 +19,16 @@ USING_NAMESPACE_BENTLEY_LICENSING_INTEGRATION_TESTS
 
 #define TEST_PRODUCT_ID      "2545"
 
-class ClientIntegrationTests : public ::testing::Test
+class SaasClientIntegrationTests : public ::testing::Test
     {
 public:
-    ClientIntegrationTests();
+    SaasClientIntegrationTests();
     static void SetUpTestCase();
 
-    BeFileName GetLicensingDbPathIntegration() const;
+    BeFileName GetLicensingDbPathIntegration();
 
-    Licensing::ClientPtr          CreateTestClient(bool signIn, Utf8StringCR productId = TEST_PRODUCT_ID) const;
-    Licensing::ClientImplPtr          CreateTestClientImpl(bool signIn, Utf8StringCR productId = TEST_PRODUCT_ID) const;
+    Licensing::SaasClientPtr      CreateTestSaasClient(int productId = std::atoi(TEST_PRODUCT_ID)) const;
+    Licensing::SaasClientImplPtr      CreateTestSaasClientImpl(int productId = std::atoi(TEST_PRODUCT_ID)) const;
 
     void TearDown();
     };
