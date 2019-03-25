@@ -75,7 +75,8 @@ public:
 
     virtual ~ORDConverter()
         {
-
+        if (m_dgndb.IsValid())
+            m_dgndb = nullptr;
         }
 
     void SetORDParams(Params* ordParams) { m_ordParams = ordParams; }
