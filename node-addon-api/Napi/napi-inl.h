@@ -207,7 +207,7 @@ struct AccessorCallbackData {
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
 	extern "C" void imodeljs_register_addon(char const*, Napi::ModuleRegisterCallback);
  
 	#define NODE_API_MODULE(modname, regfunc) \
@@ -708,7 +708,7 @@ inline std::string String::Utf8Value() const {
   std::string value;
   value.reserve(length + 1);
   value.resize(length);
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
   size_t returnSize;
   status = napi_get_value_string_utf8(_env, _value, &value[0], value.capacity(), &returnSize);
   value.resize(returnSize - 1);

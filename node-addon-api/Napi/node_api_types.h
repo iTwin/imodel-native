@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <Bentley/BentleyConfig.h>
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
 #include <JavaScriptCore/JavaScriptCore.h>
 #endif
 
@@ -15,7 +15,7 @@
 // JSVM API types are all opaque pointers for ABI stability
 // typedef undefined structs instead of void* for compile time type safety
 typedef struct napi_env__* napi_env;
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
 typedef JSValueRef napi_value;
 #else
 typedef struct napi_value__ *napi_value;
@@ -150,7 +150,7 @@ typedef struct {
   const char* release;
 } napi_node_version;
 
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
 struct napi_env__ {
 private:
   JSContextGroupRef m_jscContextGroup;
