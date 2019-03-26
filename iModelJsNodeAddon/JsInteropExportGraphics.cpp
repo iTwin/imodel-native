@@ -62,16 +62,15 @@ struct FastVertexUnifier
 {
     struct NodeEntry
     {
-        int32_t normal; int32_t param; int32_t newIndex;
-        NodeEntry() : normal(-1), param(-1), newIndex(-1) { }
+        int32_t normal; int32_t newIndex; FPoint2d param;
+        NodeEntry() : normal(-1), newIndex(-1) { }
     };
 
     struct Node // each node is 64 bytes for cache alignment
     {
-        constexpr static uint32_t ENTRY_COUNT = 5;
+        constexpr static uint32_t ENTRY_COUNT = 4;
 
         NodeEntry entries[ENTRY_COUNT];
-        int32_t padding;
     };
 
     bvector<Node>               m_remapper;
@@ -81,8 +80,8 @@ struct FastVertexUnifier
     bvector<int32_t>            m_inPointIndices;
     bvector<FPoint3d>           m_inNormals;
     bvector<int32_t>            m_inNormalIndices;
+    // No index array, already unified with point indices
     bvector<FPoint2d>           m_inParams;
-    bvector<int32_t>            m_inParamIndices;
 
     // Unified indices + corresponding data
     ExportGraphicsMesh          m_output;
@@ -99,7 +98,6 @@ void Clear()
     m_inNormals.clear();
     m_inNormalIndices.clear();
     m_inParams.clear();
-    m_inParamIndices.clear();
 
     m_output.Clear();
     }
@@ -122,11 +120,13 @@ void Unify()
     // Index count will remain the same
     m_output.m_indices.resize(m_inPointIndices.size());
 
+    const float UV_TOLERANCE = 0.01f;
+
     for (int i = 0; i < (int)m_inPointIndices.size(); ++i)
         {
         int32_t origPointIndex = m_inPointIndices[i];
         int32_t origNormalIndex = m_inNormalIndices[i];
-        int32_t origParamIndex = m_inParamIndices[i];
+        FPoint2d origParam = m_inParams[i];
 
         bool foundRemap = false;
         for (int j = 0; j < Node::ENTRY_COUNT; ++j)
@@ -135,16 +135,18 @@ void Unify()
             if (entry.newIndex == -1) // unused entry
                 {
                 entry.normal = origNormalIndex;
-                entry.param = origParamIndex;
+                entry.param = origParam;
                 entry.newIndex = (int32_t) m_output.m_points.size();
                 m_output.m_indices[i] = entry.newIndex;
                 m_output.m_points.push_back(m_inPoints[origPointIndex]);
                 m_output.m_normals.push_back(m_inNormals[origNormalIndex]);
-                m_output.m_params.push_back(m_inParams[origParamIndex]);
+                m_output.m_params.push_back(origParam);
                 foundRemap = true;
                 break;
                 }
-            else if (entry.param == origParamIndex && entry.normal == origNormalIndex)
+            else if (entry.normal == origNormalIndex &&
+                     abs(entry.param.x - origParam.x) < UV_TOLERANCE &&
+                     abs(entry.param.y - origParam.y) < UV_TOLERANCE)
                 {
                 // reuse entry
                 m_output.m_indices[i] = entry.newIndex;
@@ -159,7 +161,7 @@ void Unify()
             m_output.m_indices[i] = (int32_t) m_output.m_points.size();
             m_output.m_points.push_back(m_inPoints[origPointIndex]);
             m_output.m_normals.push_back(m_inNormals[origNormalIndex]);
-            m_output.m_params.push_back(m_inParams[origParamIndex]);
+            m_output.m_params.push_back(origParam);
             }
         }
     }
@@ -167,31 +169,27 @@ void Unify()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Matt.Gooding    02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SetInput(PolyfaceQueryCR pf, TransformCR transform)
+void SetInput(PolyfaceQueryCR pf, TransformCR transform, FPoint2dCP srcParams)
     {
     bool isIdentity = transform.IsIdentity();
     bool isMirror = !isIdentity && transform.Determinant() < 0;
 
     uint32_t indexCount = (uint32_t) pf.GetPointIndexCount();
-    m_inPointIndices.resize((indexCount / 4) * 3); // no blocking in output
-    m_inNormalIndices.resize(m_inPointIndices.size());
-    m_inParamIndices.resize(m_inPointIndices.size());
+    uint32_t indexCountWithoutBlocking = (indexCount / 4) * 3; // no blocking in output
+    m_inPointIndices.resize(indexCountWithoutBlocking); 
+    m_inNormalIndices.resize(indexCountWithoutBlocking);
+
+    // Account for potential winding order change with mirroring transform
+    uint32_t indexOffset1 = isMirror ? 2 : 1;
+    uint32_t indexOffset2 = isMirror ? 1 : 2;
 
     // Remove blocking, switch to zero-index, discard edge visibility
     int32_t const* srcPointIndices = pf.GetPointIndexCP();
     for (uint32_t dst = 0, src = 0; src < indexCount; src += 4, dst += 3)
         {
         m_inPointIndices[dst] = abs(srcPointIndices[src]) - 1;
-        if (!isMirror)
-            {
-            m_inPointIndices[dst + 1] = abs(srcPointIndices[src + 1]) - 1;
-            m_inPointIndices[dst + 2] = abs(srcPointIndices[src + 2]) - 1;
-            }
-        else
-            {
-            m_inPointIndices[dst + 1] = abs(srcPointIndices[src + 2]) - 1;
-            m_inPointIndices[dst + 2] = abs(srcPointIndices[src + 1]) - 1;
-            }
+        m_inPointIndices[dst + 1] = abs(srcPointIndices[src + indexOffset1]) - 1;
+        m_inPointIndices[dst + 2] = abs(srcPointIndices[src + indexOffset2]) - 1;
         }
 
     // Remove blocking, switch to zero-index (no sign visibility on normals)
@@ -199,33 +197,16 @@ void SetInput(PolyfaceQueryCR pf, TransformCR transform)
     for (uint32_t dst = 0, src = 0; src < indexCount; src += 4, dst += 3)
         {
         m_inNormalIndices[dst] = srcNormalIndices[src] - 1;
-        if (!isMirror)
-            {
-            m_inNormalIndices[dst + 1] = srcNormalIndices[src + 1] - 1;
-            m_inNormalIndices[dst + 2] = srcNormalIndices[src + 2] - 1;
-            }
-        else
-            {
-            m_inNormalIndices[dst + 1] = srcNormalIndices[src + 2] - 1;
-            m_inNormalIndices[dst + 2] = srcNormalIndices[src + 1] - 1;
-            }
+        m_inNormalIndices[dst + 1] = srcNormalIndices[src + indexOffset1] - 1;
+        m_inNormalIndices[dst + 2] = srcNormalIndices[src + indexOffset2] - 1;
         }
 
-    // Remove blocking, switch to zero-index (no sign visibility on params)
-    int32_t const* srcParamIndices = pf.GetParamIndexCP();
-    for (uint32_t dst = 0, src = 0; src < indexCount; src += 4, dst += 3)
+    m_inParams.resize(indexCountWithoutBlocking);
+    for (uint32_t i = 0; i < indexCountWithoutBlocking; i += 3)
         {
-        m_inParamIndices[dst] = srcParamIndices[src] - 1;
-        if (!isMirror)
-            {
-            m_inParamIndices[dst + 1] = srcParamIndices[src + 1] - 1;
-            m_inParamIndices[dst + 2] = srcParamIndices[src + 2] - 1;
-            }
-        else
-            {
-            m_inParamIndices[dst + 1] = srcParamIndices[src + 2] - 1;
-            m_inParamIndices[dst + 2] = srcParamIndices[src + 1] - 1;
-            }
+        m_inParams[i] = srcParams[i];
+        m_inParams[i + 1] = srcParams[i + indexOffset1];
+        m_inParams[i + 2] = srcParams[i + indexOffset2];
         }
 
     DPoint3dCP srcPoints = pf.GetPointCP();
@@ -251,15 +232,6 @@ void SetInput(PolyfaceQueryCR pf, TransformCR transform)
             tmpNormal.Normalize();
             }
         m_inNormals[i] = FPoint3d::From(tmpNormal);
-        }
-
-    DPoint2dCP srcParams = pf.GetParamCP();
-    uint32_t paramCount = (uint32_t) pf.GetParamCount();
-    m_inParams.resize(paramCount);
-    for (uint32_t i = 0; i < paramCount; ++i)
-        {
-        m_inParams[i].x = static_cast<float>(srcParams[i].x);
-        m_inParams[i].y = static_cast<float>(srcParams[i].y);
         }
     }
 }; // FastVertexUnifier
@@ -345,8 +317,9 @@ public:
     struct CachedEntry
         {
         ColorDef            color;
+        DgnTextureId        textureId;
         ExportGraphicsMesh  mesh; 
-        CachedEntry(ColorDef c) : color(c) { }
+        CachedEntry(ColorDef c, DgnTextureId id) : color(c), textureId(id) { }
         };
     bvector<CachedEntry>            m_cachedEntries;
 
@@ -358,8 +331,14 @@ private:
     DgnDbR                          m_db;
     FastVertexUnifier               m_unifier;
 
-    struct CachedMaterial { ColorDef color; bool useColor; bool useAlpha; };
-    std::unordered_map<uint64_t, CachedMaterial> m_cachedMaterials;
+    struct CachedMaterial
+        {
+        ColorDef    color;
+        bool        useColor;
+        bool        useAlpha;
+        Json::Value patternMap;
+        };
+    std::unordered_map<uint64_t, std::unique_ptr<CachedMaterial>> m_cachedMaterials;
 
     IFacetOptionsP _GetFacetOptionsP() override {return m_facetOptions.get();}
 
@@ -375,40 +354,42 @@ private:
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedMaterial& GetCachedMaterial(RenderMaterialId materialId)
     {
-    auto iter = m_cachedMaterials.find(materialId.GetValue());
-    if (m_cachedMaterials.end() != iter) return iter->second;
+    std::unique_ptr<CachedMaterial>& result = m_cachedMaterials[materialId.GetValue()];
+    if (result.get()) return *result;
 
-    CachedMaterial& result = m_cachedMaterials[materialId.GetValue()];
+    result.reset(new CachedMaterial());
     RenderMaterialCPtr matElem = RenderMaterial::Get(m_db, materialId);
     if (!matElem.IsValid())
         {
-        result.useColor = result.useAlpha = false;
-        return result;
+        result->useColor = result->useAlpha = false;
+        return *result;
         }
 
     RenderingAssetCR asset = matElem->GetRenderingAsset();
     if (asset.GetBool(RENDER_MATERIAL_FlagHasBaseColor, false))
         {
         RgbFactor diffuseRgb = asset.GetColor(RENDER_MATERIAL_Color);
-        result.color.SetRed((Byte)(diffuseRgb.red * 255.0));
-        result.color.SetGreen((Byte)(diffuseRgb.green * 255.0));
-        result.color.SetBlue((Byte)(diffuseRgb.blue * 255.0));
-        result.useColor = true;
+        result->color.SetRed((Byte)(diffuseRgb.red * 255.0));
+        result->color.SetGreen((Byte)(diffuseRgb.green * 255.0));
+        result->color.SetBlue((Byte)(diffuseRgb.blue * 255.0));
+        result->useColor = true;
         }
     if (asset.GetBool(RENDER_MATERIAL_FlagHasTransmit, false))
         {
         double transparency = asset.GetDouble(RENDER_MATERIAL_Transmit, 0.0);
-        result.color.SetAlpha((Byte)(transparency * 255.0));
-        result.useAlpha = true;
+        result->color.SetAlpha((Byte)(transparency * 255.0));
+        result->useAlpha = true;
         }
 
-    return result;
+    result->patternMap = asset.GetPatternMap().m_value;
+
+    return *result;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Matt.Gooding    02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef ResolveColor(SimplifyGraphic& sg)
+ColorDef ResolveColor(SimplifyGraphic& sg, Json::Value& patternMapJson)
     {
     // Resolved fill color as baseline
     ColorDef color = sg.GetCurrentGraphicParams().GetFillColor();
@@ -421,6 +402,7 @@ ColorDef ResolveColor(SimplifyGraphic& sg)
     CachedMaterial& cachedMaterial = GetCachedMaterial(materialId);
     if (cachedMaterial.useColor) color.SetColorNoAlpha(cachedMaterial.color);
     if (cachedMaterial.useAlpha) color.SetAlpha(cachedMaterial.color.GetAlpha());
+    patternMapJson = cachedMaterial.patternMap;
 
     return color;
     }
@@ -430,23 +412,56 @@ ColorDef ResolveColor(SimplifyGraphic& sg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg) override
     {
-    // TODO - this does receive empty polyfaces - should they be filtered upstream?
     if (pfQuery.GetPointIndexCount() == 0 || pfQuery.GetPointCount() == 0) return true;
     if (pfQuery.GetNormalIndexCP() == nullptr || pfQuery.GetNormalCount() == 0) return true;
     if (pfQuery.GetParamIndexCP() == nullptr || pfQuery.GetParamCount() == 0) return true;
     if (pfQuery.GetMeshStyle() != MESH_ELM_STYLE_INDEXED_FACE_LOOPS) return true;
 
-    m_unifier.SetInput(pfQuery, sg.GetLocalToWorldTransform());
-    m_unifier.Unify();
+    DgnTextureId textureId;
+    Json::Value patternMapJson;
+    ColorDef color = ResolveColor(sg, patternMapJson);
 
-    ColorDef color = ResolveColor(sg);
+    uint32_t indexCountWithoutBlocking = (uint32_t)((pfQuery.GetPointIndexCount() / 4) * 3);
+    bvector<FPoint2d> effectiveParams;
+    effectiveParams.reserve(indexCountWithoutBlocking);
+
+    if (patternMapJson.isNull())
+        {
+        int32_t const* srcParamIndices = pfQuery.GetParamIndexCP();
+        DPoint2dCP srcParams = pfQuery.GetParamCP();
+        for (uint32_t i = 0, iLimit = (uint32_t)pfQuery.GetPointIndexCount(); i < iLimit; i += 4)
+            {
+            for (uint32_t j = 0; j < 3; ++j)
+                {
+                DPoint2d srcParam = srcParams[srcParamIndices[i + j] - 1];
+                effectiveParams.push_back( { static_cast<float>(srcParam.x), static_cast<float>(srcParam.y) } );
+                }
+            }
+        }
+    else
+        {
+        RenderingAsset::TextureMap textureMap(patternMapJson, RenderingAsset::TextureMap::Type::Pattern);
+        Render::TextureMapping::Params textureMapParams = textureMap.GetTextureMapParams();
+        textureId = textureMap.GetTextureId();
+
+        bvector<DPoint2d> perFaceParams(3, DPoint2d::FromZero());
+        for (auto visitor = PolyfaceVisitor::Attach(pfQuery); visitor->AdvanceToNextFace(); )
+            {
+            textureMapParams.ComputeUVParams(perFaceParams, *visitor, nullptr);
+            for (int i = 0; i < 3; ++i)
+                effectiveParams.push_back( { static_cast<float>(perFaceParams[i].x), static_cast<float>(perFaceParams[i].y) } );
+            }
+        }
+
+    m_unifier.SetInput(pfQuery, sg.GetLocalToWorldTransform(), &effectiveParams[0]);
+    m_unifier.Unify();
 
     // Bucket polyfaces together by color to save cost on NAPI transition and give users a
     // minimal number of meshes for each element.
     ExportGraphicsMesh* cachedMesh = nullptr;
     for (auto& entry : m_cachedEntries)
         {
-        if (entry.color != color)
+        if (entry.color != color || entry.textureId != textureId)
             continue;
         cachedMesh = &entry.mesh;
         break;
@@ -454,7 +469,7 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
 
     if (cachedMesh == nullptr)
         {
-        m_cachedEntries.emplace_back(color);
+        m_cachedEntries.emplace_back(color, textureId);
         cachedMesh = &m_cachedEntries.back().mesh;
         }
 
@@ -528,6 +543,11 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
             cbArgument.Set("elementId", napiElementId);
             cbArgument.Set("mesh", convertMesh(Env(), entry.mesh));
             cbArgument.Set("color", Napi::Number::New(Env(), entry.color.GetValue()));
+            if (entry.textureId.IsValid())
+                {
+                Utf8String textureIdString = entry.textureId.ToString(BeInt64Id::UseHex::Yes);
+                cbArgument.Set("textureId", Napi::String::New(Env(), textureIdString.c_str()));
+                }
             Napi::Value cbVal = onGraphicsCb.Call({ cbArgument });
             if (cbVal.IsBoolean() && !cbVal.As<Napi::Boolean>())
                 return DgnDbStatus::Success;
