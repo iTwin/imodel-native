@@ -29,7 +29,7 @@
       <ProductDirectory Name="UnitTests-Objects" Path="unittests" />
     </ProductDirectoryList>
 
-    <Part Name="ClassificationSystemsSchema" BentleyBuildMakeFile="ClassificationSystemsSchema.prewire.mke">
+    <Part Name="ClassificationSystemsSchema">
       <SubPart PartName="ClassificationSystems" Repository="BisSchemas" PartFile="BisSchemas"/>
     </Part>
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Domain/PublicApi/ClassificationSystemsMacros.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -69,15 +69,16 @@
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with CLASSIFICATIONSYSTEMS_ECCHEMA_NAME macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
-#define CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem                                    "ClassificationSystem"
-#define CLASSIFICATIONSYSTEMS_CLASS_Classification                                          "Classification"
-#define CLASSIFICATIONSYSTEMS_CLASS_ClassificationGroup                                     "ClassificationGroup"
-#define CLASSIFICATIONSYSTEMS_CLASS_CIBSEClassDefinition                                    "CIBSEClassDefinition"
-#define CLASSIFICATIONSYSTEMS_CLASS_OmniClassClassDefinition                                "OmniClassClassDefinition"
 #define CLASSIFICATIONSYSTEMS_CLASS_ASHRAEClassDefinition                                   "ASHRAEClassDefinition"
 #define CLASSIFICATIONSYSTEMS_CLASS_ASHRAE2004ClassDefinition                               "ASHRAE2004ClassDefinition"
 #define CLASSIFICATIONSYSTEMS_CLASS_ASHRAE2010ClassDefinition                               "ASHRAE2010ClassDefinition"
+#define CLASSIFICATIONSYSTEMS_CLASS_CIBSEClassDefinition                                    "CIBSEClassDefinition"
+#define CLASSIFICATIONSYSTEMS_CLASS_Classification                                          "Classification"
+#define CLASSIFICATIONSYSTEMS_CLASS_ClassificationGroup                                     "ClassificationGroup"
+#define CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem                                    "ClassificationSystem"
+#define CLASSIFICATIONSYSTEMS_CLASS_ClassificationTable                                     "ClassificationTable"
 #define CLASSIFICATIONSYSTEMS_CLASS_MasterFormatClassDefinition                             "MasterFormatClassDefinition"
+#define CLASSIFICATIONSYSTEMS_CLASS_OmniClassClassDefinition                                "OmniClassClassDefinition"
 #define CLASSIFICATIONSYSTEMS_CLASS_UniFormatClassDefinition                                "UniFormatClassDefinition"
 
 

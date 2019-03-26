@@ -2,7 +2,7 @@
 |
 |     $Source: Domain/ClassificationSystemsDomain.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ClassificationSystems/ClassificationSystemsApi.h>
@@ -27,9 +27,10 @@ DOMAIN_DEFINE_MEMBERS(ClassificationSystemsDomain)
 //---------------------------------------------------------------------------------------
 ClassificationSystemsDomain::ClassificationSystemsDomain () : Dgn::DgnDomain(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, "ClassificationSystems Domain", 1)
     {
-    RegisterHandler(ClassificationSystemHandler::GetHandler());
-    RegisterHandler(ClassificationHandler::GetHandler());
     RegisterHandler(ClassificationGroupHandler::GetHandler());
+    RegisterHandler(ClassificationHandler::GetHandler());
+    RegisterHandler(ClassificationSystemHandler::GetHandler());
+    RegisterHandler(ClassificationTableHandler::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------

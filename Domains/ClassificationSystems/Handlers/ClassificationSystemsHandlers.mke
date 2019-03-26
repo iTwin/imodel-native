@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #     $Source: Handlers/ClassificationSystemsHandlers.mke $
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
 AppName = ClassificationSystemsHandlers
 CCompPDBName = $(AppName)
@@ -24,6 +24,8 @@ MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
 $(o)ClassificationSystemsHandlers$(oext) : $(_MakeFilePath)ClassificationSystemsHandlers.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsHandlers.h
+
+$(o)ClassificationTableHandler$(oext) : $(_MakeFilePath)ClassificationTableHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationTableHandler.h
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
