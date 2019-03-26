@@ -25,6 +25,7 @@
     <Part Name="BuildingDomain" BentleyBuildMakeFile="Building.mke" ApiNumber="B02">
         <SubPart PartName="BuildingPhysicalPublicAPI"/>
         <SubPart PartName="AecUnitsDomain"             PartFile="AecUnits"              Repository="DgnDomains-DesignModelingUnits"/>
+        <SubPart PartName="BuildingSpatialDomain" Repository="DgnDomains-BuildingSpatial" PartFile="BuildingSpatial" />
         <!--SubPart PartName="ConstraintModelSchema"      PartFile="ConstraintSystem"      Repository="DgnDomains-ConstraintSystem"/-->
         <SubPart PartName="Grids"                      PartFile="Grids"                 Repository="DgnDomains-Grids"/>
         <SubPart PartName="StructuralDomainDLL"        PartFile="StructuralDomains"     Repository="DgnDomains-Structural"/>
@@ -122,6 +123,7 @@
         -->
         <SubPart PartName="Grids"                           PartFile="Grids"                    Repository="DgnDomains-Grids"/>
         <SubPart PartName="SpacePlanningDomain"             PartFile="BuildingSpacePlanning"    Repository="DgnDomains-BuildingSpacePlanning"/>
+        <SubPart PartName="BuildingSpatialDomain"           Repository="DgnDomains-BuildingSpatial" PartFile="BuildingSpatial" />
         <SubPart PartName="StructuralDomainDLL"             PartFile="StructuralDomains"        Repository="DgnDomains-Structural"/>
         <SubPart PartName="ProfilesDomainDLL"               PartFile="ProfilesDomain"           Repository="DgnDomains-Profiles"/>
         <SubPart PartName="FormsDomainDLL"                  PartFile="FormsDomain"              Repository="DgnDomains-Forms"/>
