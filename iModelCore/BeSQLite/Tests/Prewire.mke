@@ -1,0 +1,20 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/Prewire.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+
+seedDataSource=$(SrcRoot)BeSQLite/Tests/Data/
+$(BuildContext)Delivery/UnitTests/BeSQLiteTestData : $(seedDataSource)
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+# Expose seed data as assets needed by BeSQLite unit tests
+BEGTEST_ASSETS     + $(BuildContext)Delivery/UnitTests/BeSQLiteTestData/

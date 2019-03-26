@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // IModelExtractor                                                        // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <Product Name="IModelExtractor">
+        <SubPart PartName="IModelExtractorExe" LibType="Static"/>        
+        <Directories DirectoryListName="IModelExtractorDirList"/>
+    </Product>
+    
+    <Part Name="IModelExtractorExe" DeferType="BuildSamples" BentleyBuildMakeFile="IModelExtractor/IModelExtractor.mke">
+        <SubPart PartName="BeSQLite" PartFile="BeSQLite"/>
+        <Bindings>
+            <Files ProductDirectoryName="IModelExeDir">Delivery/imodel.exe</Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="IModelExtractorDirList">  
+        <!-- Only want a static build of the EXE -->      
+        <ProductDirectory Name="IModelExeDir"               Deliver="true"  LibType="static" Path=""/>
+        <ProductDirectory Name="Assemblies"    Deliver="false" LibType="static"/>        
+        <ProductDirectory Name="Assets"    Deliver="false"/>        
+        <ProductDirectory Name="Assets"    Deliver="false" LibType="static"/>        
+        <ProductDirectory Name="VendorNotices"              Deliver="false" LibType="static"/>
+        <ProductDirectory Name="GeomNativeAssemblies"       Deliver="false" LibType="static"/>
+    </ProductDirectoryList>
+    
+</BuildContext>
