@@ -98,7 +98,7 @@ describe("DataValidationTests", () => {
             } else {
                 // tslint:disable-next-line:no-console
                 console.log("Matching iModels could not be found");
-                reporter.addResult(dt.name, false, [""], dt.lhsPath, dt.rhsPath, dt.basePath);
+                reporter.addResult(dt.name, false, [{name: "MatchingiModelNotFound", lc: 0, rc: 0, bc: 0}], dt.lhsPath, dt.rhsPath, dt.basePath);
                 pass = false;
             }
         }
