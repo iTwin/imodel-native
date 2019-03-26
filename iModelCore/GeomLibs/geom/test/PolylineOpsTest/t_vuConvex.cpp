@@ -224,10 +224,10 @@ TEST(CurveVector, XYOffset)
                     auto box = rotatedChop->Clone (Transform::From (xyz));
                     Check::SaveTransformed (box);
                     }
+                Check::SaveTransformed(result);
 
                 Check::Shift(0, 2.0 * dy, 0);
                 Check::SaveTransformed(shape);
-                // Check::SaveTransformed(result);
                 for (int effort : {0, 1, 10})
                     {
                     // and output points with various effort to get to the inside . . .

@@ -9,6 +9,13 @@
 // This h file has all methods directly implemented.
 // Hence include it a single C++ file.
 
+// connect tree does not have CurveVector::Clone(transform) ... substitute this ..
+static CurveVectorPtr CloneWithTransform(CurveVectorCR curves, TransformCR transform)
+    {
+    auto clone = curves.Clone();
+    clone->TransformInPlace(transform);
+    return clone;
+    }
 /*
 <ul>
 <li> Let regionBoundary be a (CurveVector) for a region.
@@ -64,6 +71,7 @@ void static AddRectanglesAtKeyPoints(CurveVectorCR curves, DRange2dCR range, Cur
         }
     }
 
+
 /*
 * Return a curve vector which is the inner area in which the center of a rectangular box (e.g. text) can be placed
 * without the box clashing with the regionBoundary.
@@ -84,10 +92,10 @@ double angleRadians = 0.0   //!< angle to rotate the text box.
         auto transform = Transform::FromMatrixAndFixedPoint(
             RotMatrix::FromAxisAndRotationAngle(2, -angleRadians),
             xyzA);
-        auto rotatedBoundary = regionBoundary.Clone (transform);
+        auto rotatedBoundary = CloneWithTransform(regionBoundary, transform);
         auto region = ComputeCenterRegionForRectangularBox (*rotatedBoundary, xSize, ySize, 0.0);
         auto inverseTransform = transform.ValidatedInverse ();
-        return region->Clone (inverseTransform);
+        return CloneWithTransform(*region, inverseTransform);
         }
     if (regionBoundary.ContainsNonLinearPrimitive())
         {
@@ -113,10 +121,10 @@ double angleRadians = 0.0   //!< angle to rotate the text box.
     auto transformAY = Transform::From(ax, ay, 0);
     // REMARK: The intersections might be done as one step with a union region.
     // I prefer to deal with smaller region problems.
-    auto shapeBX = regionBoundary.Clone(transformBX);
-    auto shapeBY = regionBoundary.Clone(transformBY);
-    auto shapeAX = regionBoundary.Clone(transformAX);
-    auto shapeAY = regionBoundary.Clone(transformAY);
+    auto shapeBX = CloneWithTransform(regionBoundary, transformBX);
+    auto shapeBY = CloneWithTransform(regionBoundary, transformBY);
+    auto shapeAX = CloneWithTransform(regionBoundary, transformAX);
+    auto shapeAY = CloneWithTransform(regionBoundary, transformAY);
 
 
     CurveVectorPtr minusBX = CurveVector::AreaIntersection (*shapeBX, regionBoundary);
