@@ -1,0 +1,39 @@
+#----------------------------------------------------------------------------------------
+#  $Source: mki/EncryptShadersPolicy.mki $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------------------------
+
+%include $(SrcRoot)/Pointools/PointoolsCommon/mki/PolicyCommon.mki
+#%include $(SrcRoot)Bentley/PublicMki/BentleyApi.mki 
+
+%include DefaultToolSet.mki
+
+baseDir=$(SrcRoot)Pointools/PointoolsVortexAPI/EncryptShaders/
+
+appName                         = EncryptShaders
+o                               = $(OutputRootDir)Build/Pointools/PointoolsVortexAPI$(VSOutputSubfolder)EncryptShaders/
+CCompPDBName                    = $(appName)
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+
+#----------------------------------------------------------------------
+# Preprocessor definitions
+#----------------------------------------------------------------------
+CCompOpts + -AI$(SDAssemblies)
+CCompOpts + -D"_MBCS"
+%if debug
+    DEBUG_RUNTIME = 1
+    CCompOpts + -D"WIN32"
+    CCompOpts + -D"_CONSOLE"
+    CCompOpts + -D"_CRT_SECURE_NO_WARNINGS"
+%else
+    CCompOpts + -D"WIN32"
+    CCompOpts + -D"NDEBUG"
+    CCompOpts + -D"_CONSOLE"
+    CCompOpts + -D"_CRT_SECURE_NO_WARNINGS"
+%endif
+
+#ASSEMBLY_NO_STRONGNAME = 1
+
+
