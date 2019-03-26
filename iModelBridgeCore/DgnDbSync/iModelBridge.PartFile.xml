@@ -45,6 +45,7 @@
     </Part>
 
     <Part Name="Docs" DeferType="BuildDocs" BentleyBuildMakeFile="iModelBridge/BuildDoc.mke" >
+        <RequiredRepository>Bsitools-Doxygen</RequiredRepository>
         <SubPart PartName="BentleyDocConfig" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="iModelBridgeLibrary" />
         <Bindings>

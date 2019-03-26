@@ -985,7 +985,7 @@ DgnV8Api::ModelId RootModelConverter::_GetRootModelIdFromViewGroup()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnV8Api::ModelId RootModelConverter::_GetRootModelId()
     {
-    if (IsUpdating() && !m_params.GetRootModelChoice().IsSet()) // (Note: Some of our unit tests converter various models from the same file.)
+    if (IsUpdating() && !m_params.GetRootModelChoice().IsSet()) // (Note: Some of our unit tests convert various models from the same file.)
         {
         auto sourceMasterModelSubject = FindSourceMasterModelSubject(m_rootFile->GetDictionaryModel()); // we must assume that there is only one SourceMasterModel Subject for this file.
         if (sourceMasterModelSubject.IsValid())
@@ -1744,6 +1744,7 @@ void RootModelConverter::_FinishConversion()
     {
     if (!m_beginConversionCalled)
         {
+        LOG.error ("_FinishConversion called without _BeginConversion");
         BeAssert(false && "_FinishConversion called without _BeginConversion");
         return;
         }
@@ -1890,14 +1891,23 @@ BentleyStatus RootModelConverter::DoFinishConversion()
     {
     _FinishConversion();
     if (WasAborted())
+        {
+        LOG.error ("DoFinishConversion was aborted");
         return BSIERROR;
+        }
 
     _OnConversionComplete();
 
     if (ShouldCreateIntermediateRevisions())
         PushChangesForFile(*GetRootV8File(), ConverterDataStrings::GlobalProperties());
 
-    return WasAborted()? BSIERROR: BSISUCCESS;
+    if (WasAborted())
+        {
+        LOG.error ("DoFinishConversion was aborted!");//note the exclamation, it is a hint where it got aborted.
+        return BSIERROR;
+        }
+    
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
