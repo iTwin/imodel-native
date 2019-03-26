@@ -1593,12 +1593,12 @@ BcDTMP ScalableMeshDTM::_GetBcDTM()
         m_scMesh->LoadSources(sources);
         for (IDTMSourceCollection::const_iterator it = sources.Begin(); it != sources.End(); it++)
         {
-            BeFileName path = BeFileName(it->GetPath());
-            if (0 == path.GetExtension().CompareToI(L"dtm") ||
-                0 == path.GetExtension().CompareToI(L"tin") ||
-                0 == path.GetExtension().CompareToI(L"dgn") ||
-                0 == path.GetExtension().CompareToI(L"bcdtm") ||
-                0 == path.GetExtension().CompareToI(L"dat"))
+            BeFileName path = BeFileName(it->GetPath().c_str());
+            if (0 == BeFileName::GetExtension(path).CompareToI(L"dtm") ||
+                0 == BeFileName::GetExtension(path).CompareToI(L"tin") ||
+                0 == BeFileName::GetExtension(path).CompareToI(L"dgn") ||
+                0 == BeFileName::GetExtension(path).CompareToI(L"bcdtm") ||
+                0 == BeFileName::GetExtension(path).CompareToI(L"dat"))
             {
                 hasFeatureSource = true;
             }
