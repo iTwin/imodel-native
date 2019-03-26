@@ -86,15 +86,10 @@ IGeometryPtr LShapeProfile::_CreateShapeGeometry() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus LShapeProfile::_OnDelete() const
     {
-    DgnDbStatus dbStatus;
-    DgnElementId doubleProfileId = ProfilesQuery::SelectFirstByNavigationProperty (m_dgndb, m_elementId,
-        PRF_CLASS_DoubleLShapeProfile, PRF_PROP_DoubleLShapeProfile_SingleProfile, &dbStatus);
-    if (dbStatus != DgnDbStatus::Success)
-        return dbStatus;
-
-    if (doubleProfileId.IsValid())
+    DgnElementIdSet childrenIds = QueryChildren();
+    if (!childrenIds.empty())
         {
-        ProfilesLog::FailedDelete_ProfileHasReference (PRF_CLASS_LShapeProfile, m_elementId, PRF_CLASS_DoubleLShapeProfile, doubleProfileId);
+        ProfilesLog::FailedDelete_ProfileHasReference (PRF_CLASS_LShapeProfile, m_elementId, PRF_CLASS_DoubleLShapeProfile, *childrenIds.begin());
         return DgnDbStatus::ForeignKeyConstraint;
         }
 
@@ -108,13 +103,14 @@ DgnDbStatus LShapeProfile::_OnDelete() const
 DgnDbStatus LShapeProfile::_UpdateInDb()
     {
     DgnDbStatus dbStatus;
-    bvector<DoubleLShapeProfilePtr> doubleProfiles = ProfilesQuery::SelectByNavigationProperty<DoubleLShapeProfile> (m_dgndb, m_elementId,
-        PRF_CLASS_DoubleLShapeProfile, PRF_PROP_DoubleLShapeProfile_SingleProfile, &dbStatus);
-    if (dbStatus != DgnDbStatus::Success)
-        return dbStatus;
+    DgnElementIdSet childrenIds = QueryChildren();
 
-    for (auto const& doubleProfilePtr : doubleProfiles)
+    for (DgnElementId const& childId : childrenIds)
         {
+        DoubleLShapeProfilePtr const & doubleProfilePtr = DoubleLShapeProfile::GetForEdit (GetDgnDb(), childId);
+        if (doubleProfilePtr.IsNull())
+            continue;
+
         dbStatus = doubleProfilePtr->UpdateGeometry (*this);
         if (dbStatus != DgnDbStatus::Success)
             return dbStatus;

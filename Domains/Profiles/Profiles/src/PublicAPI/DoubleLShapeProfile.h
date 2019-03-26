@@ -91,8 +91,8 @@ public:
     PROFILES_EXPORT void SetType (DoubleLShapeProfileType value); //!< Set the value for @ref CreateParams.type "Type"
 
     PROFILES_EXPORT LShapeProfilePtr GetSingleProfile() const; //!< Get the LShapeProfile instance referenced by @ref CreateParams.singleProfileId "SingleProfileId"
-    PROFILES_EXPORT void SetSingleProfile (LShapeProfile const& singleProfile); //!< Set the value for @ref CreateParams.singleProfileId "SingleProfileId"
-    PROFILES_EXPORT void SetSingleProfile (Dgn::DgnElementId const& singleProfileId); //!< Set the value for @ref CreateParams.singleProfileId "SingleProfileId"
+    PROFILES_EXPORT Dgn::DgnDbStatus SetSingleProfile (LShapeProfile const& singleProfile); //!< Set the value for @ref CreateParams.singleProfileId "SingleProfileId"
+    PROFILES_EXPORT Dgn::DgnDbStatus SetSingleProfile (Dgn::DgnElementId const& singleProfileId); //!< Set the value for @ref CreateParams.singleProfileId "SingleProfileId"
     //! @endGroup
 
     }; // DoubleLShapeProfile

@@ -80,7 +80,7 @@ END_BENTLEY_PROFILES_NAMESPACE
 
 // Relationships
 #define PRF_REL_DerivedProfileRefersToSinglePerimeterProfile                    "DerivedProfileRefersToSinglePerimeterProfile"
-#define PRF_REL_DoubleLShapeProfileRefersToLShapeProfile                        "DoubleLShapeProfileRefersToLShapeProfile"
+#define PRF_REL_LShapeProfileOwnsDoubleLShapeProfile                            "LShapeProfileOwnsDoubleLShapeProfile"
 #define PRF_REL_DoubleCShapeProfileRefersToCShapeProfile                        "DoubleCShapeProfileRefersToCShapeProfile"
 #define PRF_REL_MaterialProfileRefersToProfile                                  "MaterialProfileRefersToProfile"
 

@@ -138,24 +138,23 @@ void DoubleLShapeProfile::SetType (DoubleLShapeProfileType value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 LShapeProfilePtr DoubleLShapeProfile::GetSingleProfile() const
     {
-    DgnElementId singleProfileId = GetPropertyValueId<DgnElementId> (PRF_PROP_DoubleLShapeProfile_SingleProfile);
-    return LShapeProfile::GetForEdit (m_dgndb, singleProfileId);
+    return LShapeProfile::GetForEdit (m_dgndb, GetParentId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DoubleLShapeProfile::SetSingleProfile (LShapeProfile const& singleProfile)
+DgnDbStatus DoubleLShapeProfile::SetSingleProfile (LShapeProfile const& singleProfile)
     {
-    SetPropertyValue (PRF_PROP_DoubleLShapeProfile_SingleProfile, singleProfile.GetElementId());
+    return SetSingleProfile (singleProfile.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DoubleLShapeProfile::SetSingleProfile (DgnElementId const& singleProfileId)
+DgnDbStatus DoubleLShapeProfile::SetSingleProfile (DgnElementId const& singleProfileId)
     {
-    SetPropertyValue (PRF_PROP_DoubleLShapeProfile_SingleProfile, singleProfileId);
+    return SetParentId (singleProfileId, QueryClassId (GetDgnDb(), PRF_REL_LShapeProfileOwnsDoubleLShapeProfile));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
