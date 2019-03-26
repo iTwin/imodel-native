@@ -2653,10 +2653,13 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
             DisplayParamsCPtr displayParams(&geom.GetDisplayParams());
             PolyfaceHeaderPtr polyface;
 
+            // NB: Raster text only supported for truetype fonts; and even then it's possible for raster generation to fail to produce a valid image.
+            // Only produce raster text if the image is valid - otherwise the glyph renders as an untextured box.
             Image* rasterImage = nullptr;
-            if (doTextAsRasterIfPossible)
+            auto glyphRaster = doTextAsRasterIfPossible ? glyph->GetRaster() : nullptr;
+            if (nullptr != glyphRaster)
                 {
-                rasterImage = glyph->GetRaster() ? &glyph->GetRaster()->m_image : nullptr; // save the raster image to put into texture atlas
+                rasterImage = &glyphRaster->m_image; // save the raster image to put into texture atlas
                 Glyph::RasterPolyface raster = glyph->GetRasterPolyface(*facetOptions, *context.GetRenderSystem(), context.GetDgnDb());
                 polyface = raster.m_polyface->Clone();
                 }
