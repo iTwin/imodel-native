@@ -19,6 +19,7 @@
 #include <ScalableMesh/IScalableMeshAnalysis.h>
 #include <ScalableMesh/IScalableMeshInfo.h>
 #include <ScalableMesh/IScalableMeshClippingOptions.h>
+#include <ScalableMesh/IScalableMeshSourceCollection.h>
 #include "ScalableMeshDefs.h"
 
 #undef static_assert
@@ -197,6 +198,8 @@ struct IScalableMesh :  IRefCounted
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   _GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type) = 0;
 
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   _GetDTMInterface(DMatrix4d& storageToUors, bvector<DPoint3d>& regionPts, DTMAnalysisType type) = 0;
+
         virtual const GeoCoords::GCS&               _GetGCS() const = 0;
 
         virtual StatusInt                           _SetGCS(const GeoCoords::GCS& sourceGCS) = 0;
@@ -207,6 +210,8 @@ struct IScalableMesh :  IRefCounted
 
         virtual bool                                _IsShareable() const = 0;
         
+        virtual bool                                _LoadSources(IDTMSourceCollection& sources) const = 0;
+
         //Synchonization with data sources functions
         virtual bool                                _InSynchWithSources() const = 0; 
 
@@ -404,6 +409,8 @@ struct IScalableMesh :  IRefCounted
 
         BENTLEY_SM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type = DTMAnalysisType::Precise);
 
+        BENTLEY_SM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface(DMatrix4d& storageToUors, bvector<DPoint3d>& regionPts, DTMAnalysisType type = DTMAnalysisType::Precise);
+
         BENTLEY_SM_EXPORT const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr&
                                            GetBaseGCS() const;
         BENTLEY_SM_EXPORT StatusInt              SetBaseGCS(const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCS);
@@ -423,6 +430,8 @@ struct IScalableMesh :  IRefCounted
 
         BENTLEY_SM_EXPORT bool                   IsShareable() const;                        
          
+        BENTLEY_SM_EXPORT bool                   LoadSources(IDTMSourceCollection& sources) const;
+
         //Synchonization with data sources functions
         BENTLEY_SM_EXPORT bool                   InSynchWithSources() const; 
 

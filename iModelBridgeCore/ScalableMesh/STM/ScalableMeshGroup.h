@@ -145,6 +145,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type) override;
 
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors, bvector<DPoint3d>& regionPts, DTMAnalysisType type) override;
+
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
 
         virtual StatusInt         _GetBoundary(bvector<DPoint3d>& boundary) override;
@@ -264,6 +266,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
             {
             return nullptr;
             }
+
+        virtual bool                                _LoadSources(IDTMSourceCollection& sources) const {return false; }
 
 
         //Data source synchronization functions.

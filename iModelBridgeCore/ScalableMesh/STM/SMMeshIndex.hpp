@@ -73,6 +73,7 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Init()
     this->m_nodeHeader.m_ptsIndiceID[0] = this->GetBlockID();
 
     this->m_updateClipTimestamp = dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(this->m_SMIndex)->m_nodeInstanciationClipTimestamp;
+    this->m_isClipping = false;
     }
 
 
@@ -2732,6 +2733,8 @@ template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncW
 {
     if (!this->IsLoaded()) this->Load();
 
+    bool expected = false;
+    if (!this->m_isClipping.compare_exchange_weak(expected, true)) return false;
     bool hasSynced = false;
     if (/*size() == 0 || this->m_nodeHeader.m_nbFaceIndexes < 3*/this->m_nodeHeader.m_totalCount == 0) return false;
     for (size_t i =0; i < clipIds.size(); ++i)
@@ -2750,6 +2753,8 @@ template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncW
         if (ModifyClip(clipId, false, hasSkirts[i], tr))
             hasSynced = true;
     }
+    expected = true;
+    while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
     return hasSynced;
 }
 
@@ -4691,17 +4696,34 @@ template<class POINT, class EXTENT>  uint64_t SMMeshIndexNode<POINT, EXTENT>::La
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ComputeMergedClips(Transform tr)
     {
     if (dynamic_cast<SMMeshIndex<POINT,EXTENT>*>(this->m_SMIndex)->m_isInsertingClips) return;
+
+    bool expected = false;
+    while (!this->m_isClipping.compare_exchange_weak(expected, true)) {}
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
 
     if (!diffSetPtr.IsValid())
+    {
+        bool expected = true;
+        while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
         return;
-
+    }
 
     {
-    if (diffSetPtr->size() == 0) return;
-    for (const auto& diffSet : *diffSetPtr)
+        if (diffSetPtr->size() == 0)
         {
-        if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) return;
+            expected = true;
+            while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
+            return;
+        }
+
+        for (const auto& diffSet : *diffSetPtr)
+        {
+            if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate)
+            {
+                expected = true;
+                while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
+                return;
+            }
         }
     //std::cout << "Merging clips for " << this->GetBlockID().m_integerID << " we have " << diffSetPtr->size() << "clips" << std::endl;
    
@@ -5001,6 +5023,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         }
     assert(m_nbClips > 0 || diffSetPtr->size() == 0);
 
+     expected = true;
+    while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
+
     //std::cout << "Merged clips for " << this->GetBlockID().m_integerID << " we have " << diffSetPtr->size() << "clips" << std::endl;
 
     }
@@ -5149,7 +5174,10 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
 
     }
 
-    DRange3d polyRange;
+    if (polyPts.size() == 0)
+        return false;
+
+    DRange3d polyRange = DRange3d::From(polyPts.front());
     size_t n = 0;
     bool noIntersect = true;
     bvector<int> indices;

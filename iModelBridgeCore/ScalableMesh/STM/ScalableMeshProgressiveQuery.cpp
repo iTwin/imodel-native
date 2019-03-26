@@ -376,6 +376,7 @@ int threadId)
                   const bset<uint64_t>&                                            clipVisibilities,
                   IScalableMeshPtr&                                                scalableMeshPtr,
                   IScalableMeshDisplayCacheManagerPtr&               displayCacheManagerPtr,
+        bvector<RefCountedPtr<ScalableMeshCachedDisplayNode<DPoint3d>>>&              dirtyOverviews,
         ProcessingQuery<DPoint3d, Extent3dType>::Type                  type)
         {
 
@@ -385,6 +386,9 @@ int threadId)
 #endif
 
         ProcessingQuery<DPoint3d, Extent3dType>::Ptr processingQueryPtr(ProcessingQuery<DPoint3d, Extent3dType>::Create(queryId, m_numWorkingThreads, queryObjectP, searchingNodes, toLoadNodes, loadTexture, clipVisibilities, scalableMeshPtr, displayCacheManagerPtr, type));
+
+        if (!dirtyOverviews.empty())
+            processingQueryPtr->AddOverviewsToRecompute(dirtyOverviews);
 
         size_t currentNbProcessingQueries;
 
@@ -692,6 +696,7 @@ threadId);
             return status;
         }
 
+
         StatusInt QueryProcessor::GetUpdatedOverviewNodes(bvector<IScalableMeshCachedDisplayNodePtr>& overviewNodes, int queryId)
         {
             StatusInt status = ERROR;
@@ -723,6 +728,39 @@ threadId);
             }
             return status;
         }
+		
+        StatusInt QueryProcessor::UpdateDirtyOverviews(bvector<RefCountedPtr<ScalableMeshCachedDisplayNode<DPoint3d>>>& staleOverviews, int queryId)
+        {
+            StatusInt status = ERROR;
+
+            std::list<ProcessingQuery<DPoint3d, Extent3dType>::Ptr>::iterator queryItr(m_processingQueries.begin());
+            std::list<ProcessingQuery<DPoint3d, Extent3dType>::Ptr>::iterator queryItrEnd(m_processingQueries.end());
+
+            while (queryItr != queryItrEnd)
+            {
+                if ((*queryItr)->m_queryId == queryId)
+                {
+                    for (size_t threadIter = 0; threadIter < (*queryItr)->m_newOverviews.size(); threadIter++)
+                    {
+                        (*queryItr)->m_dirtyOverviewNodeMutexes[threadIter].lock();
+                        for (auto& node : (*queryItr)->m_newOverviews[threadIter])
+                        {
+                            for (auto& nodeOld : staleOverviews)
+                            {
+                                if (dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>(nodeOld.get())->GetNodePtr().GetPtr() == dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>(nodeOld.get())->GetNodePtr().GetPtr())
+                                    nodeOld = dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>(node.get());
+                            }
+                        }
+                        (*queryItr)->m_newOverviews[threadIter].clear();
+                        (*queryItr)->m_dirtyOverviewNodeMutexes[threadIter].unlock();
+                    }
+
+                    status = SUCCESS;
+                }
+                ++queryItr;
+            }
+            return status;
+        }
 
 static QueryProcessor s_queryProcessor;
 
@@ -733,8 +771,17 @@ void IScalableMeshProgressiveQueryEngine::CancelAllQueries()
 
 #define MAX_PRELOAD_OVERVIEW_LEVEL 1
 
+static double s_updateOverviewsDelay = (double)1 / 10 * CLOCKS_PER_SEC;
+
+//controls whether preload of overviews is subject to delay
+static bool s_shouldDelayPreloadOverviews = true;
+
 void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
     {    
+
+    //we use a timer and push the other nodes to be recomputed by the query threads
+    clock_t startT = clock();
+    m_dirtyOverviews.clear();
     for (auto& node : m_overviewNodes)
         {
         //Empty node are never loaded
@@ -742,10 +789,17 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
         
         if (!node->IsClippingUpToDate() || !node->HasCorrectClipping(m_activeClips) || node->HasInvertedClips() != m_smOverviews[&node - &m_overviewNodes[0]]->ShouldInvertClips())
             {
-            node->RefreshMergedClip(m_smOverviews[&node - &m_overviewNodes[0]]->GetReprojectionTransform());
-            node->RemoveDisplayDataFromCache();                    
-            node->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, m_loadTexture, m_smOverviews[&node - &m_overviewNodes[0]]->ShouldInvertClips());
-            assert(node->HasCorrectClipping(m_activeClips));                 
+            if (!s_shouldDelayPreloadOverviews || clock() - startT <= s_updateOverviewsDelay)
+                {
+                node->RefreshMergedClip(m_smOverviews[&node - &m_overviewNodes[0]]->GetReprojectionTransform());
+                node->RemoveDisplayDataFromCache();
+                node->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, m_loadTexture, m_smOverviews[&node - &m_overviewNodes[0]]->ShouldInvertClips());
+                assert(node->HasCorrectClipping(m_activeClips));
+                } 
+            else
+                {
+                m_dirtyOverviews.push_back(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node->GetNodePtr(), m_smOverviews[&node - &m_overviewNodes[0]]));
+                }
             }
         }   
     }
@@ -1354,7 +1408,7 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
 #endif
     QueryPlan* nextQueryOrQueries = GetQueryPlanner(newQuery)->CreatePlanForNextQuery(m_displayCacheManagerPtr, m_activeClips);
     GetQueryPlanner(newQuery)->FetchOverviewsAndPlanNextQuery(newQuery, *nextQueryOrQueries, queryObjectP,currentInd, nodesToSearch, foundNodes);
-
+    GetQueryPlanner(newQuery)->AddDirtyOverviews(*nextQueryOrQueries, m_dirtyOverviews);
     //PRE 
 #if 0
     if (!s_preloadInQueryThread)
@@ -1404,6 +1458,7 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
 #endif
 
     GetQueryPlanner(newQuery)->AddQueriesInPlan(*nextQueryOrQueries, queryObjectP, s_queryProcessor, queryParam, newQuery);
+    m_dirtyOverviews.clear();
     delete nextQueryOrQueries;
     }
 
@@ -1555,6 +1610,7 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_GetRequiredNodes(bvector<BENT
         if (query.m_queryId == queryId)
             {
             requestedQueryP = &query;
+            s_queryProcessor.UpdateDirtyOverviews(const_cast<bvector<RefCountedPtr<ScalableMeshCachedDisplayNode<DPoint3d>>>&>(m_overviewNodes), queryId);
             if (requestedQueryP->m_isQueryCompleted == false || requestedQueryP->m_fetchLastCompletedNodes == false)
             {
                 StatusInt status = s_queryProcessor.GetFoundNodes(requestedQueryP->m_requiredMeshNodes, queryId);

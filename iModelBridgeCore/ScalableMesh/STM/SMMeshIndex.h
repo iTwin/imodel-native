@@ -874,6 +874,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     atomic<size_t> m_nbClips;
     mutable atomic<uint64_t> m_updateClipTimestamp;
+    mutable atomic<bool> m_isClipping;
 
     std::mutex m_dtmLock;
     std::mutex m_displayMeshLock;

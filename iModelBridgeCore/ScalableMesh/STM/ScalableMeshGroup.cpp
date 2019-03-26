@@ -115,6 +115,11 @@ BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  ScalableMeshGroup::_GetDTMInterface
     return m_smGroupsDTM[type].get();
     }
 
+BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  ScalableMeshGroup::_GetDTMInterface(DMatrix4d& storageToUors, bvector<DPoint3d>& regionPts, DTMAnalysisType type)
+{
+    return nullptr;
+}
+
 DTMStatusInt     ScalableMeshGroup::_GetRange(DRange3dR range)
     {
 
