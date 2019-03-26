@@ -1,0 +1,29 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/UnitTests/CompileOptions.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+# Tests and and precompiled headers (PCH) are compiled separately. In order for
+# compilation to succeed, we need to use exactly the same set of PublicAPI/PublishedApi
+# headers and preprocessor definitions for both compilations.
+
+# Make sure that mdl.mki has already been included so that PublicApiIncludes does not reset.
+%ifndef __mdlMKI__
+    %include mdl.mki
+%endif
+
+%ifdef UsePublishedApi
+    PublicApiIncludes = -I${BuildContext}/SubParts/PublishedApi/WSClient/
+%else
+    PublicApiIncludes = -I${BuildContext}/PublicAPI/
+%endif
+
+PublicApiIncludes + -I${BuildContext}/VendorAPI/
+
+# We do not need to set BEGTEST_API for unit tests because it is defaulted to our current PublicApiIncludes.
+
+# Define USE_GTEST if and only if it is going to be defined during the compilation of unit tests.
+%include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
