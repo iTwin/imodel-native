@@ -1,0 +1,11 @@
+#--------------------------------------------------------------------------------------
+#     $Source: DgnV8/Converters/DgnV8ConverterInstaller/GatherNotices.mke $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#--------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+ContextDeliveryDir = $(BuildContext)Delivery/DgnV8ConverterNotices/
+                
+always:
+    ~linkmultifiles "$(ContextDeliveryDir)=$(OutRoot)$(TARGET_PROCESSOR_DIRECTORY)/Product/__DgnV8ConverterNotices/*.*"

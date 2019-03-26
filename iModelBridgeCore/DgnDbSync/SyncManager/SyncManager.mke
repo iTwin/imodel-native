@@ -1,0 +1,70 @@
+#----------------------------------------------------------------------
+#
+#     $Source: SyncManager/SyncManager.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+appName             = SyncManager
+baseDir             = $(_MakeFilePath)
+
+ContextDeliveryDir  = $(BuildContext)Delivery/
+
+DgnDbSyncAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/DgnDbSync/
+
+dgndbsyncSyncDir    = $(baseDir)../
+
+DgnDbSyncDepends    = $(DgnDbSyncAPISrc)DgnDbSync.h
+
+SyncManagerDepends  = $(DgnDbSyncAPISrc)SyncManager/SyncManager.h
+
+o                   = $(OutputRootDir)Build/DgnDbSync/SyncManager/
+
+CompileOptionsMki   = $(baseDir)SyncManagerCompileOptions.mki
+%include $(CompileOptionsMki)
+
+always:
+    ~mkdir $(o)
+
+MultiCompileIntermediatePdbFile =   $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+
+PchCompiland                    = $(baseDir)SyncManagerInternal.cpp
+PchOutputDir                    = $(o)
+PchExtraOptions                 = -Zm250
+%include $(SharedMki)PreCompileHeader.mki
+
+#----------------------------------------------------------------------
+#       Inform user of compile options
+#----------------------------------------------------------------------
+always:
+        |  Compiler options: $(cDefs)$(cDefsPost) $(copt)
+        |  -------- --------
+
+CCPchOpts           = $(UsePrecompiledHeaderOptions)
+CPchOpts            = $(UsePrecompiledHeaderOptions)
+MultiCompileDepends = $(_MakeFileSpec)
+
+%include MultiCppCompileRule.mki
+
+$(o)SyncManager$(oext): $(baseDir)SyncManager.cpp $(SyncManagerDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   dependencies of the subsystem.
+#----------------------------------------------------------------------
+DLM_NAME                = $(appName)
+DLM_DEST                = $(o)
+DLM_OBJECT_DEST         = $(o)
+DLM_OBJECT_PCH          = $(o)SyncManagerInternal$(oext) 
+DLM_EXPORT_DEST         = $(o)
+DLM_OBJECT_FILES        = $(MultiCompileObjectList)
+DLM_NOINITFUNC          = 1
+DLM_NOENTRY             = 1
+LINKER_LIBRARIES        = $(ContextSubpartsLibs)Bentley.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeJsonCpp.lib
+
+%include $(sharedMki)LinkLibrary.mki

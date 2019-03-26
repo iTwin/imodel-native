@@ -1,0 +1,59 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Dwg/Apps/DwgImportExe.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+%if $(DWGTOOLKIT) != "OpenDwg" && $(DWGTOOLKIT) != "RealDwg"
+    %error Must define DWGTOOLKIT to either OpenDwg or RealDwg!
+%elif $(DWGTOOLKIT) == "RealDwg" && $(TARGET_PLATFORM) != "Windows"
+    %error RealDWG only supports Windows platform!
+%endif
+
+appName             = DwgImporter
+baseDir             = $(_MakeFilePath)
+DgnDbSyncRootDir    = $(SrcRoot)DgnDbSync/
+DwgRootDir          = $(DgnDbSyncRootDir)Dwg/
+DwgPublicAPI        = $(DgnDbSyncRootDir)PublicAPI/Dwg/
+
+o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)$(VendorVersion)Importer/Apps/
+always:
+    ~mkdir $(o)
+
+DwgImportAppDepends = $(DwgPublicAPI)DwgBridge.h                \
+                      $(DwgPublicAPI)DwgImporter.h
+
+CompileOptionsMki   = $(DwgRootDir)DwgCompileOptions.mki
+%include $(CompileOptionsMki)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)DwgImportApp.obj    : $(baseDir)DwgImportApp.cpp $(DwgImportAppDepends) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+LINKER_LIBRARIES    = $(ContextDeliveryDir)DwgImporter.lib
+LINKER_LIBRARIES    + $(ContextDeliveryDir)DwgBridge.lib
+
+LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)Bentley.lib
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnPlatform.lib
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)iModelBridge$(libext)
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+EXE_DEST            = $(o)
+EXE_NAME            = $(appname)
+EXE_OBJS            = $(MultiCompileObjectList)
+EXE_LOPT1           = -entry:wmainCRTStartup
+EXE_TMP_DIR         = $(o)
+
+%include $(sharedMki)linktool.mki
+
+always:
+    ~linkfile "$(ContextDeliveryDir)$(appname)$(exeext)=$(o)$(appname)$(exeext)"
+

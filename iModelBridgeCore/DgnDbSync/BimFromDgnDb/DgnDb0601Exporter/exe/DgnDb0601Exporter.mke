@@ -1,0 +1,69 @@
+#----------------------------------------------------------------------
+#
+#     $Source: BimFromDgnDb/DgnDb0601Exporter/exe/DgnDb0601Exporter.mke $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+
+cdefs + -D__BIM_FROM_DGNDB_BUILD__
+%include mdl.mki
+
+appName     = DgnDb0601Exporter
+baseDir     = $(_MakeFilePath)
+
+# Need to ignore this because it's in Vancouver's header files.
+%if defined(MSVC_VERSION)
+%if MSVC_VERSION >= 1900
+    # C4312: 'type cast': conversion from '...' to '...' of greater size
+    CCompOpts + -wd4312
+
+    # C4091: '... ': ignored on left of '...' when no variable is declared
+    CCompOpts + -wd4091
+%endif
+%endif
+
+PublicApiIncludes + -I${BuildContext}/VendorAPI/DgnDb06Api
+
+o = $(OutputRootDir)Build/DgnDbSync/$(appName)/
+always:
+    ~mkdir $(o)
+
+PublicApi = $(SrcRoot)DgnDbSync\PublicApi\BimFromDgnDb/
+HeaderFiles = $(PublicApi)BimFromDgnDb.h $(PublicApi)DgnDb0601ToJson.h
+
+$(o)DgnDb0601Exporter.obj: $(baseDir)DgnDb0601Exporter.cpp $(HeaderFiles)
+
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+
+DgnDbLibs=$(BuildContext)SubParts/DgnDbLibs/
+
+EXE_DEST     = $(o)
+EXE_NAME     = $(appname)
+EXE_OBJS     = $(o)DgnDb0601Exporter.obj 
+EXE_LOPT1    = -entry:wmainCRTStartup
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnDb0601ToJson.lib
+LINKER_LIBRARIES  + $(DgnDbLibs)Bentley.lib
+LINKER_LIBRARIES  + $(DgnDbLibs)BeSQLite.lib
+LINKER_LIBRARIES  + $(DgnDbLibs)BeSQLiteEC.lib
+LINKER_LIBRARIES  + $(DgnDbLibs)ECObjects.lib
+LINKER_LIBRARIES  + $(DgnDbLibs)BentleyGeom.lib
+LINKER_LIBRARIES  + $(DgnDbLibs)DgnPlatform.lib
+LINKER_LIBRARIES  + $(DgnDbLibs)BaseGeoCoord.lib
+LINKER_LIBRARIES  + $(DgnDbLibs)BeJsonCpp.lib
+LINKER_LIBRARIES  + user32.lib
+
+EXE_TMP_DIR  = $(o)
+
+%include $(sharedMki)linktool.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
+
+# *** NB: Keep the name of the logging config file consistent
+$(BuildContext)Delivery/BimFromDgnDb.logging.config.xml : $(baseDir)../../logging.config.xml
+    $(LinkFirstDepToFirstTarget)
+
