@@ -1,0 +1,53 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Docs/Overview/Utf8String.doxpage $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+// __PUBLISH_SECTION_START__
+
+//=======================================================================================
+// Define strings overview page
+//=======================================================================================
+/** @page PAGE_Utf8StringOverview Working with strings
+
+The DgnDb technology stack includes a portability layer for working in CPP across multiple
+platforms.  The Utf8String and WString classes are used for working with strings in CPP
+in a portable way.  The iOS and Android platforms prefer strings in UTF-8 encoding while
+Windows prefers UTF-16 encoding.  Since the DgnDb technology stack is cross-platform both
+are supported.  However, with only a few exceptions, UTF-8 strings are preferred by the DgnDb
+technology stack.
+
+@tableofcontents
+
+@see GROUP_String
+@see BentleyApi::Utf8String
+@see BentleyApi::Utf8PrintfString
+@see BentleyApi::WString
+@see BentleyApi::WPrintfString
+@see BentleyApi::BeStringUtilities
+
+<hr>
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section RequiredIncludes Include files
+
+__PUBLISH_INSERT_FILE__ Overview_Strings_Include.sampleCode
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section Utf8StringBasics Utf8String Basics
+
+__PUBLISH_INSERT_FILE__ Overview_Strings_Utf8StringBasics.sampleCode
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section Utf8PrintfString Utf8PrintfString
+
+__PUBLISH_INSERT_FILE__ Overview_Strings_Utf8PrintfString.sampleCode
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section WStringBasics WString Basics
+
+__PUBLISH_INSERT_FILE__ Overview_Strings_WStringBasics.sampleCode
+
+*/
