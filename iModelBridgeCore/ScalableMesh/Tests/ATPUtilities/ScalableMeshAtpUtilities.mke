@@ -1,0 +1,95 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/ATPUtilities/ScalableMeshAtpUtilities.mke $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+baseDir         = $(_MakeFilePath)
+sourceDir       = $(baseDir)Sources/
+publicApiDir    = $(baseDir)PublicAPI/
+PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
+SolutionPolicyMki=$(baseDir)ScalableMeshAtpUtilities.mki
+#BUILD_USING_VS2013=1
+OPTIMIZE_FOR_SPEED=1
+
+%include  mdl.mki
+%include $(SolutionPolicyMki)
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Symlink APIs
+#----------------------------------------------------------------------
+always:
+   ~linkdir "$(BuildContext)PublicAPI/ScalableMeshAtpUtilities=$(publicApiDir)ScalableMeshAtpUtilities"
+
+CCompOpts + -openmp -bigobj -wd4091 -wd4312
+
+#----------------------------------------------------------------------
+#       Inform user of compile options
+#----------------------------------------------------------------------
+always:
+        |  Compiler options: $(cDefs)$(cDefsPost) $(copt) $(cIncs) $(PublicApiIncludes) $(CCompOpts)
+        |  -------- --------
+
+CCompOpts + $(PublicApiIncludes) 
+
+#disable warning: "'argument': conversion from 'int64_t' to 'uint32_t', possible loss of data". NEEDS_WORK_SM: switch all node ID types to uint64_t once and for all, then change this.
+CCompOpts + -wd4244
+
+#x86 build. signed/unsigned mismatch and int64/size_t issues.
+CCompOpts + -wd4018 -wd4309 -wd4305
+#----------------------------------------------------------------------
+#   Build precompiled header
+#----------------------------------------------------------------------
+PchCompiland = $(stmDir)ScalableMeshPCH.cpp
+PchOutputDir = $(o)
+PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__  -DVANCOUVER_API -wd4091 -wd4312
+#%include $(SharedMki)PreCompileHeader.mki
+
+# UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
+CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION -DVANCOUVER_API
+
+%if !defined (3DMesh)
+CCPchOpts + -DNO_3D_MESH
+%endif
+
+PCHHeaderDepends=$(o)ScalableMeshPCH$(oext)
+PCHHeaderDepends=
+MultiCompileDepends=$(_MakeFileSpec) 
+#DisableMultiCompile=1
+%include MultiCppCompileRule.mki
+
+#$(o)ScalableMeshAtpUtilities$(oext) : $(memoryDir)ScalableMeshAtpUtilities.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)ScalableMeshAtpUtilities$(oext) : $(sourceDir)ScalableMeshAtpUtilities.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+cppObjects =% $(MultiCompileObjectList)
+certDir             = $(bsiCerts)
+
+#----------------------------------------------------------------------
+#   dependencies of the subsystem.
+#----------------------------------------------------------------------
+#DLM_OBJECT_PCH      = $(o)ScalableMeshPCH$(oext)
+DLM_OBJECT_FILES    = $(cppObjects)
+
+LINKER_LIBRARIES_DELAYLOADED  = \
+    ws2_32.lib \
+    Urlmon.lib
+
+LINKER_LIBRARIES            = \
+    $(ContextSubpartsLibs)Bentley$(libext) \
+    $(ContextSubpartsLibs)BentleyGeom$(libext) \
+    $(ContextSubpartsLibs)BentleyGeomSerialization$(libext)
+
+    
+
+%include $(sharedMki)LinkLibrary.mki
+
