@@ -1,0 +1,103 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: RealityPlatformToolsComplete/RealityPlatformTools.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+appName         = RealityPlatformTools
+baseDir         = $(SrcRoot)RealityModFramework/RealityPlatformTools/
+curlDir         = $(SrcRoot)RealityModFramework/RealityPlatformToolsCurl/
+childDir        = $(_MakeFilePath)
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityPlatformTools/
+
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+CCompPDBName = $(appName)
+
+#----------------------------------------------------------------------
+#   Define __REALITYPLATFORM_BUILD__ symbol, so that class declarations and function decls will
+#   know to specify dllexport, rather than dllimport (the default)
+#   !No other makefile should define this symbol!
+#----------------------------------------------------------------------
+nameToDefine=__REALITYPLATFORM_BUILD__
+%include cdefapnd.mki
+
+nameToDefine=__WMSPARSER_BUILD__
+%include cdefapnd.mki
+
+nameToDefine=NOMINMAX
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+# Create PCH
+#CCPchOpts = -Yc"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
+#$(o)StdAfx$(oext) $(o)$(appName).pch : $(baseDir)StdAfx.cpp $(baseDir)StdAfx.h  $(PublicApiDir)RealityDataProvider.h
+
+# Use PCH
+#CCPchOpts = -Yu"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)RealityConversionTools$(oext) : $(baseDir)RealityConversionTools.cpp $(PublicApiDir)RealityConversionTools.h ${MultiCompileDepends}
+
+$(o)RealityDataDownload$(oext) : $(curlDir)RealityDataDownload.cpp $(PublicApiDir)RealityDataDownload.h ${MultiCompileDepends}
+
+$(o)WSGServices$(oext) : $(childDir)WSGServices.cpp $(curlDir)WSGServices.cpp $(PublicApiDir)WSGServices.h ${MultiCompileDepends}
+
+$(o)RealityDataService$(oext) : $(curlDir)RealityDataService.cpp $(PublicApiDir)RealityDataService.h ${MultiCompileDepends}
+
+$(o)GeoCoordinationService$(oext) : $(curlDir)GeoCoordinationService.cpp $(PublicApiDir)GeoCoordinationService.h ${MultiCompileDepends}
+
+$(o)SimpleWSGBase$(oext) : $(childDir)SimpleWSGBase.cpp $(baseDir)SimpleWSGBase.cpp $(PublicApiDir)SimpleWSGBase.h ${MultiCompileDepends}
+
+$(o)SimpleRDSApi$(oext) : $(baseDir)SimpleRDSApi.cpp $(PublicApiDir)SimpleRDSApi.h ${MultiCompileDepends}
+
+$(o)SimpleGCSApi$(oext) : $(curlDir)SimpleGCSApi.cpp $(PublicApiDir)SimpleGCSApi.h ${MultiCompileDepends}
+
+#
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#       Lib creation
+#----------------------------------------------------------------------
+DLM_NAME            = $(appName)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_NO_SIGN         = 1
+
+
+LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
+                       $(ContextSubPartsStaticLibs)$(libprefix)BeZLib$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
+                       $(ContextSubpartsLibs)CCApi$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext)
+
+# windows specific for Unzipfile
+LINKER_LIBRARIES   +  $(ntPlatformLib)OleAut32.lib                       
+
+%include dlmlink.mki
+
+#---------------------------------------------------------------------------------------+
+#   Deliver assets
+#---------------------------------------------------------------------------------------+
+$(OutputRootDir)BuildContexts/BeHttp/Delivery/http/ContextServices.pem : $(baseDir)ContextServices.pem
+    $(LinkFirstDepToFirstTarget)
