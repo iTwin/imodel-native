@@ -299,7 +299,7 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
 
 #ifndef DGNDB06_API
     uint32_t connectRegion = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyRegionID();
-    if(connectRegion > 0)
+    if(connectRegion != uint32_t(-1))
         {
         Utf8String buddiUrl((DEFAULT_BUDDI_RDS_URL + std::to_string(connectRegion)).c_str());
         BENTLEY_HTTP_NAMESPACE_NAME::HttpClient client;
@@ -323,6 +323,7 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
     }
 #endif
 
+#ifndef LINUX_SCALABLEMESH_BUILD
     if(serverUrl.empty())
         {
         // Unable to retrieve valid RDS url... fall back on CCApi (Windows only)
@@ -400,7 +401,7 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
             BeAssert(!"Unknown error while fetching RDS server url");
             }
         }
-
+#endif
     if(serverUrl.empty())
         {
         SMRDSPROVIDER_LOG.error("GetBuddiUrl() : RDS server URL couldn't be found");

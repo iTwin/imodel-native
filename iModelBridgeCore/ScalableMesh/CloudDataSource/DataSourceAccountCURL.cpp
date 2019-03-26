@@ -18,7 +18,9 @@
 #define DATASOURCEACCOUNTCURLLOGNAME L"ScalableMesh::CloudDataSourceAccountCURL"
 #define DATASOURCEACCOUNTCURL_LOG (*NativeLogging::LoggingManager::GetLogger(DATASOURCEACCOUNTCURLLOGNAME))
 
+#if _WIN32
 #pragma warning(disable:4840)
+#endif
 
 
 #ifdef VANCOUVER_API
@@ -298,7 +300,7 @@ bool DataSourceAccountCURL::IsResponseOK(const CURLHandle::CURLDataResponseHeade
         }
     if(response.data.count("HTTP") == 1 && response.data.at("HTTP") != "1.1 200 OK")
         {
-        DATASOURCEACCOUNTCURL_LOG.errorv("IsResponseOK() : HTTP error %s", response.data.at("HTTP"));
+        DATASOURCEACCOUNTCURL_LOG.errorv("IsResponseOK() : HTTP error %s", response.data.at("HTTP").c_str());
         return false;
         }
     return true;

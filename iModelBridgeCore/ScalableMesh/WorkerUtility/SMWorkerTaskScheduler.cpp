@@ -674,8 +674,8 @@ IScalableMeshSourceCreatorWorkerPtr TaskScheduler::GetSourceCreatorWorker(const 
         lockFileName.AppendString(L".lock");
 
         FILE* lockFile; 
-
-        while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYRW)) == nullptr)
+                
+        while ((lockFile = _wfsopen(lockFileName, L"ab+", _SH_DENYWR)) == nullptr)
             {
             sleeper.Sleep();            
             }    
@@ -1005,69 +1005,45 @@ void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
             }
 
     if (ParseSourceSubNodes(creatorPtr->EditSources(), pXmlTaskNode) == true)
+        {
+        if (streamFromBingMap)
             {
-#if 0
-                SetGroundDetectionDuration(0.0);
-                clock_t t = clock();
+            Utf8String streamingRasterUrl = "http://www.bing.com/maps/Aerial";
+            ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_IMAGE,
+                WString(streamingRasterUrl.c_str(), true).c_str());
+            BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(L"EPSG:900913"));
 
-                bool importInProgress = true;
-                std::thread mythread([&importInProgress, &creatorPtr]()
-                {
-                    float lastProgress = 0;
-                    int lastStep = 0;
-                    while (importInProgress)
-                    {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            GeoCoords::GCS gcs(GetGCSFactory().Create(baseGCSPtr));
 
-                        {
-                            float progress = 0;
-                            int step = 0;
-                            int nSteps = 0;
-                            if (!creatorPtr.IsValid() || creatorPtr->GetProgress() == nullptr) continue;
+            SourceImportConfig& sourceImportConfig = sourceP->EditConfig();
 
-                            progress = creatorPtr->GetProgress()->GetProgress();
-                            step = creatorPtr->GetProgress()->GetProgressStep();
-                            nSteps = creatorPtr->GetProgress()->GetTotalNumberOfSteps();
-                            if ((fabs(progress - lastProgress) > 0.01 || abs(step - lastStep) > 0))
-                            {
-                                std::cout << " PROGRESS: " << progress * 100.0 << " % ON STEP " << step << " OUT OF " << nSteps << std::endl;
-                                lastProgress = progress;
-                                lastStep = step;
-                            }
-                        }
-                    }
-                });
-#endif
+            sourceImportConfig.SetReplacementGCS(gcs);
+            creatorPtr->EditSources().Add(sourceP);
+            }
 
-            bool isSingleFile = true;
-            creatorPtr->SetShareable(true);                                                            
-            StatusInt status = creatorPtr->Create(isSingleFile);
+        bool isSingleFile = true;
+        creatorPtr->SetShareable(true);                                                            
+        StatusInt status = creatorPtr->Create(isSingleFile);
 
-#if 0
-            importInProgress = false;
-            mythread.join();
-#endif
-
-            creatorPtr->SaveToFile();
-            creatorPtr = nullptr;            
+        creatorPtr->SaveToFile();
+        creatorPtr = nullptr;            
             
+        IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker(smFileName));
 
-            IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker(smFileName));
+        if (m_useGroupingStrategy)
+            {                                
+            status = creatorWorkerPtr->CreateGenerationTasks(m_groupingSize, jobName, smFileName);
+            }
+        else
+            {
+            status = creatorWorkerPtr->CreateMeshTasks();
 
-            if (m_useGroupingStrategy)
-                {                                
-                status = creatorWorkerPtr->CreateGenerationTasks(m_groupingSize, jobName, smFileName);
-                }
-            else
-                {
-                status = creatorWorkerPtr->CreateMeshTasks();
+            assert(status == SUCCESS);
 
-                assert(status == SUCCESS);
+            status = creatorWorkerPtr->CreateTaskPlan();
 
-                status = creatorWorkerPtr->CreateTaskPlan();
-
-                assert(status == SUCCESS);
-                }
+            assert(status == SUCCESS);
+            }
             
 /*
 smFileName
@@ -1081,8 +1057,8 @@ smFileName
 
             bool result = ParseSourceSubNodes(sourceCollection, pXmlTaskNode);
             assert(result == true);*/
-            }           
-        }
+        }           
+    }
 
 void TaskScheduler::PerformMeshTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
     {
