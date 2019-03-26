@@ -49,13 +49,14 @@ static DgnDbStatus updateGeometryForCompositeProfiles (SinglePerimeterProfile co
 static DgnDbStatus updateGeometryForDerivedProfiles (SinglePerimeterProfile const& profile)
     {
     DgnDbStatus status;
-    bvector<DerivedProfilePtr> derivedProfiles = ProfilesQuery::SelectByNavigationProperty<DerivedProfile>
-        (profile.GetDgnDb(), profile.GetElementId(), PRF_CLASS_DerivedProfile, PRF_PROP_DerivedProfile_BaseProfile, &status);
-    if (status != DgnDbStatus::Success)
-        return status;
+    DgnElementIdSet childrenIds = profile.QueryChildren();
 
-    for (DerivedProfilePtr const& derivedProfilePtr : derivedProfiles)
+    for (DgnElementId const& childId : childrenIds)
         {
+        DerivedProfilePtr const& derivedProfilePtr = DerivedProfile::GetForEdit (profile.GetDgnDb(), childId);
+        if (derivedProfilePtr.IsNull())
+            continue;
+
         status = derivedProfilePtr->UpdateGeometry (profile);
         if (status != DgnDbStatus::Success)
             return status;
@@ -112,15 +113,11 @@ static DgnDbStatus checkForeignKeyConstraintForCompositeProfiles (SinglePerimete
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnDbStatus checkForeignKeyConstraintForDerivedProfiles (SinglePerimeterProfile const& profile)
     {
-    DgnDbStatus status;
-    DgnElementId derivedProfileId = ProfilesQuery::SelectFirstByNavigationProperty (profile.GetDgnDb(), profile.GetElementId(),
-        PRF_CLASS_DerivedProfile, PRF_PROP_DerivedProfile_BaseProfile, &status);
-    if (status != DgnDbStatus::Success)
-        return status;
+    DgnElementIdSet childrenIds = profile.QueryChildren();
 
-    if (derivedProfileId.IsValid())
+    if (!childrenIds.empty())
         {
-        ProfilesLog::FailedDelete_ProfileHasReference (PRF_CLASS_SinglePerimeterProfile, profile.GetElementId(), PRF_CLASS_DerivedProfile, derivedProfileId);
+        ProfilesLog::FailedDelete_ProfileHasReference (PRF_CLASS_SinglePerimeterProfile, profile.GetElementId(), PRF_CLASS_DerivedProfile, *childrenIds.begin());
         return DgnDbStatus::ForeignKeyConstraint;
         }
 

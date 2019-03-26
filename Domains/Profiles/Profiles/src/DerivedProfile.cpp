@@ -116,8 +116,7 @@ IGeometryPtr DerivedProfile::_UpdateShapeGeometry (Profile const& baseProfile) c
 +---------------+---------------+---------------+---------------+---------------+------*/
 SinglePerimeterProfilePtr DerivedProfile::GetBaseProfile() const
     {
-    DgnElementId baseProfileId = GetPropertyValueId<DgnElementId> (PRF_PROP_DerivedProfile_BaseProfile);
-    return SinglePerimeterProfile::GetForEdit (m_dgndb, baseProfileId);
+    return SinglePerimeterProfile::GetForEdit (m_dgndb, GetBaseProfileId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -125,23 +124,23 @@ SinglePerimeterProfilePtr DerivedProfile::GetBaseProfile() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId DerivedProfile::GetBaseProfileId() const
     {
-    return GetPropertyValueId<DgnElementId> (PRF_PROP_DerivedProfile_BaseProfile);
+    return GetParentId();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DerivedProfile::SetBaseProfile (SinglePerimeterProfile const& baseProfile)
+DgnDbStatus DerivedProfile::SetBaseProfile (SinglePerimeterProfile const& baseProfile)
     {
-    SetPropertyValue (PRF_PROP_DerivedProfile_BaseProfile, baseProfile.GetElementId());
+    return SetBaseProfile (baseProfile.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DerivedProfile::SetBaseProfile (Dgn::DgnElementId const& baseProfileId)
+DgnDbStatus DerivedProfile::SetBaseProfile (Dgn::DgnElementId const& baseProfileId)
     {
-    SetPropertyValue (PRF_PROP_DerivedProfile_BaseProfile, baseProfileId);
+    return SetParentId (baseProfileId, QueryClassId (GetDgnDb(), PRF_REL_SinglePerimeterProfileOwnsDerivedProfile));
     }
 
 /*---------------------------------------------------------------------------------**//**

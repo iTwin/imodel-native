@@ -89,8 +89,8 @@ public:
     //! @beginGroup
     PROFILES_EXPORT SinglePerimeterProfilePtr GetBaseProfile() const; //!< Get the value of @ref CreateParams.baseProfile "BaseProfile"
     PROFILES_EXPORT Dgn::DgnElementId GetBaseProfileId() const; //!< Get the value of @ref CreateParams.baseProfileId "BaseProfileId"
-    PROFILES_EXPORT void SetBaseProfile (SinglePerimeterProfile const& baseProfile); //!< Set the value for @ref CreateParams.baseProfile "BaseProfile"
-    PROFILES_EXPORT void SetBaseProfile (Dgn::DgnElementId const& baseProfileId); //!< Set the value for @ref CreateParams.baseProfile "BaseProfile"
+    PROFILES_EXPORT Dgn::DgnDbStatus SetBaseProfile (SinglePerimeterProfile const& baseProfile); //!< Set the value for @ref CreateParams.baseProfile "BaseProfile"
+    PROFILES_EXPORT Dgn::DgnDbStatus SetBaseProfile (Dgn::DgnElementId const& baseProfileId); //!< Set the value for @ref CreateParams.baseProfile "BaseProfile"
 
     PROFILES_EXPORT DPoint2d GetOffset() const; //!< Get the value of @ref CreateParams.offset "Offset"
     PROFILES_EXPORT void SetOffset (DPoint2d const& value); //!< Set the value for @ref CreateParams.offset "Offset"

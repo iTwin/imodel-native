@@ -225,3 +225,111 @@ TEST_F (DerivedProfileTestCase, UpdateBaseProfile_ExistingDerivedProfile_Updated
     EXPECT_EQ (2.0, range.XLength());
     EXPECT_EQ (3.0, range.YLength());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DerivedProfileTestCase, Insert_InvalidBaseProfileClass_FailedInsert)
+    {
+    CShapeProfile::CreateParams singlePerimeterParams (GetModel(), "C", 10.0, 6.0, 1.0, 1.0);
+    CShapeProfilePtr singleProfilePtr = CShapeProfile::Create (singlePerimeterParams);
+
+    DgnDbStatus status;
+    singleProfilePtr->Insert (&status);
+    BeAssert (status == DgnDbStatus::Success);
+
+    DoubleCShapeProfile::CreateParams requiredParams (GetModel(), "DoubleC", 1.0, singleProfilePtr->GetElementId());
+    DoubleCShapeProfilePtr baseProfilePtr = InsertElement<DoubleCShapeProfile> (requiredParams, &status);
+    ASSERT_EQ (status, Dgn::DgnDbStatus::Success);
+
+    CreateParams params (GetModel(), "Derived", baseProfilePtr->GetElementId());
+    EXPECT_FAIL_Insert (params);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DerivedProfileTestCase, SetSingleProfile_ValidSinglePerimeterProfileId_Success)
+    {
+    SinglePerimeterProfilePtr singleProfilePtr = InsertBaseProfile();
+
+    CreateParams requiredParams (GetModel(), "Derived", singleProfilePtr->GetElementId());
+    EXPECT_SUCCESS_Insert (requiredParams) << "Profile should succeed to insert with valid required create parameters.";
+
+    DgnElementIdSet children = singleProfilePtr->QueryChildren();
+    ASSERT_EQ (1, children.size());
+
+    DerivedProfilePtr derivedProfilePtr = DerivedProfile::GetForEdit (GetDb(), *children.begin());
+    ASSERT_TRUE (derivedProfilePtr.IsValid());
+
+    SinglePerimeterProfilePtr otherSingleProfilePtr = InsertBaseProfile();
+    ASSERT_EQ (DgnDbStatus::Success, derivedProfilePtr->SetBaseProfile (otherSingleProfilePtr->GetElementId()));
+
+    DgnDbStatus status;
+    derivedProfilePtr->Update (&status);
+    ASSERT_EQ (DgnDbStatus::Success, status);
+
+    EXPECT_EQ (0, singleProfilePtr->QueryChildren().size());
+    EXPECT_EQ (1, otherSingleProfilePtr->QueryChildren().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DerivedProfileTestCase, SetSingleProfile_InValidBaseProfileId_Fail)
+    {
+    SinglePerimeterProfilePtr singleProfilePtr = InsertBaseProfile();
+
+    CreateParams requiredParams (GetModel(), "Derived", singleProfilePtr->GetElementId());
+    EXPECT_SUCCESS_Insert (requiredParams) << "Profile should succeed to insert with valid required create parameters.";
+
+    DgnElementIdSet children = singleProfilePtr->QueryChildren();
+    ASSERT_EQ (1, children.size());
+
+    DerivedProfilePtr derivedProfilePtr = DerivedProfile::GetForEdit (GetDb(), *children.begin());
+    ASSERT_TRUE (derivedProfilePtr.IsValid());
+
+    ASSERT_EQ (DgnDbStatus::Success, derivedProfilePtr->SetBaseProfile (DgnElementId()));
+
+    DgnDbStatus status;
+    derivedProfilePtr->Update (&status);
+    ASSERT_NE (DgnDbStatus::Success, status);
+
+    EXPECT_EQ (1, singleProfilePtr->QueryChildren().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DerivedProfileTestCase, SetSingleProfile_InValidBaseProfileClass_Fail)
+    {
+    SinglePerimeterProfilePtr singleProfilePtr = InsertBaseProfile();
+
+    CreateParams requiredParams (GetModel(), "Derived", singleProfilePtr->GetElementId());
+    EXPECT_SUCCESS_Insert (requiredParams) << "Profile should succeed to insert with valid required create parameters.";
+
+    DgnElementIdSet children = singleProfilePtr->QueryChildren();
+    ASSERT_EQ (1, children.size());
+
+    DerivedProfilePtr derivedProfilePtr = DerivedProfile::GetForEdit (GetDb(), *children.begin());
+    ASSERT_TRUE (derivedProfilePtr.IsValid());
+
+    CShapeProfile::CreateParams singlePerimeterParams (GetModel(), "C", 10.0, 6.0, 1.0, 1.0);
+    CShapeProfilePtr singleCProfilePtr = CShapeProfile::Create (singlePerimeterParams);
+
+    DgnDbStatus status;
+    singleCProfilePtr->Insert (&status);
+    ASSERT_EQ (status, DgnDbStatus::Success);
+
+    DoubleCShapeProfile::CreateParams doubleCParams (GetModel(), "DoubleC", 1.0, singleCProfilePtr->GetElementId());
+    DoubleCShapeProfilePtr baseProfilePtr = InsertElement<DoubleCShapeProfile> (doubleCParams, &status);
+    ASSERT_EQ (status, Dgn::DgnDbStatus::Success);
+    ASSERT_EQ (DgnDbStatus::Success, derivedProfilePtr->SetBaseProfile (baseProfilePtr->GetElementId()));
+
+    derivedProfilePtr->Update (&status);
+    ASSERT_NE (DgnDbStatus::Success, status);
+
+    EXPECT_EQ (1, singleProfilePtr->QueryChildren().size());
+    EXPECT_EQ (0, baseProfilePtr->QueryChildren().size());
+    }
+

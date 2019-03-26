@@ -153,7 +153,6 @@ TEST_F (DoubleCShapeProfileTestCase, Insert_InvalidSingleProfileId_FailedInsert)
     EXPECT_FAIL_Insert (params) << "Profile should fail with invalid SinglieProfile id.";
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
