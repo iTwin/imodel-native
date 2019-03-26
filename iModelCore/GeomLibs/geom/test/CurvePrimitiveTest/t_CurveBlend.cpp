@@ -371,8 +371,8 @@ TEST(CircleChords,TriplePointsB)
 TEST(CloneOffset, RectangleOffset)
     {
     bvector<DPoint3d> points;
-    double ax = 4.0;
-    double ay = 3.0;
+    double ax = 5.0;
+    double ay = 3.2;
     double x0 = 1.0;
     double x1 = x0 + ax;
     double y0 = 2.0;
@@ -382,20 +382,20 @@ TEST(CloneOffset, RectangleOffset)
     AddPoint (points, x1, y1);
     AddPoint (points, x0, y1);
     AddPoint (points, x0, y0);
+
     for (double chamferAngle = 0.0; chamferAngle < 1.0; chamferAngle += 0.85)
         {
+        SaveAndRestoreCheckTransform shifter(20, 0, 0);
         for (double offset = 0.5; offset > -2.0; offset -= 1.0)
             {
+            SaveAndRestoreCheckTransform shifter (0, 100, 0);
             CurveVectorPtr pathA = CurveVector::CreateLinear (points, CurveVector::BOUNDARY_TYPE_Outer);
+            Check::SaveTransformed (pathA);
+            Check::Shift(0, 10, 0);
             CurveVectorPtr pathB;
             GetOffsets (pathA, offset, -1.0, pathB);
-            if (s_noisy > 0)
-                {
-                printf ("\n\n OFFSET DISTANCE %#.17g\n", offset);        
-
-                Check::Print (pathA, "BaseCurve");
-                Check::Print (pathB, "Line Offset");
-                }
+            Check::Shift (0,10,0);
+            Check::SaveTransformed (pathB);
             if (offset > -0.45 * ax && offset > -0.45 * ay)
                 {
                 Check::Near (2.0 * ax + 2.0 * ay, pathA->Length (), "Pre offset length");
@@ -404,10 +404,9 @@ TEST(CloneOffset, RectangleOffset)
                         
             CurveVectorPtr pathC;
             GetOffsets (pathA, offset, 0.001, pathC);
-            if (s_noisy > 0)
-                {
-                Check::Print (pathC, "Arc Offset");
-                }
+            Check::SaveTransformed(pathB);
+
+            Check::Shift(0, 10, 0);
             if (offset > 0.0)
                 Check::Near (2.0 * ax + 2.0 * ay + 4.0 * offset * Angle::PiOver2 (), pathC->Length (), "Arc offset length");
                 
@@ -418,11 +417,98 @@ TEST(CloneOffset, RectangleOffset)
             else
                 options.SetArcAngle (0.1); 
             CurveVectorPtr pathD = pathA->AreaOffset(options);
-            if (s_noisy > 0)
-                Check::Print (pathD, "Area Offset");
+            Check::SaveTransformed (pathD);
             }
         }
+        Check::ClearGeometry ("CloneOffset.RectangleOffset");
     }
+void NonConvexQuadSimpleFractal(bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor);
+void FractalA(bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor);
+void Fractal0(bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor);
+void Fractal1(bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor);
+void Fractal2(bvector<DPoint3d> &points, int numRecursion, double perpendicularFactor);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(AreaOffset, Fractal)
+    {
+    bvector<DPoint3d> points;
+    double chamferAngle = 0.85;
+    double dzA = 0.1;
+    for (auto generatorFunction : { FractalA, Fractal0, Fractal1, Fractal2 })
+        {
+        for (double f : {0.5, -0.7})
+            {
+            for (double offset : {0.02, 0.05, -0.3})
+                {
+                double dz = dzA;
+                if (offset < 0)
+                    dz = -dz;
+                generatorFunction(points, 1, f);
+                SaveAndRestoreCheckTransform shifter(20,0,0);
+                CurveVectorPtr pathA = CurveVector::CreateLinear(points, CurveVector::BOUNDARY_TYPE_Outer);
+                Check::Shift (0,0,dz);
+                Check::SaveTransformed(pathA);
+                Check::Shift(0, 0, -dz);
+                CurveVectorPtr pathB;
+                GetOffsets(pathA, offset, -1.0, pathB);
+                Check::SaveTransformed(pathB);
+
+                Check::Shift(0, 10, 0);
+
+                Check::Shift(0, 0, dz);
+                Check::SaveTransformed(pathA);
+                Check::Shift(0, 0, -dz);
+                CurveVectorPtr pathC;
+                GetOffsets(pathA, offset, 0.001, pathC);
+                Check::SaveTransformed(pathB);
+
+                Check::Shift(0, 10, 0);
+                Check::Shift(0, 0, dz);
+                Check::SaveTransformed(pathA);
+                Check::Shift(0, 0, -dz);
+
+                CurveOffsetOptions options(offset);
+                options.SetChamferAngle(chamferAngle);
+                if (chamferAngle > 0.0)
+                    options.SetArcAngle(0.0);
+                else
+                    options.SetArcAngle(0.1);
+                CurveVectorPtr pathD = pathA->AreaOffset(options);
+                Check::SaveTransformed(pathD);
+
+                // path offsets ....
+                pathA->SetBoundaryType (CurveVector::BOUNDARY_TYPE_Open);
+                Check::Shift(0, 15, 0);
+                Check::Shift(0, 0, dzA);
+                Check::SaveTransformed(pathA);
+                Check::Shift(0, 0, -dzA);
+
+                CurveVectorPtr pathE = pathA->AreaOffsetFromPath(options, offset, 0.0);
+                Check::SaveTransformed(pathE);
+
+                Check::Shift(0, 10, 0);
+                Check::Shift(0, 0, dzA);
+                Check::SaveTransformed(pathA);
+                Check::Shift(0, 0, -dzA);
+
+                pathE = pathA->AreaOffsetFromPath(options, 0.0, offset);
+                Check::SaveTransformed(pathE);
+
+                Check::Shift(0, 10, 0);
+                Check::Shift(0, 0, dzA);
+                Check::SaveTransformed(pathA);
+                Check::Shift(0, 0, -dzA);
+
+                pathE = pathA->AreaOffsetFromPath(options, offset, offset);
+                Check::SaveTransformed(pathE);
+
+                }
+            }
+        }
+    Check::ClearGeometry("AreaOffset.Fractal");
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17

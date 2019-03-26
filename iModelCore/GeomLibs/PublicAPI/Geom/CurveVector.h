@@ -298,6 +298,10 @@ GEOMDLLIMPEXP CurveVectorPtr CloneOffsetCurvesXY (CurveOffsetOptionsCR options) 
 //! @remark A positive offset is to the right of the curve (i.e. CCW outer loop offsets to a larger area)
 GEOMDLLIMPEXP CurveVectorPtr AreaOffset (CurveOffsetOptionsCR options) const;
 
+//! generate offset areas to right and left of each curve primitive.
+//! @remark Positive offsets are to the named left and right directions.  Negative offsets are possible to create a strip entirely to one side.
+GEOMDLLIMPEXP CurveVectorPtr AreaOffsetFromPath(CurveOffsetOptionsCR options, double leftOffset, double rightOffset) const;
+
 //! Count primitives of specified type.
 //! @param [in] targetType primitive type to count.
 GEOMDLLIMPEXP size_t CountPrimitivesOfType (ICurvePrimitive::CurvePrimitiveType targetType) const;
