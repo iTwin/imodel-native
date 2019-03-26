@@ -196,15 +196,23 @@ std::shared_ptr<Policy> AccessKeyClientImpl::GetPolicyToken()
     LOG.debug("AccessKeyClientImpl::GetPolicyToken");
 
     // returns nullptr if accesskey is inactive or expired
-    auto policy = m_policyProvider->GetPolicyWithKey(m_accessKey).get();
-
-    if (policy != nullptr)
+    try
         {
-        StorePolicyInLicensingDb(policy);
-        DeleteAllOtherPoliciesByKey(policy);
-        }
+        auto policy = m_policyProvider->GetPolicyWithKey(m_accessKey).get();
 
-    return policy;
+        if (policy != nullptr)
+            {
+            StorePolicyInLicensingDb(policy);
+            DeleteAllOtherPoliciesByKey(policy);
+            }
+
+        return policy;
+        }
+    catch (...)
+        {
+        // error should be logged where it was thrown
+        return nullptr;
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
