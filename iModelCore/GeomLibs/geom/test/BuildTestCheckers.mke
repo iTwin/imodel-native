@@ -1,0 +1,36 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: geom/test/BuildTestCheckers.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+NO_DEFAULT_CLANG_WARNINGS   = 1
+%include mdl.mki
+
+%if !defined (BE_TEST_TESTHARNESS)
+    %include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
+%endif
+
+testDir                     = $(_MakeFilePath)
+o                           = $(PartBuildDir)
+always:
+    !~@mkdir $(o)
+
+# ignore: local variable is initialized but not referenced
+# CCompOpts       + -wd4189
+
+CCompPDBName    = GeomLibsCheckers
+
+dirToSearch     = $(baseDir)src/
+%include cincapnd.mki
+
+$(o)SampleGeometry$(oext)   : $(testDir)src/SampleGeometry.cpp 
+
+$(o)checkers$(oext)         : $(testDir)src/checkers.cpp 
+
+$(o)FileOps$(oext)         : $(testDir)src/FileOps.cpp 
+
+# Deliver 
+$(BuildContext)Delivery/UnitTests/Objects/Checkers : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)

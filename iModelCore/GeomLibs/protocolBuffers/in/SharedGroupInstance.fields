@@ -1,0 +1,11 @@
+PRIMITIVE SharedGroupInstance
+<def name=SUMMARY>A placement of a shard group.
+</def>
+<def name=Interface_BaseList>IGeometry, ISinglePoint</def>
+
+
+<def name=MEMBERS><value ItemType=String ItemTagName=SharedGroupName ItemSemanticName=SharedGroupName ItemParamName=sharedGroupName ItemMemberName=mSharedGroupName ItemDescription="Name of shared group" ScaleMode=None/>
+<value ItemType=DTransform3d ItemTagName=Transform ItemSemanticName=Transform ItemParamName=transform ItemMemberName=mTransform ItemDescription="Placement Transform" ScaleMode=Length/>
+</def>
+
+END_PRIMITIVE

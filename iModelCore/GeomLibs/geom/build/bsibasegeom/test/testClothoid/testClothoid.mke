@@ -1,0 +1,11 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: geom/build/bsibasegeom/test/testClothoid/testClothoid.mke $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+TESTAPP_NAME=testClothoid
+dependencies = $(_MakeFilePath)dclothoid2d.c
+
+%include    $(_MakeFilePath)/../testapp.mki

@@ -1,0 +1,12 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: geom/build/bsibasegeom/test/test4/test4.mke $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+TESTAPP_NAME=test4
+
+dependencies = $(_MakeFilePath)ellipsefixup.fdf $(_MakeFilePath)ellipsefixup.cpp
+
+%include    $(_MakeFilePath)/../testapp.mki

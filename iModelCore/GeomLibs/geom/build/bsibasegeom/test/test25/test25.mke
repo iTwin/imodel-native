@@ -1,0 +1,10 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: geom/build/bsibasegeom/test/test25/test25.mke $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+TESTAPP_NAME=test25
+
+%include    $(_MakeFilePath)/../testapp.mki
