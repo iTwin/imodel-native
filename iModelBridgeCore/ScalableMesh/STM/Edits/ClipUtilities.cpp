@@ -1182,7 +1182,7 @@ PolyfaceHeaderPtr CreateFromSubsetAndValues(PolyfaceHeaderPtr& originalMesh, con
     return vec;
     }
 
-bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHeaderPtr& clippedMesh, bvector<ClipVectorPtr>& clipPolys, bvector<bool> isMask = bvector<bool>())
+bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHeaderPtr& clippedMesh, bvector<ClipVectorPtr>& clipPolys, std::pair<bool, uint64_t> shouldInvertBoundary = { false, -1 })
     {
     bvector<bvector<int>> idxOfFaces(clipPolys.size());
     bvector<int32_t> nCrossingPolys(clippedMesh->GetPointIndexCount() / 3, 0);
@@ -1199,19 +1199,6 @@ bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHe
         //double area;
         PolygonOps::CentroidNormalAndArea(tri, 3, centroids[idxFace], normal, areas[idxFace]);
         idxFace++;
-        }
-
-    bool shouldInvertBoundary = false;
-    int clipBoundaryIdx = 0;
-    for(auto it = clipPolys.begin(); it != clipPolys.end(); it++, clipBoundaryIdx++)
-        {
-        ClipVectorPtr& clip = *it;
-
-        if(!clip.IsValid())
-            continue;
-
-        shouldInvertBoundary = !(isMask.empty() ? (*clip)[0]->IsMask() : isMask[&clip - clipPolys.data()]);
-        if(shouldInvertBoundary) break;
         }
 
     idxFace = 0;
@@ -1333,9 +1320,9 @@ bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHe
 
     polyfaces[0].push_back(vec2);
 
-    if(shouldInvertBoundary)
+    if(shouldInvertBoundary.first)
         {
-        std::swap(polyfaces[0], polyfaces[clipBoundaryIdx + 1]);
+        std::swap(polyfaces[0], polyfaces[shouldInvertBoundary.second + 1]);
         }
     //return hasBeenClipped;
     return true;
@@ -1810,7 +1797,8 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
     bool meshIsCut = InsertMeshCuts(clippedMesh, vis, currentClip, triangleBoxes, polyBox, isMask);
     bvector<ClipVectorPtr> clipPolys;
     bool shouldUseClipPrimitives = true;
-    
+    std::pair<bool, uint64_t> boundaryInfo(false, -1);
+
     if (!shouldUseClipPrimitives)
     {
         polyfaces.resize(currentClip->size()+1);
@@ -1830,10 +1818,16 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
 #else
                 ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive);
 #endif
-               if(!isMask.empty())
-                   newClip->back()->SetIsMask(isMask[&primitive - &clip->front()]);
+                bool clipIsMask = isMask.empty() ? primitive->IsMask() : isMask[&primitive - &clip->front()];
+                newClip->back()->SetIsMask(clipIsMask);
                 clipPolys.push_back(newClip);
                 polyfaceIndices.push_back(i);
+
+                if(!clipIsMask)
+                    {
+                    boundaryInfo.first = true;
+                    boundaryInfo.second = &clipPolys.back() - &clipPolys.front();
+                    }
                 }
             ++i;
             }
@@ -1842,7 +1836,7 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
     if (clipPolys.empty()) return false;
     if(meshIsCut) clippedMesh->Triangulate();
 
-    return Process3dRegions(polyfaces, clippedMesh, clipPolys, isMask);
+    return Process3dRegions(polyfaces, clippedMesh, clipPolys, boundaryInfo);
     }
 
 bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, const PolyfaceQuery* meshP, const bvector<bool>& isMask)
@@ -1890,6 +1884,7 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
 
     PolyfaceVisitorPtr vis = PolyfaceVisitor::Attach(*clippedMesh);
     triangleBoxes.resize(clippedMesh->GetPointIndexCount() / 3, DRange2d::NullRange());
+    std::pair<bool, uint64_t> boundaryInfo(false, -1);
     bool meshIsCut = false;
     for (auto& clip : polygons)
         {
@@ -1901,13 +1896,18 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
         CurveVectorPtr curvePtr = CurveVector::CreateLinear(currentPoly, CurveVector::BOUNDARY_TYPE_Outer);
         cp = ClipVector::CreateFromCurveVector(*curvePtr,1e-8,1e-8);
         (*cp)[0]->SetIsMask(isMask[&clip - polygons.data()]);
+        if(!isMask[&clip - polygons.data()])
+            {
+            boundaryInfo.first = true;
+            boundaryInfo.second = &clip - polygons.data();
+            }
 
         meshIsCut = meshIsCut || InsertMeshCuts(clippedMesh, vis, currentPoly, triangleBoxes, polyBox);
 
         clipPolys.push_back(cp);
         }
     if(meshIsCut) clippedMesh->Triangulate();
-     bool ret = Process3dRegions(polyfaces, clippedMesh, clipPolys, isMask);
+     bool ret = Process3dRegions(polyfaces, clippedMesh, clipPolys, boundaryInfo);
 
 #if SM_TRACE_CLIPS_FULL
      if (dbg)
