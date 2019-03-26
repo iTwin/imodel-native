@@ -1,0 +1,24 @@
+//:>--------------------------------------------------------------------------------------+
+//:>
+//:>     $Source: Tests/NonPublished/ExceptionTester.h $
+//:>
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>
+//:>+--------------------------------------------------------------------------------------
+// Class : ExceptionTester
+//-----------------------------------------------------------------------------
+
+#pragma once
+ 
+// Preparation of required environement
+
+class ExceptionTester : public testing::Test 
+    {   
+
+    protected :
+    
+    ExceptionTester();
+    ~ExceptionTester() {};
+
+    HFCPtr<HPANode> m_TestNode;
+    };
