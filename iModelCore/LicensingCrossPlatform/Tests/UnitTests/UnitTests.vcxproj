@@ -1,0 +1,106 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BuddiProviderTests.cpp" />
+    <ClCompile Include="ClientTests.cpp" />
+    <ClCompile Include="AccessKeyClientTests.cpp" />
+    <ClCompile Include="DummyPolicyHelper.cpp" />
+    <ClCompile Include="DummyUserInfoHelper.cpp" />
+    <ClCompile Include="GenerateSIDTests.cpp" />
+    <ClCompile Include="Mocks\AuthHandlerProviderMock.cpp" />
+    <ClCompile Include="Mocks\BuddiProviderMock.cpp" />
+    <ClCompile Include="Mocks\LicensingDbMock.cpp" />
+    <ClCompile Include="Mocks\PolicyProviderMock.cpp" />
+    <ClCompile Include="Mocks\UlasProviderMock.cpp" />
+    <ClCompile Include="PolicyTests.cpp" />
+    <ClCompile Include="SaasClientTests.cpp" />
+    <ClCompile Include="TestsHelper.cpp" />
+    <ClCompile Include="JsonHelper.cpp" />
+    <ClCompile Include="UlasProviderTests.cpp" />
+    <ClCompile Include="LicensingDbTests.cpp" />
+    <ClCompile Include="PolicyProviderTests.cpp" />
+    <ClCompile Include="Utils\DelayedExecutorTests.cpp" />
+    <ClCompile Include="Utils\FeatureUserDataMapTests.cpp" />
+    <ClCompile Include="Utils\JWTokenTests.cpp" />
+    <ClCompile Include="Utils\LogFileHelperTests.cpp" />
+    <ClCompile Include="Utils\MockHttpHandler.cpp" />
+    <ClCompile Include="Utils\SCVWritterTests.cpp" />
+    <ClCompile Include="Utils\UrlSafeBase64UtilitiesTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BuddiProviderTests.h" />
+    <ClInclude Include="ClientTests.h" />
+    <ClInclude Include="AccessKeyClientTests.h" />
+    <ClInclude Include="DummyPolicyHelper.h" />
+    <ClInclude Include="DummyUserInfoHelper.h" />
+    <ClInclude Include="GenerateSIDTests.h" />
+    <ClInclude Include="Mocks\AuthHandlerProviderMock.h" />
+    <ClInclude Include="Mocks\BuddiProviderMock.h" />
+    <ClInclude Include="Mocks\PolicyProviderMock.h" />
+    <ClInclude Include="Mocks\UlasProviderMock.h" />
+    <ClInclude Include="Mocks\LicensingDbMock.h" />
+    <ClInclude Include="PolicyTests.h" />
+    <ClInclude Include="SaasClientTests.h" />
+    <ClInclude Include="TestsHelper.h" />
+    <ClInclude Include="JsonHelper.h" />
+    <ClInclude Include="UlasProviderTests.h" />
+    <ClInclude Include="LicensingDbTests.h" />
+    <ClInclude Include="PolicyProviderTests.h" />
+    <ClInclude Include="Utils\DelayedExecutorTests.h" />
+    <ClInclude Include="Utils\FeatureUserDataMapTests.h" />
+    <ClInclude Include="Utils\JWTokenTests.h" />
+    <ClInclude Include="Utils\LogFileHelperTests.h" />
+    <ClInclude Include="Utils\MockHttpHandler.h" />
+    <ClInclude Include="Utils\SCVWritterTests.h" />
+    <ClInclude Include="Utils\UrlSafeBase64UtilitiesTests.h" />
+  </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+  </PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CF6DF431-C978-46EC-8E32-A409994F676D}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectName>LicensingUnitTests</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeBuildCommandLine>bb $(BB2N0) re Licensing UnitTests GtestUnit</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb $(XXXXX) re Licensing-GtestUnit -s</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb $(BB2N0) re Licensing UnitTests GtestUnit -c</NMakeCleanCommandLine>
+    <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
+    <NMakeOutput>$(OutRoot)Winx64\Product\Licensing-GtestUnit\LicensingUnitTest.exe</NMakeOutput>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <IncludePath>$(SrcRoot)licensingcrossplatform\Tests\UnitTests\;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);$(SrcRoot)LicensingCrossPlatform\Tests\UnitTests\;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
