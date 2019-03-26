@@ -16,9 +16,6 @@
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 // Explicitly instantiate template query methods
-template bvector<DoubleCShapeProfilePtr> ProfilesQuery::SelectByNavigationProperty (DgnDb const&, DgnElementId const&, Utf8CP, Utf8CP, DgnDbStatus*);
-template bvector<DoubleLShapeProfilePtr> ProfilesQuery::SelectByNavigationProperty (DgnDb const&, DgnElementId const&, Utf8CP, Utf8CP, DgnDbStatus*);
-template bvector<DerivedProfilePtr> ProfilesQuery::SelectByNavigationProperty (DgnDb const&, DgnElementId const&, Utf8CP, Utf8CP, DgnDbStatus*);
 template bvector<ArbitraryCompositeProfilePtr> ProfilesQuery::SelectByAspectNavigationProperty (DgnDb const&, DgnElementId const& , Utf8CP , Utf8CP , DgnDbStatus*);
 
 /*---------------------------------------------------------------------------------**//**
@@ -51,31 +48,6 @@ bvector<DgnElementId> selectElementIds (DgnDb const& db, Utf8CP pSqlString, DgnE
 
     status = DgnDbStatus::Success;
     return elementIds;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Perform ECSql SELECT to query first Profile that has a navigation property referencing
-* 'referencedProfileId'. Returns id of the PROFILE that is referencing and invalid
-* DgnElementId if profile is not referenced by the 'pClassName'.
-* @param referencedProfileId - id of profile to search for in navigation properties.
-* @param pClassName - name of ECEntityClass to perform the query on.
-* @param pNavigationPropertyName - name of ECNavigationProperty to perform the query on.
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId ProfilesQuery::SelectFirstByNavigationProperty (DgnDb const& db, DgnElementId const& referencedProfileId,
-                                                             Utf8CP pClassName, Utf8CP pNavigationPropertyName, DgnDbStatus* pStatus)
-    {
-    DgnDbStatus dbStatus;
-    if (pStatus == nullptr)
-        pStatus = &dbStatus;
-
-    Utf8String sqlString;
-    sqlString += "SELECT ECInstanceId FROM " PRF_SCHEMA_NAME "." + Utf8String (pClassName) +
-                 " WHERE " + Utf8String (pNavigationPropertyName) + ".Id=? LIMIT 1";
-
-    bvector<DgnElementId> profileIds = selectElementIds (db, sqlString.c_str(), referencedProfileId, *pStatus);
-
-    return (profileIds.empty() ? DgnElementId() : profileIds[0]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -136,25 +108,6 @@ static bvector<RefCountedPtr<T>> selectProfiles (DgnDb const& db, DgnElementId c
 
     *pStatus = DgnDbStatus::Success;
     return profiles;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Perform EcSql SELECT to query all Profiles that have a navigation property referencing
-* 'referencedProfileId'.
-* @param referencedProfileId - id of profile to search for in navigation properties.
-* @param pClassName - name of ECEntityClass to perform the query on.
-* @param pNavigationPropertyName - name of ECNavigationProperty to perform the query on.
-* @bsimethod                                                                     01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-bvector<RefCountedPtr<T>> ProfilesQuery::SelectByNavigationProperty (DgnDb const& db, DgnElementId const& referencedProfileId,
-                                                                     Utf8CP pClassName, Utf8CP pNavigationPropertyName, DgnDbStatus* pStatus)
-    {
-    Utf8String sqlString;
-    sqlString += "SELECT DISTINCT ECInstanceId FROM " PRF_SCHEMA_NAME "." + Utf8String (pClassName) +
-                 " WHERE " + Utf8String (pNavigationPropertyName) + ".Id=?";
-
-    return selectProfiles<T> (db, referencedProfileId, sqlString.c_str(), pStatus);
     }
 
 /*---------------------------------------------------------------------------------**//**

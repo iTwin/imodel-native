@@ -19,15 +19,8 @@ struct ProfilesQuery
 public:
     ProfilesQuery() = delete;
 
-    static Dgn::DgnElementId SelectFirstByNavigationProperty (Dgn::DgnDb const& db, Dgn::DgnElementId const& referencedProfileId,
-                                                              Utf8CP pClassName, Utf8CP pNavigationPropertyName, Dgn::DgnDbStatus* pStatus = nullptr);
-
     static Dgn::DgnElementId SelectFirstByAspectNavigationProperty (Dgn::DgnDb const& db, Dgn::DgnElementId const& referencedProfileId,
                                                                     Utf8CP pAspectName, Utf8CP pNavigationPropertyName, Dgn::DgnDbStatus* pStatus = nullptr);
-
-    template<typename T>
-    static bvector<RefCountedPtr<T>> SelectByNavigationProperty (Dgn::DgnDb const& db, Dgn::DgnElementId const& referencedProfileId,
-                                                                 Utf8CP pClassName, Utf8CP pNavigationPropertyName, Dgn::DgnDbStatus* pStatus = nullptr);
 
     template<typename T>
     static bvector<RefCountedPtr<T>> SelectByAspectNavigationProperty (Dgn::DgnDb const& db, Dgn::DgnElementId const& referencedProfileId,
