@@ -190,6 +190,13 @@ struct ObjRefVault
     std::map<Utf8String, Slot> m_slotMap;
 
   public:
+    void Clear()
+        {
+        m_slotMap.clear();
+        }
+
+    bool IsEmpty() const { return m_slotMap.empty(); }
+
     Utf8String StoreObjectRef(Napi::Object obj)
         {
         BeAssert(JsInterop::IsMainThread());
@@ -340,7 +347,17 @@ JsInterop::ObjectReferenceClaimCheck::ObjectReferenceClaimCheck(JsInterop::Objec
 +---------------+---------------+---------------+---------------+---------------+------*/
 JsInterop::ObjectReferenceClaimCheck::~ObjectReferenceClaimCheck()
     {
+    Dispose();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::ObjectReferenceClaimCheck::Dispose()
+    {
+    JsInterop::DoDeferredLogging();
     s_objRefVault.ReleaseRefToObject(m_id);
+    s_objRefVault.ReleaseUnreferencedObjects();
     }
 
 //=======================================================================================
@@ -3948,6 +3965,7 @@ private:
         {
         // Warning! If you want to log in a specific ClientRequestContext, then you can't use NativeLogging directly. You must call this helper function:
         JsInterop::LogMessageInContext("ECSqlStepWorkerTestCategory", NativeLogging::LOG_ERROR, "ECSqlStepWorker: Back on main thread", m_requestContext);
+        m_requestContext.Dispose();
 
         if (m_stepForInsert)
             {
@@ -5095,6 +5113,14 @@ static void doDeferredLogging()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::DoDeferredLogging()
+    {
+    doDeferredLogging();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::LogMessageInContext(Utf8StringCR category, NativeLogging::SEVERITY sev, Utf8StringCR msg, ObjectReferenceClaimCheck const& ctx)
     {
     if (IsMainThread())
@@ -5159,6 +5185,37 @@ extern "C"
     void imodeljs_addon_setMobileResourcesDir(Utf8CP d) {s_mobileResourcesDir = d;}
     void imodeljs_addon_setMobileTempDir(Utf8CP d) {s_mobileTempDir = d;}
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef NOT_UNTIL_ALL_BOXES_RUN_NODE_10_2
+static void onNodeExiting(void*)
+    {
+    if (nullptr != s_deferredLogging)
+        {
+        delete s_deferredLogging; // Too late for logging
+        s_deferredLogging = nullptr;
+        }
+
+    if (!s_logger.IsEmpty())
+        s_logger.Reset();
+
+    s_objRefVault.Clear();  // Force the vault to release all ObjectReferences, regardless of the refcounts of the slots.
+
+    if (nullptr != s_currentClientRequestContext)
+        {
+        delete s_currentClientRequestContext;
+        s_currentClientRequestContext = nullptr;        // This kills off all TLS keys. Threads should not be accessing them at this point.
+        }
+
+    BeAssert(nullptr == s_deferredLogging);
+    BeAssert(nullptr == s_currentClientRequestContext);
+    BeAssert(s_logger.IsEmpty());
+    BeAssert(s_objRefVault.IsEmpty());
+    }
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -5191,6 +5248,10 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
     SnapRequest::Init(env, exports);
     DisableNativeAssertions::Init(env, exports);
     NativeImportContext::Init(env, exports);
+
+#ifdef NOT_UNTIL_ALL_BOXES_RUN_NODE_10_2
+    napi_add_env_cleanup_hook(env, onNodeExiting, nullptr);
+#endif
 
     exports.DefineProperties(
         {

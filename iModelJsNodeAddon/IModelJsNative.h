@@ -98,6 +98,8 @@ struct JsInterop
         ObjectReferenceClaimCheck& operator=(ObjectReferenceClaimCheck const&);
 
         Utf8StringCR GetId() const {return m_id;}
+
+        void Dispose();
         };
 
     BE_JSON_NAME(briefcaseId)
@@ -211,6 +213,7 @@ public:
     static BentleyStatus SetCurrentClientRequestContextForWorkerThread(ObjectReferenceClaimCheck const&);
     static ObjectReferenceClaimCheck const& GetCurrentClientRequestContextForWorkerThread();
     static void LogMessageInContext(Utf8StringCR category, NativeLogging::SEVERITY sev, Utf8StringCR msg, ObjectReferenceClaimCheck const& ctx);
+    static void DoDeferredLogging();
 
     static Napi::Env& Env() { static Napi::Env s_env(nullptr); return s_env; }
     static intptr_t& MainThreadId() {static intptr_t s_mainThreadId; return s_mainThreadId;}

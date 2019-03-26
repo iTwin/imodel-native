@@ -663,5 +663,17 @@ NAPI_EXTERN napi_status napi_run_script(napi_env env,
                                         napi_value script,
                                         napi_value *result) { return napi_ok; }
 
+#if NAPI_VERSION >= 3
+
+NAPI_EXTERN napi_status napi_add_env_cleanup_hook(napi_env env,
+                                                  void (*fun)(void* arg),
+                                                  void* arg) { return napi_ok; }
+
+NAPI_EXTERN napi_status napi_remove_env_cleanup_hook(napi_env env,
+                                                     void (*fun)(void* arg),
+                                                     void* arg) { return napi_ok; }
+
+#endif  // NAPI_VERSION >= 3
+
 EXTERN_C_END
 #endif
