@@ -152,3 +152,103 @@ TEST_F (DoubleCShapeProfileTestCase, Insert_InvalidSingleProfileId_FailedInsert)
     CreateParams params (GetModel(), "DoubleC", 1.0, DgnElementId());
     EXPECT_FAIL_Insert (params) << "Profile should fail with invalid SinglieProfile id.";
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DoubleCShapeProfileTestCase, Insert_InvalidSingleProfileClass_FailedInsert)
+    {
+    LShapeProfile::CreateParams params (GetModel(), "L", 10.0, 6.0, 1.0);
+    LShapeProfilePtr profilePtr = LShapeProfile::Create (params);
+
+    DgnDbStatus status;
+    profilePtr->Insert (&status);
+    EXPECT_EQ (status, DgnDbStatus::Success);
+
+    CreateParams requiredParams (GetModel(), "DoubleC", 1.0, profilePtr->GetElementId());
+    EXPECT_FAIL_Insert (requiredParams) << "Profile should succeed to insert with valid required create parameters.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DoubleCShapeProfileTestCase, SetSingleProfile_ValidCShapeProfileId_Success)
+    {
+    CShapeProfileCPtr singleProfilePtr = InsertCShapeProfile();
+
+    CreateParams requiredParams (GetModel(), "DoubleC", 1.0, singleProfilePtr->GetElementId());
+    EXPECT_SUCCESS_Insert (requiredParams) << "Profile should succeed to insert with valid required create parameters.";
+
+    DgnElementIdSet children = singleProfilePtr->QueryChildren();
+    ASSERT_EQ (1, children.size());
+
+    DoubleCShapeProfilePtr doubleProfilePtr = DoubleCShapeProfile::GetForEdit (GetDb(), *children.begin());
+    ASSERT_TRUE (doubleProfilePtr.IsValid());
+
+    CShapeProfileCPtr otherSingleProfilePtr = InsertCShapeProfile();
+    ASSERT_EQ (DgnDbStatus::Success, doubleProfilePtr->SetSingleProfile (otherSingleProfilePtr->GetElementId()));
+
+    DgnDbStatus status;
+    doubleProfilePtr->Update (&status);
+    ASSERT_EQ (DgnDbStatus::Success, status);
+
+    EXPECT_EQ (0, singleProfilePtr->QueryChildren().size());
+    EXPECT_EQ (1, otherSingleProfilePtr->QueryChildren().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DoubleCShapeProfileTestCase, SetSingleProfile_InValidCShapeProfileId_Fail)
+    {
+    CShapeProfileCPtr singleProfilePtr = InsertCShapeProfile();
+
+    CreateParams requiredParams (GetModel(), "DoubleC", 1.0, singleProfilePtr->GetElementId());
+    EXPECT_SUCCESS_Insert (requiredParams) << "Profile should succeed to insert with valid required create parameters.";
+
+    DgnElementIdSet children = singleProfilePtr->QueryChildren();
+    ASSERT_EQ (1, children.size());
+
+    DoubleCShapeProfilePtr doubleProfilePtr = DoubleCShapeProfile::GetForEdit (GetDb(), *children.begin());
+    ASSERT_TRUE (doubleProfilePtr.IsValid());
+
+    ASSERT_EQ (DgnDbStatus::Success, doubleProfilePtr->SetSingleProfile (DgnElementId()));
+
+    DgnDbStatus status;
+    doubleProfilePtr->Update (&status);
+    ASSERT_NE (DgnDbStatus::Success, status);
+
+    EXPECT_EQ (1, singleProfilePtr->QueryChildren().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     01/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DoubleCShapeProfileTestCase, SetSingleProfile_InValidSingleProfileClass_Fail)
+    {
+    CShapeProfileCPtr singleProfilePtr = InsertCShapeProfile();
+
+    CreateParams requiredParams (GetModel(), "DoubleC", 1.0, singleProfilePtr->GetElementId());
+    EXPECT_SUCCESS_Insert (requiredParams) << "Profile should succeed to insert with valid required create parameters.";
+
+    DgnElementIdSet children = singleProfilePtr->QueryChildren();
+    ASSERT_EQ (1, children.size());
+
+    DoubleCShapeProfilePtr doubleProfilePtr = DoubleCShapeProfile::GetForEdit (GetDb(), *children.begin());
+    ASSERT_TRUE (doubleProfilePtr.IsValid());
+
+    LShapeProfile::CreateParams params (GetModel(), "L", 10.0, 6.0, 1.0);
+    LShapeProfilePtr lProfilePtr = LShapeProfile::Create (params);
+
+    DgnDbStatus status;
+    lProfilePtr->Insert (&status);
+    EXPECT_EQ (status, DgnDbStatus::Success);
+    ASSERT_EQ (DgnDbStatus::Success, doubleProfilePtr->SetSingleProfile (lProfilePtr->GetElementId()));
+
+    doubleProfilePtr->Update (&status);
+    ASSERT_NE (DgnDbStatus::Success, status);
+
+    EXPECT_EQ (1, singleProfilePtr->QueryChildren().size());
+    EXPECT_EQ (0, lProfilePtr->QueryChildren().size());
+    }

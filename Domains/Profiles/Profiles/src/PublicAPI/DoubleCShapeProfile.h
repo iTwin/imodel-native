@@ -71,8 +71,8 @@ public:
     PROFILES_EXPORT void SetSpacing (double value); //!< Set the value for @ref CreateParams.spacing "Spacing"
 
     PROFILES_EXPORT CShapeProfilePtr GetSingleProfile() const; //!< Get the CShapeProfile instance referenced by @ref CreateParams.singleProfileId "SingleProfileId"
-    PROFILES_EXPORT void SetSingleProfile (CShapeProfile const& singleProfile); //!< Set the value for @ref CreateParams.singleProfileId "SingleProfileId"
-    PROFILES_EXPORT void SetSingleProfile (Dgn::DgnElementId const& singleProfileId); //!< Set the value for @ref CreateParams.singleProfileId "SingleProfileId"
+    PROFILES_EXPORT Dgn::DgnDbStatus SetSingleProfile (CShapeProfile const& singleProfile); //!< Set the value for @ref CreateParams.singleProfileId "SingleProfileId"
+    PROFILES_EXPORT Dgn::DgnDbStatus SetSingleProfile (Dgn::DgnElementId const& singleProfileId); //!< Set the value for @ref CreateParams.singleProfileId "SingleProfileId"
     //! @endGroup
 
     }; // DoubleCShapeProfile

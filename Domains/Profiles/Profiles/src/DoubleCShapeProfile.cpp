@@ -101,24 +101,23 @@ void DoubleCShapeProfile::SetSpacing (double value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CShapeProfilePtr DoubleCShapeProfile::GetSingleProfile() const
     {
-    DgnElementId singleProfileId = GetPropertyValueId<DgnElementId> (PRF_PROP_DoubleCShapeProfile_SingleProfile);
-    return CShapeProfile::GetForEdit (m_dgndb, singleProfileId);
+    return CShapeProfile::GetForEdit (m_dgndb, GetParentId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DoubleCShapeProfile::SetSingleProfile (CShapeProfile const& singleProfile)
+DgnDbStatus DoubleCShapeProfile::SetSingleProfile (CShapeProfile const& singleProfile)
     {
-    SetPropertyValue (PRF_PROP_DoubleCShapeProfile_SingleProfile, singleProfile.GetElementId());
+    return SetSingleProfile (singleProfile.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DoubleCShapeProfile::SetSingleProfile (DgnElementId const& singleProfileId)
+DgnDbStatus DoubleCShapeProfile::SetSingleProfile (DgnElementId const& singleProfileId)
     {
-    SetPropertyValue (PRF_PROP_DoubleCShapeProfile_SingleProfile, singleProfileId);
+    return SetParentId (singleProfileId, QueryClassId (GetDgnDb(), PRF_REL_CShapeProfileOwnsDoubleCShapeProfile));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
