@@ -4703,7 +4703,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 
     if (!diffSetPtr.IsValid())
     {
-        bool expected = true;
+        expected = true;
         while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
         return;
     }
