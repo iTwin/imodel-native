@@ -108,7 +108,7 @@
             "name": "CS",
             "description": "Chain Sets",
             "markerFiles": [
-                "Scenario.dgn",
+                "Scenario.dgn"
             ]
         }
     ]
