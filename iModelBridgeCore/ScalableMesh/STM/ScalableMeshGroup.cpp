@@ -579,7 +579,7 @@ SMStatus                      ScalableMeshGroup::_DetectGroundForRegion(BeFileNa
     {
     for (auto& member : m_members)
         {
-        if (!member->IsTerrain()) return member->DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer, destinationGcs, limitResolution, dataSourceDir);
+        if (!member->IsTerrain()) return member->DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer, destinationGcs, limitResolution, reprojectElevation, dataSourceDir);
         }
 
     return SMStatus::S_SUCCESS;
