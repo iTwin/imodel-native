@@ -1,0 +1,13 @@
+#----------------------------------------------------------------------
+#     $Source: Configuration/Configurationprewire.mke $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------
+%include mdl.mki
+#
+# Fallback configuration files
+#
+$(BuildContext)Delivery/DgnPlatformV8Sdk/Dlls/CEconfig/Config : $(_MakeFilePath)CEconfig
+    $(LinkFirstDepToFirstTargetAsDirectory)
+    
+$(BuildContext)Delivery/DgnPlatformV8Sdk/Dlls/v8iConfig/Config : $(_MakeFilePath)v8iConfig
+    $(LinkFirstDepToFirstTargetAsDirectory)
