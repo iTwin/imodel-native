@@ -114,7 +114,6 @@ TEST_F(SaasClientIntegrationTests, DISABLED_Equality_Test)
     }
 
 // Tests using the Client's Create method
-
 TEST_F(SaasClientIntegrationTests, SaasFactoryTrackUsage_Success)
     {
     auto client = CreateTestSaasClient(std::atoi(TEST_PRODUCT_ID));
@@ -127,8 +126,7 @@ TEST_F(SaasClientIntegrationTests, SaasFactoryTrackUsage_Success)
     EXPECT_NE(static_cast<int>(client->TrackUsage(tokenString, version, projectId).get()), static_cast<int>(LicenseStatus::Error));
     }
 
-// Tests using the Clients' implementation
-
+// Tests using the Client's implementation
 TEST_F(SaasClientIntegrationTests, SaasTrackUsage_Success)
     {
     auto client = CreateTestSaasClientImpl(std::atoi(TEST_PRODUCT_ID));
@@ -139,3 +137,23 @@ TEST_F(SaasClientIntegrationTests, SaasTrackUsage_Success)
 
     EXPECT_NE(static_cast<int>(client->TrackUsage(tokenString, version, projectId).get()), static_cast<int>(LicenseStatus::Error));
     }
+
+TEST_F(SaasClientIntegrationTests, SaasMarkFeature_Success)
+    {
+    auto client = CreateTestSaasClientImpl(std::atoi(TEST_PRODUCT_ID));
+
+    Utf8String tokenString = "0cd2c3d2b0b813ce8c8e1b297f173f9e42f775ca32a2ee32a27b0a55daff1db9";
+    auto version = BeVersion(1, 0);
+    Utf8String projectId = "00000000-0000-0000-0000-000000000000";
+
+    FeatureUserDataMapPtr featureData = std::make_shared<FeatureUserDataMap>();
+
+    featureData->AddAttribute("Manufacturer", "Bentley Systems, Inc.");
+    featureData->AddAttribute("Website", "https://www.w3schools.com");
+    featureData->AddAttribute("Title", "Mobile App");
+
+    FeatureEvent featureEvent = FeatureEvent("FeatureId", version, projectId, featureData);
+
+    EXPECT_NE(static_cast<int>(client->MarkFeature(tokenString, featureEvent).get()), static_cast<int>(LicenseStatus::Error));
+    }
+

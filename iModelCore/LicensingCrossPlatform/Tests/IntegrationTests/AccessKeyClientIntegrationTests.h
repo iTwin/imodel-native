@@ -28,8 +28,8 @@ class AccessKeyClientIntegrationTests : public ::testing::Test
 
         BeFileName GetLicensingDbPathIntegration() const;
 
-        Licensing::AccessKeyClientPtr CreateTestAccessKeyClient(Utf8StringCR productId = TEST_PRODUCT_ID, Utf8StringCR accessKey = TEST_VALID_ACCESSKEY) const;
-        Licensing::AccessKeyClientImplPtr CreateTestAccessKeyClientImpl(Utf8StringCR productId = TEST_PRODUCT_ID, Utf8StringCR accessKey = TEST_VALID_ACCESSKEY) const;
+        Licensing::AccessKeyClientPtr CreateTestClient(Utf8StringCR productId = TEST_PRODUCT_ID, Utf8StringCR accessKey = TEST_VALID_ACCESSKEY) const;
+        Licensing::AccessKeyClientImplPtr CreateTestClientImpl(Utf8StringCR productId = TEST_PRODUCT_ID, Utf8StringCR accessKey = TEST_VALID_ACCESSKEY) const;
 
         void TearDown();
     };

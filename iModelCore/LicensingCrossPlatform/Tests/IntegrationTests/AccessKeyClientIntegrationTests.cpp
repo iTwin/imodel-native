@@ -85,7 +85,7 @@ void AccessKeyClientIntegrationTests::SetUpTestCase()
     ASSERT_EQ(SUCCESS, L10N::Initialize(BeSQLite::L10N::SqlangFiles(path)));
     }
 
-AccessKeyClientPtr AccessKeyClientIntegrationTests::CreateTestAccessKeyClient(Utf8StringCR productId, Utf8StringCR accessKey) const
+AccessKeyClientPtr AccessKeyClientIntegrationTests::CreateTestClient(Utf8StringCR productId, Utf8StringCR accessKey) const
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     //RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
@@ -109,7 +109,7 @@ AccessKeyClientPtr AccessKeyClientIntegrationTests::CreateTestAccessKeyClient(Ut
         );
     }
 
-AccessKeyClientImplPtr AccessKeyClientIntegrationTests::CreateTestAccessKeyClientImpl(Utf8StringCR productId, Utf8StringCR accessKey) const
+AccessKeyClientImplPtr AccessKeyClientIntegrationTests::CreateTestClientImpl(Utf8StringCR productId, Utf8StringCR accessKey) const
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
     UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
@@ -138,23 +138,32 @@ AccessKeyClientImplPtr AccessKeyClientIntegrationTests::CreateTestAccessKeyClien
         );
     }
 
-TEST_F(AccessKeyClientIntegrationTests, AccessKeyFactoryStartStopApplication_Success)
+TEST_F(AccessKeyClientIntegrationTests, FactoryStartStopApplication_Success)
     {
-    auto client = CreateTestAccessKeyClient(TEST_PRODUCT_ID, TEST_VALID_ACCESSKEY);
+    auto client = CreateTestClient(TEST_PRODUCT_ID, TEST_VALID_ACCESSKEY);
     ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
     EXPECT_SUCCESS(client->StopApplication());
     }
 
-TEST_F(AccessKeyClientIntegrationTests, AccessKeyStartStopApplication_Success)
+TEST_F(AccessKeyClientIntegrationTests, StartStopApplication_Success)
     {
-    auto client = CreateTestAccessKeyClientImpl(TEST_PRODUCT_ID, TEST_VALID_ACCESSKEY);
+    auto client = CreateTestClientImpl(TEST_PRODUCT_ID, TEST_VALID_ACCESSKEY);
     ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
     EXPECT_SUCCESS(client->StopApplication());
     }
 
-TEST_F(AccessKeyClientIntegrationTests, AccessKeyMarkFeature_Success)
+TEST_F(AccessKeyClientIntegrationTests, StartApplicationInvalidKey_Success)
     {
-    auto client = CreateTestAccessKeyClientImpl("1000"); // TEST_VALID_ACCESSKEY is entitled to microstation (1000)
+    // note: expired access keys are cleaned occasionaly by ULAS, so this is a non-expired key where "active" = false
+    auto client = CreateTestClientImpl("1000", "F1F5BAC030C7CF3F472655412617CF5D");
+
+    // inactive key will give a nullptr policy, so StartApplication will fail
+    ASSERT_EQ(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    }
+
+TEST_F(AccessKeyClientIntegrationTests, MarkFeature_Success)
+    {
+    auto client = CreateTestClientImpl("1000"); // TEST_VALID_ACCESSKEY is entitled to microstation (1000)
 
     FeatureUserDataMapPtr featureData = std::make_shared<FeatureUserDataMap>();
 
@@ -167,9 +176,9 @@ TEST_F(AccessKeyClientIntegrationTests, AccessKeyMarkFeature_Success)
     EXPECT_SUCCESS(client->StopApplication());
     }
 
-TEST_F(AccessKeyClientIntegrationTests, AccessKeyGetLicenseStatusValidPolicy_Success)
+TEST_F(AccessKeyClientIntegrationTests, GetLicenseStatusValidPolicy_Success)
     {
-    auto client = CreateTestAccessKeyClientImpl("1000"); // TEST_VALID_ACCESSKEY is entitled to microstation (1000)
+    auto client = CreateTestClientImpl("1000"); // TEST_VALID_ACCESSKEY is entitled to microstation (1000)
 
     ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
 
