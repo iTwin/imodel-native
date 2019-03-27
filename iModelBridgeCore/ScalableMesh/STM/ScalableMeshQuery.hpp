@@ -2851,46 +2851,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
         {
         m_params = params;
 
-        DRange3d meshRange = this->GetContentExtent();
-        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-        auto meshP = this->GetMesh(flags);
-        if (meshP.get() == nullptr) return;
-
-        double roundedDownNextMultiple = (floor(meshRange.low.z / m_params.majorContourSpacing)*m_params.majorContourSpacing);
-        double roundedUpNextMultiple = (ceil(meshRange.high.z / m_params.majorContourSpacing)*m_params.majorContourSpacing);
-        for (double i = roundedDownNextMultiple; i < roundedUpNextMultiple; i += m_params.majorContourSpacing)
-            {
-            DPlane3d plane = DPlane3d::From3Points(DPoint3d::From(0, 0, i), DPoint3d::From(0, 1, i), DPoint3d::From(1, 0, i));
-            bvector<DSegment3d> allSegments;
-
-            meshP->CutWithPlane(allSegments, plane);
-
-            bvector<bvector<DPoint3d>> polylines;
-            for (auto& seg : allSegments)
-                seg.point[0].z = seg.point[1].z = i;
-            StitchSegmentsAtJunctions(polylines, allSegments);
-
-            for(auto& line: polylines)
-                m_contours.push_back(line);
-            }
-
-        roundedDownNextMultiple = (floor(meshRange.low.z / m_params.minorContourSpacing)*m_params.minorContourSpacing);
-        roundedUpNextMultiple = (ceil(meshRange.high.z / m_params.minorContourSpacing)*m_params.minorContourSpacing);
-        for (double i = roundedDownNextMultiple; i < roundedUpNextMultiple; i += m_params.minorContourSpacing)
-            {
-            DPlane3d plane = DPlane3d::From3Points(DPoint3d::From(0, 0, i), DPoint3d::From(0, 1, i), DPoint3d::From(1, 0, i));
-            bvector<DSegment3d> allSegments;
-
-            meshP->CutWithPlane(allSegments, plane);
-
-            bvector<bvector<DPoint3d>> polylines;
-            for (auto& seg : allSegments)
-                seg.point[0].z = seg.point[1].z = i;
-            StitchSegmentsAtJunctions(polylines, allSegments);
-
-            for (auto& line : polylines)
-                m_contours.push_back(line);
-            }
+        this->_MakeContours(m_contours, m_contours, m_params);
 
         m_contoursReady = true;
         }
@@ -2953,6 +2914,25 @@ IScalableMeshNodePtr ScalableMeshNode<POINT>::_GetParentNode() const
 
     return new ScalableMeshNode<POINT>(nodePtr);
     }
+
+template <class POINT>
+void ScalableMeshNode<POINT>::_MakeContours(bvector<bvector<DPoint3d>>& major, bvector<bvector<DPoint3d>>& minor, ContoursParameters params)
+{
+    LOAD_NODE
+
+    DRange3d meshRange = this->GetContentExtent();
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+    auto meshP = this->GetMesh(flags);
+    if (meshP.get() == nullptr) return;
+
+    double roundedDownNextMultiple = (floor(meshRange.low.z / params.majorContourSpacing)*params.majorContourSpacing);
+    double roundedUpNextMultiple = (ceil(meshRange.high.z / params.majorContourSpacing)*params.majorContourSpacing);
+    ScalableMeshContourExtractor(params).GetMajorContours(major, meshP, roundedDownNextMultiple, roundedUpNextMultiple);
+
+    roundedDownNextMultiple = (floor(meshRange.low.z / params.minorContourSpacing)*params.minorContourSpacing);
+    roundedUpNextMultiple = (ceil(meshRange.high.z / params.minorContourSpacing)*params.minorContourSpacing);
+    ScalableMeshContourExtractor(params).GetMinorContours(minor, meshP, roundedDownNextMultiple, roundedUpNextMultiple);
+}
 
 #ifdef WIP_MESH_IMPORT
 

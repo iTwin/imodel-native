@@ -301,6 +301,13 @@ struct IScalableMeshPointQuery : RefCountedBase
         BENTLEY_SM_EXPORT int RemoveAllClip();    
     };
 
+
+struct ContoursParameters
+{
+    float majorContourSpacing;
+    float minorContourSpacing;
+};
+
 /*============================================================================**//**
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
@@ -540,6 +547,8 @@ struct IScalableMeshNode : virtual public RefCountedBase
 
         virtual IScalableMeshNodeEditPtr _EditNode() = 0;
 
+        virtual void _MakeContours(bvector<bvector<DPoint3d>>& major, bvector<bvector<DPoint3d>>& minor, ContoursParameters params) = 0;
+
 #ifdef WIP_MESH_IMPORT
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) = 0;
 
@@ -631,6 +640,8 @@ struct IScalableMeshNode : virtual public RefCountedBase
         BENTLEY_SM_EXPORT SMNodeViewStatus IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const;
 
         BENTLEY_SM_EXPORT IScalableMeshNodeEditPtr EditNode();
+
+        BENTLEY_SM_EXPORT void MakeContours(bvector<bvector<DPoint3d>>& major, bvector<bvector<DPoint3d>>& minor, ContoursParameters params);
 
 #ifdef WIP_MESH_IMPORT
         BENTLEY_SM_EXPORT bool IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata);
