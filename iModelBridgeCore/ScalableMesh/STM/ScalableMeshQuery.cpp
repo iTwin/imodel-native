@@ -3000,6 +3000,11 @@ IScalableMeshNodeEditPtr IScalableMeshNode::EditNode()
     return _EditNode();
     }
 
+void IScalableMeshNode::MakeContours(bvector<bvector<DPoint3d>>& major, bvector<bvector<DPoint3d>>& minor, ContoursParameters params)
+    {
+    return _MakeContours(major, minor, params);
+    }
+
 bvector<IScalableMeshNodeEditPtr> IScalableMeshNodeEdit::EditChildrenNodes()
     {
     return _EditChildrenNodes();

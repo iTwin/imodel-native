@@ -37,6 +37,8 @@
 #include "SMMeshIndex.h"
 #include "./ScalableMesh/ScalableMeshGraph.h"
 #include "Edits/DifferenceSet.h"
+#include "ScalableMeshContourExtractor.h"
+
 #ifdef SCALABLE_MESH_ATP
 #include <ScalableMesh/IScalableMeshATP.h>
 #endif
@@ -1473,6 +1475,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual IScalableMeshNodeEditPtr _EditNode() override;
 
+        virtual void _MakeContours(bvector<bvector<DPoint3d>>& major, bvector<bvector<DPoint3d>>& minor, ContoursParameters params) override;
+
 #ifdef WIP_MESH_IMPORT
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) override;
 
@@ -1704,12 +1708,6 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             }
 
             typedef RefCountedPtr<ScalableMeshCachedDisplayNode<POINT>> Ptr;
-    };
-
-    struct ContoursParameters
-    {
-        float majorContourSpacing;
-        float minorContourSpacing;
     };
 
     template<class POINT> class ScalableMeshContourCachedDisplayNode : public virtual ScalableMeshCachedDisplayNode<POINT>
