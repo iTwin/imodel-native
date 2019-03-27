@@ -2,7 +2,7 @@
 #
 #     $Source: install/BundleRealDWGInstaller.mki $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 
@@ -16,7 +16,7 @@ BENTLEYLANGUAGE = $(LANGUAGE)
 #INSTALLER_COMPILER_OPT  + -dLANGUAGE_CULTURE=$(BENTLEYLANGUAGE)
 
 
-BB_INSTALLER_SKIP_WIXBUNDLE_INSIGNIA=1
+#BB_INSTALLER_SKIP_WIXBUNDLE_INSIGNIA=1
 
 
 INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgRegistryFrag.wxs

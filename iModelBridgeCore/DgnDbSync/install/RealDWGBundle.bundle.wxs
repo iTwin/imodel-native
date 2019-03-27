@@ -5,7 +5,8 @@
 	  <?include $(var.BBInstallSetDefinitionWxi)?>
     <?include InstallSetDefintion.wxi?>
     
-    <Bundle Name="$(var.bbVarBundleName)" Version="$(var.INSTALLER_PRODUCT_VERSION)" UpgradeCode="$(var.bbVarBundleUpgradeCode)" Condition="VersionNT64  > v6.1 OR (VersionNT64 > v6.0 AND VersionNT64 &lt; v6.2 AND ServicePackLevel >= 1)" DisableModify="no" Manufacturer="Bentley Systems, Incorporated" HelpUrl="https://communities.bentley.com/products/default.aspx" UpdateUrl="http://www.bentley.com/downloads" AboutUrl="http://apps.bentley.com/bentleyconnect/" Copyright="Copyright © 2016 Bentley Systems, Incorporated. All rights reserved." Tag="BE;SP=0;LCID=$(var.LANGUAGE_LCID);PID=1000;Win64=True">
+    <!-- iModel Bridge for DWG has a GPR ID 2706 -->
+    <Bundle Name="$(var.bbVarBundleName)" Version="$(var.INSTALLER_PRODUCT_VERSION)" UpgradeCode="$(var.bbVarBundleUpgradeCode)" Condition="VersionNT64  > v6.1 OR (VersionNT64 > v6.0 AND VersionNT64 &lt; v6.2 AND ServicePackLevel >= 1)" DisableModify="no" Manufacturer="Bentley Systems, Incorporated" HelpUrl="https://communities.bentley.com/products/default.aspx" UpdateUrl="http://www.bentley.com/downloads" AboutUrl="http://apps.bentley.com/bentleyconnect/" Copyright="Copyright © 2016 Bentley Systems, Incorporated. All rights reserved." Tag="BE;SP=0;LCID=$(var.LANGUAGE_LCID);PID=2706;Win64=True">
         
         <BootstrapperApplicationRef Id="ManagedBootstrapperApplicationHost">
             <PayloadGroupRef Id="InstallFrameworkManagedBootstrapper"/>
