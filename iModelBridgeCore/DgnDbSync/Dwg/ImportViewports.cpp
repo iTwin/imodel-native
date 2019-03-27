@@ -1561,6 +1561,7 @@ void            DwgImporter::_PostProcessViewports ()
     bool wantThumbnails = this->GetOptions().WantThumbnails ();
     BeDuration timeout = this->GetOptions().GetThumbnailTimeout ();
 
+#if defined(TODO_IMODEL02_THUMBNAILS)
     // ensure graphics sub-system has started, if we want to generate thumbnails:
     if (wantThumbnails)
         {
@@ -1623,6 +1624,7 @@ void            DwgImporter::_PostProcessViewports ()
         if (changed)
             this->SaveViewDefinition (*viewController);
         }
+#endif // TODO_IMODEL02_THUMBNAILS
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2024,8 +2024,6 @@ void            DwgImporter::_FinishImport ()
         return ;
         }
 
-    m_dgndb->SaveSettings ();
-
 #ifdef DEBUG_DELETE_DOCUMENTS
     this->_DetectDeletedDocuments ();
 #endif

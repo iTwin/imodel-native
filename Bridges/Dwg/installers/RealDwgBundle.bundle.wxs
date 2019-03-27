@@ -2,10 +2,9 @@
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension" xmlns:bal="http://schemas.microsoft.com/wix/BalExtension" xmlns:wbb="urn:schemas-bentley-com:wixBundleBuild">
     <?include wixBundleBuildDefinitions.wxi?>
-	<?include $(var.BBInstallSetDefinitionWxi)?>
-    <?include InstallSetDefintion.wxi?>
+    <?include $(var.BBInstallSetDefinitionWxi)?>
     
-    <Bundle Name="$(var.bbVarBundleName)" Version="$(var.INSTALLER_PRODUCT_VERSION)" UpgradeCode="$(var.bbVarBundleUpgradeCode)" Condition="VersionNT64  > v6.1 OR (VersionNT64 > v6.0 AND VersionNT64 &lt; v6.2 AND ServicePackLevel >= 1)" DisableModify="no" Manufacturer="Bentley Systems, Incorporated" HelpUrl="https://communities.bentley.com/products/default.aspx" UpdateUrl="http://www.bentley.com/downloads" AboutUrl="http://apps.bentley.com/bentleyconnect/" Copyright="Copyright © 2016 Bentley Systems, Incorporated. All rights reserved." Tag="BE;SP=0;LCID=$(var.LANGUAGE_LCID);PID=1000;Win64=True">
+    <Bundle Name="$(var.bbVarBundleName)" Version="$(var.INSTALLER_PRODUCT_VERSION)" UpgradeCode="$(var.bbVarBundleUpgradeCode)" Condition="VersionNT64  > v6.1 OR (VersionNT64 > v6.0 AND VersionNT64 &lt; v6.2 AND ServicePackLevel >= 1)" DisableModify="no" Manufacturer="Bentley Systems, Incorporated" HelpUrl="https://communities.bentley.com/products/default.aspx" UpdateUrl="http://www.bentley.com/downloads" AboutUrl="http://apps.bentley.com/bentleyconnect/" Copyright="Copyright © 2019 Bentley Systems, Incorporated. All rights reserved." Tag="BE;SP=0;LCID=$(var.LANGUAGE_LCID);PID=1000;Win64=True">
         
         <BootstrapperApplicationRef Id="ManagedBootstrapperApplicationHost">
             <PayloadGroupRef Id="InstallFrameworkManagedBootstrapper"/>
@@ -15,6 +14,7 @@
         <WixVariable Id="WixMbaPrereqLicenseUrl" Value="Nothing.rtf" />
         
         <Chain ParallelCache="yes">
+          <PackageGroupRef Id="PreRequisites"/>
             <MsiPackage Id="PowerProductPackage" SourceFile="$(var.PowerProductPath)$(var.bbVarProductShortName)$(var.bbVarProductTargetPlatform).msi"  Compressed="yes"  Visible="no" EnableFeatureSelection="yes" ForcePerMachine="yes" Description="iModel Bridge Service - Autodesk(R) DWG(TM)">
                 <MsiProperty Name="INSTALLDIR" Value="[InstallDirectory]"/>
                 <MsiProperty Name="PACKAGE_HOMEROOT" Value="[ConfigurationDirectory]"/>
@@ -30,9 +30,8 @@
 
                 <MsiProperty Name="USER_CONFIGURATION_LOCATION" Value="[SharedConfigurationDirectory]"/>
 
-                <wbb:PackageSource InstallSetContext="DwgConverter" PathMacro="PowerProductPath" />
+                <wbb:PackageSource InstallSetContext="DwgBridge" PathMacro="PowerProductPath" />
             </MsiPackage>
-           
         </Chain>
 
         <wbb:Pages>
@@ -52,27 +51,16 @@
             <wbb:Page Name="CompanionProductConfigurationSettingsPage" Source="SetupPagesLib.dll" Xaml="CompanionProductConfigurationSettingsUserControl.xaml"/>
             <wbb:Page Name="CompanionProductSelectionPage" Source="SetupPagesLib.dll" Xaml="CompanionProductSelectionUserControl.xaml"/>
             <wbb:Page Name="CompanionProductFeatureSelectionPage" Source="SetupPagesLib.dll" Xaml="CompanionProductFeatureSelectionUserControl.xaml"/>
-            <wbb:Page Name="LumenRTInstallDirectorySelectionPage" Source="LumenRTExtension.dll" Xaml="InstallDirSelection.xaml"/>
-            <wbb:Page Name="LumenRTUserInformationPage" Source="LumenRTExtension.dll" Xaml="LumenRTUserInformation.xaml"/>
             <wbb:Page Name="RedefineWixPackageCachePage" Source="SetupPagesLib.dll" Xaml="RedefineWixPackageCacheUserControl.xaml"/>
         </wbb:Pages>
 
-        <!--<wbb:UISequences>
-            <wbb:UISequence Action="Install">InstallDirectorySelectionPage,WelcomeDialogInstallPage,FeatureConfigPage</wbb:UISequence>
-            <wbb:UISequence Action="Layout">InstallDirectorySelectionPage,DeploymentImageSettingsPage,FeatureConfigPage</wbb:UISequence>
-            <wbb:UISequence Action="Modify">FeatureConfigPage</wbb:UISequence>
+        <wbb:UISequences>
+            <wbb:UISequence Action="Install">CompanionProductSelectionPage,CompanionProductInstallDirSelectionPage</wbb:UISequence>
+            <wbb:UISequence Action="Layout">CompanionProductSelectionPage,CompanionProductInstallDirSelectionPage,DeploymentImageSettingsPage</wbb:UISequence>
+            <wbb:UISequence Action="Modify">CompanionProductSelectionPage</wbb:UISequence>
             <wbb:UISequence Action="Repair">RepairSelectionPage</wbb:UISequence>
             <wbb:UISequence Action="Uninstall">UninstallVerificationPage</wbb:UISequence>
-            <wbb:UISequence Action="Maintenance">MaintenancePage,FeatureConfigPage,RepairSelectionPage,UninstallVerificationPage</wbb:UISequence>
-        </wbb:UISequences>-->
-
-        <wbb:UISequences>
-          <wbb:UISequence Action="Install">CompanionProductSelectionPage,CompanionProductInstallDirSelectionPage</wbb:UISequence>
-          <wbb:UISequence Action="Layout">CompanionProductSelectionPage,CompanionProductInstallDirSelectionPage,DeploymentImageSettingsPage</wbb:UISequence>
-          <wbb:UISequence Action="Modify">CompanionProductSelectionPage</wbb:UISequence>
-          <wbb:UISequence Action="Repair">RepairSelectionPage</wbb:UISequence>
-          <wbb:UISequence Action="Uninstall">UninstallVerificationPage</wbb:UISequence>
-          <wbb:UISequence Action="Maintenance">MaintenancePage,CompanionProductSelectionPage,CompanionProductFeatureSelectionPage,RepairSelectionPage,UninstallVerificationPage</wbb:UISequence>
+            <wbb:UISequence Action="Maintenance">MaintenancePage,CompanionProductSelectionPage,CompanionProductFeatureSelectionPage,RepairSelectionPage,UninstallVerificationPage</wbb:UISequence>
         </wbb:UISequences>
 
         <?ifdef BBinstallerBuildTypeRelease?>
@@ -82,12 +70,32 @@
         <?endif?>
 
         <!--List of properties to save value of, while creating the Deployment Image-->
-        <Variable Name="LayoutSavePropertyList" Type="string" Value="InstallDirectory;ConfigurationDirectory;InstallDesktopShortcut;LumenRTInstallDirectory;LumenRTUserName;LumenRTCompanyName;SharedConfigurationDirectory"/>
-        <Variable Name="BePathPropertyList" Value="InstallDirectory;ConfigurationDirectory;SharedConfigurationDirectory;LumenRTInstallDirectory"/>
+        <Variable Name="LayoutSavePropertyList" Type="string" Value="InstallDirectory;ConfigurationDirectory;InstallDesktopShortcut;SharedConfigurationDirectory"/>
+        <Variable Name="BePathPropertyList" Value="InstallDirectory;ConfigurationDirectory;SharedConfigurationDirectory"/>
 
         <!--List of Bundle properties, in addition to Windows Standard Path propties, available when user try to add package.-->
         <Variable Name="AddedPackageAvailablePropertyList" Type="string" Value="InstallDirectory;ConfigurationDirectory"/>
 
     </Bundle>
-</Wix>
 
+    <Fragment Id="PreRequisites">
+        <util:RegistrySearch Id="BentleyConnectInstalledVersion" Variable="BentleyConnectInstalledVersion" Win64="yes" Root="HKLM" Key="SOFTWARE\Bentley\BentleyDesktopClient\Install" Value="Version" Format="raw" Result="value" />
+
+        <util:RegistrySearch Variable="VC14_vcredist_x64_Installed" Root="HKLM" Key="SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum" Value="Install" Win64="yes" />
+
+        <PackageGroup Id="PreRequisites">
+
+            <!-- MsiPackage, MspPackage and ExePackage for VisualBasic are removed!! -->
+
+            <ExePackage Id="VCRedistx64" DetectCondition="VC14_vcredist_x64_Installed" PerMachine="yes" Permanent="yes"
+                InstallCommand="/log [WixBundleLog_VCRedistx64] /quiet /norestart" RepairCommand="/repair /quiet" Vital="no"
+                SourceFile="$(var.MergemoduleMicrosoft_VC_140_Path)vc_redist.x64.exe" Compressed="no" >
+                <wbb:Feature EnableRepair="no"/>
+                <wbb:PackageSource Repository="Mergemodule-Microsoft_VC_14.0"/>
+                <ExitCode Value="1638" Behavior="success"/>
+            </ExePackage>
+
+        </PackageGroup>
+
+  </Fragment>
+</Wix>

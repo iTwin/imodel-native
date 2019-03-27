@@ -14,16 +14,16 @@
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
     <?include $(var.BBInstallSetDefinitionWxi)?>
 
-    <Fragment Id="OpenDWGConverterStandardRegistry">
+    <Fragment Id="OpenDwgBridgeStandardRegistry">
         <Property Id="OpenDwgRegistryFeature" Value="1"/>
 
         <Component Id="PPRequiredInstallRegKeysBSW" Guid="*" Directory="INSTALLDIR" Win64="$(var.COMPONENT_WIN64)" Feature="DefaultFeature">
             <RegistryKey ForceDeleteOnUninstall="yes" ForceCreateOnInstall="yes" Key="SOFTWARE\Bentley\iModelBridges\OpenDwgBridge" Root="HKLM">
-                <RegistryValue Name="AffinityLibraryPath"  Value="[INSTALLDIR]DwgBridge.dll" Type="string" />
-                <RegistryValue Name="BridgeLibraryPath"      Value="[INSTALLDIR]DwgBridge.dll" Type="string" />
+                <RegistryValue Name="AffinityLibraryPath"   Value="[INSTALLDIR]DwgBridge.dll" Type="string" />
+                <RegistryValue Name="BridgeLibraryPath"     Value="[INSTALLDIR]DwgBridge.dll" Type="string" />
 
-                <RegistryValue Name="iModelFrameWorkExe"      Value="[INSTALLDIR]iModelBridgeFwk.exe" Type="string" />
-                <RegistryValue Name="BridgeAssetsDir"  Value="[INSTALLDIR]Assets" Type="string"/>
+                <RegistryValue Name="iModelFrameWorkExe"    Value="[INSTALLDIR]iModelBridgeFwk.exe" Type="string" />
+                <RegistryValue Name="BridgeAssetsDir"       Value="[INSTALLDIR]Assets" Type="string"/>
 
                 <RegistryValue Name="IsPowerPlatformBased" Value="false" Type="string"/>
             </RegistryKey>
@@ -31,6 +31,3 @@
     </Fragment>
 
 </Wix>
-
-
-

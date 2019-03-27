@@ -297,7 +297,7 @@ public:
 
             //! Copy the spatial reference from a point cloud file to a point cloud element
             //! @param[in]      eRef         The point cloud element.
-            virtual BentleyStatus _SyncSpatialReferenceFromFile(DgnElementP eRef) {return ERROR; }
+            virtual BentleyStatus _SyncSpatialReferenceFromFile(DgnElementP eRef) {return BSIERROR; }
 
             //! returns whether we should automatically synchronize the spatial reference from the POD file
             virtual bool _GetAutomaticallySyncSpatialReferenceFromFile() const {return false;}

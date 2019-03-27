@@ -578,7 +578,7 @@ BentleyStatus   LayoutXrefFactory::ComputeSpatialView ()
     if (nullptr == spatialModel)
         return  BSIERROR;
 
-    auto range = spatialModel->QueryModelRange ();
+    auto range = spatialModel->QueryElementsRange ();
 
     // DWG's EXTMIN and EXTMAX are not reliable - best to be computed, cached and set prior to reaching here:
     if (nullptr != m_xrefDwg && m_xrefRange.IsNull())

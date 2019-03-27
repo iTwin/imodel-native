@@ -395,7 +395,6 @@
         <!-- V8 converter -->
         <SubPart PartName="DgnV8ConverterExe" />
         <SubProduct ProductName="DgnV8Converter" />
-        <SubPart PartName="DwgConverter" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter"/>
     </Part>
 
     <Part Name="BimFromDgnDbPublicApi" BentleyBuildMakeFile="BimFromDgnDb/BimFromDgnDb.prewire.mke" OnlyPlatforms="x64,iOSARM64,AndroidARM64">

@@ -219,9 +219,7 @@ BentleyStatus   DwgRasterImageExt::_ConvertToBim (ProtocolExtensionContext& cont
 BentleyStatus   DwgRasterImageExt::CreateRasterModel (BeFileNameCR rasterFilename, BeFileNameCR activePath)
     {
     // create a new model with raster object id suffix
-    Utf8String  fileId;
-    if (BSISUCCESS != T_HOST.GetRasterAttachmentAdmin()._CreateFileUri(fileId, Utf8String(rasterFilename.c_str())))
-        return  BSIERROR;
+    Utf8String  fileId (rasterFilename.GetFileNameAndExtension().c_str());
 
     DwgDbDatabasePtr    dwg = m_dwgRaster->GetDatabase ();
     if (dwg.IsNull())

@@ -14,7 +14,7 @@
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
     <?include $(var.BBInstallSetDefinitionWxi)?>
 
-    <Fragment Id="RealDWGConverterStandardRegistry">
+    <Fragment Id="RealDwgBridgeStandardRegistry">
         <Feature Level="1" Id="RequiredReg">
             <ComponentRef  Id="PPRequired_InstallRegKeysBSW_0"/>
             <ComponentRef  Id="RealDwgExtraRegistry"/>
@@ -111,6 +111,3 @@
     </Fragment>
 
 </Wix>
-
-
-

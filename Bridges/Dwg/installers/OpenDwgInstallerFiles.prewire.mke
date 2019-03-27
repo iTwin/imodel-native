@@ -6,22 +6,22 @@
 #
 #--------------------------------------------------------------------------------------
 
-PolicyFile      = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+PolicyFile = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
 
 %include mdl.mki
 
-OpenDWGInstallFiles    = $(BuildContext)OpenDWGInstallerFiles/
+OpenDwgInstallFiles = $(BuildContext)OpenDwgInstallerFiles/
                 
 #----------------------------------------------------------------------*/
 # Symlink files needed for powerproduct build in BuildContext
 #----------------------------------------------------------------------*/
 always:
-    ~linkfile "$(OpenDWGInstallFiles)OpenDWGBundle.bundle.wxs=$(_MakeFilePath)OpenDWGBundle.bundle.wxs"
-	~linkfile "$(OpenDWGInstallFiles)OpenDwgRegistryFrag.wxs=$(_MakeFilePath)OpenDwgRegistryFrag.wxs"
+    ~linkfile "$(OpenDwgInstallFiles)OpenDwgBundle.bundle.wxs=$(_MakeFilePath)OpenDwgBundle.bundle.wxs"
+    ~linkfile "$(OpenDwgInstallFiles)OpenDwgRegistryFrag.wxs=$(_MakeFilePath)OpenDwgRegistryFrag.wxs"
 
-$(OpenDWGInstallFiles)OpenDWGInstaller.mki : $(_MakeFilePath)OpenDWGInstaller.mki
+$(OpenDwgInstallFiles)OpenDwgInstaller.mki : $(_MakeFilePath)OpenDwgInstaller.mki
     $(LinkFirstDepToFirstTarget)
 
-$(OpenDWGInstallFiles)BundleOpenDWGInstaller.mki : $(_MakeFilePath)BundleOpenDWGInstaller.mki
+$(OpenDwgInstallFiles)BundleOpenDwgInstaller.mki : $(_MakeFilePath)BundleOpenDwgInstaller.mki
     $(LinkFirstDepToFirstTarget)
 

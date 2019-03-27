@@ -6,25 +6,22 @@
 #
 #--------------------------------------------------------------------------------------
 
-PolicyFile      = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+PolicyFile = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
 
 %include mdl.mki
 
-RealDWGInstallFiles    = $(BuildContext)RealDWGInstallerFiles/
+RealDwgInstallFiles = $(BuildContext)RealDwgInstallerFiles/
                 
 #----------------------------------------------------------------------*/
 # Symlink files needed for powerproduct build in BuildContext
 #----------------------------------------------------------------------*/
 always:
-    ~linkfile "$(RealDWGInstallFiles)RealDWGBundle.bundle.wxs=$(_MakeFilePath)RealDWGBundle.bundle.wxs"
-    ~linkfile "$(RealDWGInstallFiles)DwgRegistryFrag.wxs=$(_MakeFilePath)DwgRegistryFrag.wxs"
-    ~linkfile "$(RealDWGInstallFiles)DwgMergeModuleFrag.wxs=$(_MakeFilePath)DwgMergeModuleFrag.wxs"
+    ~linkfile "$(RealDwgInstallFiles)RealDwgBundle.bundle.wxs=$(_MakeFilePath)RealDwgBundle.bundle.wxs"
+    ~linkfile "$(RealDwgInstallFiles)DwgRegistryFrag.wxs=$(_MakeFilePath)DwgRegistryFrag.wxs"
+    ~linkfile "$(RealDwgInstallFiles)DwgMergeModuleFrag.wxs=$(_MakeFilePath)DwgMergeModuleFrag.wxs"
 
-$(RealDWGInstallFiles)RealDWGInstaller.mki : $(_MakeFilePath)RealDWGInstaller.mki
+$(RealDwgInstallFiles)RealDwgInstaller.mki : $(_MakeFilePath)RealDwgInstaller.mki
     $(LinkFirstDepToFirstTarget)
 
-$(RealDWGInstallFiles)BundleRealDWGInstaller.mki : $(_MakeFilePath)BundleRealDWGInstaller.mki
+$(RealDwgInstallFiles)BundleRealDwgInstaller.mki : $(_MakeFilePath)BundleRealDwgInstaller.mki
     $(LinkFirstDepToFirstTarget)
-
-
-

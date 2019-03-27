@@ -16,7 +16,4 @@ BB_INSTALLER_SKIP_WIXBUNDLE_INSIGNIA=1
 INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgRegistryFrag.wxs
 INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgMergeModuleFrag.wxs
 
-
 #INSTALLER_VALIDATOR_OPT     + -sice:ICE30
-
-
