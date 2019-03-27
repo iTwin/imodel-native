@@ -153,6 +153,22 @@ DbResult ScalableMeshDb::OpenShared(BENTLEY_NAMESPACE_NAME::Utf8CP path, bool re
 {
     m_path = path;
     DbResult result = this->OpenBeSQLiteDb(path, BeSQLite::Db::OpenParams(readonly ? BeSQLite::Db::OpenMode::Readonly : BeSQLite::Db::OpenMode::ReadWrite, readonly ? BeSQLite::DefaultTxn::No : BeSQLite::DefaultTxn::Immediate, allowBusyRetry? new InfiniteRetries(): nullptr));
+
+    if (result == BE_SQLITE_ERROR_FileNotFound)
+        {
+        result = this->OpenBeSQLiteDb(path, BeSQLite::Db::OpenParams(readonly ? BeSQLite::Db::OpenMode::Readonly : BeSQLite::Db::OpenMode::ReadWrite));
+        
+        if (result != BE_SQLITE_OK)
+
+            return result;
+
+        this->CloseDb();
+
+        result = this->OpenBeSQLiteDb(path, BeSQLite::Db::OpenParams(readonly ? BeSQLite::Db::OpenMode::Readonly : BeSQLite::Db::OpenMode::ReadWrite, readonly ? BeSQLite::DefaultTxn::No : BeSQLite::DefaultTxn::Immediate, allowBusyRetry? new InfiniteRetries(): nullptr));
+
+        assert(result == BE_SQLITE_OK);
+        }
+
     this->SetAllowImplictTransactions(true);
     return result;
 }

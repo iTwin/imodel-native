@@ -660,7 +660,7 @@ void TaskScheduler::GetScalableMeshFileName(BeFileName& smFileNameAbsolutePath, 
         }
     }
 
-IScalableMeshSourceCreatorWorkerPtr TaskScheduler::GetSourceCreatorWorker(const BeFileName& smFileName)
+IScalableMeshSourceCreatorWorkerPtr TaskScheduler::GetSourceCreatorWorker(const BeFileName& smFileName, bool isSharable)
     {
     if (!m_sourceCreatorWorkerPtr.IsValid())
         {                
@@ -682,7 +682,7 @@ IScalableMeshSourceCreatorWorkerPtr TaskScheduler::GetSourceCreatorWorker(const 
 
         StatusInt status;
         
-        m_sourceCreatorWorkerPtr = IScalableMeshSourceCreatorWorker::GetFor(smFileNameAbsolutePath.c_str(), m_nbWorkers, status);        
+        m_sourceCreatorWorkerPtr = IScalableMeshSourceCreatorWorker::GetFor(smFileNameAbsolutePath.c_str(), m_nbWorkers, isSharable, status);        
 
         assert(m_sourceCreatorWorkerPtr.IsValid());         
 
@@ -931,6 +931,8 @@ void TaskScheduler::PerformFilterTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
     assert(status == SUCCESS);
     }
 
+static bool s_useSourceCreatorWorkerForIndex = false; 
+
 void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
     {        
     WString    jobName;
@@ -945,15 +947,28 @@ void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
     _wremove(smFileNameAbsolutePath.c_str());
     
     StatusInt createStatus;
-    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(smFileNameAbsolutePath.c_str(), createStatus));
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr;
+    
+    
+    if (s_useSourceCreatorWorkerForIndex)
+        {
+        IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker(smFileName, false));
+        //creatorWorkerPtr->OpenSqlFiles(false, false);
+
+        creatorPtr = creatorWorkerPtr;        
+        }
+    else
+        {
+        creatorPtr = (BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(smFileNameAbsolutePath.c_str(), createStatus));
+        }
+
 
     if (creatorPtr == 0)
         {
         //printf("ERROR : cannot create STM file\r\n");
         return;
         }
-   
-    creatorPtr->SetShareable(true);
+       
     ScalableMeshCreationMethod creationMethod = SCM_CREATION_METHOD_ONE_SPLIT;
 
     creatorPtr->SetCreationMethod(creationMethod);
@@ -1022,17 +1037,26 @@ void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
             }
 
         bool isSingleFile = true;
-        creatorPtr->SetShareable(true);                                                            
         StatusInt status = creatorPtr->Create(isSingleFile);
 
-        creatorPtr->SaveToFile();
-        creatorPtr = nullptr;            
+        if (!s_useSourceCreatorWorkerForIndex)
+            {
+            creatorPtr->SaveToFile();
+            creatorPtr = nullptr;            
+            }
+        else
+            {
+            IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker(smFileName, true));
+            creatorPtr->SetShareable(true);
+            //creatorWorkerPtr->CloseSqlFiles(); 
+            //creatorWorkerPtr->OpenSqlFiles(false, false);
+            }
             
-        IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker(smFileName));
+        IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker(smFileName, true));
 
         if (m_useGroupingStrategy)
             {                                
-            status = creatorWorkerPtr->CreateGenerationTasks(m_groupingSize, jobName, smFileName);
+            status = creatorWorkerPtr->CreateGenerationTasks(m_groupingSize, jobName, smFileName);                   
             }
         else
             {
