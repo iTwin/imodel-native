@@ -34,11 +34,11 @@ public:
         //! Constructor to initialize Profile members and associate it with provided DgnModel.
         //! @param[in] model DgnModel that the Profile will be associated to.
         //! @param[in] pName Name of the Profile.
-        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model, Utf8CP pName, uint64_t sideCount, double sideLength);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model, Utf8CP pName, int32_t sideCount, double sideLength);
 
     public:
         //! @beginGroup
-        uint64_t sideCount = 0; //!< Count of sides (edges) the polygon is made of. @details Value cannot be less than 3 or greater than 32.
+        int32_t sideCount = 0; //!< Count of sides (edges) the polygon is made of. @details Value cannot be less than 3 or greater than 32.
         double sideLength = 0.0; //!< Constant length of each polygon side (edge).
         //! @endGroup
         };
@@ -60,8 +60,8 @@ public:
     PROFILES_EXPORT static RegularPolygonProfilePtr Create (CreateParams const& params) { return new RegularPolygonProfile (params); }
 
     //! @beginGroup
-    PROFILES_EXPORT uint64_t GetSideCount() const; //!< Get the value of @ref CreateParams.sideCount "SideCount"
-    PROFILES_EXPORT void SetSideCount (uint64_t value); //!< Set the value for @ref CreateParams.sideCount "SideCount"
+    PROFILES_EXPORT int32_t GetSideCount() const; //!< Get the value of @ref CreateParams.sideCount "SideCount"
+    PROFILES_EXPORT void SetSideCount (int32_t value); //!< Set the value for @ref CreateParams.sideCount "SideCount"
 
     PROFILES_EXPORT double GetSideLength() const; //!< Get the value of @ref CreateParams.sideLength "SideLength"
     PROFILES_EXPORT void SetSideLength (double value); //!< Set the value for @ref CreateParams.sideLength "SideLength"

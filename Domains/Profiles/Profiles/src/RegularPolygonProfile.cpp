@@ -24,7 +24,7 @@ RegularPolygonProfile::CreateParams::CreateParams (DefinitionModel const& model,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-RegularPolygonProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, uint64_t sideCount, double sideLength)
+RegularPolygonProfile::CreateParams::CreateParams (DefinitionModel const& model, Utf8CP pName, int32_t sideCount, double sideLength)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , sideCount (sideCount)
     , sideLength (sideLength)
@@ -68,15 +68,15 @@ IGeometryPtr RegularPolygonProfile::_CreateShapeGeometry() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint64_t RegularPolygonProfile::GetSideCount() const
+int32_t RegularPolygonProfile::GetSideCount() const
     {
-    return GetPropertyValueUInt64 (PRF_PROP_RegularPolygonProfile_SideCount);
+    return GetPropertyValueInt32 (PRF_PROP_RegularPolygonProfile_SideCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RegularPolygonProfile::SetSideCount (uint64_t value)
+void RegularPolygonProfile::SetSideCount (int32_t value)
     {
     SetPropertyValue (PRF_PROP_RegularPolygonProfile_SideCount, ECValue (value));
     }
