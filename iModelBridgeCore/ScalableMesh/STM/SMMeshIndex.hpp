@@ -6322,6 +6322,77 @@ template<class POINT, class EXTENT>  int     SMMeshIndex<POINT, EXTENT>::RemoveW
     return SMStatus::S_SUCCESS;
     }
 
+   
+
+/**----------------------------------------------------------------------------
+DoParallelStitching
+Stitch nodes in parallel
+-----------------------------------------------------------------------------*/
+template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::DoParallelStitching(vector<SMMeshIndexNode<POINT, EXTENT>*>& nodesToStitch)
+    {
+    set<SMMeshIndexNode<POINT, EXTENT>*> stitchedNodes;
+    std::recursive_mutex stitchedMutex;
+    for (auto& node : nodesToStitch)
+        {
+        LightThreadPool::GetInstance()->m_nodeMap[(void*)node] = std::make_shared<std::atomic<unsigned int>>();
+        *LightThreadPool::GetInstance()->m_nodeMap[(void*)node] = -1;
+        }
+    for (size_t i =0; i < LightThreadPool::GetInstance()->m_nbThreads; ++i)
+        RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>** vec, set<SMMeshIndexNode<POINT,EXTENT>*>* stitchedNodes, std::recursive_mutex* stitchedMutex, size_t nNodes, size_t threadId) ->void
+        {
+        vector<SMMeshIndexNode<POINT, EXTENT>*> myNodes;
+        size_t firstIdx = nNodes / LightThreadPool::GetInstance()->m_nbThreads * threadId;
+        myNodes.push_back(vec[firstIdx]);
+        while (myNodes.size() > 0)
+            {
+            //grab node
+            SMMeshIndexNode<POINT, EXTENT>* current = myNodes[0];
+            vector<SMPointIndexNode<POINT, EXTENT>*> neighbors;
+            current->GetAllNeighborNodes(neighbors);
+            neighbors.push_back(current);
+            bool reservedNode = false;
+
+            reservedNode = TryReserveNodes(LightThreadPool::GetInstance()->m_nodeMap, (void**)&neighbors[0], neighbors.size(),(unsigned int)threadId);
+
+            if (reservedNode == true)
+                {
+                bool needsStitching = false;
+                stitchedMutex->lock();
+                if (stitchedNodes->count(current) != 0) needsStitching = false;
+                else
+                    {
+                    stitchedNodes->insert(current);
+                    needsStitching = true;
+                    }
+                for (auto& neighbor : neighbors)
+                    if (std::find(myNodes.begin(), myNodes.end(), neighbor) == myNodes.end() && stitchedNodes->count((SMMeshIndexNode<POINT,EXTENT>*)neighbor) == 0) myNodes.push_back((SMMeshIndexNode<POINT, EXTENT>*)neighbor);
+                stitchedMutex->unlock();
+                if(needsStitching) current->Stitch((int)current->m_nodeHeader.m_level, 0);
+                unsigned int val = (unsigned int)-1;
+                unsigned int id = (unsigned int)threadId;
+                  if(LightThreadPool::GetInstance()->m_nodeMap.count(current) == 0)
+                LightThreadPool::GetInstance()->m_nodeMap[current] = std::make_shared<std::atomic<unsigned int>>();
+                LightThreadPool::GetInstance()->m_nodeMap[current]->compare_exchange_strong(id, val);
+                }
+            myNodes.erase(myNodes.begin());
+            if (myNodes.size() == 0 && firstIdx + 1 < nNodes / LightThreadPool::GetInstance()->m_nbThreads * (threadId+1))
+                {
+                firstIdx += 1;
+                myNodes.push_back(vec[firstIdx]);
+                }
+            }
+        SetThreadAvailableAsync(threadId);
+        }, &nodesToStitch[0], &stitchedNodes, &stitchedMutex, nodesToStitch.size(), std::placeholders::_1));
+
+    WaitForThreadStop(this->m_progress.get());
+    LightThreadPool::GetInstance()->m_nodeMap.clear();
+    for (auto& node : nodesToStitch)
+        {
+        if (stitchedNodes.count(node) == 0)
+            node->Stitch((int)node->m_nodeHeader.m_level, 0);
+        }
+    }
+
 /**----------------------------------------------------------------------------
 Stitch
 Stitch the data.
@@ -6397,67 +6468,8 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                     s_useThreadsInStitching = true;
                     return;
                     }
-                set<SMMeshIndexNode<POINT, EXTENT>*> stitchedNodes;
-                std::recursive_mutex stitchedMutex;
-                for (auto& node : nodesToStitch)
-                    {
-                    LightThreadPool::GetInstance()->m_nodeMap[(void*)node] = std::make_shared<std::atomic<unsigned int>>();
-                    *LightThreadPool::GetInstance()->m_nodeMap[(void*)node] = -1;
-                    }
-                for (size_t i =0; i < LightThreadPool::GetInstance()->m_nbThreads; ++i)
-                    RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>** vec, set<SMMeshIndexNode<POINT,EXTENT>*>* stitchedNodes, std::recursive_mutex* stitchedMutex, size_t nNodes, size_t threadId) ->void
-                    {
-                    vector<SMMeshIndexNode<POINT, EXTENT>*> myNodes;
-                    size_t firstIdx = nNodes / LightThreadPool::GetInstance()->m_nbThreads * threadId;
-                    myNodes.push_back(vec[firstIdx]);
-                    while (myNodes.size() > 0)
-                        {
-                        //grab node
-                        SMMeshIndexNode<POINT, EXTENT>* current = myNodes[0];
-                        vector<SMPointIndexNode<POINT, EXTENT>*> neighbors;
-                        current->GetAllNeighborNodes(neighbors);
-                        neighbors.push_back(current);
-                        bool reservedNode = false;
 
-                        reservedNode = TryReserveNodes(LightThreadPool::GetInstance()->m_nodeMap, (void**)&neighbors[0], neighbors.size(),(unsigned int)threadId);
-
-                        if (reservedNode == true)
-                            {
-                            bool needsStitching = false;
-                            stitchedMutex->lock();
-                            if (stitchedNodes->count(current) != 0) needsStitching = false;
-                            else
-                                {
-                                stitchedNodes->insert(current);
-                                needsStitching = true;
-                                }
-                            for (auto& neighbor : neighbors)
-                                if (std::find(myNodes.begin(), myNodes.end(), neighbor) == myNodes.end() && stitchedNodes->count((SMMeshIndexNode<POINT,EXTENT>*)neighbor) == 0) myNodes.push_back((SMMeshIndexNode<POINT, EXTENT>*)neighbor);
-                            stitchedMutex->unlock();
-                            if(needsStitching) current->Stitch((int)current->m_nodeHeader.m_level, 0);
-                            unsigned int val = (unsigned int)-1;
-                            unsigned int id = (unsigned int)threadId;
-                              if(LightThreadPool::GetInstance()->m_nodeMap.count(current) == 0)
-                            LightThreadPool::GetInstance()->m_nodeMap[current] = std::make_shared<std::atomic<unsigned int>>();
-                            LightThreadPool::GetInstance()->m_nodeMap[current]->compare_exchange_strong(id, val);
-                            }
-                        myNodes.erase(myNodes.begin());
-                        if (myNodes.size() == 0 && firstIdx + 1 < nNodes / LightThreadPool::GetInstance()->m_nbThreads * (threadId+1))
-                            {
-                            firstIdx += 1;
-                            myNodes.push_back(vec[firstIdx]);
-                            }
-                        }
-                    SetThreadAvailableAsync(threadId);
-                    }, &nodesToStitch[0], &stitchedNodes, &stitchedMutex, nodesToStitch.size(), std::placeholders::_1));
-
-                WaitForThreadStop(this->m_progress.get());
-                LightThreadPool::GetInstance()->m_nodeMap.clear();
-                for (auto& node : nodesToStitch)
-                    {
-                    if (stitchedNodes.count(node) == 0)
-                        node->Stitch((int)node->m_nodeHeader.m_level, 0);
-                    }
+                DoParallelStitching(nodesToStitch);
                 }
             else
                 {

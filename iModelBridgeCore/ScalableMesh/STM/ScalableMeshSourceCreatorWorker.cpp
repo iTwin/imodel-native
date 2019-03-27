@@ -170,7 +170,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName, uint32_t 
     m_scalableMeshFileLock = nullptr;
 
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
-    SetThreadingOptions(false, false, false);
+    SetThreadingOptions(false, true, false);
     SetShareable(true);
     ScalableMeshDb::SetEnableSharedDatabase(true);
 #ifdef TRACE_ON	    
@@ -190,7 +190,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr, uin
     m_scalableMeshFileLock = nullptr;
 
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
-    SetThreadingOptions(false, false, false);
+    SetThreadingOptions(false, true, false);
     SetShareable(true);
     ScalableMeshDb::SetEnableSharedDatabase(true);
 #ifdef TRACE_ON		    
@@ -1774,6 +1774,8 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
             }
 
         //Stitch tiles
+        vector<SMMeshIndexNode<DPoint3d, DRange3d>*> nodesToStitch;
+
         for (auto& tileId : stitchTileIds)
             {
             for (auto& node : nodesToMesh)
@@ -1783,19 +1785,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                 if (node->GetBlockID().m_integerID == tileId)
                     {        
                     if (s_doMultiThreadStitching)
-                        {
-                        RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<DPoint3d, DRange3d>* node, HFCPtr<MeshIndexType> pDataIndex, size_t threadId ) ->void
-                            {    
-                            bool isStitched = pDataIndex->GetMesher2_5d()->Stitch(node);
-                            assert(isStitched == true);
-                    
-                            if (isStitched)
-                                {
-                                node->SetDirty(true);
-                                }
-
-                            SetThreadAvailableAsync(threadId);
-                            }, node, pDataIndex, std::placeholders::_1));
+                        {                  
+                        if (node->m_nodeHeader.m_level > 0)
+                            nodesToStitch.push_back(node);
                         }
                     else
                         {                                    
@@ -1812,10 +1804,11 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                             node->SetDirty(true);
                             }
 
+                         
     #ifndef NDEBUG
                         uint32_t newPointCount = node->GetNbObjects();
                         assert(pointCount <= newPointCount);
-                        assert(newPointCount > 0);
+                        assert(newPointCount > 0 || pointCount == 0);
                         assert(node->m_nodeHeader.m_nodeCount == newPointCount);
     #endif
                         }
@@ -1825,9 +1818,28 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                 }
             }
 
-        if (s_doMultiThreadStitching && stitchTileIds.size())
-            {
-            WaitForThreadStop();
+        if (s_doMultiThreadStitching && nodesToStitch.size() > 0)
+            {            
+            assert(nodesToStitch.size() == stitchTileIds.size());
+            m_pDataIndex->DoParallelStitching(nodesToStitch);
+
+#ifndef NDEBUG
+            wchar_t text_buffer[1000] = { 0 }; //temporary buffer
+
+            swprintf(text_buffer, _countof(text_buffer), L"NODES TO STITCH\r\n"); 
+            OutputDebugStringW(text_buffer); // print
+            
+            for (auto& node : nodesToStitch)
+                {                
+                swprintf(text_buffer, _countof(text_buffer), L"Node ID %zd\r\n", node->GetBlockID().m_integerID); 
+                OutputDebugStringW(text_buffer); // print
+                }
+
+            swprintf(text_buffer, _countof(text_buffer), L"NODES TO STITCH END\r\n"); 
+            OutputDebugStringW(text_buffer); // print
+
+#endif
+         
             }
 
 #ifndef NDEBUG
