@@ -47,3 +47,11 @@ folly::Future<BentleyStatus> SaasClient::TrackUsage(Utf8StringCR accessToken, Be
     {
     return m_impl->TrackUsage(accessToken, version, projectId);
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<BentleyStatus> SaasClient::MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent)
+    {
+    return m_impl->MarkFeature(accessToken, featureEvent);
+    }

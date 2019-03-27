@@ -55,6 +55,11 @@ public:
     //! @param[in] version version for this usage
     //! @param[in] projectId projectId of this usage
     LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
+
+    //! Mark realtime feature
+    //! @param[in] accessToken OIDC token of user to mark feature against
+    //! @param[in] featureEvent The feature event to mark
+    LICENSING_EXPORT folly::Future<BentleyStatus> MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent);
     };
 
 END_BENTLEY_LICENSING_NAMESPACE
