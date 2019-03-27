@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------
 
 # including this to make sure the development environment is setup
-%include $(SrcRoot)licensingcrossplatform/mki/LicensingCore.mki
+%include $(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/mki/LicensingCore.mki
 
 %if $(TARGET_PROCESSOR_ARCHITECTURE)=="x64"
     arch=Winx64
@@ -18,4 +18,4 @@
 %endif
 
 always:
-    CreateSymLinks.py -f $(OutRoot)$(arch)\Product\Licensing-UnitTests\Assets\sqlang\DgnClientFx_en.sqlang.db3=$(SrcRoot)licensingcrossplatform\Tests\UnitTests\Assets\DgnClientFx_en.sqlang.db3
+    CreateSymLinks.py -f $(OutRoot)$(arch)\Product\Licensing-UnitTests\Assets\sqlang\DgnClientFx_en.sqlang.db3=$(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/Tests/UnitTests/Assets/DgnClientFx_en.sqlang.db3
