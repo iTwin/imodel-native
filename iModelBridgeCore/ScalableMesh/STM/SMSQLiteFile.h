@@ -101,12 +101,14 @@ public:
 
     bool Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly = true, bool openShareable = false, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     bool Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly = true, bool openShareable = false, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE, bool createSisterIfMissing = false);
-    bool Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
-    bool Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
+    bool Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE, bool isSharable = false);
+    bool Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE, bool isSharable = false);
     bool Close();
     bool IsOpen() { return m_database->IsDbOpen(); }
     bool IsReadOnly() { return m_database->IsReadonly(); }
     bool IsShared() { return m_isShared; }
+    BENTLEY_SM_EXPORT void SetIsShared(bool isShared); 
+
     ScalableMeshDb* GetDb() { return m_database; }
     BENTLEY_SM_EXPORT void Save();
 
