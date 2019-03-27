@@ -26,6 +26,10 @@ BeFileName GetTempPathFromProjectPath(const BeFileName& path)
 	substrFile.ReplaceAll(L"\"", L"_");
 	substrFile.ReplaceAll(L"'", L"_");
 
+    // For embeded dgn files
+    substrFile.ReplaceAll(L"<", L"_");
+    substrFile.ReplaceAll(L">", L"_");
+
 	extraFileDir.AppendToPath(substrFile.c_str());
 	return extraFileDir;
 }
