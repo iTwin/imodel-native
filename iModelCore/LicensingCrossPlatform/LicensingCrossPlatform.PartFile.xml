@@ -108,7 +108,7 @@
         </Bindings>
     </Part>    
 
-    <Part Name="RunGtestUnit" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Licensing-GtestUnit -dGTEST_NAME=LicensingUnitTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtestUnit" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Licensing-GtestUnit -dGTEST_NAME=LicensingUnitTest" OnlyPlatforms="x64">
         <SubProduct ProductName="Licensing-GtestUnit" />
         <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
 
