@@ -17,11 +17,11 @@
 #include <Bentley/BentleyConfig.h>
 // WIP_LICENSING_FOR_LINUX_AND_MACOS
 #if !defined(BENTLEYCONFIG_OS_APPLE_MACOS) && !defined(BENTLEYCONFIG_OS_LINUX)
-#include <Licensing/Client.h>
+#include <Licensing/SaasClient.h>
 #else
 namespace Licensing
 {
-typedef std::shared_ptr<struct Client> ClientPtr;
+typedef std::shared_ptr<struct SaasClient> SaasClientPtr;
 };
 #endif
 
@@ -45,7 +45,7 @@ namespace IModelJsNative
         {
     private:
         RuntimeJsonLocalState m_localState;
-        Licensing::ClientPtr m_client;
+        Licensing::SaasClientPtr m_client;
         // Bentley coding guideline: No need to free static non-POD objects.
         static UlasClient* s_singleton;
 

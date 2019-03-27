@@ -45,6 +45,7 @@ struct ConverterApp : iModelBridge
 protected:
     // iModelBridge
     WString _SupplySqlangRelPath() override;
+    BentleyStatus _ParseCommandLine(int argc, WCharCP argv[]) override {return doParseCommandLine(argc, argv);}
     CmdLineArgStatus _ParseCommandLineArg(int iarg, int argc, WCharCP argv[]) override;
     BentleyStatus _Initialize(int argc, WCharCP argv[]) override;
     void _Terminate(BentleyStatus) override;

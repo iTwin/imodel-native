@@ -7,34 +7,54 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Licensing\AccessKeyClient.cpp" />
     <ClCompile Include="Licensing\Client.cpp" />
-    <ClCompile Include="Licensing\ClientFreeImpl.cpp" />
+    <ClCompile Include="Licensing\SaasClient.cpp" />
+    <ClCompile Include="Licensing\SaasClientImpl.cpp" />
     <ClCompile Include="Licensing\ClientImpl.cpp" />
-    <ClCompile Include="Licensing\ClientWithKeyImpl.cpp" />
+    <ClCompile Include="Licensing\AccessKeyClientImpl.cpp" />
     <ClCompile Include="Licensing\Policy.cpp" />
     <ClCompile Include="Licensing\PolicyToken.cpp" />
-    <ClCompile Include="Licensing\UsageDb.cpp" />
+    <ClCompile Include="Licensing\Providers\AuthHandlerProvider.cpp" />
+    <ClCompile Include="Licensing\Providers\UlasProvider.cpp" />
+    <ClCompile Include="Licensing\LicensingDb.cpp" />
+    <ClCompile Include="Licensing\Providers\BuddiProvider.cpp" />
     <ClCompile Include="Licensing\Utils\DelayedExecutor.cpp" />
     <ClCompile Include="Licensing\GenerateSID.cpp" />
+    <ClCompile Include="Licensing\Utils\FeatureEvent.cpp" />
     <ClCompile Include="Licensing\Utils\FeatureUserDataMap.cpp" />
     <ClCompile Include="Licensing\Utils\InMemoryJsonLocalState.cpp" />
     <ClCompile Include="Licensing\Utils\JWToken.cpp" />
     <ClCompile Include="Licensing\Utils\LogFileHelper.cpp" />
+    <ClCompile Include="Licensing\Providers\PolicyProvider.cpp" />
     <ClCompile Include="Licensing\Utils\SCVWritter.cpp" />
     <ClCompile Include="Licensing\Utils\UrlSafeBase64Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Licensing\ClientFreeImpl.h" />
+    <ClInclude Include="Licensing\SaasClientImpl.h" />
     <ClInclude Include="Licensing\ClientImpl.h" />
-    <ClInclude Include="Licensing\ClientInterface.h" />
-    <ClInclude Include="Licensing\ClientWithKeyImpl.h" />
+    <ClInclude Include="Licensing\AccessKeyClientImpl.h" />
+    <ClInclude Include="Licensing\ISaasClient.h" />
+    <ClInclude Include="Licensing\ILicensingDb.h" />
+    <ClInclude Include="Licensing\Providers\AuthHandlerProvider.h" />
+    <ClInclude Include="Licensing\Providers\BuddiProvider.h" />
+    <ClInclude Include="Licensing\Providers\IAuthHandlerProvider.h" />
+    <ClInclude Include="Licensing\Providers\IBuddiProvider.h" />
+    <ClInclude Include="Licensing\Providers\IUlasProvider.h" />
+    <ClInclude Include="Licensing\Providers\UlasProvider.h" />
+    <ClInclude Include="Licensing\Utils\FeatureEvent.h" />
+    <ClInclude Include="PublicAPI\Licensing\AccessKeyClient.h" />
+    <ClInclude Include="PublicAPI\Licensing\AuthType.h" />
+    <ClInclude Include="PublicAPI\Licensing\SaasClient.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\DateHelper.h" />
     <ClInclude Include="Licensing\FreeApplicationPolicyHelper.h" />
     <ClInclude Include="Licensing\Logging.h" />
     <ClInclude Include="Licensing\Policy.h" />
     <ClInclude Include="Licensing\PolicyHelper.h" />
     <ClInclude Include="Licensing\PolicyToken.h" />
-    <ClInclude Include="Licensing\UsageDb.h" />
+    <ClInclude Include="Licensing\LicensingDb.h" />
+    <ClInclude Include="Licensing\Providers\IPolicyProvider.h" />
+    <ClInclude Include="Licensing\Providers\PolicyProvider.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\UsageJsonHelper.h" />
     <ClInclude Include="PublicAPI\Licensing\Client.h" />
     <ClInclude Include="PublicAPI\Licensing\LicenseStatus.h" />
@@ -88,11 +108,11 @@
     <NMakeOutput>
     </NMakeOutput>
     <NMakePreprocessorDefinitions>DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb -v4 -ax64 -r LicensingCrossPlatform -f LicensingCrossPlatform -p Licensing re Licensing</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -v4 -ax64 -r LicensingCrossPlatform -f LicensingCrossPlatform -p Licensing re Licensing -s</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -v4 -ax64 -r LicensingCrossPlatform -f LicensingCrossPlatform -p Licensing re Licensing -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb re Licensing</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb re Licensing -s</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb re Licensing -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(SrcRoot)licensingcrossplatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);D:\dev\crossDev\src\licensing\LicensingCrossPlatform\PublicAPI;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
+    <IncludePath>$(SrcRoot)licensingcrossplatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);$(SrcRoot)licensing\LicensingCrossPlatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)crossplatformlic\out\Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
     <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>

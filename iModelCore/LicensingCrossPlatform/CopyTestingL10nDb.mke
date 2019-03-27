@@ -1,0 +1,21 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: CopyTestingL10nDb.mke $
+#
+#   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+# including this to make sure the development environment is setup
+%include $(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/mki/LicensingCore.mki
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE)=="x64"
+    arch=Winx64
+%elif $(TARGET_PROCESSOR_ARCHITECTURE)=="x86"
+    arch=Winx86
+%else
+    arch=$(TARGET_PROCESSOR_ARCHITECTURE)
+%endif
+
+always:
+    CreateSymLinks.py -f $(OutRoot)$(arch)\Product\Licensing-UnitTests\Assets\sqlang\DgnClientFx_en.sqlang.db3=$(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/Tests/UnitTests/Assets/DgnClientFx_en.sqlang.db3

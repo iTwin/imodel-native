@@ -17,12 +17,12 @@
 
 namespace Licensing
 {
-typedef std::shared_ptr<struct Client> ClientPtr;
+typedef std::shared_ptr<struct SaasClient> SaasClientPtr;
 
-struct Client
+struct SaasClient
     {
-    Client() {}
-    static ClientPtr CreateFree() { return std::make_shared<Client>(); }
+    SaasClient() {}
+    static SaasClientPtr Create() { return std::make_shared<SaasClient>(); }
     folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR appVersion, Utf8StringCR projectId)
         {
         IModelJsNative::JsInterop::GetLogger().warning("Usage tracking not supported yet on Linux and MacOS.");
@@ -87,7 +87,7 @@ void UlasClient::Initialize(Region region)
     WebServices::UrlProvider::Initialize(env, WebServices::UrlProvider::DefaultTimeout, &m_localState);
     JsInterop::GetLogger().infov("Initialized iModel.js addon to region '%s'.", WebServices::UrlProvider::ToEnvironmentString(env).c_str());
 
-    m_client = Licensing::Client::CreateFree();
+    m_client = Licensing::SaasClient::Create();
     BeAssert(m_client != nullptr);
     }
 
