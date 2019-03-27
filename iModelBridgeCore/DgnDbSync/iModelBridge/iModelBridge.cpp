@@ -1092,3 +1092,34 @@ bool iModelBridge::TestFeatureFlag(CharCP ff)
     iModelBridgeLdClient::GetInstance((WebServices::UrlProvider::Environment)GetParamsCR().GetUrlEnvironment()).IsFeatureOn(flagVal, ff);
     return flagVal;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridge::doParseCommandLine(int argc, WCharCP argv[])
+    {
+    for (int i=1; i<argc; ++i)  // no point in processing argv[0] as that is just the program name
+        {
+        auto status = _ParseCommandLineArg(i, argc, argv);
+        if (iModelBridge::CmdLineArgStatus::Success == status)
+            continue;
+
+        if (iModelBridge::CmdLineArgStatus::NotRecognized != status)
+            fwprintf(stderr, L"unrecognized option: %s\n", argv[i]);
+        else
+            fwprintf(stderr, L"invalid option: %s\n", argv[i]);
+        
+        // return BSIERROR;
+        }
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridge::_ParseCommandLine(int argc, WCharCP argv[])
+    {
+    // return doParseCommandLine(argc, argv);
+    return BSISUCCESS;
+    }

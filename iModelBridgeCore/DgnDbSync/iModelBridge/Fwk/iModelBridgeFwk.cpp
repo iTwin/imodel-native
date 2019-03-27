@@ -555,8 +555,8 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
         return BSIERROR;
         }
 
+    // Parse --fwk args and push all unrecognized args to m_bargptrs
     m_bargptrs.push_back(argv[0]);
-
     if ((BSISUCCESS != m_jobEnvArgs.ParseCommandLine(m_bargptrs, argc, argv)) || (BSISUCCESS != m_jobEnvArgs.Validate(argc, argv)))
         {
         PrintUsage(argv[0]);
@@ -569,30 +569,33 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
 
     InitLogging();
 
-    bvector<WCharCP> serverRawArgPtrs;        // pare down the args once again, removing the server-specific args and leaving the rest for the bridge
-    std::swap(serverRawArgPtrs, m_bargptrs);
-
+    bvector<WCharCP> unparsedArgPtrs;          // Forward non-fwk args to next parser and get ready to accumulate the args that it does not recognize.
+    std::swap(unparsedArgPtrs, m_bargptrs);
     m_bargptrs.push_back(argv[0]);
 
+    // Parse --imodel-bank args and push all unrecognized args to m_bargptrs
     IModelBankArgs bankArgs;
-    if ((BSISUCCESS != bankArgs.ParseCommandLine(m_bargptrs, (int) serverRawArgPtrs.size(), serverRawArgPtrs.data())) || (BSISUCCESS != bankArgs.Validate((int) serverRawArgPtrs.size(), serverRawArgPtrs.data())))
+    if ((BSISUCCESS != bankArgs.ParseCommandLine(m_bargptrs, (int) unparsedArgPtrs.size(), unparsedArgPtrs.data())) || (BSISUCCESS != bankArgs.Validate((int) unparsedArgPtrs.size(), unparsedArgPtrs.data())))
         {
         PrintUsage(argv[0]);
         return BSIERROR;
         }
 
-    if (!bankArgs.ParsedAny())
-        {
-        m_bargptrs.clear();
-        m_bargptrs.push_back(argv[0]);
-        }
+    unparsedArgPtrs.clear();                   // Forward non-bank args to next parser and get ready to accumulate the args that it does not recognize.
+    std::swap(unparsedArgPtrs, m_bargptrs);
+    m_bargptrs.push_back(argv[0]);
 
+    // Parse --server args and push all unrecognized args to m_bargptrs
     IModelHubArgs hubArgs;
-    if ((BSISUCCESS != hubArgs.ParseCommandLine(m_bargptrs, (int) serverRawArgPtrs.size(), serverRawArgPtrs.data())) || (BSISUCCESS != hubArgs.Validate((int) serverRawArgPtrs.size(), serverRawArgPtrs.data())))
+    if ((BSISUCCESS != hubArgs.ParseCommandLine(m_bargptrs, (int) unparsedArgPtrs.size(), unparsedArgPtrs.data())) || (BSISUCCESS != hubArgs.Validate((int) unparsedArgPtrs.size(), unparsedArgPtrs.data())))
         {
         PrintUsage(argv[0]);
         return BSIERROR;
         }
+
+    unparsedArgPtrs.clear();                   // Forward non-bank and non-server args to next parser and get ready to accumulate the args that it does not recognize.
+    std::swap(unparsedArgPtrs, m_bargptrs);
+    m_bargptrs.push_back(argv[0]);
 
     if (bankArgs.ParsedAny() && hubArgs.ParsedAny())
         {
@@ -618,16 +621,14 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
         dmsCredentialsAreEncrypted = m_iModelHubArgs->m_isEncrypted;
         }
 
-    bvector<WCharCP> dmsRawArgPtrs;        // pare down the args once again, removing the dms server-specific args and leaving the rest for the bridge
-    std::swap(dmsRawArgPtrs, m_bargptrs);
-
-    m_bargptrs.push_back(argv[0]);
-
-    if ((BSISUCCESS != m_dmsServerArgs.ParseCommandLine(m_bargptrs, (int) dmsRawArgPtrs.size(), dmsRawArgPtrs.data(), dmsCredentialsAreEncrypted)) || (BSISUCCESS != m_dmsServerArgs.Validate((int) dmsRawArgPtrs.size(), dmsRawArgPtrs.data())))
+    // Parse --dms args and push all unrecognized args to m_bargptrs
+    if ((BSISUCCESS != m_dmsServerArgs.ParseCommandLine(m_bargptrs, (int) unparsedArgPtrs.size(), unparsedArgPtrs.data(), dmsCredentialsAreEncrypted)) || (BSISUCCESS != m_dmsServerArgs.Validate((int) unparsedArgPtrs.size(), unparsedArgPtrs.data())))
         {
         PrintUsage(argv[0]);
         return BSIERROR;
         }
+
+    // The args that are now in m_bargptrs will be fowarded to the bridge's _ParseCommandLine function. 
 
     // Now that we have the server arguments (including the repository name), we can access and parse the arguments that are parked in the registry db
     if (BSISUCCESS != ParseDocProps())

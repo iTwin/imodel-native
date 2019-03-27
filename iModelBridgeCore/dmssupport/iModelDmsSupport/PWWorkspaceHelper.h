@@ -18,6 +18,8 @@ struct PWWorkspaceHelper : public IDmsSupport
         bool        m_initPwAppDone;
         bool        m_initDone;
         DmsSession  m_session;
+        BeFileName  m_inputFile;
+
         bool        InitPwApi();
         virtual bool _Initialize() override;
         virtual bool _UnInitialize() override;
@@ -25,7 +27,8 @@ struct PWWorkspaceHelper : public IDmsSupport
         virtual bool _InitializeSession(WStringCR pwMoniker) override;
         virtual bool _UnInitializeSession() override;
         virtual bool _InitializeSessionFromDataSource(WStringCR dataSource) override;
-        virtual bool _StageInputFile(BeFileNameCR fileLocation) override { return true; }
+        virtual bool _StageInputFile(BeFileNameCR fileLocation) override;
+        
         StatusInt  StageDocument(long folderId, long documentId, BeFileNameCR dirPath);
     public:
         PWWorkspaceHelper(DmsSession& session);

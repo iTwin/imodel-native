@@ -93,6 +93,8 @@ StatusInt   PWWorkspaceHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, int
 
     if (!additonalFilePatterns.empty())
         {
+        BeFileName dirPath = BeFileName(m_inputFile).GetDirectoryName();
+
         for (auto pattern: additonalFilePatterns)
             {
             int result = aaApi_SelectDocumentsByNameProp((long)folderId, pattern.c_str(), NULL, NULL, NULL);
@@ -102,7 +104,7 @@ StatusInt   PWWorkspaceHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, int
                     {
                     long docId = aaApi_GetDocumentId(index);
                     if (docId != 0)
-                        StageDocument(folderId, docId, destination);
+                        StageDocument(folderId, docId, dirPath);
                     }
                 }
             }
@@ -253,5 +255,14 @@ bool            PWWorkspaceHelper::_InitializeSessionFromDataSource(WStringCR da
     if (!m_session.Initialize())
         return false;
 
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            PWWorkspaceHelper::_StageInputFile(BeFileNameCR fileLocation)
+    {
+    m_inputFile = fileLocation;
     return true;
     }

@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
  |
- |     $Source: LicensingCrossPlatform/PublicAPI/Licensing/Licensing.h $
+ |     $Source: PublicAPI/Licensing/Licensing.h $
  |
- |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
