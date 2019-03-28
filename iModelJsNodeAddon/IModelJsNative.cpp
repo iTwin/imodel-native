@@ -151,6 +151,27 @@ namespace IModelJsNative {
 
 static void doDeferredLogging();
 
+static int32_t getOptionalIntProperty(Napi::Object obj, Utf8CP propName, int32_t dval)
+    {
+    if (!obj.Has(propName))
+        return dval;
+    return obj.Get(propName).ToNumber().Int32Value();
+    }
+    
+static bool getOptionalBooleanProperty(Napi::Object obj, Utf8CP propName, bool dval)
+    {
+    if (!obj.Has(propName))
+        return dval;
+    return obj.Get(propName).ToBoolean().Value();
+    }
+
+static Utf8String getOptionalStringProperty(Napi::Object obj, Utf8CP propName, Utf8CP dval)
+    {
+    if (!obj.Has(propName))
+        return dval;
+    return obj.Get(propName).ToString().Utf8Value().c_str();
+    }
+
 Napi::String toJsString(Napi::Env env, Utf8CP val, size_t len) { return Napi::String::New(env, val, len); }
 Napi::String toJsString(Napi::Env env, Utf8CP val) { return toJsString(env, val, std::strlen(val)); }
 Napi::String toJsString(Napi::Env env, Utf8StringCR str) { return toJsString(env, str.c_str(), str.length()); }
@@ -4876,6 +4897,35 @@ static void setUseTileCache(Napi::CallbackInfo const& info)
         JsInterop::SetUseTileCache(info[0].As<Napi::Boolean>().Value());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void setCrashReporting(Napi::CallbackInfo const& info)
+    {
+    static bool s_crashReportingInitialized;
+
+    if (s_crashReportingInitialized) {
+        Napi::TypeError::New(info.Env(), "Crash reporting is already initialized.").ThrowAsJavaScriptException();
+        return;
+    }
+
+    if ((info.Length() != 1) || !info[0].IsObject()) {
+        Napi::TypeError::New(info.Env(), "Argument must be CrashReportingConfig object").ThrowAsJavaScriptException();
+        return;
+    }
+    Napi::Object obj = info[0].As<Napi::Object>();
+
+    JsInterop::CrashReportingConfig ccfg;
+    ccfg.m_crashDumpDir.SetNameA(getOptionalStringProperty(obj, "crashDumpDir", "").c_str());
+    ccfg.m_maxDumpsInDir            = getOptionalIntProperty(obj, "maxDumpsInDir", 5);
+    ccfg.m_maxUploadRetries         = getOptionalIntProperty(obj, "maxUploadRetries", 5);
+    ccfg.m_uploadRetryWaitInterval  = getOptionalIntProperty(obj, "uploadRetryWaitInterval", 10000);
+    ccfg.m_uploadUrl                = getOptionalStringProperty(obj, "uploadUrl", "");
+    ccfg.m_wantFullMemory           = getOptionalBooleanProperty(obj, "wantFullMemory", false);
+    ccfg.m_needsVectorExceptionHandler = true;
+    JsInterop::InitializeCrashReporting(ccfg);
+    }
+
 static Napi::ObjectReference s_logger;
 struct LogMessage {Utf8String m_category; Utf8String m_message; NativeLogging::SEVERITY m_severity;};
 static bmap<Utf8String, bvector<LogMessage>>* s_deferredLogging;
@@ -5233,6 +5283,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
 #endif
 
     JsInterop::Initialize(addondir, env, tempdir);
+
     NativeDgnDb::Init(env, exports);
     NativeECDb::Init(env, exports);
     NativeChangedElementsECDb::Init(env, exports);
@@ -5258,7 +5309,8 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
         Napi::PropertyDescriptor::Value("version", Napi::String::New(env, PACKAGE_VERSION), PROPERTY_ATTRIBUTES),
         Napi::PropertyDescriptor::Function(env, exports, "initializeRegion", &initializeRegion),
         Napi::PropertyDescriptor::Accessor(env, exports, "logger", &getLogger, &setLogger),
-        Napi::PropertyDescriptor::Function(env, exports, "setUseTileCache", &setUseTileCache)
+        Napi::PropertyDescriptor::Function(env, exports, "setUseTileCache", &setUseTileCache),
+        Napi::PropertyDescriptor::Function(env, exports, "setCrashReporting", &setCrashReporting),
         });
 
     return exports;

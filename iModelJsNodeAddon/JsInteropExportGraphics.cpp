@@ -145,8 +145,8 @@ void Unify()
                 break;
                 }
             else if (entry.normal == origNormalIndex &&
-                     abs(entry.param.x - origParam.x) < UV_TOLERANCE &&
-                     abs(entry.param.y - origParam.y) < UV_TOLERANCE)
+                     std::abs(entry.param.x - origParam.x) < UV_TOLERANCE &&
+                     std::abs(entry.param.y - origParam.y) < UV_TOLERANCE)
                 {
                 // reuse entry
                 m_output.m_indices[i] = entry.newIndex;

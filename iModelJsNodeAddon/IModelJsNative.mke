@@ -52,6 +52,14 @@ $(o)imodeljs-nodeaddonapi.package.version.h: $(baseDir)/imodeljs-nodeaddonapi.pa
 
 cIncs + -I$(o)
 
+# breakpad's own .h files include each other relative to the "client" directory. 
+# For example, a file that is located in breakpad/client/windows/handler will
+# include another header file like this: 
+# #include "client/windows/crash_generation/crash_generation_client.h"
+# Now, "client" is a subdirectory of "breakpad".
+# So, we have to add the breakpad directory itself to the include path
+cIncs + -I$(BuildContext)VendorAPI/breakpad
+
 # DLM_NAME and CCompPDBName must be the same.
 CCompPDBName    =% $(appName)
 
@@ -77,6 +85,12 @@ $(o)ECPresentationUtils$(oext) : $(baseDir)ECPresentationUtils.cpp $(baseDir)ECP
 $(o)ECSchemaXmlContextUtils$(oext) : $(baseDir)ECSchemaXmlContextUtils.cpp $(baseDir)ECSchemaXmlContextUtils.h ${MultiCompileDepends}
 
 $(o)UlasClient$(oext) : $(baseDir)UlasClient.cpp $(baseDir)UlasClient.h $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+
+%ifdef __unix
+# TODO: Linux, OSX
+%else
+$(o)CrashReportingWindows$(oext) : $(baseDir)CrashReportingWindows.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+%endif
 
 %include MultiCppCompileGo.mki
 

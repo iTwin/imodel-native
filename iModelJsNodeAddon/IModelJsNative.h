@@ -79,6 +79,17 @@ void handleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions
 
 struct JsInterop
 {
+    struct CrashReportingConfig
+        {
+        BeFileName m_crashDumpDir;
+        Utf8String m_uploadUrl;
+        size_t m_maxDumpsInDir;
+        size_t m_maxUploadRetries;
+        size_t m_uploadRetryWaitInterval;
+        bool m_wantFullMemory;
+        bool m_needsVectorExceptionHandler;
+        };
+
     // An indirect reference to an ObjectReference. Keeps the ObjectReference alive. Can be redeemed
     //  only on the main thread. Can be copied on other threads.
     struct ObjectReferenceClaimCheck
@@ -223,6 +234,13 @@ public:
 
     static void StepAsync(Napi::Function& callback, Statement& stmt);
     static void StepAsync(Napi::Function& callback, ECSqlStatement& stmt, bool stepForInsert);
+
+#ifdef _WIN32
+    static void InitializeCrashReporting(CrashReportingConfig const&);
+#else
+    // WIP breakpad on other platforms
+    static void InitializeCrashReporting(CrashReportingConfig const&) {}
+#endif
 };
 
 //=======================================================================================
