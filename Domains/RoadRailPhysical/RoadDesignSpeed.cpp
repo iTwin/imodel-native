@@ -55,21 +55,21 @@ DesignSpeedDefinition::DesignSpeedDefinition(CreateParams const& params):
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DesignSpeedDefinition::DesignSpeedDefinition(CreateParams const& params, double designSpeed, UnitSystem unitSystem):
+DesignSpeedDefinition::DesignSpeedDefinition(CreateParams const& params, double designSpeedInMPerSec, UnitSystem unitSystem):
     T_Super(params)
     {
-    SetPropertyValue("DesignSpeed", designSpeed);
+    SetPropertyValue("DesignSpeed", designSpeedInMPerSec);
     SetPropertyValue("UnitSystem", static_cast<int32_t>(unitSystem));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DesignSpeedDefinition::CreateCode(DefinitionModelCR scope, double speed, UnitSystem unitSystem)
+DgnCode DesignSpeedDefinition::CreateCode(DefinitionModelCR scope, double designSpeedInCodeUnits, UnitSystem unitSystem)
     {
     Utf8String suffix = (unitSystem == UnitSystem::SI) ? "Km/h" : "mph";
     return CodeSpec::CreateCode(BRRP_CODESPEC_DesignSpeedDefinition, scope,
-        Utf8PrintfString("%.0f %s", speed, suffix.c_str()));
+        Utf8PrintfString("%.0f %s", designSpeedInCodeUnits, suffix.c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -87,11 +87,17 @@ DesignSpeedDefinitionCPtr DesignSpeedDefinition::QueryByCode(DefinitionModelCR m
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DesignSpeedDefinitionPtr DesignSpeedDefinition::Create(DefinitionModelCR model, double designSpeed, UnitSystem unitSystem)
+DesignSpeedDefinitionPtr DesignSpeedDefinition::Create(DefinitionModelCR model, double designSpeedInCodeUnits, UnitSystem unitSystem)
     {
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, designSpeed, unitSystem));
+    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, designSpeedInCodeUnits, unitSystem));
+    
+    auto kphUnitCP = model.GetDgnDb().Schemas().GetUnit("Units", "KM_PER_HR");
+    auto mphUnitCP = model.GetDgnDb().Schemas().GetUnit("Units", "MPH");
+    Units::Quantity speedQty(designSpeedInCodeUnits, (unitSystem == UnitSystem::SI) ? *kphUnitCP : *mphUnitCP);
 
-    return new DesignSpeedDefinition(params, designSpeed, unitSystem);
+    auto mPerSecUnitCP = model.GetDgnDb().Schemas().GetUnit("Units", "M_PER_SEC");
+    auto mPerSecSpeedQty = speedQty.ConvertTo(mPerSecUnitCP);
+    return new DesignSpeedDefinition(params, mPerSecSpeedQty.GetMagnitude(), unitSystem);
     }
 
 /*---------------------------------------------------------------------------------**//**

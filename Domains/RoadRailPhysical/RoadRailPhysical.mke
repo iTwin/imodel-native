@@ -2,7 +2,7 @@
 #
 #     $Source: RoadRailPhysical.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
@@ -92,6 +92,7 @@ LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libex
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)LinearReferencing$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailAlignment$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)Units$(libext)
 
 %include $(sharedMki)linkLibrary.mki
 
