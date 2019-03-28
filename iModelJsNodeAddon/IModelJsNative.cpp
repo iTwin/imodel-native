@@ -314,6 +314,7 @@ struct ObjRefVault
 };
 
 static ObjRefVault s_objRefVault;
+static bvector<JsInterop::ObjectReferenceClaimCheck> s_deferredLoggingClientRequestActivityClaimChecks;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
@@ -379,6 +380,7 @@ void JsInterop::ObjectReferenceClaimCheck::Dispose()
     JsInterop::DoDeferredLogging();
     s_objRefVault.ReleaseRefToObject(m_id);
     s_objRefVault.ReleaseUnreferencedObjects();
+    m_id.clear();
     }
 
 //=======================================================================================
@@ -5113,6 +5115,8 @@ static void pushDeferredLoggingMessage(Utf8CP category, NativeLogging::SEVERITY 
     lm.m_message = msg;
     lm.m_severity = sev;
     (*s_deferredLogging)[ctx.GetId()].push_back(lm);
+
+    s_deferredLoggingClientRequestActivityClaimChecks.push_back(ctx); // make sure this claim check (and the vault slot) remain alive until doDeferredLogging is run.
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5158,6 +5162,9 @@ static void doDeferredLogging()
 
     delete s_deferredLogging;
     s_deferredLogging = nullptr;
+
+    s_deferredLoggingClientRequestActivityClaimChecks.clear();
+    s_objRefVault.ReleaseUnreferencedObjects();
     }
 
 /*---------------------------------------------------------------------------------**//**
