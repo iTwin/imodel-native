@@ -99,6 +99,15 @@ private:
     bset<Bentley::ElementRefP> m_corridorV8RefSet;
     Bentley::Cif::ConsensusConnectionPtr m_cifConsensusConnection;
 
+    typedef bool (ConvertORDElementXDomain::*AspectAssignmentFunc)(Dgn::DgnElementR, DgnV8EhCR) const;
+    bvector<AspectAssignmentFunc> m_aspectAssignFuncs;
+
+    bool AssignLinearQuantityAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
+    bool AssignTemplateDropAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
+    bool AssignSuperelevationAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
+    bool AssignCorridorAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
+    bool AssignCorridorSurfaceAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
+
 protected:
     virtual void _DetermineElementParams(Dgn::DgnClassId&, Dgn::DgnCode&, Dgn::DgnCategoryId&, DgnV8EhCR, Dgn::DgnDbSync::DgnV8::Converter&, ECObjectsV8::IECInstance const* primaryV8Instance, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&) override;
     virtual Result _PreConvertElement(DgnV8EhCR, Dgn::DgnDbSync::DgnV8::Converter&, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&) override;

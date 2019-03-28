@@ -609,7 +609,7 @@ struct ORDCorridorsConverter: RefCountedBase
 private:
     Transform m_unitsScaleTransform;
     ORDConverter& m_converter;
-    RoadRailBim::DesignSpeedDefinitionCPtr m_defaultDesignSpeedDef;
+    ECN::ECUnitCP m_kphUnitCP, m_mphUnitCP, m_msecUnitCP;
 
 private:
     ORDCorridorsConverter(ORDConverter& converterLib, TransformCR unitsScaleTransform);
@@ -621,6 +621,10 @@ private:
     BentleyStatus UpdateCorridor(CorridorCR cifCorridor,
         iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change, DgnCategoryId targetCategoryId);
     BentleyStatus AssignCorridorGeomStream(CorridorCR cifCorridor, RoadRailBim::CorridorR corridor);
+    RoadRailBim::DesignSpeedDefinitionCPtr ORDCorridorsConverter::GetOrInsertDesignSpeedDefinition(
+        Dgn::DefinitionModelCR standardsModel, double speedInMPerSec, RoadRailBim::DesignSpeedDefinition::UnitSystem unitSystem);
+    void ConvertSpeedTable(SpeedTableCP speedTable, int32_t cifDesignSpeedIdx, RoadRailBim::PathwayElementCR pathway, Dgn::DefinitionModelCR standardsModel,
+        RoadRailBim::DesignSpeedDefinition::UnitSystem unitSystem);
 
 public:
     static ORDCorridorsConverterPtr Create(ORDConverter& converter, TransformCR unitsScaleTransform)
@@ -638,6 +642,9 @@ public:
 ORDCorridorsConverter::ORDCorridorsConverter(ORDConverter& converter, TransformCR unitsScaleTransform):
     m_converter(converter), m_unitsScaleTransform(unitsScaleTransform)
     {
+    m_msecUnitCP = converter.GetDgnDb().Schemas().GetUnit("Units", "M_PER_SEC");
+    m_kphUnitCP = converter.GetDgnDb().Schemas().GetUnit("Units", "KM_PER_HR");
+    m_mphUnitCP = converter.GetDgnDb().Schemas().GetUnit("Units", "MPH");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -698,6 +705,94 @@ BentleyStatus ORDCorridorsConverter::AssignCorridorGeomStream(CorridorCR cifCorr
 
     return BentleyStatus::SUCCESS;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+RoadRailBim::DesignSpeedDefinitionCPtr ORDCorridorsConverter::GetOrInsertDesignSpeedDefinition(
+    Dgn::DefinitionModelCR standardsModel, double speedInMPerSec, RoadRailBim::DesignSpeedDefinition::UnitSystem unitSystem)
+    {    
+    BENTLEY_NAMESPACE_NAME::Units::Quantity speedQty(speedInMPerSec, *m_msecUnitCP);
+
+    double speedInCodeUnits;
+    if (unitSystem == RoadRailBim::DesignSpeedDefinition::UnitSystem::SI)
+        speedInCodeUnits = speedQty.ConvertTo(m_kphUnitCP).GetMagnitude();
+    else
+        speedInCodeUnits = speedQty.ConvertTo(m_mphUnitCP).GetMagnitude();
+
+    speedInCodeUnits = round(speedInCodeUnits);
+
+    auto retValCPtr = RoadRailBim::DesignSpeedDefinition::QueryByCode(standardsModel, speedInCodeUnits, unitSystem);
+    if (retValCPtr.IsValid())
+        return retValCPtr;
+
+    auto retValPtr = RoadRailBim::DesignSpeedDefinition::Create(standardsModel, speedInCodeUnits, unitSystem);
+    return retValPtr->Insert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDCorridorsConverter::ConvertSpeedTable(SpeedTableCP speedTable, int32_t cifDesignSpeedIdx, RoadRailBim::PathwayElementCR pathway, Dgn::DefinitionModelCR standardsModel,
+    RoadRailBim::DesignSpeedDefinition::UnitSystem unitSystem)
+    {
+    bvector<bpair<double, bpair<double, double>>> stationStartEndSpeeds;
+
+    if (speedTable)
+        {
+        auto speedSectionsPtr = speedTable->GetSpeedSections();
+        while (speedSectionsPtr->MoveNext())
+            {
+            auto speedSectionPtr = speedSectionsPtr->GetCurrent();
+            double startStation = speedSectionPtr->GetStation();
+            auto designSpeedsPtr = speedSectionPtr->GetDesignSpeeds();
+            if (designSpeedsPtr.IsValid())
+                {
+                int32_t i = 0;
+                while (designSpeedsPtr->MoveNext() && i++ < cifDesignSpeedIdx);
+
+                auto designSpeedPtr = designSpeedsPtr->GetCurrent();
+                auto startSpeed = designSpeedPtr->GetStart();
+                auto endSpeed = designSpeedPtr->GetEnd();
+
+                stationStartEndSpeeds.push_back({ startStation, { startSpeed, endSpeed } });
+                }
+            }
+        }
+
+    auto alignmentCPtr = pathway.GetMainLinearElementAs<RoadRailAlignment::Alignment>();    
+    double lastStartStation = alignmentCPtr->GetLength();
+
+    if (stationStartEndSpeeds.empty())
+        {
+        BENTLEY_NAMESPACE_NAME::Units::Quantity speedQtyKPH(100.0, *m_kphUnitCP);
+        BENTLEY_NAMESPACE_NAME::Units::Quantity speedQtyMPH(60.0, *m_mphUnitCP);
+
+        double speedQtyMPSEC = (unitSystem == RoadRailBim::DesignSpeedDefinition::UnitSystem::SI) ? 
+            speedQtyKPH.ConvertTo(m_msecUnitCP).GetMagnitude() : speedQtyMPH.ConvertTo(m_msecUnitCP).GetMagnitude();
+        stationStartEndSpeeds.push_back({ 0.0, { speedQtyMPSEC, speedQtyMPSEC } });
+        }
+
+    for (auto rIter = stationStartEndSpeeds.rbegin(); rIter != stationStartEndSpeeds.rend(); rIter++)
+        {
+        auto& stationStartEndSpeed = *rIter;
+
+        RoadRailBim::DesignSpeedElementPtr designSpeedPtr;
+        if (fabs(stationStartEndSpeed.second.first - stationStartEndSpeed.second.second) < DBL_EPSILON)
+            designSpeedPtr = RoadRailBim::DesignSpeed::Create(
+                RoadRailBim::DesignSpeed::CreateFromToParams(pathway, 
+                    *GetOrInsertDesignSpeedDefinition(standardsModel, stationStartEndSpeed.second.first, unitSystem),
+                    stationStartEndSpeed.first, lastStartStation));
+        else
+            designSpeedPtr = RoadRailBim::DesignSpeedTransition::Create(
+                RoadRailBim::DesignSpeedTransition::CreateFromToParams(pathway, stationStartEndSpeed.first, lastStartStation));
+
+        designSpeedPtr->Insert();
+
+        lastStartStation = stationStartEndSpeed.first;
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -735,21 +830,6 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
                 corridorPtr->SetMainLinearElement(bimMainAlignmentPtr.get());
                 }
             }
-
-        /*iModelBridgeSyncInfoFile::SourceIdentity sourceIdentity(params.fileScopeId, alignmentItem.Kind(), alignmentItem._GetId());
-        auto iterator = params.syncInfo.MakeIteratorBySourceId(sourceIdentity);
-        auto iterEntry = iterator.begin();
-        if (iterEntry != iterator.end())
-            {
-            bimMainAlignmentPtr = AlignmentBim::Alignment::GetForEdit(m_converter.GetPhysicalNetworkModel().GetDgnDb(), iterEntry.GetDgnElementId());
-            if (bimMainAlignmentPtr.IsValid())
-                {
-                if (bimMainAlignmentPtr->GetILinearElementSource().IsValid())
-                    return BentleyStatus::ERROR; // Alignment already associated with another Corridor
-
-                corridorPtr->SetMainLinearElement(bimMainAlignmentPtr.get());
-                }
-            }*/
         }
 
     if (BentleyStatus::SUCCESS != AssignCorridorGeomStream(cifCorridor, *corridorPtr))
@@ -778,48 +858,20 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
     if (pathwayPtr->Insert(RoadRailBim::PathwayElement::Order::LeftMost).IsNull())
         return BentleyStatus::ERROR;
 
-    if (m_defaultDesignSpeedDef.IsNull())
+    if (cifAlignmentPtr.IsValid() && bimMainAlignmentPtr.IsValid())
         {
+        SpeedTablePtr speedTablePtr;
+        //SpeedTablePtr speedTablePtr = corridorAlgPtr->GetActiveSpeedTable();
+
         Dgn::DefinitionModelPtr standardsModelPtr;
         if (isRail)
             standardsModelPtr = RoadRailBim::RailwayStandardsModel::Query(*params.subjectCPtr);
         else
             standardsModelPtr = RoadRailBim::RoadwayStandardsModel::Query(*params.subjectCPtr);
 
-        double msecSpeed = 0.0;
-        Utf8String speedLabel;
-        auto msecUnitCP = corridorPtr->GetDgnDb().Schemas().GetUnit("Units", "M_PER_SEC");
-        if (params.rootModelUnitSystem == Dgn::UnitSystem::Metric)
-            {
-            auto kphUnitCP = corridorPtr->GetDgnDb().Schemas().GetUnit("Units", "KM_PER_HR");
-            BENTLEY_NAMESPACE_NAME::Units::Quantity speedQty(100.0, *kphUnitCP); // 100 Km/h
-            msecSpeed = speedQty.ConvertTo(msecUnitCP).GetMagnitude();
-            speedLabel = "100 Km/h";
-            }
-        else
-            { 
-            auto mphUnitCP = corridorPtr->GetDgnDb().Schemas().GetUnit("Units", "MPH");
-            BENTLEY_NAMESPACE_NAME::Units::Quantity speedQty(70.0, *mphUnitCP); // 70 MPH
-            msecSpeed = speedQty.ConvertTo(msecUnitCP).GetMagnitude();
-            speedLabel = "70 MPH";
-            }        
-
-        // Hard-coded for now - while the CIF SDK exposes an API for it
-        auto designSpeedDefPtr = RoadRailBim::DesignSpeedDefinition::Create(*standardsModelPtr, msecSpeed); 
-        designSpeedDefPtr->SetUserLabel(speedLabel.c_str());
-        m_defaultDesignSpeedDef = designSpeedDefPtr->Insert();
-
-        if (m_defaultDesignSpeedDef.IsNull())
-            return BentleyStatus::ERROR;
-        }
-
-    if (bimMainAlignmentPtr.IsValid())
-        {
-        auto designSpeedPtr = 
-            RoadRailBim::DesignSpeed::Create(RoadRailBim::DesignSpeed::CreateFromToParams(
-                *pathwayPtr, *m_defaultDesignSpeedDef, 0, bimMainAlignmentPtr->GetLength()));
-        if (designSpeedPtr->Insert().IsNull())
-            return BentleyStatus::ERROR;
+        ConvertSpeedTable(speedTablePtr.get(), 0, *pathwayPtr, *standardsModelPtr, 
+            (params.rootModelUnitSystem == Dgn::UnitSystem::Metric) ? 
+                RoadRailBim::DesignSpeedDefinition::UnitSystem::SI : RoadRailBim::DesignSpeedDefinition::UnitSystem::Imperial);
         }
 
     return BentleyStatus::SUCCESS;
@@ -935,6 +987,12 @@ ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter): m_c
     {
     m_cifConsensusConnection = ConsensusConnection::Create(*m_converter.GetRootModelRefP());
     m_graphic3dClassId = converter.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_Graphic3d);    
+
+    m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignCorridorSurfaceAspect);
+    m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignLinearQuantityAspect);
+    m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignCorridorAspect);
+    m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignTemplateDropAspect);
+    m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignSuperelevationAspect);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1118,7 +1176,13 @@ void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceC
         auto corridorSurfaceAspectPtr = DgnV8ORDBim::CorridorSurfaceAspect::Create(isTopMesh, isBottomMesh, description.c_str());
         DgnV8ORDBim::CorridorSurfaceAspect::Set(element, *corridorSurfaceAspectPtr);
         }
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void assignStationRangeAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceCR cifCorridorSurface)
+    {
     auto startStationAsWStr = cifCorridorSurface.GetStartStation();
     auto endStationAsWStr = cifCorridorSurface.GetEndStation();
 
@@ -1142,6 +1206,190 @@ void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceC
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void assignQuantityAspect(Dgn::DgnElementR element, Cif::AlignmentCR cifAlignment)
+    {
+    double length = cifAlignment.GetLinearGeometry()->GetLength2d();
+
+    if (auto linearQuantityAspectP = DgnV8ORDBim::LinearQuantityAspect::GetP(element))
+        {
+        linearQuantityAspectP->SetLength(length);
+        }
+    else
+        {
+        auto linearQuantityAspectPtr = DgnV8ORDBim::LinearQuantityAspect::Create(length);
+        DgnV8ORDBim::LinearQuantityAspect::Set(element, *linearQuantityAspectPtr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void assignQuantityAspect(Dgn::DgnElementR element, Cif::Linear3dConsensusItemCR cifLinear3d)
+    {
+    double length = cifLinear3d.GetLinearGeometry()->GetLength2d();
+
+    if (auto linearQuantityAspectP = DgnV8ORDBim::LinearQuantityAspect::GetP(element))
+        {
+        linearQuantityAspectP->SetLength(length);
+        }
+    else
+        {
+        auto linearQuantityAspectPtr = DgnV8ORDBim::LinearQuantityAspect::Create(length);
+        DgnV8ORDBim::LinearQuantityAspect::Set(element, *linearQuantityAspectPtr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void assignQuantityAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceCR cifCorridorSurface)
+    {
+    ValidatedDouble volume, surfaceArea;
+
+    double polyfaceVolume = 0.0;
+    Bentley::DPoint3d centroid;
+    Bentley::RotMatrix axes;
+    Bentley::DVec3d momentXYZ;
+
+    auto polyfaceHeaderPtr = cifCorridorSurface.GetMesh();
+    if (polyfaceHeaderPtr->ComputePrincipalMomentsAllowMissingSideFacets(polyfaceVolume, centroid, axes, momentXYZ, true, 1e-3))
+        volume = fabs(polyfaceVolume);
+
+    size_t numPositive, numPerpendicular, numNegative;
+    double forwardProjectedSum, reverseProjectedSum, forwardAbsoluteSum, reverseAbsoluteSum, perpendicularAbsoluteSum;
+
+    double sumAreas = polyfaceHeaderPtr->SumDirectedAreas(
+        Bentley::DVec3d::UnitZ(), numPositive, numPerpendicular, numNegative, 
+            forwardProjectedSum, reverseProjectedSum, forwardAbsoluteSum, reverseAbsoluteSum, perpendicularAbsoluteSum);
+    if (fabs(sumAreas) > DBL_EPSILON)
+        {
+        if (numPositive > 0)
+            surfaceArea = forwardAbsoluteSum;
+        else
+            surfaceArea = reverseAbsoluteSum;
+        }
+
+    if (!volume.IsValid() && !surfaceArea.IsValid())
+        return;
+
+    double uorsPerMeter = cifCorridorSurface.GetDgnModelP()->GetModelInfo().GetUorPerMeter();
+    double squaredUorsPerMeter = uorsPerMeter * uorsPerMeter;
+    double cubicUorsPerMeter = squaredUorsPerMeter * uorsPerMeter;
+
+    double volumeVal = volume.IsValid() ? volume.Value() / cubicUorsPerMeter : NAN;
+    double surfaceAreaVal = surfaceArea.IsValid() ? surfaceArea.Value() / squaredUorsPerMeter : NAN;
+    if (auto volumetricQuantityAspectP = DgnV8ORDBim::VolumetricQuantityAspect::GetP(element))
+        {
+        volumetricQuantityAspectP->SetSurfaceArea(surfaceAreaVal);
+        volumetricQuantityAspectP->SetVolume(volumeVal);
+        }
+    else
+        {
+        auto volumetricQuantityAspectPtr = DgnV8ORDBim::VolumetricQuantityAspect::Create(volumeVal, surfaceAreaVal);
+        DgnV8ORDBim::VolumetricQuantityAspect::Set(element, *volumetricQuantityAspectPtr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConvertORDElementXDomain::AssignLinearQuantityAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
+    {
+    auto cifConsensusItemPtr = Linear3dConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
+    if (auto cifLinear3dCP = dynamic_cast<Linear3dConsensusItemCP>(cifConsensusItemPtr.get()))
+        {
+        assignORDFeatureAspect(element, *cifConsensusItemPtr);
+        assignQuantityAspect(element, *cifLinear3dCP);
+        return true;
+        }
+    else
+        {
+        auto cifAlignmentPtr = Alignment::CreateFromElementHandle(v8el);
+        if (cifAlignmentPtr.IsValid())
+            {
+            assignORDFeatureAspect(element, *cifAlignmentPtr);
+            assignQuantityAspect(element, *cifAlignmentPtr);
+            return true;
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConvertORDElementXDomain::AssignTemplateDropAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
+    {
+    auto templateDropPtr = TemplateDrop::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
+    if (templateDropPtr.IsValid())
+        {
+        assignORDFeatureAspect(element, *templateDropPtr);
+        assignTemplateDropAspect(element, *templateDropPtr);
+        return true;
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConvertORDElementXDomain::AssignSuperelevationAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
+    {
+    auto superElevationPtr = SuperElevation::CreateFromElementHandle(v8el);
+    if (superElevationPtr.IsValid())
+        {
+        assignStationRangeAspect(element, superElevationPtr->GetStartDistance(), superElevationPtr->GetEndDistance());
+        assignSuperelevationAspect(element, *superElevationPtr);
+        return true;
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConvertORDElementXDomain::AssignCorridorAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
+    {
+    auto cifCorridorPtr = Corridor::CreateFromElementHandle(v8el);
+    if (cifCorridorPtr.IsValid())
+        {
+        assignCorridorAspect(element, *cifCorridorPtr);
+        return true;
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConvertORDElementXDomain::AssignCorridorSurfaceAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
+    {
+    auto featurizedPtr = FeaturizedConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
+    if (featurizedPtr.IsValid())
+        {
+        if (element.GetModel()->Is3d())
+            {
+            if (auto cifCorridorSurfaceCP = dynamic_cast<CorridorSurfaceCP>(featurizedPtr.get()))
+                {
+                assignORDFeatureAspect(element, *featurizedPtr);
+                assignCorridorSurfaceAspect(element, *cifCorridorSurfaceCP);
+                assignStationRangeAspect(element, *cifCorridorSurfaceCP);
+                assignQuantityAspect(element, *cifCorridorSurfaceCP);
+                return true;
+                }
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversionResults& elRes, DgnV8EhCR v8el, DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm, DgnDbSync::DgnV8::Converter&)
@@ -1149,45 +1397,10 @@ void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversi
     if (m_converter.m_v8ToBimElmMap.end() != m_converter.m_v8ToBimElmMap.find(v8el.GetElementRef()))
         return;
 
-    auto templateDropPtr = TemplateDrop::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
-    if (templateDropPtr.IsValid())
+    for (auto& func : m_aspectAssignFuncs)
         {
-        assignORDFeatureAspect(*elRes.m_element, *templateDropPtr);
-        assignTemplateDropAspect(*elRes.m_element, *templateDropPtr);        
-        }
-    else
-        {
-        auto superElevationPtr = SuperElevation::CreateFromElementHandle(v8el);
-        if (superElevationPtr.IsValid())
-            {
-            assignStationRangeAspect(*elRes.m_element, superElevationPtr->GetStartDistance(), superElevationPtr->GetEndDistance());
-            assignSuperelevationAspect(*elRes.m_element, *superElevationPtr);
-            }
-        else
-            {
-            auto cifCorridorPtr = Corridor::CreateFromElementHandle(v8el);
-            if (cifCorridorPtr.IsValid())
-                {
-                assignCorridorAspect(*elRes.m_element, *cifCorridorPtr);
-                }
-            else
-                {
-                auto featurizedPtr = FeaturizedConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
-                if (featurizedPtr.IsValid())
-                    {
-                    assignORDFeatureAspect(*elRes.m_element, *featurizedPtr);
-
-                    if (v8mm.GetV8Model().Is3D())
-                        {
-                        if (auto cifCorridorSurfaceCP = dynamic_cast<CorridorSurfaceCP>(featurizedPtr.get()))
-                            {
-                            assignCorridorSurfaceAspect(*elRes.m_element, *cifCorridorSurfaceCP);
-                            return;
-                            }
-                        }
-                    }
-                }
-            }
+        if ((this->*func)(*elRes.m_element, v8el))
+            break;
         }
 
     if (m_alignmentV8RefSet.end() == m_alignmentV8RefSet.find(v8el.GetElementRef()) &&
