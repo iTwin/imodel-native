@@ -3,12 +3,15 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
   
     <Part Name="DwgBridgePRG" PrgOutputDir="DwgBridge">
-        <SubProduct ProductName="DwgConverter" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
         <SubProduct ProductName="RealDwgBridge"/>
         <SubProduct ProductName="OpenDwgBridge"/>
+        <SubNuGetProduct NuGetProductName="RealDwgBridgeSdkNuget"/>
+        <SubNuGetProduct NuGetProductName="OpenDwgBridgeSdkNuget"/>
+        <SubPart PartName="RunDwgImporterTests" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter"/>
     </Part>
 
 
+    <!-- A product installer for DwgBridge using OpenDWG -->
     <Product Name="OpenDwgBridge" SaveProduct="true" BuildInstallSet="true">
         <SubPart PartName="OpenDwgImportExe" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter"/>
         <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
@@ -37,6 +40,30 @@
     </Part>
 
 
+    <!-- An SDK zip delivery for DwgBridge using OpenDWG -->
+    <NuGetProduct Name="OpenDwgBridgeSdkNuget" OnlyPlatforms="x64" Description="OpenDwgImporterSdkNuget">
+        <SubPart PartName="OpenDwgImportDLL" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="OpenDwgBridgeDLL" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="OpenDwgDb" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="Docs" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="CodeSamples" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="DwgImporterHeaderDelivery" />
+        <Directories DirectoryListName="OpenDwgBridgeSdkDirList"/>
+        <Directories DirectoryListName="DwgSdkCommonDirList"/>
+    </NuGetProduct>
+
+    <ProductDirectoryList ListName="OpenDwgBridgeSdkDirList">
+        <ProductDirectory Name="ApplicationRoot"    Path="DwgImporterSDK"/>
+        <ProductDirectory Name="OpenDwgDbLibs"      RelativeTo="ApplicationRoot" Path="Libs"/>
+        <ProductDirectory Name="OpenDwgDbAssemblies" RelativeTo="ApplicationRoot" Path="Dlls"/>
+        <ProductDirectory Name="OpenDwgImportAssemblies" RelativeTo="ApplicationRoot" Path="Dlls"/>
+        <ProductDirectory Name="RealDwgDbLibs"      Deliver="false"/>
+        <ProductDirectory Name="RealDwgDbAssemblies" Deliver="false"/>
+        <ProductDirectory Name="RealDwgImportAssemblies" Deliver="false"/>
+    </ProductDirectoryList>
+
+
+    <!-- A product installer for DwgBridge using RealDWG -->
     <Product Name="RealDwgBridge" SaveProduct="true" BuildInstallSet="true">
         <SubPart PartName="RealDwgImportExe" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter"/>
         <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
@@ -65,5 +92,55 @@
             </Files>
         </Bindings>
     </Part>
+
+
+    <!-- An SDK zip delivery for DwgBridge using RealDWG -->
+    <NuGetProduct Name="RealDwgBridgeSdkNuget" OnlyPlatforms="x64" Description="RealDwgImporterSdkNuget">
+        <SubPart PartName="RealDwgImportDLL" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="RealDwgBridgeDLL" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="RealDwgDb" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="Docs" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="CodeSamples" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="DwgImporterHeaderDelivery" />
+        <Directories DirectoryListName="RealDwgBridgeSdkDirList"/>
+        <Directories DirectoryListName="DwgSdkCommonDirList"/>
+    </NuGetProduct>
+
+    <Part Name="DwgImporterHeaderDelivery">
+        <SubPart PartName="PublicAPI" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <Bindings>
+            <Directory SourceName="PublicAPI/Dwg" ProductDirectoryName="DwgImportHeaders"/>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="RealDwgBridgeSdkDirList">
+        <ProductDirectory Name="ApplicationRoot"        Path="DwgImporterSDK"/>
+        <ProductDirectory Name="RealDwgDbLibs"          RelativeTo="ApplicationRoot" Path="Libs"/>
+        <ProductDirectory Name="RealDwgDbAssemblies"    RelativeTo="ApplicationRoot" Path="Dlls"/>
+        <ProductDirectory Name="RealDwgImportAssemblies" RelativeTo="ApplicationRoot" Path="Dlls"/>
+        <ProductDirectory Name="OpenDwgDbLibs"          Deliver="false"/>
+        <ProductDirectory Name="OpenDwgDbAssemblies"    Deliver="false"/>
+        <ProductDirectory Name="OpenDwgImportAssemblies" Deliver="false"/>
+    </ProductDirectoryList>
+
+    <ProductDirectoryList ListName="DwgSdkCommonDirList">
+        <ProductDirectory Name="ApplicationRoot"        Path="DwgImporterSDK"/>
+        <ProductDirectory Name="DwgImportHeaders"       RelativeTo="ApplicationRoot" Path="PublicAPI/Dwg"/>
+        <ProductDirectory Name="DwgImporterDocs"        RelativeTo="ApplicationRoot" Path="Docs"/>
+        <ProductDirectory Name="SampleXData"            RelativeTo="ApplicationRoot" Path="Samples/XData"/>
+        <ProductDirectory Name="SampleListProp"         RelativeTo="ApplicationRoot" Path="Samples/ListProperty"/>
+        <!-- exclude list -->
+        <ProductDirectory Name="VendorNotices"          Deliver="false"/>
+        <ProductDirectory Name="VendorNotices"          Deliver="false" LibType="static" />
+        <ProductDirectory Name="Assets"                 Deliver="false"/>
+        <ProductDirectory Name="Assets"                 Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Assemblies"             Deliver="false"/>
+        <ProductDirectory Name="Assemblies"             Deliver="false" LibType="static"/>
+        <ProductDirectory Name="RealDwgAssemblies"      Deliver="false"/>
+        <ProductDirectory Name="RealDwgAssembliesEnUS"  Deliver="false"/>
+        <ProductDirectory Name="ShxFonts"               Deliver="false"/>
+        <ProductDirectory Name="MergeModules"           Deliver="false"/>
+        <ProductDirectory Name="DgnV8Dlls"              Deliver="false" />
+    </ProductDirectoryList>
 
 </BuildContext>
