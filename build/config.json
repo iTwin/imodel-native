@@ -42,7 +42,10 @@
             "depends" : [
                 "iModelBridgeCore"
             ]
-        },
+        }
+    ],
+
+    "archive": [
         {
             "name": "DwgBridge",
             "archs": "x64",
