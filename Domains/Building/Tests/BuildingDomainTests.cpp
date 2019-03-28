@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/BuildingDomainTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BuildingDomainBaseFixture.h"
@@ -461,14 +461,14 @@ TEST_F(BuildingDomainTestFixture, WallClassTests)
 
 	ASSERT_TRUE(Dgn::DgnDbStatus::Success == wall->SetCode(code));
 
-    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, GROSS_FOOTPRINT_AREA, "SQ.IN", DOUBLE_TEST_VALUE));
-    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, NET_FOOTPRINT_AREA,   "SQ.FT", DOUBLE_TEST_VALUE));
-    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, GROSS_SIDE_AREA,      "SQ.M",  DOUBLE_TEST_VALUE));
-    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, NET_SIDE_AREA,        "SQ.KM", DOUBLE_TEST_VALUE));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, GROSS_FOOTPRINT_AREA, "SQ_IN", DOUBLE_TEST_VALUE));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, NET_FOOTPRINT_AREA,   "SQ_FT", DOUBLE_TEST_VALUE));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, GROSS_SIDE_AREA,      "SQ_M",  DOUBLE_TEST_VALUE));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, NET_SIDE_AREA,        "SQ_KM", DOUBLE_TEST_VALUE));
 
 
-    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, GROSS_VOLUME, "CUB.M",  DOUBLE_TEST_VALUE));
-    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, NET_VOLUME,   "CUB.FT", DOUBLE_TEST_VALUE));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, GROSS_VOLUME, "CUB_M",  DOUBLE_TEST_VALUE));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, NET_VOLUME,   "CUB_FT", DOUBLE_TEST_VALUE));
 
     ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, HEIGHT, "FT", DOUBLE_TEST_VALUE));
     ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::SetDoublePropertyUsingUnitString(*wall, LENGTH, "M",  DOUBLE_TEST_VALUE));
@@ -487,22 +487,22 @@ TEST_F(BuildingDomainTestFixture, WallClassTests)
 	ECN::ECValue propVal;
     double testValue;
 
-    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, GROSS_FOOTPRINT_AREA, "SQ.IN", testValue));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, GROSS_FOOTPRINT_AREA, "SQ_IN", testValue));
 	ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
 
-    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, NET_FOOTPRINT_AREA, "SQ.FT", testValue));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, NET_FOOTPRINT_AREA, "SQ_FT", testValue));
 	ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
 
-    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, GROSS_SIDE_AREA, "SQ.M", testValue));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, GROSS_SIDE_AREA, "SQ_M", testValue));
     ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
 
-    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, NET_SIDE_AREA, "SQ.KM", testValue));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, NET_SIDE_AREA, "SQ_KM", testValue));
 	ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
 
-    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, GROSS_VOLUME, "CUB.M", testValue));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, GROSS_VOLUME, "CUB_M", testValue));
     ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
 
-    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, NET_VOLUME, "CUB.FT", testValue));
+    ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, NET_VOLUME, "CUB_FT", testValue));
     ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
 
     ASSERT_TRUE(BentleyStatus::SUCCESS == BuildingDomain::BuildingDomainUtilities::GetDoublePropertyUsingUnitString(*queriedWall, HEIGHT, "FT", testValue));
