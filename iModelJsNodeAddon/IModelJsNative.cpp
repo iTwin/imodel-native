@@ -28,6 +28,7 @@
 #include <DgnPlatform/Tile.h>
 #include <DgnPlatform/ChangedElementsManager.h>
 #include "UlasClient.h"
+#include "SignalTestUtility.h"
 #include <Bentley/BeThreadLocalStorage.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -179,15 +180,15 @@ Napi::String toJsString(Napi::Env env, BeInt64Id id) { return toJsString(env, id
 
 // An ObjRefVault is place to store Napi::ObjectReferences. It holds onto the references as long as they
 // are in use. ObjectReferences are stored in "slots" in the vault. Code running on any thread can hold a reference
-// to a slot, so as to keep that slot and its ObjectReference alive. Only code running on the main thread can 
+// to a slot, so as to keep that slot and its ObjectReference alive. Only code running on the main thread can
 // access the ObjectReference in a slot.
 //
 // Vault operations are guarded by the BeSystemMutex.
 //
 // Details: A slot has its own reference count. A reference to a slot is a claim to keep the slot alive.
-// A reference to a slot can be incremented/decremented by code running on any thread. When the 
+// A reference to a slot can be incremented/decremented by code running on any thread. When the
 // last reference to a slot is released, that means that the slot should release the ObjectReference itself.
-// The last decrement of the slot's can occur on any thread. The actual release of the JS object can 
+// The last decrement of the slot's can occur on any thread. The actual release of the JS object can
 // happen only on the main thread. Therefore, the release of the slot is handled as a request to release the JS object.
 // This request is noticed and carried out later on the main thread.
 struct ObjRefVault
@@ -751,14 +752,14 @@ struct NativeECDb : Napi::ObjectWrap<NativeECDb>
             {
             Napi::HandleScope scope(env);
             Napi::Function t = DefineClass(env, "ECDb", {
-            InstanceMethod("createDb", &NativeECDb::CreateDb),
-            InstanceMethod("openDb", &NativeECDb::OpenDb),
-            InstanceMethod("closeDb", &NativeECDb::CloseDb),
-            InstanceMethod("dispose", &NativeECDb::Dispose),
-            InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
-            InstanceMethod("abandonChanges", &NativeECDb::AbandonChanges),
-            InstanceMethod("importSchema", &NativeECDb::ImportSchema),
-            InstanceMethod("isOpen", &NativeECDb::IsOpen)
+                InstanceMethod("createDb", &NativeECDb::CreateDb),
+                InstanceMethod("openDb", &NativeECDb::OpenDb),
+                InstanceMethod("closeDb", &NativeECDb::CloseDb),
+                InstanceMethod("dispose", &NativeECDb::Dispose),
+                InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
+                InstanceMethod("abandonChanges", &NativeECDb::AbandonChanges),
+                InstanceMethod("importSchema", &NativeECDb::ImportSchema),
+                InstanceMethod("isOpen", &NativeECDb::IsOpen)
             });
 
             exports.Set("ECDb", t);
@@ -1580,51 +1581,6 @@ public:
         return Napi::Number::New(Env(), (int)status);
         }
 
-    Napi::Value GetElementPropertiesForDisplay(Napi::CallbackInfo const& info)
-        {
-        REQUIRE_DB_TO_BE_OPEN
-        REQUIRE_ARGUMENT_STRING(0, elementIdStr, Env().Undefined());
-        Utf8String exportedJson;
-
-        ECInstanceId elemId(ECInstanceId::FromString(elementIdStr.c_str()).GetValueUnchecked());
-        if (!elemId.IsValid())
-            return CreateBentleyReturnErrorObject(DgnDbStatus::BadElement);
-
-        CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECClassId FROM biscore.Element WHERE ECInstanceId = ?");
-        if (!stmt.IsValid())
-            return CreateBentleyReturnErrorObject(DgnDbStatus::SQLiteError);
-
-        stmt->BindId(1, elemId);
-        if (stmt->Step() != BE_SQLITE_ROW)
-            return CreateBentleyReturnErrorObject(DgnDbStatus::SQLiteError);
-
-        ECClassId ecclassId = stmt->GetValueId<ECClassId>(0);
-        ECClassCP ecclass = GetDgnDb().Schemas().GetClass(ecclassId);
-        KeySetPtr input = KeySet::Create({ECClassInstanceKey(ecclass, elemId)});
-        RulesDrivenECPresentationManager::ContentOptions options ("Items");
-        if ( m_presentationManager == nullptr)
-            return CreateBentleyReturnErrorObject(DgnDbStatus::BadArg);
-
-        m_connections.NotifyConnectionOpened(GetDgnDb());
-        ContentDescriptorCPtr descriptor = m_presentationManager->GetContentDescriptor(GetDgnDb(), ContentDisplayType::PropertyPane, *input, nullptr, options.GetJson()).get();
-        if (descriptor.IsNull())
-            return CreateBentleyReturnErrorObject(DgnDbStatus::BadArg);
-
-        PageOptions pageOptions;
-        pageOptions.SetPageStart(0);
-        pageOptions.SetPageSize(0);
-        ContentCPtr content = m_presentationManager->GetContent(*descriptor, pageOptions).get();
-        if (content.IsNull())
-            return CreateBentleyReturnErrorObject(DgnDbStatus::BadArg);
-
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        content->AsJson().Accept(writer);
-        exportedJson = buffer.GetString();
-
-        return CreateBentleyReturnSuccessObject(toJsString(Env(), exportedJson));
-        };
-
     Napi::Value SaveChanges(Napi::CallbackInfo const& info)
         {
         OPTIONAL_ARGUMENT_STRING(0, description, Env().Undefined());
@@ -2136,7 +2092,6 @@ public:
             InstanceMethod("getDbGuid", &NativeDgnDb::GetDbGuid),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
-            InstanceMethod("getElementPropertiesForDisplay", &NativeDgnDb::GetElementPropertiesForDisplay),
             InstanceMethod("getGeoCoordinatesFromIModelCoordinates", &NativeDgnDb::GetGeoCoordsFromIModelCoords),
             InstanceMethod("getIModelCoordinatesFromGeoCoordinates", &NativeDgnDb::GetIModelCoordsFromGeoCoords),
             InstanceMethod("getIModelProps", &NativeDgnDb::GetIModelProps),
@@ -4874,6 +4829,34 @@ public:
         }
 };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct NativeDevTools : Napi::ObjectWrap<NativeDevTools>
+{
+private:
+static Napi::Value Signal(Napi::CallbackInfo const &info)
+    {
+    if (info.Length() == 0 || !info[0].IsNumber())
+        Napi::TypeError::New(info.Env(), "Must supply SignalType").ThrowAsJavaScriptException();
+    SignalType signalType = (SignalType) info[0].As<Napi::Number>().Int32Value();
+    bool status = SignalTestUtility::Signal(signalType);
+    return Napi::Number::New(info.Env(), status);
+    }
+
+public:
+NativeDevTools(Napi::CallbackInfo const &info) : Napi::ObjectWrap<NativeDevTools>(info) {}
+
+static void Init(Napi::Env env, Napi::Object exports)
+    {
+    Napi::HandleScope scope(env);
+    Napi::Function t = DefineClass(env, "NativeDevTools", {
+        StaticMethod("signal", &NativeDevTools::Signal),
+    });
+    exports.Set("NativeDevTools", t);
+    }
+};
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                    12/18
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -4991,7 +4974,7 @@ BentleyStatus JsInterop::SetCurrentClientRequestContextForWorkerThread(ObjectRef
     ObjectReferenceClaimCheck* current = (ObjectReferenceClaimCheck*) s_currentClientRequestContext->GetValueAsPointer();
     if (current != nullptr)
         delete current;
-    
+
     s_currentClientRequestContext->SetValueAsPointer(new ObjectReferenceClaimCheck(ctx));
 
     return BSISUCCESS;
@@ -5040,7 +5023,7 @@ static void callSetCurrentClientRequestContext(Napi::Env env, Napi::Value ctxObj
 static Napi::Object callGetCurrentClientRequestContext(Napi::Env env)
     {
     // WARNING! Caller must manage the HandleScope in which this runs!
-    
+
     auto method = s_logger.Get("getCurrentClientRequestContext").As<Napi::Function>();
     if (method == env.Undefined())
         {
@@ -5068,7 +5051,7 @@ JsInterop::ObjectReferenceClaimCheck JsInterop::GetCurrentClientRequestContextFo
     auto obj = callGetCurrentClientRequestContext(env);
 
     auto slotId = s_objRefVault.StoreObjectRef(obj);
-    
+
     return ObjectReferenceClaimCheck(slotId);
     }
 
@@ -5138,7 +5121,7 @@ static void doDeferredLogging()
     s_objRefVault.ReleaseUnreferencedObjects();
 
     BeSystemMutexHolder ___;
-    
+
     if (!s_deferredLogging)
         return;
 
@@ -5151,7 +5134,7 @@ static void doDeferredLogging()
 
         auto ctxObj = s_objRefVault.GetObject_Locked(env, contextAndMessages.first);
         callSetCurrentClientRequestContext(env, ctxObj);
-        
+
         for (auto const& lm : contextAndMessages.second)
             {
             logMessageToJs(lm.m_category.c_str(), lm.m_severity, lm.m_message.c_str());
@@ -5198,7 +5181,7 @@ void JsInterop::LogMessageInContext(Utf8StringCR category, NativeLogging::SEVERI
 
     auto ctxObj = s_objRefVault.GetObject_Locked(env, ctx.GetId());
     callSetCurrentClientRequestContext(env, ctxObj);
-    
+
     logMessageToJs(category.c_str(), sev, msg.c_str());
 
     callSetCurrentClientRequestContext(env, wasCtx);
@@ -5306,6 +5289,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
     SnapRequest::Init(env, exports);
     DisableNativeAssertions::Init(env, exports);
     NativeImportContext::Init(env, exports);
+    NativeDevTools::Init(env, exports);
 
 #ifdef NOT_UNTIL_ALL_BOXES_RUN_NODE_10_2
     napi_add_env_cleanup_hook(env, onNodeExiting, nullptr);
