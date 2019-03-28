@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="RoadRailPhysical" alias="rrphys" version="01.00.00" description="Base schema for the Road and Rail domains." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+<ECSchema schemaName="RoadRailPhysical" alias="rrphys" version="01.00.01" description="Base schema for the Road and Rail domains." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
     <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
     <ECSchemaReference name="LinearReferencing" version="01.00.00" alias="lr"/>
@@ -136,12 +136,17 @@
             </ILinearlyLocatedSegmentationHints>
         </ECCustomAttributes>
     </ECEntityClass>
+    <ECEnumeration typeName="DesignSpeedDefinition_UnitSystem" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="SI"/>
+        <ECEnumerator value="1" displayLabel="Imperial"/>
+    </ECEnumeration>
     <ECEntityClass typeName="DesignSpeedDefinition" modifier="Sealed"  displayLabel="Design Speed Definition" description="Standardized design-speed definition in the context of a Subject." >
         <BaseClass>bis:DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <ECProperty propertyName="DesignSpeed" typeName="double" kindOfQuantity="VELOCITY"/>
+        <ECProperty propertyName="UnitSystem" typeName="DesignSpeedDefinition_UnitSystem" displayLabel="Unit System applicable for this design speed definition"/>
     </ECEntityClass>
     <ECEntityClass typeName="DesignSpeed" modifier="Sealed"  displayLabel="Design Speed" description="Linearly located property of a Pathway specifying uniform design-speeds along it." >
         <BaseClass>DesignSpeedElement</BaseClass>

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/RoadRailPhysical/RoadDesignSpeed.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -99,21 +99,26 @@ struct EXPORT_VTABLE_ATTRIBUTE DesignSpeedDefinition : Dgn::DefinitionElement
 DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_DesignSpeedDefinition, Dgn::DefinitionElement);
 friend struct DesignSpeedDefinitionHandler;
 
+public:
+    enum class UnitSystem : int16_t { SI = 0, Imperial = 1 };
+
 protected:
     //! @private
     ROADRAILPHYSICAL_EXPORT explicit DesignSpeedDefinition(CreateParams const& params);
     //! @private
-    ROADRAILPHYSICAL_EXPORT explicit DesignSpeedDefinition(CreateParams const& params, double designSpeed);
+    ROADRAILPHYSICAL_EXPORT explicit DesignSpeedDefinition(CreateParams const& params, double designSpeed, UnitSystem unitSystem);
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(DesignSpeedDefinition)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(DesignSpeedDefinition)
 
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DefinitionModelCR scope, double speed);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DefinitionModelCR scope, double speed, UnitSystem unitSystem);
+    ROADRAILPHYSICAL_EXPORT static DesignSpeedDefinitionCPtr QueryByCode(Dgn::DefinitionModelCR model, double speed, UnitSystem unitSystem);
 
     double GetDesignSpeed() const { return GetPropertyValueDouble("DesignSpeed"); }
+    ROADRAILPHYSICAL_EXPORT UnitSystem GetUnitSystem() const;
 
-    ROADRAILPHYSICAL_EXPORT static DesignSpeedDefinitionPtr Create(Dgn::DefinitionModelCR model, double designSpeed);
+    ROADRAILPHYSICAL_EXPORT static DesignSpeedDefinitionPtr Create(Dgn::DefinitionModelCR model, double designSpeed, UnitSystem unitSystem);
 }; // DesignSpeedDefinition
 
 //=======================================================================================

@@ -73,7 +73,7 @@ TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
     ASSERT_EQ(portionCPtr->GetElementId(), leftRoadwayPtr->GetElementId());
     ASSERT_EQ(typicalSectionPointDefId, clPointDefPtr->GetElementId());
 
-    auto designSpeedDefPtr = DesignSpeedDefinition::Create(*standardsModel, 50.0);
+    auto designSpeedDefPtr = DesignSpeedDefinition::Create(*standardsModel, 50.0, DesignSpeedDefinition::UnitSystem::SI);
     ASSERT_TRUE(designSpeedDefPtr->Insert().IsValid());
 
     auto designSpeedPtr = DesignSpeed::Create(DesignSpeed::CreateFromToParams(*leftRoadwayPtr, *designSpeedDefPtr, 0, 150));

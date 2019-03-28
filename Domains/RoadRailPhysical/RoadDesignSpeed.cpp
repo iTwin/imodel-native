@@ -2,7 +2,7 @@
 |
 |     $Source: RoadDesignSpeed.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailPhysicalInternal.h"
@@ -55,29 +55,51 @@ DesignSpeedDefinition::DesignSpeedDefinition(CreateParams const& params):
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DesignSpeedDefinition::DesignSpeedDefinition(CreateParams const& params, double designSpeed):
+DesignSpeedDefinition::DesignSpeedDefinition(CreateParams const& params, double designSpeed, UnitSystem unitSystem):
     T_Super(params)
     {
     SetPropertyValue("DesignSpeed", designSpeed);
+    SetPropertyValue("UnitSystem", static_cast<int32_t>(unitSystem));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DesignSpeedDefinition::CreateCode(DefinitionModelCR scope, double speed)
+DgnCode DesignSpeedDefinition::CreateCode(DefinitionModelCR scope, double speed, UnitSystem unitSystem)
     {
+    Utf8String suffix = (unitSystem == UnitSystem::SI) ? "Km/h" : "mph";
     return CodeSpec::CreateCode(BRRP_CODESPEC_DesignSpeedDefinition, scope,
-        Utf8PrintfString("%.0f", speed));
+        Utf8PrintfString("%.0f %s", speed, suffix.c_str()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DesignSpeedDefinitionCPtr DesignSpeedDefinition::QueryByCode(DefinitionModelCR model, double speed, UnitSystem unitSystem)
+    {
+    auto defId = model.GetDgnDb().Elements().QueryElementIdByCode(CreateCode(model, speed, unitSystem));
+    if (!defId.IsValid())
+        return nullptr;
+
+    return Get(model.GetDgnDb(), defId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DesignSpeedDefinitionPtr DesignSpeedDefinition::Create(DefinitionModelCR model, double designSpeed)
+DesignSpeedDefinitionPtr DesignSpeedDefinition::Create(DefinitionModelCR model, double designSpeed, UnitSystem unitSystem)
     {
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, designSpeed));
+    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, designSpeed, unitSystem));
 
-    return new DesignSpeedDefinition(params, designSpeed);
+    return new DesignSpeedDefinition(params, designSpeed, unitSystem);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DesignSpeedDefinition::UnitSystem DesignSpeedDefinition::GetUnitSystem() const
+    {
+    return static_cast<UnitSystem>(GetPropertyValueInt32("UnitSystem"));
     }
 
 /*---------------------------------------------------------------------------------**//**
