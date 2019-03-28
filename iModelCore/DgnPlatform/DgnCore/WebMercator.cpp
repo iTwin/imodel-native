@@ -208,7 +208,7 @@ StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
     auto& units= m_root.GetDgnDb().GeoLocation();
     for (int i=0; i<4; ++i)
         {
-        if (SUCCESS != units.XyzFromLatLong(corners.m_pts[i], llPts[i]))
+        if (SUCCESS != units.XyzFromLatLongWGS84(corners.m_pts[i], llPts[i]))
             return ERROR; // only use re-projection if all 4 corners re-project properly
         }
 
