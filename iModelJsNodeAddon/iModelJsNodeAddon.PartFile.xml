@@ -64,7 +64,8 @@
     </Bindings>
   </Part>
 
-  <Part Name="iModelJsLib" ExcludeLibType="Static" BentleyBuildMakeFile="IModelJsNative.mke"  >
+  <Part Name="iModelJsLib" ExcludeLibType="Static" BentleyBuildMakeFile="IModelJsNative.mke">
+    <RequiredRepository>Thirdparty-breakpad_54fa71efbe50</RequiredRepository>
     <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
     <SubPart PartName="iModelJsNativeLibCommon"/>
     <SubPart PartName="iModelJsNativeLibSqlang"/>
@@ -73,6 +74,10 @@
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
       </Files>
+      <VendorNotices IfNotPresent="Continue">
+        Delivery/breakpad_notice.txt,
+        Delivery/libdisasm_notice.txt
+      </VendorNotices>
     </Bindings>
   </Part>
 

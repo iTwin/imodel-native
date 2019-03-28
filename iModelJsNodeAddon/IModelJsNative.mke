@@ -22,6 +22,23 @@ o = $(OutputRootDir)Build/imodeljs-addon/
 always:
     !~@mkdir $(o)
 
+# vvvv Hack for breakpad vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+# Assumes you have <RequiredRepository>Thirdparty-breakpad_54fa71efbe50</RequiredRepository>
+
+USING_BREAKPAD = 0
+
+%if ($(TARGET_PROCESSOR_ARCHITECTURE) == "x64")
+    USING_BREAKPAD = 1
+
+    always:
+        ~linkdir "$(BuildContext)VendorApi/breakpad=$(SrcRoot)thirdparty/breakpad_54fa71efbe50/include"
+        ~linkmultifiles "$(BuildContext)SubParts/Libs=$(SrcRoot)thirdparty/breakpad_54fa71efbe50/lib/*.lib"
+        ~linkfile "$(BuildContext)Delivery/breakpad_notice.txt=$(SrcRoot)thirdparty/breakpad_54fa71efbe50/share/breakpad/copyright"
+        ~linkfile "$(BuildContext)Delivery/libdisasm_notice.txt=$(SrcRoot)thirdparty/breakpad_54fa71efbe50/share/libdisasm/copyright"
+%endif
+
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 #
 # Burn the package version # into the code
 #
@@ -113,6 +130,12 @@ DLM_NO_CONTEXT_LINK = 1
 
 %else
     LINKER_LIBRARIES  + $(ContextSubpartsLibs)napi.lib
+
+    %if $(USING_BREAKPAD) == 1
+        LINKER_LIBRARIES  + $(ContextSubpartsLibs)libbreakpad.lib
+        LINKER_LIBRARIES  + $(ContextSubpartsLibs)libbreakpad_client.lib
+        LINKER_LIBRARIES  + $(ContextSubpartsLibs)libdisasm.lib
+    %endif
 
     %include $(sharedMki)linkLibrary.mki
 
