@@ -118,7 +118,7 @@ def callEachStrategy(args, config, verData):
             bdfPath = os.path.join(args.bdfdir, stratConfig['name'].lower() + '.xml')
             action = 'taglist -f ' + bdfPath
         elif 'build' == args.action:
-            action = 'build'
+            action = 'build --tmrbuild --noprompt'
         elif 'checkunused' == args.action:
             if not version or '99.99.99.99' == version:
                 print('WARNING: No valid version was computed for {0}, so it will NOT be validated.'.format(stratConfig['name']))
