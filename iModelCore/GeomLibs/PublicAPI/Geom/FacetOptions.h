@@ -38,9 +38,6 @@ protected:
    GEOMAPI_VIRTUAL double _GetChordTolerance () const = 0;
    GEOMAPI_VIRTUAL void _SetChordTolerance (double chordTolerance) = 0;
 
-   GEOMAPI_VIRTUAL double _GetMaxFacetWidth () const = 0;
-   GEOMAPI_VIRTUAL void _SetMaxFacetWidth (double maxWidth) = 0;
-
    GEOMAPI_VIRTUAL double _GetMaxEdgeLength () const = 0;
    GEOMAPI_VIRTUAL void _SetMaxEdgeLength (double maxEdgeLength) = 0;
 
@@ -144,11 +141,6 @@ public:
 GEOMDLLIMPEXP void SetChordTolerance (double chordTolerance);
 //! Get the ChordTolerance facet control. 
 GEOMDLLIMPEXP double GetChordTolerance () const;
-
-//! Sets maximum facet width.  As of now, only bodies faceted by Parasolid use this parameter.
-GEOMDLLIMPEXP void SetMaxFacetWidth (double maxWidth);
-//! Gets the maximum facet width.
-GEOMDLLIMPEXP double GetMaxFacetWidth () const;
 
 //! Set the MaxEdgeLength facet control. 
 GEOMDLLIMPEXP void SetMaxEdgeLength (double maxEdgeLength);

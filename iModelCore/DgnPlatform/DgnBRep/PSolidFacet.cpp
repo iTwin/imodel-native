@@ -1300,10 +1300,10 @@ void            FacetEntity (IBRepEntityCR in, IFacetOptionsR facetOptions)
         options.control.is_surface_plane_tol = PK_LOGICAL_true;
         }
 
-    if (0.0 != facetOptions.GetMaxFacetWidth ())
+    if (0.0 != facetOptions.GetMaxEdgeLength ())
         {
         DPoint3d maxWidthPoint;
-        maxWidthPoint.Init (facetOptions.GetMaxFacetWidth (), 0.0, 0.0);
+        maxWidthPoint.Init (facetOptions.GetMaxEdgeLength (), 0.0, 0.0);
         outputToSolidTransform.MultiplyMatrixOnly (maxWidthPoint);
         options.control.is_max_facet_width  = PK_LOGICAL_true;
         options.control.max_facet_width     = maxWidthPoint.Magnitude ();

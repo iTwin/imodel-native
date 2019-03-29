@@ -31,18 +31,6 @@ void IFacetOptions::SetChordTolerance (double chordTolerance) {_SetChordToleranc
 +--------------------------------------------------------------------------------------*/
 double IFacetOptions::GetChordTolerance () const {return _GetChordTolerance () * _GetToleranceDistanceScale();}
 
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    MattGooding     06/2012
-+--------------------------------------------------------------------------------------*/
-void IFacetOptions::SetMaxFacetWidth (double maxFacetWidth) {_SetMaxFacetWidth (maxFacetWidth);}
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    MattGooding     06/2012
-+--------------------------------------------------------------------------------------*/
-double IFacetOptions::GetMaxFacetWidth () const {return _GetMaxFacetWidth () * _GetToleranceDistanceScale (); }
-
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
@@ -432,8 +420,6 @@ struct FacetOptions : public IFacetOptions
 
     double m_chordTolerance;
 
-    double m_maxFacetWidth;
-
     double m_maxEdgeLength;
 
     double m_normalAngleTolerance;
@@ -500,12 +486,6 @@ struct FacetOptions : public IFacetOptions
             {return m_chordTolerance; }
    void _SetChordTolerance (double chordTolerance) override
             {m_chordTolerance = chordTolerance;}
-
-    // Get/Set pair for MaxFacetWidth.  Simple access to m_maxFacetWidth
-   double _GetMaxFacetWidth () const override
-            {return m_maxFacetWidth; }
-   void _SetMaxFacetWidth (double maxFacetWidth) override
-            {m_maxFacetWidth = maxFacetWidth;}
 
     // Get/Set pair for MaxEdgeLength.  Simple access to m_maxEdgeLength
    double _GetMaxEdgeLength () const override
@@ -685,7 +665,6 @@ struct FacetOptions : public IFacetOptions
 void _SetDefaults () override
     {
     m_chordTolerance = 0;
-    m_maxFacetWidth = 0.0;
     m_maxEdgeLength = 0;
     m_normalAngleTolerance = s_defaultAngleTolerance;
     m_maxPerBezier = 0;
@@ -767,7 +746,7 @@ bool params
     options->SetAngleTolerance (angleRadians);
     options->SetMaxEdgeLength (maxEdgeLength);
     if (triangulate)
-        options->SetCurvedSurfaceMaxPerFace(3); // <- NOTE: SetMaxPerFace is already 3 by default…
+        options->SetCurvedSurfaceMaxPerFace(3); // <- NOTE: SetMaxPerFace is already 3 by defaultï¿½
     options->SetNormalsRequired (normals);
     options->SetParamsRequired (params);
     return options;
