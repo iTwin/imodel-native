@@ -301,7 +301,7 @@ void UserChannel::lock( VoxelChannelData *vcd )
 {
 	if (!vcd) return;
 
-	if (m_flags && UserChannel_OOC)
+	if (m_flags & UserChannel_OOC)
 		m_ooc.create(this);			// create OOC file if it does not already exist
 
 	if (vcd->isOOC() && !vcd->isUniform())	// cleans up local data if it should be OOC
