@@ -320,6 +320,7 @@ struct Utf8String : public bastring
     Utf8String(const_iterator __beg, const_iterator __end) : bastring(__beg, __end){}
     Utf8String(reverse_iterator __beg, reverse_iterator __end) : bastring(__beg, __end){}
     Utf8String(const_reverse_iterator __beg, const_reverse_iterator __end) : bastring(__beg, __end){}
+    BENTLEYDLL_EXPORT Utf8String(struct Utf8PrintfString&&);
 
     //! Construct a Utf8String by converting from a wchar_t string.
     explicit Utf8String(WCharCP str) : bastring(){BeStringUtilities::WCharToUtf8(*this, str);}

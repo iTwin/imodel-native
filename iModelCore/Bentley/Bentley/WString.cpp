@@ -574,3 +574,9 @@ bool Utf8String::EndsWithIAscii(Utf8CP value) const
     return (0 == temp.CompareToIAscii(value));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2019
+//---------------------------------------------------------------------------------------
+Utf8String::Utf8String(Utf8PrintfString&& other) : bastring(std::move(other))
+    {
+    }

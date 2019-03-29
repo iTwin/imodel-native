@@ -206,7 +206,7 @@ public:
             T_Super::setValue(std::forward<M>(value));
         }
     void SetValue() {SetValue(folly::unit);}
-    folly::Future<T> GetFuture() {return m_future.then([](T&& result){return result;});}
+    folly::Future<T> GetFuture() {return m_future.then([](T&& result){return folly::Future<T>(result);});}
     void _Cancel() override {m_future.cancel();}
     bool IsCanceled() const {return m_cancelationToken->IsCanceled();}
     ICancelationTokenCR GetCancelationToken() const {return *m_cancelationToken;}
