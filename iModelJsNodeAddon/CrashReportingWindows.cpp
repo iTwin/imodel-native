@@ -45,18 +45,20 @@ static google_breakpad::CustomInfoEntry s_customInfoEntries[] = {
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void maintainDumpDir()
     {
-    s_dmpFileCount = 0;
-
     bvector<BeFileName> allFiles;
     BeDirectoryIterator::WalkDirsAndMatch(allFiles, s_config->m_crashDumpDir, L"*.dmp", false);
     s_dmpFileCount = allFiles.size();
-    if (s_dmpFileCount <= s_config->m_maxDumpsInDir)
+
+    // Make sure there is room for one more!
+    if (s_dmpFileCount <= (s_config->m_maxDumpsInDir - 1))
         return;
+    
     for (auto& file : allFiles)
         {
         BeFileName::BeDeleteFile(file);
+        if (--s_dmpFileCount <= s_config->m_maxDumpsInDir/2)
+            break;
         }
-    s_dmpFileCount= 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -137,19 +139,14 @@ static LONG CALLBACK vectoredExceptionHandler(PEXCEPTION_POINTERS exceptionInfo)
                               (code == DBG_PRINTEXCEPTION_WIDE_C);
 
     if (code == EXCEPTION_INVALID_HANDLE && s_exceptionHandler->get_consume_invalid_handle_exceptions())
-        {
-        s_processingException = false;
         return EXCEPTION_CONTINUE_EXECUTION;
-        }
 
     if (!is_debug_exception || s_exceptionHandler->get_handle_debug_exceptions())
         {
         s_exceptionHandler->WriteMinidumpForException(exceptionInfo);
 
         for (int i = 0; !s_dumpFinished && i < 100; ++i)
-            {
             ::Sleep(100);
-            }
         }
 
     s_processingException = false;
