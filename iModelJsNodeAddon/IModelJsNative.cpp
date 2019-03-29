@@ -4905,11 +4905,27 @@ static void setCrashReporting(Napi::CallbackInfo const& info)
 
     JsInterop::CrashReportingConfig ccfg;
     ccfg.m_crashDumpDir.SetNameA(getOptionalStringProperty(obj, "crashDumpDir", "").c_str());
-    ccfg.m_maxDumpsInDir            = getOptionalIntProperty(obj, "maxDumpsInDir", 5);
+    ccfg.m_maxDumpsInDir            = getOptionalIntProperty(obj, "maxDumpsInDir", 50);
     ccfg.m_maxUploadRetries         = getOptionalIntProperty(obj, "maxUploadRetries", 5);
     ccfg.m_uploadRetryWaitInterval  = getOptionalIntProperty(obj, "uploadRetryWaitInterval", 10000);
+    ccfg.m_maxReportsPerDay         = getOptionalIntProperty(obj, "maxReportsPerDay", 1000);
     ccfg.m_uploadUrl                = getOptionalStringProperty(obj, "uploadUrl", "");
     ccfg.m_wantFullMemory           = getOptionalBooleanProperty(obj, "wantFullMemory", false);
+    if (obj.Has("params"))
+        {
+        Napi::Array arr = obj.Get("params").As<Napi::Array>();
+        for (uint32_t arrIndex = 0; arrIndex < arr.Length(); ++arrIndex) {
+            Napi::Value arrValue = arr[arrIndex];
+            if (arrValue.IsObject())
+                {
+                auto item = arrValue.As<Napi::Object>();
+                auto name = getOptionalStringProperty(item, "name", "");
+                auto value = getOptionalStringProperty(item, "value", "");
+                if (!name.empty())
+                    ccfg.m_params.push_back(make_bpair(name, value));
+                }
+            }
+        }
     ccfg.m_needsVectorExceptionHandler = true;
     JsInterop::InitializeCrashReporting(ccfg);
     }

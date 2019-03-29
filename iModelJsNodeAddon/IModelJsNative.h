@@ -83,9 +83,11 @@ struct JsInterop
         {
         BeFileName m_crashDumpDir;
         Utf8String m_uploadUrl;
+        bvector<bpair<Utf8String,Utf8String>> m_params;
         size_t m_maxDumpsInDir;
         size_t m_maxUploadRetries;
         size_t m_uploadRetryWaitInterval;
+        size_t m_maxReportsPerDay;
         bool m_wantFullMemory;
         bool m_needsVectorExceptionHandler;
         };
