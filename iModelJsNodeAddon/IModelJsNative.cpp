@@ -315,7 +315,7 @@ struct ObjRefVault
 };
 
 static ObjRefVault s_objRefVault;
-static bvector<JsInterop::ObjectReferenceClaimCheck> s_deferredLoggingClientRequestActivityClaimChecks;
+static bset<JsInterop::ObjectReferenceClaimCheck> s_deferredLoggingClientRequestActivityClaimChecks;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
@@ -330,9 +330,6 @@ JsInterop::ObjectReferenceClaimCheck::ObjectReferenceClaimCheck()
 JsInterop::ObjectReferenceClaimCheck::ObjectReferenceClaimCheck(Utf8StringCR id) : m_id(id)
     {
     s_objRefVault.AddRefToObject(m_id);
-
-    if (JsInterop::IsMainThread())
-        s_objRefVault.ReleaseUnreferencedObjects();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -359,6 +356,14 @@ JsInterop::ObjectReferenceClaimCheck&  JsInterop::ObjectReferenceClaimCheck::ope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool JsInterop::ObjectReferenceClaimCheck::operator< (ObjectReferenceClaimCheck const& rhs) const
+    {
+    return m_id < rhs.m_id;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
 JsInterop::ObjectReferenceClaimCheck::ObjectReferenceClaimCheck(JsInterop::ObjectReferenceClaimCheck&& rhs) : m_id(rhs.m_id)
     {
     // rhs is going away. I take over its reference to the slot. I don't add another ref.
@@ -378,9 +383,7 @@ JsInterop::ObjectReferenceClaimCheck::~ObjectReferenceClaimCheck()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::ObjectReferenceClaimCheck::Dispose()
     {
-    JsInterop::DoDeferredLogging();
     s_objRefVault.ReleaseRefToObject(m_id);
-    s_objRefVault.ReleaseUnreferencedObjects();
     m_id.clear();
     }
 
@@ -5099,7 +5102,7 @@ static void pushDeferredLoggingMessage(Utf8CP category, NativeLogging::SEVERITY 
     lm.m_severity = sev;
     (*s_deferredLogging)[ctx.GetId()].push_back(lm);
 
-    s_deferredLoggingClientRequestActivityClaimChecks.push_back(ctx); // make sure this claim check (and the vault slot) remain alive until doDeferredLogging is run.
+    s_deferredLoggingClientRequestActivityClaimChecks.insert(ctx); // make sure this claim check (and the vault slot) remain alive until doDeferredLogging is run.
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5115,6 +5118,12 @@ static void deferLogging(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP ms
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void doDeferredLogging()
     {
+    if (!JsInterop::IsMainThread())
+        {
+        BeAssert(false && "deferred logging can be processed only on the main thread");
+        return;
+        }
+
     if (s_logger.Env().IsExceptionPending())
         return;
 

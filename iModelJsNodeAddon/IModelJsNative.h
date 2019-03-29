@@ -108,6 +108,8 @@ struct JsInterop
         ObjectReferenceClaimCheck(ObjectReferenceClaimCheck&&);
         ObjectReferenceClaimCheck& operator=(ObjectReferenceClaimCheck const&);
 
+        bool operator<(ObjectReferenceClaimCheck const&) const;
+
         Utf8StringCR GetId() const {return m_id;}
 
         void Dispose();
