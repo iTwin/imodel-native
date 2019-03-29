@@ -170,7 +170,7 @@
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(OutRoot)Winx64\BuildContexts\Grids\PublicAPI;$(IncludePath)</IncludePath>
+    <IncludePath>$(OutRoot)Winx64\BuildContexts\Grids\VendorAPI;$(OutRoot)Winx64\BuildContexts\Grids\PrivateAPI;$(OutRoot)Winx64\BuildContexts\Grids\PublicAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeBuildCommandLine>bb re Grids:Grids</NMakeBuildCommandLine>

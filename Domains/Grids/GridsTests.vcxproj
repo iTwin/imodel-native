@@ -73,6 +73,9 @@
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <IncludePath>$(SRCROOT)DgnDomains\Grids;$(OUTROOT)Winx64\BuildContexts\Grids\PublicAPI;$(OUTROOT)Winx64\BuildContexts\Grids\VendorAPI;$(IncludePath)</IncludePath>
+    <NMakeBuildCommandLine>bb re grids-tests &amp;&amp; bb re grids-gtest</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb re grids-tests -c &amp;&amp; bb re grids-gtest -c &amp;&amp; bb re grids-tests &amp;&amp; bb re grids-gtest</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb re grids-tests -c &amp;&amp; bb re grids-gtest -c</NMakeCleanCommandLine>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -119,26 +122,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="..\Tests\BuildTests.mke" />
-    <None Include="..\Tests\Prewire.mke" />
-    <None Include="..\Tests\RunTests.mke" />
+    <ClCompile Include="Tests\NonPublished\ArcGridSurfacePlacementStrategy_Test.cpp" />
+    <ClCompile Include="Tests\NonPublished\ElevationGrid_Test.cpp" />
+    <ClCompile Include="Tests\NonPublished\GridCurves_Test.cpp" />
+    <ClCompile Include="Tests\NonPublished\GridsStrategy_Test.cpp" />
+    <ClCompile Include="Tests\NonPublished\GridsTestFixtureBase.cpp" />
+    <ClCompile Include="Tests\NonPublished\Grids_Test.cpp" />
+    <ClCompile Include="Tests\NonPublished\LineGridSurfaceManipulationStrategy_Test.cpp" />
+    <ClCompile Include="Tests\NonPublished\SplineGridSurfacePlacementStrategy_Test.cpp" />
+    <ClCompile Include="Tests\NonPublished\TestUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\Tests\ignore_list.txt" />
+    <ClInclude Include="Tests\NonPublished\GridsTestFixtureBase.h" />
+    <ClInclude Include="Tests\NonPublished\TestUtils.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Tests\NonPublished\ArcGridSurfacePlacementStrategy_Test.cpp" />
-    <ClCompile Include="..\Tests\NonPublished\ElevationGrid_Test.cpp" />
-    <ClCompile Include="..\Tests\NonPublished\GridsStrategy_Test.cpp" />
-    <ClCompile Include="..\Tests\NonPublished\GridsTestFixtureBase.cpp" />
-    <ClCompile Include="..\Tests\NonPublished\Grids_Test.cpp" />
-    <ClCompile Include="..\Tests\NonPublished\LineGridSurfaceManipulationStrategy_Test.cpp" />
-    <ClCompile Include="..\Tests\NonPublished\SplineGridSurfacePlacementStrategy_Test.cpp" />
-    <ClCompile Include="..\Tests\NonPublished\TestUtils.cpp" />
+    <None Include="Tests\BuildTests.mke" />
+    <None Include="Tests\Prewire.mke" />
+    <None Include="Tests\RunTests.mke" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Tests\NonPublished\GridsTestFixtureBase.h" />
-    <ClInclude Include="..\Tests\NonPublished\TestUtils.h" />
+    <Text Include="Tests\ignore_list.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

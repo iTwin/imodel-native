@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/GridCurve.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,9 +43,11 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
     GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate(Dgn::DgnElementCR original) override;
 
+    BE_PROP_NAME (BubbleAtStart)
+    BE_PROP_NAME (BubbleAtEnd)
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridCurve, GRIDELEMENTS_EXPORT)
-    
+
     //---------------------------------------------------------------------------------------
     // Getters and setters
     //---------------------------------------------------------------------------------------
@@ -56,6 +58,22 @@ public:
     //! gets the ElementIds of intersecting GridSurfaces which creates this GridCurve
     //! @return a list of ElementIds of intersecting GridSurfaces
     GRIDELEMENTS_EXPORT bvector<Dgn::DgnElementId> GetIntersectingSurfaceIds() const;
+
+    //! Sets bubbleAtStart property for grid curve
+    //! @param bubbleAtStart a value to set
+    GRIDELEMENTS_EXPORT void SetBubbleAtStart (bool bubbleAtStart) { SetPropertyValue (prop_BubbleAtStart (), bubbleAtStart); };
+
+    //! Gets bubbleAtStart property for grid curve
+    //! @return true if grid curve should have a bubble at start
+    GRIDELEMENTS_EXPORT bool GetBubbleAtStart () const { return GetPropertyValueBoolean (prop_BubbleAtStart ()); };
+
+    //! Sets bubbleAtEnd property for grid curve
+    //! @param bubbleAtEnd a value to set
+    GRIDELEMENTS_EXPORT void SetBubbleAtEnd (bool bubbleAtEnd) { SetPropertyValue (prop_BubbleAtEnd (), bubbleAtEnd); };
+
+    //! Gets bubbleAtEnd property for grid curve
+    //! @return true if grid curve should have a bubble at end
+    GRIDELEMENTS_EXPORT bool GetBubbleAtEnd () const { return GetPropertyValueBoolean (prop_BubbleAtEnd ()); };
 
     //---------------------------------------------------------------------------------------
     // Geometry modification
