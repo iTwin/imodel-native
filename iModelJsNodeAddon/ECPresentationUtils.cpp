@@ -1714,19 +1714,19 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPr
 folly::Future<ECPresentationResult> ECPresentationUtils::GetDisplayLabel(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
-    folly::Future<Utf8String> future = folly::makeFuture<Utf8String>("");
-    if (params.isMember("key"))
-        {
-        ECClassId classId(BeJsonUtilities::UInt64FromValue(params["key"]["classId"]));
-        ECInstanceId instanceId(BeJsonUtilities::UInt64FromValue(params["key"]["instanceId"]));
-        future = manager.GetDisplayLabel(db, ECInstanceKey(classId, instanceId));
-        }
-    else if (params.isMember("keys"))
-        {
-        KeySetPtr keys = KeySet::FromJson(*connection, params["keys"]);
-        future = manager.GetDisplayLabel(db, *keys);
-        }
-    return future.then([](Utf8String label)
+    if (!params.isMember("key"))
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "key");
+
+    ECClassCP ecClass = IModelJsECPresentationSerializer::GetClassFromFullName(*connection, params["key"]["className"].asCString());
+    if (ecClass == nullptr)
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "key.className");
+
+    ECInstanceId id;
+    ECInstanceId::FromString(id, params["key"]["id"].asCString());
+    if (!id.IsValid())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "key.id");
+
+    return manager.GetDisplayLabel(db, ECInstanceKey(ecClass->GetId(), id)).then([](Utf8String label)
         {
         rapidjson::Document responseJson;
         responseJson.SetString(label.c_str(), responseJson.GetAllocator());
