@@ -6,7 +6,7 @@
 |       $Date: 2015/09/08 15:28:13 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -91,7 +91,7 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(std::vector<int>& f
 
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize);
 
-BENTLEY_SM_EXPORT bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, const PolyfaceQuery* meshP);
+BENTLEY_SM_EXPORT bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, const PolyfaceQuery* meshP, const bvector<bool>& isMask);
 BENTLEY_SM_EXPORT bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<size_t>& polyfaceIndices, ClipVectorCP clip, const PolyfaceQuery* meshP, const bvector<bool>& isMask);
 //void BuildSkirtMeshesForPolygonSet(bvector<bvector<PolyfaceHeaderPtr>>& skirts, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, DRange3d& nodeRange);
 
@@ -220,7 +220,7 @@ private:
     void OrderClipGeometryList();
 
     bool HasOnlyPolygons();
-    void GetClipsAsPolygons(bvector<bvector<DPoint3d>>& outPolygons);
+    void GetClipsAsPolygons(bvector<bvector<DPoint3d>>& outPolygons, bvector<bool>& isMask);
     void GetClipsAsVectors(bvector<ClipVectorPtr>& outVectors);
     void GetClipsAsSingleVector(ClipVectorPtr& outVector);
 
@@ -256,6 +256,7 @@ public:
     BENTLEY_SM_EXPORT RegionResult GetRegions(bvector<uint64_t>& ids, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces);
     BENTLEY_SM_EXPORT RegionResult GetExteriorRegion(PolyfaceHeaderPtr& mesh);
     BENTLEY_SM_EXPORT RegionResult GetInteriorRegion(PolyfaceHeaderPtr& mesh);
+    BENTLEY_SM_EXPORT RegionResult GetClippedMesh(PolyfaceHeaderPtr& mesh);
     BENTLEY_SM_EXPORT bool WasClipped();
 
     BENTLEY_SM_EXPORT void SelectRegions(RegionFilter filter, RegionFilterMode mode);

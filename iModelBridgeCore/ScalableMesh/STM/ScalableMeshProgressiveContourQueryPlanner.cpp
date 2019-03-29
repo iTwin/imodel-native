@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 void ContourQueryPlanner::AddQueriesInPlan(QueryPlan& nextQueryPlan, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, QueryProcessor& queryProcessor, IScalableMeshViewDependentMeshQueryParamsPtr queryParams, RequestedQuery& query) const
 {
-    auto handle = queryProcessor.AddQuery(nextQueryPlan.m_queryId, queryObjectP, nextQueryPlan.m_searchingNodes, nextQueryPlan.m_toLoadNodes, nextQueryPlan.m_loadTexture, nextQueryPlan.m_activeClips, nextQueryPlan.m_meshToQuery, nextQueryPlan.m_displayCacheManagerPtr);
+    auto handle = queryProcessor.AddQuery(nextQueryPlan.m_queryId, queryObjectP, nextQueryPlan.m_searchingNodes, nextQueryPlan.m_toLoadNodes, nextQueryPlan.m_loadTexture, nextQueryPlan.m_activeClips, nextQueryPlan.m_meshToQuery, nextQueryPlan.m_displayCacheManagerPtr, nextQueryPlan.m_overviewsToUpdate);
     bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>> emptyNodeSet;
     handle = queryProcessor.AddDependentQuery(handle, emptyNodeSet, emptyNodeSet, nextQueryPlan.m_loadTexture, ProcessingQuery<DPoint3d, Extent3dType>::Type::Contour);
     handle->m_alwaysReloadMeshNodes = true;

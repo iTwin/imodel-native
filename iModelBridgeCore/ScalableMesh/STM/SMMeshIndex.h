@@ -874,6 +874,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     atomic<size_t> m_nbClips;
     mutable atomic<uint64_t> m_updateClipTimestamp;
+    mutable atomic<bool> m_isClipping;
 
     std::mutex m_dtmLock;
     std::mutex m_displayMeshLock;
@@ -954,6 +955,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         StatusInt           SaveMeshToCloud(const WString& path, const bool& pi_pCompress);
 
         StatusInt           ChangeGeometricError(const WString& path, const bool& pi_pCompress, const double& newGeometricErrorValue);
+
+        BENTLEY_SM_EXPORT void DoParallelStitching(vector<SMMeshIndexNode<POINT, EXTENT>*>& nodesToStitch);
 
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false, vector<SMMeshIndexNode<POINT, EXTENT>*>* nodesToStitchInfo = nullptr);
         

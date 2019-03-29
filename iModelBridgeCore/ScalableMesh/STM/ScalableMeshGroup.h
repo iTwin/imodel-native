@@ -145,6 +145,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type) override;
 
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors, bvector<DPoint3d>& regionPts, DTMAnalysisType type) override;
+
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
 
         virtual StatusInt         _GetBoundary(bvector<DPoint3d>& boundary) override;
@@ -224,7 +226,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 #endif
         virtual Transform                          _GetReprojectionTransform() const override;
 
-        virtual SMStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution, bool reprojectElevation) override;
+        virtual SMStatus                           _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution, bool reprojectElevation, const BeFileName& dataSourceDir) override;
         virtual BentleyStatus                      _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName) override;
         virtual void                               _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
         virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override;
@@ -264,6 +266,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
             {
             return nullptr;
             }
+
+        virtual bool                                _LoadSources(IDTMSourceCollection& sources) const {return false; }
 
 
         //Data source synchronization functions.

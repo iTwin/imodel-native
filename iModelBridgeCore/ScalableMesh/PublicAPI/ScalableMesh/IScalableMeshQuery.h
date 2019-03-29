@@ -322,6 +322,8 @@ struct IScalableMeshMesh : public RefCountedBase
 
         virtual DTMStatusInt _GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm) = 0;
 
+        virtual DTMStatusInt _GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm, bool pointsOnly) = 0;
+
         virtual DTMStatusInt _GetBoundary(bvector<DPoint3d>& boundary) = 0;
 
 		virtual void _SetTransform(Transform newTransform) = 0;
@@ -355,6 +357,8 @@ struct IScalableMeshMesh : public RefCountedBase
         BENTLEY_SM_EXPORT DPoint3d* EditPoints();
 
         BENTLEY_SM_EXPORT DTMStatusInt GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm);
+
+        BENTLEY_SM_EXPORT DTMStatusInt GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm, bool pointsOnly);
 
         BENTLEY_SM_EXPORT DTMStatusInt GetBoundary(bvector<DPoint3d>& boundary);
 
@@ -658,6 +662,8 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
 
         virtual bool      _GetContours(bvector<bvector<DPoint3d>>& contours) = 0;
 
+        virtual IScalableMesh*    _GetScalableMesh() = 0;
+
     public : 
 
 
@@ -670,6 +676,8 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
         BENTLEY_SM_EXPORT void      SetIsInVideoMemory(bool isInVideoMemory);
 
         BENTLEY_SM_EXPORT bool      GetContours(bvector<bvector<DPoint3d>>& contours);
+
+        IScalableMesh*    GetScalableMesh();
 
         BENTLEY_SM_EXPORT static IScalableMeshCachedDisplayNodePtr Create(uint64_t nodeId, IScalableMesh* smP);
     };

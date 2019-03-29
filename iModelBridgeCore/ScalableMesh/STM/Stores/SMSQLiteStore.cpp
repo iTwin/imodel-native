@@ -225,7 +225,8 @@ SharedTransaction::SharedTransaction(SMSQLiteFilePtr fileP, bool readonly, bool 
     m_smSQLiteFile = fileP;
     if (m_smSQLiteFile.IsValid() && !m_smSQLiteFile->IsOpen() && m_smSQLiteFile->IsShared())
     {
-        m_smSQLiteFile->GetDb()->ReOpenShared(readonly, true);
+        bool openResult = m_smSQLiteFile->GetDb()->ReOpenShared(readonly, true);
+        assert(openResult == true);
         m_dbNeedsClosing = true;
         if (startTransaction)
         {

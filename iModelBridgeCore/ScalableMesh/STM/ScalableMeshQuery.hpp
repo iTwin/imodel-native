@@ -1638,7 +1638,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                 clipper.SetClipGeometry(idsForPrimitives, clips.get());
                 clipper.SetSourceMesh(meshPtr->GetPolyfaceQuery());
                 clipper.ComputeClip();
-                MeshClipper::RegionResult clipResult = clipper.GetInteriorRegion(polyface);
+                MeshClipper::RegionResult clipResult = clipper.GetClippedMesh(polyface);
                 if(clipResult == MeshClipper::RegionResult::Success || clipResult == MeshClipper::RegionResult::NoData)
                     {
                     // Clear mesh
