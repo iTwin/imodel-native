@@ -70,6 +70,8 @@ BentleyStatus Writer::WriteGltf()
     AddDefaultScene();
 
     // Binary data must be aligned to 32-bit boundary...
+    m_json["buffers"]["binary_glTF"]["byteLength"] = static_cast<uint32_t>(BinaryDataSize());
+
     Utf8String  sceneStr = Json::FastWriter().write(m_json);
     while (0 != sceneStr.size() % 4)
         sceneStr.append(1, ' ');
