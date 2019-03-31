@@ -435,7 +435,7 @@ TEST(AreaOffset, Fractal)
     bvector<DPoint3d> points;
     double chamferAngle = 0.85;
     double dzA = 0.1;
-    for (auto generatorFunction : { FractalA, Fractal0, Fractal1, Fractal2 })
+    for (auto generatorFunction : { FractalA, Fractal0, /* Fractal1, Fractal2 */})
         {
         for (double f : {0.5, -0.7})
             {
