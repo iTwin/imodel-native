@@ -161,12 +161,12 @@ TEST(CurveVector, XYOffset)
             Check::SaveTransformed (shape);
 
             bvector<CurveVectorPtr> debugGeometry;
-            auto result = CurveVectorXYOffsetContext::ComputeChoppedCenterRegionForRectangularBox(*shape, ax + bx, ay + by,
+            auto result = CurveVectorXYOffsetContext::ComputeCenterRegionForRectangularBox(*shape, ax + bx, ay + by,
                         Angle::DegreesToRadians (degrees), &debugGeometry);
             Check::Shift (0, 1.5 * range.YLength (), 0);
             for (auto &g : debugGeometry)
                 Check::SaveTransformed (g);
-            Check::Shift(0, 1.5 * range.YLength () * dy, 0);
+            Check::Shift(0, 1.5 * dy, 0);
             if (result.IsValid ())
                 {
                 static int s_showManyCuts = 0;
@@ -441,7 +441,7 @@ TEST(CurveVector, ChrisDFailure)
                     Transform::From(RotMatrix::FromAxisAndRotationAngle(2, Angle::DegreesToRadians(degrees))));
                 Check::SaveTransformed(shape);
                 bvector<CurveVectorPtr> debugGeometry;
-                auto result = CurveVectorXYOffsetContext::ComputeChoppedCenterRegionForRectangularBox(*shape, ax + bx, ay + by,
+                auto result = CurveVectorXYOffsetContext::ComputeCenterRegionForRectangularBox(*shape, ax + bx, ay + by,
                     Angle::DegreesToRadians(degrees), s_outputIntermediates ? &debugGeometry : nullptr);
                 double debugY = 1.1 * range.YLength();
                 Check::Shift(0, debugY, 0);
@@ -529,14 +529,14 @@ TEST(CurveVector, OffsetXYThinSection)
                 Check::SaveTransformed(textBox);
 
                 double dy = 1.5 * range.YLength();
-                for (auto degrees : { 4.0, 0.0, 1.0 /* -1.0, 5.0, 20.0, 40.0, 60.0 */, 20.0 })
+                for (auto degrees : { 0.0, 4.0, -10.0, 70.0, 40.0 })
                     {
                     SaveAndRestoreCheckTransform shifter(3.0 * range.XLength(), 0, 0);
                     auto rotatedChop = textBox->Clone(
                         Transform::From(RotMatrix::FromAxisAndRotationAngle(2, Angle::DegreesToRadians(degrees))));
                     Check::SaveTransformed(shape);
                     bvector<CurveVectorPtr> debugGeometry;
-                    auto result = CurveVectorXYOffsetContext::ComputeChoppedCenterRegionForRectangularBox(*shape, ax + bx, ay + by,
+                    auto result = CurveVectorXYOffsetContext::ComputeCenterRegionForRectangularBox(*shape, ax + bx, ay + by,
                         Angle::DegreesToRadians(degrees), s_outputIntermediates ? &debugGeometry : nullptr);
                     double debugY = 1.1 * range.YLength();
                     Check::Shift(0, debugY, 0);
