@@ -89,7 +89,6 @@
     </Part>
     
     <Part Name="BuildingSpatialHandlers" BentleyBuildMakeFile="Handlers/BuildingSpatialHandlers.mke">
-        <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx"/>
         <SubPart PartName="BuildingSpatialElements"/>
         <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
         <Bindings>
@@ -99,7 +98,7 @@
     </Part>
     
     <Part Name="BuildingSpatialDomain" BentleyBuildMakeFile="Domain/BuildingSpatialDomain.mke">
-        <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx"/>
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="BuildingSpatialSchema" />
         <SubPart PartName="BuildingSpatialHandlers"/>
         <Bindings>
