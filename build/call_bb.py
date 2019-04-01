@@ -152,13 +152,14 @@ def callEachStrategy(args, config, verData):
             bbEnv['INSTALLER_SKIP_VALIDATION'] = '1'
 
             action = 'buildinstallset'
+        elif 'diffreport' == args.action:
+            action = 'diffreport ' + args.bdf1 + ' ' + args.bdf2 + ' ' '--outputPath=' + args.diffOutDir
         else:
             action = args.action
 
         archArg = ('-a ' + (args.arch if args.arch else stratConfig['archs'])) if not noArch else ''
 
         cmd = getBBCmd() + ' -v {0} -s "{1}" {2} {3}'.format(args.verbosity, bbStrats, archArg, action)
-        
         print(cmd)
         cmdStartTime = time.time()
         status = subprocess.call(cmd, shell=True, env=(bbEnv if bbEnv else os.environ))
@@ -181,12 +182,15 @@ def main():
     defaultVersionsFile = os.path.join(os.environ['SYSTEM_ARTIFACTSDIRECTORY'], 'bdf', 'versions.json') if 'SYSTEM_ARTIFACTSDIRECTORY' in os.environ else ''
 
     argParser = argparse.ArgumentParser(description="Runs BB commands based on a JSON config file.")
-    argParser.add_argument("action",                                        help='One of pull|build|bdf|checkunused|createnugets|createinstallers')
+    argParser.add_argument("action",                                        help='One of pull|build|bdf|checkunused|createnugets|createinstallers|diffreport')
     argParser.add_argument("-c", "--config", default=defaultConfigFile,     help='Path to configuration file')
     argParser.add_argument("-r", "--versions", default=defaultVersionsFile, help='(!pull) Path to versions file')
     argParser.add_argument("-s", "--strat",                                 help='Overrides configuration to use a specific build strategy')
     argParser.add_argument("-a", "--arch",                                  help='Limits actions to strategies enabled for given arch')
     argParser.add_argument("-b", "--bdfdir",                                help='(bdf) Directory to write BDF files to -or- (pull) Directory where BDF files are stored')
+    argParser.add_argument("--bdf1",                                        help='(diffreport) Can be a bdf file or use (bdfserver:<BuildName>:<Version>) to pull from the BDF server')
+    argParser.add_argument("--bdf2",                                        help='(diffreport) Can be a bdf file or use (bdfserver:<BuildName>:<Version>) to pull from the BDF server')
+    argParser.add_argument("--diffOutDir",                                  help='(diffreport) Directory path to write the output of bdfs diff log generated in difflog file')
     argParser.add_argument("-v", "--verbosity", default='3')
 
     args = argParser.parse_args()
@@ -200,6 +204,9 @@ def main():
     print('    arch = ' + (args.arch if args.arch else '<None>'))
     print('    bdfdir = ' + (args.bdfdir if args.bdfdir else '<None>'))
     print('    verbosity = ' + (args.verbosity if args.verbosity else '<None>'))
+    print('    bdf1 = ' + (args.bdf1 if args.bdf1 else '<None>'))
+    print('    bdf2 = ' + (args.bdf2 if args.bdf2 else '<None>'))
+    print('    diffOutDir = ' + (args.diffOutDir if args.diffOutDir else '<None>'))
     print('==================================================')
 
     args.action = args.action.lower()
