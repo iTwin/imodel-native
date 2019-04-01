@@ -56,7 +56,12 @@ void AsyncTaskRunner::Stop ()
 void AsyncTaskRunner::WakeUp()
     {
     if (m_schedulerToHoldWhileStopping = m_scheduler.lock())
-        m_schedulerToHoldWhileStopping->Push(std::make_shared<AsyncTask>(1)); // Push dummy task to wake up thread runner.
+        {
+        // Push dummy task to wake up thread runner.
+        // This is only thread wakeup task, so do not attach to current parent thread.
+        // Attaching caused rare hangs when thread stopped before executing this dummy task, thus hanging it and parent.
+        m_schedulerToHoldWhileStopping->Push(std::make_shared<AsyncTask>(1), nullptr);
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
