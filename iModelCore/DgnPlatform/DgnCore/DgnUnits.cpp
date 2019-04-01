@@ -69,6 +69,28 @@ void DgnGeoLocation::SetGlobalOrigin(DPoint3dCR origin)
         m_gcs->SetGlobalOrigin(origin);
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnGeoLocation::XyzFromLatLongWGS84(DPoint3dR outXyz, GeoPointCR wgs84LatLong) const
+    {
+    auto* dgnGCS = GetDgnGCS();
+    if (nullptr == dgnGCS)
+        return BSIERROR;
+
+    if (!m_wgs84GCS.IsValid()) 
+        {
+        WString warningMsg;
+        StatusInt warning;
+        m_wgs84GCS = GeoCoordinates::BaseGCS::CreateGCS();        // WGS84 - used to convert Long/Latitude to ECEF.
+        m_wgs84GCS->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
+        }
+    GeoPoint dgnLatLong;
+    m_wgs84GCS->LatLongFromLatLong(dgnLatLong, wgs84LatLong, *dgnGCS);
+    return m_geoServices->UorsFromLatLong(outXyz, dgnLatLong, *dgnGCS);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -111,7 +133,7 @@ EcefLocation DgnGeoLocation::GetEcefLocation() const
         WString warningMsg;
         StatusInt warning;
         auto wgs84GCS = GeoCoordinates::BaseGCS::CreateGCS();        // WGS84 - used to convert Long/Latitude to ECEF.
-        wgs84GCS ->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
+        wgs84GCS->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
 
         GeoPoint originLatLong, yLatLong, tempLatLong;
         dgnGCS->LatLongFromUors(originLatLong, origin);
