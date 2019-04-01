@@ -3058,6 +3058,7 @@ Utf8CP Db::InterpretDbResult(DbResult result)
         case BE_SQLITE_ERROR_ChangeTrackError:                       return "BE_SQLITE_ERROR_ChangeTrackError";
         case BE_SQLITE_ERROR_InvalidRevisionVersion: return "BE_SQLITE_ERROR_InvalidRevisionVersion";
         case BE_SQLITE_ERROR_SchemaUpgradeRequired:  return "BE_SQLITE_ERROR_SchemaUpgradeRequired";
+        case BE_SQLITE_ERROR_SchemaUpgradeRecommended: return "BE_SQLITE_ERROR_SchemaUpgradeRecommended";
         case BE_SQLITE_ERROR_SchemaTooNew:           return "BE_SQLITE_ERROR_SchemaTooNew";
         case BE_SQLITE_ERROR_SchemaTooOld:           return "BE_SQLITE_ERROR_SchemaTooOld";
         case BE_SQLITE_ERROR_SchemaLockFailed:       return "BE_SQLITE_ERROR_ChangeTrackError";
@@ -3086,7 +3087,7 @@ Utf8CP Db::InterpretDbResult(DbResult result)
         case BE_SQLITE_CONSTRAINT_VTAB:       return "BE_SQLITE_CONSTRAINT_VTAB";
         }
 
-    return "<unkown result code>";
+    return "<unknown result code>";
     }
 
 
