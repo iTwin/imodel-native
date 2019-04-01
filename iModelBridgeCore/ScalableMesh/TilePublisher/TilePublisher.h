@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/TilePublisher.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -193,6 +193,7 @@ private:
     BatchIdMap              m_batchIds;
     std::FILE*              m_outputFile;
     DPoint3d                m_centroid;
+    Transform               m_tileTransform;
     TileMeshList            m_meshes;
     TileNodeCPtr            m_tile = nullptr;
     ByteStream              m_binaryData;
