@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #     $Source: DgnUtils/BuildingDgnUtils.mke $
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
 %include mdl.mki
 
@@ -25,20 +25,7 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 BuildingUtilsPublicApi = $(_MakeFilePath)PublicAPI/
 BuildingUtilsPrivateApi = $(_MakeFilePath)PrivateAPI/
-
-$(o)BuildingEvents$(oext) : $(_MakeFilePath)BuildingEvents.cpp ${MultiCompileDepends} \
-                            $(_MakeFilePath)PublicApi/BuildingEvents.h \
-                            $(_MakeFilePath)PublicApi/Interfaces/IToolSettingsChangedHandler.h \
-                            $(_MakeFilePath)PublicApi/Interfaces/ICreatePressedHandler.h \
-                            $(_MakeFilePath)PublicApi/Interfaces/IBuildingUpdatedHandler.h \
-                            $(_MakeFilePath)PublicApi/Interfaces/ISiteUpdatedHandler.h \
-                            $(_MakeFilePath)PublicApi/Interfaces/IElementChangedHandler.h \
-                            $(_MakeFilePath)PublicApi/Interfaces/IFrontStageValuesChangedHandler.h \
-                            $(_MakeFilePath)PublicApi/Interfaces/IFrontStageValuesRequestedHandler.h \
-                            $(_MakeFilePath)PublicApi/Interfaces/IResetPressedHandler.h
                             
-$(o)BuildingEventsHandler$(oext) : $(_MakeFilePath)BuildingEventsHandler.cpp ${MultiCompileDepends} \
-                                   $(_MakeFilePath)PrivateApi/BuildingEventsHandler.h
 
 $(o)DgnGeometryUtils$(oext) : $(_MakeFilePath)DgnGeometryUtils.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/DgnGeometryUtils.h
 
@@ -70,8 +57,6 @@ DLM_OBJECT_DEST = $(o)
 DLM_OBJECT_FILES = $(objs)
 
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnClientFx$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnView$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)

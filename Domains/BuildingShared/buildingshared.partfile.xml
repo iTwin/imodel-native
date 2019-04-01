@@ -49,14 +49,25 @@
 
     <Part Name="BuildingDgnUtils" BentleyBuildMakeFile="DgnUtils/BuildingDgnUtils.mke">
         <SubPart PartName="BuildingSharedApi" />
-        <SubPart PartName="DgnClientFxPublicApi" Repository="DgnClientFx" PartFile="DgnClientFx" />
-        <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx" />
         <SubPart PartName="RoadRailPhysical"   PartFile="RoadRailPhysical"  Repository="DgnDomains-RoadRailPhysical" />
         <SubPart PartName="BuildingUnits" />
         <SubPart PartName="BuildingUtils" />
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingDgnUtils$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)BuildingDgnUtils$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="BuildingDgnViewUtils" BentleyBuildMakeFile="DgnViewUtils/BuildingDgnViewUtils.mke">
+        <SubPart PartName="BuildingSharedApi" />
+        <SubPart PartName="DgnClientFxPublicApi" Repository="DgnClientFx" PartFile="DgnClientFx" />
+        <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx" />
+        <SubPart PartName="RoadRailPhysical"   PartFile="RoadRailPhysical"  Repository="DgnDomains-RoadRailPhysical" />
+        <SubPart PartName="BuildingUnits" />
+        <SubPart PartName="BuildingUtils" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingDgnViewUtils$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingDgnViewUtils$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
@@ -72,6 +83,7 @@
     <Part Name="BuildingSharedBundle">
         <SubPart PartName="BuildingUtils"/>
         <SubPart PartName="BuildingDgnUtils" />
+        <SubPart PartName="BuildingDgnViewUtils" />
         <SubPart PartName="GeometryManipulationStrategies"/>
         <SubPart PartName="DgnElementManipulationStrategies"/>
     </Part>

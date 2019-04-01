@@ -1,17 +1,16 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnUtils/PublicApi/Interfaces/ICreatePressedHandler.h $
+|     $Source: DgnViewUtils/PublicApi/interfaces/ISiteUpdatedHandler.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
-struct ICreatePressedHandler
+struct ISiteUpdatedHandler : IElementChangedHandler
     {
-    virtual void OnCreatePressed(JsonValueCR jsonValue, DgnClientFx::MessageResponse& response) = 0;
     };
 
 END_BUILDING_SHARED_NAMESPACE

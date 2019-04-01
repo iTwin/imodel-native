@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/BuildingShared/BuildingSharedMacros.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,6 +38,12 @@
 #define BUILDINGSHAREDDGNUTILS_EXPORT EXPORT_ATTRIBUTE
 #else
 #define BUILDINGSHAREDDGNUTILS_EXPORT IMPORT_ATTRIBUTE
+#endif
+
+#if defined (__BUILDINGSHAREDDGNVIEWUTILS_BUILD__)
+#define BUILDINGSHAREDDGNVIEWUTILS_EXPORT EXPORT_ATTRIBUTE
+#else
+#define BUILDINGSHAREDDGNVIEWUTILS_EXPORT IMPORT_ATTRIBUTE
 #endif
 
 #if defined (__GEOMETRYMANIPULATIONSTRATEGIES_BUILD__)
