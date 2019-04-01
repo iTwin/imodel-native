@@ -613,7 +613,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     
     CreateDataIndex(pDataIndex, true, splitThreshold);
 
-    m_dataIndex = pDataIndex;
+    m_pDataIndex = pDataIndex;
 
     size_t previousDepth = pDataIndex->GetDepth();
     pDataIndex->SetIsTerrain(true);
@@ -1209,9 +1209,9 @@ StatusInt IScalableMeshSourceCreator::Impl::GetLocalSourceTextureProvider(ITextu
             destinationGcsPtr = m_gcs.GetGeoRef().GetBasePtr();
             }        
         
-        HASSERT(m_dataIndex != nullptr);
+        HASSERT(m_pDataIndex != nullptr);
           
-        DRange2d extentInTargetCS(DRange2d::From(m_dataIndex->GetContentExtent()));
+        DRange2d extentInTargetCS(DRange2d::From(m_pDataIndex->GetContentExtent()));
 
         pRaster = RasterUtilities::LoadRaster(path, destinationGcsPtr, extentInTargetCS, replacementGcsPtr);
 
@@ -1250,7 +1250,7 @@ StatusInt IScalableMeshSourceCreator::Impl::GetRasterSources(bvector<IDTMSource*
 
 StatusInt IScalableMeshSourceCreator::Impl::GetTextureProvider(ITextureProviderPtr& textureProviderPtr)
     {
-    return GetTextureProvider(textureProviderPtr, m_scmPtr, m_dataIndex);
+    return GetTextureProvider(textureProviderPtr, m_scmPtr, m_pDataIndex);
     }
 
 
@@ -1258,8 +1258,8 @@ StatusInt IScalableMeshSourceCreator::Impl::GetTextureProvider(ITextureProviderP
 {
     bvector<IDTMSource*> filteredSources;
 
-    if (m_dataIndex == nullptr && dataIndexPtr != nullptr)
-        m_dataIndex = dataIndexPtr;
+    if (m_pDataIndex == nullptr && dataIndexPtr != nullptr)
+        m_pDataIndex = dataIndexPtr;
     if (m_scmPtr == nullptr && smPtr != nullptr)
         m_scmPtr = smPtr;
 

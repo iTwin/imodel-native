@@ -90,14 +90,14 @@ class ScalableMeshDb : public BeSQLite::Db
         SMSQLiteFile*   m_smFile; 
         BESQL_VERSION_STRUCT GetCurrentVersion() const;
         Savepoint* m_currentSavepoint;
+        BENTLEY_NAMESPACE_NAME::Utf8String m_path;
 
 #ifndef NDEBUG
         bool       m_canReopenShared = true;
 #endif
 
-#ifndef VANCOUVER_API
-        BENTLEY_NAMESPACE_NAME::Utf8String m_path;
-#endif
+        
+
 
         static bool s_enableSharedDatabase;
 
@@ -117,7 +117,7 @@ class ScalableMeshDb : public BeSQLite::Db
 
     public:
 
-        ScalableMeshDb(SQLDatabaseType type, SMSQLiteFile* smFile) : m_type(type), m_smFile(smFile), m_currentSavepoint(nullptr){}
+        ScalableMeshDb(SQLDatabaseType type, SMSQLiteFile* smFile, BENTLEY_NAMESPACE_NAME::Utf8String& path) : m_type(type), m_smFile(smFile), m_path(path), m_currentSavepoint(nullptr){}        
 
 #ifndef VANCOUVER_API
         //Offer functions to more explicitly deal with shared db's; open/close after specific transactions, allow implicit transactions, busy-retry
@@ -126,7 +126,7 @@ class ScalableMeshDb : public BeSQLite::Db
         BENTLEY_SM_EXPORT bool ReOpenShared(bool readonly, bool allowBusyRetry);
         BENTLEY_SM_EXPORT bool StartTransaction();
         BENTLEY_SM_EXPORT bool CommitTransaction();
-        BENTLEY_SM_EXPORT void CloseShared(bool& wasTransactionAbandoned);
+        BENTLEY_SM_EXPORT void CloseShared(bool& wasTransactionAbandoned);        
 #ifndef NDEBUG		
         BENTLEY_SM_EXPORT void SetCanReopenShared(bool canReopenShared);
 #endif		

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/GTests/SMUnitTestGroundDetection.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -146,7 +146,7 @@ void GroundDetectionTester::DoDetection()
     BeFileName groundOutputFileName(BeFileName::GetFileNameWithoutExtension(groundOutputName.c_str()).c_str());
     BeFileName outputDirName(outputDir.c_str());
     
-    SMStatus status = IScalableMeshDetectGround::DetectGroundForRegion(m_smPtr, groundOutputFileName, outputDirName, m_groundArea, groundId, pSmQuickGroundPreviewer, destinationGcs, true);
+    SMStatus status = IScalableMeshDetectGround::DetectGroundForRegion(m_smPtr, groundOutputFileName, outputDirName, m_groundArea, groundId, pSmQuickGroundPreviewer, destinationGcs, true, true, featureFilePath);
     EXPECT_EQ(status == S_SUCCESS, true);    
     
     Utf8String coverageName(groundOutputName.c_str());

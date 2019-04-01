@@ -150,6 +150,7 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
     TerrainModel::BcDTMPtr m_dtm; //Maximum 5M points bcDtm representation of a ScalableMesh
     bool                   m_tryCreateDtm; 
 	bool m_useBcLibDrape;
+    bvector<DPoint3d> m_bounds;
 
 
     protected:
@@ -191,6 +192,8 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
         void SetStorageToUors(DMatrix4d& storageToUors);
 
 		void SetUseBcLibForDraping(bool useBcLib);
+
+        RefCountedPtr<ScalableMeshDTM> ExtractRegion(bvector<DPoint3d>& region);
     };
 /*----------------------------------------------------------------------------+
 |Class ScalableMesh
@@ -220,6 +223,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         HFCPtr<MeshIndexType>          m_scmTerrainIndexPtr; //Optional. Scalable Mesh representing only terrain
         IScalableMeshPtr               m_terrainP; 
         RefCountedPtr<ScalableMeshDTM>  m_scalableMeshDTM[DTMAnalysisType::Qty];
+        bvector<RefCountedPtr<ScalableMeshDTM>> m_scalableMeshDTMRegions;
 
         IScalableMeshPtr m_groupP;
 
@@ -297,6 +301,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type) override;
+
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors, bvector<DPoint3d>& regionPts, DTMAnalysisType type) override;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
 
@@ -379,7 +385,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 #endif
         virtual Transform                          _GetReprojectionTransform() const override;
 
-        virtual SMStatus                           _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution, bool reprojectElevation) override;
+        virtual SMStatus                           _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution, bool reprojectElevation, const BeFileName& dataSourceDir) override;
         virtual BentleyStatus                      _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName) override;
         virtual void                               _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
         virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override;        
@@ -424,6 +430,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 #ifdef WIP_MESH_IMPORT
         virtual void _GetAllTextures(bvector<IScalableMeshTexturePtr>& textures) override;
 #endif
+
+        virtual bool                   _LoadSources(IDTMSourceCollection& sources) const override;
 
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override; 
@@ -518,6 +526,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type) override;
+
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors, bvector<DPoint3d>& regionPts, DTMAnalysisType type) override;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) override;
 
@@ -643,7 +653,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             return ERROR;
             }
 #endif
-        virtual SMStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution, bool reprojectElevation) override
+        virtual SMStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution, bool reprojectElevation, const BeFileName& dataSourceDir) override
             {
             return SMStatus::S_ERROR;
             }
