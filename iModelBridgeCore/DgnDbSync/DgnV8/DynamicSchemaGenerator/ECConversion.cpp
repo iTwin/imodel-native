@@ -1471,7 +1471,8 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
          
          if (coreSchema.IsValid())
             {
-             if (ECN::ECObjectsStatus::Success != schema->AddReferencedSchema(*coreSchema))
+             ECN::ECObjectsStatus stat = schema->AddReferencedSchema(*coreSchema);
+             if (ECN::ECObjectsStatus::Success != stat && ECN::ECObjectsStatus::NamedItemAlreadyExists != stat)
                  LOG.warning("Error adding a reference to the core custom attributes schema.");
              else
                 {

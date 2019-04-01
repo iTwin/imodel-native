@@ -910,6 +910,10 @@ void ConvertDetailingSymbolExtension::RelateViewAttachmentLabelToViewAttachment(
             return converter.GetDgnDb().Elements().Get<Sheet::ViewAttachment>(entry->GetElementId()).IsValid();
             };
     auto dgnAttachmentElementMapping = converter.FindFirstElementMappedTo(attachmentParentModelId, attachmentElementId, &detectViewAttachment);
+    if (!dgnAttachmentElementMapping.IsValid())
+        {
+        return;//VSTS#88429, prevent silent crash.
+        }
     auto viewAttachmentElementId = dgnAttachmentElementMapping.GetElementId();
     if (!viewAttachmentElementId.IsValid())
         {

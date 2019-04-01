@@ -1764,9 +1764,9 @@ void RootModelConverter::_FinishConversion()
 
     for (auto f : m_finishers)
         {
-        LOG.tracev ("calling TFHandlerConverterExtension::_OnFinishConversion for %p", f);
+        LOG.tracev ("calling DgnDbElementHandlerExtension::_OnFinishConversion for %p", f);
         f->_OnFinishConversion(*this);
-        LOG.tracev ("called TFHandlerConverterExtension::_OnFinishConversion for %p", f);
+        LOG.tracev ("called DgnDbElementHandlerExtension::_OnFinishConversion for %p", f);
         }
 
     for (auto xdomain : XDomainRegistry::s_xdomains)
