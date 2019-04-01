@@ -1471,7 +1471,8 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
          
          if (coreSchema.IsValid())
             {
-             if (ECN::ECObjectsStatus::Success != schema->AddReferencedSchema(*coreSchema))
+             ECN::ECObjectsStatus stat = schema->AddReferencedSchema(*coreSchema);
+             if (ECN::ECObjectsStatus::Success != stat && ECN::ECObjectsStatus::NamedItemAlreadyExists != stat)
                  LOG.warning("Error adding a reference to the core custom attributes schema.");
              else
                 {
@@ -3643,7 +3644,8 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
     for (DgnV8Api::RelationshipEntry const& entry : relationships)
         {
         //schemas not captured in sync info are system schemas which we don't consider during conversion
-        if (DynamicSchemaGenerator::ExcludeSchemaFromBisification(Utf8String(entry.RelationshipSchemaName.c_str())))
+        Utf8String relationshipSchemaName(entry.RelationshipSchemaName.c_str());
+        if (DynamicSchemaGenerator::ExcludeSchemaFromBisification(relationshipSchemaName) || !_ShouldImportSchema(relationshipSchemaName, *v8Element.GetDgnModelP()))
             continue;
 
         V8ECInstanceKey v8SourceKey(ECClassName(Utf8String(entry.SourceSchemaName.c_str()).c_str(), Utf8String(entry.SourceClassName.c_str()).c_str()),
