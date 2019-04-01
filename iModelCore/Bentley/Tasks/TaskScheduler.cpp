@@ -2,7 +2,7 @@
  |
  |     $Source: Tasks/TaskScheduler.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -31,7 +31,7 @@ TaskScheduler::~TaskScheduler()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TaskScheduler::ResetOnEmptyTask ()
     {
-    m_onEmptyTask = std::make_shared<PackagedAsyncTask<void>> ([=] {});
+    m_onEmptyTask = std::make_shared<PackagedAsyncTask<void>> ([=] {}, 1);
     }
 
 /*--------------------------------------------------------------------------------------+

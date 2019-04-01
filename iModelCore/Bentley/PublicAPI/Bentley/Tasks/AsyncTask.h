@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/Bentley/Tasks/AsyncTask.h $
  |
- |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,6 +13,7 @@
 #include <functional>
 #include <Bentley/BeDebugUtilities.h>
 #include <Bentley/BeThread.h>
+#include <set>
 
 BEGIN_BENTLEY_TASKS_NAMESPACE
 
@@ -179,6 +180,8 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
 
     private:
         static bool s_stackInfoEnabled;
+        static BeMutex s_activeTasksMutex;
+        static std::set<AsyncTask*> s_activeTasks;
 
     private:
         BeMutex m_mutex;
@@ -211,6 +214,10 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
 
         void NotifyOnCompletedListeners ();
 
+        static Utf8String GetTaskDescription(AsyncTask& task, ITaskScheduler* scheduler, int padding);
+        static bool IsTaskReferencedInSubTasks(AsyncTask& refTask, AsyncTask& inTask);
+        static std::set<AsyncTask*> FilterTasks(std::set<AsyncTask*> tasks);
+
     protected:
         BENTLEYDLL_EXPORT virtual void _OnExecute ();
 
@@ -226,7 +233,10 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
         BENTLEYDLL_EXPORT static void PushTaskToDefaultSheduler(std::shared_ptr<AsyncTask> task);
 
     public:
-        BENTLEYDLL_EXPORT AsyncTask ();
+        //! Create async task. Usually derived class is used for this.
+        //! @param stackDepth - used to control what stack frame info is captured for debugging when SetStackInfoEnabled(true) is called.
+        //! 0 will capture function that calls AsyncTask constructor, 1 will capture funciton above that, and so on.
+        BENTLEYDLL_EXPORT AsyncTask (size_t stackDepth = 0);
 
         BENTLEYDLL_EXPORT virtual ~AsyncTask ();
 
@@ -237,7 +247,7 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
         template<typename C>
         static std::shared_ptr<PackagedAsyncTask<void>> WhenAll(C tasks)
             {
-            auto whenAll = std::make_shared<PackagedAsyncTask<void>>([]{});
+            auto whenAll = std::make_shared<PackagedAsyncTask<void>>([]{}, 1);
             for (auto task : tasks)
                 whenAll->AddSubTask(task);
 
@@ -272,11 +282,14 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
         //! This will only work on DEBUG builds.
         BENTLEYDLL_EXPORT static void SetStackInfoEnabled(bool enabled);
 
-        //! Get caller stack frame info for debugging if available.
+        //! Get caller stack frame info for debugging if available. Needs to be enabled with SetStackInfoEnabled().
         BENTLEYDLL_EXPORT BeDebugUtilities::StackFrameInfo* GetStackInfo() const;
 
         //! Internal. Used to set caller stack information for task.
         BENTLEYDLL_EXPORT void SetStackInfo(size_t frameIndex);
+
+        //! Internal. Get debug summary for all currently active tasks. Needs to be enabled with SetStackInfoEnabled().
+        BENTLEYDLL_EXPORT static Utf8String DebugActiveTasks();
     };
     
 //=======================================================================================
@@ -294,7 +307,7 @@ struct PackagedAsyncTask : AsyncTask
         T m_result;
 
     public:
-        PackagedAsyncTask (const std::function<T (void)>& taskCallback) : AsyncTask (), m_taskCallback (taskCallback), m_result ()
+        PackagedAsyncTask (const std::function<T (void)>& taskCallback, size_t stackDepth = 0) : AsyncTask (++stackDepth), m_taskCallback (taskCallback), m_result ()
             {
             }
 
@@ -313,8 +326,7 @@ struct PackagedAsyncTask : AsyncTask
         //! Execute new task with callback code in default thread after this task is finished.
         std::shared_ptr<PackagedThenAsyncTask<R, T>> Then (const std::function<R (T&)>& taskCallback)
             {
-            auto task = std::make_shared<PackagedThenAsyncTask<R, T>> (taskCallback, std::shared_ptr <T> (shared_from_this (), &m_result));
-            task->SetStackInfo(1);
+            auto task = std::make_shared<PackagedThenAsyncTask<R, T>> (taskCallback, std::shared_ptr <T> (shared_from_this (), &m_result), 1);
             AddThenTask (task);
             return task;
             }
@@ -323,8 +335,7 @@ struct PackagedAsyncTask : AsyncTask
         //! Execute new task with callback code in sheduler/thread/pool after this task is finished.
         std::shared_ptr<PackagedThenAsyncTask<R, T>> Then (std::shared_ptr<ITaskScheduler> scheduler, const std::function<R (T&)>& taskCallback)
             {
-            auto task = std::make_shared<PackagedThenAsyncTask<R, T>> (taskCallback, std::shared_ptr <T> (shared_from_this (), &m_result));
-            task->SetStackInfo(1);
+            auto task = std::make_shared<PackagedThenAsyncTask<R, T>> (taskCallback, std::shared_ptr <T> (shared_from_this (), &m_result), 1);
             AddThenTask (task, scheduler);
             return task;
             }
@@ -332,8 +343,7 @@ struct PackagedAsyncTask : AsyncTask
         //! Execute new task with callback code in sheduler/thread/pool after this task is finished.
         std::shared_ptr<PackagedThenAsyncTask<void, T>> Then (std::shared_ptr<ITaskScheduler> scheduler, const std::function<void (T&)>& taskCallback)
             {
-            auto task = std::make_shared<PackagedThenAsyncTask<void, T>> (taskCallback, std::shared_ptr <T> (shared_from_this (), &m_result));
-            task->SetStackInfo(1);
+            auto task = std::make_shared<PackagedThenAsyncTask<void, T>> (taskCallback, std::shared_ptr <T> (shared_from_this (), &m_result), 1);
             AddThenTask (task, scheduler);
             return task;
             }
@@ -341,8 +351,7 @@ struct PackagedAsyncTask : AsyncTask
         //! Execute new task with callback code in default thread after this task is finished.
         std::shared_ptr<PackagedThenAsyncTask<void, T>> Then (const std::function<void (T&)>& taskCallback)
             {
-            auto task = std::make_shared<PackagedThenAsyncTask<void, T>> (taskCallback, std::shared_ptr <T> (shared_from_this (), &m_result));
-            task->SetStackInfo(1);
+            auto task = std::make_shared<PackagedThenAsyncTask<void, T>> (taskCallback, std::shared_ptr <T> (shared_from_this (), &m_result), 1);
             AddThenTask (task);
             return task;
             }
@@ -358,7 +367,7 @@ struct PackagedAsyncTask<void> : AsyncTask
         std::function<void (void)> m_taskCallback;
 
     public:
-        PackagedAsyncTask (const std::function<void (void)>& taskCallback) : AsyncTask (), m_taskCallback (taskCallback)
+        PackagedAsyncTask (const std::function<void (void)>& taskCallback, size_t stackDepth = 0) : AsyncTask (++stackDepth), m_taskCallback (taskCallback)
             {
             }
 
@@ -371,8 +380,7 @@ struct PackagedAsyncTask<void> : AsyncTask
         //! Execute new task with callback code in default thread after this task is finished.
         std::shared_ptr<PackagedAsyncTask<R>> Then (const std::function<R (void)>& taskCallback)
             {
-            auto task = std::make_shared<PackagedAsyncTask<R>> (taskCallback);
-            task->SetStackInfo(1);
+            auto task = std::make_shared<PackagedAsyncTask<R>> (taskCallback, 1);
             AddThenTask (task);
             return task;
             }
@@ -381,8 +389,7 @@ struct PackagedAsyncTask<void> : AsyncTask
         //! Execute new task with callback code in sheduler/thread/pool after this task is finished.
         std::shared_ptr<PackagedAsyncTask<R>> Then (std::shared_ptr<ITaskScheduler> scheduler, const std::function<R (void)>& taskCallback)
             {
-            auto task = std::make_shared<PackagedAsyncTask<R>> (taskCallback);
-            task->SetStackInfo(1);
+            auto task = std::make_shared<PackagedAsyncTask<R>> (taskCallback, 1);
             AddThenTask (task, scheduler);
             return task;
             }
@@ -390,8 +397,7 @@ struct PackagedAsyncTask<void> : AsyncTask
         //! Execute new task with callback code in default thread after this task is finished.
         std::shared_ptr<PackagedAsyncTask<void>> Then (const std::function<void (void)>& taskCallback)
             {
-            auto task = std::make_shared<PackagedAsyncTask<void>> (taskCallback);
-            task->SetStackInfo(1);
+            auto task = std::make_shared<PackagedAsyncTask<void>> (taskCallback, 1);
             AddThenTask (task);
             return task;
             }
@@ -399,8 +405,7 @@ struct PackagedAsyncTask<void> : AsyncTask
         //! Execute new task with callback code in sheduler/thread/pool after this task is finished.
         std::shared_ptr<PackagedAsyncTask<void>> Then (std::shared_ptr<ITaskScheduler> scheduler, const std::function<void (void)>& taskCallback)
             {
-            auto task = std::make_shared<PackagedAsyncTask<void>> (taskCallback);
-            task->SetStackInfo(1);
+            auto task = std::make_shared<PackagedAsyncTask<void>> (taskCallback, 1);
             AddThenTask (task, scheduler);
             return task;
             }
@@ -421,12 +426,12 @@ struct PackagedThenAsyncTask : PackagedAsyncTask<T>
         std::function<T (P&)> m_taskCallback;
 
     public:
-        PackagedThenAsyncTask (const std::function<T (P&)>& taskCallback, std::shared_ptr<P> parentResult)
-            : PackagedAsyncTask<T> (nullptr),
+        PackagedThenAsyncTask (const std::function<T (P&)>& taskCallback, std::shared_ptr<P> parentResult, size_t stackDepth = 0)
+            : PackagedAsyncTask<T> (nullptr, ++stackDepth),
                 m_taskCallback (taskCallback),
                 m_parentResult (parentResult)
             {
-                }
+            }
 
         virtual void _OnExecute ()
             {
@@ -446,8 +451,8 @@ struct PackagedThenAsyncTask<void, P> : PackagedAsyncTask<void>
         std::function<void (P&)> m_taskCallback;
 
     public:
-        PackagedThenAsyncTask (const std::function<void (P&)>& taskCallback, std::shared_ptr<P> parentResult)
-            : PackagedAsyncTask<void> (nullptr),
+        PackagedThenAsyncTask (const std::function<void (P&)>& taskCallback, std::shared_ptr<P> parentResult, size_t stackDepth = 0)
+            : PackagedAsyncTask<void> (nullptr, ++stackDepth),
                 m_taskCallback (taskCallback),
                 m_parentResult (parentResult)
             {
@@ -469,7 +474,7 @@ AsyncTaskPtr<T> CreateCompletedAsyncTask (const T& result)
     auto task = std::make_shared<PackagedAsyncTask<T>> ([=]
         {
         return result;
-        });
+        }, 1);
     task->Execute ();
     return task;
     }

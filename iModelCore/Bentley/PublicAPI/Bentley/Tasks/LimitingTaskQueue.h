@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/Tasks/LimitingTaskQueue.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,7 +30,7 @@ struct LimitingTaskQueue
             std::shared_ptr<ICancellationListener> cancellationListener;
             std::function<AsyncTaskPtr<T> ()> createAsyncTask;
 
-            Task () : PackagedAsyncTask<T> (nullptr) {};
+            Task (size_t stackDepth = 0) : PackagedAsyncTask<T> (nullptr, ++stackDepth) {};
 
             void OnFinished (const T& result)
                 {

@@ -2,7 +2,7 @@
  |
  |     $Source: Tasks/AsyncTaskRunner.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include <Bentley/Tasks/AsyncTaskRunner.h>
@@ -56,9 +56,7 @@ void AsyncTaskRunner::Stop ()
 void AsyncTaskRunner::WakeUp()
     {
     if (m_schedulerToHoldWhileStopping = m_scheduler.lock())
-        {
-        m_schedulerToHoldWhileStopping->Push(std::make_shared<AsyncTask>()); // Push dummy task to wake up thread runner.
-        }
+        m_schedulerToHoldWhileStopping->Push(std::make_shared<AsyncTask>(1)); // Push dummy task to wake up thread runner.
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -114,9 +112,7 @@ void AsyncTaskRunner::_RunAsyncTasksLoop ()
         m_currentRunningTask = nullptr;
 
         if (m_isStopping)
-            {
             break;
-            }
         }
     }
 
