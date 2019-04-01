@@ -33,6 +33,29 @@ using TaskQueueSPtr = std::shared_ptr<TaskQueue>;
 #define JSON_Content "content"
 #define JSON_Transform "transform"
 
+// Used for reality meshes.
+static Utf8String s_unlitTextureVertexShader = R"RAW_STRING(
+    attribute vec3 a_pos;
+    attribute vec2 a_texc;
+    varying vec2 v_texc;
+    uniform mat4 u_mv;
+    uniform mat4 u_proj;
+    void main(void)
+        {
+        v_texc = a_texc;
+        gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);
+        }
+)RAW_STRING";
+
+static Utf8String s_unlitTextureFragmentShader = R"RAW_STRING(
+    varying vec2 v_texc;  
+    uniform sampler2D u_tex; 
+    void main(void)
+        {
+        gl_FragColor = texture2D(u_tex, v_texc);
+        }
+)RAW_STRING";
+
 /*---------------------------------------------------------------------------------**//**
 * Convert json to string and pad to 4-byte boundary.
 * @bsimethod                                                    Paul.Connelly   09/18
@@ -121,6 +144,10 @@ struct CesiumTileWriter : Dgn::Tile::IO::Writer
     void BeginBatchedModel(uint32_t& startPosition, uint32_t& lengthDataPosition, Render::FeatureTableCR featureTable);
     void EndBatchedModel(uint32_t startPosition, uint32_t lengthDataPosition);
     BentleyStatus  WriteBatchedModel(Render::FeatureTableCR featureTable);
+    void AddShader(Json::Value& shaders, Utf8CP name, int32_t type, Utf8CP buffer);
+    void AddTechniqueParameter(Json::Value& technique, Utf8CP name, Gltf::DataType type, Utf8CP semantic);
+    void AppendProgramAttribute(Json::Value& program, Utf8CP attrName);
+    Utf8String AddMeshShaderTechnique(Utf8StringCR idStr, Utf8StringCR vertexShaderString, Utf8StringCR fragmentShaderString, bool textured = true);
 
     CesiumTileWriter(StreamBufferR streamBuffer, GeometricModelR model) : Dgn::Tile::IO::Writer(streamBuffer, model) { }
 };
@@ -481,6 +508,99 @@ BatchTableBuilder::BatchTableBuilder(FeatureTableCR attrs, DgnDbR db, bool is3d)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void CesiumTileWriter::AddShader(Json::Value& shaders, Utf8CP name, int32_t type, Utf8CP buffer)
+    {
+    auto& shader = (shaders[name] = Json::objectValue);
+    shader["type"] = type;
+    shader["extensions"]["KHR_binary_glTF"]["bufferView"] = buffer;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void CesiumTileWriter::AddTechniqueParameter(Json::Value& technique, Utf8CP name, Gltf::DataType type, Utf8CP semantic)
+    {
+    auto& param = technique["parameters"][name];
+    param["type"] = static_cast<int32_t>(type);
+    if (nullptr != semantic)
+        param["semantic"] = semantic;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void CesiumTileWriter::AppendProgramAttribute(Json::Value& program, Utf8CP attrName)
+    {
+    program["attributes"].append(attrName);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String CesiumTileWriter::AddMeshShaderTechnique(Utf8StringCR idStr, Utf8StringCR vertexShaderString, Utf8StringCR fragmentShaderString, bool textured)
+    {
+    Utf8String techniqueName = "Technique_" + idStr;
+
+    if (m_json.isMember("techniques") && m_json["techniques"].isMember(techniqueName.c_str()))
+        return techniqueName;
+
+    Json::Value technique(Json::objectValue);
+
+    AddTechniqueParameter(technique, "mv", Gltf::DataType::FloatMat4, "CESIUM_RTC_MODELVIEW");
+    AddTechniqueParameter(technique, "proj", Gltf::DataType::FloatMat4, "PROJECTION");
+    AddTechniqueParameter(technique, "pos", Gltf::DataType::FloatVec3, "POSITION");
+
+    Utf8String         programName               = "Program_" + idStr;
+    Utf8String         vertexShader              = "VertexShader_" + idStr;
+    Utf8String         fragmentShader            = "FragmentShader" + idStr;;
+    Utf8String         vertexShaderBufferView    = vertexShader + "_BufferView";
+    Utf8String         fragmentShaderBufferView  = fragmentShader + "_BufferView";
+
+    technique["program"] = programName.c_str();
+
+    auto&   techniqueStates = technique["states"];
+    techniqueStates["enable"] = Json::arrayValue;
+    techniqueStates["enable"].append(Gltf::DepthTest);
+
+    auto& techniqueAttributes = technique["attributes"];
+    techniqueAttributes["a_pos"] = "pos";
+
+    auto& techniqueUniforms = technique["uniforms"];
+    techniqueUniforms["u_mv"] = "mv";
+    techniqueUniforms["u_proj"] = "proj";
+
+    auto& rootProgramNode = (m_json["programs"][programName.c_str()] = Json::objectValue);
+    rootProgramNode["attributes"] = Json::arrayValue;
+    AppendProgramAttribute(rootProgramNode, "a_pos");
+
+    rootProgramNode["vertexShader"]   = vertexShader.c_str();
+    rootProgramNode["fragmentShader"] = fragmentShader.c_str();
+
+    auto& shaders = m_json["shaders"];
+    AddShader(shaders, vertexShader.c_str(), Gltf::VertexShader, vertexShaderBufferView.c_str());
+    AddShader(shaders, fragmentShader.c_str(), Gltf::FragmentShader, fragmentShaderBufferView.c_str());
+
+    AddBufferView(vertexShaderBufferView.c_str(),  vertexShaderString.c_str(), vertexShaderString.size());
+    AddBufferView(fragmentShaderBufferView.c_str(), fragmentShaderString.c_str(), fragmentShaderString.size());
+    
+    if (textured)
+        {
+        AddTechniqueParameter(technique, "tex", Gltf::DataType::Sampler2d, "_3DTILESDIFFUSE");
+        AddTechniqueParameter(technique, "texc", Gltf::DataType::FloatVec2, "TEXCOORD_0");
+        technique["uniforms"]["u_tex"] = "tex";
+        technique["attributes"]["a_texc"] = "texc";
+        AppendProgramAttribute(rootProgramNode, "a_texc");
+        }
+
+    m_json["techniques"][techniqueName.c_str()] = technique;
+
+    return techniqueName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CesiumTileWriter::AddTextureSampler(Utf8StringCR sampler, TextureCR texture)
@@ -560,6 +680,7 @@ Json::Value CesiumTileWriter::CreateMaterialJson(MeshMaterial const& material, U
     if (material.GetTexture().IsValid())
         values["tex"] = AddTextureImage(*material.GetTexture(), idStr);
 
+    json["technique"] = AddMeshShaderTechnique(idStr, s_unlitTextureVertexShader.c_str(), s_unlitTextureFragmentShader.c_str(), material.GetTexture().IsValid());
     json["values"] = values;
     return json; 
     }
@@ -606,8 +727,7 @@ void CesiumTileWriter::AddTriMesh(Json::Value& primitivesNode, TriMeshArgsCR mes
         primitivesNode.append(primitiveJson);
         }
     }
-
-
+ 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
