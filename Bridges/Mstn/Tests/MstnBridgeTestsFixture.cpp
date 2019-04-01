@@ -775,7 +775,7 @@ BentleyApi::BentleyStatus ProcessRunner::Start(size_t waitMs)
     si.cb = sizeof(si);
     PROCESS_INFORMATION pi;
     ZeroMemory(&pi, sizeof(pi));
-    EXPECT_TRUE(::CreateProcessW(nullptr, (LPWSTR)m_cmdline.c_str(), nullptr, nullptr, false, NORMAL_PRIORITY_CLASS, nullptr, nullptr, &si, &pi));
+    EXPECT_TRUE(::CreateProcessW(nullptr, (LPWSTR)m_cmdline.c_str(), nullptr, nullptr, false, NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi));
     
     m_hProcess = pi.hProcess;
     m_hThread = pi.hThread;
