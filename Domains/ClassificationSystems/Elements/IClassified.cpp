@@ -2,10 +2,12 @@
 |
 |     $Source: Elements/IClassified.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "PublicApi/ClassificationSystemsElements.h"
+#include "PublicApi/IClassified.h"
+#include "PublicApi/Classification.h"
+#include "PublicApi/ClassificationSystem.h"
 
 USING_NAMESPACE_CLASSIFICATIONSYSTEMS
 USING_NAMESPACE_BUILDING_SHARED

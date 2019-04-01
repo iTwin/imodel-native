@@ -16,18 +16,30 @@ struct ClassificationTableTestFixture : public ClassificationSystemsTestsBase
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Elonas.Seviakovas               03/2019
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassificationTableTestFixture, CreateAndInsert_InsertsSuccessfully)
+TEST_F(ClassificationTableTestFixture, CreateAndInsert_InsertsAndSetsParentSuccessfully)
     {
     Dgn::DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
     db.BriefcaseManager().StartBulkOperation();
+    Utf8CP systemName = "TestSystem";
 
-    ClassificationTablePtr table = ClassificationTable::Create(db);
-    ASSERT_TRUE(table.IsValid()) << "Failed to create table";
-
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, systemName);
 
     Dgn::DgnDbStatus status;
+    system->Insert(&status);
+    ASSERT_EQ(Dgn::DgnDbStatus::Success, status) << "System failed to be inserted to Db";
+
+    Utf8CP tableName = "TestTable";
+    ClassificationTablePtr table = ClassificationTable::Create(*system, tableName);
+    ASSERT_TRUE(table.IsValid()) << "Failed to create table";
+
     table->Insert(&status);
     ASSERT_EQ(Dgn::DgnDbStatus::Success, status) << "Table failed to be inserted to Db";
 
     db.SaveChanges();
+
+    Dgn::DgnElementIdSet children = system->QueryChildren();
+
+    ASSERT_FALSE(children.empty()) << "No children were added to the Classification System";
+
+    ASSERT_EQ(table->GetElementId().GetValue(), children.begin()->GetValue()) << "Table was not added as child to System";
     }

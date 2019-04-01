@@ -83,5 +83,6 @@
 
 
 #define CLASSIFICATIONSYSTEMS_REL_ClassificationGroupGroupsClassifications                         "ClassificationGroupGroupsClassifications"
+#define CLASSIFICATIONSYSTEMS_REL_ClassificationSystemContainsClassificationTable                  "ClassificationSystemContainsClassificationTable"
 #define CLASSIFICATIONSYSTEMS_REL_ClassificationSpecializesClassification                          "ClassificationSpecializesClassification"
 #define CLASSIFICATIONSYSTEMS_REL_IClassifiedIsClassifiedAs                                        "IClassifiedIsClassifiedAs"

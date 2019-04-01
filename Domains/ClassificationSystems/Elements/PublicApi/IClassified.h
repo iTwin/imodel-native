@@ -2,10 +2,13 @@
 |
 |     $Source: Elements/PublicApi/IClassified.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <BuildingShared/BuildingSharedApi.h>
+#include <ClassificationSystems/Domain/ClassificationSystemsMacros.h>
+#include <ClassificationSystems/Elements/ForwardDeclarations.h>
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
