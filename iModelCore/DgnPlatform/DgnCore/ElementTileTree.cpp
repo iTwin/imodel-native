@@ -3591,7 +3591,8 @@ Utf8CP TileCache::GetCurrentVersion()
     //  11: Added width + height to textures.
     //  12: Fixed display priority range in 2d models
     //  13: Texture atlas for raster text
-    return "13";
+    //  14: Fixed texture clipping
+    return "14";
     }
 
 /*---------------------------------------------------------------------------------**//**
