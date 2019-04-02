@@ -562,7 +562,6 @@ TEST_F (ProfileTestCase, StandardCardinalPointToString_StandardCardinalPoint_Str
     EXPECT_STREQ ("TopInLineWithShearCenter", StandardCardinalPointToString (StandardCardinalPoint::TopInLineWithShearCenter));
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -162,7 +162,7 @@ public:
     //! @beginGroup
     //! Get StandardCatalogCode associated with this profile.
     //! @details StandardCatalogCode is populated from profiles `CodeValue` property, see @ref GetCode()
-    //! @returns StandardCatalogCode. If profile has no `CodeValue` set, StandardCatalogCode with empty stirngs is returned.
+    //! @returns StandardCatalogCode. If profile has no `CodeValue` set, StandardCatalogCode with empty strings is returned.
     PROFILES_EXPORT StandardCatalogCode GetStandardCatalogCode() const;
     //! Set `CodeValue` for this profile using "StandardCatalogProfile" `CodeSpec`.
     //! @param catalogCode String property set used to construct the `CodeValue`. See @ref StandardCatalogCode.
@@ -293,7 +293,6 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE ProfileHandler : Dgn::dgn_ElementHandler::Definition, DependencyUpdateNotifier
     {
     ELEMENTHANDLER_DECLARE_MEMBERS_ABSTRACT (PRF_CLASS_Profile, Profile, ProfileHandler, Dgn::dgn_ElementHandler::Definition, PROFILES_EXPORT)
-
     }; // ProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

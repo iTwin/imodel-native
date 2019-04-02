@@ -28,7 +28,7 @@ public:
         DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS (MaterialProfile)
 
     public:
-        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model, 
+        PROFILES_EXPORT explicit CreateParams (Dgn::DefinitionModel const& model,
             Dgn::DgnElementId const& profileId = Dgn::DgnElementId(), Dgn::DgnElementId const& materialId = Dgn::DgnElementId());
 
     public:
