@@ -45,6 +45,9 @@ class CodeCoverage:
 
     def set_SourcePath(self, sourcePath):
         self.sources = ' --sources=' + sourcePath
+    
+    def set_SourcePath2(self, sourcePath2):
+        self.sources = str(self.sources) + ' --sources=' + sourcePath2
 
     def set_ExportType(self, type):
         if type.lower() == "html":
@@ -91,6 +94,3 @@ class CodeCoverage:
             return True
     def editModules(self, moduleFilter):
         self.modules = ' --modules=' + moduleFilter
-        
-    
-    

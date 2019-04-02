@@ -202,6 +202,7 @@ class CoverageOpenCPP:
 
                 if 'Bridges\\Mstn' in str(cmp.RepoPathForComp(comp)):
                     cov.set_SourcePath(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Mstn','iModelBridgeCore')) #Mstn is using iModelBridgeCore
+                    cov.set_SourcePath2(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Mstn','iModelCore')) #Mstn is also using iModelCore
                 else:
                     cov.set_SourcePath(cmp.RepoPathForComp(comp))
                 
@@ -217,6 +218,7 @@ class CoverageOpenCPP:
                     cov.set_ReportPath(self.repoPath)
                     if 'Bridges\\Mstn' in str(cmp.RepoPathForComp(comp)):
                         cov.set_SourcePath(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Mstn','iModelBridgeCore')) #Mstn is using iModelBridgeCore
+                        cov.set_SourcePath2(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Mstn','iModelCore')) #Mstn is also using iModelCore
                     else:
                         cov.set_SourcePath(cmp.RepoPathForComp(comp))
                     if cov.covTestExe(testExe):  # if a single run completes, mark it success
