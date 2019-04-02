@@ -561,3 +561,35 @@ TEST_F (ProfileTestCase, StandardCardinalPointToString_StandardCardinalPoint_Str
     EXPECT_STREQ ("RightInLineWithShearCenter", StandardCardinalPointToString (StandardCardinalPoint::RightInLineWithShearCenter));
     EXPECT_STREQ ("TopInLineWithShearCenter", StandardCardinalPointToString (StandardCardinalPoint::TopInLineWithShearCenter));
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ProfileTestCase, NotifyDependencies_RegisteredIDependencyUpdateHandler_HandlerWasCalled)
+    {
+    struct ProfileUpdateHandlerExample : IDependencyUpdateHandler
+        {
+        std::shared_ptr<int> value;
+        virtual void _OnUpdate (DgnDb const& database, DgnElementId const& elementId) override
+            {
+            ++(*value);
+            }
+
+        ProfileUpdateHandlerExample()
+            {
+            value = std::make_shared<int> (0);
+            }
+        };
+
+    ProfileUpdateHandlerExample profileUpdateHandler = ProfileUpdateHandlerExample();
+
+    ProfileHandler& profilehandler = ProfileHandler::GetHandler();
+    profilehandler.RegisterDependencyHandler(profileUpdateHandler);
+
+    ASSERT_EQ (0, *profileUpdateHandler.value);
+    profilehandler.NotifyDependencies (GetDb(), DgnElementId());
+    ASSERT_EQ (1, *profileUpdateHandler.value) << "NotifyDependecies() failed to call _OnUpdate() of registered handlers";
+    profilehandler.NotifyDependencies (GetDb(), DgnElementId());
+    ASSERT_EQ (2, *profileUpdateHandler.value) << "NotifyDependecies() failed to call _OnUpdate() of registered handlers";
+    }
