@@ -2,7 +2,7 @@
  |
  |     $Source: BeHttp/SimplePackagedAsyncTask.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -25,7 +25,7 @@ private:
 
 public:
     SimplePackagedAsyncTask (const D& data) :
-        Tasks::PackagedAsyncTask<R> (nullptr),
+        Tasks::PackagedAsyncTask<R> (nullptr, 1),
         m_data (data)
         {
         }
