@@ -2,13 +2,14 @@
 |
 |     $Source: Grids/Domain/GridsDomain.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Grids/Domain/GridsDomain.h>
-#include <Grids/gridsApi.h>
+#include <Grids/Elements/GridElementsAPI.h>
+#include <Grids/Handlers/GridHandlersAPI.h>
 #include <DgnPlatform/DgnCategory.h>
-#include <BuildingShared/BuildingSharedApi.h>
+#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
 #define GRIDLINE_STYLE_NAME "GridlineStyle1"
 

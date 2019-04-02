@@ -2,10 +2,10 @@
 |
 |     $Source: Grids/Strategies/SketchGridSurfaceManipulationStrategy.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Grids\GridsApi.h>
+#include <Grids/Strategies/GridStrategies.h>
 
 USING_NAMESPACE_GRIDS
 USING_NAMESPACE_BUILDING_SHARED
