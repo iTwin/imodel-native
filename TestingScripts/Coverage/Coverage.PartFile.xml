@@ -89,7 +89,7 @@
 
     <Part Name="Licensing-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BMakeOptions="+dCOMP_Name=Licensing" OnlyPlatforms="x64">
 		  <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository> 
-      <SubProduct Repository="imodel02" PartFile="iModelCore/LicensingCrossPlatform/LicensingCrossPlatform" ProductName="Licensing-GTest"/>
+      <SubProduct Repository="imodel02" PartFile="iModelCore/LicensingCrossPlatform/LicensingCrossPlatform" ProductName="Licensing-GtestUnit"/>
     </Part>
 
     <Part Name="Units-CodeCoverage" BentleyBuildMakeFile="RunCodeCoverage.mke" BMakeOptions="+dCOMP_Name=Units" OnlyPlatforms="x64">
