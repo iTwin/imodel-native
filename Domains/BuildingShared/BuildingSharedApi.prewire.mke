@@ -2,7 +2,7 @@
 #
 #     $Source: BuildingSharedApi.prewire.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %if defined (DGNV8_BUILD)
@@ -39,5 +39,8 @@ $(BuildContext)PublicAPI/BuildingShared/DgnElementManipulationStrategies : $(_Ma
 $(BuildContext)PublicAPI/BuildingShared/DgnUtils : $(_MakeFilePath)DgnUtils/PublicAPI
     $(LinkFirstDepToFirstTargetAsDirectory)
 
+$(BuildContext)PublicAPI/BuildingShared/DgnViewUtils : $(_MakeFilePath)DgnViewUtils/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+    
 $(BuildContext)PublicAPI/BuildingShared/StrategyPlatform : $(_MakeFilePath)StrategyPlatform/PublicAPI
     $(LinkFirstDepToFirstTargetAsDirectory)
