@@ -124,6 +124,7 @@
   <ItemGroup>
     <ClCompile Include="Tests\NonPublished\ArcGridSurfacePlacementStrategy_Test.cpp" />
     <ClCompile Include="Tests\NonPublished\ElevationGrid_Test.cpp" />
+    <ClCompile Include="Tests\NonPublished\GeometryTests.cpp" />
     <ClCompile Include="Tests\NonPublished\GridCurves_Test.cpp" />
     <ClCompile Include="Tests\NonPublished\GridsStrategy_Test.cpp" />
     <ClCompile Include="Tests\NonPublished\GridsTestFixtureBase.cpp" />
