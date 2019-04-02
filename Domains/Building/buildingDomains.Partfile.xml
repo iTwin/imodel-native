@@ -122,6 +122,7 @@
         <SubPart PartName="ConstraintModel"                 PartFile="ConstraintSystem"         Repository="DgnDomains-ConstraintSystem"/>
         -->
         <SubPart PartName="Grids"                           PartFile="Grids"                    Repository="DgnDomains-Grids"/>
+        <SubPart PartName="SpacePlanningDomain"             PartFile="BuildingSpacePlanning"    Repository="DgnDomains-BuildingSpacePlanning"/>
         <SubPart PartName="BuildingSpatialDomain"           Repository="DgnDomains-BuildingSpatial" PartFile="BuildingSpatial" />
         <SubPart PartName="StructuralDomainDLL"             PartFile="StructuralDomains"        Repository="DgnDomains-Structural"/>
         <SubPart PartName="ProfilesDomainDLL"               PartFile="ProfilesDomain"           Repository="DgnDomains-Profiles"/>
@@ -163,6 +164,7 @@
 
     <NuGetProduct Name="DesignModelingSDKForABD" Description="DesignModelingSDKForABD"> 
         <SubPart PartName="BuildingDomain"/>
+        <SubPart PartName="SpacePlanningDomain"             PartFile="BuildingSpacePlanning"    Repository="DgnDomains-BuildingSpacePlanning"/>
         <SubPart PartName="DesignModelingDomainsSDK-Only"/>
         <SubPart PartName="DgnV8ConverterExe"               PartFile="DgnDbSync"                Repository="DgnDbSync"/>
 
