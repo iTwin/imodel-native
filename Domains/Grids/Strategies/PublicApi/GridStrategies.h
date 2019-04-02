@@ -2,12 +2,14 @@
 |
 |     $Source: Grids/Strategies/PublicApi/GridStrategies.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <BuildingShared/BuildingSharedApi.h>
+#include <Grids/Domain/GridsMacros.h>
+#include <Grids/Elements/GridElementsAPI.h>
 
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(SketchGridSurfacePlacementStrategy)
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(SketchGridSurfaceManipulationStrategy)
