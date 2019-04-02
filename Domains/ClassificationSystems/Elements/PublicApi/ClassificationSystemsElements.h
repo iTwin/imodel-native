@@ -2,7 +2,7 @@
 |
 |     $Source: Elements/PublicApi/ClassificationSystemsElements.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -12,7 +12,8 @@
 
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <ClassificationSystems/Domain/ClassificationSystemsMacros.h>
-#include <BuildingShared/BuildingSharedApi.h>
+#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
+#include <BuildingShared/interfaces.h>
 
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ClassificationSystem)
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(Classification)

@@ -2,12 +2,12 @@
 |
 |     $Source: Elements/ClassificationSystemsElements.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "PublicApi/ClassificationSystemsElements.h"
-#include <BuildingShared/BuildingSharedApi.h>
+#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
   
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE

@@ -2,12 +2,11 @@
 |
 |     $Source: Domain/ClassificationSystemsDomain.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ClassificationSystems/ClassificationSystemsApi.h>
-#include <DgnClientFx/DgnClientApp.h>
-#include <BuildingShared\BuildingSharedApi.h>
+#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
 
 namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
