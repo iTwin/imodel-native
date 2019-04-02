@@ -220,7 +220,7 @@ JsonNavNodeCPtr NavNodesProviderContext::GetVirtualParentNode() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodesProviderPtr NavNodesProviderContext::CreateHierarchyLevelProvider(NavNodesProviderContextR context, JsonNavNodeCP parentNode) const
     {
-    return m_providerFactory.Create(context, parentNode, ProviderCacheType::Full);
+    return m_providerFactory.Create(context, parentNode, ProviderCacheType::Combined);
     }
 
 /*---------------------------------------------------------------------------------**//**

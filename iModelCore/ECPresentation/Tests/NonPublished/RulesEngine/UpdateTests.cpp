@@ -4191,7 +4191,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
     RootNodeRule* rootRule1 = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rootRule1->AddSpecification(*new CustomNodeSpecification(1, false, "TEST_Type", "Root", "descr", "imageid"));
     rules1->AddPresentationRule(*rootRule1);
-    ChildNodeRule* childRule1 = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule1 = new ChildNodeRule("ParentNode.Type = \"TEST_Type\"", 1, false, RuleTargetTree::TargetTree_Both);
     childRule1->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules1->AddPresentationRule(*childRule1);
     
@@ -4201,7 +4201,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
     RootNodeRule* rootRule2 = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rootRule2->AddSpecification(*new CustomNodeSpecification(1, false, "TEST_Type", "Root", "descr", "imageid"));
     rules2->AddPresentationRule(*rootRule2);
-    ChildNodeRule* childRule2 = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule2 = new ChildNodeRule("ParentNode.Type = \"TEST_Type\"", 1, false, RuleTargetTree::TargetTree_Both);
     childRule2->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
     rules2->AddPresentationRule(*childRule2);
     
@@ -4211,7 +4211,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
     RootNodeRule* rootRule3 = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rootRule3->AddSpecification(*new CustomNodeSpecification(1, false, "TEST_Type", "Root", "descr", "imageid"));
     rules3->AddPresentationRule(*rootRule3);
-    ChildNodeRule* childRule3 = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
+    ChildNodeRule* childRule3 = new ChildNodeRule("ParentNode.Type = \"TEST_Type\"", 1, false, RuleTargetTree::TargetTree_Both);
     childRule3->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
     rules3->AddPresentationRule(*childRule3);
 

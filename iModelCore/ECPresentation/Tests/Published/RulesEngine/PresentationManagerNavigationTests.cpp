@@ -6027,3 +6027,40 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecific
     EXPECT_STREQ("1_Instance_C", rootNodes[0]->GetLabel().c_str());
     EXPECT_STREQ("2_Instance_A", rootNodes[1]->GetLabel().c_str());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, CreatesValidHierarchyWhenHidingMultipleHierarchyLevelsWithMultipleSpecificationsInARow)
+    {
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+    
+    RootNodeRule* rule1 = new RootNodeRule();
+    rule1->AddSpecification(*CreateCustomNodeSpecification("first"));
+    rules->AddPresentationRule(*rule1);
+
+    ChildNodeRule* rule2 = new ChildNodeRule("ParentNode.Type = \"first\"", 1, false, TargetTree_Both);
+    rule2->AddSpecification(*CreateCustomNodeSpecification("second1", [](CustomNodeSpecificationR spec) { spec.SetHideNodesInHierarchy(true); }));
+    rule2->AddSpecification(*CreateCustomNodeSpecification("second2", [](CustomNodeSpecificationR spec) { spec.SetHideNodesInHierarchy(true); }));
+    rules->AddPresentationRule(*rule2);
+
+    ChildNodeRule* rule3 = new ChildNodeRule("ParentNode.Type = \"second1\"", 1, false, TargetTree_Both);
+    rule3->AddSpecification(*CreateCustomNodeSpecification("third", [](CustomNodeSpecificationR spec) { spec.SetHideNodesInHierarchy(true); }));
+    rules->AddPresentationRule(*rule3);
+
+    ChildNodeRule* rule4 = new ChildNodeRule("ParentNode.Type = \"third\"", 1, false, TargetTree_Both);
+    rule4->AddSpecification(*CreateCustomNodeSpecification("fourth"));
+    rules->AddPresentationRule(*rule4);
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ("first", rootNodes[0]->GetLabel().c_str());
+
+    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, childNodes.GetSize());
+    EXPECT_STREQ("fourth", childNodes[0]->GetLabel().c_str());
+    }
