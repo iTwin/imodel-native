@@ -36,14 +36,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationGroup final : Dgn::GroupInformation
         // Creation
         //---------------------------------------------------------------------------------------
         //! Creates a ClassificationGroup
-        //! @param[in]  db          db to insert class definition group in
-        //! @param[in]  name        name of the ClassificationSystem class definition group
+        //! @param[in]  table   Classification Table in which this Classification Group will be inserted
+        //! @param[in]  name    Classification Group's name
         //! @return     a ptr to created ClassificationGroup
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationGroupPtr Create(ClassificationSystemCR system, Utf8CP name);
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationGroupPtr Create(ClassificationTableCR table, Utf8CP name);
 
-        //!Returns Id property of the parent ClassificationSystem
-        //! @return Id property of the parent ClassificationSystem
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::DgnElementId GetClassificationSystemId() const;
+        //!Returns Id property of the parent ClassificationTable
+        //! @return Id property of the parent ClassificationTable
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::DgnElementId GetClassificationTableId() const;
 
         //! Gets the name of this ClassificationGroup
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetUserLabel(); }

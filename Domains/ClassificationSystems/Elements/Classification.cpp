@@ -8,7 +8,7 @@
 
 #include "PublicApi/Classification.h"
 #include "PublicApi/ClassificationGroup.h"
-#include "PublicApi/ClassificationSystem.h"
+#include "PublicApi/ClassificationTable.h"
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
@@ -34,7 +34,7 @@ Dgn::DgnCode Classification::GetClassificationCode
 Classification::Classification
 (
     CreateParams const& params,
-    ClassificationSystemCR system,
+    ClassificationTableCR table,
     Utf8CP name,
     Utf8CP id,
     Utf8CP description,
@@ -51,7 +51,7 @@ Classification::Classification
         }
     else 
         {
-        elemid = system.GetElementId();
+        elemid = table.GetElementId();
         }
     Dgn::DgnCode code = GetClassificationCode(params.m_dgndb, id, elemid);
     SetCode(code);
@@ -64,7 +64,7 @@ Classification::Classification
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassificationPtr Classification::CreateAndInsert
 (
-    ClassificationSystemCR system,
+    ClassificationTableCR table,
     Utf8CP name,
     Utf8CP id,
     Utf8CP description,
@@ -72,11 +72,11 @@ ClassificationPtr Classification::CreateAndInsert
     ClassificationCP specializes
 )
     {
-    Dgn::DgnDbR db = system.GetDgnDb();
+    Dgn::DgnDbR db = table.GetDgnDb();
 
-    Dgn::DgnModelPtr model = system.GetSubModel();
+    Dgn::DgnModelPtr model = table.GetSubModel();
     if (model.IsNull())
-        model = Dgn::DefinitionModel::CreateAndInsert(system);
+        model = Dgn::DefinitionModel::CreateAndInsert(table);
 
     if (model.IsNull())
         {
@@ -86,7 +86,7 @@ ClassificationPtr Classification::CreateAndInsert
 
     Dgn::DgnClassId classId = QueryClassId(db);
     Dgn::DgnElement::CreateParams params(db, model->GetModelId(), classId);
-    ClassificationPtr classification = new Classification(params, system, name, id, description, group, specializes);
+    ClassificationPtr classification = new Classification(params, table, name, id, description, group, specializes);
     classification->Insert();
     if (group != nullptr)
         classification->SetGroupId(group->GetElementId());
@@ -154,7 +154,7 @@ Dgn::DgnElementId Classification::GetSpecializationId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnElementId Classification::GetClassificationSystemId() const
+Dgn::DgnElementId Classification::GetClassificationTableId() const
     {
     return GetModel()->GetModeledElementId();
     }

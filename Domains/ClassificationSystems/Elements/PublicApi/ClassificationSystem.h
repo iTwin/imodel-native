@@ -50,12 +50,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem final : Dgn::DefinitionEleme
 
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static Dgn::ElementIterator MakeIterator(Dgn::DgnDbR dgnDbR);
 
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::ElementIterator MakeClassificationIterator() const;
-
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::ElementIterator MakeClassificationGroupIterator() const;
-
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT void GetClassificationDataVerbose (Json::Value& elementData) const;
-
         //! Gets the name of this ClassificationSystem
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const;
     };

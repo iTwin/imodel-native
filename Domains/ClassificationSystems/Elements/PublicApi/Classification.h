@@ -29,7 +29,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification final : Dgn::DefinitionElement
 
     protected:
         explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Classification(CreateParams const& params) : T_Super(params) {}
-        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Classification(CreateParams const& params, ClassificationSystemCR system, Utf8CP name, Utf8CP id, Utf8CP description, ClassificationGroupCP group, ClassificationCP specializes);
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Classification(CreateParams const& params, ClassificationTableCR system, Utf8CP name, Utf8CP id, Utf8CP description, ClassificationGroupCP group, ClassificationCP specializes);
         friend struct ClassificationHandler;
         friend struct ClassificationSystemsDomain;
 
@@ -52,13 +52,13 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification final : Dgn::DefinitionElement
         // Creation
         //---------------------------------------------------------------------------------------
         //! Creates and inserts a Classification
-        //! @param[in]  system      db to insert Classification in
+        //! @param[in]  table       Classification Table in which this Classification Group will be inserted
         //! @param[in]  name        name of this Classification
         //! @param[in]  description description of this Classification
         //! @param[in]  group       Group this Classification is in
         //! @param[in]  specializes What Classification this Classification specializes in
         //! @return     a ptr to created Classification
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationPtr CreateAndInsert(ClassificationSystemCR system, Utf8CP name, Utf8CP id, Utf8CP description, ClassificationGroupCP group, ClassificationCP specializes);
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationPtr CreateAndInsert(ClassificationTableCR system, Utf8CP name, Utf8CP id, Utf8CP description, ClassificationGroupCP group, ClassificationCP specializes);
 
         //!Returns this Classification Name property
         //! @return Name property of the Classification
@@ -68,9 +68,9 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification final : Dgn::DefinitionElement
         //! @return Id property of the Classification
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetClassificationId() const { return GetCode().GetValueUtf8CP(); }
 
-        //!Returns Id property of the parent ClassificationSystem
-        //! @return Id property of the parent ClassificationSystem
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::DgnElementId GetClassificationSystemId() const;
+        //!Returns Id property of the parent Classification Table
+        //! @return Id property of the parent Classification Table
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::DgnElementId GetClassificationTableId() const;
 
         //!Returns this Classification Description property
         //! @return Description property of the Classification

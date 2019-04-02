@@ -31,18 +31,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationTable : Dgn::DefinitionElement
 
         //! Sets Classification System Id
         //! @param[in] systemId to set
-        void SetSystemId(Dgn::DgnElementId systemId);
+        void SetClassificationSystemId(Dgn::DgnElementId systemId);
 
     public:
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationTable, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
 
-        ////! Creates a ClassificationTable
-        ////! @param[in]  db  db to insert class definition in
-        ////! @return  a ptr to created ClassificationTable
-        //CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationTablePtr Create(Dgn::DgnDbR db);
-
         //! Creates and inserts a ClassificationTable
-        //! @param[in]  system      db to insert ClassificationTable in
+        //! @param[in]  system   Classification System that will be set as Table's parent
+        //! @param[in]  name     Classification Table's name
         //! @return     a ptr to created ClassificationTable
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationTablePtr Create(ClassificationSystemCR system, Utf8CP name);
 
@@ -50,9 +46,21 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationTable : Dgn::DefinitionElement
         //! @return Name property of the Classification Table
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetUserLabel(); }
 
-        //!Returns id of the System that has this Table
-        //! @return Id of Classification System that has this Table
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::DgnElementId GetSystemId() const;
+        //!Returns id of the Classification System that has this Classification Table
+        //! @return Id of Classification System that has this Classification Table
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::DgnElementId GetClassificationSystemId() const;
+
+        //!Returns an iterator that will go through every Classification assigned to this Table
+        //! @return Iterator of Classifications
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::ElementIterator MakeClassificationIterator() const;
+
+        //!Returns an iterator that will go through every Classification Group assigned to this Table
+        //! @return Iterator of Classification Groups
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::ElementIterator MakeClassificationGroupIterator() const;
+
+        //! Assigns classification data to the provided elementData parameter
+        //! @param[out]  elementData   container for the classification data
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT void GetClassificationDataVerbose(Json::Value& elementData) const;
     };
 
 END_CLASSIFICATIONSYSTEMS_NAMESPACE

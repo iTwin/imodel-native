@@ -62,3 +62,26 @@ void ClassificationSystemsTestsBase::SetUpTestCase()
     seedPath.BeDeleteFile();
     CreateSeedDb(PROJECT_SEED_NAME, PROJECT_TEMP_FOLDER, &StaticRegisterDomains);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Elonas.Seviakovas               04/19
+//---------------------------------------------------------------------------------------
+ClassificationTablePtr ClassificationSystemsTestsBase::CreateAndInsertTable(Dgn::DgnDbR db)
+{
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, "Test Classification System");
+
+    Dgn::DgnDbStatus status;
+    system->Insert(&status);
+    if(status != Dgn::DgnDbStatus::Success)
+        return nullptr;
+
+    ClassificationTablePtr table = ClassificationTable::Create(*system, "Test Classification Table");
+    if (!table.IsValid())
+        return nullptr;
+
+    table->Insert(&status);
+    if (status != Dgn::DgnDbStatus::Success)
+        return nullptr;
+
+    return table;
+}

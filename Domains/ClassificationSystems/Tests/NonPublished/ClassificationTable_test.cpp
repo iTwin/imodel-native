@@ -16,12 +16,12 @@ struct ClassificationTableTestFixture : public ClassificationSystemsTestsBase
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Elonas.Seviakovas               03/2019
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ClassificationTableTestFixture, CreateAndInsert_InsertsAndSetsParentSuccessfully)
+TEST_F(ClassificationTableTestFixture, Create_InsertsAndSetsSubmodelSuccessfully)
     {
     Dgn::DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
     db.BriefcaseManager().StartBulkOperation();
-    Utf8CP systemName = "TestSystem";
 
+    Utf8CP systemName = "TestSystem";
     ClassificationSystemPtr system = ClassificationSystem::Create(db, systemName);
 
     Dgn::DgnDbStatus status;
@@ -35,11 +35,10 @@ TEST_F(ClassificationTableTestFixture, CreateAndInsert_InsertsAndSetsParentSucce
     table->Insert(&status);
     ASSERT_EQ(Dgn::DgnDbStatus::Success, status) << "Table failed to be inserted to Db";
 
-    db.SaveChanges();
-
     Dgn::DgnElementIdSet children = system->QueryChildren();
 
     ASSERT_FALSE(children.empty()) << "No children were added to the Classification System";
 
     ASSERT_EQ(table->GetElementId().GetValue(), children.begin()->GetValue()) << "Table was not added as child to System";
+    db.SaveChanges();
     }

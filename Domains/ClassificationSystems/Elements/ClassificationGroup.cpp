@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "PublicApi/ClassificationGroup.h"
-#include "PublicApi/ClassificationSystem.h"
+#include "PublicApi/ClassificationTable.h"
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
@@ -30,15 +30,15 @@ ClassificationGroup::ClassificationGroup
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassificationGroupPtr ClassificationGroup::Create
 (
-    ClassificationSystemCR system,
+    ClassificationTableCR table,
     Utf8CP name
 )
     {
-    Dgn::DgnDbR db = system.GetDgnDb();
+    Dgn::DgnDbR db = table.GetDgnDb();
 
-    Dgn::DgnModelPtr model = system.GetSubModel();
+    Dgn::DgnModelPtr model = table.GetSubModel();
     if (model.IsNull())
-        model = Dgn::DefinitionModel::CreateAndInsert(system);
+        model = Dgn::DefinitionModel::CreateAndInsert(table);
 
     if (model.IsNull())
         {
@@ -55,7 +55,7 @@ ClassificationGroupPtr ClassificationGroup::Create
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                08/2018
 //---------------+---------------+---------------+---------------+---------------+------
-Dgn::DgnElementId ClassificationGroup::GetClassificationSystemId() const
+Dgn::DgnElementId ClassificationGroup::GetClassificationTableId() const
     {
     return GetModel()->GetModeledElementId();
     }

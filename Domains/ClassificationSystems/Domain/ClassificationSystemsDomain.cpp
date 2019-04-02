@@ -106,6 +106,7 @@ Dgn::DgnCode ClassificationSystemsDomain::GetSystemCode
     {
     return Dgn::DgnCode(db.CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem), db.Elements().GetRootSubjectId(), name);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius              05/2018
 //---------------------------------------------------------------------------------------
@@ -127,6 +128,35 @@ ClassificationSystemCPtr ClassificationSystemsDomain::TryAndGetSystem
 }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas             04/2019
+//---------------------------------------------------------------------------------------
+ClassificationTableCPtr ClassificationSystemsDomain::TryAndGetTable
+(
+    ClassificationSystemCR system,
+    Utf8CP name
+) const
+    {
+    ClassificationTableCPtr table = nullptr;
+
+    for (auto childId : system.QueryChildren())
+        {
+        table = ClassificationTable::Get(system.GetDgnDb(), childId);
+        if(table.IsNull())
+            continue;
+
+        if(table->GetName() == name)
+            break;
+        else
+            table = nullptr;
+        }
+
+    if (table.IsNull())
+        return InsertTable(system, name);
+    else 
+        return table;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius              04/2018
 //---------------------------------------------------------------------------------------
 ClassificationSystemPtr ClassificationSystemsDomain::InsertSystem
@@ -140,17 +170,30 @@ Utf8CP name
     return classSystem;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas             04/2019
+//---------------------------------------------------------------------------------------
+ClassificationTablePtr ClassificationSystemsDomain::InsertTable
+(
+    ClassificationSystemCR system,
+    Utf8CP name
+) const
+    {
+    ClassificationTablePtr table = ClassificationTable::Create(system, name);
+    table->Insert();
+    return table;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius              04/2018
 //---------------------------------------------------------------------------------------
 ClassificationGroupPtr ClassificationSystemsDomain::InsertGroup
 (
-ClassificationSystemCR system,
+ClassificationTableCR table,
 Utf8CP name
 ) const
     {
-    ClassificationGroupPtr classDefinitionGroup = ClassificationGroup::Create(system, name);
+    ClassificationGroupPtr classDefinitionGroup = ClassificationGroup::Create(table, name);
     classDefinitionGroup->Insert();
     return classDefinitionGroup;
     }
@@ -160,7 +203,7 @@ Utf8CP name
 //---------------------------------------------------------------------------------------
 ClassificationPtr ClassificationSystemsDomain::InsertClassification
 (
-ClassificationSystemCR system, 
+ClassificationTableCR table, 
 Utf8CP name, 
 Utf8CP id, 
 Utf8CP description, 
@@ -168,7 +211,7 @@ ClassificationGroupCP group,
 ClassificationCP specializes
 ) const
     {
-    ClassificationPtr classification = Classification::CreateAndInsert(system, name, id, description, group, specializes);
+    ClassificationPtr classification = Classification::CreateAndInsert(table, name, id, description, group, specializes);
     return classification;
     }
 
