@@ -2,18 +2,13 @@
 |
 |     $Source: DgnUtils/PublicApi/GeometryDebug.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
 #pragma once
-
-#include <DgnView/DgnTool.h>
-#include <DgnView/Locate.h>
-#include <DgnView\SelectionSetManager.h>
-#include <DgnView\AccuSnap.h>
+#include <DgnPlatform/DgnPlatformApi.h>
 #include <BuildingShared/BuildingSharedMacros.h>
-#include <DgnView/DgnViewLib.h>
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 

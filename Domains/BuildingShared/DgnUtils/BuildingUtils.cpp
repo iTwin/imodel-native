@@ -53,7 +53,6 @@
 #define GRIDS_CATEGORY_CODE_GridCurve                           "GridCurve"
 
 USING_NAMESPACE_BENTLEY_DGN
-namespace DgnFx = BentleyApi::DgnClientFx;
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
