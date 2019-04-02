@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "IModelJsNative.h"
+#include <folly/BeFolly.h>
 #include <DgnPlatform/SimplifyGraphic.h>
 
 using namespace IModelJsNative;
@@ -20,26 +21,9 @@ struct ExportGraphicsMesh
     bvector<FPoint3d>   m_normals;
     bvector<FPoint2d>   m_params;
 
-    void Clear()
-        {
-        m_indices.clear();
-        m_points.clear();
-        m_normals.clear();
-        m_params.clear();
-        }
-
     void Add(ExportGraphicsMesh const& rhs)
         {
         int32_t pointOffset = (int32_t)m_points.size();
-        if (pointOffset == 0)
-            {
-            m_indices = rhs.m_indices;
-            m_points = rhs.m_points;
-            m_normals = rhs.m_normals;
-            m_params = rhs.m_params;
-            return;
-            }
-
         m_indices.reserve(m_indices.size() + rhs.m_indices.size());
         for (int i = 0; i < (int)rhs.m_indices.size(); ++i)
             m_indices.push_back(rhs.m_indices[i] + pointOffset);
@@ -62,8 +46,7 @@ struct FastVertexUnifier
 {
     struct NodeEntry
     {
-        int32_t normal; int32_t newIndex; FPoint2d param;
-        NodeEntry() : normal(-1), newIndex(-1) { }
+        int32_t newIndex; int32_t normal; FPoint2d param;
     };
 
     struct Node // each node is 64 bytes for cache alignment
@@ -72,8 +55,6 @@ struct FastVertexUnifier
 
         NodeEntry entries[ENTRY_COUNT];
     };
-
-    bvector<Node>               m_remapper;
 
     // Indices are zero-based, no blocking, no sign for edge visibility
     bvector<DPoint3d>           m_inPoints;
@@ -88,29 +69,14 @@ struct FastVertexUnifier
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Matt.Gooding    02/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Clear()
-    {
-    m_remapper.clear();
-
-    m_inPoints.clear();
-    m_inPointIndices.clear();
-    m_inNormals.clear();
-    m_inNormalIndices.clear();
-    m_inParams.clear();
-
-    m_output.Clear();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Matt.Gooding    02/19
 * Linear speed unification of vertex indices. Each point has ENTRY_COUNT remappings
 * that can be saved. After that, just add additional vertices for each normal/param
 * combination - ROI on further remapping is poor.
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Unify()
     {
-    m_remapper.resize(m_inPoints.size());
+    std::unique_ptr<Node[]> remapper(new Node[m_inPoints.size()]);
+    memset(remapper.get(), 0, sizeof(Node) * m_inPoints.size());
 
     // Reserve for at least best case compression
     m_output.m_points.reserve(m_inPoints.size());
@@ -118,11 +84,12 @@ void Unify()
     m_output.m_params.reserve(m_inPoints.size());
 
     // Index count will remain the same
-    m_output.m_indices.resize(m_inPointIndices.size());
+    uint32_t indexCount = (uint32_t) m_inPointIndices.size();
+    m_output.m_indices.resize(indexCount);
 
     const float UV_TOLERANCE = 0.01f;
 
-    for (int i = 0; i < (int)m_inPointIndices.size(); ++i)
+    for (uint32_t i = 0; i < indexCount; ++i)
         {
         int32_t origPointIndex = m_inPointIndices[i];
         int32_t origNormalIndex = m_inNormalIndices[i];
@@ -131,13 +98,13 @@ void Unify()
         bool foundRemap = false;
         for (int j = 0; j < Node::ENTRY_COUNT; ++j)
             {
-            NodeEntry& entry = m_remapper[origPointIndex].entries[j];
-            if (entry.newIndex == -1) // unused entry
+            NodeEntry& entry = remapper[origPointIndex].entries[j];
+            if (entry.newIndex == 0) // unused entry
                 {
                 entry.normal = origNormalIndex;
                 entry.param = origParam;
-                entry.newIndex = (int32_t) m_output.m_points.size();
-                m_output.m_indices[i] = entry.newIndex;
+                entry.newIndex = (int32_t) m_output.m_points.size() + 1; // ONE-INDEX
+                m_output.m_indices[i] = (int32_t) m_output.m_points.size();
                 m_output.m_points.push_back(m_inPoints[origPointIndex]);
                 m_output.m_normals.push_back(m_inNormals[origNormalIndex]);
                 m_output.m_params.push_back(origParam);
@@ -149,7 +116,7 @@ void Unify()
                      std::abs(entry.param.y - origParam.y) < UV_TOLERANCE)
                 {
                 // reuse entry
-                m_output.m_indices[i] = entry.newIndex;
+                m_output.m_indices[i] = entry.newIndex - 1; // ONE-INDEX
                 foundRemap = true;
                 break;
                 }
@@ -236,56 +203,6 @@ void SetInput(PolyfaceQueryCR pf, TransformCR transform, FPoint2dCP srcParams)
     }
 }; // FastVertexUnifier
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Matt.Gooding    02/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Napi::Value convertMesh(Napi::Env env, ExportGraphicsMesh& mesh)
-    {
-    Napi::Object convertedMesh = Napi::Object::New(env);
-
-    Napi::Int32Array indexArray = Napi::Int32Array::New(env, (uint32_t)mesh.m_indices.size());
-    memcpy (indexArray.Data(), &mesh.m_indices[0], mesh.m_indices.size() * sizeof(int32_t));
-    convertedMesh.Set("indices", indexArray);
-
-    uint32_t nVertices = (uint32_t) mesh.m_points.size();
-    Napi::Float64Array pointArray = Napi::Float64Array::New(env, nVertices * 3);
-    for (uint32_t i = 0; i < nVertices; ++i)
-        {
-        pointArray[i * 3] = mesh.m_points[i].x;
-        pointArray[i * 3 + 1] = mesh.m_points[i].y;
-        pointArray[i * 3 + 2] = mesh.m_points[i].z;
-        }
-    convertedMesh.Set("points", pointArray);
-
-    Napi::Float32Array normalArray = Napi::Float32Array::New(env, nVertices * 3);
-    for (uint32_t i = 0; i < nVertices; ++i)
-        {
-        normalArray[i * 3] = mesh.m_normals[i].x;
-        normalArray[i * 3 + 1] = mesh.m_normals[i].y;
-        normalArray[i * 3 + 2] = mesh.m_normals[i].z;
-        }
-    convertedMesh.Set("normals", normalArray);
-
-    Napi::Float64Array paramArray = Napi::Float64Array::New(env, nVertices * 2);
-    for (uint32_t i = 0; i < nVertices; ++i)
-        {
-        paramArray[i * 2] = mesh.m_params[i].x;
-        paramArray[i * 2 + 1] = mesh.m_params[i].y;
-        }
-    convertedMesh.Set("params", paramArray);
-
-    return convertedMesh;
-    }
-
-struct ExportGraphicsMaterial : Render::Material
-{
-private:
-    ExportGraphicsMaterial(CreateParams const& params) : Material(params) { }
-
-public:
-    static MaterialPtr Create(MaterialKey key) { return new ExportGraphicsMaterial(Material::CreateParams(key)); }
-};
-
 //=======================================================================================
 // @bsistruct                                                   Matt.Gooding    02/19
 //=======================================================================================
@@ -329,7 +246,6 @@ public:
 private:
     IFacetOptionsPtr                m_facetOptions;
     DgnDbR                          m_db;
-    FastVertexUnifier               m_unifier;
 
     struct CachedMaterial
         {
@@ -453,32 +369,76 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
             }
         }
 
-    m_unifier.SetInput(pfQuery, sg.GetLocalToWorldTransform(), &effectiveParams[0]);
-    m_unifier.Unify();
+    FastVertexUnifier unifier;
+    unifier.SetInput(pfQuery, sg.GetLocalToWorldTransform(), &effectiveParams[0]);
+    unifier.Unify();
 
     // Bucket polyfaces together by color to save cost on NAPI transition and give users a
     // minimal number of meshes for each element.
-    ExportGraphicsMesh* cachedMesh = nullptr;
     for (auto& entry : m_cachedEntries)
         {
         if (entry.color != color || entry.textureId != textureId)
             continue;
-        cachedMesh = &entry.mesh;
-        break;
+
+        entry.mesh.Add(unifier.m_output);
+        return true;
         }
 
-    if (cachedMesh == nullptr)
-        {
-        m_cachedEntries.emplace_back(color, textureId);
-        cachedMesh = &m_cachedEntries.back().mesh;
-        }
-
-    cachedMesh->Add(m_unifier.m_output);
-    m_unifier.Clear();
-
+    m_cachedEntries.emplace_back(color, textureId);
+    ExportGraphicsMesh& cachedMesh = m_cachedEntries.back().mesh;
+    cachedMesh.m_indices = std::move(unifier.m_output.m_indices);
+    cachedMesh.m_points = std::move(unifier.m_output.m_points);
+    cachedMesh.m_normals = std::move(unifier.m_output.m_normals);
+    cachedMesh.m_params = std::move(unifier.m_output.m_params);
     return true;
     }
 }; // ExportGraphicsProcessor
+
+//=======================================================================================
+// @bsistruct                                                   Matt.Gooding    04/19
+//=======================================================================================
+struct ExportGeometrySource3d : GeometrySource3d
+{
+public:
+    GeometryStream  m_geomStream;
+    DgnCategoryId   m_categoryId;
+    DgnDbR          m_db;
+    Placement3d     m_placement;
+
+    ExportGeometrySource3d(DgnDbR db) : m_db(db) { }
+    virtual ~ExportGeometrySource3d() { }
+
+    DgnDbR _GetSourceDgnDb() const override { return m_db; }
+    DgnElementCP _ToElement() const override { return nullptr; }
+    GeometrySource3dCP _GetAsGeometrySource3d() const override { return this; }
+    DgnCategoryId _GetCategoryId() const override { return m_categoryId; }
+    GeometryStreamCR _GetGeometryStream() const override { return m_geomStream; }
+    Placement3dCR _GetPlacement() const override { return m_placement; }
+
+    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false); return DgnDbStatus::BadRequest; }
+    DgnDbStatus _SetPlacement(Placement3dCR) override { BeAssert(false); return DgnDbStatus::BadRequest; }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Matt.Gooding    03/19
+//=======================================================================================
+struct ExportGraphicsJob
+{
+    ExportGeometrySource3d          m_geom;
+    DgnDbR                          m_db;
+    ExportGraphicsProcessor         m_processor;
+    ExportGraphicsContext           m_context;
+    Napi::String                    m_elementId;
+
+    ExportGraphicsJob(DgnDbR db, IFacetOptions* fo, Napi::String elementId) :
+        m_geom(db), m_db(db), m_processor(db, fo), m_context(m_processor), m_elementId(elementId) { }
+
+    void Execute()
+        {
+        m_context.SetDgnDb(m_db);
+        m_context.VisitGeometry(m_geom);
+        }
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Matt.Gooding    02/19
@@ -502,7 +462,75 @@ static IFacetOptionsPtr createFacetOptions(Napi::Object const& exportProps)
     if (maxEdgeLengthVal.IsNumber())
         maxEdgeLength = maxEdgeLengthVal.As<Napi::Number>().DoubleValue();
 
-    return IFacetOptions::CreateForSurfaces(chordTol, angleTol, maxEdgeLength, true, true, true);
+    auto result = IFacetOptions::CreateForSurfaces(chordTol, angleTol, maxEdgeLength, true, true, true);
+    result->SetIgnoreHiddenBRepEntities(true); // act like tile generation, big perf improvement
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static Napi::Value convertMesh(Napi::Env env, ExportGraphicsMesh& mesh)
+    {
+    Napi::Object convertedMesh = Napi::Object::New(env);
+
+    Napi::Int32Array indexArray = Napi::Int32Array::New(env, (uint32_t)mesh.m_indices.size());
+    memcpy (indexArray.Data(), &mesh.m_indices[0], mesh.m_indices.size() * sizeof(int32_t));
+    convertedMesh.Set("indices", indexArray);
+
+    uint32_t nVertices = (uint32_t) mesh.m_points.size();
+    Napi::Float64Array pointArray = Napi::Float64Array::New(env, nVertices * 3);
+    for (uint32_t i = 0; i < nVertices; ++i)
+        {
+        pointArray[i * 3] = mesh.m_points[i].x;
+        pointArray[i * 3 + 1] = mesh.m_points[i].y;
+        pointArray[i * 3 + 2] = mesh.m_points[i].z;
+        }
+    convertedMesh.Set("points", pointArray);
+
+    Napi::Float32Array normalArray = Napi::Float32Array::New(env, nVertices * 3);
+    for (uint32_t i = 0; i < nVertices; ++i)
+        {
+        normalArray[i * 3] = mesh.m_normals[i].x;
+        normalArray[i * 3 + 1] = mesh.m_normals[i].y;
+        normalArray[i * 3 + 2] = mesh.m_normals[i].z;
+        }
+    convertedMesh.Set("normals", normalArray);
+
+    Napi::Float32Array paramArray = Napi::Float32Array::New(env, nVertices * 2);
+    for (uint32_t i = 0; i < nVertices; ++i)
+        {
+        paramArray[i * 2] = mesh.m_params[i].x;
+        paramArray[i * 2 + 1] = mesh.m_params[i].y;
+        }
+    convertedMesh.Set("params", paramArray);
+
+    return convertedMesh;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static BeSQLite::CachedStatementPtr getSelectStatement(DgnDbR db)
+    {
+    // Mimic GeometrySelector3d in Tile.cpp - just get the element bits we need and dodge
+    // the mutex contention that comes with loading full elements.
+    const Utf8CP sql = "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin_X,Origin_Y,Origin_Z,"
+        "BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z FROM "
+        BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE ElementId=?";
+    return db.GetCachedStatement(sql);
+    }
+static Placement3d getPlacement(BeSQLite::CachedStatement& stmt)
+    {
+    Angle yaw   = Angle::FromDegrees(stmt.GetValueDouble(2));
+    Angle pitch = Angle::FromDegrees(stmt.GetValueDouble(3));
+    Angle roll  = Angle::FromDegrees(stmt.GetValueDouble(4));
+    DPoint3d origin = DPoint3d::From(stmt.GetValueDouble(5), stmt.GetValueDouble(6), stmt.GetValueDouble(7));
+    DPoint3d boxMin = DPoint3d::From(stmt.GetValueDouble(8), stmt.GetValueDouble(9), stmt.GetValueDouble(10));
+    DPoint3d boxMax = DPoint3d::From(stmt.GetValueDouble(11), stmt.GetValueDouble(12), stmt.GetValueDouble(13));
+
+    return Placement3d(origin, YawPitchRollAngles(yaw, pitch, roll),
+        ElementAlignedBox3d(boxMin.x, boxMin.y, boxMin.z, boxMax.x, boxMax.y, boxMax.z));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -510,37 +538,51 @@ static IFacetOptionsPtr createFacetOptions(Napi::Object const& exportProps)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps)
     {
+    BeFolly::ThreadPool& threadPool = BeFolly::ThreadPool::GetCpuPool();
+    BeSQLite::CachedStatementPtr stmt = getSelectStatement(db);
     IFacetOptionsPtr facetOptions = createFacetOptions(exportProps);
-    ExportGraphicsProcessor egProcessor(db, facetOptions.get());
-    ExportGraphicsContext egContext(egProcessor);
-    egContext.SetDgnDb(db);
-
-    // TS API specifies that modifying the binding of this function in the callback will be ignored
-    Napi::Function onGraphicsCb = exportProps.Get("onGraphics").As<Napi::Function>();
     Napi::Array elementIdArray = exportProps.Get("elementIdArray").As<Napi::Array>();
+
+    bvector<std::unique_ptr<ExportGraphicsJob>> jobs; jobs.reserve(elementIdArray.Length());
+    bvector<folly::Future<folly::Unit>> jobHandles; jobHandles.reserve(jobs.size());
 
     for (uint32_t i = 0; i < elementIdArray.Length(); ++i)
         {
         Napi::String napiElementId = elementIdArray.Get(i).As<Napi::String>();
         std::string elementIdStr = napiElementId.Utf8Value();
         DgnElementId elementId(BeInt64Id::FromString(elementIdStr.c_str()).GetValue());
-        if (!elementId.IsValid())
-            continue;
+        if (!elementId.IsValid()) continue;
 
-        GeometrySourceCP geomSource;
-        DgnElementCPtr element = db.Elements().GetElement(elementId);
-        if (element.IsNull() || !(geomSource = element->ToGeometrySource()))
-            continue;
+        // Mimic GeometrySelector3d in Tile.cpp
+        stmt->Reset();
+        stmt->BindInt64(1, elementId.GetValueUnchecked());
+        if (BeSQLite::BE_SQLITE_ROW != stmt->Step()) continue;
 
-        egProcessor.m_cachedEntries.clear();
-        egContext.VisitGeometry(*geomSource);
-        if (egProcessor.m_cachedEntries.empty())
-            continue;
+        GeometryStream geomStream;
+        auto status = db.Elements().LoadGeometryStream(geomStream, stmt->GetValueBlob(1), stmt->GetColumnBytes(1));
+        if (status != DgnDbStatus::Success) continue;
 
-        for (auto& entry : egProcessor.m_cachedEntries)
+        ExportGraphicsJob* job = new ExportGraphicsJob(db, facetOptions.get(), napiElementId);
+        job->m_geom.m_categoryId = stmt->GetValueId<DgnCategoryId>(0);
+        job->m_geom.m_placement = getPlacement(*stmt);
+        job->m_geom.m_geomStream = std::move(geomStream);
+
+        jobs.emplace_back(job);
+        jobHandles.push_back(folly::via(&threadPool, [=]() { job->Execute(); }));
+        }
+
+    // TS API specifies that modifying the binding of this function in the callback will be ignored
+    Napi::Function onGraphicsCb = exportProps.Get("onGraphics").As<Napi::Function>();
+
+    for (uint32_t i = 0; i < (uint32_t)jobHandles.size(); ++i)
+        {
+        jobHandles[i].wait(); // Should use folly chaining? Good enough for now, jobs are FIFO
+
+        ExportGraphicsJob* job = jobs[i].get();
+        for (auto& entry : job->m_processor.m_cachedEntries)
             {
             Napi::Object cbArgument = Napi::Object::New(Env());
-            cbArgument.Set("elementId", napiElementId);
+            cbArgument.Set("elementId", job->m_elementId);
             cbArgument.Set("mesh", convertMesh(Env(), entry.mesh));
             cbArgument.Set("color", Napi::Number::New(Env(), entry.color.GetValue()));
             if (entry.textureId.IsValid())
@@ -548,10 +590,10 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
                 Utf8String textureIdString = entry.textureId.ToString(BeInt64Id::UseHex::Yes);
                 cbArgument.Set("textureId", Napi::String::New(Env(), textureIdString.c_str()));
                 }
-            Napi::Value cbVal = onGraphicsCb.Call({ cbArgument });
-            if (cbVal.IsBoolean() && !cbVal.As<Napi::Boolean>())
-                return DgnDbStatus::Success;
+            onGraphicsCb.Call({ cbArgument });
             }
+
+        jobs[i].reset(); // Cleaning these up now while they're still in cache is much faster
         }
 
     return DgnDbStatus::Success;

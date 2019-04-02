@@ -1315,7 +1315,9 @@ void            FacetEntity (IBRepEntityCR in, IFacetOptionsR facetOptions)
     options.control.is_surface_plane_ang = PK_LOGICAL_true;
     options.control.surface_plane_ang    = angleTol;
 
-    int maxPerFace = (PSolidUtil::HasCurvedFaceOrEdge(entityTag) ? facetOptions.GetCurvedSurfaceMaxPerFace() : facetOptions.GetMaxPerFace());
+    int maxPerFace = facetOptions.GetMaxPerFace();
+    if (facetOptions.GetCurvedSurfaceMaxPerFace() != maxPerFace && PSolidUtil::HasCurvedFaceOrEdge(entityTag))
+        maxPerFace = facetOptions.GetCurvedSurfaceMaxPerFace();
 
     options.control.match                = PK_facet_match_topol_c;
     options.control.max_facet_sides      = (maxPerFace > 3 ? maxPerFace : 3);
