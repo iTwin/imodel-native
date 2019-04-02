@@ -89,6 +89,15 @@ DgnDbStatus Profile::_OnUpdate (DgnElement const& original)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void Profile::_OnUpdateFinished() const
+    {
+    ProfileHandler& profileHandler = ProfileHandler::GetHandler();
+    profileHandler.NotifyDependencies(m_dgndb, m_elementId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Profiles should override this method to update geometry of profiles that reference/
 * depend on it. If overriden, T_Super must be called. See Profile::UpdateGeometry.
 * @bsimethod                                                                     01/2019

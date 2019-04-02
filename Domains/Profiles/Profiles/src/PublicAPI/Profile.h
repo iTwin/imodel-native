@@ -130,6 +130,7 @@ protected:
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override; //!< @private
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override; //!< @private
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _UpdateInDb() override; //!< @private
+    PROFILES_EXPORT virtual void _OnUpdateFinished() const override; //!< @private
     PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override; //!< @private
 
 public:
@@ -276,6 +277,7 @@ public:
         m_dependencyHandlers.push_back (IDependencyUpdateHandlerPtr (new _HandlerType (std::move (handler))));
         }
 
+protected:
     //! Notifies dependencies, triggers their update methods.
     //! @param database database that owns the elementId element.
     //! @param elementId Id of the element that was updated and wants to notify its dependencies.
@@ -292,6 +294,8 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ProfileHandler : Dgn::dgn_ElementHandler::Definition, DependencyUpdateNotifier
     {
+    friend struct Profile;
+
     ELEMENTHANDLER_DECLARE_MEMBERS_ABSTRACT (PRF_CLASS_Profile, Profile, ProfileHandler, Dgn::dgn_ElementHandler::Definition, PROFILES_EXPORT)
     }; // ProfileHandler
 

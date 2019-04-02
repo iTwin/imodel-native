@@ -581,14 +581,22 @@ TEST_F (ProfileTestCase, NotifyDependencies_RegisteredIDependencyUpdateHandler_H
             }
         };
 
+    struct TestNotifier : DependencyUpdateNotifier
+        {
+        void NotifyDependenciesWrapper(Dgn::DgnDb const& database, Dgn::DgnElementId const& elementId)
+            {
+            NotifyDependencies(database, elementId);
+            }
+        };
+
     ProfileUpdateHandlerExample profileUpdateHandler = ProfileUpdateHandlerExample();
 
-    ProfileHandler& profilehandler = ProfileHandler::GetHandler();
-    profilehandler.RegisterDependencyHandler(profileUpdateHandler);
+    TestNotifier notifier;
+    notifier.RegisterDependencyHandler(profileUpdateHandler);
 
     ASSERT_EQ (0, *profileUpdateHandler.value);
-    profilehandler.NotifyDependencies (GetDb(), DgnElementId());
+    notifier.NotifyDependenciesWrapper(GetDb(), DgnElementId());
     ASSERT_EQ (1, *profileUpdateHandler.value) << "NotifyDependecies() failed to call _OnUpdate() of registered handlers";
-    profilehandler.NotifyDependencies (GetDb(), DgnElementId());
+    notifier.NotifyDependenciesWrapper(GetDb(), DgnElementId());
     ASSERT_EQ (2, *profileUpdateHandler.value) << "NotifyDependecies() failed to call _OnUpdate() of registered handlers";
     }
