@@ -92,6 +92,17 @@
         <ProductDirectory Name="UnitTests-Assets"               Deliver="false"/>
         <ProductDirectory Name="UnitTests-IgnoreList"           Deliver="false"/>
         <ProductDirectory Name="UnitTests-Objects"              Deliver="false"/>
+
+        <!-- Adding these to silence the warnings... if you want them, deliver them properly... -->
+        <ProductDirectory Name="Assemblies" LibType="static" Deliver="false"/>
+        <ProductDirectory Name="VendorNotices" LibType="static" Deliver="false"/>
+        <ProductDirectory Name="BuildingSharedIncludes" Deliver="false"/>
+        <ProductDirectory Name="GridsIncludes" Deliver="false"/>
+        <ProductDirectory Name="ProfilesIncludes" Deliver="false"/>
+        <ProductDirectory Name="StructuralDomainIncludes" Deliver="false"/>
+        <ProductDirectory Name="FormsDomainIncludes" Deliver="false"/>
+        <ProductDirectory Name="BuildingDomainIncludes" Deliver="false"/>
+
     </ProductDirectoryList>
 
     <Product Name="BuildingDomainTests" OnlyPlatforms="x64">
@@ -140,6 +151,7 @@
         <ProductDirectory Name="PublicAPI"                               Deliver="true" RelativeTo="Root"   Path="PublicAPI"/>
         <ProductDirectory Name="VendorAPI"                               Deliver="true" RelativeTo="Root"   Path="VendorAPI"/>
         <ProductDirectory Name="VendorNotices"                           Deliver="true" RelativeTo="Root"   Path="VendorNotices"/>
+        <ProductDirectory Name="VendorNotices"                           Deliver="true" RelativeTo="Root"   Path="VendorNotices" LibType="static"/>
         <ProductDirectory Name="Assets"                                  Deliver="true" RelativeTo="Root"   Path="Assets"/>
         <ProductDirectory Name="ComponentAssets"                         Deliver="true" RelativeTo="Root"   Path="Assets"/>
         <ProductDirectory Name="Assets"                                  Deliver="true" RelativeTo="Root"   Path="Assets" LibType="static"/>
@@ -159,6 +171,12 @@
         <ProductDirectory Name="ConstraintSystemIncludes"                Deliver="true" RelativeTo="Root"   Path="Include/ConstraintSystem"/>
         <ProductDirectory Name="PlantDomainSchemasDir"                   Deliver="true" RelativeTo="Root"   Path="Assets/ECSchemas/Domain"/>
         <ProductDirectory Name="PlantDomainAssembliesDir"                Deliver="true" RelativeTo="Root"   Path="Assemblies"/>
+
+        <!-- Adding these to silence the warnings... if you want them, deliver them properly... -->
+        <ProductDirectory Name="Assemblies" LibType="static" Deliver="false"/>
+        <ProductDirectory Name="BuildingSharedIncludes" Deliver="false"/>
+        <ProductDirectory Name="ProfilesIncludes" Deliver="false"/>
+        <ProductDirectory Name="ClassificationSystemsIncludes" Deliver="false"/>
         
     </ProductDirectoryList>
 
@@ -179,6 +197,12 @@
         <!-- Just to make it smaller, clip out stuff we don't need -->
         <ProductDirectory Name="sqlang"                                  Deliver="false"        LibType="static"/>
         <ProductDirectory Name="Libs"                                    Deliver="false"        LibType="Static"/>
+
+        <!-- Adding these to silence the warnings... if you want them, deliver them properly... -->
+        <ProductDirectory Name="BuildingSharedIncludes" Deliver="false"/>
+        <ProductDirectory Name="ProfilesIncludes" Deliver="false"/>
+        <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false"/>
+        <ProductDirectory Name="VendorNotices" Deliver="false"/>
     </ProductDirectoryList>
 
 </BuildContext>

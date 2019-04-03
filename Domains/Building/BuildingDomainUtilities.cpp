@@ -2,7 +2,7 @@
 |
 |     $Source: BuildingDomainUtilities.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BuildingDomainInternal.h"
@@ -1015,7 +1015,7 @@ namespace BuildingDomain
 
         Utf8String numbers = "-1234567890.+";
 
-        int pos = propertyValueString.find_first_not_of(numbers, 0);
+        int pos = (int)propertyValueString.find_first_not_of(numbers, 0);
 
         Utf8String valueString = propertyValueString.substr(0, pos);
         Utf8String unitSuffix  = propertyValueString.substr(pos, propertyValueString.length());
@@ -1112,7 +1112,7 @@ namespace BuildingDomain
     Dgn::DgnDbStatus BuildingDomainUtilities::FindOrCreateSubCategory(Dgn::DgnDbPtr dgnDb, Dgn::DgnCategoryId categoryId, Dgn::DgnSubCategoryId &subCategoryId, Utf8CP subCategoryName)
         {
 
-        Dgn::DefinitionModelR dictionary = dgnDb->GetDictionaryModel();
+        // unused - Dgn::DefinitionModelR dictionary = dgnDb->GetDictionaryModel();
         Utf8String subName(subCategoryName);
 
         Dgn::DgnCode subCategoryCode = Dgn::DgnSubCategory::CreateCode(*dgnDb, categoryId, subName);

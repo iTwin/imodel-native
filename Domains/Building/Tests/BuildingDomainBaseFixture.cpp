@@ -2,9 +2,12 @@
 |
 |     $Source: Tests/BuildingDomainBaseFixture.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
+#ifdef NO_DGNVIEW_IMODEL02
+
 #include "BuildingDomainBaseFixture.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DesktopTools\KnownDesktopLocationsAdmin.h>
@@ -286,3 +289,5 @@ DgnDbPtr BuildingDomainTestFixture::OpenDgnDb()
 //    db = DgnDb::CreateDgnDb(nullptr, outputFileName, createProjectParams);
 //    ASSERT_EQ(true, db.IsValid());
 //    }
+
+#endif // NO_DGNVIEW_IMODEL02

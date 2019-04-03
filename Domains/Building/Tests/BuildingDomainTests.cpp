@@ -5,6 +5,9 @@
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
+#ifdef NO_DGNVIEW_IMODEL02
+
 #include "BuildingDomainBaseFixture.h"
 #include <BuildingDomain\BuildingDomainApi.h>
 #include <BeJsonCpp\BeJsonUtilities.h>
@@ -803,4 +806,4 @@ TEST_F(BuildingDomainTestFixture, RadialTests)
 
     }
 
-
+#endif // NO_DGNVIEW_IMODEL02
