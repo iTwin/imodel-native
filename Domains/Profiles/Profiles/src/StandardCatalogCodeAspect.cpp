@@ -68,9 +68,9 @@ DgnDbStatus StandardCatalogCodeAspect::_UpdateProperties (DgnElement const& elem
     if (sqlStatementPtr.IsNull())
         return DgnDbStatus::SQLiteError;
 
-    sqlStatementPtr->BindText (1, manufacturer.c_str(), IECSqlBinder::MakeCopy::No, manufacturer.SizeInBytes());
-    sqlStatementPtr->BindText (2, standardsOrganization.c_str(), IECSqlBinder::MakeCopy::No, manufacturer.SizeInBytes());
-    sqlStatementPtr->BindText (3, revision.c_str(), IECSqlBinder::MakeCopy::No, manufacturer.SizeInBytes());
+    sqlStatementPtr->BindText (1, manufacturer.c_str(), IECSqlBinder::MakeCopy::No, (int)manufacturer.SizeInBytes());
+    sqlStatementPtr->BindText (2, standardsOrganization.c_str(), IECSqlBinder::MakeCopy::No, (int)manufacturer.SizeInBytes());
+    sqlStatementPtr->BindText (3, revision.c_str(), IECSqlBinder::MakeCopy::No, (int)manufacturer.SizeInBytes());
     sqlStatementPtr->BindId (4, GetAspectInstanceId());
 
     if (sqlStatementPtr->Step() != BE_SQLITE_DONE)
