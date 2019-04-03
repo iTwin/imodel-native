@@ -68,6 +68,15 @@ bool MaterialProfile::_Validate() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void MaterialProfile::_OnUpdateFinished() const
+    {
+    MaterialProfileHandler& materialProfileHandler = MaterialProfileHandler::GetHandler();
+    materialProfileHandler.NotifyDependencies(m_dgndb, m_elementId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProfileCPtr MaterialProfile::GetProfile() const
