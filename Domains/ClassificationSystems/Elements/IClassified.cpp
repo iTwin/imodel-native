@@ -64,6 +64,35 @@ ClassificationCPtr IClassified::GetClassification(ClassificationSystemCR system)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<ClassificationCPtr> IClassified::GetClassifications(ClassificationSystemCR system) const
+    {
+    Dgn::DgnDbR db = _GetAsDgnElement().GetDgnDb();
+
+    Dgn::DgnElementId elemId = system.GetElementId();
+    BeAssert(elemId.IsValid());
+
+    bvector<ClassificationCPtr> classificationList;
+
+    for (ElementIdIteratorEntry classificationEntry : MakeClassificationsIterator())
+        {
+        ClassificationCPtr classification = Classification::Get(db, classificationEntry.GetElementId());
+        if (classification.IsNull())
+            continue;
+
+        ClassificationTableCPtr table = ClassificationTable::Get(db, classification->GetClassificationTableId());
+        if (table.IsNull())
+            continue;
+
+        if (table->GetClassificationSystemId() == elemId)
+            classificationList.push_back(classification);
+        }
+
+    return classificationList;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                06/2018
 //---------------+---------------+---------------+---------------+---------------+------
 void IClassified::AddClassification(ClassificationCR classification)
@@ -79,8 +108,6 @@ void IClassified::AddClassification(ClassificationCR classification)
 
     ClassificationSystemCPtr system = ClassificationSystem::Get(classification.GetDgnDb(), table->GetClassificationSystemId());
     BeAssert(system.IsValid());
-    if (GetClassification(*system).IsValid())
-        return;
 
     Dgn::DgnDbR db = _GetAsDgnElement().GetDgnDb();
     Dgn::DgnElementId targetId = classification.GetElementId();

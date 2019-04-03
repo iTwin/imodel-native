@@ -94,7 +94,7 @@ TEST_F(ClassificationSystemsTestFixture, PropertiesAreSetProperly)
     ASSERT_TRUE(getSystem.IsValid()) << "System was not found in Db";
 
     ClassificationTablePtr table = ClassificationTable::Create(*system, "Test Table");
-    ASSERT_TRUE(system.IsValid()) << "Failed to create table";
+    ASSERT_TRUE(table.IsValid()) << "Failed to create table";
 
     table->Insert(&stat);
     ASSERT_EQ(DgnDbStatus::Success, stat) << "Table failed to be inserted to Db";

@@ -29,6 +29,7 @@ struct IClassified
     public:
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::ElementIdIterator MakeClassificationsIterator() const;
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationCPtr GetClassification(ClassificationSystemCR system) const;
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT bvector<ClassificationCPtr> GetClassifications(ClassificationSystemCR system) const;
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT void AddClassification(ClassificationCR classification);
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT void RemoveClassification(ClassificationCR classification);
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT bool IsClassifiedAs(ClassificationCR classification) const;
