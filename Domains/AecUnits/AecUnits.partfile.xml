@@ -7,7 +7,7 @@
         <SubPart PartName="AecUnitsDomain"/>
     </Part>
 
-    <Part Name="AecUnitsDomain" BentleyBuildMakeFile="AecUnits.mke" ApiNumber="B02">
+    <Part Name="AecUnitsDomain" BentleyBuildMakeFile="AecUnits.mke" ApiNumber="M02">
         <SubPart PartName="AecUnitsPublicAPI"/>
         <SubPart PartName="DgnPlatformDLL"        PartFile="DgnPlatform"  Repository="DgnPlatform" />
 
@@ -17,7 +17,7 @@
         </Bindings>
     </Part>   
 
-    <Part Name="AecUnitsPublicAPI" BentleyBuildMakeFile="AecUnits.prewire.mke" ApiNumber="B02">
+    <Part Name="AecUnitsPublicAPI" BentleyBuildMakeFile="AecUnits.prewire.mke" ApiNumber="M02">
         <Bindings>
             <PublicAPI Domain="AecUnits"/>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
