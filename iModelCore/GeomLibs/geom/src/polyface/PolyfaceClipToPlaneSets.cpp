@@ -4,7 +4,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceClipToPlaneSets.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -766,6 +766,7 @@ StatusInt   PolyfaceQuery::ClipToPlaneSetIntersection (T_ClipPlaneSets const& pl
         return output._ProcessUnclippedPolyface (*this);
 
     PolyfaceHeaderPtr                   outputPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
+    outputPolyface->CopyAllActiveFlagsFromQuery(*this);
     LightweightPolyfaceBuilderPtr       outputBuilder = LightweightPolyfaceBuilder::Create (*outputPolyface);
     PolyfaceClipFacet                   facet (index);
     OutputChainMap                      outputChainMap (*this);
@@ -878,6 +879,7 @@ StatusInt   PolyfaceQuery::ClipToRange (DRange3dCR clipRange, PolyfaceQuery::ICl
     facetOptions->SetParamsRequired (0 != GetParamCount());
 
     PolyfaceHeaderPtr                   outputPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
+    outputPolyface->CopyAllActiveFlagsFromQuery(*this);
     LightweightPolyfaceBuilderPtr   outputBuilder = LightweightPolyfaceBuilder::Create (*outputPolyface);
     PolyfaceClipFacet                   facet (0);
     OutputChainMap                      outputChainMap (*this);
