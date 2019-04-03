@@ -21,7 +21,7 @@
         <Directories DirectoryListName="FormsDomainTestDirs"/>
     </Product>
 
-    <Part Name="FormsDomainPublicAPI" BentleyBuildMakeFile="Forms.prewire.mke" ApiNumber="B02">
+    <Part Name="FormsDomainPublicAPI" BentleyBuildMakeFile="Forms.prewire.mke" ApiNumber="M02">
         <Bindings>
             <PublicAPI Domain="FormsDomain"/>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
@@ -31,7 +31,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="FormsDomainDLL" BentleyBuildMakeFile="Forms.mke" ApiNumber="B02">
+    <Part Name="FormsDomainDLL" BentleyBuildMakeFile="Forms.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform" Repository="DgnPlatform" />
         <SubPart PartName="ProfilesDomainDLL"  PartFile="ProfilesDomain" Repository="DgnDomains-Profiles" />
         <SubPart PartName="FormsDomainPublicAPI"/>
