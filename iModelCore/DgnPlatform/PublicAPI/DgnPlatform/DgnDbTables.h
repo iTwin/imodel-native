@@ -157,6 +157,7 @@
 #include "ECSqlClassParams.h"
 #include "ECSqlStatementIterator.h"
 #include <Bentley/HeapZone.h>
+#include <GeoCoord/BaseGeoCoord.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -729,6 +730,7 @@ private:
     mutable bool m_hasCheckedForGCS = false;
     mutable DgnGCS* m_gcs = nullptr;
     mutable IGeoCoordinateServicesP m_geoServices = nullptr;
+    mutable GeoCoordinates::BaseGCSPtr m_wgs84GCS;
 
     DgnGeoLocation(DgnDbR db);
     void LoadProjectExtents() const;
@@ -795,6 +797,12 @@ public:
     //! @param[in] inLatLong The input GeoPoint
     //! @return non-zero error status if the point cannot be converted or if this DgnDb is not geo-located
     DGNPLATFORM_EXPORT BentleyStatus XyzFromLatLong(DPoint3dR outXyz, GeoPointCR inLatLong) const;
+
+    //! Convert a GeoPoint in the WGS84 Datum to an XYZ point
+    //! @param[out] outXyz The output XYZ point
+    //! @param[in] inLatLong The input GeoPoint in the WGS84 datum.
+    //! @return non-zero error status if the point cannot be converted or if this DgnDb is not geo-located
+    DGNPLATFORM_EXPORT BentleyStatus XyzFromLatLongWGS84(DPoint3dR outXyz, GeoPointCR inLatLong) const;
 
     //! Convert a an XYZ point to a GeoPoint
     //! @param[out] outLatLong  The output GeoPoint

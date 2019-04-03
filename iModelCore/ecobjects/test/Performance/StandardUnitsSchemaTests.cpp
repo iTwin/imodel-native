@@ -2,7 +2,7 @@
 |
 |     $Source: test/Performance/StandardUnitsSchemaTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -43,8 +43,8 @@ TEST_F(UnitsPerformanceTest, LoadUnitsSchema)
     ECSchema::ReadFromXmlFile(unitsSchema, assetsDir.c_str(), *context);
     timer.Stop();
 
-    EXPECT_EQ(451, unitsSchema->GetUnitCount());
-    EXPECT_EQ(66, unitsSchema->GetPhenomenonCount());
+    EXPECT_EQ(454, unitsSchema->GetUnitCount());
+    EXPECT_EQ(67, unitsSchema->GetPhenomenonCount());
     EXPECT_EQ(12, unitsSchema->GetUnitSystemCount());
 
     PERFORMANCELOG.infov("Time to load the Standard Units Schema with %lu units: %.17g", unitsSchema->GetUnitCount(), timer.GetElapsedSeconds());

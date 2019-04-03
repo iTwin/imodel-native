@@ -549,7 +549,23 @@ void Converter::ConvertViewClips(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInf
 
     // the outer clip is stored in the "ClipBoundElement"
     if (SUCCESS == viewInfo.GetDynamicViewSettings().GetClipBoundElemHandle(eh, &v8Model))
-        clip = ConvertClip(DgnV8Api::ClipVector::CreateFromElement(eh, &v8Model), &trans); // got one, turn it into a ClipVector
+        {
+        DgnV8Api::ClipVolumePass clipPass = DgnV8Api::ClipVolumePass::Inside;
+        DynamicViewSettingsCR settings = viewInfo.GetDynamicViewSettings();
+
+        if (settings.ShouldDisplayForward())
+            {
+            if (!settings.ShouldDisplayBackward())
+                clipPass = DgnV8Api::ClipVolumePass::InsideForward;
+            }
+        else if (settings.ShouldDisplayBackward())
+            {
+            if (!settings.ShouldDisplayForward())
+                clipPass = DgnV8Api::ClipVolumePass::InsideBackward;
+            }
+
+        clip = ConvertClip(DgnV8Api::ClipVector::CreateFromElement(eh, &v8Model, nullptr, clipPass), &trans); // got one, turn it into a ClipVector
+        }
 
     // clip masks are stored in the "ClipMaskElement"
     if (SUCCESS == viewInfo.GetDynamicViewSettings().GetClipMaskElemHandle(eh, &v8Model))

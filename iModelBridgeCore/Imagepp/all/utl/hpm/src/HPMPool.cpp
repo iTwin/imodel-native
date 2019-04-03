@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hpm/src/HPMPool.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -1054,7 +1054,6 @@ void HPMMemoryMgrReuseAlreadyAllocatedBlocks::FreeMemory(Byte* pi_MemPtr, size_t
 
 void HPMMemoryMgrReuseAlreadyAllocatedBlocks::FreeAll()
     {
-    vector<MemEntry>::iterator itr;
     while (m_UsedMemMgrList.size() != 0)
         {
         FreeMemory(m_UsedMemMgrList.begin()->Offset, m_UsedMemMgrList.begin()->Size);

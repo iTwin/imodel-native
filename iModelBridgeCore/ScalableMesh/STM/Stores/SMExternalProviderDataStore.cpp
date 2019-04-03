@@ -45,9 +45,12 @@ void SMExternalClipDefinitionExtOps::LoadClipWithParameters(bvector<DPoint3d>& c
         {
             auto polyCP = cp->front()->GetPolygon();
             clipData.clear();
-            if (polyCP != nullptr)
-                for (auto&pt : *polyCP)
+            if(polyCP != nullptr)
+                {
+                for(auto&pt : *polyCP)
                     clipData.push_back(DPoint3d::From(pt.x, pt.y, cp->front()->GetZHigh()));
+                cp->front()->GetTransformFromClip()->Multiply(&clipData[0], clipData.data(), (int)clipData.size());
+                }
             geom = SMClipGeometryType::BoundedVolume;
         }
     }

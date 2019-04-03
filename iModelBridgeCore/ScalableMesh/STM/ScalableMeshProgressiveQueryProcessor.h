@@ -6,6 +6,8 @@
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 
+#include <ScalableMesh/IScalableMeshQuery.h>
+
 #include "ScalableMesh.h"
 
 #if !defined(VANCOUVER_API) && !defined(DGNDB06_API)
@@ -172,6 +174,9 @@ protected:
         m_updatedOverviewNodeMutexes = new std::mutex[nbWorkingThreads];
         m_nodeQueryProcessors.resize(nbWorkingThreads);
         m_nodeQueryProcessorMutexes = new std::mutex[nbWorkingThreads];
+        m_dirtyOverviews.resize(nbWorkingThreads);
+        m_newOverviews.resize(nbWorkingThreads);
+        m_dirtyOverviewNodeMutexes = new std::mutex[nbWorkingThreads];
 
         m_queryObjectP = queryObjectP;
         m_isCancel = false;
@@ -196,6 +201,7 @@ public:
         delete[] m_foundMeshNodeMutexes;
         delete[] m_updatedOverviewNodeMutexes;
         delete[] m_nodeQueryProcessorMutexes;
+        delete[] m_dirtyOverviewNodeMutexes;
         delete m_queryObjectP;
         if (nullptr != m_collectCallback)
             delete m_collectCallback;
@@ -304,6 +310,14 @@ public:
         typename ProcessingQuery<POINT, EXTENT>::Type                              queryType
     );
 
+    void AddOverviewsToRecompute(bvector<RefCountedPtr<ScalableMeshCachedDisplayNode<DPoint3d>>>& dirtyOverviews) 
+    {
+        for (size_t nodeId = 0; nodeId < dirtyOverviews.size(); nodeId++)
+        {
+            m_dirtyOverviews[nodeId % m_dirtyOverviews.size()].push_back(RefCountedPtr<IScalableMeshCachedDisplayNode>(&*dirtyOverviews[nodeId]));
+        }
+    }
+
     virtual void Run(size_t threadInd, QueryProcessor& processor);
 
     void OnLoadedMeshNode(IScalableMeshCachedDisplayNodePtr& meshNodePtr, size_t threadInd)
@@ -343,8 +357,12 @@ public:
     ProducedNodeContainer<POINT, EXTENT>                      m_producedFoundNodes;
     bvector<bvector<IScalableMeshCachedDisplayNodePtr>>       m_foundMeshNodes;
     std::mutex*                                               m_foundMeshNodeMutexes;
+
     bvector<bvector<IScalableMeshCachedDisplayNodePtr>>       m_updatedOverviewNodes;
+    bvector<bvector<IScalableMeshCachedDisplayNodePtr>>       m_dirtyOverviews;
+    bvector<bvector<IScalableMeshCachedDisplayNodePtr>>       m_newOverviews;
     std::mutex*                                               m_updatedOverviewNodeMutexes;
+    std::mutex*                                               m_dirtyOverviewNodeMutexes;
 
     bvector<NodeQueryProcessor<DPoint3d, Extent3dType>::Ptr>  m_nodeQueryProcessors;
     std::mutex*                                                    m_nodeQueryProcessorMutexes;
@@ -433,6 +451,7 @@ public:
         const bset<uint64_t>&                                            clipVisibilities,
         IScalableMeshPtr&                                                scalableMeshPtr,
         IScalableMeshDisplayCacheManagerPtr&               displayCacheManagerPtr,
+        bvector<RefCountedPtr<ScalableMeshCachedDisplayNode<DPoint3d>>>&              dirtyOverviews,
         ProcessingQuery<DPoint3d, Extent3dType>::Type                             type = ProcessingQuery<DPoint3d, Extent3dType>::Type::LoadMesh);
 
     QueryHandle AddDependentQuery(QueryHandle sourceQuery,
@@ -454,6 +473,7 @@ public:
     StatusInt GetFoundNodes(bvector<IScalableMeshCachedDisplayNodePtr>& foundNodes, int queryId);
 
     StatusInt GetUpdatedOverviewNodes(bvector<IScalableMeshCachedDisplayNodePtr>& overviewNodes, int queryId);
+    StatusInt UpdateDirtyOverviews(bvector<RefCountedPtr<ScalableMeshCachedDisplayNode<DPoint3d>>>& staleOverviews, int queryId);
 };
 
 

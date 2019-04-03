@@ -1690,8 +1690,10 @@ void RunClipMeshTest()
     bvector<bvector<DPoint3d>> inPolys;
     inPolys.push_back(poly);
 
+    bvector<bool> isMask(1, true);
+
     PolyfaceQueryCarrier* meshP = new PolyfaceQueryCarrier(3, false, nIndices, nVerts, &allVerts[0], &allIndices[0]);
-    ScalableMesh::GetRegionsFromClipPolys3D(outMeshes, inPolys, meshP);
+    ScalableMesh::GetRegionsFromClipPolys3D(outMeshes, inPolys, meshP, isMask);
 
     for (auto& vec: outMeshes)
     for (auto& meshPtr : vec)

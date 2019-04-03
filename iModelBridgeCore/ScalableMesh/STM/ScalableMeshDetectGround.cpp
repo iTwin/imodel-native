@@ -5,7 +5,7 @@
 
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
-SMStatus IScalableMeshDetectGround::DetectGroundForRegion(IScalableMeshPtr& source, BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution)
+SMStatus IScalableMeshDetectGround::DetectGroundForRegion(IScalableMeshPtr& source, BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution, bool reprojectElevation, const BeFileName& dataSourceDir)
 {
     BeFileName terrainAbsName;
 
@@ -25,7 +25,6 @@ SMStatus IScalableMeshDetectGround::DetectGroundForRegion(IScalableMeshPtr& sour
     assert(!BeFileName::DoesPathExist(terrainAbsName.c_str()));
 #endif
 
-
         IScalableMeshGroundExtractorPtr smGroundExtractor(IScalableMeshGroundExtractor::Create(terrainAbsName, source));
 
         BaseGCSPtr newDestPtr = (BaseGCS*)destinationGcs.get();
@@ -34,12 +33,17 @@ SMStatus IScalableMeshDetectGround::DetectGroundForRegion(IScalableMeshPtr& sour
         smGroundExtractor->SetGroundPreviewer(groundPreviewer);
         smGroundExtractor->SetLimitTextureResolution(limitResolution);
 
+        smGroundExtractor->SetReprojectElevation(reprojectElevation);
+
+        if (!dataSourceDir.empty())
+            {
+            smGroundExtractor->SetDataSourceDir(dataSourceDir);
+            }
+        
         StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);
 
         if (status != SUCCESS)
             return status == SUCCESS ? SMStatus::S_SUCCESS : SMStatus::S_ERROR;
-
-
 
     createdTerrain = terrainAbsName;
     return SMStatus::S_SUCCESS;

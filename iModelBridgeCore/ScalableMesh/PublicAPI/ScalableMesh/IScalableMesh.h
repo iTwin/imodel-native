@@ -19,6 +19,7 @@
 #include <ScalableMesh/IScalableMeshAnalysis.h>
 #include <ScalableMesh/IScalableMeshInfo.h>
 #include <ScalableMesh/IScalableMeshClippingOptions.h>
+#include <ScalableMesh/IScalableMeshSourceCollection.h>
 #include "ScalableMeshDefs.h"
 
 #undef static_assert
@@ -197,6 +198,8 @@ struct IScalableMesh :  IRefCounted
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   _GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type) = 0;
 
+        virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   _GetDTMInterface(DMatrix4d& storageToUors, bvector<DPoint3d>& regionPts, DTMAnalysisType type) = 0;
+
         virtual const GeoCoords::GCS&               _GetGCS() const = 0;
 
         virtual StatusInt                           _SetGCS(const GeoCoords::GCS& sourceGCS) = 0;
@@ -207,6 +210,8 @@ struct IScalableMesh :  IRefCounted
 
         virtual bool                                _IsShareable() const = 0;
         
+        virtual bool                                _LoadSources(IDTMSourceCollection& sources) const = 0;
+
         //Synchonization with data sources functions
         virtual bool                                _InSynchWithSources() const = 0; 
 
@@ -298,7 +303,7 @@ struct IScalableMesh :  IRefCounted
 
         virtual void                               _ImportTerrainSM(WString terrainPath) = 0;
 
-        virtual SMStatus                           _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, GeoCoordinates::BaseGCSCPtr& destinationGcs, bool limitResolution, bool reprojectElevation) = 0;
+        virtual SMStatus                           _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, GeoCoordinates::BaseGCSCPtr& destinationGcs, bool limitResolution, bool reprojectElevation, const BeFileName& dataSourceDir) = 0;
                                                                                                                                                                  
         virtual BentleyStatus                      _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName) = 0;
 
@@ -404,6 +409,8 @@ struct IScalableMesh :  IRefCounted
 
         BENTLEY_SM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type = DTMAnalysisType::Precise);
 
+        BENTLEY_SM_EXPORT BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*   GetDTMInterface(DMatrix4d& storageToUors, bvector<DPoint3d>& regionPts, DTMAnalysisType type = DTMAnalysisType::Precise);
+
         BENTLEY_SM_EXPORT const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr&
                                            GetBaseGCS() const;
         BENTLEY_SM_EXPORT StatusInt              SetBaseGCS(const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCS);
@@ -423,6 +430,8 @@ struct IScalableMesh :  IRefCounted
 
         BENTLEY_SM_EXPORT bool                   IsShareable() const;                        
          
+        BENTLEY_SM_EXPORT bool                   LoadSources(IDTMSourceCollection& sources) const;
+
         //Synchonization with data sources functions
         BENTLEY_SM_EXPORT bool                   InSynchWithSources() const; 
 
@@ -503,7 +512,7 @@ struct IScalableMesh :  IRefCounted
 
         BENTLEY_SM_EXPORT IScalableMeshPtr       GetTerrainSM();
 
-        BENTLEY_SM_EXPORT SMStatus          DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, GeoCoordinates::BaseGCSCPtr destinationGcs = nullptr, bool limitResolutions = false, bool reprojectElevation = false);
+        BENTLEY_SM_EXPORT SMStatus               DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, GeoCoordinates::BaseGCSCPtr destinationGcs = nullptr, bool limitResolutions = false, bool reprojectElevation = false, const BeFileName& dataSourceDir = BeFileName());
 
         BENTLEY_SM_EXPORT BentleyStatus          CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName);
 

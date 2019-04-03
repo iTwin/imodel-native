@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:07:12 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -59,6 +59,7 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
     private:  
 
         bvector<ScalableMeshCachedDisplayNode<DPoint3d>::Ptr> m_overviewNodes;
+        bvector<ScalableMeshCachedDisplayNode<DPoint3d>::Ptr> m_dirtyOverviews;
         bvector<IScalableMesh*>                               m_smOverviews;
         mutable std::vector<RequestedQuery>                   m_requestedQueries;        
        // IScalableMeshPtr                                      m_scalableMeshPtr;

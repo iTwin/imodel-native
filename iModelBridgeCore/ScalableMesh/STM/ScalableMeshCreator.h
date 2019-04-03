@@ -169,7 +169,6 @@ struct IScalableMeshCreator::Impl
 
     protected:
         
-        HFCPtr<MeshIndexType>               m_dataIndex;
 
         std::atomic<bool>        m_isCanceled;
 
@@ -234,7 +233,7 @@ struct IScalableMeshCreator::Impl
 
         BENTLEY_SM_EXPORT bool IsShareable();
 
-        BENTLEY_SM_EXPORT void SetShareable(bool isShareable);
+        BENTLEY_SM_EXPORT virtual void SetShareable(bool isShareable);        
 
       //  IScalableMeshNodePtr                AddChildNode (const IScalableMeshNodePtr& parentNode, 
        //                                                   StatusInt&                  status);

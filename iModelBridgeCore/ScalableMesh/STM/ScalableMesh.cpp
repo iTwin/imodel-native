@@ -276,6 +276,11 @@ BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface(DMatr
     return _GetDTMInterface(storageToUors, type);
     }
 
+BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface(DMatrix4d& storageToUors, bvector<DPoint3d>& regionPts, DTMAnalysisType type)
+{
+    return _GetDTMInterface(storageToUors, regionPts, type);
+}
+
 const BaseGCSCPtr& IScalableMesh::GetBaseGCS() const 
     {
     return _GetGCS().GetGeoRef().GetBasePtr();
@@ -315,6 +320,11 @@ bool IScalableMesh::IsReadOnly() const
 bool IScalableMesh::IsShareable() const
     {
     return _IsShareable();
+    }
+
+bool IScalableMesh::LoadSources(IDTMSourceCollection& sources) const
+    {
+    return _LoadSources(sources);
     }
 
 bool IScalableMesh::InSynchWithSources() const
@@ -518,9 +528,9 @@ BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageDat
     return _CreateCoverage(coverageData, id, coverageName);
     }
 
-SMStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr destinationGcs, bool limitResolution, bool reprojectElevation)
+SMStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr destinationGcs, bool limitResolution, bool reprojectElevation, const BeFileName& dataSourceDir)
     {
-    return _DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer, destinationGcs, limitResolution, reprojectElevation);
+    return _DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer, destinationGcs, limitResolution, reprojectElevation, dataSourceDir);
     }
 
 void IScalableMesh::GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData)
@@ -1334,14 +1344,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                 return BSISUCCESS; // No sources were added to the STM
 
             IDTMSourceCollection sources;
-            DocumentEnv sourceEnv(L"");
-
-            SourcesDataSQLite sourcesData;
-            m_smSQLitePtr->LoadSources(sourcesData);
-
-            bool success = BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, sourcesData, sourceEnv);
-            assert(success == true);
-
+            this->LoadSources(sources);
 
             auto sourceIter(sources.Begin());
             auto sourceIterEnd(sources.End());
@@ -1550,7 +1553,7 @@ BcDTMP ScalableMeshDTM::_GetBcDTM()
         params->SetLevel(m_scMesh->GetTerrainDepth());
 
         size_t totalPts = 0;
-        if (meshQueryInterface->Query(returnedNodes, 0, 0, params) != SUCCESS)
+        if (meshQueryInterface->Query(returnedNodes, !m_bounds.empty() ? m_bounds.data() : 0, !m_bounds.empty() ? (int)m_bounds.size() : 0, params) != SUCCESS)
             return nullptr;
         for (auto& node : returnedNodes)
         {
@@ -1560,7 +1563,7 @@ BcDTMP ScalableMeshDTM::_GetBcDTM()
         {
             returnedNodes.clear();
             params->SetLevel(params->GetLevel() - 1);
-            meshQueryInterface->Query(returnedNodes, 0, 0, params);
+            meshQueryInterface->Query(returnedNodes, !m_bounds.empty()? m_bounds.data() : 0, !m_bounds.empty() ? (int)m_bounds.size() : 0, params);
             totalPts = 0;
             for (auto& node : returnedNodes)
             {
@@ -1583,8 +1586,35 @@ BcDTMP ScalableMeshDTM::_GetBcDTM()
             for (auto&idx : indices) idx += (int)meshP->GetNbPoints();
             meshP->AppendMesh(currentMeshPtr->GetPolyfaceQuery()->GetPointCount(), const_cast<DPoint3d*>(currentMeshPtr->GetPolyfaceQuery()->GetPointCP()), (int)indices.size(), &indices[0], 0, 0, 0, 0, 0, 0);
         }
-		meshP->RemoveDuplicates();
-        DTMStatusInt val = meshP->GetAsBcDTM(m_dtm);
+
+        bool hasFeatureSource = false;
+
+        IDTMSourceCollection sources;
+        m_scMesh->LoadSources(sources);
+        for (IDTMSourceCollection::const_iterator it = sources.Begin(); it != sources.End(); it++)
+        {
+            BeFileName path = BeFileName(it->GetPath().c_str());
+            if (0 == BeFileName::GetExtension(path).CompareToI(L"dtm") ||
+                0 == BeFileName::GetExtension(path).CompareToI(L"tin") ||
+                0 == BeFileName::GetExtension(path).CompareToI(L"dgn") ||
+                0 == BeFileName::GetExtension(path).CompareToI(L"bcdtm") ||
+                0 == BeFileName::GetExtension(path).CompareToI(L"dat"))
+            {
+                hasFeatureSource = true;
+            }
+            
+        }
+
+        DTMStatusInt val = DTM_SUCCESS;
+        if (hasFeatureSource)
+        {
+            meshP->RemoveDuplicates();
+            val = meshP->GetAsBcDTM(m_dtm);
+        }
+        else
+        {
+            val = meshP->GetAsBcDTM(m_dtm, true);
+        }
         if (val == DTM_ERROR) 
             {
             m_dtm = nullptr;
@@ -1623,6 +1653,16 @@ DTMStatusInt ScalableMeshDTM::_GetBoundary(DTMPointArray& result)
 
     return DTM_SUCCESS;
     }
+
+RefCountedPtr<ScalableMeshDTM> ScalableMeshDTM::ExtractRegion(bvector<DPoint3d>& region)
+{
+    RefCountedPtr<ScalableMeshDTM> myPtr = ScalableMeshDTM::Create(m_scMesh);
+    myPtr->SetAnalysisType(m_draping->GetAnalysisType());
+    auto mat4d = DMatrix4d::From(m_transformToUors);
+    myPtr->SetStorageToUors(mat4d);
+    myPtr->m_bounds = region;
+    return myPtr;
+}
 
 IDTMDrapingP ScalableMeshDTM::_GetDTMDraping()
     {
@@ -1899,6 +1939,12 @@ template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<
     return m_scalableMeshDTM[type].get();
     }
 
+template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<POINT>::_GetDTMInterface(DMatrix4d& storageToUors, bvector<DPoint3d>& regionPts, DTMAnalysisType type)
+{
+    m_scalableMeshDTMRegions.push_back(m_scalableMeshDTM[type]->ExtractRegion(regionPts));
+    return m_scalableMeshDTMRegions.back().get();
+}
+
 
 
 /*----------------------------------------------------------------------------+
@@ -1983,9 +2029,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableM
         m_smSQLitePtr->LoadSources(sourcesData);
         
         IDTMSourceCollection sources;
-        DocumentEnv sourceEnv(L"");
-        bool success = BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, sourcesData, sourceEnv);
-        assert(success == true);
+        this->LoadSources(sources);
                 
         for (IDTMSourceCollection::const_iterator sourceIt = sources.Begin(), sourcesEnd = sources.End(); sourceIt != sourcesEnd; ++sourceIt)
             {
@@ -2485,6 +2529,7 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
         trans.InverseOf(m_reprojectionTransform);
         trans.Multiply(&reprojectedPts[0], pts, (int)ptsSize);
         targetPts = reprojectedPts.data();
+        extent = DRange3d::From(targetPts, (int)ptsSize);
         }
     else targetPts = pts;
 
@@ -2763,9 +2808,24 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
 template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
     {
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
-    bvector<DPoint3d> clipData;
-    m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipData);
-    DRange3d extent = DRange3d::From(&clipData[0], (int)clipData.size());
+    bvector<DPoint3d> clipPolyData;
+    m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipPolyData);
+
+    DRange3d extent = DRange3d::From(&clipPolyData[0], (int)clipPolyData.size());
+
+    ClipVectorPtr clipVectorData;
+    SMClipGeometryType geom;
+    SMNonDestructiveClipType type;
+    bool isActive;
+    m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(clipID, clipVectorData, geom, type, isActive);
+
+    if(clipVectorData.IsValid() && !clipVectorData->empty())
+        {
+        DRange3d clipVectorRange;
+        clipVectorData->GetRange(clipVectorRange, nullptr);
+        extent.Extend(clipVectorRange);
+        }
+
     if (extent.Volume() == 0)
         {
         if (extent.XLength() == 0)
@@ -3223,6 +3283,20 @@ template <class POINT> bool ScalableMesh<POINT>::_InSynchWithSources() const
     }
 
 /*----------------------------------------------------------------------------+
+|ScalableMesh::_LoadSources
++----------------------------------------------------------------------------*/
+template <class POINT> bool ScalableMesh<POINT>::_LoadSources(IDTMSourceCollection& sources) const
+    {
+    if(!m_smSQLitePtr.IsValid())
+        return false;
+
+    SourcesDataSQLite sourcesData;
+    m_smSQLitePtr->LoadSources(sourcesData);
+
+    return BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, sourcesData, DocumentEnv(L""));
+    }
+
+/*----------------------------------------------------------------------------+
 |ScalableMesh::_GetRangeInSpecificGCS
 +----------------------------------------------------------------------------*/
 template <class POINT> int ScalableMesh<POINT>::_GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const
@@ -3329,11 +3403,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SaveAs(const WString& des
             return ERROR;
 
         IDTMSourceCollection sources;
-
-        SourcesDataSQLite sourcesData;
-        m_smSQLitePtr->LoadSources(sourcesData);
-
-        if (!BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, sourcesData, DocumentEnv(L"")))
+        if (!this->LoadSources(sources))
             return ERROR;
 
         destMeshSourceEdit->EditSources() = sources;
@@ -3490,7 +3560,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
     return SUCCESS;
     }
 
-template <class POINT>  SMStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution, bool reprojectElevation)
+template <class POINT>  SMStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution, bool reprojectElevation, const BeFileName& dataSourceDir)
     {    
 
 #if NEED_SAVE_AS_IN_IMPORT_DLL
@@ -3522,11 +3592,14 @@ template <class POINT>  SMStatus                      ScalableMesh<POINT>::_Dete
         smGroundExtractor->SetDestinationGcs(newDestPtr);
         smGroundExtractor->SetExtractionArea(coverageData);
         smGroundExtractor->SetGroundPreviewer(groundPreviewer);
-		smGroundExtractor->SetLimitTextureResolution(limitResolution);
+        smGroundExtractor->SetLimitTextureResolution(limitResolution);
         smGroundExtractor->SetReprojectElevation(reprojectElevation);
 
-        
-                
+        if (!dataSourceDir.empty())
+            {
+            smGroundExtractor->SetDataSourceDir(dataSourceDir);
+            }
+                                
         StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);
 
 		if (status != SUCCESS)
@@ -4041,6 +4114,13 @@ template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMeshS
     assert(0);
     return 0;
     }
+
+template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMeshSingleResolutionPointIndexView<POINT>::_GetDTMInterface(DMatrix4d& storageToUors, bvector<DPoint3d>& regionPoints, DTMAnalysisType type)
+{
+    assert(0);
+    return 0;
+}
+
 
 
 template <class POINT> DTMStatusInt ScalableMeshSingleResolutionPointIndexView<POINT>::_GetRange(DRange3dR range)

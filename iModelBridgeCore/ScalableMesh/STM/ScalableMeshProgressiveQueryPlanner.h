@@ -6,7 +6,7 @@
 |       $Date: 2018/08/15 14:07:12 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -61,6 +61,7 @@ struct QueryPlan
     IScalableMeshDisplayCacheManagerPtr&                   m_displayCacheManagerPtr;
     bset<uint64_t>&                                        m_activeClips;
     IScalableMeshPtr m_meshToQuery;
+    bvector<RefCountedPtr<ScalableMeshCachedDisplayNode<DPoint3d>>>              m_overviewsToUpdate;
 
     QueryPlan(IScalableMeshDisplayCacheManagerPtr& displayCacheManager, bset<uint64_t>& activeClips)
         :m_displayCacheManagerPtr(displayCacheManager), m_activeClips(activeClips)
@@ -75,6 +76,7 @@ public:
     virtual QueryPlan* CreatePlanForNextQuery(IScalableMeshDisplayCacheManagerPtr& displayCacheManager, bset<uint64_t>& activeClips) const;
     virtual void FetchOverviewsAndPlanNextQuery(RequestedQuery& query, QueryPlan& nextQueryPlan, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, size_t& currentInd, ProducedNodeContainer<DPoint3d, Extent3dType>& nodesToSearch, ProducedNodeContainer<DPoint3d, Extent3dType>& foundNodes) const;
     virtual void AddQueriesInPlan(QueryPlan& nextQueryPlan, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, QueryProcessor& queryProcessor, IScalableMeshViewDependentMeshQueryParamsPtr viewParams, RequestedQuery& query) const;
+    virtual void AddDirtyOverviews(QueryPlan& nextQueryPlan, bvector<RefCountedPtr<ScalableMeshCachedDisplayNode<DPoint3d>>>& dirtyOverviews);
 };
 
 void ComputeOverviewSearchToLoadNodes(RequestedQuery&                                            newQuery,
