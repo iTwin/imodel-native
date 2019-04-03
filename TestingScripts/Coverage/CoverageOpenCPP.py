@@ -764,12 +764,15 @@ def main():
     parser.add_argument('--excelReport', action='store_true', dest='excelReport', help='If specified, generates an Excel report with color coding')
     parser.add_argument('--methods', action='store_true', dest='methods', help='If specified, generates an Html report for methods')    
     args = parser.parse_args()
-    
+  
     comps = []
     if args.component == None:
         comps = cmp.AllComps()
     else:
+        if '-GTEST' in str(args.component).upper(): #if product name is sent as component name
+            args.component = str(args.component).upper().replace('-GTEST','')
         comps.append(args.component)
+        print "Component Name: " + str(args.component)
 
     if not args.reportPath:
         repoPath = os.path.join(os.getenv('OutRoot'), 'winx64', 'LogFiles', 'CodeCoverage')

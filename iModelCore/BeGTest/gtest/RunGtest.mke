@@ -58,7 +58,7 @@ always:
 		~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
 %endif
 
-%if defined (winNT)
+%if defined (winNT) && !defined(ENABLE_GTEST_COVERAGE)
 	%ifdef ONLY_TEST_CHANGES
 		%message Run only required tests
 		always:
@@ -111,12 +111,40 @@ always:
 		-$(RunPrefix) $(LogDir)run.bat
 	
 %else
-	
-	$(ResultsCapture) : $(exeName)
-		>$(ResultsCapture)
-		$(exeName)
-		<
-		-$(exeName) >> $(ResultsCapture) 2>&1
+	%if defined (winNT) && defined (ENABLE_GTEST_COVERAGE)
+			xml_comp = Bentley-Gtest
+			LOG_DIR=$(OutputRootDir)LogFiles\CodeCoverage
+			RunPrefix=start "CodeCoverage $(GTEST_PRODUCT)" \/WAIT 
+			always:
+				!~@mkdir $(LOG_DIR)
+			
+			always:
+				%if defined (GTEST_PRODUCT)
+					>$(LogDir)run.bat
+					python $(SrcRoot)imodel02\TestingScripts\Coverage\CoverageOpenCPP.py --component=$(GTEST_PRODUCT) --localReport > $(ResultsCapture)
+					$(exeName) $(GTEST_EXTRA_ARGS) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
+					exit
+					<
+					-$(RunPrefix) $(LogDir)run.bat
+					%if $(GTEST_PRODUCT) == $(xml_comp)
+						start "CodeCoverage $(GTEST_PRODUCT)" \/WAIT python $(SrcRoot)imodel02\TestingScripts\Coverage\CoverageOpenCPP.py --component=$(GTEST_PRODUCT)
+					%endif
+				%else
+					%if !defined (Win10SdkDir)
+						%error Define Win10SdkDir in your shared shell. e.g. set Win10SdkDir=C:\Program Files (x86)\Windows Kits\10\.
+					%endif
+				%endif
+				
+			%message ..
+			%message The Coverage reports are at $(LOG_DIR)
+			%message ..
+	%else
+		$(ResultsCapture) : $(exeName)
+			>$(ResultsCapture)
+			$(exeName)
+			<
+			-$(exeName) >> $(ResultsCapture) 2>&1
+	%endif
 
 %endif
 
