@@ -11,6 +11,8 @@
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
+HANDLER_DEFINE_MEMBERS(MaterialProfileHandler)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -84,7 +86,5 @@ ProfileCPtr MaterialProfile::GetProfile() const
     DgnElementId profileId = GetNavigationPropertyInfo (PRF_PROP_MaterialProfile_Profile).GetId<DgnElementId>();
     return m_dgndb.Elements().Get<Profile> (profileId);
     }
-
-HANDLER_DEFINE_MEMBERS (MaterialProfileHandler)
 
 END_BENTLEY_PROFILES_NAMESPACE
