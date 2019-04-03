@@ -2,7 +2,7 @@
 |
 |     $Source: RoadRailPhysicalDomain.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailPhysicalInternal.h"
@@ -336,7 +336,7 @@ BentleyStatus create2dView(ConfigurationModelR model, Utf8CP viewName,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewId RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject, PhysicalModelR physicalNetworkModel, bvector<DgnCategoryId> const* additionalCategoriesForSelector)
     {
-    auto& dgnDb = subject.GetDgnDb();
+    // unused - auto& dgnDb = subject.GetDgnDb();
 
     auto configurationModelPtr = ConfigurationModel::Query(subject);
     
