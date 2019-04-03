@@ -53,6 +53,14 @@ private:
         return func;
         }
 
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            04/2019
+    +---------------+---------------+---------------+---------------+-----------+------*/
+    void CallFunc(folly::Func&& func)
+        {
+        func();
+        }
+
 public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            11/2017
@@ -86,7 +94,7 @@ public:
         if (BeThreadUtilities::GetCurrentThreadId() == m_threadId)
             {
             lock.unlock();
-            func();
+            CallFunc(std::move(func));
             }
         else
             {
@@ -110,8 +118,7 @@ public:
             if (nullptr != m_terminatePromise)
                 break;
             
-            folly::Func func = PopFunc();
-            func();
+            CallFunc(PopFunc());
             }
         
         BeMutexHolder lock(m_cv.GetMutex());
@@ -123,8 +130,7 @@ public:
             while (!m_queue.empty())
                 {
                 lock.unlock();
-                folly::Func func = PopFunc();
-                func();
+                CallFunc(PopFunc());
                 lock.lock();
                 }
             LoggingHelper::LogMessage(Log::Threads, Utf8PrintfString("Took %.2f seconds to finish.", timer.GetCurrentSeconds()).c_str(), LOG_DEBUG);
@@ -138,9 +144,24 @@ public:
 * @bsimethod                                    Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 SingleThreadedQueueExecutor::SingleThreadedQueueExecutor(Utf8String name)
-    : m_runner(new ThreadRunner())
+    : m_runner(nullptr), m_name(name)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SingleThreadedQueueExecutor::~SingleThreadedQueueExecutor() {Terminate().wait();}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void SingleThreadedQueueExecutor::Init()
     {
-    std::thread([=]()
+    if (nullptr != m_runner)
+        return;
+
+    m_runner = new ThreadRunner();
+    std::thread([&, name = m_name]()
         {
         if (!name.empty())
             BeThreadUtilities::SetCurrentThreadName(name.c_str());
@@ -151,14 +172,18 @@ SingleThreadedQueueExecutor::SingleThreadedQueueExecutor(Utf8String name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-SingleThreadedQueueExecutor::~SingleThreadedQueueExecutor() {m_runner->Terminate().wait();}
+folly::Future<folly::Unit> SingleThreadedQueueExecutor::Terminate()
+    {
+    if (nullptr == m_runner)
+        return folly::makeFuture();
+    return m_runner->Terminate();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> SingleThreadedQueueExecutor::Terminate() {return m_runner->Terminate();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SingleThreadedQueueExecutor::add(folly::Func func) {m_runner->QueueOrExecute(std::move(func));}
+void SingleThreadedQueueExecutor::add(folly::Func func)
+    {
+    Init();
+    m_runner->QueueOrExecute(std::move(func));
+    }

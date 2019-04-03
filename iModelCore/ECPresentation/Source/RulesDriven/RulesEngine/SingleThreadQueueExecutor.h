@@ -20,7 +20,11 @@ struct SingleThreadedQueueExecutor : folly::Executor
     struct ThreadRunner;
 
 private:
+    Utf8String m_name;
     ThreadRunner* m_runner;
+
+private:
+    void Init();
 
 public:
     ECPRESENTATION_EXPORT SingleThreadedQueueExecutor(Utf8String name = "");

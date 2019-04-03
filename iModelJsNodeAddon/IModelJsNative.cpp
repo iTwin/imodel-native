@@ -158,7 +158,7 @@ static int32_t getOptionalIntProperty(Napi::Object obj, Utf8CP propName, int32_t
         return dval;
     return obj.Get(propName).ToNumber().Int32Value();
     }
-    
+
 static bool getOptionalBooleanProperty(Napi::Object obj, Utf8CP propName, bool dval)
     {
     if (!obj.Has(propName))
@@ -207,6 +207,12 @@ struct ObjRefVault
             m_refCount = std::move(r.m_refCount);
             m_objRef = std::move(r.m_objRef);
             }
+        Slot& operator=(Slot&& r)
+            {
+            m_refCount = std::move(r.m_refCount);
+            m_objRef = std::move(r.m_objRef);
+            return *this;            
+            }
         };
 
     std::map<Utf8String, Slot> m_slotMap;
@@ -217,27 +223,42 @@ struct ObjRefVault
         m_slotMap.clear();
         }
 
+#ifdef COMMENT_OUT_DUMP
+    void Dump()
+    {
+        OutputDebugStringA("----------- ObjRefVault ---------------\n");
+        for (auto const& e : m_slotMap)
+        {
+            Utf8PrintfString s("%s: %d\n", e.first.c_str(), e.second.m_refCount);
+            OutputDebugStringA(s.c_str());
+        }
+    }
+#endif
+
     bool IsEmpty() const { return m_slotMap.empty(); }
 
-    Utf8String StoreObjectRef(Napi::Object obj)
+    void StoreObjectRef(Napi::Object obj, Utf8StringCR id)
         {
         BeAssert(JsInterop::IsMainThread());
 
         BeSystemMutexHolder ___;
-
-        Utf8PrintfString id("%" PRIx64, (intptr_t)(napi_value)obj);
 
         BeAssert(m_slotMap.find(id) == m_slotMap.end());
 
         auto &slot = m_slotMap[id];
         slot.m_objRef.Reset(obj, 1); // Slot holds the one and only reference to the JS object.
         slot.m_refCount = 0;      // The slot itself is initially unreferenced
+        }
 
-        return id;
+    Utf8String FindIdFromObject(Napi::Object obj)
+        {
+        Utf8PrintfString id("%" PRIx64, (intptr_t)(napi_value)obj);
+        auto i = m_slotMap.find(id);
+        return (i != m_slotMap.end())? i->first: "";
         }
 
     // Return the object in the slot or Undefined of id is empty or invalid
-    Napi::Value GetObject_Locked(Napi::Env env, Utf8StringCR id)
+    Napi::Value GetObjectById_Locked(Napi::Env env, Utf8StringCR id)
         {
         // Caller must hold the BeSystemMutex!
 
@@ -248,15 +269,30 @@ struct ObjRefVault
 
         auto slotIt = m_slotMap.find(id);
         if (slotIt == m_slotMap.end())
-        {
-            BeAssert(false && "Invalid slot id");
+            {
             return env.Undefined();
-        }
+            }
 
         Slot& slot = slotIt->second;
         return slot.m_objRef.Value();
         }
 
+    Napi::Value GetObjectById(Napi::Env env, Utf8StringCR id)
+        {
+        BeSystemMutexHolder ___;
+        return GetObjectById_Locked(env, id);
+        }
+
+    uint32_t GetObjectRefCountById(Utf8StringCR id)
+        {
+        BeSystemMutexHolder ___;
+        if (id.empty())
+            return 0;
+
+        auto slotIt = m_slotMap.find(id);
+        return (slotIt == m_slotMap.end())? 0: slotIt->second.m_refCount;
+        }
+    
     void ReleaseUnreferencedObjects()
         {
         BeAssert(JsInterop::IsMainThread());
@@ -970,7 +1006,7 @@ public:
 
     Dgn::DgnDbPtr m_dgndb;
     ConnectionManager m_connections;
-    std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
+    //std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
     std::shared_ptr<CancellationToken> m_cancellationToken;
     NativeDgnDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeDgnDb>(info) {}
     ~NativeDgnDb() {CloseDgnDb();}
@@ -984,7 +1020,7 @@ public:
         m_cancellationToken->Cancel();
         m_cancellationToken = nullptr;
 
-        TearDownPresentationManager();
+        //TearDownPresentationManager();
         m_dgndb->RemoveFunction(HexStrSqlFunction::GetSingleton());
         m_dgndb->RemoveFunction(StrSqlFunction::GetSingleton());
         m_dgndb->m_jsIModelDb.Reset(); // disconnect the iModelDb object
@@ -1001,7 +1037,7 @@ public:
 
         m_dgndb = &dgndb;
 
-        SetupPresentationManager();
+        //SetupPresentationManager();
         // NativeAppData::Add(*this);
         m_dgndb->AddFunction(HexStrSqlFunction::GetSingleton());
         m_dgndb->AddFunction(StrSqlFunction::GetSingleton());
@@ -1021,7 +1057,7 @@ public:
 
     DgnDbR GetDgnDb() {return *m_dgndb;}
 
-    void SetupPresentationManager()
+    /*void SetupPresentationManager()
         {
         BeFileName assetsDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
         BeFileName tempDir = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
@@ -1037,7 +1073,7 @@ public:
             return;
         IECPresentationManager::RegisterImplementation(nullptr);
         m_presentationManager.reset();
-        }
+        }*/
 
     Napi::Object CreateBentleyReturnSuccessObject(Napi::Value goodVal) {return NapiUtils::CreateBentleyReturnSuccessObject(goodVal, Env());}
 
@@ -4355,6 +4391,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
             bool _TestCondition(BeConditionVariable&) override {return m_flag.load();}
             };
     private:
+        JsInterop::ObjectReferenceClaimCheck m_requestContext;
         BeConditionVariable m_waiter;
         ECPresentationResult m_result;
         BeAtomic<bool> m_hasResult;
@@ -4366,14 +4403,16 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
             }
         void OnOK() override
             {
+            JsInterop::LogMessageInContext("ECPresentation.Node", NativeLogging::LOG_DEBUG, "Sending success response", m_requestContext);
             Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), m_result, true)});
             }
         void OnError(Napi::Error const& e) override
             {
+            JsInterop::LogMessageInContext("ECPresentation.Node", NativeLogging::LOG_DEBUG, "Sending error response", m_requestContext);
             Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), ECPresentationResult(ECPresentationStatus::Error, "callback error"))});
             }
     public:
-        ResponseSender(Napi::Function& callback) : Napi::AsyncWorker(callback), m_hasResult(false) {}
+        ResponseSender(Napi::Function& callback) : Napi::AsyncWorker(callback), m_requestContext(JsInterop::GetCurrentClientRequestContextForMainThread()), m_hasResult(false) {}
         void SetResult(ECPresentationResult&& result) {m_result = std::move(result); m_hasResult.store(true); m_waiter.notify_all();}
     };
 
@@ -4405,6 +4444,23 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
             }
     };
 
+    //=======================================================================================
+    //! @bsiclass
+    //=======================================================================================
+    struct AsyncLoggingNotificationsContext
+        {
+        RulesDrivenECPresentationManager::TaskNotificationsContext* m_notificationsContext;
+        AsyncLoggingNotificationsContext(RulesDrivenECPresentationManager& presentationManager)
+            {
+            JsInterop::ObjectReferenceClaimCheck requestContext = JsInterop::GetCurrentClientRequestContextForMainThread();
+            m_notificationsContext = new RulesDrivenECPresentationManager::TaskNotificationsContext(presentationManager, [requestContext]()
+                {
+                JsInterop::SetCurrentClientRequestContextForWorkerThread(requestContext);
+                });
+            }
+        ~AsyncLoggingNotificationsContext() { delete m_notificationsContext; }
+        };
+
     DEFINE_CONSTRUCTOR;
 
     ConnectionManager m_connections;
@@ -4417,6 +4473,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         {
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(m_connections, T_HOST.GetIKnownLocationsAdmin()));
         m_ruleSetLocater = SimpleRuleSetLocater::Create();
+        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         m_presentationManager->GetLocaters().RegisterLocater(*m_ruleSetLocater);
         m_presentationManager->SetLocalState(&m_localState);
         }
@@ -4513,10 +4570,12 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
             return;
             }
 
+        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         m_connections.NotifyConnectionOpened(db->GetDgnDb());
 
         JsonValueCR params = request["params"];
 
+        JsInterop::LogMessage("ECPresentation.Node", NativeLogging::LOG_DEBUG, Utf8PrintfString("Received request: %s", requestId).c_str());
         ResponseSender* responseSender = new ResponseSender(responseCallback);
         responseSender->Queue();
         try
@@ -4565,6 +4624,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
     Napi::Value SetupRulesetDirectories(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, rulesetDirectories, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetDirectories")));
+        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         ECPresentationResult result = ECPresentationUtils::SetupRulesetDirectories(*m_presentationManager, rulesetDirectories);
         return CreateReturnValue(result);
         }
@@ -4572,6 +4632,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
     Napi::Value SetupLocaleDirectories(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, localeDirectories, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "localeDirectories")));
+        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         ECPresentationResult result = ECPresentationUtils::SetupLocaleDirectories(*m_presentationManager, localeDirectories);
         return CreateReturnValue(result);
         }
@@ -4579,6 +4640,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
     Napi::Value GetRulesets(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
+        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         ECPresentationResult result = ECPresentationUtils::GetRulesets(*m_ruleSetLocater, rulesetId);
         return CreateReturnValue(result, true);
         }
@@ -4586,6 +4648,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
     Napi::Value AddRuleset(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetJsonString, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetJsonString")));
+        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         ECPresentationResult result = ECPresentationUtils::AddRuleset(*m_ruleSetLocater, rulesetJsonString);
         return CreateReturnValue(result);
         }
@@ -4594,12 +4657,14 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
         REQUIRE_ARGUMENT_STRING(1, hash, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "hash")));
+        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         ECPresentationResult result = ECPresentationUtils::RemoveRuleset(*m_ruleSetLocater, rulesetId, hash);
         return CreateReturnValue(result);
         }
 
     Napi::Value ClearRulesets(Napi::CallbackInfo const& info)
         {
+        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         ECPresentationResult result = ECPresentationUtils::ClearRulesets(*m_ruleSetLocater);
         return CreateReturnValue(result);
         }
@@ -4609,6 +4674,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         REQUIRE_ARGUMENT_STRING(0, rulesetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
         REQUIRE_ARGUMENT_STRING(1, variableId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "variableId")));
         REQUIRE_ARGUMENT_STRING(2, type, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "type")));
+        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         ECPresentationResult result = ECPresentationUtils::GetRulesetVariableValue(*m_presentationManager, rulesetId, variableId, type);
         return CreateReturnValue(result);
         }
@@ -4619,6 +4685,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         REQUIRE_ARGUMENT_STRING(1, variableId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "variableId")));
         REQUIRE_ARGUMENT_STRING(2, variableType, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "type")));
         REQUIRE_ARGUMENT_ANY_OBJ(3, value, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "value")));
+        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         Json::Value jsonValue = NapiUtils::Convert(value);
         ECPresentationResult result = ECPresentationUtils::SetRulesetVariableValue(*m_presentationManager, ruleSetId, variableId, variableType, jsonValue);
         return CreateReturnValue(result);
@@ -4626,6 +4693,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
 
     void Terminate(Napi::CallbackInfo const& info)
         {
+        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         m_presentationManager.reset();
         }
     };
@@ -4930,6 +4998,102 @@ static void setCrashReporting(Napi::CallbackInfo const& info)
     JsInterop::InitializeCrashReporting(ccfg);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void storeObjectInVault(Napi::CallbackInfo const& info)
+    {
+    if (info.Length() != 2 || !info[0].IsObject() || !info[1].IsString())
+        {
+        Napi::TypeError::New(info.Env(), "Argument 0 must be an object, and argument 1 must be a string (the ID to be assigned to it)").ThrowAsJavaScriptException();
+        return;
+        }
+    Napi::Object obj = info[0].As<Napi::Object>();
+    Utf8String id = info[1].ToString().Utf8Value().c_str();
+
+    if (s_objRefVault.GetObjectById(info.Env(), id) == info.Env().Undefined())
+        s_objRefVault.StoreObjectRef(obj, id);
+
+    s_objRefVault.AddRefToObject(id);   // The caller will hold the ref. See dropObjectFromVault
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void addReferenceToObjectInVault(Napi::CallbackInfo const& info)
+    {
+    if (info.Length() != 1 || !info[0].IsString())
+        {
+        Napi::TypeError::New(info.Env(), "Argument must be a string - the ID of an object in the vault").ThrowAsJavaScriptException();
+        return;
+        }
+    Utf8String id = info[0].ToString().Utf8Value().c_str();
+
+    if (s_objRefVault.GetObjectById(info.Env(), id) == info.Env().Undefined())
+        {
+        Napi::TypeError::New(info.Env(), "ID not found in object vault").ThrowAsJavaScriptException();
+        return;
+        }
+
+    s_objRefVault.AddRefToObject(id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void dropObjectFromVault(Napi::CallbackInfo const& info)
+    {
+    if (info.Length() != 1 || !info[0].IsString())
+        {
+        Napi::TypeError::New(info.Env(), "Argument must be a string - the ID of an object in the vault").ThrowAsJavaScriptException();
+        return;
+        }
+    Utf8String id = info[0].ToString().Utf8Value().c_str();
+
+    if (s_objRefVault.GetObjectById(info.Env(), id) == info.Env().Undefined())
+        {
+        Napi::TypeError::New(info.Env(), "ID not found in object vault").ThrowAsJavaScriptException();
+        return;
+        }
+
+    s_objRefVault.ReleaseRefToObject(id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static Napi::Value getObjectFromVault(Napi::CallbackInfo const& info)
+    {
+    if (info.Length() != 1 || !info[0].IsString())
+        {
+        Napi::TypeError::New(info.Env(), "Argument must be a string - the ID of an object in the vault").ThrowAsJavaScriptException();
+        return info.Env().Undefined();
+        }
+    Utf8String id = info[0].ToString().Utf8Value().c_str();
+    return s_objRefVault.GetObjectById(info.Env(), id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static Napi::Value getObjectRefCountFromVault(Napi::CallbackInfo const& info)
+    {
+    if (info.Length() != 1 || !info[0].IsString())
+        {
+        Napi::TypeError::New(info.Env(), "Argument must be a string - the ID of an object in the vault").ThrowAsJavaScriptException();
+        return info.Env().Undefined();
+        }
+    Utf8String id = info[0].ToString().Utf8Value().c_str();
+
+    if (s_objRefVault.GetObjectById(info.Env(), id) == info.Env().Undefined())
+        {
+        Napi::TypeError::New(info.Env(), "ID not found in object vault").ThrowAsJavaScriptException();
+        return info.Env().Undefined();
+        }
+    return Napi::Number::New(info.Env(), (int) s_objRefVault.GetObjectRefCountById(id));
+    }
+
+
 static Napi::ObjectReference s_logger;
 struct LogMessage {Utf8String m_category; Utf8String m_message; NativeLogging::SEVERITY m_severity;};
 static bmap<Utf8String, bvector<LogMessage>>* s_deferredLogging;
@@ -5069,9 +5233,17 @@ JsInterop::ObjectReferenceClaimCheck JsInterop::GetCurrentClientRequestContextFo
 
     auto obj = callGetCurrentClientRequestContext(env);
 
-    auto slotId = s_objRefVault.StoreObjectRef(obj);
+    if (obj == env.Undefined())
+        {
+        return ObjectReferenceClaimCheck("");
+        }
 
-    return ObjectReferenceClaimCheck(slotId);
+    Utf8String slotId = obj.Get("activityId").ToString().Utf8Value().c_str();
+
+    if (s_objRefVault.GetObjectById(env, slotId) == env.Undefined())
+        s_objRefVault.StoreObjectRef(obj, slotId);
+
+    return ObjectReferenceClaimCheck(slotId);   // Calls s_objRefVault.AddRefToObject
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5157,7 +5329,7 @@ static void doDeferredLogging()
 
         auto wasCtx = callGetCurrentClientRequestContext(env);
 
-        auto ctxObj = s_objRefVault.GetObject_Locked(env, contextAndMessages.first);
+        auto ctxObj = s_objRefVault.GetObjectById_Locked(env, contextAndMessages.first);
         callSetCurrentClientRequestContext(env, ctxObj);
 
         for (auto const& lm : contextAndMessages.second)
@@ -5204,7 +5376,7 @@ void JsInterop::LogMessageInContext(Utf8StringCR category, NativeLogging::SEVERI
 
     auto wasCtx = callGetCurrentClientRequestContext(env);
 
-    auto ctxObj = s_objRefVault.GetObject_Locked(env, ctx.GetId());
+    auto ctxObj = s_objRefVault.GetObjectById_Locked(env, ctx.GetId());
     callSetCurrentClientRequestContext(env, ctxObj);
 
     logMessageToJs(category.c_str(), sev, msg.c_str());
@@ -5327,6 +5499,12 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
         Napi::PropertyDescriptor::Accessor(env, exports, "logger", &getLogger, &setLogger),
         Napi::PropertyDescriptor::Function(env, exports, "setUseTileCache", &setUseTileCache),
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReporting", &setCrashReporting),
+        Napi::PropertyDescriptor::Function(env, exports, "storeObjectInVault", &storeObjectInVault),
+        Napi::PropertyDescriptor::Function(env, exports, "getObjectFromVault", &getObjectFromVault),
+        Napi::PropertyDescriptor::Function(env, exports, "dropObjectFromVault", &dropObjectFromVault),
+        Napi::PropertyDescriptor::Function(env, exports, "addReferenceToObjectInVault", &addReferenceToObjectInVault),
+        Napi::PropertyDescriptor::Function(env, exports, "getObjectRefCountFromVault", &getObjectRefCountFromVault),
+        
         });
 
     return exports;

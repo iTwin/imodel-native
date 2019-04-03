@@ -56,6 +56,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
 {
     struct Impl;
     struct CancelableTasksStore;
+    struct TaskExecutionContext;
     struct ConnectionManagerWrapper;
     struct RulesetLocaterManagerWrapper;
     struct UserSettingsManagerWrapper;
@@ -213,10 +214,25 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         ContentOptions(Utf8StringCR rulesetId, Utf8StringCR locale = "") : CommonOptions(rulesetId.c_str(), locale.empty() ? nullptr : locale.c_str()) {}
         };
 
+    //===================================================================================
+    // @bsiclass                                    Grigas.Petraitis            03/2019
+    //===================================================================================
+    struct TaskNotificationsContext
+        {
+        private:
+            RulesDrivenECPresentationManager& m_manager;
+            std::function<void()> m_callbackOnTaskStart;
+        public:
+            ECPRESENTATION_EXPORT TaskNotificationsContext(RulesDrivenECPresentationManager& manager, std::function<void()> onTaskStart);
+            ECPRESENTATION_EXPORT ~TaskNotificationsContext();
+            std::function<void()> const& GetOnTaskStartCallback() const { return m_callbackOnTaskStart; }
+        };
+
 private:
     Impl* m_impl;
     folly::Executor* m_executor;
     CancelableTasksStore* m_cancelableTasks;
+    TaskNotificationsContext const* m_taskNotificationsContext;
     ConnectionManagerWrapper* m_connectionsWrapper;
     bvector<ECInstanceChangeEventSourceWrapper*> m_ecInstanceChangeEventSourceWrappers;
 
