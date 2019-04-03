@@ -21,7 +21,7 @@
         <Directories DirectoryListName="StructuralDomainsTestDirs"/>
     </Product>
 
-    <Part Name="StructuralDomainPublicAPI" BentleyBuildMakeFile="Structural.prewire.mke" ApiNumber="B02">
+    <Part Name="StructuralDomainPublicAPI" BentleyBuildMakeFile="Structural.prewire.mke" ApiNumber="M02">
         <Bindings>
             <PublicAPI Domain="StructuralDomain"/>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
@@ -31,7 +31,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="StructuralDomainDLL" BentleyBuildMakeFile="Structural.mke" ApiNumber="B02">
+    <Part Name="StructuralDomainDLL" BentleyBuildMakeFile="Structural.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <!--TODO: references to Forms and Profiles commented out for EAP-->
         <!-- <SubPart PartName="ProfilesDomainDLL"  PartFile="ProfilesDomain" Repository="DgnDomains-Profiles" />
