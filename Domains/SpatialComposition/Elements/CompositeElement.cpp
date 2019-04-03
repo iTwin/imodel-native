@@ -115,7 +115,7 @@ static Dgn::DgnDbStatus deleteRelationship (Dgn::DgnDbR dgnDb, Dgn::DgnElementId
 Dgn::DgnDbStatus CompositeElement::RemoveOverlapedElement (Dgn::DgnElementId overlapedElementId)
     {
     Dgn::DgnDbR dgnDb = GetDgnDb();
-    Dgn::DgnDbStatus status;
+    // unused - Dgn::DgnDbStatus status;
     Dgn::DgnElementId id = GetElementId();
     if (elementsHaveRelationship (dgnDb, id, overlapedElementId, SPATIALCOMPOSITION_SCHEMA (SPATIALCOMPOSITION_REL_CompositeOverlapsSpatialElements)))
         {
