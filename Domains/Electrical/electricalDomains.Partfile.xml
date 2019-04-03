@@ -53,6 +53,7 @@
         <ProductDirectory Name="PublicAPI"                               Deliver="true" Path="PublicAPI"/>
         <ProductDirectory Name="VendorAPI"                               Deliver="true" Path="VendorAPI"/>
         <ProductDirectory Name="VendorNotices"                           Deliver="true" Path="VendorNotices"/>
+        <ProductDirectory Name="VendorNotices"                           Deliver="true" Path="VendorNotices" LibType="static"/>
         <ProductDirectory Name="Assets"                                  Deliver="true" Path="Assets"/>
         <ProductDirectory Name="ComponentAssets"                         Deliver="true" Path="Assets"/>
         <ProductDirectory Name="Assets"                                  Deliver="true" Path="Assets" LibType="static"/>
@@ -72,6 +73,8 @@
         <ProductDirectory Name="PlantDomainAssembliesDir"                Deliver="true" Path="Assemblies"/>
 		<ProductDirectory Name="ElectricalDomainIncludes"                Deliver="true" Path="Include/ElectricalDomain"/>
         
+        <!-- Adding these to silence the warnings... if you want them, deliver them properly... -->
+        <ProductDirectory Name="Assemblies" LibType="static" Deliver="false"/>
     </ProductDirectoryList>
     
 </BuildContext>
