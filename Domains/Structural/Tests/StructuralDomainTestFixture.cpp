@@ -2,9 +2,12 @@
 |
 |     $Source: Tests/StructuralDomainTestFixture.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
+#ifdef NO_DGNVIEW_IMODEL02
+
 #include "StructuralDomainTestFixture.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
@@ -182,3 +185,5 @@ DgnDbPtr StructuralDomainTestFixture::OpenDgnDb()
 
     return db;
     }
+
+#endif // NO_DGNVIEW_IMODEL02

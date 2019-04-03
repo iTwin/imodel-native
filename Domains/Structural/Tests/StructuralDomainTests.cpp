@@ -2,9 +2,12 @@
 |
 |     $Source: Tests/StructuralDomainTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
+#ifdef NO_DGNVIEW_IMODEL02
+
 #include "StructuralDomainTestFixture.h"
 #include <StructuralDomain/StructuralDomainApi.h>
 // #include <FormsDomain/FormsDomainApi.h>
@@ -967,3 +970,4 @@ TEST_F(StructuralDomainTestFixture, EnsureCanContainAnyPhysicalElement)
     }
 */
 
+#endif // NO_DGNVIEW_IMODEL02

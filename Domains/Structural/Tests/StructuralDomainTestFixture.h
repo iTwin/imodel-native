@@ -2,10 +2,13 @@
 |
 |     $Source: Tests/StructuralDomainTestFixture.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+
+#ifdef NO_DGNVIEW_IMODEL02
+
 #include <Bentley/BeTest.h>
 #include <DgnView/DgnViewLib.h>
 #include <DgnView/DgnViewAPI.h>
@@ -66,3 +69,5 @@ class StructuralDomainTestFixture : public testing::Test
         DgnDbPtr CreateDgnDb();
         DgnDbPtr OpenDgnDb();
     };
+
+#endif // NO_DGNVIEW_IMODEL02
