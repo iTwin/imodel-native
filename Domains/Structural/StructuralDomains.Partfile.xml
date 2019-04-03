@@ -49,7 +49,6 @@
 
     <Part Name="StructuralDomainTestsExe" DeferType="StructuralDomainTests" BentleyBuildMakeFile="Tests/Tests.mke">
         <SubPart PartName="google_gtest_lib"     PartFile="gtest"         Repository="util-gtest"  />
-        <SubPart PartName="DgnView"              PartFile="DgnDisplay"    Repository="DgnDisplay"  />
         <SubPart PartName="DgnPlatformSqlang"    PartFile="DgnPlatform"   Repository="DgnPlatform" />
         <SubPart PartName="StructuralDomainDLL"/>
         <Bindings>
