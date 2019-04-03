@@ -2,7 +2,7 @@
 |
 |     $Source: Segmentation.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "LinearReferencingInternal.h"
@@ -38,7 +38,7 @@ bvector<LinearSegment> ISegmentableLinearElement::_QueryLinearSegments(QueryPara
             }
 
         segmentReferences.clear();
-        for (int i = currentStartStops.size() - 1; i >= 0; --i)
+        for (int i = (int)currentStartStops.size() - 1; i >= 0; --i)
             {
             if (fabs(currentStartStops.at(i).first - minStart) < DBL_EPSILON)
                 {
