@@ -46,7 +46,7 @@ Dgn::DgnDbStatus StraightProfiledExtrusion::_LoadProperties(Dgn::DgnElementCR el
         }
 
     SetLength(statement->GetValueDouble(0));
-    ECN::ECRelationshipClassCP relClass = element.GetDgnDb().Schemas().GetClass(BENTLEY_FORMS_SCHEMA_NAME, FORMS_CLASS_StraightProfiledExtrusionHasProfile)->GetRelationshipClassCP();
+    // unused - ECN::ECRelationshipClassCP relClass = element.GetDgnDb().Schemas().GetClass(BENTLEY_FORMS_SCHEMA_NAME, FORMS_CLASS_StraightProfiledExtrusionHasProfile)->GetRelationshipClassCP();
 
     ECN::ECClassId relationshipId;
     SetProfileId(statement->GetValueNavigation<ProfileId>(1, &relationshipId));
