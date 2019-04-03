@@ -2,7 +2,7 @@
 |
 |     $Source: DgnUtils/RegionsApiWrapper.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/BuildingDgnUtilsApi.h"
@@ -50,7 +50,7 @@ bool RegionsApiWrapper::ImprintPoly
 
     if (pPointArray && (pointArrayCount > 1))
         {
-        m_worldToLocalTransform.Multiply(pPointArray, pointArrayCount);
+        m_worldToLocalTransform.Multiply(pPointArray, (int)pointArrayCount);
 
         for (size_t i = 0; i < pointArrayCount; i++)
             {

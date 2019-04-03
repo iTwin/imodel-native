@@ -2,7 +2,7 @@
 |
 |     $Source: DgnUtils/ConflictSolver.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/BuildingDgnUtilsApi.h"
@@ -125,19 +125,19 @@ bool ConflictSolver::IsFaceProblem(MTGNodeId fid, Conflict& conflict)
     bmap<int64_t, RegionsApiWrapper::CurveInfo> isOutsideIds;
     m_regionsApi.GetFaceParentCurvesDeep(fid, isInsideIds, isOutsideIds);
 
-    int insideInnerCount = std::count_if(isInsideIds.begin(), isInsideIds.end(), [] (bpair<int64_t, RegionsApiWrapper::CurveInfo> const& current)
+    int insideInnerCount = (int)std::count_if(isInsideIds.begin(), isInsideIds.end(), [] (bpair<int64_t, RegionsApiWrapper::CurveInfo> const& current)
         {
         return EdgeUserType::Inner == static_cast<EdgeUserType>(current.second.ownerType);
         });
-    int insideContainerCount = std::count_if(isInsideIds.begin(), isInsideIds.end(), [] (bpair<int64_t, RegionsApiWrapper::CurveInfo> const& current)
+    int insideContainerCount = (int)std::count_if(isInsideIds.begin(), isInsideIds.end(), [] (bpair<int64_t, RegionsApiWrapper::CurveInfo> const& current)
         {
         return EdgeUserType::Container == static_cast<EdgeUserType>(current.second.ownerType);
         });
-    int outsideInnerCount = std::count_if(isOutsideIds.begin(), isOutsideIds.end(), [] (bpair<int64_t, RegionsApiWrapper::CurveInfo> const& current)
+    /* unused - int outsideInnerCount = (int)*/std::count_if(isOutsideIds.begin(), isOutsideIds.end(), [] (bpair<int64_t, RegionsApiWrapper::CurveInfo> const& current)
         {
         return EdgeUserType::Inner == static_cast<EdgeUserType>(current.second.ownerType);
         });
-    int outsideContainerCount = std::count_if(isOutsideIds.begin(), isOutsideIds.end(), [] (bpair<int64_t, RegionsApiWrapper::CurveInfo> const& current)
+    /* unused - int outsideContainerCount = (int)*/std::count_if(isOutsideIds.begin(), isOutsideIds.end(), [] (bpair<int64_t, RegionsApiWrapper::CurveInfo> const& current)
         {
         return EdgeUserType::Container == static_cast<EdgeUserType>(current.second.ownerType);
         });

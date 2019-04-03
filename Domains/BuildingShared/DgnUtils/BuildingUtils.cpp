@@ -67,8 +67,8 @@ int& indexOut
 )
     {
     Utf8String tmpStr (name);
-    bool addDash = !tmpStr.empty ();
-    int index = 0;
+    // unused - bool addDash = !tmpStr.empty ();
+    // unused - int index = 0;
     size_t lastDash = tmpStr.find_last_of ('-');
     if (lastDash != Utf8String::npos)
         {
@@ -518,7 +518,7 @@ void BuildingUtils::AppendRoadwayGeometry (Dgn::DgnElementPtr roadway, CurveVect
     GeometryBuilderPtr roadwayGeomBuilder = GeometryBuilder::Create (*roadwayGeomElem);
     roadwayGeomBuilder->Append (*roadVector);
     Render::GeometryParams geomParams = roadwayGeomBuilder->GetGeometryParams ();
-    Render::LineStyleInfoCP lineStyleCP = geomParams.GetLineStyle ();
+    // unused - Render::LineStyleInfoCP lineStyleCP = geomParams.GetLineStyle ();
     Render::LineStyleInfoPtr lineStyle = Render::LineStyleInfo::Create (GetCenterLineStyleId (roadway->GetDgnDb ()), nullptr);
     geomParams.SetLineStyle (lineStyle.get ());
     geomParams.SetWeight (1);
