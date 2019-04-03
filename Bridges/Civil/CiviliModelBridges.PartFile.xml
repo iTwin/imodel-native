@@ -48,6 +48,8 @@
         <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
         <ProductDirectory Name="CifDlls"  Path="Cif"/>
         <ProductDirectory Name="Dgnlibs"  RelativeTo="ApplicationRoot" Path="Dgnlibs"/>
+        <ProductDirectory Name="DgnV8DummyUstation"  Path="DgnV8"    RelativeTo="Assemblies"/>
+        <ProductDirectory Name="WorkSpace"   Path=""   RelativeTo="DgnV8Dlls"/>
     </ProductDirectoryList>
 
     <Part Name="ORDBridgeLibrary" BentleyBuildMakeFile="ORDBridge/ORDBridge.mke" >
@@ -84,6 +86,7 @@
         <SubPart PartName="RoadRailPhysical-Tested" Repository="DgnDomains-RoadRailPhysical" PartFile="RoadRailPhysical" />
         <SubPart PartName="CiviliModelBridgesTested" />
         <SubPart PartName="Resources" />
+        <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
         <!-- <SubPart PartName="ORDBridgeGUI" /> -->
         <InstallerWixFile SourceFile="ORDBridge\Installer\ORDBridgeInstaller"/>
         <Directories DirectoryListName="ORDBridgeDirectoryList" />
