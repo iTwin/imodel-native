@@ -27,7 +27,7 @@
         <SubProduct ProductName="ProfilesDomainTested" />
     </Part>
 
-    <Part Name="ProfilesDomainDLL" BentleyBuildMakeFile="Profiles/ProfilesDomainDLL.mke" ApiNumber="B02">
+    <Part Name="ProfilesDomainDLL" BentleyBuildMakeFile="Profiles/ProfilesDomainDLL.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform" />
         <SubPart PartName="ProfilesPublicAPI" />
         <Bindings>
@@ -40,7 +40,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="ProfilesPublicAPI" BentleyBuildMakeFile="Profiles/ProfilesDomainDll.prewire.mke" ApiNumber="B02">
+    <Part Name="ProfilesPublicAPI" BentleyBuildMakeFile="Profiles/ProfilesDomainDll.prewire.mke" ApiNumber="M02">
         <SubPart PartName="ProfilesSchema" PartFile="BisSchemas" Repository="BisSchemas" />
         <SubPart PartName="AecUnitsPublicAPI" Repository="DgnDomains-DesignModelingUnits" PartFile="AecUnits" />
         <Bindings>
