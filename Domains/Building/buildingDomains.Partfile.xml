@@ -22,7 +22,7 @@
     </Part>
 
 
-    <Part Name="BuildingDomain" BentleyBuildMakeFile="Building.mke" ApiNumber="B02">
+    <Part Name="BuildingDomain" BentleyBuildMakeFile="Building.mke" ApiNumber="M02">
         <SubPart PartName="BuildingPhysicalPublicAPI"/>
         <SubPart PartName="AecUnitsDomain"             PartFile="AecUnits"              Repository="DgnDomains-DesignModelingUnits"/>
         <SubPart PartName="BuildingSpatialDomain" Repository="DgnDomains-BuildingSpatial" PartFile="BuildingSpatial" />
@@ -39,7 +39,7 @@
     </Part>   
 
 
-    <Part Name="BuildingPhysicalPublicAPI" BentleyBuildMakeFile="Building.prewire.mke" ApiNumber="B02">
+    <Part Name="BuildingPhysicalPublicAPI" BentleyBuildMakeFile="Building.prewire.mke" ApiNumber="M02">
         <Bindings>
             <PublicAPI Domain="BuildingDomain"/>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
@@ -54,7 +54,7 @@
         </Bindings>
     </Part>
 
-  <Part Name="ProfilesPublicAPI" BentleyBuildMakeFile="Profiles.prewire.mke" ApiNumber="B02">
+  <Part Name="ProfilesPublicAPI" BentleyBuildMakeFile="Profiles.prewire.mke" ApiNumber="M02">
     <Bindings>
       <PublicAPI Domain="ProfilesDomain"/>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
