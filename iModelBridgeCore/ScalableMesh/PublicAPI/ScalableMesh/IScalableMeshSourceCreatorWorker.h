@@ -60,10 +60,12 @@ struct IScalableMeshSourceCreatorWorker : public IScalableMeshSourceCreator
 
         BENTLEY_SM_IMPORT_EXPORT static IScalableMeshSourceCreatorWorkerPtr GetFor(const WChar* filePath,
                                                                                    uint32_t     nbWorkers,
+                                                                                   bool         isSharable,
                                                                                    StatusInt&   status);
 
         BENTLEY_SM_IMPORT_EXPORT static IScalableMeshSourceCreatorWorkerPtr GetFor(const IScalableMeshPtr& scmPtr,
                                                                                    uint32_t                nbWorkers,
+                                                                                   bool                    isSharable,
                                                                                    StatusInt&              status);
 
         BENTLEY_SM_IMPORT_EXPORT StatusInt                    CreateGenerationTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName) const;
@@ -85,6 +87,11 @@ struct IScalableMeshSourceCreatorWorker : public IScalableMeshSourceCreator
         BENTLEY_SM_IMPORT_EXPORT StatusInt                    ProcessGenerateTask(BeXmlNodeP pXmlTaskNode) const;
 
         BENTLEY_SM_IMPORT_EXPORT StatusInt                    ProcessTextureTask(BeXmlNodeP pXmlTaskNode) const;
+
+
+        BENTLEY_SM_IMPORT_EXPORT StatusInt                    OpenSqlFiles(bool readOnly, bool needSisterMainLockFile);
+
+        BENTLEY_SM_IMPORT_EXPORT StatusInt                    CloseSqlFiles();        
                 
     };
 

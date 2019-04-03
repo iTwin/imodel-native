@@ -1764,12 +1764,16 @@ void RootModelConverter::_FinishConversion()
 
     for (auto f : m_finishers)
         {
+        LOG.tracev ("calling DgnDbElementHandlerExtension::_OnFinishConversion for %p", f);
         f->_OnFinishConversion(*this);
+        LOG.tracev ("called DgnDbElementHandlerExtension::_OnFinishConversion for %p", f);
         }
 
     for (auto xdomain : XDomainRegistry::s_xdomains)
         {
+        LOG.tracev ("calling XDomain::_OnFinishConversion for %p", xdomain);
         xdomain->_OnFinishConversion(*this);
+        LOG.tracev ("called XDomain::_OnFinishConversion for %p", xdomain);
         }
 
     if (!IsUpdating())

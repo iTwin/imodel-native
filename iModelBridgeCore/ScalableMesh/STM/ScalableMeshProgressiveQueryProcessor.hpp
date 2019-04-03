@@ -38,6 +38,21 @@ template <class POINT, class EXTENT>  void ProcessingQuery<POINT,EXTENT>::Run(si
         }
     }
 
+    while (m_dirtyOverviews[threadInd].size() > 0 && !m_isCancel)
+    {
+        IScalableMeshCachedDisplayNodePtr overviewNodePtr;
+
+        overviewNodePtr = m_dirtyOverviews[threadInd].back();
+        dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>(overviewNodePtr.get())->RefreshMergedClip(overviewNodePtr->GetScalableMesh()->GetReprojectionTransform());
+        dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>(overviewNodePtr.get())->RemoveDisplayDataFromCache();
+        dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>(overviewNodePtr.get())->LoadMesh(false, m_clipVisibilities, m_displayCacheManagerPtr, m_loadTexture, overviewNodePtr->GetScalableMesh()->ShouldInvertClips());
+
+        m_dirtyOverviewNodeMutexes[threadInd].lock();
+        m_dirtyOverviews[threadInd].pop_back();
+        m_newOverviews[threadInd].push_back(overviewNodePtr);
+        m_dirtyOverviewNodeMutexes[threadInd].unlock();
+    }
+
     HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> nodePtr;
 
     //processingQueryPtr->m_searchingNodeMutexes[threadId].lock();

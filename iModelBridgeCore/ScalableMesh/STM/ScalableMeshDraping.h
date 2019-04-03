@@ -6,7 +6,7 @@
 |       $Date: 2015/04/20 12:32:17 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -68,6 +68,11 @@ struct ScalableMeshDraping : IDTMDraping
             {
             m_type = type;
             }
+
+        DTMAnalysisType GetAnalysisType()
+        {
+            return m_type;
+        }
             
 
             void ClearNodes()

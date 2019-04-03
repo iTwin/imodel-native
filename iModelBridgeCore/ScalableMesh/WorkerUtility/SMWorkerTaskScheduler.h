@@ -61,7 +61,7 @@ struct TaskScheduler
 
         void GetScalableMeshFileName(BeFileName& smFileNameAbsolutePath, const BeFileName& smFileName) const;
 
-        IScalableMeshSourceCreatorWorkerPtr GetSourceCreatorWorker(const BeFileName& smFileName);
+        IScalableMeshSourceCreatorWorkerPtr GetSourceCreatorWorker(const BeFileName& smFileName, bool isSharable = true);
 
         bool ParseWorkerTaskType(BeXmlNodeP pXmlTaskNode, WorkerTaskType& t);
 

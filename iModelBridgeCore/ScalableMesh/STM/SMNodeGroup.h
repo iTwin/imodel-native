@@ -1430,7 +1430,6 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         }
     if (BeFileStatus::Success != status)
         {
-        SMNODEGROUP_LOG.errorv("Failed to Open [BeFileStatus(%d)]... try to create it: %ls", (uint32_t)status, group_filename.c_str());
         status = file.Create(group_filename.c_str());
         }
     if (BeFileStatus::Success == status)

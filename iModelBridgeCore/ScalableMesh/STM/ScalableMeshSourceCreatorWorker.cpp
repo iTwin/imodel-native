@@ -86,13 +86,25 @@ StatusInt IScalableMeshSourceCreatorWorker::ProcessGenerateTask(BeXmlNodeP pXmlT
     }
 
 StatusInt IScalableMeshSourceCreatorWorker::ProcessTextureTask(BeXmlNodeP pXmlTaskNode) const
-{
+    {
     return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->ProcessTextureTask(pXmlTaskNode);
-}
+    }
+
+
+StatusInt IScalableMeshSourceCreatorWorker::OpenSqlFiles(bool readOnly, bool needSisterMainLockFile) 
+    {
+    return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->OpenSqlFiles(readOnly, needSisterMainLockFile);
+    }
+
+StatusInt IScalableMeshSourceCreatorWorker::CloseSqlFiles()
+    {
+    return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CloseSqlFiles();
+    }
 
 
 IScalableMeshSourceCreatorWorkerPtr IScalableMeshSourceCreatorWorker::GetFor(const WChar*  filePath,
                                                                              uint32_t      nbWorkers,
+                                                                             bool          isSharable,
                                                                              StatusInt&    status)
     {
     RegisterDelayedImporters();
@@ -100,17 +112,8 @@ IScalableMeshSourceCreatorWorkerPtr IScalableMeshSourceCreatorWorker::GetFor(con
     using namespace ISMStore;
     BeFileName fileName = BeFileName(filePath);
 
-#ifdef VANCOUVER_API
-    if (fileName.IsUrl() || (!BeFileName::DoesPathExist(fileName.c_str()) && !canCreateFile(filePath)))
-#else
-    if (IsUrl(fileName) || (!fileName.DoesPathExist() /*&& !canCreateFile(filePath)*/))
-#endif	
-    {
-        status = BSIERROR;
-        return 0;
-    }
     
-    IScalableMeshSourceCreatorWorkerPtr pCreatorWorker = new IScalableMeshSourceCreatorWorker(new IScalableMeshSourceCreatorWorker::Impl(filePath, nbWorkers));    
+    IScalableMeshSourceCreatorWorkerPtr pCreatorWorker = new IScalableMeshSourceCreatorWorker(new IScalableMeshSourceCreatorWorker::Impl(filePath, nbWorkers, isSharable));    
     /*
     IScalableMeshSourceCreatorWorker::Impl* implP(dynamic_cast<IScalableMeshSourceCreatorWorker::Impl*>(pCreatorWorker->m_implP.get()));
     assert(implP != nullptr);
@@ -129,13 +132,14 @@ IScalableMeshSourceCreatorWorkerPtr IScalableMeshSourceCreatorWorker::GetFor(con
 
 IScalableMeshSourceCreatorWorkerPtr IScalableMeshSourceCreatorWorker::GetFor(const IScalableMeshPtr& scmPtr,
                                                                              uint32_t                nbWorkers,
+                                                                             bool                    isSharable,
                                                                              StatusInt&              status)
     {
     using namespace ISMStore;
 
     RegisterDelayedImporters();
 
-    IScalableMeshSourceCreatorWorkerPtr pCreatorWorker = new IScalableMeshSourceCreatorWorker(new IScalableMeshSourceCreatorWorker::Impl(scmPtr, nbWorkers));
+    IScalableMeshSourceCreatorWorkerPtr pCreatorWorker = new IScalableMeshSourceCreatorWorker(new IScalableMeshSourceCreatorWorker::Impl(scmPtr, nbWorkers, isSharable));
 
     status = pCreatorWorker->m_implP->LoadFromFile();
     if (BSISUCCESS != status)
@@ -160,7 +164,7 @@ IScalableMeshSourceCreatorWorker::~IScalableMeshSourceCreatorWorker()
         }
     }
 
-IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName, uint32_t nbWorkers)
+IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName, uint32_t nbWorkers, bool isSharable)
     : IScalableMeshSourceCreator::Impl(scmFileName) 
     {        
     m_smDb = nullptr;
@@ -170,9 +174,9 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName, uint32_t 
     m_scalableMeshFileLock = nullptr;
 
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
-    SetThreadingOptions(false, false, false);
-    SetShareable(true);
-    ScalableMeshDb::SetEnableSharedDatabase(true);
+    SetThreadingOptions(false, true, false);
+    SetShareable(isSharable);
+    ScalableMeshDb::SetEnableSharedDatabase(isSharable);
 #ifdef TRACE_ON	    
     CachedDataEventTracer::GetInstance()->setOutputObjLog(false);
     CachedDataEventTracer::GetInstance()->setLogDirectory("D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\");    
@@ -180,7 +184,7 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName, uint32_t 
 #endif	
     }
 
-IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr, uint32_t nbWorkers)
+IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr, uint32_t nbWorkers, bool isSharable)
     : IScalableMeshSourceCreator::Impl(scmPtr)
     {      
     m_smDb = nullptr;
@@ -190,9 +194,9 @@ IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr, uin
     m_scalableMeshFileLock = nullptr;
 
     //Setting meshing and filtering to thread lead to crash/unexpected behavior.
-    SetThreadingOptions(false, false, false);
-    SetShareable(true);
-    ScalableMeshDb::SetEnableSharedDatabase(true);
+    SetThreadingOptions(false, true, false);
+    SetShareable(isSharable);
+    ScalableMeshDb::SetEnableSharedDatabase(isSharable);
 #ifdef TRACE_ON		    
     CachedDataEventTracer::GetInstance()->setOutputObjLog(false);
     CachedDataEventTracer::GetInstance()->setLogDirectory("D:\\MyDoc\\RMA - July\\CloudWorker\\Log\\");    
@@ -241,7 +245,7 @@ void IScalableMeshSourceCreatorWorker::Impl::ReleaseScalableMeshFileLock()
     assert(m_scalableMeshFileLock != nullptr);
     fclose(m_scalableMeshFileLock);
     m_scalableMeshFileLock = nullptr;
-    }
+    }   
                    
 HFCPtr<MeshIndexType> IScalableMeshSourceCreatorWorker::Impl::GetDataIndex()
     {
@@ -1774,6 +1778,8 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
             }
 
         //Stitch tiles
+        vector<SMMeshIndexNode<DPoint3d, DRange3d>*> nodesToStitch;
+
         for (auto& tileId : stitchTileIds)
             {
             for (auto& node : nodesToMesh)
@@ -1783,19 +1789,9 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                 if (node->GetBlockID().m_integerID == tileId)
                     {        
                     if (s_doMultiThreadStitching)
-                        {
-                        RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<DPoint3d, DRange3d>* node, HFCPtr<MeshIndexType> pDataIndex, size_t threadId ) ->void
-                            {    
-                            bool isStitched = pDataIndex->GetMesher2_5d()->Stitch(node);
-                            assert(isStitched == true);
-                    
-                            if (isStitched)
-                                {
-                                node->SetDirty(true);
-                                }
-
-                            SetThreadAvailableAsync(threadId);
-                            }, node, pDataIndex, std::placeholders::_1));
+                        {                  
+                        if (node->m_nodeHeader.m_level > 0)
+                            nodesToStitch.push_back(node);
                         }
                     else
                         {                                    
@@ -1812,10 +1808,11 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                             node->SetDirty(true);
                             }
 
+                         
     #ifndef NDEBUG
                         uint32_t newPointCount = node->GetNbObjects();
                         assert(pointCount <= newPointCount);
-                        assert(newPointCount > 0);
+                        assert(newPointCount > 0 || pointCount == 0);
                         assert(node->m_nodeHeader.m_nodeCount == newPointCount);
     #endif
                         }
@@ -1825,9 +1822,28 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
                 }
             }
 
-        if (s_doMultiThreadStitching && stitchTileIds.size())
-            {
-            WaitForThreadStop();
+        if (s_doMultiThreadStitching && nodesToStitch.size() > 0)
+            {            
+            assert(nodesToStitch.size() == stitchTileIds.size());
+            m_pDataIndex->DoParallelStitching(nodesToStitch);
+
+#ifndef NDEBUG
+            wchar_t text_buffer[1000] = { 0 }; //temporary buffer
+
+            swprintf(text_buffer, _countof(text_buffer), L"NODES TO STITCH\r\n"); 
+            OutputDebugStringW(text_buffer); // print
+            
+            for (auto& node : nodesToStitch)
+                {                
+                swprintf(text_buffer, _countof(text_buffer), L"Node ID %zd\r\n", node->GetBlockID().m_integerID); 
+                OutputDebugStringW(text_buffer); // print
+                }
+
+            swprintf(text_buffer, _countof(text_buffer), L"NODES TO STITCH END\r\n"); 
+            OutputDebugStringW(text_buffer); // print
+
+#endif
+         
             }
 
 #ifndef NDEBUG
@@ -2315,11 +2331,10 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::OpenSqlFiles(bool readOnly, bo
     {            
     if (m_smDb == nullptr || m_smSisterDb == nullptr)
         {
-        SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(GetDataIndex()->GetDataStore().get()));
-        assert(pSqliteStore != nullptr);
-                
         m_mainFilePtr = GetFile(true);
-
+        assert(m_mainFilePtr->IsShared() == true);
+        
+       
         if (m_smDb == nullptr)
             {
             m_smDb = m_mainFilePtr->GetDb();
@@ -2327,8 +2342,12 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::OpenSqlFiles(bool readOnly, bo
             }
         
         if (m_smSisterDb == nullptr)
-            {
-            m_sisterFilePtr = pSqliteStore->GetSisterSQLiteFile(SMStoreDataType::LinearFeature, false, true);
+            {                        
+            SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(GetDataIndex()->GetDataStore().get()));
+            assert(pSqliteStore != nullptr);
+
+
+            m_sisterFilePtr = pSqliteStore->GetSisterSQLiteFile(SMStoreDataType::LinearFeature, true, false);
 
             m_smSisterDb = m_sisterFilePtr->GetDb();
             assert(m_smSisterDb != nullptr);
@@ -2408,6 +2427,42 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CloseSqlFiles()
 
 
     return SUCCESS;
+    }
+
+void IScalableMeshSourceCreatorWorker::Impl::SetShareable(bool isShareable)
+    {
+    if (isShareable)
+        {
+//#if 0
+        SMSQLiteFilePtr sqlFilePtr(GetFile(true));
+        assert(sqlFilePtr.IsValid() && sqlFilePtr->GetDb() != nullptr);
+
+        if (sqlFilePtr->GetDb()->IsDbOpen())
+            sqlFilePtr->GetDb()->CloseDb();
+
+        sqlFilePtr->SetIsShared(true);
+        
+        SMSQLiteStore<PointIndexExtentType>* pSqliteStore(static_cast<SMSQLiteStore<PointIndexExtentType>*>(GetDataIndex()->GetDataStore().get()));
+        assert(pSqliteStore != nullptr);
+
+        SMSQLiteFilePtr sisterFilePtr(pSqliteStore->GetSisterSQLiteFile(SMStoreDataType::LinearFeature, true, false));
+        assert(sisterFilePtr.IsValid() && sisterFilePtr->GetDb() != nullptr);
+            
+        if (sisterFilePtr->GetDb()->IsDbOpen())
+            sisterFilePtr->GetDb()->CloseDb();
+
+        sisterFilePtr->SetIsShared(true);
+//#endif
+
+        __super::SetShareable(true);
+        m_isShareable = true;        
+        ScalableMeshDb::SetEnableSharedDatabase(true);    
+        }
+    else
+        {
+        __super::SetShareable(false);
+        ScalableMeshDb::SetEnableSharedDatabase(false);    
+        }
     }
 
 StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessStitchTask(BeXmlNodeP pXmlTaskNode)

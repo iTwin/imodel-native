@@ -150,6 +150,18 @@ iModelBridge::CmdLineArgStatus ConverterApp::_ParseCommandLineArg(int iArg, int 
         return CmdLineArgStatus::Success;
         }
 
+    if (argv[iArg] == wcsstr (argv[iArg], L"--PPBASEDCONVERTER"))
+        {
+        //intended for GetV8DgnDllsRelativeDir
+        return CmdLineArgStatus::Success;
+        }
+
+    if (argv[iArg] == wcsstr (argv[iArg], L"--V8DLLSDIR="))
+        {
+        //intended for GetV8DgnDllsRelativeDir
+        return CmdLineArgStatus::Success;
+        }
+    
     // This is not a common command line argument => let the subclass handle it
     return CmdLineArgStatus::NotRecognized;
     }
