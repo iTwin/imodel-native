@@ -17,7 +17,7 @@
     </Part>
 	
 	
-    <Part Name="ElectricalDomain" BentleyBuildMakeFile="Electrical.mke" ApiNumber="B02">
+    <Part Name="ElectricalDomain" BentleyBuildMakeFile="Electrical.mke" ApiNumber="M02">
         <SubPart PartName="ElectricalPhysicalPublicAPI"/>
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
 
@@ -27,7 +27,7 @@
         </Bindings>
     </Part>
 	
-	<Part Name="ElectricalPhysicalPublicAPI" BentleyBuildMakeFile="Electrical.prewire.mke" ApiNumber="B02">
+	<Part Name="ElectricalPhysicalPublicAPI" BentleyBuildMakeFile="Electrical.prewire.mke" ApiNumber="M02">
         <Bindings>
             <PublicAPI Domain="ElectricalDomain"/>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
