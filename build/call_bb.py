@@ -154,6 +154,12 @@ def callEachStrategy(args, config, verData):
             action = 'buildinstallset'
         elif 'diffreport' == args.action:
             action = 'diffreport ' + args.bdf1 + ' ' + args.bdf2 + ' ' '--outputPath=' + args.diffOutDir
+        elif 'clean' == args.action:
+            if not isFirstStrategy:
+                print('INFO: tree already cleaned from previous strategy')
+                continue
+
+            action = 'build --tmr --noprompt'
         else:
             action = args.action
 
@@ -182,7 +188,7 @@ def main():
     defaultVersionsFile = os.path.join(os.environ['SYSTEM_ARTIFACTSDIRECTORY'], 'bdf', 'versions.json') if 'SYSTEM_ARTIFACTSDIRECTORY' in os.environ else ''
 
     argParser = argparse.ArgumentParser(description="Runs BB commands based on a JSON config file.")
-    argParser.add_argument("action",                                        help='One of pull|build|bdf|checkunused|createnugets|createinstallers|diffreport')
+    argParser.add_argument("action",                                        help='One of pull|build|bdf|checkunused|createnugets|createinstallers|diffreport|clean')
     argParser.add_argument("-c", "--config", default=defaultConfigFile,     help='Path to configuration file')
     argParser.add_argument("-r", "--versions", default=defaultVersionsFile, help='(!pull) Path to versions file')
     argParser.add_argument("-s", "--strat",                                 help='Overrides configuration to use a specific build strategy')
