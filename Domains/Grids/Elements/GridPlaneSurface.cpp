@@ -353,7 +353,7 @@ Dgn::DgnDbStatus                PlanCartesianGridSurface::RecomputeGeometryStrea
     DPoint3d endPt = DPoint3d::From(endExt, 0.0, staElev);
 
     //start from the grid transform
-    Placement3dCR currGridPlacement = grid->GetPlacement();
+    // unused - Placement3dCR currGridPlacement = grid->GetPlacement();
     SetPlacement(Placement3d()); //set the start local coordinates
     Transform rotation = Transform::FromIdentity();
     Transform coordTrans = Transform::From(0.0, coordinate, 0.0);
@@ -496,7 +496,7 @@ Dgn::DgnDbStatus                PlanRadialGridSurface::RecomputeGeometryStream
     DPoint3d endPt = DPoint3d::From(endRadius, 0.0, staElev);
 
     //start from the grid transform
-    Placement3dCR currGridPlacement = grid->GetPlacement();
+    // unused - Placement3dCR currGridPlacement = grid->GetPlacement();
     SetPlacement(Placement3d()); //set the start local coordinates
     Transform rotation = Transform::FromPrincipleAxisRotations(Transform::FromIdentity(), 0.0, 0.0, angle);
 

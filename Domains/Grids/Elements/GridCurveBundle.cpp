@@ -146,8 +146,8 @@ GridSurfaceCR otherSurface
     if (SUCCESS == DgnGeometryUtils::GetIBRepEntitiesFromGeometricElement (brepsThis, &thisSurface) &&
         SUCCESS == DgnGeometryUtils::GetIBRepEntitiesFromGeometricElement (brepsThat, &otherSurface))
         {
-        Dgn::IBRepEntity::EntityType type1 = brepsThis[0]->GetEntityType();
-        Dgn::IBRepEntity::EntityType type2 = brepsThat[0]->GetEntityType();
+        // unused - Dgn::IBRepEntity::EntityType type1 = brepsThis[0]->GetEntityType();
+        // unused - Dgn::IBRepEntity::EntityType type2 = brepsThat[0]->GetEntityType();
         CurveVectorPtr result;
         BRepUtil::Modify::IntersectSheetFaces(result, *brepsThis[0], *brepsThat[0]);
         if (result->size() > 0)

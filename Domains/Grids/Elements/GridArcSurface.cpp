@@ -326,7 +326,7 @@ Dgn::DgnDbStatus                PlanCircumferentialGridSurface::RecomputeGeometr
 
 
     //start from the grid transform
-    Placement3dCR currGridPlacement = grid->GetPlacement();
+    // unused - Placement3dCR currGridPlacement = grid->GetPlacement();
     SetPlacement(Placement3d()); //set the start local coordinates
 
     //now set the geometry

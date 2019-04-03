@@ -187,9 +187,9 @@ void GridsDomain::InsertCodeSpec (DgnDbR db, Utf8CP name)
 void GridsDomain::_OnSchemaImported(DgnDbR db) const
     {
     Dgn::ColorDef tmpColorDef;
-    double tmpTransparency;
+    // unused - double tmpTransparency;
     bool bTRUE = true;
-    bool bFALSE = false;
+    // unused - bool bFALSE = false;
 
     //method        |   db  |               name                        |      color       |    isVisible   |   isPlotted   |   isSnappable |   isLocatable |   weight  |   styleId |   displaypriority |      materialId      |    transparency    |
     tmpColorDef = Dgn::ColorDef::DarkGrey ();
@@ -216,7 +216,7 @@ void GridsDomain::_OnSchemaImported(DgnDbR db) const
         DefinitionModelPtr model = DefinitionModel::Create(*partition);
 
         IBriefcaseManager::Request request;
-        auto stat = model->PopulateRequest(request, BeSQLite::DbOpcode::Insert);
+        /* unused - auto stat = */model->PopulateRequest(request, BeSQLite::DbOpcode::Insert);
         model->GetDgnDb().BriefcaseManager().Acquire(request);
 
         DgnDbStatus status = model->Insert();
@@ -241,9 +241,9 @@ bool GridsDomain::EnsureDomainCategoriesExist (Dgn::DgnDbR db)
     {
     bool itemInserted = false;
     Dgn::ColorDef tmpColorDef;
-    double tmpTransparency;
-    bool bTRUE = true;
-    bool bFALSE = false;
+    // unused - double tmpTransparency;
+    // unused - bool bTRUE = true;
+    // unused - bool bFALSE = false;
 
     if (!(queryCategoryId (db, GRIDS_CATEGORY_CODE_GridCurve).IsValid ()))
         {
