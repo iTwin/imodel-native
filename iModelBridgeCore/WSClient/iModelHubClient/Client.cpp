@@ -1102,11 +1102,11 @@ StatusTaskPtr Client::AbandonBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBrie
 
     Utf8String briefcaseIdString;
     briefcaseIdString.Sprintf("%u", briefcaseId);
-    ObjectId iModelId = ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Briefcase, briefcaseIdString);
+    ObjectId briefcaseObjectId = ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Briefcase, briefcaseIdString);
 
     auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, requestOptions, "Sending abandon briefcase request. iModel ID: %s.", iModelInfo.GetId().c_str());
-    return client->SendDeleteObjectRequestWithOptions(iModelId, requestOptions, cancellationToken)->Then<StatusResult>([=](WSDeleteObjectResult const& result)
+    return client->SendDeleteObjectRequestWithOptions(briefcaseObjectId, requestOptions, cancellationToken)->Then<StatusResult>([=](WSDeleteObjectResult const& result)
         {
         if (!result.IsSuccess())
             {

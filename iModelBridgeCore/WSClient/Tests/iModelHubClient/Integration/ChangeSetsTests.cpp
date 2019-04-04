@@ -140,6 +140,7 @@ TEST_F(ChangeSetsTests, PushToEmptyiModel)
 TEST_F(ChangeSetsTests, PullAndMerge)
     {
     m_briefcase = AcquireAndOpenBriefcase(false);
+    m_briefcase->GetiModelConnectionPtr()->SetPageSize(2);
 
     BoolResult upToDateResult = m_briefcase->IsBriefcaseUpToDate()->GetResult();
     ASSERT_SUCCESS(upToDateResult);
@@ -164,6 +165,7 @@ TEST_F(ChangeSetsTests, PullAndMerge)
 TEST_F(ChangeSetsTests, ChangeSetsInfo)
     {
     m_briefcase = AcquireAndOpenBriefcase(true);
+    m_briefcase->GetiModelConnectionPtr()->SetPageSize(1);
     Utf8String lastChangeSetId = m_briefcase->GetDgnDb().Revisions().GetParentRevisionId();
 
     ChangeSetsInfoResult changeSetsResult = m_briefcase->GetiModelConnection().GetAllChangeSets()->GetResult();
@@ -208,6 +210,9 @@ TEST_F(ChangeSetsTests, PullMergeAndPush)
 TEST_F(ChangeSetsTests, TwoPulls)
     {
     m_briefcase = AcquireAndOpenBriefcase(false);
+    m_briefcase->GetiModelConnectionPtr()->SetPageSize(2);
+    iModelManager* manager = (iModelManager*)_GetRepositoryManager(m_briefcase->GetDgnDb());
+    manager->GetiModelConnectionPtr()->SetPageSize(2);
 
     Utf8String originalChangeSetId = m_briefcase->GetDgnDb().Revisions().GetParentRevisionId();
 
@@ -316,6 +321,7 @@ TEST_F(ChangeSetsTests, PreDownloadManyBriefcases)
         ASSERT_SUCCESS(acquireResult);
         BriefcasePtr briefcase = acquireResult.GetValue();
         briefcase->GetiModelConnection().GetChangeSetCacheManager().EnableBackgroundDownload()->GetResult();
+        briefcase->GetiModelConnectionPtr()->SetPageSize(i + 1);
         briefcases.push_back(briefcase);
         }
 
