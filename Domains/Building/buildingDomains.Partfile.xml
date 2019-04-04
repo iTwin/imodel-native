@@ -125,6 +125,7 @@
         <!--<SubPart PartName="SpacePlanningDomain"             PartFile="BuildingSpacePlanning"    Repository="DgnDomains-BuildingSpacePlanning"/> -->
         <SubPart PartName="ClassificationSystemsDomain" Repository="DgnDomains-ClassificationSystems" PartFile="ClassificationSystems" />
         <SubPart PartName="BuildingSpatialDomain"           Repository="DgnDomains-BuildingSpatial" PartFile="BuildingSpatial" />
+        <SubPart PartName="SpatialCompositionDomain"        Repository="DgnDomains-SpatialComposition" PartFile="SpatialComposition" />
         <SubPart PartName="StructuralDomainDLL"             PartFile="StructuralDomains"        Repository="DgnDomains-Structural"/>
         <SubPart PartName="ProfilesDomainDLL"               PartFile="ProfilesDomain"           Repository="DgnDomains-Profiles"/>
         <SubPart PartName="FormsDomainDLL"                  PartFile="FormsDomain"              Repository="DgnDomains-Forms"/>
