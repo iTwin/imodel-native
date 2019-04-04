@@ -73,6 +73,7 @@
       <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
       <SubPart PartName="BuildingSpatial"/>
       <SubPart PartName="BuildingSpatialDomain"/>
+      <SubPart PartName="SpatialCompositionDomain" Repository="DgnDomains-SpatialComposition" PartFile="SpatialComposition" />
       <SubPart PartName="ClassificationSystemsDomain" Repository="DgnDomains-ClassificationSystems" PartFile="ClassificationSystems"/>
       <Bindings>
         <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="BuildingSpatial/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
