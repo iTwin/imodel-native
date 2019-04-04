@@ -13,7 +13,7 @@
 
 #include "../LicensingDb.h"
 #include "../Policy.h"
-#include "../Utils/FeatureEvent.h"
+#include <Licensing/Utils/FeatureEvent.h>
 
 #include <WebServices/Client/ClientInfo.h>
 
