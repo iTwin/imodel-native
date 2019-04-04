@@ -5095,8 +5095,9 @@ static Napi::Value getObjectRefCountFromVault(Napi::CallbackInfo const& info)
 
 
 static Napi::ObjectReference s_logger;
-struct LogMessage {Utf8String m_category; Utf8String m_message; NativeLogging::SEVERITY m_severity;};
-static bmap<Utf8String, bvector<LogMessage>>* s_deferredLogging;
+struct LogMessage {Utf8String m_message; NativeLogging::SEVERITY m_severity;};
+static bmap<Utf8String, bmap<Utf8String, bvector<LogMessage>>>* s_deferredLogging;
+static bmap<Utf8String, NativeLogging::SEVERITY>* s_categorySeverityFilter;
 static BeThreadLocalStorage* s_currentClientRequestContext;
 
 /*---------------------------------------------------------------------------------**//**
@@ -5111,6 +5112,19 @@ static void setLogger(Napi::CallbackInfo const& info)
     {
     s_logger = Napi::ObjectReference::New(info[0].ToObject());
     s_logger.SuppressDestruct();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void clearLogLevelCache(Napi::CallbackInfo const&)
+    {
+    BeSystemMutexHolder ___;
+
+    if (nullptr == s_categorySeverityFilter)
+        return;
+    delete s_categorySeverityFilter;
+    s_categorySeverityFilter = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5275,20 +5289,61 @@ static bool callIsLogLevelEnabledJs(Utf8CP category, NativeLogging::SEVERITY sev
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+NativeLogging::SEVERITY callGetLogLevelJs(Utf8StringCR category)
+    {
+    auto env = s_logger.Env();
+    Napi::HandleScope scope(env);
+
+    auto method = s_logger.Get("getLevel").As<Napi::Function>();
+    if (method == env.Undefined())
+        {
+        Napi::Error::New(JsInterop::Env(), "Invalid Logger").ThrowAsJavaScriptException();
+        return NativeLogging::LOG_TRACE;
+        }
+
+    auto catJS = toJsString(env, category);
+
+    auto jsLevelValue = method({catJS});
+    
+    int logLevel = (jsLevelValue == env.Undefined())? 4: jsLevelValue.ToNumber().Int32Value();
+
+    switch (logLevel)
+        {
+        case 0: return NativeLogging::LOG_TRACE;
+        case 1: return NativeLogging::LOG_INFO;
+        case 2: return NativeLogging::LOG_WARNING;
+        case 3: return NativeLogging::LOG_ERROR;
+        case 4: return (NativeLogging::SEVERITY)(NativeLogging::LOG_FATAL + 1); // LogLevel.None => Fake importance that is higher than the highest that could really be set.
+        }
+    BeAssert(false);
+    return NativeLogging::LOG_TRACE;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void pushDeferredLoggingMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg, JsInterop::ObjectReferenceClaimCheck const& ctx)
     {
     BeSystemMutexHolder ___;
 
-    if (!s_deferredLogging)
-        s_deferredLogging = new bmap<Utf8String, bvector<LogMessage>>();
+    if (nullptr == s_deferredLogging)
+        s_deferredLogging = new bmap<Utf8String, bmap<Utf8String, bvector<LogMessage>>>();
+
+    if (nullptr != s_categorySeverityFilter)
+        {                                                                   
+        auto i = s_categorySeverityFilter->find(category);                  // if we know the level set for the category
+        if ((i != s_categorySeverityFilter->end()) && (sev < i->second))    // and we know that the current message is of lower severity than that
+            return;                                                         // then don't both to save the message, since we know that Logger will just filter it out.
+        }
 
     LogMessage lm;
-    lm.m_category = category;
     lm.m_message = msg;
     lm.m_severity = sev;
-    (*s_deferredLogging)[ctx.GetId()].push_back(lm);
+    auto& ctxEntry = (*s_deferredLogging)[ctx.GetId()];
+    auto& catEntry = ctxEntry[category];
+    catEntry.push_back(lm);
 
     s_deferredLoggingClientRequestActivityClaimChecks.insert(ctx); // make sure this claim check (and the vault slot) remain alive until doDeferredLogging is run.
     }
@@ -5319,22 +5374,36 @@ static void doDeferredLogging()
 
     BeSystemMutexHolder ___;
 
-    if (!s_deferredLogging)
+    if (nullptr == s_deferredLogging)
         return;
 
-    for (auto const& contextAndMessages : *s_deferredLogging)
+    if (nullptr == s_categorySeverityFilter)
+        s_categorySeverityFilter = new bmap<Utf8String, NativeLogging::SEVERITY>();
+
+    for (auto const& contextWithCategories : *s_deferredLogging)
         {
+        auto const& ctx = contextWithCategories.first;
+
         auto env = s_logger.Env();
         Napi::HandleScope scope(env);
 
         auto wasCtx = callGetCurrentClientRequestContext(env);
 
-        auto ctxObj = s_objRefVault.GetObjectById_Locked(env, contextAndMessages.first);
+        auto ctxObj = s_objRefVault.GetObjectById_Locked(env, ctx);
         callSetCurrentClientRequestContext(env, ctxObj);
 
-        for (auto const& lm : contextAndMessages.second)
+        for (auto const& categoryAndMessages : contextWithCategories.second)
             {
-            logMessageToJs(lm.m_category.c_str(), lm.m_severity, lm.m_message.c_str());
+            auto const& category = categoryAndMessages.first;
+
+            auto iSev = s_categorySeverityFilter->find(category);
+            if (iSev == s_categorySeverityFilter->end()) // build up knowledge of severity settings
+                (*s_categorySeverityFilter)[category] = callGetLogLevelJs(category);
+
+            for (auto const& msg : categoryAndMessages.second)
+                {
+                logMessageToJs(category.c_str(), msg.m_severity, msg.m_message.c_str());
+                }
             }
 
         callSetCurrentClientRequestContext(env, wasCtx);
@@ -5504,6 +5573,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
         Napi::PropertyDescriptor::Function(env, exports, "dropObjectFromVault", &dropObjectFromVault),
         Napi::PropertyDescriptor::Function(env, exports, "addReferenceToObjectInVault", &addReferenceToObjectInVault),
         Napi::PropertyDescriptor::Function(env, exports, "getObjectRefCountFromVault", &getObjectRefCountFromVault),
+        Napi::PropertyDescriptor::Function(env, exports, "clearLogLevelCache", &clearLogLevelCache),
         
         });
 
