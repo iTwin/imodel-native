@@ -1,0 +1,73 @@
+#----------------------------------------------------------------------
+#     $Source: DgnViewUtils/BuldingDgnViewUtils.mke $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------
+%include mdl.mki
+
+AppName = BuildingDgnViewUtils
+CCompPDBName = $(AppName)
+
+o = $(OutputRootDir)build/BuildingShared/BuildingDgnViewUtils/
+
+nameToDefine = __BUILDINGSHAREDDGNVIEWUTILS_BUILD__
+%include cdefapnd.mki
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+BuildingUtilsPublicApi = $(_MakeFilePath)PublicAPI/
+BuildingUtilsPrivateApi = $(_MakeFilePath)PrivateAPI/
+
+$(o)BuildingDgnViewUtils$(oext) : $(_MakeFilePath)BuildingDgnViewUtils.cpp ${MultiCompileDepends} \
+                            $(_MakeFilePath)PublicApi/BuildingDgnViewUtils.h 
+                            
+                            
+$(o)BuildingEvents$(oext) : $(_MakeFilePath)BuildingEvents.cpp ${MultiCompileDepends} \
+                            $(_MakeFilePath)PublicApi/BuildingEvents.h \
+                            $(_MakeFilePath)PublicApi/Interfaces/IToolSettingsChangedHandler.h \
+                            $(_MakeFilePath)PublicApi/Interfaces/ICreatePressedHandler.h \
+                            $(_MakeFilePath)PublicApi/Interfaces/IBuildingUpdatedHandler.h \
+                            $(_MakeFilePath)PublicApi/Interfaces/ISiteUpdatedHandler.h \
+                            $(_MakeFilePath)PublicApi/Interfaces/IElementChangedHandler.h \
+                            $(_MakeFilePath)PublicApi/Interfaces/IFrontStageValuesChangedHandler.h \
+                            $(_MakeFilePath)PublicApi/Interfaces/IFrontStageValuesRequestedHandler.h \
+                            $(_MakeFilePath)PublicApi/Interfaces/IResetPressedHandler.h
+                            
+$(o)BuildingEventsHandler$(oext) : $(_MakeFilePath)BuildingEventsHandler.cpp ${MultiCompileDepends} \
+                                   $(_MakeFilePath)PrivateApi/BuildingEventsHandler.h
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnClientFx$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnView$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)RoadRailPhysical$(libext)
+
+%include $(sharedMki)linkLibrary.mki
+
