@@ -10,11 +10,13 @@
 #include <DgnView\DgnViewLib.h>
 #include <DgnPlatform\DesktopTools\KnownDesktopLocationsAdmin.h>
 #include <DgnPlatform\GenericDomain.h>
+#include <BuildingShared\DgnUtils\BuildingUtils.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_GRIDS
+USING_NAMESPACE_BUILDING_SHARED
 
 #pragma region TestHost
 
@@ -46,7 +48,7 @@ struct TestHost : DgnViewLib::Host
 BeFileName TestHost::s_baseDbPath;
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                                                      11/2017
+* @bsiclass                                                                      03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ConverterViewManager : ViewManager
     {
@@ -56,7 +58,7 @@ struct ConverterViewManager : ViewManager
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
+* @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BeFileName getOutputDirectory()
     {
@@ -70,14 +72,14 @@ static BeFileName getOutputDirectory()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2017
+* @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnDbPtr createDgnDb (BeFileName const& bimFilename)
     {
     CreateDgnDbParams createProjectParams;
     createProjectParams.SetOverwriteExisting (true);
-    createProjectParams.SetRootSubjectName ("ProfilesTests");
-    createProjectParams.SetRootSubjectDescription ("Tests for Profiles domain");
+    createProjectParams.SetRootSubjectName ("GridsTests");
+    createProjectParams.SetRootSubjectDescription ("Tests for Grids domain");
     createProjectParams.SetOpenMode (Db::OpenMode::ReadWrite);
     createProjectParams.SetDbType (Db::CreateParams::DbType::Standalone);
 
@@ -89,7 +91,7 @@ static DgnDbPtr createDgnDb (BeFileName const& bimFilename)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2018
+* @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestHost::TestHost()
     {
@@ -109,7 +111,7 @@ TestHost::TestHost()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2018
+* @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestHost::~TestHost()
     {
@@ -117,7 +119,7 @@ TestHost::~TestHost()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2018
+* @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestHost& TestHost::Instance()
     {
@@ -126,7 +128,7 @@ TestHost& TestHost::Instance()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
+* @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TestHost::_SupplyProductName (BentleyApi::Utf8StringR name)
     {
@@ -134,7 +136,7 @@ void TestHost::_SupplyProductName (BentleyApi::Utf8StringR name)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2017
+* @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewLib::Host::NotificationAdmin& TestHost::_SupplyNotificationAdmin()
     {
@@ -142,7 +144,7 @@ DgnViewLib::Host::NotificationAdmin& TestHost::_SupplyNotificationAdmin()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                                                      11/2017
+* @bsiclass                                                                      03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GridsViewManager : ViewManager
     {
@@ -153,7 +155,7 @@ struct GridsViewManager : ViewManager
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2017
+* @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewManager& TestHost::_SupplyViewManager()
     {
@@ -161,7 +163,7 @@ ViewManager& TestHost::_SupplyViewManager()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2017
+* @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 L10N::SqlangFiles TestHost::_SupplySqlangFiles()
     {
@@ -173,7 +175,7 @@ L10N::SqlangFiles TestHost::_SupplySqlangFiles()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2017
+* @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewLib::Host::IKnownLocationsAdmin& TestHost::_SupplyIKnownLocationsAdmin()
     {
@@ -217,9 +219,9 @@ struct GeometryTests : testing::Test
         bvector<GridCurvePtr> InsertIntersectionCurves (ElevationGridPtr elevationGrid, GridPtr otherGrid);
 
         /*---------------------------------------------------------------------------------**//**
-            * Create and insert a DgnModel.
-            * @bsimethod                                                                     11/2018
-            +---------------+---------------+---------------+---------------+---------------+------*/
+        * Create and insert a DgnModel.
+        * @bsimethod                                                                     03/2019
+        +---------------+---------------+---------------+---------------+---------------+------*/
         template<typename T_Model, typename T_Partition>
         RefCountedPtr<T_Model> InsertDgnModel (Utf8CP pPartitionName)
             {
@@ -546,16 +548,30 @@ TEST_F (GeometryTests, CreateGridsGeometry)
         ElevationGridPtr elevation = InsertElevationGrid (DPoint3d::From (0, 0, 5), 40, 40, 0, 1, "Elevation-O0");
         OrthogonalGridPtr orthogonal = InsertOrthogonalGrid (DPoint3d::From (0, 0, 0), 10, 5, 0, 15, 0, 30, 10, 4, 4, "Orthogonal-Basic");
         bvector<GridCurvePtr> curves = InsertIntersectionCurves (elevation, orthogonal);
+        int curveNo = 0;
         for (GridCurvePtr curve : curves)
+            {
+            curve->SetUserLabel (Utf8PrintfString("%d", curveNo++).c_str());
+            curve->SetBubbleAtStart (curveNo % 2 != 0);
+            curve->SetBubbleAtEnd (curveNo % 3 != 0);
+            curve->Update();
             InsertPhysicalCurveElement (curve);
+            }
         }
 
         { // orthogonal grid with extents
         ElevationGridPtr elevation = InsertElevationGrid (DPoint3d::From (35, -5, 5), 40, 40, 0, 1, "Elevation-O1");
         OrthogonalGridPtr orthogonal = InsertOrthogonalGrid (DPoint3d::From (40, 0, 0), 10, 5, -1, 16, -1, 31, 10, 4, 4, "Orthogonal-Extended");
         bvector<GridCurvePtr> curves = InsertIntersectionCurves (elevation, orthogonal);
+        int curveNo = 0;
         for (GridCurvePtr curve : curves)
+            {
+            curve->SetUserLabel (Utf8PrintfString ("%d", curveNo++).c_str());
+            curve->SetBubbleAtStart (curveNo % 2 != 0);
+            curve->SetBubbleAtEnd (curveNo % 3 != 0);
+            curve->Update();
             InsertPhysicalCurveElement (curve);
+            }
         }
 
         { // orthogonal grid altered individual extents
@@ -585,24 +601,45 @@ TEST_F (GeometryTests, CreateGridsGeometry)
             surfaces[3]->Update();
             }
         bvector<GridCurvePtr> curves = InsertIntersectionCurves (elevation, orthogonal);
+        int curveNo = 0;
         for (GridCurvePtr curve : curves)
+            {
+            curve->SetUserLabel (Utf8PrintfString ("%d", curveNo++).c_str());
+            curve->SetBubbleAtStart (curveNo % 2 != 0);
+            curve->SetBubbleAtEnd (curveNo % 3 != 0);
+            curve->Update();
             InsertPhysicalCurveElement (curve);
+            }
         }
 
         { // radial grid without extents
         ElevationGridPtr elevation = InsertElevationGrid (DPoint3d::From (0, 40, 5), 40, 40, 0, 1, "Elevation-R0");
         RadialGridPtr radial = InsertRadialGrid (DPoint3d::From (0, 40, 0), Angle::FromDegrees (30), 5, Angle::FromDegrees (0), Angle::FromDegrees (90), 0, 30, 10, 4, 6, "Radial-Basic");
         bvector<GridCurvePtr> curves = InsertIntersectionCurves (elevation, radial);
+        int curveNo = 0;
         for (GridCurvePtr curve : curves)
+            {
+            curve->SetUserLabel (Utf8PrintfString ("%04d", curveNo++).c_str());
+            curve->SetBubbleAtStart (curveNo % 2 != 0);
+            curve->SetBubbleAtEnd (curveNo % 3 != 0);
+            curve->Update();
             InsertPhysicalCurveElement (curve);
+            }
         }
 
         { // radial grid with extents
         ElevationGridPtr elevation = InsertElevationGrid (DPoint3d::From (35, 35, 5), 40, 40, 0, 1, "Elevation-R1");
         RadialGridPtr radial = InsertRadialGrid (DPoint3d::From (40, 40, 0), Angle::FromDegrees (30), 5, Angle::FromDegrees (-10), Angle::FromDegrees (100), -5, 35, 10, 4, 6, "Radial-Extended");
         bvector<GridCurvePtr> curves = InsertIntersectionCurves (elevation, radial);
+        int curveNo = 0;
         for (GridCurvePtr curve : curves)
+            {
+            curve->SetUserLabel (Utf8PrintfString ("%d", curveNo++).c_str());
+            curve->SetBubbleAtStart (curveNo % 2 != 0);
+            curve->SetBubbleAtEnd (curveNo % 3 != 0);
+            curve->Update();
             InsertPhysicalCurveElement (curve);
+            }
         }
 
         { // radial grid altered individual extents
@@ -658,8 +695,55 @@ TEST_F (GeometryTests, CreateGridsGeometry)
         circularSurfaces[5]->Update();
 
         bvector<GridCurvePtr> curves = InsertIntersectionCurves (elevation, radial);
+        int curveNo = 0;
         for (GridCurvePtr curve : curves)
+            {
+            curve->SetUserLabel (Utf8PrintfString ("%d", curveNo++).c_str());
+            curve->SetBubbleAtStart (curveNo % 2 != 0);
+            curve->SetBubbleAtEnd (curveNo % 3 != 0);
+            curve->Update();
             InsertPhysicalCurveElement (curve);
+            }
+        }
+
+        { // spline grid
+        ElevationGridPtr elevation = InsertElevationGrid (DPoint3d::From (0, 80, 5), 40, 40, 0, 1, "Elevation-S0");
+        SketchGridPtr sketchGrid = SketchGrid::Create (GetModel(), GetModel().GetModeledElementId(), "Sketch Grid", 0.0, 10.0);
+        sketchGrid->Insert();
+
+        Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel (GetDb());
+        Grids::GeneralGridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert (defModel, *sketchGrid);
+        
+        SketchLineGridSurface::CreateParams params (*sketchGrid->GetSurfacesModel().get(), *gridAxis, 0.0, 10, DPoint2d::From (0, 20), DPoint2d::From (0, 70));
+        GridPlanarSurfacePtr plane = SketchLineGridSurface::Create (params);
+        plane->Insert();
+
+        SketchArcGridSurface::CreateParams arcParams (*sketchGrid->GetSurfacesModel().get(), *gridAxis, 0.0, 10, GeometryUtils::CreateArc (10, Angle::Pi(), 0));
+        GridArcSurfacePtr arc = SketchArcGridSurface::Create (arcParams);
+        arc->Insert();
+
+        ICurvePrimitivePtr splinePrimitive = GeometryUtils::CreateSplinePrimitive ({ { 0, 0, 0 },{ 10, 0, 0 },{ 0, 10, 0 }, {10, 10, 0}, {20, 0, 0}, {0, 20, 0}, {20, 20, 0} });
+        SketchSplineGridSurface::CreateParams splineParams (*sketchGrid->GetSurfacesModel().get(), *gridAxis, 0.0, 10.0, *splinePrimitive);
+        GridSplineSurfacePtr spline = SketchSplineGridSurface::Create (splineParams);
+        spline->Insert();
+
+        Placement3d gridPlacement = sketchGrid->GetPlacement();
+        gridPlacement.SetOrigin (DPoint3d::From (0, 80, 5));
+        sketchGrid->SetPlacement (gridPlacement);
+        sketchGrid->Update();
+
+        GetDb().SaveChanges();
+
+        bvector<GridCurvePtr> curves = InsertIntersectionCurves (elevation, sketchGrid);
+        int curveNo = 0;
+        for (GridCurvePtr curve : curves)
+            {
+            curve->SetUserLabel (Utf8PrintfString ("%04d", curveNo++).c_str());
+            curve->SetBubbleAtStart (true);
+            curve->SetBubbleAtEnd (true);
+            curve->Update();
+            InsertPhysicalCurveElement (curve);
+            }
         }
     
     GetDb().SaveChanges();

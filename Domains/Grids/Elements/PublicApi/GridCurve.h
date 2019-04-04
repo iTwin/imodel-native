@@ -61,19 +61,19 @@ public:
 
     //! Sets bubbleAtStart property for grid curve
     //! @param bubbleAtStart a value to set
-    GRIDELEMENTS_EXPORT void SetBubbleAtStart (bool bubbleAtStart) { SetPropertyValue (prop_BubbleAtStart (), bubbleAtStart); };
+    GRIDELEMENTS_EXPORT void SetBubbleAtStart (bool bubbleAtStart) { SetPropertyValue (prop_BubbleAtStart(), bubbleAtStart); };
 
     //! Gets bubbleAtStart property for grid curve
     //! @return true if grid curve should have a bubble at start
-    GRIDELEMENTS_EXPORT bool GetBubbleAtStart () const { return GetPropertyValueBoolean (prop_BubbleAtStart ()); };
+    GRIDELEMENTS_EXPORT bool GetBubbleAtStart() const { return GetPropertyValueBoolean (prop_BubbleAtStart()); };
 
     //! Sets bubbleAtEnd property for grid curve
     //! @param bubbleAtEnd a value to set
-    GRIDELEMENTS_EXPORT void SetBubbleAtEnd (bool bubbleAtEnd) { SetPropertyValue (prop_BubbleAtEnd (), bubbleAtEnd); };
+    GRIDELEMENTS_EXPORT void SetBubbleAtEnd (bool bubbleAtEnd) { SetPropertyValue (prop_BubbleAtEnd(), bubbleAtEnd); };
 
     //! Gets bubbleAtEnd property for grid curve
     //! @return true if grid curve should have a bubble at end
-    GRIDELEMENTS_EXPORT bool GetBubbleAtEnd () const { return GetPropertyValueBoolean (prop_BubbleAtEnd ()); };
+    GRIDELEMENTS_EXPORT bool GetBubbleAtEnd() const { return GetPropertyValueBoolean (prop_BubbleAtEnd()); };
 
     //---------------------------------------------------------------------------------------
     // Geometry modification
