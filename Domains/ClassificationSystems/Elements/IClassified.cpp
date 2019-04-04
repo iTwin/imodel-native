@@ -2,10 +2,13 @@
 |
 |     $Source: Elements/IClassified.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "PublicApi/ClassificationSystemsElements.h"
+#include "PublicApi/IClassified.h"
+#include "PublicApi/Classification.h"
+#include "PublicApi/ClassificationTable.h"
+#include "PublicApi/ClassificationSystem.h"
 
 USING_NAMESPACE_CLASSIFICATIONSYSTEMS
 USING_NAMESPACE_BUILDING_SHARED
@@ -49,7 +52,11 @@ ClassificationCPtr IClassified::GetClassification(ClassificationSystemCR system)
         if (classification.IsNull())
             continue;
 
-        if (classification->GetClassificationSystemId() == elemId)
+        ClassificationTableCPtr table = ClassificationTable::Get(db, classification->GetClassificationTableId());
+        if (table.IsNull())
+            continue;
+
+        if (table->GetClassificationSystemId() == elemId)
             return classification;
         }
 
@@ -67,7 +74,10 @@ void IClassified::AddClassification(ClassificationCR classification)
     if (IsClassifiedAs(classification))
         return;
 
-    ClassificationSystemCPtr system = classification.GetDgnDb().Elements().Get<ClassificationSystem>(classification.GetClassificationSystemId());
+    ClassificationTableCPtr table = ClassificationTable::Get(classification.GetDgnDb(), classification.GetClassificationTableId());
+    BeAssert(table.IsValid());
+
+    ClassificationSystemCPtr system = ClassificationSystem::Get(classification.GetDgnDb(), table->GetClassificationSystemId());
     BeAssert(system.IsValid());
     if (GetClassification(*system).IsValid())
         return;

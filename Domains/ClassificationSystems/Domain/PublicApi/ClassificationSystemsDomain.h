@@ -2,7 +2,7 @@
 |
 |     $Source: Domain/PublicApi/ClassificationSystemsDomain.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -48,9 +48,11 @@ private:
     void InsertOmniClass41Definitions(Dgn::DgnDbR db) const;
     void InsertOmniClass49Definitions(Dgn::DgnDbR db) const; 
     ClassificationSystemPtr InsertSystem(Dgn::DgnDbR db, Utf8CP name) const;
-    ClassificationGroupPtr InsertGroup(ClassificationSystemCR system, Utf8CP name) const;
+    ClassificationTablePtr InsertTable(ClassificationSystemCR system, Utf8CP name) const;
+    ClassificationGroupPtr InsertGroup(ClassificationTableCR table, Utf8CP name) const;
     ClassificationSystemCPtr TryAndGetSystem(Dgn::DgnDbR db, Utf8CP name) const;
-    ClassificationPtr InsertClassification(ClassificationSystemCR system, Utf8CP name, Utf8CP id, Utf8CP description, ClassificationGroupCP group, ClassificationCP specializes) const;
+    ClassificationTableCPtr TryAndGetTable(ClassificationSystemCR system, Utf8CP name) const;
+    ClassificationPtr InsertClassification(ClassificationTableCR table, Utf8CP name, Utf8CP id, Utf8CP description, ClassificationGroupCP group, ClassificationCP specializes) const;
 //__PUBLISH_SECTION_END__
 
 //__PUBLISH_SECTION_START__
