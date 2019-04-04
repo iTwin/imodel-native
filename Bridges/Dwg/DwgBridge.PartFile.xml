@@ -4,10 +4,15 @@
   
     <Part Name="DwgBridgePRG" PrgOutputDir="DwgBridge">
         <SubProduct ProductName="RealDwgBridge"/>
-        <SubProduct ProductName="OpenDwgBridge"/>
+        <!-- In an effort to reduce CI Pipeline build time, OpenDwgBridge is moved into dev build, until it is needed again -->
         <SubNuGetProduct NuGetProductName="RealDwgBridgeSdkNuget"/>
-        <SubNuGetProduct NuGetProductName="OpenDwgBridgeSdkNuget"/>
         <SubPart PartName="RunDwgImporterTests" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter"/>
+    </Part>
+
+    <Part Name="DwgBridge.Dev" PrgOutputDir="DwgBridge">
+        <SubPart PartName="DwgBridgePRG"/>
+        <SubProduct ProductName="OpenDwgBridge"/>
+        <SubNuGetProduct NuGetProductName="OpenDwgBridgeSdkNuget"/>
     </Part>
 
 

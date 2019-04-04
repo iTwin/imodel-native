@@ -29,7 +29,7 @@ OpenDwgLibsDir      = $(BuildContext)SubParts/Libs/Teigha/
 OdGripPointsDir     = $(OpenDwgDrawing)Examples/GripPoints/
 ContextDeliveryDir  = $(BuildContext)Delivery/$(DWGTOOLKIT)Importer/
 
-o   = $(OutputRootDir)Build/$(DWGTOOLKIT)Db/
+o   = $(OutputRootDir)Build/$(appName)/
 always:
     ~mkdir $(o)
 
