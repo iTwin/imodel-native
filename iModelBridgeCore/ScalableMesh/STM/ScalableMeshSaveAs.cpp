@@ -56,7 +56,32 @@ StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WS
     if (SUCCESS != source->GetTextureInfo(textureInfo))
         return ERROR;
 
-    //PrepareClipsForSaveAs(clips);
+    // Gather 3sm clips along with the other clips that are being passed
+    bvector<uint64_t> clipIds;
+    source->GetAllClipIds(clipIds);
+
+    for(auto clipID : clipIds)
+        {
+        bvector<DPoint3d> clipData;
+        if(source->GetClip(clipID, clipData))
+            {
+            //create a clipvector with infinite z dimensions for the polygons
+            auto curvePtr = ICurvePrimitive::CreateLineString(clipData);
+            CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
+            clips->Append(*ClipVector::CreateFromCurveVector(*cv, 0.0, 0.1));
+            }
+        else
+            {
+            ClipVectorPtr clipVector;
+            source->GetClip(clipID, clipVector);
+            clips->Append(*clipVector);
+            }
+        SMNonDestructiveClipType clipType;
+        source->GetClipType(clipID, clipType);
+        clips->back()->SetIsMask(clipType == SMNonDestructiveClipType::Mask);
+        }
+
+    PrepareClipsForSaveAs(clips);
 
     // Set global parameters to the new 3sm (this will also create a new index)
     if (SUCCESS != scMeshDestination->SetGCS(source->GetGCS()))
