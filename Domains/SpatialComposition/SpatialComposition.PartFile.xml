@@ -7,6 +7,7 @@
     <Part Name="SpatialComposition">
         <SubPart PartName="SpatialCompositionSchema"/>
         <SubPart PartName="SpatialCompositionApi"/>
+        <SubPart PartName="SpatialCompositionDomain"/>
     </Part>
 
     <Part Name="SpatialCompositionSchema" BentleyBuildMakeFile="SpatialCompositionSchema.prewire.mke">
@@ -29,6 +30,15 @@
         <Bindings>
             <Libs>Delivery/$(libprefix)SpatialCompositionElements$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)SpatialCompositionElements$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="SpatialCompositionDomain" BentleyBuildMakeFile="Domain/SpatialCompositionDomain.mke">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="SpatialCompositionSchema" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)SpatialCompositionDomain$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)SpatialCompositionDomain$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
