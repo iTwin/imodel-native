@@ -2,7 +2,7 @@
 |
 |     $Source: BeHttp/Curl/CurlHttpRequest.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -61,6 +61,8 @@ struct CurlHttpRequest
         curl_slist* m_headers;
 
         std::shared_ptr<TransferInfo> m_transferInfo;
+
+        char m_errorBuffer[CURL_ERROR_SIZE];
 
     private:
         bool ShouldCompressRequestBody(Request request);

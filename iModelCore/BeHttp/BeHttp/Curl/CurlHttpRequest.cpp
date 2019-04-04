@@ -636,6 +636,9 @@ BentleyStatus CurlHttpRequest::SetupCurl ()
             }
         }
 
+    m_errorBuffer[0] = '\0';
+    curl_easy_setopt(m_curl, CURLOPT_ERRORBUFFER, m_errorBuffer);
+
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
         {
         curl_easy_setopt(m_curl, CURLOPT_DEBUGFUNCTION, CurlDebugCallback);
@@ -791,6 +794,9 @@ void CurlHttpRequest::FinalizeRequest(CURLcode curlStatus)
     {
     m_transferInfo->SetInactive();
     m_transferInfo->status = ResolveConnectionStatus(curlStatus);
+
+    if (m_errorBuffer[0] != '\0')
+        LOG.errorv("* HTTP #%lld Connection error: %s '%s'", GetNumber(), curl_easy_strerror(curlStatus), m_errorBuffer);
     }
 
 /*--------------------------------------------------------------------------------------+
