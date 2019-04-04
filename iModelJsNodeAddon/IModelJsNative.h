@@ -83,7 +83,7 @@ struct JsInterop
         {
         BeFileName m_crashDumpDir;
         Utf8String m_uploadUrl;
-        bvector<bpair<Utf8String,Utf8String>> m_params;
+        bmap<Utf8String,Utf8String> m_params;
         size_t m_maxDumpsInDir;
         size_t m_maxUploadRetries;
         size_t m_uploadRetryWaitInterval;
@@ -239,11 +239,14 @@ public:
     static void StepAsync(Napi::Function& callback, Statement& stmt);
     static void StepAsync(Napi::Function& callback, ECSqlStatement& stmt, bool stepForInsert);
 
-#ifdef _WIN32
-    static void InitializeCrashReporting(CrashReportingConfig const&);
+    static void MaintainCrashDumpDir(CrashReportingConfig const&);
+    static bmap<Utf8String,Utf8String> GetCrashReportCustomProperties(CrashReportingConfig const&);
+
+    static void InitializeCrashReporting(CrashReportingConfig const&)
+#if defined (USING_GOOGLE_BREAKPAD)
+        ;
 #else
-    // WIP breakpad on other platforms
-    static void InitializeCrashReporting(CrashReportingConfig const&) {}
+        {}
 #endif
 };
 

@@ -4990,7 +4990,7 @@ static void setCrashReporting(Napi::CallbackInfo const& info)
                 auto name = getOptionalStringProperty(item, "name", "");
                 auto value = getOptionalStringProperty(item, "value", "");
                 if (!name.empty())
-                    ccfg.m_params.push_back(make_bpair(name, value));
+                    ccfg.m_params[name] = value;
                 }
             }
         }

@@ -30,7 +30,7 @@ void SignalTestUtility::StackOverflow(int depth)
     {
     char blockdata[10000];
     blockdata;
-    printf("Overflow: %d\n", depth);
+    printf("Overflow depth: %d\r", depth);
     StackOverflow(depth + 1);
     }
 POP_CLANG_IGNORE

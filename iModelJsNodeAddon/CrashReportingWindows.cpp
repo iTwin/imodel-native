@@ -8,13 +8,13 @@
 #ifndef _WIN32
     #error This file is for Windows only
 #endif
+#include <signal.h>
 #include <breakpad/client/windows/handler/exception_handler.h>
 #include <breakpad/client/windows/crash_generation/crash_generation_client.h>
 #include <breakpad/client/windows/crash_generation/crash_generation_server.h>
 #include <breakpad/client/windows/crash_generation/client_info.h>
 #include <breakpad/client/windows/sender/crash_report_sender.h>
 #include "iModelJsNative.h"
-#include <imodeljs-nodeaddonapi.package.version.h>
 #include <Bentley/BeDirectoryIterator.h>
 
 const DWORD MS_VC_EXCEPTION = 0x406D1388;
@@ -31,34 +31,25 @@ static std::wstring s_crashFilesDir;
 static JsInterop::CrashReportingConfig* s_config;
 static bool s_dumpFinished = false;
 static std::wstring s_uploadUrl;
-static size_t s_dmpFileCount;
 
 static const wchar_t kPipeName[] = L"\\\\.\\pipe\\imodeljs\\crashReporting\\server";
-
-static google_breakpad::CustomInfoEntry s_customInfoEntries[] = {
-    google_breakpad::CustomInfoEntry(L"prod", L"@bentley/imodeljs-Win32-X64"),
-    google_breakpad::CustomInfoEntry(L"ver", L"" PACKAGE_VERSION),
-};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void maintainDumpDir()
+static void writeCustomPropertiesToFile(std::map<std::wstring, std::wstring> const& props, const std::wstring& dumpFileName)
     {
-    bvector<BeFileName> allFiles;
-    BeDirectoryIterator::WalkDirsAndMatch(allFiles, s_config->m_crashDumpDir, L"*.dmp", false);
-    s_dmpFileCount = allFiles.size();
-
-    // Make sure there is room for one more!
-    if (s_dmpFileCount <= (s_config->m_maxDumpsInDir - 1))
-        return;
-    
-    for (auto& file : allFiles)
+    // preallocate space for the longest file name.
+    static std::wstring paramsFile(MAX_PATH, L' ');
+    paramsFile.assign(dumpFileName.c_str());
+    paramsFile.append(L".txt");
+    FILE* fp = _wfopen(paramsFile.c_str(), L"w+");
+    for (auto const& prop : props)
         {
-        BeFileName::BeDeleteFile(file);
-        if (--s_dmpFileCount <= s_config->m_maxDumpsInDir/2)
-            break;
+        fwprintf(fp, L"%ls, %ls\n", prop.first.c_str(), prop.second.c_str());
         }
+    fclose(fp);
+    return;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -69,7 +60,10 @@ static void onDumpWritten(void* context, const google_breakpad::ClientInfo* clie
     s_dumpFinished = true;
 
     if (s_uploadUrl.empty())
+        {
+        writeCustomPropertiesToFile(*s_uploadAdditionalParameters, *dmpFilePath);
         return;
+        }
 
     (*s_dumpFiles)[L"upload_file_minidump"].assign(*dmpFilePath);   // try not to allocate any memory!
 
@@ -96,13 +90,6 @@ static void onDumpWritten(void* context, const google_breakpad::ClientInfo* clie
 
         ::Sleep((DWORD) s_config->m_uploadRetryWaitInterval);
         }
-
-    // Even if we can't upload, if we are at or beyond the max, we must delete the .dmp file.
-    // Don't allocate memory, if you can help it!
-    if (s_dmpFileCount >= s_config->m_maxDumpsInDir)
-        BeFileName::BeDeleteFile(dmpFilePath->c_str());
-
-    ++s_dmpFileCount;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -116,13 +103,6 @@ static LONG CALLBACK vectoredExceptionHandler(PEXCEPTION_POINTERS exceptionInfo)
         return EXCEPTION_CONTINUE_SEARCH;
         }
     s_processingException = true;
-
-    /*
-    if (s_dmpFileCount > s_config->m_maxDumpsInDir)
-        {
-        ...
-        }
-     */
 
     // *** I would like to just call google_breakpad::ExceptionHandler::HandleException, but that is private.
     // *** So, I try to do effectively the same thing here.
@@ -156,6 +136,14 @@ static LONG CALLBACK vectoredExceptionHandler(PEXCEPTION_POINTERS exceptionInfo)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+static void abortHandler(int signal)
+  {
+  RaiseException(0, 0, 0, NULL);
+  }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     {
     s_config = new CrashReportingConfig(cfg);
@@ -167,7 +155,7 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
 
     s_crashFilesDir = cfg.m_crashDumpDir.c_str();
     
-    maintainDumpDir();
+    MaintainCrashDumpDir(cfg);
 
     s_crashServer = new google_breakpad::CrashGenerationServer(kPipeName, nullptr, nullptr, nullptr, onDumpWritten, nullptr, nullptr, nullptr, nullptr, nullptr, true, &s_crashFilesDir);
     if (!s_crashServer->Start())
@@ -193,14 +181,8 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     
     s_uploadAdditionalParameters = new std::map<std::wstring, std::wstring>();
     
-    for (auto& info : s_customInfoEntries)
-        (*s_uploadAdditionalParameters)[info.name] = info.value;
-    
-    for (auto& param : cfg.m_params)
-        (*s_uploadAdditionalParameters)[WString(param.first.c_str(), true).c_str()] = WString(param.second.c_str(), true).c_str();
-
-    // Register the exception-handler
-    google_breakpad::CustomClientInfo custom_info = {s_customInfoEntries, _countof(s_customInfoEntries)};
+    for (auto& prop : GetCrashReportCustomProperties(cfg))
+        (*s_uploadAdditionalParameters)[WString(prop.first.c_str(), true).c_str()] = WString(prop.second.c_str(), true).c_str();
 
     MINIDUMP_TYPE dumptype;
 
@@ -210,7 +192,7 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
         dumptype = (MINIDUMP_TYPE)(MiniDumpNormal | MiniDumpWithThreadInfo);
 
     s_exceptionHandler = new google_breakpad::ExceptionHandler(cfg.m_crashDumpDir.c_str(), nullptr, nullptr, nullptr,
-                                   google_breakpad::ExceptionHandler::HANDLER_ALL, dumptype, kPipeName, &custom_info);
+                                   google_breakpad::ExceptionHandler::HANDLER_ALL, dumptype, kPipeName, nullptr);
 
     if (cfg.m_needsVectorExceptionHandler)
         {
@@ -220,4 +202,6 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
         // and use that to trigger the breakpad crash-reporting logic.
         AddVectoredExceptionHandler(1, vectoredExceptionHandler);
         }
+
+    signal(SIGABRT, abortHandler);
     }
