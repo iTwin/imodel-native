@@ -38,7 +38,8 @@
 #define WAITTIMEOUT 30000
 
 // Server need to have compression enabled - WSG 2.5+ has this by default
-#define COMPRESSION_OPTIONS_URL "https://mobilevm2.bentley.com/ws/v2.5/Repositories"
+#define COMPRESSION_OPTIONS_URL "https://mobilevm4.bentley.com/ws/v2.5/Repositories"
+#define BENTLEY_ROOT_CA_URL "https://mobilevm4.bentley.com/"
 
 #define GENERIC_URL "https://httpbin.org/uuid"
 
@@ -287,9 +288,21 @@ TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasCertIssuedToDiffe
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTests, Perform_SiteHasRevokedCertificate_Error)
+    {
+    Request request("https://revoked.badssl.com/");
+
+    Response response = request.Perform().get();
+
+    EXPECT_EQ(ConnectionStatus::CertificateError, response.GetConnectionStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasBentleyInternalCertificate_SucceedsAsUsesNativeSystemSslEngineAndSystemTrustsCertificate)
     {
-    Request request("https://mobilevm6.bentley.com/ws");
+    Request request(BENTLEY_ROOT_CA_URL);
     request.SetValidateCertificate(true);
 
     Response response = request.Perform().get();
