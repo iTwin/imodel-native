@@ -244,6 +244,7 @@
 
   <Product Name="PublishORDToBIM">
     <SubPart PartName="PublishORDToBIMExe" />
+    <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
     <Directories DirectoryListName="PublishORDToBIMDirectoryList" />
   </Product>
 
@@ -261,6 +262,8 @@
     <ProductDirectory Name="BentleyDesktopClientApi" RelativeTo="ApplicationRoot" />
     <ProductDirectory Name="BentleyDesktopClientApi_Native" RelativeTo="ApplicationRoot" />
     <ProductDirectory Name="BentleyClientSharedAssemblies" RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="DgnV8DummyUstation"  Path="DgnV8"    RelativeTo="Assemblies"/>
+    <ProductDirectory Name="WorkSpace"   Path=""   RelativeTo="DgnV8Dlls"/>
   </ProductDirectoryList>
 
   <Part Name="PublishORDToBIMExe" BentleyBuildMakeFile="ORDBridge/PublishORDToBIM/PublishORDToBIM.mke" >

@@ -2,7 +2,7 @@
 |
 |     $Source: ORDBridge/PublishORDToBIM/PublishORDToBim.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublishORDToBim.h"
@@ -36,9 +36,11 @@ static int runBridge(int argc, WCharCP argv[])
     iModelBridgeSacAdapter::InitializeHost(*iModelBridgeP);
 
     // Testing affinity interface
-	WChar buffer[_MAX_PATH];
+    // In reality, this getAfinity API is expected to be called only by the iModelBridge Framework, on a separate process than
+    // the actual publishing. Thus, not testing it here anymore.
+	/*WChar buffer[_MAX_PATH];
 	iModelBridgeAffinityLevel affinityLevel;
-	iModelBridge_getAffinity(buffer, _MAX_PATH, affinityLevel, BeFileName(argv[0]).GetDirectoryName(), iModelBridgeP->_GetParams().GetInputFileName());
+	iModelBridge_getAffinity(buffer, _MAX_PATH, affinityLevel, BeFileName(argv[0]).GetDirectoryName(), iModelBridgeP->_GetParams().GetInputFileName());*/
 
 	if (BSISUCCESS != iModelBridgeP->_Initialize(argc, argv))
 		{
@@ -48,12 +50,12 @@ static int runBridge(int argc, WCharCP argv[])
 
 	saparams.Initialize();
 
-    if (affinityLevel != iModelBridgeAffinityLevel::ExactMatch)
+    /*if (affinityLevel != iModelBridgeAffinityLevel::ExactMatch)
         {
         fprintf(stderr, "No Civil data found.\n");
         if (iModelBridgeAffinityLevel::None == affinityLevel)
             return RESULT_AFFINITY_CHECK_NONE;
-        }
+        }*/
 
     auto retVal = iModelBridgeSacAdapter::Execute(*iModelBridgeP, saparams);
 
