@@ -351,10 +351,6 @@ private:
     ICancellationTokenPtr cancellationToken
     ) const;
 
-    //! Get all of the changeSets after the specific ChangeSetId.
-    ChangeSetsInfoTaskPtr GetChangeSetsInternal(WSQuery const& query, bool parseFileAccessKey, 
-                                                ICancellationTokenPtr cancellationToken = nullptr) const;
-
     //! Get all of the changeSets.
     ChangeSetsInfoTaskPtr GetAllChangeSetsInternal(bool loadAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
 

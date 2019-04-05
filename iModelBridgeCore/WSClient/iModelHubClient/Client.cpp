@@ -1332,7 +1332,7 @@ ICancellationTokenPtr cancellationToken
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet);
     query.SetFilter(filter);
 
-    auto changeSetsResult = ExecuteAsync(connection->ChangeSetsFromQueryInternal(query, false, cancellationToken));
+    auto changeSetsResult = ExecuteAsync(connection->GetChangeSetsFromQueryByChunks(query, false, cancellationToken));
 
     return DownloadStandaloneBriefcaseInternal(connection, iModelInfo, *(seedFileInfoResult->GetValue()), changeSetsResult->GetValue(), fileNameCallback, callback, cancellationToken);
     }

@@ -1252,6 +1252,10 @@ bool                        parseFileAccessKey,
 ICancellationTokenPtr       cancellationToken
 ) const
     {
+    const Utf8String methodName = "iModelConnection::GetChangeSetsFromQueryByChunks";
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
+
     Utf8String originalFilter = query.GetFilter();
     query.SetOrderBy(ServerSchema::Property::Index);
     query.SetTop(m_pageSize);
@@ -1273,7 +1277,11 @@ Utf8StringCR originalFilter,
 ChangeSetsInfoResultPtr finalResult,
 ICancellationTokenPtr cancellationToken
 ) const
-    {    
+    {
+    const Utf8String methodName = "iModelConnection::GetChangeSetsFromQueryByChunksRecursively";
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
+
     return ChangeSetsFromQueryInternal(*query, parseFileAccessKey, cancellationToken)->Then([=](ChangeSetsInfoResultCR changeSetsResult)
         {
         if (!changeSetsResult.IsSuccess())
@@ -1352,40 +1360,6 @@ ICancellationTokenPtr       cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr iModelConnection::GetChangeSetsInternal
-(
-const WebServices::WSQuery& query,
-bool                        parseFileAccessKey,
-ICancellationTokenPtr       cancellationToken
-) const
-    {
-    const Utf8String methodName = "iModelConnection::GetChangeSetsInternal";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    std::shared_ptr<ChangeSetsInfoResult> finalResult = std::make_shared<ChangeSetsInfoResult>();
-
-    return GetChangeSetsFromQueryByChunks(query, parseFileAccessKey, cancellationToken)->Then([=](ChangeSetsInfoResultCR changeSetsResult)
-        {
-        if (changeSetsResult.IsSuccess())
-            {
-            finalResult->SetSuccess(changeSetsResult.GetValue());
-            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-            }
-        else
-            {
-            finalResult->SetError(changeSetsResult.GetError());
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsResult.GetError().GetMessage().c_str());
-            }
-        })->Then<ChangeSetsInfoResult>([=]()
-            {
-            return *finalResult;
-            });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             02/2017
-//---------------------------------------------------------------------------------------
 ChangeSetsInfoTaskPtr iModelConnection::GetChangeSetsAfterIdInternal
 (
 Utf8StringCR          changeSetId,
@@ -1405,7 +1379,7 @@ ICancellationTokenPtr cancellationToken
         query.SetSelect(selectString);
         }
 
-    return GetChangeSetsInternal(query, loadAccessKey, cancellationToken);
+    return GetChangeSetsFromQueryByChunks(query, loadAccessKey, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1534,7 +1508,7 @@ ChangeSetsTaskPtr iModelConnection::DownloadChangeSets(std::deque<ObjectId>& cha
 
     std::shared_ptr<ChangeSetsResult> finalResult = std::make_shared<ChangeSetsResult>();
 
-    return GetChangeSetsInternal(query, true, cancellationToken)
+    return GetChangeSetsFromQueryByChunks(query, true, cancellationToken)
         ->Then([=](ChangeSetsInfoResultCR changeSetsQueryResult) {
         if (!changeSetsQueryResult.IsSuccess())
             {
