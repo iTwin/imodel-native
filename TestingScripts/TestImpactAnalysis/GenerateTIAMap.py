@@ -209,6 +209,8 @@ def adjustMapFiles(map_dir):
                 print 'writing to file: ' + str(f_name)
                 for line in lines[start:end]:
                     f2.write(line)
+                #add empty line to ensure file gets updated
+                f2.write('\n')
             #if remaining entires
             if last < len(lines):
                 f_name2 = os.path.join(map_dir, os.path.basename(filename) + '_' + str(i+1) + file_extension)
