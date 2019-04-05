@@ -1326,7 +1326,9 @@ bool ConvertORDElementXDomain::AssignTemplateDropAspect(Dgn::DgnElementR element
     auto templateDropPtr = TemplateDrop::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
     if (templateDropPtr.IsValid())
         {
-        assignORDFeatureAspect(element, *templateDropPtr);
+        // TemplateDrops no longer seem to have access to a feature definition in the CIF SDK.  Leaving 
+        // this line commented out until we get confirmation that this wasn't a mistake from the ORD team.
+        //assignORDFeatureAspect(element, *templateDropPtr);
         assignTemplateDropAspect(element, *templateDropPtr);
         return true;
         }
