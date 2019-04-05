@@ -150,7 +150,7 @@ TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
     InitBisContextWithSchemaXml(schemaXml);
     ASSERT_TRUE(schema.IsValid());
     EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_FALSE(validator.Validate(*schema)) << "TestSchema validated successfully even though it is not a valid EC" << ECSchema::GetECVersionString(ECVersion::Latest) << " schema";
+    EXPECT_FALSE(validator.Validate(*schema)) << "Expected schema to fail validation because the schema does not successfully convert to EC 3.1 or greater";
     }
 
     // Test failure to validate schema who ECXML version is not the latest ECXML version.
@@ -165,12 +165,30 @@ TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
     InitBisContextWithSchemaXml(schemaXml);
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_FALSE(validator.Validate(*schema)) << "TestSchema failed to validate successfully even though it is a valid EC" << ECSchema::GetECVersionString(ECVersion::Latest) << " schema due to its xml version not being the latest";
+    EXPECT_FALSE(validator.Validate(*schema)) << "Expected schema to fail validation because the schema original xml version is 2.0";
+    }
+    // Test succesfully validates dynamic schema with ECXML 2.0.
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="BisCore" version="1.0" prefix="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.02" prefix="CoreCA"/>
+            <ECCustomAttributes>
+                <DynamicSchema xmlns="CoreCustomAttributes.01.00.02"/>
+            </ECCustomAttributes>
+            <ECClass typeName="TestClass" isDomainClass="true">
+                <BaseClass>bis:Element</BaseClass>
+            </ECClass>
+        </ECSchema>)xml";
+    InitBisContextWithSchemaXml(schemaXml);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    EXPECT_TRUE(validator.Validate(*schema)) << "Expected validation to succeed even though original xml version was 2.0 because schema is marked as dynamic";
     }
     // Test successfully validates latest schema
     {
     Utf8String schemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -180,7 +198,7 @@ TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
     InitBisContextWithSchemaXml(schemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
-    EXPECT_TRUE(validator.Validate(*schema)) << "TestSchema validates successfully as it is a valid EC" << ECSchema::GetECVersionString(ECVersion::Latest) << " schema";
+    EXPECT_TRUE(validator.Validate(*schema)) << "Expected schema to pass validation because the orginal xml version is 3.1";
     }
     }
 
