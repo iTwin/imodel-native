@@ -2,16 +2,16 @@
 |
 |     $Source: Grids/Elements/RadialGridPortion.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <Grids/gridsApi.h>
+#include <Grids/Elements/GridElementsAPI.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
-#include <BuildingShared/BuildingSharedApi.h>
+#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN

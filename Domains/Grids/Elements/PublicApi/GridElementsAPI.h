@@ -2,13 +2,14 @@
 |
 |     $Source: Grids/Elements/PublicApi/GridElementsAPI.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <DgnPlatform/DgnPlatformApi.h>
-#include <BuildingShared/BuildingSharedApi.h>
+#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
+#include <BuildingShared/interfaces.h>
 #include <Grids/Domain/GridsMacros.h>
 
 #include "ForwardDeclarations.h"

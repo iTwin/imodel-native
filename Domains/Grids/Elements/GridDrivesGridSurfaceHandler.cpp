@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/GridDrivesGridSurfaceHandler.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -15,8 +15,8 @@
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/RangeIndex.h>
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
-#include <BuildingShared/BuildingSharedApi.h>
-#include <Grids/gridsApi.h>
+#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
+#include <Grids/Elements/GridElementsAPI.h>
 
 USING_NAMESPACE_GRIDS
 USING_NAMESPACE_BENTLEY_DGN

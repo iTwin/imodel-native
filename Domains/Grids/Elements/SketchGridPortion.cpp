@@ -1,10 +1,10 @@
 \
-#include <Grids/gridsApi.h>
+#include <Grids/Elements/GridElementsAPI.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
-#include <BuildingShared/BuildingSharedApi.h>
+#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
 
 BEGIN_GRIDS_NAMESPACE

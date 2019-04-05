@@ -2,11 +2,11 @@
 |
 |     $Source: Grids/Elements/GridCurveBundle.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GridElementsAPI.h"
-#include <BuildingShared/BuildingSharedApi.h>
+#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
 USING_NAMESPACE_GRIDS
 USING_NAMESPACE_BENTLEY_DGN

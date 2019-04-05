@@ -2,10 +2,10 @@
 |
 |     $Source: Grids/Elements/GridCurvesSet.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Grids/gridsApi.h>
+#include <Grids/Elements/GridElementsAPI.h>
 #include <DgnPlatform/ViewController.h>
 
 BEGIN_GRIDS_NAMESPACE

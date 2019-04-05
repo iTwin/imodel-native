@@ -2,11 +2,11 @@
 |
 |     $Source: Grids/Handlers/PortionHandlers.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <Grids/gridsApi.h>
+#include <Grids/Handlers/GridHandlersAPI.h>
 
 USING_NAMESPACE_GRIDS
 
