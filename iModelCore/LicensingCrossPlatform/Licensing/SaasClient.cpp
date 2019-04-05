@@ -32,7 +32,7 @@ SaasClientPtr SaasClient::Create
     (
     int productId,
     Utf8StringCR featureString,
-    IHttpHandlerPtr httpHandler
+    Http::IHttpHandlerPtr httpHandler
     )
     {
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();

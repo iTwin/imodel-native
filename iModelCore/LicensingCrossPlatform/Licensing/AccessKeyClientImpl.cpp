@@ -49,7 +49,7 @@ AccessKeyClientImpl::AccessKeyClientImpl
     if(m_licensingDb == nullptr) // either pass in a mock, or initialize here
         m_licensingDb = std::make_unique<LicensingDb>(); // should this be make shared?
 
-    m_correlationId = BeGuid(true).ToString();
+    m_correlationId = BeSQLite::BeGuid(true).ToString();
     m_timeRetriever = TimeRetriever::Get();
     m_delayedExecutor = DelayedExecutor::Get();
 

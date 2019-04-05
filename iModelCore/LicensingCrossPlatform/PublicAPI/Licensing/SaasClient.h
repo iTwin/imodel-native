@@ -22,7 +22,6 @@
 //#include <Licensing/Utils/FeatureUserDataMap.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
-USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
@@ -48,7 +47,7 @@ public:
         (
         int productId = 0,
         Utf8StringCR featureString = "",
-        IHttpHandlerPtr customHttpHandler = nullptr
+        Http::IHttpHandlerPtr customHttpHandler = nullptr
         );
 
     //! Send realtime usage
