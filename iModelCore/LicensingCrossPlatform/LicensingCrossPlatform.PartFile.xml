@@ -229,8 +229,8 @@
         <SubProduct ProductName="Licensing-GtestUnit"/>
         <SubPart PartName="RunGtestUnit"/>
 
-        <SubProduct ProductName="Licensing-GtestIntegration"/>
-        <SubPart PartName="RunGtestIntegration"/>
+        <!-- <SubProduct ProductName="Licensing-GtestIntegration"/>
+        <SubPart PartName="RunGtestIntegration"/>-->    
     </Product>
 
     <ProductDirectoryList ListName="LicenseClientCrossPlatform">

@@ -4,10 +4,14 @@
     <ClCompile Include="ClientIntegrationTests.cpp" />
     <ClCompile Include="TestsHelper.cpp" />
     <ClCompile Include="DummyPolicyHelper.cpp" />
+    <ClCompile Include="AccessKeyClientIntegrationTests.cpp" />
+    <ClCompile Include="SaasClientIntegrationTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClientIntegrationTests.h" />
     <ClInclude Include="TestsHelper.h" />
     <ClInclude Include="DummyPolicyHelper.h" />
+    <ClInclude Include="AccessKeyClientIntegrationTests.h" />
+    <ClInclude Include="SaasClientIntegrationTests.h" />
   </ItemGroup>
 </Project>

@@ -11,7 +11,7 @@
 
 #include <Licensing/Utils/TimeRetriever.h>
 #include <Licensing/Utils/DelayedExecutor.h>
-#include "Utils/FeatureEvent.h"
+#include <Licensing/Utils/FeatureEvent.h>
 
 #include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
@@ -21,7 +21,6 @@
 
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
-USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass

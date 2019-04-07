@@ -11,9 +11,6 @@
 #include <BeHttp/IHttpHandler.h>
 #include <WebServices/Connect/IConnectAuthenticationProvider.h>
 
-USING_NAMESPACE_BENTLEY_HTTP
-USING_NAMESPACE_BENTLEY_WEBSERVICES
-
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
 typedef std::shared_ptr<struct IAuthHandlerProvider> IAuthHandlerProviderPtr;
@@ -21,7 +18,7 @@ typedef std::shared_ptr<struct IAuthHandlerProvider> IAuthHandlerProviderPtr;
 struct IAuthHandlerProvider
     {
 public:
-    virtual IHttpHandlerPtr GetAuthHandler(Utf8StringCR serverUrl, IConnectAuthenticationProvider::HeaderPrefix prefix) = 0;
+    virtual Http::IHttpHandlerPtr GetAuthHandler(Utf8StringCR serverUrl, WebServices::IConnectAuthenticationProvider::HeaderPrefix prefix) = 0;
     virtual ~IAuthHandlerProvider() {};
     };
 

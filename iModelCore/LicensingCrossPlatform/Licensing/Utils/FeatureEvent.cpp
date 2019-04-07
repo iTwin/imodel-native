@@ -1,7 +1,7 @@
 #include <Licensing/Licensing.h>
 #include <Licensing/Utils/DateHelper.h>
 #include <BeSQLite/BeSQLite.h>
-#include "FeatureEvent.h"
+#include <Licensing/Utils/FeatureEvent.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 

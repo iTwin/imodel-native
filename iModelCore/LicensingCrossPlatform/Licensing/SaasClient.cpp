@@ -32,7 +32,7 @@ SaasClientPtr SaasClient::Create
     (
     int productId,
     Utf8StringCR featureString,
-    IHttpHandlerPtr httpHandler
+    Http::IHttpHandlerPtr httpHandler
     )
     {
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
@@ -46,4 +46,12 @@ SaasClientPtr SaasClient::Create
 folly::Future<BentleyStatus> SaasClient::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
     {
     return m_impl->TrackUsage(accessToken, version, projectId);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<BentleyStatus> SaasClient::MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent)
+    {
+    return m_impl->MarkFeature(accessToken, featureEvent);
     }

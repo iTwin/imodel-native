@@ -20,7 +20,6 @@
 #include <Licensing/Utils/FeatureUserDataMap.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
-USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                   
@@ -50,14 +49,14 @@ public:
     //! @param[in] authType auth type of token. defaults to SAML
     LICENSING_EXPORT static ClientPtr Create
         (
-        const ConnectSignInManager::UserInfo& userInfo,
-        ClientInfoPtr clientInfo,
-        std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+        const WebServices::ConnectSignInManager::UserInfo& userInfo,
+		WebServices::ClientInfoPtr clientInfo,
+        std::shared_ptr<WebServices::IConnectAuthenticationProvider> authenticationProvider,
         BeFileNameCR dbPath,
         bool offlineMode,
         Utf8StringCR projectId = "",
         Utf8StringCR featureString = "",
-        IHttpHandlerPtr customHttpHandler = nullptr,
+        Http::IHttpHandlerPtr customHttpHandler = nullptr,
         AuthType authType = AuthType::SAML
         );
 
