@@ -1,5 +1,7 @@
 #pragma once
 
+//__PUBLISH_SECTION_START__
+
 #include <Licensing/Licensing.h>
 #include <Licensing/Utils/FeatureUserDataMap.h>
 
