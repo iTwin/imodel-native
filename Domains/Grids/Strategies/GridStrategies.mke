@@ -1,0 +1,90 @@
+#----------------------------------------------------------------------
+#     $Source: Grids/Strategies/GridStrategies.mke $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------
+AppName = GridStrategies
+CCompPDBName = $(AppName)
+
+%include mdl.mki
+%include $(SrcRoot)DgnDomains/Grids/publicmki/Grids.mki
+
+o = $(OutputRootDir)build/ConceptBuilding/GridStrategies/
+
+nameToDefine = __GRIDSTRATEGIES_BUILD__
+%include cdefapnd.mki
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)SketchGridSurfacePlacementStrategy$(oext)        : $(_MakeFilePath)SketchGridSurfacePlacementStrategy.cpp \
+                                          $(_MakeFilePath)PublicApi/SketchGridSurfacePlacementStrategy.h \
+                                          ${MultiCompileDepends}
+
+$(o)SketchGridSurfaceManipulationStrategy$(oext)        : $(_MakeFilePath)SketchGridSurfaceManipulationStrategy.cpp \
+                                          $(_MakeFilePath)PublicApi/SketchGridSurfaceManipulationStrategy.h \
+                                          ${MultiCompileDepends}
+
+$(o)GridPlanarSurfaceManipulationStrategy$(oext) : $(_MakeFilePath)GridPlanarSurfaceManipulationStrategy.cpp \
+                                                   $(_MakeFilePath)PublicApi/GridPlanarSurfaceManipulationStrategy.h \
+                                                   ${MultiCompileDepends}
+
+$(o)LineGridSurfacePlacementStrategy$(oext)        : $(_MakeFilePath)LineGridSurfacePlacementStrategy.cpp \
+                                          $(_MakeFilePath)PublicApi/LineGridSurfacePlacementStrategy.h \
+                                          ${MultiCompileDepends}
+
+$(o)LineGridSurfaceManipulationStrategy$(oext)        : $(_MakeFilePath)LineGridSurfaceManipulationStrategy.cpp \
+                                          $(_MakeFilePath)PublicApi/LineGridSurfaceManipulationStrategy.h \
+                                          ${MultiCompileDepends}
+
+$(o)ArcGridSurfaceManipulationStrategy$(oext) : $(_MakeFilePath)ArcGridSurfaceManipulationStrategy.cpp \
+                                                $(_MakeFilePath)PublicApi/ArcGridSurfaceManipulationStrategy.h \
+                                                ${MultiCompileDepends}
+
+$(o)ArcGridSurfacePlacementStrategy$(oext) : $(_MakeFilePath)ArcGridSurfacePlacementStrategy.cpp \
+                                             $(_MakeFilePath)PublicApi/ArcGridSurfacePlacementStrategy.h \
+                                             ${MultiCompileDepends}
+
+$(o)SplineGridSurfaceManipulationStrategy$(oext)        : $(_MakeFilePath)SplineGridSurfaceManipulationStrategy.cpp \
+                                          $(_MakeFilePath)PublicApi/SplineGridSurfaceManipulationStrategy.h \
+                                          ${MultiCompileDepends}
+
+$(o)SplineGridSurfacePlacementStrategy$(oext)        : $(_MakeFilePath)SplineGridSurfacePlacementStrategy.cpp \
+                                          $(_MakeFilePath)PublicApi/SplineGridSurfacePlacementStrategy.h \
+                                          ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUtils$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingDgnUtils$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUnits$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)GridElements$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)GeometryManipulationStrategies$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnElementManipulationStrategies$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)Units$(libext)
+
+%include $(sharedMki)linkLibrary.mki

@@ -1,0 +1,108 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Tests/RunTests.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+GTestDir=$(SrcRoot)BeGTest/gtest/
+
+%ifndef GTEST_EXE
+    %error Define GTEST_EXE to identify the test runner executable that should be run
+%endif
+
+%ifndef GTEST_OUTPUT_DIR
+    GTEST_OUTPUT_DIR=$(OutputRootDir)build/RunGtest/$[@basename $(GTEST_EXE)]/
+%endif
+
+%ifndef GTEST_LOGFILE_NAME
+    GTEST_LOGFILE_NAME=$[@basename $(GTEST_EXE)].log
+%endif
+
+BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
+runDir=$[@realpath ${GTEST_OUTPUT_DIR}]/run/
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        -$(rmdirRecursiveCmd) $(runDir)
+
+    %return
+%endif
+
+LogDir=$(runDir)logs/
+ResultsCapture=$(LogDir)test.log
+
+always:
+    !~@mkdir ${GTEST_OUTPUT_DIR}
+    !~@mkdir ${runDir}
+    !~@mkdir ${runDir}/Output
+    !~@mkdir ${runDir}/Temp
+    !~@mkdir ${LogDir}
+    ~@putenv PATH=$(PATH);$(OutputRootDir)Product/BuildingConceptStation-Gtest/java/bin/server/
+
+%if defined (winNT) 
+    
+    testName = $[@basename $(exeName)]
+    exeName = $[@realpath $(GTEST_EXE)]
+
+    %if defined(RUN_GTEST_MINIMIZED) || defined(BEGTEST_RUN_MINIMIZED)
+        RunPrefix=start "$(testName)" \/WAIT \/MIN
+    %else
+        RunPrefix=start "$(testName)" \/WAIT
+    %endif
+
+
+    $(ResultsCapture) : $(exeName).exe
+        >$(ResultsCapture)
+        $(exeName)
+        <
+        >$(LogDir)run.bat
+        $(exeName) | $(GTestDir)TeeGtest.py $(ResultsCapture)
+        exit
+        <
+        -$(RunPrefix) $(LogDir)run.bat
+
+%else
+    
+    # This is a hack because symlinks wreck havoc when running on Linux... some shells and apps resolve, some resolve partially, some don't... sucks, but this is the most reliable way.
+    # See associated code in RunTests.py:GetExeLocation
+    appDir = $[@dir $(GTEST_EXE)]
+    appDirectory        = $[@basename ${appDir}]
+    copyFromDirectory   = $(OutputRootDir)Product/
+    copyToDirectory     = $(OutputRootDir)ProductCopy/
+
+    %if defined (BMAKE_DELETE_ALL_TARGETS)
+        always:
+            $(rmdirRecursiveCmd) $(copyToDirectory)$(appDirectory)
+    %else
+        always:
+            !~@mkdir $(copyToDirectory)
+            rsync -rLptgoD $(copyFromDirectory)${appDirectory} $(copyToDirectory)
+    %endif
+
+    exeName = $(copyToDirectory)${appDirectory}/$[@basename $(GTEST_EXE)]
+
+    $(ResultsCapture) : $(exeName)
+        >$(ResultsCapture)
+        $(exeName)
+        <
+        -$(exeName) >> $(ResultsCapture) 2>&1
+
+%endif
+
+%message See $(ResultsCapture)
+
+BreakOnFailure = 0
+%if defined (BEGTEST_BREAK_ON_FAILURE)
+    BreakOnFailure = 1
+%endif
+
+always:
+    python $(GTestDir)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] $(BreakOnFailure)
+
+always:
+    ~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
+
+    

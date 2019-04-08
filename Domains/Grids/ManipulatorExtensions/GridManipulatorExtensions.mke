@@ -1,0 +1,51 @@
+#----------------------------------------------------------------------
+#     $Source: Grids/ManipulatorExtensions/GridManipulatorExtensions.mke $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------
+AppName = GridManipulatorExtensions
+CCompPDBName = $(AppName)
+
+%include mdl.mki
+%include $(SrcRoot)DgnDomains/Grids/publicmki/Grids.mki
+
+o = $(OutputRootDir)build/Grids/ManipulatorExtensions/
+
+nameToDefine = __GRIDSMANIPULATORS_BUILD__
+%include cdefapnd.mki
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)SketchLineGridSurfaceManipulatorExtension$(oext) : $(_MakeFilePath)SketchLineGridSurfaceManipulatorExtension.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicAPI/SketchLineGridSurfaceManipulatorExtension.h
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnView$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)GridElements$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)GridHandlers$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)GridStrategies$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)StrategyPlatform$(libext)
+
+%include $(sharedMki)linkLibrary.mki
+
