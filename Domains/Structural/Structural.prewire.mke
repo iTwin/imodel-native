@@ -1,0 +1,13 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Structural.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+always:
+    @CreateSymLinks.py -m"$(BuildContext)PublicAPI\StructuralDomain\=$(_MakeFilePath)PublicAPI\*.h"
+    @CreateSymLinks.py -f"$(BuildContext)ECSchemas\Domain\StructuralPhysical.ecschema.xml=$(_MakeFilePath)StructuralPhysical.ecschema.xml"
+
