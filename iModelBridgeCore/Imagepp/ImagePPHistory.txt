@@ -1,0 +1,30 @@
+//:>--------------------------------------------------------------------------------------+
+//:>
+//:>     $Source: ImagePPHistory.txt $
+//:>
+//:>  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+//:>
+//:>+--------------------------------------------------------------------------------------
+
+3/31/2010
+
+removed
+    imagepp\win\gra\hrf\com
+
+3/11/2006
+
+removed
+        imagepp\java directory
+        imagepp\win\ext
+        imagepp\stl
+        imagepp\ext\BentleyModelServerLicense
+        imagepp\ext\jpeg 2000
+        imagepp\ext\erMapperecw\dll
+        imagepp\ext\erMapperecw\src
+
+                available on branch BR_platform080903xx
+
+removed from build
+        imagepp\ext\bluemarble
+        imagepp\gra\all\hcp
+

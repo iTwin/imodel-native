@@ -1,0 +1,43 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: all/imagepp.mki $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+BUILD_NO_STACK_CHECK        = 1
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+# If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
+# PreCompiledHeader.mki uses CCompPDBName
+appName             = ImagePP
+CCompPDBName        = $(appName)
+DLM_NAME            = $(appName)
+
+SrcImagePP      = $(SrcRoot)Imagepp/
+%include $(SrcImagepp)mki/imageppdirs.mki
+
+
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+
+#----------------------------------------------------------
+# Preprocessor definition.
+#----------------------------------------------------------
+nameToDefine=__IMAGEPP_BUILD__
+%include cdefapnd.mki
+
+nameToDefine = NOMINMAX
+%include cdefapnd.mki
+
+# so that we can #include <ImageppInternal.h>
+dirToSearch                     = $(SrcImagepp)
+%include cincapnd.mki
+
+dirToSearch                     = $(ippPrivateAPISrc)
+%include cincapnd.mki
+
+# Moved to imagepp.mke because $(OutBuildDir) is not defined yet.
+#dirToSearch                     = $(ippOutPrivateApi)
+#%include cincapnd.mki
