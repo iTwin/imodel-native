@@ -1,0 +1,43 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: docs/overview/ViewOverview.doxpage $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
+BEGIN_BENTLEY_DGN_NAMESPACE
+
+/** @page PAGE_ViewOverview View and ViewController
+
+@tableofcontents
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section PAGE_ViewOverview1 Required include files
+
+__PUBLISH_INSERT_FILE__ View_Includes.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ViewOverview2 Create and Insert View
+
+__PUBLISH_INSERT_FILE__ ToyTile_CreateView.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ViewOverview3 Making Changes with a ViewController
+
+__PUBLISH_INSERT_FILE__ ViewController_Includes.sampleCode
+
+__PUBLISH_INSERT_FILE__ ViewController.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ViewOverview4 See Also
+
+@see GROUP_DgnView
+*/
+
+END_BENTLEY_DGN_NAMESPACE
