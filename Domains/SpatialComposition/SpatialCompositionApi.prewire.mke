@@ -1,0 +1,14 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: SpatialCompositionApi.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+$(BuildContext)PublicAPI/SpatialComposition/Elements : $(_MakeFilePath)Elements/PublicApi
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/SpatialComposition/Domain : $(_MakeFilePath)Domain/PublicApi
+    $(LinkFirstDepToFirstTargetAsDirectory)
