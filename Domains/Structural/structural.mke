@@ -7,7 +7,7 @@
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
-CompileOptionsMki   = $(SrcRoot)DgnDomains/Structural/StructuralCompileOptions.mki
+CompileOptionsMki   = $(SrcRoot)imodel02/Domains/Structural/StructuralCompileOptions.mki
 %include $(CompileOptionsMki)
 
 StructBaseical          = $(_MakeFilePath)StructuralPhysical/

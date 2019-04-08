@@ -14,7 +14,7 @@ ContextDeliveryDir = $(BuildContext)Delivery/
 # Define commonly used locations
 #--------------------------------------------------------------------------------------
 appName         = CivilBaseGeometry
-appSrc          = $(SrcRoot)Civil/Geometry/CivilBaseGeometry/Native/
+appSrc          = $(SrcRoot)imodel02/Domains/CivilGeometry/CivilBaseGeometry/Native/
 appPublicApi    = $(appSrc)PublicAPI/$(appName)/
 o               = $(OutBuildDir)/$(appName)/
 

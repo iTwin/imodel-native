@@ -7,7 +7,7 @@
 #---------------------------------------------------------------------------------------+
 %include LinearReferencing.Analyzer.mki
 %include mdl.mki
-%include $(SrcRoot)DgnDomains/LinearReferencing/LinearReferencing.mki
+%include $(SrcRoot)imodel02/Domains/LinearReferencing/LinearReferencing.mki
 
 #--------------------------------------------------------------------------------------
 #   Macros
@@ -32,7 +32,7 @@ PchExplicitDepends  = $(MultiCompileDepends)
     GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
 
-CompileOptionsMki =$(SrcRoot)DgnDomains/LinearReferencing/LinearReferencing.mki
+CompileOptionsMki =$(SrcRoot)imodel02/Domains/LinearReferencing/LinearReferencing.mki
 %include $(CompileOptionsMki)
 %include $(SharedMki)PreCompileHeader.mki
 

@@ -40,7 +40,7 @@
     
     <Part Name="BuildingUtils" BentleyBuildMakeFile="Utils/BuildingUtils.mke">
         <SubPart PartName="BuildingSharedApi"/>
-        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <SubPart PartName="GeomDlls" Repository="imodel02" PartFile="iModelCore/GeomLibs/geomlibs"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingUtils$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)BuildingUtils$(shlibext)</Assemblies>
@@ -49,7 +49,7 @@
 
     <Part Name="BuildingDgnUtils" BentleyBuildMakeFile="DgnUtils/BuildingDgnUtils.mke">
         <SubPart PartName="BuildingSharedApi" />
-        <SubPart PartName="RoadRailPhysical"   PartFile="RoadRailPhysical"  Repository="DgnDomains-RoadRailPhysical" />
+        <SubPart PartName="RoadRailPhysical"   PartFile="Domains/RoadRailPhysical/RoadRailPhysical"  Repository="imodel02" />
         <SubPart PartName="BuildingUnits" />
         <SubPart PartName="BuildingUtils" />
         <Bindings>
@@ -62,7 +62,7 @@
         <SubPart PartName="BuildingSharedApi" />
         <SubPart PartName="DgnClientFxPublicApi" Repository="DgnClientFx" PartFile="DgnClientFx" />
         <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx" />
-        <SubPart PartName="RoadRailPhysical"   PartFile="RoadRailPhysical"  Repository="DgnDomains-RoadRailPhysical" />
+        <SubPart PartName="RoadRailPhysical"   PartFile="Domains/RoadRailPhysical/RoadRailPhysical"  Repository="imodel02" />
         <SubPart PartName="BuildingUnits" />
         <SubPart PartName="BuildingUtils" />
         <Bindings>
@@ -73,7 +73,7 @@
     
     <Part Name="BuildingUnits" BentleyBuildMakeFile="Units/BuildingUnits.mke">
         <SubPart PartName="BuildingSharedApi"/>
-        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <SubPart PartName="GeomDlls" Repository="imodel02" PartFile="iModelCore/GeomLibs/geomlibs"/>
         <Bindings>
           <Libs>Delivery/$(libprefix)BuildingUnits$(libext)</Libs>
           <Assemblies>Delivery/$(shlibprefix)BuildingUnits$(shlibext)</Assemblies>
@@ -92,7 +92,7 @@
         <SubPart PartName="BuildingUtils"/>
         <SubPart PartName="BuildingUnits"/>
         <SubPart PartName="BuildingSharedApi"/>
-        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <SubPart PartName="GeomDlls" Repository="imodel02" PartFile="iModelCore/GeomLibs/geomlibs"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)GeometryManipulationStrategies$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)GeometryManipulationStrategies$(shlibext)</Assemblies>
@@ -101,9 +101,9 @@
 
     <Part Name="DgnElementManipulationStrategies" BentleyBuildMakeFile="DgnElementManipulationStrategies/DgnElementManipulationStrategies.mke">
         <SubPart PartName="GeometryManipulationStrategies"/>
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
-        <SubPart PartName="UnitsNative" PartFile="Units" Repository="Units" />
-        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="UnitsNative" PartFile="iModelCore/Units/Units" Repository="imodel02" />
+        <SubPart PartName="GeomDlls" Repository="imodel02" PartFile="iModelCore/GeomLibs/geomlibs"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)DgnElementManipulationStrategies$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)DgnElementManipulationStrategies$(shlibext)</Assemblies>
@@ -111,8 +111,8 @@
     </Part>
 
     <Part Name="StrategyPlatform" BentleyBuildMakeFile="StrategyPlatform/StrategyPlatform.mke">
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform" />
-        <SubPart PartName="BeSQLite" Repository="BeSQLite" PartFile="BeSQLite" />
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform" />
+        <SubPart PartName="BeSQLite" Repository="imodel02" PartFile="iModelCore/BeSQLite/BeSQLite" />
         <SubPart PartName="DgnView" Repository="DgnDisplay" PartFile="DgnDisplay" />
         <SubPart PartName="GeometryManipulationStrategies" />
         <SubPart PartName="DgnElementManipulationStrategies" />
@@ -133,7 +133,7 @@
 
   <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests/RunTests.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/BuildingShared-GtestProduct/BuildingSharedTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
     <SubProduct ProductName="BuildingShared-GtestProduct" />
-    <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     <Bindings>
       <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BuildingSharedTest.log</Files>
     </Bindings>
@@ -156,16 +156,16 @@
   </Part>
 
   <Product Name="BuildingShared-TestsProduct">
-    <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+    <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
     <SubPart PartName="BuildingShared-Tests"/>
-    <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+    <SubPart PartName="DgnPlatformSqlang" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
     <Directories DirectoryListName="BuildingSharedDirectories"/>
-    <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
   </Product>
 
 
   <Part Name="BuildingShared-Tests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
-    <SubPart PartName="DgnDbTestUtils" PartFile="DgnPlatform" Repository="DgnPlatform" />
+    <SubPart PartName="DgnDbTestUtils" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
     <SubPart PartName="PrewireForUnitTests"/>
     <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
     <SubPart PartName="BuildingSharedBundle"/>
@@ -193,7 +193,7 @@
     
     <Part Name="BuildingUtils_DgnV8" BentleyBuildMakeFile="Utils/BuildingUtils.mke" BentleyBuildMakeOptions="-dDGNV8_BUILD">
         <SubPart PartName="BuildingSharedApi_DgnV8"/>
-        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <SubPart PartName="GeomDlls" Repository="imodel02" PartFile="iModelCore/GeomLibs/geomlibs"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingUtils$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)BuildingUtils$(shlibext)</Assemblies>
@@ -202,7 +202,7 @@
 
     <Part Name="BuildingUnits_DgnV8" BentleyBuildMakeFile="Units/BuildingUnits.mke" BentleyBuildMakeOptions="-dDGNV8_BUILD">
         <SubPart PartName="BuildingSharedApi_DgnV8"/>
-        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <SubPart PartName="GeomDlls" Repository="imodel02" PartFile="iModelCore/GeomLibs/geomlibs"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingUnits$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)BuildingUnits$(shlibext)</Assemblies>
@@ -213,17 +213,17 @@
         <SubPart PartName="BuildingUtils_DgnV8"/>
         <SubPart PartName="BuildingUnits_DgnV8"/>
         <SubPart PartName="BuildingSharedApi_DgnV8"/>
-        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <SubPart PartName="GeomDlls" Repository="imodel02" PartFile="iModelCore/GeomLibs/geomlibs"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)GeometryManipulationStrategies$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)GeometryManipulationStrategies$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 	
-    <Part Name="CodeGenerators" BentleyBuildMakeFile="CodeGenerators/CodeGenerators.mke" BentleyBuildMakeOptions="-dout=$(SrcRoot)DgnDomains\ClassificationSystems\Domain\GeneratedInserts\ -din=$(_MakeFilePath)Xmls\"/>
+    <Part Name="CodeGenerators" BentleyBuildMakeFile="CodeGenerators/CodeGenerators.mke" BentleyBuildMakeOptions="-dout=$(SrcRoot)imodel02/Domains/ClassificationSystems/Domain/GeneratedInserts/ -din=$(_MakeFilePath)Xmls\"/>
 
     <Part Name="BuildSharedTestUtils" BentleyBuildMakeFile="TestUtils/TestUtils.mke" BentleyBuildMakeOptions="-dTestDir=SharedRepositoryManagerTest">
-        <SubPart PartName="DgnDbTestUtils" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <SubPart PartName="DgnDbTestUtils" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"  ProductSubDirectory="BuildingShared/SharedRepositoryManagerTest" SourceName="Delivery/UnitTests/Objects/SharedRepositoryManagerTest"/>
         </Bindings>

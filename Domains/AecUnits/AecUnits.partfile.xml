@@ -9,7 +9,7 @@
 
     <Part Name="AecUnitsDomain" BentleyBuildMakeFile="AecUnits.mke" ApiNumber="M02">
         <SubPart PartName="AecUnitsPublicAPI"/>
-        <SubPart PartName="DgnPlatformDLL"        PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <SubPart PartName="DgnPlatformDLL"        PartFile="iModelCore/DgnPlatform/DgnPlatform"  Repository="imodel02" />
 
         <Bindings>
             <Libs>Delivery/$(libprefix)AecUnits$(libext)</Libs>
@@ -29,9 +29,9 @@
     </Part>
 
     <Part Name="AecUnitsTestsExe" DeferType="AecUnitsTests" BentleyBuildMakeFile="Tests/Tests.mke" OnlyPlatforms="x64">
-        <SubPart PartName="google_gtest_lib"           PartFile="gtest"                 Repository="util-gtest"  />
+        <SubPart PartName="google_gtest_lib"           PartFile="iModelCore/util/gtest/gtest"                 Repository="imodel02"  />
         <SubPart PartName="DgnView"                    PartFile="DgnDisplay"            Repository="DgnDisplay"  />
-        <SubPart PartName="DgnPlatformSqlang"          PartFile="DgnPlatform"           Repository="DgnPlatform" />
+        <SubPart PartName="DgnPlatformSqlang"          PartFile="iModelCore/DgnPlatform/DgnPlatform"           Repository="imodel02" />
         <SubPart PartName="AecUnitsDomain"/>
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)AecUnitsTests.exe</Assemblies>

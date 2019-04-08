@@ -7,7 +7,7 @@
 #---------------------------------------------------------------------------------------+
 %include RoadRailAlignment.Analyzer.mki
 %include mdl.mki
-%include $(SrcRoot)DgnDomains/RoadRailAlignment/RoadRailAlignment.mki
+%include $(SrcRoot)imodel02/Domains/RoadRailAlignment/RoadRailAlignment.mki
 
 #--------------------------------------------------------------------------------------
 #   Macros
@@ -32,7 +32,7 @@ PchExplicitDepends  = $(MultiCompileDepends)
     GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
 
-CompileOptionsMki =$(SrcRoot)DgnDomains/RoadRailAlignment/RoadRailAlignment.mki
+CompileOptionsMki =$(SrcRoot)imodel02/Domains/RoadRailAlignment/RoadRailAlignment.mki
 %include $(CompileOptionsMki)
 %include $(SharedMki)PreCompileHeader.mki
 

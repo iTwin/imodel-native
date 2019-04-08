@@ -45,9 +45,9 @@
     </Part>
     
     <Part Name="GridElements" BentleyBuildMakeFile="Grids/Elements/GridElements.mke">
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="GridsApi"/>
-        <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
+        <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
         <Bindings>
             <Libs>Delivery/$(libprefix)GridElements$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)GridElements$(shlibext)</Assemblies>
@@ -55,7 +55,7 @@
     </Part>
 
     <Part Name="GridHandlers" BentleyBuildMakeFile="Grids/Handlers/GridHandlers.mke">
-      <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+      <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
       <SubPart PartName="GridElements"/>
       <Bindings>
         <Libs>Delivery/$(libprefix)GridHandlers$(libext)</Libs>
@@ -64,13 +64,13 @@
     </Part>
 
     <Part Name="GridStrategies" BentleyBuildMakeFile="Grids/Strategies/GridStrategies.mke">
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
-        <SubPart PartName="BuildingUtils" Repository="BuildingShared" PartFile="BuildingShared" />
-        <SubPart PartName="GeometryManipulationStrategies" Repository="BuildingShared" PartFile="BuildingShared" />
-        <SubPart PartName="DgnElementManipulationStrategies" Repository="BuildingShared" PartFile="BuildingShared" />
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="BuildingUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
+        <SubPart PartName="GeometryManipulationStrategies" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
+        <SubPart PartName="DgnElementManipulationStrategies" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
         <SubPart PartName="GridElements"/>
         <SubPart PartName="GridsApi"/>
-        <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
+        <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
         <Bindings>
         <Libs>Delivery/$(libprefix)GridStrategies$(libext)</Libs>
         <Assemblies>Delivery/$(shlibprefix)GridStrategies$(shlibext)</Assemblies>
@@ -78,13 +78,13 @@
     </Part>
     
     <Part Name="GridManipulatorExtensions" BentleyBuildMakeFile="Grids/ManipulatorExtensions/GridManipulatorExtensions.mke">
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform" />
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform" />
         <SubPart PartName="DgnView" Repository="DgnDisplay" PartFile="DgnDisplay" />
         <SubPart PartName="GridsApi" />
         <SubPart PartName="GridElements" />
         <SubPart PartName="GridHandlers" />
         <SubPart PartName="GridStrategies" />
-        <SubPart PartName="StrategyPlatform" Repository="BuildingShared" PartFile="BuildingShared" />
+        <SubPart PartName="StrategyPlatform" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
         <Bindings>
             <Libs>Delivery/$(libprefix)GridManipulatorExtensions$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)GridManipulatorExtensions$(shlibext)</Assemblies>
@@ -110,7 +110,7 @@
 
     <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests/RunTests.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Grids-GtestProduct/GridsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
       <SubProduct ProductName="Grids-GtestProduct" />
-      <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+      <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
       <Bindings>
         <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/GridsTest.log</Files>
       </Bindings>
@@ -133,16 +133,16 @@
     </Part>
 
     <Product Name="Grids-TestsProduct">
-      <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+      <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
       <SubPart PartName="Grids-Tests"/>
-      <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+      <SubPart PartName="DgnPlatformSqlang" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
       <Directories DirectoryListName="GridsDirectories"/>
-      <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+      <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
 
     <Part Name="Grids-Tests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
-      <SubPart PartName="BuildSharedTestUtils" PartFile="BuildingShared" Repository="BuildingShared" />
+      <SubPart PartName="BuildSharedTestUtils" PartFile="Domains/BuildingShared/BuildingShared" Repository="imodel02" />
       <SubPart PartName="PrewireForUnitTests"/>
       <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
       <SubPart PartName="Grids"/>
@@ -160,9 +160,9 @@
     </Part>
   
     <Part Name="GridsDomain" BentleyBuildMakeFile="Grids/Domain/GridsDomain.mke">
-      <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+      <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
       <SubPart PartName="GridHandlers"/>
-      <SubPart PartName="BeJsonCpp" Repository="libsrc-jsoncpp" PartFile="BeJsonCpp"/>
+      <SubPart PartName="BeJsonCpp" Repository="imodel02" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"/>
       <Bindings>
         <Libs>Delivery/$(libprefix)GridsDomain$(libext)</Libs>
         <Assemblies>Delivery/$(shlibprefix)GridsDomain$(shlibext)</Assemblies>

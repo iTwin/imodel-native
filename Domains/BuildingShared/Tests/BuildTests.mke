@@ -7,7 +7,7 @@
 #----------------------------------------------------------------------------------------
 %include mdl.mki
 
-dirToSearch = $(SrcRoot)DgnPlatform/
+dirToSearch = $(SrcRoot)imodel02/iModelCore/DgnPlatform/
 %include cincapnd.mki
 
 %ifndef TestDir

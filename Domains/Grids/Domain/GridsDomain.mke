@@ -7,7 +7,7 @@
 #----------------------------------------------------------------------
 
 %include mdl.mki
-%include $(SrcRoot)DgnDomains/Grids/publicmki/Grids.mki
+%include $(SrcRoot)imodel02/Domains/Grids/publicmki/Grids.mki
 
 # The same value must be used across several variables; set AppName and reference it.
 AppName = GridsDomain

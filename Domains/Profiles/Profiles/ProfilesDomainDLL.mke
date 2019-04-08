@@ -6,7 +6,7 @@
 #
 #--------------------------------------------------------------------------------------+
 %include mdl.mki
-%include $(SrcRoot)DgnDomains/Profiles/Profiles/ProfilesDomainDLL.mki
+%include $(SrcRoot)imodel02/Domains/Profiles/Profiles/ProfilesDomainDLL.mki
 
 #--------------------------------------------------------------------------------------
 #   Macros

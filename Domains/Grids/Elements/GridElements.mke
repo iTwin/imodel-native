@@ -6,7 +6,7 @@ AppName = GridElements
 CCompPDBName = $(AppName)
 
 %include mdl.mki
-%include $(SrcRoot)DgnDomains/Grids/publicmki/Grids.mki
+%include $(SrcRoot)imodel02/Domains/Grids/publicmki/Grids.mki
 
 o = $(OutputRootDir)build/ConceptBuilding/GridElements/
 

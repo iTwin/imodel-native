@@ -32,10 +32,10 @@
     </Part>
 
     <Part Name="StructuralDomainDLL" BentleyBuildMakeFile="Structural.mke" ApiNumber="M02">
-        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <SubPart PartName="DgnPlatformDLL"  PartFile="iModelCore/DgnPlatform/DgnPlatform"  Repository="imodel02" />
         <!--TODO: references to Forms and Profiles commented out for EAP-->
-        <!-- <SubPart PartName="ProfilesDomainDLL"  PartFile="ProfilesDomain" Repository="DgnDomains-Profiles" />
-        <SubPart PartName="FormsDomainDLL"     PartFile="FormsDomain" Repository="DgnDomains-Forms" /> -->
+        <!-- <SubPart PartName="ProfilesDomainDLL"  PartFile="Domains/Profiles/ProfilesDomain" Repository="imodel02" />
+        <SubPart PartName="FormsDomainDLL"     PartFile="Domains/Forms/FormsDomain" Repository="imodel02" /> -->
         <SubPart PartName="StructuralDomainPublicAPI"/>
         <Bindings>
             <Libs>
@@ -48,8 +48,8 @@
     </Part>
 
     <Part Name="StructuralDomainTestsExe" DeferType="StructuralDomainTests" BentleyBuildMakeFile="Tests/Tests.mke">
-        <SubPart PartName="google_gtest_lib"     PartFile="gtest"         Repository="util-gtest"  />
-        <SubPart PartName="DgnPlatformSqlang"    PartFile="DgnPlatform"   Repository="DgnPlatform" />
+        <SubPart PartName="google_gtest_lib"     PartFile="iModelCore/util/gtest/gtest"         Repository="imodel02"  />
+        <SubPart PartName="DgnPlatformSqlang"    PartFile="iModelCore/DgnPlatform/DgnPlatform"   Repository="imodel02" />
         <SubPart PartName="StructuralDomainDLL"/>
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)StructuralDomainTests.exe</Assemblies>
@@ -66,7 +66,7 @@
     <Part Name="RunStructuralDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" 
           BentleyBuildMakeOptions="-dGTEST_PRODUCT=StructuralDomainsTested\  -dGTEST_NAME=StructuralDomainTests" ExcludeLibType="Static">
         <SubPart PartName="StructuralDomainTestsExe"/>
-        <SubPart PartName="Base"    PartFile="BeGTest"   Repository="BeGTest" />
+        <SubPart PartName="Base"    PartFile="iModelCore/BeGTest/BeGTest"   Repository="imodel02" />
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">
                 Delivery/Gtest/Logs/StructuralDomainTests.log

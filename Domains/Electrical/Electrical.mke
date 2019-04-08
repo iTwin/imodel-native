@@ -7,7 +7,7 @@
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
-CompileOptionsMki   = $(SrcRoot)DgnDomains/Electrical/ElectricalCompileOptions.mki
+CompileOptionsMki   = $(SrcRoot)imodel02/Domains/Electrical/ElectricalCompileOptions.mki
 %include $(CompileOptionsMki)
 
 ElectricalPhysSrc       = $(_MakeFilePath)ElectricalPhysicalschema/

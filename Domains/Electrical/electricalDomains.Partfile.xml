@@ -6,7 +6,7 @@
     <Part Name="ElectricalDomains" PrgOutputDir="DesignModelingDomainsSDK">
         <!-- <SubPart PartName="RunElectricalDomainTests"/> -->
         <SubPart PartName="DesignModelingDomainsSDK-Only"/>
-        <!-- <SubProduct ProductName="StructuralDomainsTested" PartFile="StructuralDomains"    Repository="DgnDomains-Structural"/> -->
+        <!-- <SubProduct ProductName="StructuralDomainsTested" PartFile="Domains/Structural/StructuralDomains"    Repository="imodel02"/> -->
     </Part>
 	
 	
@@ -19,7 +19,7 @@
 	
     <Part Name="ElectricalDomain" BentleyBuildMakeFile="Electrical.mke" ApiNumber="M02">
         <SubPart PartName="ElectricalPhysicalPublicAPI"/>
-        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <SubPart PartName="DgnPlatformDLL"  PartFile="iModelCore/DgnPlatform/DgnPlatform"  Repository="imodel02" />
 
         <Bindings>
             <Libs>Delivery/$(libprefix)ElectricalDomain$(libext)</Libs>

@@ -10,7 +10,7 @@
     </Part>
 
     <Part Name="SpatialCompositionSchema" BentleyBuildMakeFile="SpatialCompositionSchema.prewire.mke">
-        <SubPart PartName="AecUnitsPublicAPI" Repository="DgnDomains-DesignModelingUnits" PartFile="AecUnits" />
+        <SubPart PartName="AecUnitsPublicAPI" Repository="imodel02" PartFile="Domains/AecUnits/AecUnits" />
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain">ECSchemas/Domain/SpatialComposition*.xml</Files>
         </Bindings>
@@ -23,9 +23,9 @@
     </Part>
     
     <Part Name="SpatialCompositionElements" BentleyBuildMakeFile="Elements/SpatialCompositionElements.mke">
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="SpatialCompositionApi"/>
-        <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
+        <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
         <Bindings>
             <Libs>Delivery/$(libprefix)SpatialCompositionElements$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)SpatialCompositionElements$(shlibext)</Assemblies>

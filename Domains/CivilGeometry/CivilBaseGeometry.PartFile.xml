@@ -26,9 +26,9 @@
   </Part>
 
   <Part Name="CivilBaseGeometryDll" BentleyBuildMakeFile="CivilBaseGeometry/CivilBaseGeometry.mke" Scope="Private">
-    <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
-    <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
-    <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs"/>
+    <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02" />
+    <SubPart PartName="GeomDlls" PartFile="iModelCore/GeomLibs/geomlibs" Repository="imodel02" />
+    <SubPart PartName="GeomlibsSerialization" PartFile="iModelCore/GeomLibs/geomlibs" Repository="imodel02"/>
     <SubPart PartName="PublicAPI"/>
     <Bindings>
       <Libs>Delivery/$(libprefix)CivilBaseGeometry$(libext)</Libs>
@@ -66,17 +66,17 @@
   </Part>
 
   <Product Name="CivilBaseGeometry-Tests" Scope="Private">
-    <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
+    <SubPart PartName="Base" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     <SubPart PartName="Tests"/>
     <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
-    <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    <Directories DirectoryListName="CollectionProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
   </Product>
 
   <Part Name="CivilBaseGeometry-Gtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="
       -dTEST_NAME=CivilBaseGeometryTests
       -dTEST_COLLECTION_PRODUCT=CivilBaseGeometry-Tests" OnlyPlatforms="x64" Scope="Private">
     <SubProduct ProductName="CivilBaseGeometry-Tests"/>
-    <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     <Bindings>
       <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/CivilBaseGeometryTests/Assemblies/*</Files>
       <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/CivilBaseGeometryTests/Assets" />
@@ -86,7 +86,7 @@
   <!-- Build a gtest exe to run the tests -->
   <Product Name="CivilBaseGeometry-Gtest" Scope="Private">
       <SubPart PartName="CivilBaseGeometry-Gtest"/>
-      <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+      <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
   </Product>
 
   <!-- This part runs the test on x64 -->
@@ -100,7 +100,7 @@
   <!--This part runs the test on x64 and produces a code coverage report -->
   <Part Name="CoveredGTest" DeferType="RunUnitTests" BentleyBuildMakeFile="CivilBaseGeometry/Tests/CodeCoverage.mke" BentleyBuildMakeOptions="
       -dProductName=CivilBaseGeometry
-      -dCodeSourceDir=${SrcRoot}\Civil\Geometry\CivilBaseGeometry\
+      -dCodeSourceDir=${SrcRoot}/imodel02/Domains/CivilGeometry/CivilBaseGeometry/
       -dFailIfCoverageNotMet=0
       -dMinimumCoverage=.6" OnlyPlatforms="x64" Scope="Private">
     <SubProduct ProductName="CivilBaseGeometry-Gtest" />
@@ -109,7 +109,7 @@
   <!-- iOS XCTest -->
   <Product Name="iOSXCTest-CivilBaseGeometry-Tests" Scope="Private">
     <SubPart PartName="iOSXCTest" LibType="Static" />
-    <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest" />
+    <Directories DirectoryListName="iOSXCTestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" />
   </Product>
     
   <Part Name="iOSXCTest-Run" OnlyPlatforms="iOSARM*" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="
@@ -133,7 +133,7 @@
       -dTEST_COLLECTION_PRODUCT=CivilBaseGeometry-Tests
       -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOSARM*" Scope="Private">
     <SubProduct ProductName="CivilBaseGeometry-Tests" />
-    <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest" />
+    <SubPart PartName="iOSXCTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" />
     <Bindings>
       <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/CivilBaseGeometryTests/Project" />
     </Bindings>

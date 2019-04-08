@@ -28,7 +28,7 @@
     </Part>
 
     <Part Name="ProfilesDomainDLL" BentleyBuildMakeFile="Profiles/ProfilesDomainDLL.mke" ApiNumber="M02">
-        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
         <SubPart PartName="ProfilesPublicAPI" />
         <Bindings>
             <Libs>
@@ -42,7 +42,7 @@
 
     <Part Name="ProfilesPublicAPI" BentleyBuildMakeFile="Profiles/ProfilesDomainDll.prewire.mke" ApiNumber="M02">
         <SubPart PartName="ProfilesSchema" PartFile="BisSchemas" Repository="BisSchemas" />
-        <SubPart PartName="AecUnitsPublicAPI" Repository="DgnDomains-DesignModelingUnits" PartFile="AecUnits" />
+        <SubPart PartName="AecUnitsPublicAPI" Repository="imodel02" PartFile="Domains/AecUnits/AecUnits" />
         <Bindings>
             <PublicAPI Domain="Profiles" />
             <Directory SourceName="PublicAPI/Profiles" ProductDirectoryName="ProfilesIncludes" />
@@ -50,9 +50,9 @@
     </Part>
 
     <Part Name="ProfilesTests" BentleyBuildMakeFile="Tests/Tests.mke">
-        <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
+        <SubPart PartName="google_gtest_lib" PartFile="iModelCore/util/gtest/gtest" Repository="imodel02" />
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
-        <SubPart PartName="DgnPlatformSqlang" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <SubPart PartName="DgnPlatformSqlang" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
         <SubPart PartName="ProfilesDomainDLL" />
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)ProfilesTests.exe</Assemblies>
@@ -68,7 +68,7 @@
 
     <Part Name="RunProfilesTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" 
           BentleyBuildMakeOptions="-dGTEST_PRODUCT=ProfilesDomainTested\ -dGTEST_NAME=ProfilesTests" ExcludeLibType="Static">
-        <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest" />
+        <SubPart PartName="Base" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02" />
         <SubPart PartName="ProfilesTests" />
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">
@@ -79,7 +79,7 @@
 
     <Part Name="ProfilesDoc" BentleyBuildMakeFile="Profiles\Documentation\ProfilesDoc.mke">
         <RequiredRepository>Bsitools-Doxygen</RequiredRepository>
-        <SubPart PartName="BentleyDocConfig" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <SubPart PartName="BentleyDocConfig" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
         <Bindings>
             <PublicAPI Domain="Profiles" />
             <Files ProductDirectoryName="ProfilesDocs">

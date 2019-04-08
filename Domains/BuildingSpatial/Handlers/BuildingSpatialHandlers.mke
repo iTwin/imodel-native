@@ -8,7 +8,7 @@ CCompPDBName = $(AppName)
 %include mdl.mki
 # not merged to imodel02: %include $(SrcRoot)DgnDomains/BuildingSpacePlanning/publicmki/BuildingSpacePlanning.mki
 
-BuildingSpatialHandlersSrc = $(SrcRoot)DgnDomains/BuildingSpatial/Handlers/
+BuildingSpatialHandlersSrc = $(SrcRoot)imodel02/Domains/BuildingSpatial/Handlers/
 o = $(OutputRootDir)build/BuildingSpatial/Handlers/
 
 

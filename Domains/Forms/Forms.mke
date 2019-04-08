@@ -7,7 +7,7 @@
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
-CompileOptionsMki   = $(SrcRoot)DgnDomains/Forms/FormsCompileOptions.mki
+CompileOptionsMki   = $(SrcRoot)imodel02/Domains/Forms/FormsCompileOptions.mki
 %include $(CompileOptionsMki)
 
 #--------------------------------------------------------------------------------------

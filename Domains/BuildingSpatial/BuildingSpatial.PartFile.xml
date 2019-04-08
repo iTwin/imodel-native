@@ -11,14 +11,14 @@
     </Part>
 
     <Part Name="BuildingSpatialSchema" BentleyBuildMakeFile="BuildingSpatialSchema.prewire.mke">
-        <SubPart PartName="SpatialCompositionSchema" Repository="DgnDomains-SpatialComposition" PartFile="SpatialComposition" />
+        <SubPart PartName="SpatialCompositionSchema" Repository="imodel02" PartFile="Domains/SpatialComposition/SpatialComposition" />
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain">ECSchemas/Domain/BuildingSpatial*.xml</Files>
         </Bindings>
     </Part>
 
     <Part Name="BuildingSpatialApi" BentleyBuildMakeFile="BuildingSpatialApi.prewire.mke">
-        <SubPart PartName="SpatialCompositionElements" Repository="DgnDomains-SpatialComposition" PartFile="SpatialComposition" />
+        <SubPart PartName="SpatialCompositionElements" Repository="imodel02" PartFile="Domains/SpatialComposition/SpatialComposition" />
         <Bindings>
             <PublicAPI Domain="BuildingSpatial"/>
         </Bindings>
@@ -26,7 +26,7 @@
 
     <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests/RunTests.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/BuildingSpatial-GtestProduct/BuildingSpatialTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
       <SubProduct ProductName="BuildingSpatial-GtestProduct" />
-      <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+      <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
       <Bindings>
         <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BuildingSpatialTest.log</Files>
       </Bindings>
@@ -61,19 +61,19 @@
     </Part>
 
     <Product Name="BuildingSpatial-TestsProduct">
-      <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+      <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
       <SubPart PartName="BuildingSpatial-Tests"/>
-      <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
-      <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+      <SubPart PartName="DgnPlatformSqlang" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+      <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
     <Part Name="BuildingSpatial-Tests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
-      <SubPart PartName="BuildSharedTestUtils" PartFile="BuildingShared" Repository="BuildingShared" />
+      <SubPart PartName="BuildSharedTestUtils" PartFile="Domains/BuildingShared/BuildingShared" Repository="imodel02" />
       <SubPart PartName="PrewireForUnitTests"/>
       <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
       <SubPart PartName="BuildingSpatial"/>
       <SubPart PartName="BuildingSpatialDomain"/>
-      <SubPart PartName="ClassificationSystemsDomain" Repository="DgnDomains-ClassificationSystems" PartFile="ClassificationSystems"/>
+      <SubPart PartName="ClassificationSystemsDomain" Repository="imodel02" PartFile="Domains/ClassificationSystems/ClassificationSystems"/>
       <Bindings>
         <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="BuildingSpatial/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
           <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/BuildingSpatial_en.sqlang.db3</Files>
@@ -90,7 +90,7 @@
     
     <Part Name="BuildingSpatialHandlers" BentleyBuildMakeFile="Handlers/BuildingSpatialHandlers.mke">
         <SubPart PartName="BuildingSpatialElements"/>
-        <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
+        <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingSpatialHandlers$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)BuildingSpatialHandlers$(shlibext)</Assemblies>
@@ -98,7 +98,7 @@
     </Part>
     
     <Part Name="BuildingSpatialDomain" BentleyBuildMakeFile="Domain/BuildingSpatialDomain.mke">
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="BuildingSpatialSchema" />
         <SubPart PartName="BuildingSpatialHandlers"/>
         <Bindings>
@@ -108,9 +108,9 @@
     </Part>
     
     <Part Name="BuildingSpatialElements" BentleyBuildMakeFile="Elements/BuildingSpatialElements.mke">
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="BuildingSpatialApi"/>
-        <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
+        <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingSpatialElements$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)BuildingSpatialElements$(shlibext)</Assemblies>

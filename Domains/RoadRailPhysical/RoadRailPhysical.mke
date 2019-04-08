@@ -6,7 +6,7 @@
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
-%include $(SrcRoot)DgnDomains/RoadRailPhysical/RoadRailPhysical.mki
+%include $(SrcRoot)imodel02/Domains/RoadRailPhysical/RoadRailPhysical.mki
 
 #--------------------------------------------------------------------------------------
 #   Macros
@@ -31,7 +31,7 @@ PchExplicitDepends  = $(MultiCompileDepends)
     GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
 
-CompileOptionsMki =$(SrcRoot)DgnDomains/RoadRailPhysical/RoadRailPhysical.mki
+CompileOptionsMki =$(SrcRoot)imodel02/Domains/RoadRailPhysical/RoadRailPhysical.mki
 %include $(CompileOptionsMki)
 %include $(SharedMki)PreCompileHeader.mki
 

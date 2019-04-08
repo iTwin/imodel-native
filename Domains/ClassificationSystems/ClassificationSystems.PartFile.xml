@@ -41,9 +41,9 @@
     </Part>
     
     <Part Name="ClassificationSystemsElements" BentleyBuildMakeFile="Elements/ClassificationSystemsElements.mke">
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="ClassificationSystemsApi"/>
-        <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
+        <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
         <Bindings>
             <Libs>Delivery/$(libprefix)ClassificationSystemsElements$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)ClassificationSystemsElements$(shlibext)</Assemblies>
@@ -51,7 +51,7 @@
     </Part>
 
     <Part Name="ClassificationSystemsHandlers" BentleyBuildMakeFile="Handlers/ClassificationSystemsHandlers.mke">
-      <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+      <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
       <SubPart PartName="ClassificationSystemsElements"/>
       <Bindings>
         <Libs>Delivery/$(libprefix)ClassificationSystemsHandlers$(libext)</Libs>
@@ -78,7 +78,7 @@
 
     <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests/RunTests.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ClassificationSystems-GtestProduct/ClassificationSystemsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
       <SubProduct ProductName="ClassificationSystems-GtestProduct" />
-      <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+      <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
       <Bindings>
         <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ClassificationSystemsTest.log</Files>
       </Bindings>
@@ -101,16 +101,16 @@
     </Part>
 
     <Product Name="ClassificationSystems-TestsProduct">
-      <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+      <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
       <SubPart PartName="ClassificationSystems-Tests"/>
-      <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+      <SubPart PartName="DgnPlatformSqlang" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
       <Directories DirectoryListName="ClassificationSystemsDirectories"/>
-      <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+      <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
 
     <Part Name="ClassificationSystems-Tests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
-      <SubPart PartName="BuildSharedTestUtils" PartFile="BuildingShared" Repository="BuildingShared" />
+      <SubPart PartName="BuildSharedTestUtils" PartFile="Domains/BuildingShared/BuildingShared" Repository="imodel02" />
       <SubPart PartName="PrewireForUnitTests"/>
       <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
       <SubPart PartName="ClassificationSystems"/>
@@ -128,10 +128,10 @@
     </Part>
   
     <Part Name="ClassificationSystemsDomain" BentleyBuildMakeFile="Domain/ClassificationSystemsDomain.mke">
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="ClassificationSystemsHandlers"/>
-        <SubPart PartName="BeJsonCpp" Repository="libsrc-jsoncpp" PartFile="BeJsonCpp"/>
-        <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
+        <SubPart PartName="BeJsonCpp" Repository="imodel02" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"/>
+        <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
         <Bindings>
             <Libs>Delivery/$(libprefix)ClassificationSystemsDomain$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)ClassificationSystemsDomain$(shlibext)</Assemblies>

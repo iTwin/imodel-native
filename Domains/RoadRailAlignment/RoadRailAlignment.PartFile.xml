@@ -3,9 +3,9 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
     <Part Name="RoadRailAlignment" BentleyBuildMakeFile="RoadRailAlignment.mke">
-        <SubPart PartName="CivilBaseGeometry" PartFile="CivilBaseGeometry" Repository="Civil-Geometry"/> <!-- &&AG this is still WIP. Dependency to CivilBaseGeometry -->
+        <SubPart PartName="CivilBaseGeometry" PartFile="Domains/CivilGeometry/CivilBaseGeometry" Repository="imodel02"/> <!-- &&AG this is still WIP. Dependency to CivilBaseGeometry -->
         <SubPart PartName="PublicAPI"/>
-        <SubPart PartName="LinearReferencing"            PartFile="LinearReferencing"         Repository="DgnDomains-LinearReferencing"/>
+        <SubPart PartName="LinearReferencing"            PartFile="Domains/LinearReferencing/LinearReferencing"         Repository="imodel02"/>
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)RoadRailAlignment$(libext)</Libs>
             <Assemblies Required="false">Delivery/$(shlibprefix)RoadRailAlignment$(shlibext)</Assemblies>
@@ -47,7 +47,7 @@
 
     <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
         <SubPart PartName="RoadRailAlignment"/>
-        <SubPart PartName="UnitsNative"                     PartFile="Units"                     Repository="Units"/>
+        <SubPart PartName="UnitsNative"                     PartFile="iModelCore/Units/Units"                     Repository="imodel02"/>
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RoadRailAlignment/Backdoor" SourceName="Delivery/UnitTests/Objects/Backdoor"/>
@@ -77,10 +77,10 @@
 
     <Product Name="RoadRailAlignment-Tests">
         <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
-        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
         <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
-        <Directories Repository="BeGTest" PartFile="BeGTest" DirectoryListName="CollectionProduct"/>
+        <Directories Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" DirectoryListName="CollectionProduct"/>
         <Directories DirectoryListName="Tests"/>
     </Product>
 
@@ -90,13 +90,13 @@
 
     <!-- Build a gtest exe to run the tests -->
     <Product Name="Gtest-RoadRailAlignment-Tests">
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <SubPart PartName="Gtest"/>
     </Product>
 
     <Part Name="Gtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RoadRailAlignmentTests -dTEST_COLLECTION_PRODUCT=RoadRailAlignment-Tests -dTEST_FRAMEWORK_SQLANG=RoadRailAlignment_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="RoadRailAlignment-Tests"/>
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/RoadRailAlignmentTests/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/RoadRailAlignmentTests/Assets" />
@@ -105,14 +105,14 @@
 
     <Part Name="RunGtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" DeferType="RunUnitTests" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Gtest-RoadRailAlignment-Tests -dGTEST_NAME=RoadRailAlignmentTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Gtest-RoadRailAlignment-Tests" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Part>
     
     <!-- iOS XCTest -->
     
     <Product Name="iOSXCTest-RoadRailAlignment-Tests">
         <SubPart PartName="iOSXCTest" LibType="Static" />
-        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest" />
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" />
     </Product>
     
     <Part Name="iOSXCTest-Run" OnlyPlatforms="iOSARM*" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/XCTest/Logs" >
@@ -128,7 +128,7 @@
     
     <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=RoadRailAlignmentTests -dTEST_COLLECTION_PRODUCT=RoadRailAlignment-Tests -dTEST_FRAMEWORK_SQLANG=RoadRailAlignment_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOSARM*">
         <SubProduct ProductName="RoadRailAlignment-Tests" />
-        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest" />
+        <SubPart PartName="iOSXCTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" />
         <Bindings>
             <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/RoadRailAlignmentTests/Project" />
         </Bindings>

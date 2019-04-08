@@ -9,7 +9,7 @@
 
 %include mdl.mki
 
-CompileOptionsMki   = $(SrcRoot)DgnDomains/AecUnits/AecUnitsCompileOptions.mki
+nCompileOptionsMki   = $(SrcRoot)imodel02/Domains/AecUnits/AecUnitsCompileOptions.mki
 %include $(CompileOptionsMki)
 
 

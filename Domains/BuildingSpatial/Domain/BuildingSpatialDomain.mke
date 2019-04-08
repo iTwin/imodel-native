@@ -7,7 +7,7 @@
 #----------------------------------------------------------------------
 
 %include mdl.mki
-#%include $(SrcRoot)DgnDomains/BuildingSpatial/publicmki/BuildingSpatial.mki
+#%include $(SrcRoot)imodel02/Domains/BuildingSpatial/publicmki/BuildingSpatial.mki
 
 # The same value must be used across several variables; set AppName and reference it.
 AppName = BuildingSpatialDomain

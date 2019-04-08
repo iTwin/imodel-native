@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
-GTestDir=$(SrcRoot)BeGTest/gtest/
+GTestDir=$(SrcRoot)imodel02/iModelCore/BeGTest/gtest/
 
 %ifndef GTEST_EXE
     %error Define GTEST_EXE to identify the test runner executable that should be run
@@ -21,7 +21,7 @@ GTestDir=$(SrcRoot)BeGTest/gtest/
     GTEST_LOGFILE_NAME=$[@basename $(GTEST_EXE)].log
 %endif
 
-BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
+BentleyTestDir=$(SrcRoot)imodel02/iModelCore/util/gtest/BentleyTest/
 runDir=$[@realpath ${GTEST_OUTPUT_DIR}]/run/
 
 %if defined (BMAKE_DELETE_ALL_TARGETS)
