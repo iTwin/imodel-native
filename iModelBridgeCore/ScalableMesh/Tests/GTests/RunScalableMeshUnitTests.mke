@@ -1,0 +1,55 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/GTests/RunScalableMeshUnitTests.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+PolicyFile      = $(SrcRoot)ScalableMesh/Tests/AssertCompilePublishedScalableMeshUnitTestsPolicy.mki
+
+%include mdl.mki
+
+ExeName = ScalableMeshUnitTests
+
+#--------------------------------------------------------------------------------------
+# Tests Directories
+#--------------------------------------------------------------------------------------
+Test_Root   = $(OutputRootDir)Product/ScalableMeshUnitTests/Dlls/
+GTestResults              = $(Test_Root)results/
+~@putenv GTestResults=$(GTestResults)
+
+always:
+!~@mkdir $(GTestResults)
+
+#--------------------------------------------------------------------------------------
+# Filter Tests
+#--------------------------------------------------------------------------------------
+%include filter_list.mki
+%if defined(filter_list)
+    GTestFilter = --gtest_filter=$(filter_list)
+%endif
+
+RunGTest = $(Test_Root)$(ExeName).exe
+Results  = --gtest_output=xml:$(GTestResults)$(ExeName).results.xml
+
+always:
+  @type NUL > $(GTestResults)$(ExeName).results.xml
+
+#always:
+#  python $(_MakeFilePath)/RunTests.py "$(RunGTest) $(GTestFilter) $(Results)" "$(GTestResults)run.log"
+
+always:
+  $(RunGTest) $(GTestFilter) $(Results)
+
+%iffile $(GTestResults)$(ExeName).results.xml
+  always:
+      @type NUL > $(GTestResults)blank
+      -@fc $(GTestResults)$(ExeName).results.xml $(GTestResults)blank > NUL
+
+  always:
+    -@del $(GTestResults)blank
+%endif
+
+always:
+  ~@putenv GTestResults=
