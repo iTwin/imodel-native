@@ -1201,6 +1201,19 @@ bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHe
         idxFace++;
         }
 
+    bool shouldInvertBoundary = false;
+    int clipBoundaryIdx = 0;
+    for(auto it = clipPolys.begin(); it != clipPolys.end(); it++, clipBoundaryIdx++)
+        {
+        ClipVectorPtr& clip = *it;
+
+        if(!clip.IsValid())
+            continue;
+
+        shouldInvertBoundary = !(isMask.empty() ? (*clip)[0]->IsMask() : isMask[&clip - clipPolys.data()]);
+        if(shouldInvertBoundary) break;
+        }
+
     idxFace = 0;
     for (vis->Reset(); vis->AdvanceToNextFace();)
         {
@@ -1902,7 +1915,7 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
             boundaryInfo.second = &clip - polygons.data();
             }
 
-        meshIsCut = meshIsCut || InsertMeshCuts(clippedMesh, vis, currentPoly, triangleBoxes, polyBox);
+        meshIsCut = InsertMeshCuts(clippedMesh, vis, currentPoly, triangleBoxes, polyBox) || meshIsCut;
 
         clipPolys.push_back(cp);
         }
