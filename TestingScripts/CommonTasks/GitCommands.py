@@ -59,7 +59,7 @@ class GitCommand:
         return bexist
 
     def files_last_commit(self):
-        srcRoot = os.path.dirname(self.work_dir)
+        srcRoot = os.path.join(os.getenv('SrcRoot'), 'imodel02')
         success = self.execute('git show --oneline --name-only --pretty=""')
         if not success:
             return []
@@ -76,7 +76,7 @@ class GitCommand:
             return sFiles
 
     def files_incoming(self):
-        srcRoot = os.path.dirname(self.work_dir)
+        srcRoot = os.path.join(os.getenv('SrcRoot'), 'imodel02')
         success = self.execute('git fetch && git diff --name-only ..origin')
         if not success:
             return []
@@ -93,7 +93,7 @@ class GitCommand:
             return sFiles
 
     def files_branches(self, sb, tb):
-        srcRoot = os.path.dirname(self.work_dir)
+        srcRoot = os.path.join(os.getenv('SrcRoot'), 'imodel02')
         success = self.execute('git show --oneline --name-only --pretty="" ' + sb + ' ' + tb)
         if not success:
             return []
