@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>ECPresentation</id>
+        <version>$version$</version>
+        <title>ECPresentation</title>
+        <authors>Bentley Systems, Incorporated</authors>
+        <owners>Bentley Systems, Incorporated</owners>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Bentley ECPresentation Library</description>
+        <copyright>(c) $CopyRightYear$ Bentley Systems, Incorporated. All rights reserved.</copyright>
+        <language>en-US</language>
+        <dependencies>
+            <group>
+                <dependency id="BeSQLiteEC" version="[#DgnClientSdk_version#]" />
+                <dependency id="ECObjects" version="[#DgnClientSdk_version#]" />
+            </group>
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="Delivery\ECPresentationM02.dll"  target="lib\native\ECPresentationM02.dll" />
+        <file src="Delivery\ECPresentation.lib"     target="lib\native\ECPresentation.lib" />
+        <file src="Delivery\PublishedAPI\**\*"      target="include" />
+    </files>
+</package>
