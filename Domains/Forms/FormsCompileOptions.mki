@@ -1,0 +1,16 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: FormsCompileOptions.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+appName                         = FormsDomain
+o                               = $(OutputRootDir)build/$(appName)/
+CCompPDBName                    = $(appName)
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+
+nameToDefine = __FORMS_DOMAIN_BUILD__
+%include cdefapnd.mki
+
