@@ -2,7 +2,7 @@
 |
 |     $Source: BeHttp/Curl/CurlHttpRequest.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -796,7 +796,7 @@ void CurlHttpRequest::FinalizeRequest(CURLcode curlStatus)
     m_transferInfo->status = ResolveConnectionStatus(curlStatus);
 
     if (m_errorBuffer[0] != '\0')
-        LOG.errorv("* HTTP #%lld Connection error: %s '%s'", GetNumber(), curl_easy_strerror(curlStatus), m_errorBuffer);
+        LOG.errorv("* HTTP #%lld Connection error: %s '%s' (%s)", GetNumber(), curl_easy_strerror(curlStatus), m_errorBuffer, GetEffectiveUrl().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -872,13 +872,9 @@ Response CurlHttpRequest::ResolveResponse()
     if (m_transferInfo->status == ConnectionStatus::OK)
         httpStatus = ResolveHttpStatus(httpStatusCode);
 
-    const char* effectiveUrl = nullptr;
-    if (nullptr == m_curl)
-        effectiveUrl = m_httpRequest.GetUrl().c_str();
-    else
-        curl_easy_getinfo(m_curl, CURLINFO_EFFECTIVE_URL, &effectiveUrl);
+    
 
-    Response response(m_transferInfo->responseContent, effectiveUrl, m_transferInfo->status, httpStatus);
+    Response response(m_transferInfo->responseContent, GetEffectiveUrl().c_str(), m_transferInfo->status, httpStatus);
 
     m_transferInfo->responseContent->GetBody()->Close();
     m_transferInfo = nullptr;
@@ -895,6 +891,22 @@ Response CurlHttpRequest::ResolveResponse()
         }
 
     return response;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String CurlHttpRequest::GetEffectiveUrl()
+    {
+    const char* effectiveUrl = nullptr;
+
+    if (nullptr != m_curl)
+        curl_easy_getinfo(m_curl, CURLINFO_EFFECTIVE_URL, &effectiveUrl);
+
+    if (effectiveUrl == nullptr)
+        effectiveUrl = m_httpRequest.GetUrl().c_str();
+
+    return effectiveUrl;
     }
 
 /*--------------------------------------------------------------------------------------+

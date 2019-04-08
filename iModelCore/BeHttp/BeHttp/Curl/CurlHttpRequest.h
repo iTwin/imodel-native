@@ -88,6 +88,7 @@ struct CurlHttpRequest
         ConnectionStatus ResolveConnectionStatus(CURLcode curlStatus);
         HttpStatus ResolveHttpStatus(int httpStatusInt);
         bool GetShouldRetry();
+        Utf8String GetEffectiveUrl();
 
         void SendProgressCallback(double dltotal, double dlnow, double ultotal, double ulnow);
 
