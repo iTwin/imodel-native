@@ -12,7 +12,7 @@
 
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <ClassificationSystems/Domain/ClassificationSystemsMacros.h>
-#include <BuildingShared/BuildingSharedApi.h>
+#include <BuildingShared/interfaces.h>
 #include <ClassificationSystems/Elements/ForwardDeclarations.h>
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
