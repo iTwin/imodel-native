@@ -23,22 +23,22 @@
         </Bindings>
     </Part>
     
-    <Part Name="SpatialCompositionElements" BentleyBuildMakeFile="Elements/SpatialCompositionElements.mke">
+    <Part Name="SpatialCompositionElements" BentleyBuildMakeFile="Elements/SpatialCompositionElements.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="SpatialCompositionApi"/>
         <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
         <Bindings>
             <Libs>Delivery/$(libprefix)SpatialCompositionElements$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)SpatialCompositionElements$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)SpatialCompositionElements$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
-    <Part Name="SpatialCompositionDomain" BentleyBuildMakeFile="Domain/SpatialCompositionDomain.mke">
+    <Part Name="SpatialCompositionDomain" BentleyBuildMakeFile="Domain/SpatialCompositionDomain.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="SpatialCompositionSchema" />
         <Bindings>
             <Libs>Delivery/$(libprefix)SpatialCompositionDomain$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)SpatialCompositionDomain$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)SpatialCompositionDomain$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
