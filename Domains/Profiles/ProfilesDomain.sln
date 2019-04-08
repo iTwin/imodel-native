@@ -1,0 +1,60 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2026
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tests", "Tests\Tests.vcxproj", "{2340EA9E-30B1-4C48-8124-E6D0C0F3B9F0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Profiles", "Profiles\Profiles.vcxproj", "{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Internal", "Internal", "{C5A1F86D-999E-4474-8409-B3BA24F4B5DB}"
+	ProjectSection(SolutionItems) = preProject
+		Internal\CommonCommands.txt = Internal\CommonCommands.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Root", "Root", "{D3156F12-6564-47A9-AAF3-FE2546FD4F2F}"
+	ProjectSection(SolutionItems) = preProject
+		ProfilesDomain.Partfile.xml = ProfilesDomain.Partfile.xml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{25990648-55DC-4F50-AFAC-F9AE0289FDC0}"
+	ProjectSection(SolutionItems) = preProject
+		Docs\Profiles.cmap = Docs\Profiles.cmap
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2340EA9E-30B1-4C48-8124-E6D0C0F3B9F0}.Debug|x64.ActiveCfg = Debug|x64
+		{2340EA9E-30B1-4C48-8124-E6D0C0F3B9F0}.Debug|x64.Build.0 = Debug|x64
+		{2340EA9E-30B1-4C48-8124-E6D0C0F3B9F0}.Debug|x86.ActiveCfg = Debug|Win32
+		{2340EA9E-30B1-4C48-8124-E6D0C0F3B9F0}.Debug|x86.Build.0 = Debug|Win32
+		{2340EA9E-30B1-4C48-8124-E6D0C0F3B9F0}.Release|x64.ActiveCfg = Release|x64
+		{2340EA9E-30B1-4C48-8124-E6D0C0F3B9F0}.Release|x64.Build.0 = Release|x64
+		{2340EA9E-30B1-4C48-8124-E6D0C0F3B9F0}.Release|x86.ActiveCfg = Release|Win32
+		{2340EA9E-30B1-4C48-8124-E6D0C0F3B9F0}.Release|x86.Build.0 = Release|Win32
+		{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}.Debug|x64.ActiveCfg = Debug|x64
+		{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}.Debug|x64.Build.0 = Debug|x64
+		{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}.Debug|x86.ActiveCfg = Debug|Win32
+		{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}.Debug|x86.Build.0 = Debug|Win32
+		{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}.Release|x64.ActiveCfg = Release|x64
+		{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}.Release|x64.Build.0 = Release|x64
+		{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}.Release|x86.ActiveCfg = Release|Win32
+		{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C5A1F86D-999E-4474-8409-B3BA24F4B5DB} = {D3156F12-6564-47A9-AAF3-FE2546FD4F2F}
+		{25990648-55DC-4F50-AFAC-F9AE0289FDC0} = {D3156F12-6564-47A9-AAF3-FE2546FD4F2F}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C50A7A70-DB66-444C-BC3F-90901DD00614}
+	EndGlobalSection
+EndGlobal
