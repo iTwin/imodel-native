@@ -6,7 +6,6 @@ AppName = BuildingSpatialHandlers
 CCompPDBName = $(AppName)
 
 %include mdl.mki
-%include $(SrcRoot)DgnDomains/BuildingSpacePlanning/publicmki/BuildingSpacePlanning.mki
 
 BuildingSpatialHandlersSrc = $(SrcRoot)DgnDomains/BuildingSpatial/Handlers/
 o = $(OutputRootDir)build/BuildingSpatial/Handlers/
@@ -26,9 +25,9 @@ nameToDefine = __BUILDINGSPATIALHANDLERS_BUILD__
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)BuildingHandler$(oext) : $(_MakeFilePath)BuildingHandler.cpp ${MultiCompileDepends} $(BuildingSpatialHandlersSrc)PublicApi/BuildingHandler.h $(BuildingElementsPublicApi)Building.h  
+$(o)BuildingHandler$(oext) : $(_MakeFilePath)BuildingHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/BuildingHandler.h  
 
-$(o)SpaceHandler$(oext) : $(_MakeFilePath)SpaceHandler.cpp ${MultiCompileDepends} $(BuildingSpatialHandlersSrc)PublicApi/SpaceHandler.h $(BuildingElementsPublicApi)Space.h  
+$(o)SpaceHandler$(oext) : $(_MakeFilePath)SpaceHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SpaceHandler.h   
 
 
 %include MultiCppCompileGo.mki
