@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/Tasks/UniqueTaskHolder.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -132,16 +132,19 @@ struct UniqueTasksHolder
             return resultTask;
             }
 
-        // Cancel currently running task
-        void CancelTask(const ID& id)
+        // Cancel currently running task. Returns task if found, nullptr if not.
+        AsyncTaskPtr<T> CancelTask(const ID& id)
             {
             BeMutexHolder mutex(m_impl->taskCS);
+            AsyncTaskPtr<T> task;
             auto it = m_impl->tasks.find(id);
             if (it != m_impl->tasks.end())
                 {
+                task = it->second->runningTask;
                 it->second->token->SetCanceled();
                 m_impl->tasks.erase(id);
                 }
+            return task;
             }
 
         // Check if task is running at a given moment

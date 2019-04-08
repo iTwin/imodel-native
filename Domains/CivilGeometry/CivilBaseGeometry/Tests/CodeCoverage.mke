@@ -1,0 +1,60 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: CivilBaseGeometry/Tests/CodeCoverage.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+%if ($(TARGET_PLATFORM) != "Windows")
+  %error Code coverage can only be run on Windows
+%endif
+
+%if !defined (ProductName)
+  %error ProductName must be defined
+%endif
+%warn ProductName = $(ProductName)
+
+%if !defined (CodeSourceDir)
+  %error CodeSourceDir must be defined and point to the parent directory of the source code being tested.  This directory is searched recursively.
+%endif
+%warn CodeSourceDir = $(CodeSourceDir)
+
+%warn FailIfCoverageNotMet - Set to 1 to fail the build if the minimum coverage percentage is not met. If set to 0 (the default) the build will not fail if minimum coverage is not met.
+FailCoverage = 0
+%if defined (FailIfCoverageNotMet)
+  FailCoverage= $(FailIfCoverageNotMet)
+%endif
+
+%warn MinimumCoveage - Defines the minimum coverage (between 0.0 and 1.0) necessary to pass the build, if FailIfCoverageNotMet is set to 1.  If FailIfCoverageNotMet is 0, this has no effect.  Defaults to 0.1.
+MinCoverage = 0.1
+%if defined (MinimumCoverage)
+  MinCoverage = $(MinimumCoverage)
+%endif
+
+
+#OPEN_CPP_TEST_EXE - Path to the gtest executable that is used to test your DLL.
+#OPEN_CPP_DLL - Path to the DLL that is being tested. Warning: this path can't target a symlink, direct path to the DLL in the builds directory is needed.
+#OPEN_CPP_SOURCE - Path to the source code of the DLL The path is recursively searched.
+#OPEN_CPP_OUTPUT - Path to the output directory. Usually a directory next to the gtest executable.
+
+#OPEN_CPP_OUTPUT_NAME - Name for the binary and xml output files. Default is "Coverage".
+#OPEN_CPP_GEN_HTML - Generate HTML code coverage report in the output directory. Default is 1. Set 0 to disable.
+#OPEN_CPP_GEN_BINARY - Generate binary code coverage report in the output directory. Default is 1. Set 0 to disable.
+#OPEN_CPP_GEN_XML - Generate xml code coverage report in the output directory. Default is 1. Set 0 to disable.
+#OPEN_CPP_TARGET_COVERAGE - Target code coverage percentage. Default is 0.9.
+#OPEN_CPP_FAIL_COVERAGE - Fail build if code coverage is not sufficient. Default is 1. Set 0 to disable.
+
+appName = $(ProductName)
+ProductDir = $(OutputRootDir)Product/$(ProductName)-Gtest/
+Build = $(OutputRootDir)build/$(ProductName)/
+OPEN_CPP_TEST_EXE = $(ProductDir)$(appName)Tests.exe
+OPEN_CPP_DLL = $(Build)$(appName).dll
+OPEN_CPP_SOURCE = $(CodeSourceDir)
+OPEN_CPP_OUTPUT = $(ProductDir)CodeCoverage/$(appName)
+OPEN_CPP_OUTPUT_NAME = $(appName)
+OPEN_CPP_FAIL_COVERAGE = $(FailCoverage)
+OPEN_CPP_TARGET_COVERAGE = $(MinCoverage)
+
+%include $(SrcRoot)bsitools/opencppcoverage/OpenCppCoverage.mki

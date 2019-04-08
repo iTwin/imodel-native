@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeDebugUtilities.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeDebugUtilities.h>
@@ -50,6 +50,14 @@ Utf8String BeDebugUtilities::GetStackTraceDescription(size_t maxFrames)
 BeDebugUtilities::StackFrameInfo BeDebugUtilities::GetStackFrameInfoAt(size_t frameIndex)
     {
     return StackFrameInfo();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+std::vector<BeDebugUtilities::StackFrameInfo> BeDebugUtilities::GetStackFrameInfosAt(size_t frameIndex, size_t frameCount)
+    {
+    return {};
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -127,38 +135,51 @@ Utf8String BeDebugUtilities::GetStackTraceDescription(size_t maxFrames)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeDebugUtilities::StackFrameInfo BeDebugUtilities::GetStackFrameInfoAt(size_t frameIndex)
     {
+    return std::move(GetStackFrameInfosAt(frameIndex + 1, 1)[0]);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+std::vector<BeDebugUtilities::StackFrameInfo> BeDebugUtilities::GetStackFrameInfosAt(size_t frameIndex, size_t frameCount)
+    {
     frameIndex += 1; // Skip this function
 
-    void*           stack[1];
-    unsigned short  frames;
-    SYMBOL_INFO*    symbol;
-    HANDLE          process;
+    auto stack = new void*[frameCount];
 
     SymSetOptions(SYMOPT_LOAD_LINES);
 
-    process = GetCurrentProcess();
+    HANDLE process = GetCurrentProcess();
     SymInitialize(process, NULL, TRUE);
-    frames = CaptureStackBackTrace((DWORD)frameIndex, 1, stack, NULL);
-    symbol = (SYMBOL_INFO *)calloc(sizeof(SYMBOL_INFO)+256 * sizeof(char), 1);
+    USHORT frames = CaptureStackBackTrace((DWORD)frameIndex, (DWORD)frameCount, stack, NULL);
+
+    SYMBOL_INFO* symbol = (SYMBOL_INFO *)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
     symbol->MaxNameLen = 255;
     symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
 
-    IMAGEHLP_LINE line;
+    std::vector<StackFrameInfo> infos;
 
-    SymFromAddr(process, (DWORD64)(stack[0]), 0, symbol);
-    DWORD dwDisplacement;
-
-    StackFrameInfo info;
-    if (SymGetLineFromAddr(process, (DWORD64) (stack[0]), &dwDisplacement, &line))
+    for (USHORT i = 0; i < frames; i++)
         {
-        info.functionName = symbol->Name;
-        info.fileName = line.FileName;
-        info.fileLine = line.LineNumber;
+        StackFrameInfo info;
+
+        SymFromAddr(process, (DWORD64)(stack[i]), 0, symbol);
+
+        DWORD dwDisplacement;
+        IMAGEHLP_LINE line;
+        if (SymGetLineFromAddr(process, (DWORD64)(stack[i]), &dwDisplacement, &line))
+            {
+            info.functionName = symbol->Name;
+            info.fileName = line.FileName;
+            info.fileLine = line.LineNumber;
+            }
+        infos.push_back(std::move(info));
         }
 
     free(symbol);
+    delete[] stack;
 
-    return info;
+    return std::move(infos);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -185,6 +206,14 @@ Utf8String BeDebugUtilities::GetStackTraceDescription(size_t maxFrames)
 BeDebugUtilities::StackFrameInfo BeDebugUtilities::GetStackFrameInfoAt(size_t frameIndex)
     {
     return StackFrameInfo();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+std::vector<BeDebugUtilities::StackFrameInfo> BeDebugUtilities::GetStackFrameInfosAt(size_t frameIndex, size_t frameCount)
+    {
+    return {};
     }
 
 /*--------------------------------------------------------------------------------------+

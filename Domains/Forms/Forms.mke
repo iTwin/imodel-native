@@ -1,0 +1,138 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Forms.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+CompileOptionsMki   = $(SrcRoot)DgnDomains/Forms/FormsCompileOptions.mki
+%include $(CompileOptionsMki)
+
+#--------------------------------------------------------------------------------------
+#   Macros
+#--------------------------------------------------------------------------------------
+appSrc              = $(_MakeFilePath)
+appPublicApi        = $(appSrc)PublicAPI/
+MultiCompileDepends = $(_MakeFileSpec) $(appPublicApi)FormsDomainDefinitions.h $(appPublicApi)FormsDomainApi.h
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Pre-compiled header
+#----------------------------------------------------------------------
+# PchCompiland        = $(appSrc)___.cpp
+# PchOutputDir        = $(o)
+# PchExtraOptions     = -Zm160
+# PchExplicitDepends  = $(MultiCompileDepends)
+
+%if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
+    # Avoid internal compiler error in GCC using windows ndk toolchain
+    GCC_NO_PRE_COMPILED_HEADER = 1
+%endif
+
+# %include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+FormsBase            = $(_MakeFilePath)
+FormsBasePublicAPI   = $(FormBase)PublicAPI/
+
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+
+%include MultiCppCompileRule.mki
+
+$(o)FormsDomainUtilities$(oext) : $(FormsBase)FormsDomainUtilities.cpp \
+    ${MultiCompileDepends} \
+    $(FormsBasePublicAPI)FormsDomainUtilities.h \
+    $(FormsBasePublicAPI)FormsDomainApi.h \
+    $(FormsBasePublicAPI)FormsDomainDefinitions.h
+
+$(o)FormsDomain$(oext) : $(FormsBase)FormsDomain.cpp \
+    ${MultiCompileDepends} \
+    $(FormsBasePublicAPI)FormsDomain.h \
+    $(FormsBasePublicAPI)FormsDomainApi.h \
+    $(FormsBasePublicAPI)FormsDomainUtilities.h \
+    $(FormsBasePublicAPI)FormsDomainDefinitions.h
+
+$(o)Form$(oext) : $(FormsBase)Form.cpp \
+    ${MultiCompileDepends} \
+    $(FormsBasePublicAPI)Form.h \
+    $(FormsBasePublicAPI)FormsDomain.h \
+    $(FormsBasePublicAPI)FormsDomainApi.h \
+    $(FormsBasePublicAPI)FormsDomainUtilities.h \
+    $(FormsBasePublicAPI)FormsDomainDefinitions.h
+
+$(o)CurvedExtrusion$(oext) : $(FormsBase)CurvedExtrusion.cpp \
+    ${MultiCompileDepends} \
+    $(FormsBasePublicAPI)CurvedExtrusion.h \
+    $(FormsBasePublicAPI)Form.h \
+    $(FormsBasePublicAPI)FormsDomain.h \
+    $(FormsBasePublicAPI)FormsDomainApi.h \
+    $(FormsBasePublicAPI)FormsDomainUtilities.h \
+    $(FormsBasePublicAPI)FormsDomainDefinitions.h
+
+$(o)StraightExtrusion$(oext) : $(FormsBase)StraightExtrusion.cpp \
+    ${MultiCompileDepends} \
+    $(FormsBasePublicAPI)StraightExtrusion.h \
+    $(FormsBasePublicAPI)Form.h \
+    $(FormsBasePublicAPI)FormsDomain.h \
+    $(FormsBasePublicAPI)FormsDomainApi.h \
+    $(FormsBasePublicAPI)FormsDomainUtilities.h \
+    $(FormsBasePublicAPI)FormsDomainDefinitions.h
+
+$(o)CurvedProfiledExtrusion$(oext) : $(FormsBase)CurvedProfiledExtrusion.cpp \
+    ${MultiCompileDepends} \
+    $(FormsBasePublicAPI)CurvedProfiledExtrusion.h \
+    $(FormsBasePublicAPI)Form.h \
+    $(FormsBasePublicAPI)FormsDomain.h \
+    $(FormsBasePublicAPI)FormsDomainApi.h \
+    $(FormsBasePublicAPI)FormsDomainUtilities.h \
+    $(FormsBasePublicAPI)FormsDomainDefinitions.h
+
+$(o)StraightProfiledExtrusion$(oext) : $(FormsBase)StraightProfiledExtrusion.cpp \
+    ${MultiCompileDepends} \
+    $(FormsBasePublicAPI)StraightProfiledExtrusion.h \
+    $(FormsBasePublicAPI)Form.h \
+    $(FormsBasePublicAPI)FormsDomain.h \
+    $(FormsBasePublicAPI)FormsDomainApi.h \
+    $(FormsBasePublicAPI)FormsDomainUtilities.h \
+    $(FormsBasePublicAPI)FormsDomainDefinitions.h
+
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_OBJECT_DEST             = $(o)
+# DLM_OBJECT_PCH              = $(o)____$(oext) 
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_DLS                  = 1
+DLM_NO_DEF                  = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeJsonCpp$(libext)
+
+%include $(sharedMki)linkLibrary.mki
+

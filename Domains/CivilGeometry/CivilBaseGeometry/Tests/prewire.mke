@@ -1,0 +1,12 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: CivilBaseGeometry/Tests/prewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(_MakeFilePath)ignore_list.txt
+    $(msg)
+    $(LinkFirstDepToFirstTarget)

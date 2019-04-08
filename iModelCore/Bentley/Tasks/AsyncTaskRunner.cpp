@@ -2,7 +2,7 @@
  |
  |     $Source: Tasks/AsyncTaskRunner.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include <Bentley/Tasks/AsyncTaskRunner.h>
@@ -57,7 +57,10 @@ void AsyncTaskRunner::WakeUp()
     {
     if (m_schedulerToHoldWhileStopping = m_scheduler.lock())
         {
-        m_schedulerToHoldWhileStopping->Push(std::make_shared<AsyncTask>()); // Push dummy task to wake up thread runner.
+        // Push dummy task to wake up thread runner.
+        // This is only thread wakeup task, so do not attach to current parent thread.
+        // Attaching caused rare hangs when thread stopped before executing this dummy task, thus hanging it and parent.
+        m_schedulerToHoldWhileStopping->Push(std::make_shared<AsyncTask>(1), nullptr);
         }
     }
 
@@ -114,9 +117,7 @@ void AsyncTaskRunner::_RunAsyncTasksLoop ()
         m_currentRunningTask = nullptr;
 
         if (m_isStopping)
-            {
             break;
-            }
         }
     }
 

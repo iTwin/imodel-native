@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/Bentley/Tasks/TaskScheduler.h $
  |
- |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,8 +37,7 @@ struct ITaskScheduler
     //! Create new task with callback code and execute it 
     template <class T> std::shared_ptr<PackagedAsyncTask<T>> ExecuteAsync (const std::function<T ()>& taskCallback, AsyncTask::Priority priority = AsyncTask::Priority::Inherited)
         {
-        auto task = std::make_shared<PackagedAsyncTask<T>> (taskCallback);
-        task->SetStackInfo(1);
+        auto task = std::make_shared<PackagedAsyncTask<T>> (taskCallback, 1);
         Push (task, priority);
         return task;
         }
@@ -46,8 +45,7 @@ struct ITaskScheduler
     //! Create new task with callback code and execute it 
     std::shared_ptr<PackagedAsyncTask<void>> ExecuteAsync (const std::function<void (void)>& taskCallback, AsyncTask::Priority priority = AsyncTask::Priority::Inherited)
         {
-        auto task = std::make_shared<PackagedAsyncTask<void>> (taskCallback);
-        task->SetStackInfo(1);
+        auto task = std::make_shared<PackagedAsyncTask<void>> (taskCallback, 1);
         Push (task, priority);
         return task;
         }
@@ -56,8 +54,7 @@ struct ITaskScheduler
     //! Current task completion will not be blocked by this new task. 
     template <class T> std::shared_ptr<PackagedAsyncTask<T>> ExecuteAsyncWithoutAttachingToCurrentTask (const std::function<T ()>& taskCallback, AsyncTask::Priority priority = AsyncTask::Priority::Inherited)
         {
-        auto task = std::make_shared<PackagedAsyncTask<T>> (taskCallback);
-        task->SetStackInfo(1);
+        auto task = std::make_shared<PackagedAsyncTask<T>> (taskCallback, 1);
         Push (task, nullptr, priority);
         return task;
         }
@@ -66,8 +63,7 @@ struct ITaskScheduler
     //! Current task completion will not be blocked by this new task. 
     std::shared_ptr<PackagedAsyncTask<void>> ExecuteAsyncWithoutAttachingToCurrentTask (const std::function<void (void)>& taskCallback, AsyncTask::Priority priority = AsyncTask::Priority::Inherited)
         {
-        auto task = std::make_shared<PackagedAsyncTask<void>> (taskCallback);
-        task->SetStackInfo(1);
+        auto task = std::make_shared<PackagedAsyncTask<void>> (taskCallback, 1);
         Push (task, nullptr, priority);
         return task;
         }

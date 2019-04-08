@@ -1,0 +1,50 @@
+#----------------------------------------------------------------------
+#     $Source: StrategyPlatform/StrategyPlatform.mke $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------
+AppName = StrategyPlatform
+CCompPDBName = $(AppName)
+
+%include mdl.mki
+
+o = $(OutputRootDir)build/BuildingShared/StrategyPlatform/
+
+nameToDefine = __STRATEGYPLATFORM_BUILD__
+%include cdefapnd.mki
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)GeometricElementManipulator$(oext) : $(_MakeFilePath)GeometricElementManipulator.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicAPI/GeometricElementManipulator.h
+
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnView$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)GeometryManipulationStrategies$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnElementManipulationStrategies$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+
+%include $(sharedMki)linkLibrary.mki

@@ -1,0 +1,30 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Grids/gridsApi.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+
+#link Public header file to build context    
+
+$(BuildContext)PublicAPI/Grids/gridsApi.h : $(_MakeFilePath)PublicApi/gridsApi.h
+    $(LinkFirstDepToFirstTarget)
+
+    
+$(BuildContext)PublicAPI/Grids/Domain : $(_MakeFilePath)Domain/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/Grids/Elements : $(_MakeFilePath)Elements/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+    
+$(BuildContext)PublicAPI/Grids/Handlers : $(_MakeFilePath)Handlers/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+    
+$(BuildContext)PublicAPI/Grids/Strategies : $(_MakeFilePath)Strategies/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/Grids/ManipulatorExtensions : $(_MakeFilePath)ManipulatorExtensions/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)

@@ -1,0 +1,71 @@
+#----------------------------------------------------------------------
+#     $Source: DgnUtils/BuildingDgnUtils.mke $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------
+%include mdl.mki
+
+AppName = BuildingDgnUtils
+CCompPDBName = $(AppName)
+
+o = $(OutputRootDir)build/ConceptBuilding/BuildingDgnUtils/
+
+nameToDefine = __BUILDINGSHAREDDGNUTILS_BUILD__
+%include cdefapnd.mki
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+BuildingUtilsPublicApi = $(_MakeFilePath)PublicAPI/
+BuildingUtilsPrivateApi = $(_MakeFilePath)PrivateAPI/
+                            
+
+$(o)DgnGeometryUtils$(oext) : $(_MakeFilePath)DgnGeometryUtils.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/DgnGeometryUtils.h
+
+$(o)BuildingUtils$(oext) : $(_MakeFilePath)BuildingUtils.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/BuildingUtils.h
+
+$(o)GeometryDebug$(oext) : $(_MakeFilePath)GeometryDebug.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryDebug.h   
+
+$(o)ShortestPath$(oext) : $(_MakeFilePath)ShortestPath.cpp ${MultiCompileDepends} $(BuildingUtilsPublicApi)ShortestPath.h
+
+$(o)RegionsApiWrapper$(oext) : $(_MakeFilePath)RegionsApiWrapper.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/RegionsApiWrapper.h                                              
+
+$(o)ConflictSolver$(oext) : $(_MakeFilePath)ConflictSolver.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ConflictSolver.h
+
+$(o)RelationshipUtils$(oext) : $(_MakeFilePath)RelationshipUtils.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/RelationshipUtils.h
+
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)RoadRailPhysical$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUnits$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUtils$(libext)
+
+%include $(sharedMki)linkLibrary.mki
+

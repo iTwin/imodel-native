@@ -1,0 +1,46 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: BuildingSharedApi.prewire.mke $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%if defined (DGNV8_BUILD)
+    PolicyFile = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+%endif
+%include mdl.mki
+
+#link Public header file to build context    
+
+$(BuildContext)PublicAPI/BuildingShared/BuildingSharedMacros.h : $(_MakeFilePath)PublicAPI/BuildingShared/BuildingSharedMacros.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)PublicAPI/BuildingShared/BuildingSharedApi.h : $(_MakeFilePath)PublicAPI/BuildingShared/BuildingSharedApi.h
+    $(LinkFirstDepToFirstTarget)
+    
+$(BuildContext)PublicAPI/BuildingShared/Interfaces.h : $(_MakeFilePath)PublicAPI/BuildingShared/Interfaces.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)PublicAPI/BuildingShared/SharedRepositoryManagerTestBase.h : $(_MakeFilePath)TestUtils/SharedRepositoryManagerTest/SharedRepositoryManagerTestBase.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)PublicAPI/BuildingShared/Units : $(_MakeFilePath)Units/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/BuildingShared/Utils : $(_MakeFilePath)Utils/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/BuildingShared/GeometryManipulationStrategies : $(_MakeFilePath)GeometryManipulationStrategies/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/BuildingShared/DgnElementManipulationStrategies : $(_MakeFilePath)DgnElementManipulationStrategies/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/BuildingShared/DgnUtils : $(_MakeFilePath)DgnUtils/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/BuildingShared/DgnViewUtils : $(_MakeFilePath)DgnViewUtils/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+    
+$(BuildContext)PublicAPI/BuildingShared/StrategyPlatform : $(_MakeFilePath)StrategyPlatform/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)

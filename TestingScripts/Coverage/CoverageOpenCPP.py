@@ -769,9 +769,7 @@ def main():
     if args.component == None:
         comps = cmp.AllComps()
     else:
-        if 'LICENSING-GTESTUNIT' in str(args.component).upper(): #if product name is sent as component name (Special Case for licensing product)
-            args.component = str(args.component).upper().replace('-GTESTUNIT','')
-        elif '-GTEST' in str(args.component).upper(): #if product name is sent as component name
+        if '-GTEST' in str(args.component).upper(): #if product name is sent as component name
             args.component = str(args.component).upper().replace('-GTEST','')
         comps.append(args.component)
         print "Component Name: " + str(args.component)
