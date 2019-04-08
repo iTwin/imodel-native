@@ -6,8 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ClassificationSystems/ClassificationSystemsApi.h>
-#include <DgnClientFx/DgnClientApp.h>
-#include <BuildingShared\BuildingSharedApi.h>
+#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
 
 namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;

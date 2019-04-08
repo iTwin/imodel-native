@@ -12,7 +12,7 @@
 
 
 #include <ClassificationSystems/ClassificationSystemsApi.h>
-#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h> 
+#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
 
 namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
