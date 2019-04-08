@@ -1,0 +1,17 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: BimFromDgnDb/BimFromDgnDb.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+baseDir         = $(SrcRoot)DgnDbSync/
+
+BimFromDgnDbAPISrc = $(baseDir)PublicAPI/BimFromDgnDb
+
+# Wire in my own public header files.
+always:
+    ~linkdir "$(BuildContext)PublicAPI/BimFromDgnDb=$(BimFromDgnDbAPISrc)"
+

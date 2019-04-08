@@ -1,0 +1,133 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Dwg/Samples/XData/ImportXData.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+appName             = ImportXData
+baseDir             = $(_MakeFilePath)
+DgnDbSyncRootDir    = $(SrcRoot)DgnDbSync/
+DwgRootDir          = $(DgnDbSyncRootDir)Dwg/
+DwgPublicAPI        = $(DgnDbSyncRootDir)PublicAPI/Dwg/
+DwgVendorAPI        = $(BuildContext)VendorAPI/$(DWGTOOLKIT)$(VendorVersion)/
+DwgImporterDir      = $(BuildContext)Delivery/$(DWGTOOLKIT)$(VendorVersion)Importer/
+
+o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)$(VendorVersion)$(appName)/
+always:
+    ~mkdir $(o)
+
+ImportXDataDepends  = $(baseDir)ImportXData.h                   \
+                      $(DwgPublicAPI)DwgBridge.h                \
+                      $(DwgPublicAPI)DwgImporter.h              \
+                      $(DwgPublicAPI)DwgHelper.h
+
+### Pass $(DWGTOOLKIT) to compiler
+CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -I$(DwgVendorAPI)
+
+%if $(DWGTOOLKIT) == "OpenDwg"
+    DwgDbLibName    = OpenDwgDbExchange$(libext)
+    ToolkitLibs     = $(BuildContext)SubParts/teigha/Libs/
+
+%elif $(DWGTOOLKIT) == "RealDwg"
+    DwgDbLibName    = RealDwg$(VendorVersion)/RealDwgDbExchange$(libext)
+    ToolkitLibs     = $(BuildContext)SubParts/Libs/$(DWGTOOLKIT)$(VendorVersion)/
+
+    ## RealDWG appends a version suffix to its core lib names:
+    %if $(VendorVersion) == 2017
+        RealDwgSuffix = 21
+    %elif $(VendorVersion) == 2018
+        RealDwgSuffix = 22
+    %elif $(VendorVersion) == 2019
+        RealDwgSuffix = 23
+    %else
+        %error RealDwgSuffix not defined (a newer release of RealDWG?)!!
+    %endif
+
+%endif
+
+#----------------------------------------------------------------------
+#   Compile SampleAffinity
+#----------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)SampleAffinity.obj : $(baseDir)SampleAffinity.cpp $(ImportXDataDepends) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the DLL
+#----------------------------------------------------------------------
+LINKER_LIBRARIES    = $(DwgImporterDir)DwgImporter$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(DwgDbLibName)
+
+LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)Bentley$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnPlatform$(libext)
+%if $(DWGTOOLKIT) == "RealDwg"
+LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acdb$(RealDwgSuffix)$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acpal$(libext)
+%endif
+
+DLM_NAME            = SampleAffinity
+DLM_DEST            = $(o)
+DLM_OBJECT_DEST     = $(o)
+DLM_EXPORT_DEST     = $(o)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_NOINITFUNC      = 1
+DLM_NOENTRY         = 1
+DLM_NO_IMPLIB       = 1
+DLM_NO_CONTEXT_LINK = 1
+
+%include $(sharedMki)LinkLibrary.mki
+
+
+#----------------------------------------------------------------------
+#   Compile ImportXData
+#----------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)ImportXData.obj    : $(baseDir)ImportXData.cpp $(ImportXDataDepends) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link ImportXData.exe
+#----------------------------------------------------------------------
+EXE_DEST            = $(o)
+EXE_NAME            = $(appname)
+EXE_OBJS            = $(MultiCompileObjectList)
+EXE_LOPT1           = -entry:wmainCRTStartup
+EXE_TMP_DIR         = $(o)
+EXE_NO_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES    = $(DwgImporterDir)DwgImporter$(libext)
+LINKER_LIBRARIES    + $(DwgImporterDir)DwgBridge$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(DwgDbLibName)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeSQLite$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeSQLiteEC$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)Bentley$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)DgnPlatform$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeJsonCpp$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)ECObjects$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)iModelBridge$(libext)
+%if $(DWGTOOLKIT) == "RealDwg"
+LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acdb$(RealDwgSuffix)$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acpal$(libext)
+%endif
+
+%include $(sharedMki)linktool.mki
+
+# Symlink source to Delivery
+always:
+    ~linkdir "$(BuildContext)Delivery/Samples/XData=$(baseDir)"
+
+%if !defined(NDEBUG)
+# Symlink the dll & exe to RealDwgImporter for debugging purpose
+always:
+    ~linkfile "$(OutputRootDir)Product/RealDwgImporter/$(EXE_NAME)$(exeext)=$(EXE_DEST)$(EXE_NAME)$(exeext)"
+    ~linkfile "$(OutputRootDir)Product/RealDwgImporter/SampleAffinity$(shlibext)=$(DLM_DEST)SampleAffinity$(shlibext)"
+%endif

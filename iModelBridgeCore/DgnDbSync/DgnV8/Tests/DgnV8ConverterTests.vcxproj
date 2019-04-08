@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{436FC5D2-15F6-4143-ABA8-DC30639A8854}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <OutDir>$(OutRoot)\Winx64\build\DgnDbSync\DgnV8ConverterTests</OutDir>
+    <IntDir>$(OutRoot)\Winx64\build\DgnDbSync\DgnV8ConverterTests</IntDir>
+    <IntermediateOutputPath>$(OutRoot)\Winx64\build\DgnDbSync\DgnV8ConverterTests</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>$(OutRoot)\Winx64\build\DgnDbSync\</BaseIntermediateOutputPath>
+    <NMakeOutput>$(OutRoot)Winx64\product\DgnV8ConverterTests\DgnV8ConverterTests.exe</NMakeOutput>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnDbSync\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnDbSync\VendorAPI\;$(OutRoot)Winx64\build\UnitTests\DgnProject\BackDoorDgnProjectUnitTests\PublicAPI\;$(SrcRoot)DgnPlatform\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+    <Text Include="readme.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Admins.cpp" />
+    <ClCompile Include="BasicGeometryTests.cpp" />
+    <ClCompile Include="BeXmlCompareHelper.cpp" />
+    <ClCompile Include="ConverterAppTests.cpp" />
+    <ClCompile Include="ConverterAppTestsBaseFixture.cpp" />
+    <ClCompile Include="ConverterCommandBuilder.cpp" />
+    <ClCompile Include="ConverterTests.cpp" />
+    <ClCompile Include="ConverterTestsBaseFixture.cpp" />
+    <ClCompile Include="DataValidationTests.cpp" />
+    <ClCompile Include="DgnMaterial_Tests.cpp" />
+    <ClCompile Include="DimensionTests.cpp" />
+    <ClCompile Include="DrawingTests.cpp" />
+    <ClCompile Include="ECSchemaTests.cpp" />
+    <ClCompile Include="ECTests.cpp" />
+    <ClCompile Include="GeomTestHelper.cpp" />
+    <ClCompile Include="gtestmain.cpp" />
+    <ClCompile Include="ImportConfigEditor.cpp" />
+    <ClCompile Include="ImportConfigTests.cpp" />
+    <ClCompile Include="ItemTypeTests.cpp" />
+    <ClCompile Include="LevelTests.cpp" />
+    <ClCompile Include="ModelTests.cpp" />
+    <ClCompile Include="NamedGroupTests.cpp" />
+    <ClCompile Include="ProgressMeterTests.cpp" />
+    <ClCompile Include="RasterTests.cpp" />
+    <ClCompile Include="RulesetEmbedderTests.cpp" />
+    <ClCompile Include="SyncInfoReader.cpp" />
+    <ClCompile Include="TagTests.cpp" />
+    <ClCompile Include="TextBlockTests.cpp" />
+    <ClCompile Include="V8AttachmentTests.cpp" />
+    <ClCompile Include="V8FileEditor.cpp" />
+    <ClCompile Include="ViewTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\PublicAPI\DgnDbSync\DgnDbSync.h" />
+    <ClInclude Include="..\..\PublicAPI\DgnDbSync\DgnV8\Converter.h" />
+    <ClInclude Include="..\..\PublicAPI\DgnDbSync\DgnV8\DgnV8.h" />
+    <ClInclude Include="..\..\PublicAPI\DgnDbSync\DgnV8\DgnV8Font.h" />
+    <ClInclude Include="..\..\PublicAPI\DgnDbSync\DgnV8\SyncInfo.h" />
+    <ClInclude Include="..\ConverterInternal.h" />
+    <ClInclude Include="BeXmlCompareHelper.h" />
+    <ClInclude Include="ConverterAppTestsBaseFixture.h" />
+    <ClInclude Include="ConverterCommandBuilder.h" />
+    <ClInclude Include="ConverterTestsBaseFixture.h" />
+    <ClInclude Include="GenericTestBaseFixture.h" />
+    <ClInclude Include="GeomTestHelper.h" />
+    <ClInclude Include="ImportConfigEditor.h" />
+    <ClInclude Include="Tests.h" />
+    <ClInclude Include="V8FileEditor.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="logging.config.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Run.mke" />
+    <None Include="Tests.mke" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,19 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: Bimv8SyncVendorAPI.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+baseDir         = $(_MakeFilePath)
+
+# deliver a subset of the VendorAPIs.
+always:
+    ~linkdir "$(BuildContext)PublicAPI/json=$(BuildContext)VendorAPI/json"
+    ~linkdir "$(BuildContext)PublicAPI/rapidjson=$(BuildContext)VendorAPI/rapidjson"
+    ~linkdir "$(BuildContext)PublicAPI/libxml=$(BuildContext)VendorAPI/libxml"
+    ~linkdir "$(BuildContext)PublicAPI/csmap=$(BuildContext)VendorAPI/csmap"
+    ~linkdir "$(BuildContext)PublicAPI/zlib=$(BuildContext)VendorAPI/zlib"
+    ~linkdir "$(BuildContext)PublicAPI/folly=$(BuildContext)VendorAPI/folly"
