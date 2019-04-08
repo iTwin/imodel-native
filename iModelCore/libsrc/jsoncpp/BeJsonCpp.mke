@@ -1,0 +1,85 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: BeJsonCpp.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+# Export/make visible all functions in JsonCpp
+GCC_DEFAULT_VISIBILITY=default
+
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
+
+# We have had issues in firebug where the PDB produced here sometimes does not match the LIB.
+# Instead of sinking more time into determining why the PDB is bad, link symbol information directly into the LIB as, effectively, a workaround.
+# This must be defined /before/ including mdl.mki.
+DEBUG_INFO_IN_OBJ = 1
+
+%include mdl.mki
+
+baseDir             = $(_MakeFilePath)
+JsonCppSrc          = $(baseDir)src/lib_json/
+JsonCppInclude      = $(baseDir)include/json/
+BeJsonCppSrc        = $(baseDir)
+BeJsonCppInclude    = $(baseDir)PublicAPI/BeJsonCpp/
+appName             = BeJsonCpp
+o                   = $(OutputRootDir)build/$(appName)/
+
+always:
+    !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+# The JsonCpp API is defined in the json/* headers
+#--------------------------------------------------------------------------------------
+always:
+    ~linkdir "$(BuildContext)PublicAPI/json=$(baseDir)include/json"
+    ~linkdir "$(BuildContext)PublicAPI/BeJsonCpp=${BeJsonCppInclude}"
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+JsonCppDepends              = $(_MakeFileSpec)            \
+                              $(JsonCppInclude)config.h   \
+                              $(JsonCppInclude)forwards.h \
+                              $(JsonCppInclude)json.h     \
+                              $(JsonCppInclude)value.h    \
+                              $(JsonCppInclude)writer.h   \
+                              $(JsonCppSrc)json_tool.h
+
+$(o)json_reader$(oext)      : $(JsonCppSrc)json_reader.cpp $(JsonCppDepends)
+
+$(o)json_value$(oext)       : $(JsonCppSrc)json_value.cpp $(JsonCppDepends)
+
+$(o)json_writer$(oext)      : $(JsonCppSrc)json_writer.cpp $(JsonCppDepends)
+
+$(o)BeJsonUtilities$(oext)  : $(BeJsonCppSrc)BeJsonUtilities.cpp $(JsonCppDepends) $(BeJsonCppInclude)BeJsonUtilities.h
+
+#--------------------------------------------------------------------------------------
+#   Objs
+#--------------------------------------------------------------------------------------
+BeJsonCppObjs               = $(o)json_reader$(oext)    \
+                              $(o)json_value$(oext)     \
+                              $(o)json_writer$(oext)    \
+                              $(o)BeJsonUtilities$(oext)
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(BeJsonCppObjs)
+DLM_EXPORT_OBJS             = $(BeJsonCppObjs)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_BENTLEY_LIB          = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+CREATE_STATIC_LIBRARIES     = 1
+
+%include $(sharedMki)linkLibrary.mki
+
+$(BuildContext)Delivery/jsoncpp-license.txt : $(_MakeFilePath)LICENSE
+    $(LinkFirstDepToFirstTarget)
