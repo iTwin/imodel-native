@@ -1,0 +1,17 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: BuildingCompileOptions.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+appName                         = BuildingDomain
+o                               = $(OutputRootDir)build/$(appName)/
+CCompPDBName                    = $(appName)
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+
+nameToDefine = __BUILDING_DOMAIN_BUILD__
+%include cdefapnd.mki
+

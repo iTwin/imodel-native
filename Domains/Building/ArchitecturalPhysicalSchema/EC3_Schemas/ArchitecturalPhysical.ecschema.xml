@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="ArchitecturalPhysical" alias="ArchPhys" version="01.00.00" description="Architectural Physical Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <!--ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/-->
+    <ECSchemaReference name="AecUnits" version="01.00.00" alias="AECU"/>
+
+    <ECEntityClass typeName="Casework">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="CurtainWall" displayLabel="Curtain Wall">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="Door">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="OverallHeight"        typeName="double"   description="Overall Height of the Door"                        displayLabel="Overall Height"       kindOfQuantity="AECU:LENGTH_SHORT"/>
+        <ECProperty propertyName="OverallWidth"         typeName="double"   description="Overal1 Width of the Door"                         displayLabel="Overall Width"        kindOfQuantity="AECU:LENGTH_SHORT"/>
+        <ECProperty propertyName="Description"          typeName="string"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="DoorType" description="Door Physical Type" displayLabel="Door Type">
+        <BaseClass>bis:PhysicalType</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Floor">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Furniture">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+ 
+    <ECEntityClass typeName="Railing">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Ramp" description="A slopping element that transistions between two elevations">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+ 
+    <ECEntityClass typeName="Roof">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Stair">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="TransportationMechanism" displayLabel="Transportation Mechanism">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="Wall" description="Wall">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>bis:IParentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Height"               typeName="double"   description="Height of the wall"                        displayLabel="Height"               kindOfQuantity="AECU:LENGTH"/>
+        <ECProperty propertyName="Width"                typeName="double"   description="Width (thickness) of the wall"             displayLabel="Width"                kindOfQuantity="AECU:LENGTH_SHORT"/>
+        <ECProperty propertyName="GrossVolume"          typeName="double"   description="Gross Volume at the of the wall"           displayLabel="Gross Volume"         kindOfQuantity="AECU:VOLUME"/>
+        <ECProperty propertyName="NetVolume"            typeName="double"   description="Net Volume at the of the wall"             displayLabel="Net Volume"           kindOfQuantity="AECU:VOLUME"/>
+        <ECProperty propertyName="GrossSideArea"        typeName="double"   description="Gross Area at the center of the wall"      displayLabel="Gross Side Area"      kindOfQuantity="AECU:AREA"/>
+        <ECProperty propertyName="Length"               typeName="double"   description="length along the centerline of the wall"   displayLabel="Length"               kindOfQuantity="AECU:LENGTH"/>
+        <ECProperty propertyName="NetSideArea"          typeName="double"   description="Net Area at the center of the wall"        displayLabel="Net Side Area"        kindOfQuantity="AECU:AREA"/>
+        <ECProperty propertyName="GrossFootprintArea"   typeName="double"   description="Net Area at the center of the wall"        displayLabel="Gross Footprint Area" kindOfQuantity="AECU:AREA"/>
+        <ECProperty propertyName="NetFootprintArea"     typeName="double"   description="Net Area at the center of the wall"        displayLabel="Net Footprint Area"   kindOfQuantity="AECU:AREA"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="WallLeaf" description="Wall" displayLabel="Wall Leaf">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Height"               typeName="double"   description="Height of the wall layer"                        displayLabel="Height"             kindOfQuantity="AECU:LENGTH"/>
+        <ECProperty propertyName="Length"               typeName="double"   description="length along the centerline of the wall layer"   displayLabel="Length"             kindOfQuantity="AECU:LENGTH"/>
+        <ECProperty propertyName="Width"                typeName="double"   description="Width (thickness) of the wall layer"             displayLabel="Width"              kindOfQuantity="AECU:LENGTH_SHORT"/>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="WallOwnsWallLeafs" displayLabel="Wall Owns Wall Leafs" modifier="None" strength="embedding">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel ="Wall leaf related to" polymorphic="true">
+            <Class class="Wall"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel ="Wall leaf owned by" polymorphic="true">
+            <Class class="WallLeaf"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="WallType" description="Physical wall type" displayLabel="Wall Type">
+        <BaseClass>bis:PhysicalType</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Window" description="Window">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="OverallHeight"        typeName="double"   description="Overall Height of the Window"                      displayLabel="Overall Height"       kindOfQuantity="AECU:LENGTH_SHORT"/>
+        <ECProperty propertyName="OverallWidth"         typeName="double"   description="Overal1 Width of the Window"                       displayLabel="Overall Width"        kindOfQuantity="AECU:LENGTH_SHORT"/>
+        <ECProperty propertyName="Description"          typeName="string"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="WindowType" displayLabel="Window Type">
+        <BaseClass>bis:PhysicalType</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+</ECSchema>
