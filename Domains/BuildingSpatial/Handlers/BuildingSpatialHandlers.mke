@@ -1,0 +1,60 @@
+#----------------------------------------------------------------------
+#     $Source: Handlers/BuildingSpatialHandlers.mke $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------
+AppName = BuildingSpatialHandlers
+CCompPDBName = $(AppName)
+
+%include mdl.mki
+# not merged to imodel02: %include $(SrcRoot)DgnDomains/BuildingSpacePlanning/publicmki/BuildingSpacePlanning.mki
+
+BuildingSpatialHandlersSrc = $(SrcRoot)DgnDomains/BuildingSpatial/Handlers/
+o = $(OutputRootDir)build/BuildingSpatial/Handlers/
+
+
+nameToDefine = __BUILDINGSPATIALHANDLERS_BUILD__
+%include cdefapnd.mki
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)BuildingHandler$(oext) : $(_MakeFilePath)BuildingHandler.cpp ${MultiCompileDepends} $(BuildingSpatialHandlersSrc)PublicApi/BuildingHandler.h # not merged to imodel02 - $(BuildingElementsPublicApi)Building.h
+
+$(o)SpaceHandler$(oext) : $(_MakeFilePath)SpaceHandler.cpp ${MultiCompileDepends} $(BuildingSpatialHandlersSrc)PublicApi/SpaceHandler.h # not merged to imodel02 - $(BuildingElementsPublicApi)Space.h  
+
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUnits$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUtils$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingDgnUtils$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)SpatialCompositionElements$(libext)
+
+
+%include $(sharedMki)linkLibrary.mki
+
