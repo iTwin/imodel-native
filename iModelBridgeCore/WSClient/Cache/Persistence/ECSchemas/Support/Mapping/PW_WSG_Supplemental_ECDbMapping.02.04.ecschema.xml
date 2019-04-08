@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="PW_WSG_Supplemental_ECDbMapping" nameSpacePrefix="pwwsg_ecdbmapping" version="02.04" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca" />
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
+    <ECCustomAttributes>
+        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <PrimarySchemaName>PW_WSG</PrimarySchemaName>
+            <PrimarySchemaMajorVersion>2</PrimarySchemaMajorVersion>
+            <PrimarySchemaMinorVersion>4</PrimarySchemaMinorVersion>
+            <Precedence>10</Precedence>
+            <Purpose>ECDbMapping</Purpose>
+            <IsUserSpecific>False</IsUserSpecific>
+        </SupplementalSchemaMetaData>
+    </ECCustomAttributes>
+
+    <ECClass typeName="PWObject">
+        <ECCustomAttributes>
+            <!-- BIM02 ECDb requires one table for relationship end -->
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="Environment">
+        <ECCustomAttributes>
+            <!-- BIM02 ECDb requires one table for relationship end -->
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="ProjectType">
+        <ECCustomAttributes>
+            <!-- BIM02 ECDb requires one table for relationship end -->
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="Interface">
+        <ECCustomAttributes>
+            <!-- BIM02 ECDb requires one table for relationship end -->
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="AttributeDefinition">
+        <ECCustomAttributes>
+            <!-- BIM02 ECDb requires one table for relationship end -->
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
