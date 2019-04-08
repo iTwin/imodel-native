@@ -616,6 +616,7 @@ Dgn::ElementIterator BuildingElementsUtils::MakeIterator
 //---------------------------------------------------------------------------------------
 void BuildingElement_notifyFail(Utf8CP pOperation, Dgn::DgnElement& elm, Dgn::DgnDbStatus* stat)
     {
+#ifdef NO_NOTIFICATION_MANAGER_IMODEL02
     if (stat)
         {
         if (*stat == Dgn::DgnDbStatus::LockNotHeld)
@@ -631,6 +632,7 @@ void BuildingElement_notifyFail(Utf8CP pOperation, Dgn::DgnElement& elm, Dgn::Dg
             Dgn::NotificationManager::OutputMessage(nmd);
             }
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -643,6 +645,7 @@ BeSQLite::DbOpcode op,
 Dgn::IBriefcaseManager::Response* pResponse
 )
     {
+#ifdef NO_NOTIFICATION_MANAGER_IMODEL02
     Dgn::RepositoryStatus status = pResponse ? pResponse->Result () : Dgn::RepositoryStatus::Success;
     Utf8String statusString;
     Utf8String additionalInfo = "";
@@ -712,6 +715,7 @@ Dgn::IBriefcaseManager::Response* pResponse
     Utf8String notify = Utf8PrintfString ("Error> acquire lock Failed on Element:%I64u, (Label:\"%s\"), due to \"%s\"", el.GetElementId ().GetValue(), el.GetUserLabel (), statusString.c_str()).append(additionalInfo);
     Dgn::NotifyMessageDetails nmd (Dgn::OutputMessagePriority::Error, notify.c_str ());
     Dgn::NotificationManager::OutputMessage (nmd);
+#endif
     }
 
     

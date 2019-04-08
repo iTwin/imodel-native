@@ -210,14 +210,14 @@ DgnDbStatus ArbitraryCompositeProfile::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ArbitraryCompositeProfile::_CopyFrom (DgnElement const& source)
+void ArbitraryCompositeProfile::_CopyFrom (DgnElement const& source, CopyFromOptions const& opts)
     {
     if (typeid (source) == typeid (ArbitraryCompositeProfile))
         m_components = static_cast<ArbitraryCompositeProfile const&> (source).m_components;
     else
         ProfilesLog::FailedCopyFrom_InvalidElement (PRF_CLASS_ArbitraryCompositeProfile, m_elementId, source.GetElementId());
 
-    return T_Super::_CopyFrom (source);
+    return T_Super::_CopyFrom (source, opts);
     }
 
 /*---------------------------------------------------------------------------------**//**

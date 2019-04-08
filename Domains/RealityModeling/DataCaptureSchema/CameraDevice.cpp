@@ -395,9 +395,9 @@ Dgn::DgnDbStatus CameraDeviceModel::_OnDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraDeviceModel::_CopyFrom(DgnElementCR el)
+void CameraDeviceModel::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
     auto other = dynamic_cast<CameraDeviceModelCP>(&el);
     BeAssert(nullptr != other);
     if (nullptr == other)
@@ -817,9 +817,9 @@ Dgn::DgnDbStatus CameraDevice::_OnDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraDevice::_CopyFrom(DgnElementCR el)
+void CameraDevice::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
     auto other = dynamic_cast<CameraDeviceCP>(&el);
     BeAssert(nullptr != other);
     if (nullptr == other)

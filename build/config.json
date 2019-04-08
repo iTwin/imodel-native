@@ -52,6 +52,15 @@
             "depends" : [
                 "iModelBridgeCore"
             ]
+        },
+        {
+            "name": "BuildingDomain",
+            "archs": "x64",
+            "prg_id": "2246",
+            "version_seed": "2.1.0",
+            "depends" : [
+                "iModelBridgeCore"
+            ]
         }
     ],
 

@@ -161,9 +161,9 @@ void GimbalAngleRange::_OnDeleted() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Chantal.Poulin                     03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GimbalAngleRange::_CopyFrom(DgnElementCR el)
+void GimbalAngleRange::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
     auto other = dynamic_cast<GimbalAngleRangeCP>(&el);
     BeAssert(nullptr != other);
     if (nullptr == other)

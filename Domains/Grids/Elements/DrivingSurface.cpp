@@ -190,9 +190,9 @@ BentleyStatus   DrivingSurface::TryGetLength(double& length) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            DrivingSurface::_CopyFrom(Dgn::DgnElementCR source)
+void            DrivingSurface::_CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(source);
+    T_Super::_CopyFrom(source, opts);
     }
 
 END_GRIDS_NAMESPACE

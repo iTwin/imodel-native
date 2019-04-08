@@ -132,7 +132,7 @@ protected:
     PLANNING_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
 
     //! @see DgnElement::_CopyFrom()
-    PLANNING_EXPORT void _CopyFrom(Dgn::DgnElementCR source) override;
+    PLANNING_EXPORT void _CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const& opts) override;
 
 public:
     //! Create a new plan

@@ -22,7 +22,7 @@ protected:
     explicit GRIDELEMENTS_EXPORT GridSpline (CreateParams const& params, ICurvePrimitivePtr curve);
     friend struct GridSplineHandler;
 
-    virtual GRIDELEMENTS_EXPORT void                _CopyFrom (Dgn::DgnElementCR source) override;
+    virtual GRIDELEMENTS_EXPORT void                _CopyFrom (Dgn::DgnElementCR source, CopyFromOptions const& opts) override;
 
     virtual bool            _ValidateGeometry(ICurvePrimitivePtr curve) const override;
 public:

@@ -12,7 +12,7 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               06/2018
 //=======================================================================================
-struct GridCurveBundle : Dgn::DriverBundleElement, Dgn::IDependencyGraphNode
+struct GridCurveBundle : Dgn::DriverBundleElement
     {
     DGNELEMENT_DECLARE_MEMBERS(GRIDS_CLASS_GridCurveBundle, Dgn::DriverBundleElement)
 
@@ -29,8 +29,8 @@ struct GridCurveBundle : Dgn::DriverBundleElement, Dgn::IDependencyGraphNode
         explicit GridCurveBundle(CreateParams params) : T_Super(params) {}
 
         //Dgn::IDependencyGraphNode
-        GRIDELEMENTS_EXPORT virtual void _OnAllInputsHandled() override;
-        GRIDELEMENTS_EXPORT virtual void _OnBeforeOutputsHandled() override;
+        GRIDELEMENTS_EXPORT virtual void _OnAllInputsHandled(Dgn::ElementDependency::Graph const& graph, Dgn::ElementDependency::Edge const& edge) const override;
+        GRIDELEMENTS_EXPORT virtual void _OnBeforeOutputsHandled(Dgn::ElementDependency::Graph const& graph, Dgn::ElementDependency::Edge const& edge) const override;
 
         GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
 

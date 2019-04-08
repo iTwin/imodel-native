@@ -47,9 +47,9 @@ ICurvePrimitivePtr  curve
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            GridSpline::_CopyFrom(Dgn::DgnElementCR source)
+void            GridSpline::_CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(source);
+    T_Super::_CopyFrom(source, opts);
     }
 
 //---------------------------------------------------------------------------------------

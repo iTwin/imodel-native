@@ -21,7 +21,7 @@
           BentleyBuildMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedAPI +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
         <SubPart PartName="ECPresentation-Library"/>
         <SubPart PartName="ECPresentation-PublicAPI"/>
-        <SubPart PartName="PresentationRulesSchema" PartFile="BisSchemas" Repository="BisSchemas"/>
+        <SubPart PartName="PresentationRulesSchema" PartFile="BisSchemasIModelCore" Repository="BisSchemas"/>
         <Bindings>
             <Directory SourceName="Delivery/PublishedAPI" SubPartDirectory="PublishedAPI/ECPresentation" />
         </Bindings>

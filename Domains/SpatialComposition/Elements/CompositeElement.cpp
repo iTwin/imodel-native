@@ -137,9 +137,9 @@ Dgn::DgnDbStatus CompositeElement::_LoadFromDb ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Joana.Smitaite                   01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CompositeElement::_CopyFrom(Dgn::DgnElementCR source)
+void CompositeElement::_CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(source);
+    T_Super::_CopyFrom(source, opts);
 
     if (auto spatialElement = dynamic_cast<CompositeElementCP>(&source))
         {

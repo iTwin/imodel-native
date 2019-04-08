@@ -55,7 +55,7 @@ private:
     virtual bool _CreateGeometry() override;
     virtual IGeometryPtr _CreateShapeGeometry() const override;
 
-    virtual void _CopyFrom (Dgn::DgnElement const& source) override;
+    virtual void _CopyFrom (Dgn::DgnElement const& source, CopyFromOptions const& opts) override;
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (ArbitraryCenterLineProfile)

@@ -39,7 +39,7 @@ protected:
     //! @note Implementers should be aware that your element starts in a valid state. Be careful to free existing state before overwriting it. Also note that
     //! @a source is not necessarily the same type as this DgnElement. See notes at CopyFrom.
     //! @note If you hold any IDs, you must also override _RemapIds. Also see _AdjustPlacementForImport
-    virtual void _CopyFrom(Dgn::DgnElementCR source) override;
+    virtual void _CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const& opts) override;
 
     //! Called to bind the parameters when inserting a new Shot into the DgnDb. Override to save subclass properties.
     //! @note If you override this method, you should bind your subclass properties

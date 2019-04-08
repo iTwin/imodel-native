@@ -9,7 +9,7 @@
 
 BEGIN_GRIDS_NAMESPACE
 
-struct GridDrivesGridSurfaceHandler : Dgn::DgnElementDependencyHandler
+struct GridDrivesGridSurfaceHandler : Dgn::ElementDependency::Handler
 {
 private: 
     DOMAINHANDLER_DECLARE_MEMBERS (GRIDS_REL_GridDrivesGridSurface, GridDrivesGridSurfaceHandler, Dgn::DgnDomain::Handler, GRIDELEMENTS_EXPORT)
@@ -20,8 +20,8 @@ private:
     static ECN::ECRelationshipClassCR GetECClass(Dgn::DgnDbR db);
 
 protected:
-    void _OnRootChanged (Dgn::DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
-    void _ProcessDeletedDependency (Dgn::DgnDbR db, Dgn::dgn_TxnTable::ElementDep::DepRelData const& relData) override;
+    void _OnRootChanged (Dgn::ElementDependency::Graph const& graph, Dgn::ElementDependency::Edge const& edge) override;
+    void _OnDeletedDependency (Dgn::ElementDependency::Graph const& graph, Dgn::ElementDependency::Edge const& edge) override;
 
 public:
     //! Inserts relationship between grid surfaces and created grid curve

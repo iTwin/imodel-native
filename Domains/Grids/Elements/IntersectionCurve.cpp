@@ -187,9 +187,9 @@ ICurvePrimitivePtr                  IntersectionCurve::GetCurve
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IntersectionCurve::_CopyFrom(Dgn::DgnElementCR source)
+void            IntersectionCurve::_CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(source);
+    T_Super::_CopyFrom(source, opts);
     }
 
 END_GRIDS_NAMESPACE

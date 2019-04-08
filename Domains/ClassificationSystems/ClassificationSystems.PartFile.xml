@@ -30,7 +30,7 @@
     </ProductDirectoryList>
 
     <Part Name="ClassificationSystemsSchema">
-      <SubPart PartName="ClassificationSystems" Repository="BisSchemas" PartFile="BisSchemas"/>
+      <SubPart PartName="ClassificationSystems" Repository="BisSchemas" PartFile="BisSchemasIModelCore"/>
     </Part>
 
     <Part Name="ClassificationSystemsApi" BentleyBuildMakeFile="ClassificationSystemsAPI.prewire.mke">

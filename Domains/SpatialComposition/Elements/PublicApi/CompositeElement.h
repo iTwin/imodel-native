@@ -15,7 +15,7 @@ struct CompositeElement : Dgn::SpatialLocationElement
 
         virtual SPATIALCOMPOSITION_EXPORT void CalculateProperties ();
         virtual SPATIALCOMPOSITION_EXPORT Dgn::DgnDbStatus _LoadFromDb ();
-        virtual SPATIALCOMPOSITION_EXPORT void _CopyFrom (Dgn::DgnElementCR source) override;
+        virtual SPATIALCOMPOSITION_EXPORT void _CopyFrom (Dgn::DgnElementCR source, CopyFromOptions const& opts) override;
         virtual SPATIALCOMPOSITION_EXPORT Dgn::DgnDbStatus _OnInsert () override;
         virtual SPATIALCOMPOSITION_EXPORT Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElementCR original) override;
         virtual SPATIALCOMPOSITION_EXPORT Dgn::DgnDbStatus _OnDelete() const override;

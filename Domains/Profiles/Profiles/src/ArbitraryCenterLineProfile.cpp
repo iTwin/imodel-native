@@ -227,7 +227,7 @@ IGeometryPtr ArbitraryCenterLineProfile::_CreateShapeGeometry() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ArbitraryCenterLineProfile::_CopyFrom (Dgn::DgnElement const & source)
+void ArbitraryCenterLineProfile::_CopyFrom (Dgn::DgnElement const & source, CopyFromOptions const& opts)
     {
     ArbitraryCenterLineProfileCP asProfile = dynamic_cast<ArbitraryCenterLineProfileCP>(&source);
     if (nullptr == asProfile)
@@ -238,7 +238,7 @@ void ArbitraryCenterLineProfile::_CopyFrom (Dgn::DgnElement const & source)
     m_arcAngle = asProfile->m_arcAngle;
     m_chamferAngle = asProfile->m_chamferAngle;
 
-    return T_Super::_CopyFrom (source);
+    return T_Super::_CopyFrom (source, opts);
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

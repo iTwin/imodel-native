@@ -131,7 +131,7 @@ protected:
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override; //!< @private
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _UpdateInDb() override; //!< @private
     PROFILES_EXPORT virtual void _OnUpdateFinished() const override; //!< @private
-    PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override; //!< @private
+    PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source, CopyFromOptions const& opts) override; //!< @private
 
 public:
     Dgn::DgnDbStatus UpdateGeometry (Profile const& relatedProfile); //!< @private

@@ -30,23 +30,23 @@ HANDLER_DEFINE_MEMBERS(GridDrivesGridSurfaceHandler)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GridDrivesGridSurfaceHandler::_OnRootChanged
 (
-Dgn::DgnDbR db,
-BeSQLite::EC::ECInstanceId relationshipId,
-Dgn::DgnElementId source,
-Dgn::DgnElementId target
+ElementDependency::Graph const& graph,
+ElementDependency::Edge const& edge
 )
     {
+#ifdef ELEM_DEP_REFACTOR_IMODEL02
     GridSurfacePtr thisSurface = db.Elements ().GetForEdit<GridSurface> (target);
 
     if (thisSurface.IsNull())
         db.Txns().ReportError(*new TxnManager::ValidationError(TxnManager::ValidationError::Severity::Fatal, "target surface is NULL"));
     thisSurface->Update();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GridDrivesGridSurfaceHandler::_ProcessDeletedDependency(Dgn::DgnDbR db, Dgn::dgn_TxnTable::ElementDep::DepRelData const& relData)
+void GridDrivesGridSurfaceHandler::_OnDeletedDependency (ElementDependency::Graph const& graph, ElementDependency::Edge const& edge)
     {
 
     }

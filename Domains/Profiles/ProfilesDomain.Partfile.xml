@@ -41,7 +41,7 @@
     </Part>
 
     <Part Name="ProfilesPublicAPI" BentleyBuildMakeFile="Profiles/ProfilesDomainDll.prewire.mke" ApiNumber="M02">
-        <SubPart PartName="ProfilesSchema" PartFile="BisSchemas" Repository="BisSchemas" />
+        <SubPart PartName="ProfilesSchema" PartFile="BisSchemasIModelCore" Repository="BisSchemas" />
         <SubPart PartName="AecUnitsPublicAPI" Repository="imodel02" PartFile="Domains/AecUnits/AecUnits" />
         <Bindings>
             <PublicAPI Domain="Profiles" />

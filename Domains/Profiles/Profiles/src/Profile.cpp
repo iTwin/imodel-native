@@ -113,14 +113,14 @@ DgnDbStatus Profile::_UpdateInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Profile::_CopyFrom (DgnElement const& source)
+void Profile::_CopyFrom (DgnElement const& source, CopyFromOptions const& opts)
     {
     if (auto const* pSourceProfile = dynamic_cast<Profile const*> (&source))
         m_geometryUpdated = pSourceProfile->m_geometryUpdated;
     else
         ProfilesLog::FailedCopyFrom_InvalidElement (PRF_CLASS_Profile, m_elementId, source.GetElementId());
 
-    return T_Super::_CopyFrom (source);
+    return T_Super::_CopyFrom (source, opts);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -215,15 +215,20 @@ void GridCurveBundle::UpdateGridCurve()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                06/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void GridCurveBundle::_OnAllInputsHandled()
+void GridCurveBundle::_OnAllInputsHandled(Dgn::ElementDependency::Graph const& graph, Dgn::ElementDependency::Edge const& edge) const
     {
+#ifdef ELEM_DEP_REFACTOR_IMODEL02
+// const vs. non-const this
     UpdateGridCurve();
+#endif
     }
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                06/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void GridCurveBundle::_OnBeforeOutputsHandled()
+void GridCurveBundle::_OnBeforeOutputsHandled(Dgn::ElementDependency::Graph const& graph, Dgn::ElementDependency::Edge const& edge) const
     {
+#ifdef ELEM_DEP_REFACTOR_IMODEL02
+// const vs. non-const this
     UpdateGridCurve();
+#endif
     }

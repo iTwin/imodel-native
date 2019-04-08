@@ -12,16 +12,16 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               06/2018
 //=======================================================================================
-struct GridSurfaceDrivesGridCurveBundleHandler : Dgn::DgnElementDependencyHandler
+struct GridSurfaceDrivesGridCurveBundleHandler : Dgn::ElementDependency::Handler
     {
-    DOMAINHANDLER_DECLARE_MEMBERS(GRIDS_REL_GridSurfaceDrivesGridCurveBundle, GridSurfaceDrivesGridCurveBundleHandler, Dgn::DgnElementDependencyHandler, GRIDELEMENTS_EXPORT)
+    DOMAINHANDLER_DECLARE_MEMBERS(GRIDS_REL_GridSurfaceDrivesGridCurveBundle, GridSurfaceDrivesGridCurveBundleHandler, Dgn::ElementDependency::Handler, GRIDELEMENTS_EXPORT)
 
     private:
         static ECN::ECRelationshipClassCR GetECClass(Dgn::DgnDbCR db);
 
     protected:
-        virtual void _OnRootChanged(Dgn::DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
-        virtual void _ProcessDeletedDependency(Dgn::DgnDbR db, Dgn::dgn_TxnTable::ElementDep::DepRelData const& relData) override;
+        virtual void _OnRootChanged(Dgn::ElementDependency::Graph const& graph, Dgn::ElementDependency::Edge const& edge) override;
+        virtual void _OnDeletedDependency(Dgn::ElementDependency::Graph const& graph, Dgn::ElementDependency::Edge const& edge) override;
 
     public:
         static BeSQLite::EC::ECInstanceKey Insert(Dgn::DgnDbR db, GridSurfaceCR source, GridCurveBundleCR target);

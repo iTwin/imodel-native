@@ -23,7 +23,7 @@ protected:
     explicit GRIDELEMENTS_EXPORT DrivingSurface (CreateParams const& params, ISolidPrimitivePtr surface);
     friend struct DrivingSurfaceHandler;
 
-    virtual GRIDELEMENTS_EXPORT void                _CopyFrom (Dgn::DgnElementCR source) override;
+    virtual GRIDELEMENTS_EXPORT void                _CopyFrom (Dgn::DgnElementCR source, CopyFromOptions const& opts) override;
     static  GRIDELEMENTS_EXPORT Dgn::GeometricElement3d::CreateParams        CreateParamsFromModel (Dgn::DgnModelCR model, Dgn::DgnClassId classId);
 
 public:

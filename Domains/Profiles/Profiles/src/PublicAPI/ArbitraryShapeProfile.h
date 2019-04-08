@@ -50,7 +50,7 @@ protected:
     virtual bool _Validate() const override;
 
     //! @private
-    PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override;
+    PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source, CopyFromOptions const& opts) override;
 
 private:
     virtual IGeometryPtr _CreateShapeGeometry() const override;

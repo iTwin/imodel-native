@@ -108,9 +108,9 @@ Dgn::DgnDbStatus GridCurve::_OnUpdate(Dgn::DgnElementCR original)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            GridCurve::_CopyFrom(Dgn::DgnElementCR source)
+void            GridCurve::_CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(source);
+    T_Super::_CopyFrom(source, opts);
     }
 
 //--------------------------------------------------------------------------------------

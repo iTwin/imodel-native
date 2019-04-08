@@ -91,7 +91,7 @@ protected:
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _InsertInDb() override; //!< @private
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override; //!< @private
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _LoadFromDb() override; //!< @private
-    PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override; //!< @private
+    PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source, CopyFromOptions const& opts) override; //!< @private
 
 private:
     bool ValidateComponent (ArbitraryCompositeProfileComponent const& component, int componentIndex) const;

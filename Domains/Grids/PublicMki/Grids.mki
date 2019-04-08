@@ -16,22 +16,22 @@ __GridsMKI__  = 1
 #   Define paths to Grids directories
 #============================================================================
 %if !defined (GridsPublicApi)
-    GridsPublicApi                  = $(SrcRoot)imodel02/Domains/Grids/Grids/Domain/PublicApi/
+    GridsPublicApi                  = $(SrcRoot)imodel02/Domains/Grids/Domain/PublicApi/
 %endif
 
 %if !defined (GridsDomainPublicApi)
-    GridsDomainPublicApi            = $(SrcRoot)imodel02/Domains/Grids/Grids/Domain/PublicApi/
+    GridsDomainPublicApi            = $(SrcRoot)imodel02/Domains/Grids/Domain/PublicApi/
 %endif
 
 %if !defined (GridElementsPublicApi)
-    GridElementsPublicApi           = $(SrcRoot)imodel02/Domains/Grids/Grids/Elements/PublicApi/
+    GridElementsPublicApi           = $(SrcRoot)imodel02/Domains/Grids/Elements/PublicApi/
 %endif
 
 %if !defined (GridHandlersPublicApi)
-    GridHandlersPublicApi           = $(SrcRoot)imodel02/Domains/Grids/Grids/Handlers/PublicApi/
+    GridHandlersPublicApi           = $(SrcRoot)imodel02/Domains/Grids/Handlers/PublicApi/
 %endif
 
 %if !defined (GridStrategiesPublicApi)
-    GridStrategiesPublicApi           = $(SrcRoot)imodel02/Domains/Grids/Grids/Strategies/PublicApi/
+    GridStrategiesPublicApi           = $(SrcRoot)imodel02/Domains/Grids/Strategies/PublicApi/
 %endif
 

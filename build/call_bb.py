@@ -244,7 +244,6 @@ def main():
         config['strategies'] = [{
             "name": args.strat,
             "archs": args.arch,
-            "version_env": "VER_INVALID",
             "version_seed": "0.0.0"
         }]
 

@@ -17,10 +17,7 @@ HANDLER_DEFINE_MEMBERS(GridSurfaceDrivesGridCurveBundleHandler)
 //---------------+---------------+---------------+---------------+---------------+------
 void GridSurfaceDrivesGridCurveBundleHandler::_OnRootChanged
 (
-    Dgn::DgnDbR db, 
-    BeSQLite::EC::ECInstanceId relationshipId, 
-    Dgn::DgnElementId source, 
-    Dgn::DgnElementId target
+    Dgn::ElementDependency::Graph const& graph, Dgn::ElementDependency::Edge const& edge
 )
     {
 
@@ -29,10 +26,9 @@ void GridSurfaceDrivesGridCurveBundleHandler::_OnRootChanged
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                06/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void GridSurfaceDrivesGridCurveBundleHandler::_ProcessDeletedDependency
+void GridSurfaceDrivesGridCurveBundleHandler::_OnDeletedDependency
 (
-    Dgn::DgnDbR db, 
-    Dgn::dgn_TxnTable::ElementDep::DepRelData const& relData
+    Dgn::ElementDependency::Graph const& graph, Dgn::ElementDependency::Edge const& edge
 )
     {
 

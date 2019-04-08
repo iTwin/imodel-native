@@ -272,14 +272,14 @@ IGeometryPtr ArbitraryShapeProfile::_CreateShapeGeometry() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ArbitraryShapeProfile::_CopyFrom (DgnElement const& source)
+void ArbitraryShapeProfile::_CopyFrom (DgnElement const& source, CopyFromOptions const& opts)
     {
     if (auto const* pSourceProfile = dynamic_cast<ArbitraryShapeProfile const*> (&source))
         m_geometryPtr = pSourceProfile->m_geometryPtr;
     else
         ProfilesLog::FailedCopyFrom_InvalidElement (PRF_CLASS_ArbitraryShapeProfile, m_elementId, source.GetElementId());
 
-    return T_Super::_CopyFrom (source);
+    return T_Super::_CopyFrom (source, opts);
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
