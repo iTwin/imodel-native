@@ -9,7 +9,6 @@
 
 #include "Tests.h"
 
-#include <Bentley/BeDebugLog.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <BeHttp/HttpBody.h>
 #include <BeHttp/HttpProxy.h>
@@ -694,14 +693,14 @@ TEST_F(HttpRequestTests, Perform_ManyRequests_ExecutesSuccessfully)
         Request request(HTTPBIN_HTTP_URL "/ip");
         Future<Response> future = request.Perform().then([i] (Response response)
             {
-            BeDebugLog(Utf8PrintfString("Finished running: %d", i).c_str());
+            TESTLOG.infov("Finished running: %d", i);
             return response;
             });
         futures.push_back(std::move(future));
         }
 
     // Wait
-    BeDebugLog("Waiting for all requests to finish");
+    TESTLOG.infov("Waiting for all requests to finish");
     uint64_t mid = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
     // Could not get collectAll() compiling
     for (auto& future : futures)
@@ -717,7 +716,7 @@ TEST_F(HttpRequestTests, Perform_ManyRequests_ExecutesSuccessfully)
         EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
         }
 
-    BeDebugLog(Utf8PrintfString("Setting up requests took: %4llu ms. Waiting took: %4llu ms", mid - start, end - mid).c_str());
+    TESTLOG.infov("Setting up requests took: %4llu ms. Waiting took: %4llu ms", mid - start, end - mid);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -741,14 +740,14 @@ TEST_F(HttpRequestTests, PerformAsync_ManyRequests_ExecutesSuccessfully)
             {
             BeMutexHolder holder(resultCS);
             responses.push_back(finishedResponse);
-            BeDebugLog(Utf8PrintfString("Finished running: %d", i).c_str());
+            TESTLOG.infov("Finished running: %d", i);
             });
         tasks.insert(task->Then([]
             {}));
         }
 
     // Wait
-    BeDebugLog("Waiting for all requests to finish");
+    TESTLOG.infov("Waiting for all requests to finish");
     uint64_t mid = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
     AsyncTask::WhenAll(tasks)->Wait();
     uint64_t end = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
@@ -762,7 +761,7 @@ TEST_F(HttpRequestTests, PerformAsync_ManyRequests_ExecutesSuccessfully)
         EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
         }
 
-    BeDebugLog(Utf8PrintfString("Setting up requests took: %4llu ms. Waiting took: %4llu ms", mid - start, end - mid).c_str());
+    TESTLOG.infov("Setting up requests took: %4llu ms. Waiting took: %4llu ms", mid - start, end - mid);
     }
 
 /*--------------------------------------------------------------------------------------+
