@@ -1,0 +1,24 @@
+
+always:
+	python $(_MakeFilePath)GenerateStandardRoomsInserts.py $(in)StandardRooms.xml $(out)GeneratedClassificationStandardInserts.cpp
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)MasterFormat/MasterFormat_2010.xml $(out)GeneratedMasterFormatInserts.cpp MasterFormat
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)UniFormat/UniFormat_2010.xml $(out)GeneratedUniFormatInserts.cpp UniFormat
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)OmniClass/OmniClass_11_2006-03-28.xml $(out)GeneratedOmniClass11Inserts.cpp OmniClass
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)OmniClass/OmniClass_12_2006-03-28.xml $(out)GeneratedOmniClass12Inserts.cpp OmniClass
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)OmniClass/OmniClass_13_2006-03-28.xml $(out)GeneratedOmniClass13_2006Inserts.cpp OmniClass
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)OmniClass/omniClass_13_2010-06-24.xml $(out)GeneratedOmniClass13_2010Inserts.cpp OmniClass
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)OmniClass/OmniClass_14_2006-03-28.xml $(out)GeneratedOmniClass14Inserts.cpp OmniClass
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)OmniClass/OmniClass_21_2011-02-11.xml $(out)GeneratedOmniClass21Inserts.cpp OmniClass
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)OmniClass/OmniClass_22_2006-05-02.xml $(out)GeneratedOmniClass22_2006Inserts.cpp OmniClass
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)OmniClass/OmniClass_22_2011-04-11.xml $(out)GeneratedOmniClass22_2010Inserts.cpp OmniClass
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)OmniClass/omniclass_23_2010-06-24.xml $(out)GeneratedOmniClass23Inserts.cpp OmniClass	
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)OmniClass/omniclass_32_2010-06-24.xml $(out)GeneratedOmniClass32Inserts.cpp OmniClass
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)OmniClass/OmniClass_33_2006-03-28.xml $(out)GeneratedOmniClass33Inserts.cpp OmniClass
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)OmniClass/OmniClass_34_2006-03-28.xml $(out)GeneratedOmniClass34Inserts.cpp OmniClass
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)OmniClass/OmniClass_36_2010-06-04.xml $(out)GeneratedOmniClass36_04Inserts.cpp OmniClass
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)OmniClass/OmniClass_36_2010-06-24.xml $(out)GeneratedOmniClass36_24Inserts.cpp OmniClass
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)OmniClass/OmniClass_41_2006-03-28.xml $(out)GeneratedOmniClass41Inserts.cpp OmniClass
+	python $(_MakeFilePath)GenerateFormatInserts.py $(in)OmniClass/omniclass_49_2010-06-24.xml $(out)GeneratedOmniClass49Inserts.cpp OmniClass
+	
+	
+
