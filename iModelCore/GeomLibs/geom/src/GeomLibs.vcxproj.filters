@@ -1,0 +1,1345 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="Source Files\bezier">
+      <UniqueIdentifier>{4f2cd404-6527-49f0-ab69-5a902549afa0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\bspline">
+      <UniqueIdentifier>{b8e6f485-a22e-41ba-93a9-c8b4ad4992ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\CurvePrimitive">
+      <UniqueIdentifier>{803a6481-f2d2-470e-a32c-12c06fc2c03a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\funcs">
+      <UniqueIdentifier>{068d5fce-545c-4f86-8cb7-eb4bb2fead7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\gpa">
+      <UniqueIdentifier>{fe1c809e-0479-496c-9e58-24c3d3caa816}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\IntegerTypes">
+      <UniqueIdentifier>{9070ccab-fa3d-4a65-ab7b-92d1f1b8f9c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\interfac">
+      <UniqueIdentifier>{37a19c91-b230-4f18-bd3d-d42f0824d715}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\memory">
+      <UniqueIdentifier>{6a84ad17-cec1-4fce-a928-b5c371b00477}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\mtg">
+      <UniqueIdentifier>{58a121d1-71cf-41b0-8178-3cf65c8ce2b7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\polyface">
+      <UniqueIdentifier>{9302f04a-f820-4ab9-8135-30a3da42e766}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\regions">
+      <UniqueIdentifier>{8eaf2d71-128d-4745-a677-3db94fefb0d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\rimsbs">
+      <UniqueIdentifier>{c511f65d-59b7-42d1-93bc-ad21d89c566c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\SolidPrimitive">
+      <UniqueIdentifier>{552bd4ec-d11d-4c0a-9617-ee618028f6b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\structs">
+      <UniqueIdentifier>{70ee3955-a0e8-43c6-9562-1fd6fb3a4d3d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\bspline\experimental">
+      <UniqueIdentifier>{cfdf5222-ada0-4e09-92d3-f472a29f2dec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\bspline">
+      <UniqueIdentifier>{4bc8e624-dc85-4e2b-b59f-161104e8b80d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\CurvePrimitive">
+      <UniqueIdentifier>{05c6a3f8-1704-420e-bc8a-e2ffbb0eb196}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\funcs">
+      <UniqueIdentifier>{7f07603e-8f47-4ccf-aa0b-3a3fa8be4876}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\gpa">
+      <UniqueIdentifier>{fd33bf94-8021-45d6-8113-0c7cf34b2e7e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\memory">
+      <UniqueIdentifier>{eac40a76-1a85-4568-9870-03cb09948a4e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mtg">
+      <UniqueIdentifier>{70a3fb0d-c97d-4b49-baa6-489b7ee672e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\polyface">
+      <UniqueIdentifier>{0bfd5dd0-97a1-4b61-8fd8-a7bb615140c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\regions">
+      <UniqueIdentifier>{04953676-f512-429d-ac18-ebe7896ee1ec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\SolidPrimitive">
+      <UniqueIdentifier>{b6a0e65c-8158-4e77-8bb4-6514fb431d47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\structs\cpp">
+      <UniqueIdentifier>{c180356c-7081-4d92-b78f-d49a719800c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\structs\cpp\refmethods">
+      <UniqueIdentifier>{642794ad-8b40-4a37-86b4-d4c0bc4a9679}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="bezier\bezeval.cpp">
+      <Filter>Source Files\bezier</Filter>
+    </ClCompile>
+    <ClCompile Include="bezier\bezierDPoint4d.cpp">
+      <Filter>Source Files\bezier</Filter>
+    </ClCompile>
+    <ClCompile Include="bezier\bezierExtractionContext.cpp">
+      <Filter>Source Files\bezier</Filter>
+    </ClCompile>
+    <ClCompile Include="bezier\bezroot.cpp">
+      <Filter>Source Files\bezier</Filter>
+    </ClCompile>
+    <ClCompile Include="bezier\bezrootConics.cpp">
+      <Filter>Source Files\bezier</Filter>
+    </ClCompile>
+    <ClCompile Include="bezier\implicitbezier.cpp">
+      <Filter>Source Files\bezier</Filter>
+    </ClCompile>
+    <ClCompile Include="bezier\ruledBezier.cpp">
+      <Filter>Source Files\bezier</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\akima.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\BCurveSegment.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\BezierCurveDPoint3d.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\BezierTriangleDPoint3d.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bsp_curvature.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bsp_mxspline.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bsp_offset.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspbound.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspcciStubs.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspconv.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspCubicFit.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspcurv.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspcurvcurv.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspdcurv.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspdsurf.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspfit.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspicurv.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\Bspline1d.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\BsplineCurveFit.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\BsplineParam.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspLocal.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspmesh.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspmisc.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspplank.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bsppolyface.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspPolysolve.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspproc.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspprof.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bsprange.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bsprcurv.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bsprfit.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bsprsurf.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspSmoothPolyface.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspssi.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspstubs.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspsurf.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspsurf_cliptrim.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspsurfacetrim.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bsputil.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\bspv7.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\BSurfPatch.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\GenericBezierTriangle.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\GridArrays.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\LocalRange.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\MSBsplineCurve.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\MSBsplineCurve_ByBezier.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\MSBsplineCurve_getSet.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\MSBsplineCurve_Modify.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\MSBsplineCurve_ruledSurface.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\MSBsplineCurve_transform.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\MSBsplineCurveCreate.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\MSBsplineCurvePtr.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\MSBsplineSurface.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\MSBsplineSurface_AddSurfaces.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\MSBsplineSurface_getSet.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\MSBsplineSurfaceLofting.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\MSInterpolationCurve.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\plank.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\sortutil.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\TensorProducts.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\tristrip.cpp">
+      <Filter>Source Files\bspline</Filter>
+    </ClCompile>
+    <ClCompile Include="bspline\experimental\bsppolyfaceGlobalVU.cpp">
+      <Filter>Source Files\bspline\experimental</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\CCBlend.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\CCFillet.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\CompoundDrawState.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\cp_arc.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\cp_child.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\cp_line.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\cp_linestring.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\CurveCurveApproach.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\CurveCurveIntersection.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\CurveCurveProcessor.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\CurveGapOptions.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\CurveLocationDetail.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\CurveLocationDetailPair.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\CurvePlaneIntersection.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\CurvePrimitiveBsplineCurve.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\CurvePrimitiveId.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\CurvePrimitivePair.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\CurvePrimitivePartialCurve.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\CurveTopologyId.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\CurveVector.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\cv_areaBooleans.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\cv_areaFixup.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\cv_AreaMoments.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\cv_chainFixup.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\cv_clone.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\cv_hatch.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\cv_inout.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\cv_offset.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\cv_ops.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\cv_properties.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\cv_WireMoments.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\FacetEdgeLocateionDetail.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\ICurvePrimitive.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\ICurvePrimitiveProcessor.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="curveprimitive\IGeometryPtr.cpp">
+      <Filter>Source Files\CurvePrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\analyticroots.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\Angle.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\barycentric.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\bench.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\BinaryRangeHeap.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\biarc.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\BSIQuadrature.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\bvRangeTree.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\ccctangent.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\CGWriter.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\cluster.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\complex.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\doublefuncs.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\DoubleOps.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\dpoint2darray.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\dpoint3darray.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\DPoint3dOps.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\DPoint3dOpsRangeHeap.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\eigensys3d.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\ellipsefillet.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\ellipticintegrals.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\linalg.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\lineargeom.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\memfuncs.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\newton.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\pencil.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\polycoff.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\polygon2d.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\polygon3d.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\polygondecomp.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\PolygonOps.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\polyline2d.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\polyline3d.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\PolylineIntersections.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\PolylineOps.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\polyplane4d.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\polysolv.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\qsic.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\quadeqn.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\quadraticgeom.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\quadric.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\rctree.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\rename.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\rotations.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\rotconic.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\simpson.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\standardViews.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\svd.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\TernaryRangeTree.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\TriDiagonalSolver.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\trigfuncs.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\triquad.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\XYPointSearch.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\XYRangeTree.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs\XYZRangeTree.cpp">
+      <Filter>Source Files\funcs</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\bspintersect.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_assembleBeziers.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_beziersection.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_bool.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_bspline.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_developable.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_ellipse.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_hatch.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_inout.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_hatchblock.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_intersectxy.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_offset.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_pairs.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_perptan.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_polygon.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_prop1.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_properties.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_silhouette.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_stroke.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gp_xymoments.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gpa_parser.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gpa_properties.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\gpaCurvePrimitive.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\graphicspointarray.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\jmdl_planeset.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="gpa\jmdl_polyhdr.cpp">
+      <Filter>Source Files\gpa</Filter>
+    </ClCompile>
+    <ClCompile Include="integertypes\BSIRect.cpp">
+      <Filter>Source Files\IntegerTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="interfac\basegeom_2ms.cpp">
+      <Filter>Source Files\interfac</Filter>
+    </ClCompile>
+    <ClCompile Include="interfac\dmatrix3d_dep.cpp">
+      <Filter>Source Files\interfac</Filter>
+    </ClCompile>
+    <ClCompile Include="interfac\dpoint3dconvertedtodvec3d.cpp">
+      <Filter>Source Files\interfac</Filter>
+    </ClCompile>
+    <ClCompile Include="interfac\rotmatrix_dep.cpp">
+      <Filter>Source Files\interfac</Filter>
+    </ClCompile>
+    <ClCompile Include="memory\embeddedarraycachemanager.cpp">
+      <Filter>Source Files\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="memory\embeddedarrayio.cpp">
+      <Filter>Source Files\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="memory\embeddeddoublearray.cpp">
+      <Filter>Source Files\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="memory\embeddeddpoint2darray.cpp">
+      <Filter>Source Files\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="memory\embeddeddpoint3darray.cpp">
+      <Filter>Source Files\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="memory\embeddedfpoint2darray.cpp">
+      <Filter>Source Files\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="memory\embeddedfpoint3darray.cpp">
+      <Filter>Source Files\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="memory\embeddedint64array.cpp">
+      <Filter>Source Files\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="memory\embeddedintarray.cpp">
+      <Filter>Source Files\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="memory\jmdl_dpnt3.cpp">
+      <Filter>Source Files\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="memory\jmdl_iarray.cpp">
+      <Filter>Source Files\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="memory\UnionFind.cpp">
+      <Filter>Source Files\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\decimatexyz.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\facetout.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\gp_fragments.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_facetmemory.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgbase1.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgchain.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgclip.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgedgestar.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgfacet.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgfacet2.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgfacet3.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgloop.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgmarkset.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgmask.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgmemory.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgmesh.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgparity.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgreduce.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgreg.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgstitch.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\jmdl_mtgswap.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\mtgflowlines.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\MTGGraph.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\mtgprint.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\mtgSmoothNormals.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="mtg\unfold.cpp">
+      <Filter>Source Files\mtg</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\BlockedVector.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\ClipPlane.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\ClipPlaneSet.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\FacetFaceData.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\FacetLocationDetail.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\FacetOptions.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\IndexedClipEdge.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\IPolyfaceConstruction_Add.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\IPolyfaceConstruction_Dispatchers.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\pf_cutFill.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\pf_drapeLinestring.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\pf_heal.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\pf_indexedHeapRangeSearch.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\pf_integrals.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\pf_rangeSearch.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\pf_sweepMeshToSolid.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\pf_unifyIndices.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\pfBoundary.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\Polyface.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\PolyfaceAdd.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\polyfaceAddNormals.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\PolyfaceAddSolidPrimitive.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\PolyfaceAddTriangulation.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\PolyfaceClip.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\PolyfaceClip1.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\PolyfaceClipToPlaneSets.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\PolyfaceCoordinateMap.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\PolyfaceEdgeChain.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\PolyfaceIndexedStitch.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\PolyfacePartition.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\PolyfaceQuery.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\PolyfaceQueryCarrier.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\PolyfaceStitch.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\polyfaceToMTG.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\PolyfaceVectors.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\PolyfaceVisitor.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\PolyfaceVisitorSearch.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="polyface\RgbFactor.cpp">
+      <Filter>Source Files\polyface</Filter>
+    </ClCompile>
+    <ClCompile Include="regions\rg_extractCurveVector.cpp">
+      <Filter>Source Files\regions</Filter>
+    </ClCompile>
+    <ClCompile Include="regions\rg_fixface.cpp">
+      <Filter>Source Files\regions</Filter>
+    </ClCompile>
+    <ClCompile Include="regions\rg_gaps.cpp">
+      <Filter>Source Files\regions</Filter>
+    </ClCompile>
+    <ClCompile Include="regions\rg_geom.cpp">
+      <Filter>Source Files\regions</Filter>
+    </ClCompile>
+    <ClCompile Include="regions\rg_header.cpp">
+      <Filter>Source Files\regions</Filter>
+    </ClCompile>
+    <ClCompile Include="regions\rg_intersections.cpp">
+      <Filter>Source Files\regions</Filter>
+    </ClCompile>
+    <ClCompile Include="regions\rg_inwardparity.cpp">
+      <Filter>Source Files\regions</Filter>
+    </ClCompile>
+    <ClCompile Include="regions\rg_loops.cpp">
+      <Filter>Source Files\regions</Filter>
+    </ClCompile>
+    <ClCompile Include="regions\rg_merge.cpp">
+      <Filter>Source Files\regions</Filter>
+    </ClCompile>
+    <ClCompile Include="regions\rg_merge2.cpp">
+      <Filter>Source Files\regions</Filter>
+    </ClCompile>
+    <ClCompile Include="regions\rg_rangeTree.cpp">
+      <Filter>Source Files\regions</Filter>
+    </ClCompile>
+    <ClCompile Include="regions\rg_windingNumber.cpp">
+      <Filter>Source Files\regions</Filter>
+    </ClCompile>
+    <ClCompile Include="rimsbs\gpaff_context.cpp">
+      <Filter>Source Files\rimsbs</Filter>
+    </ClCompile>
+    <ClCompile Include="rimsbs\RICurvePrimitive.cpp">
+      <Filter>Source Files\rimsbs</Filter>
+    </ClCompile>
+    <ClCompile Include="rimsbs\rimsbs_context.cpp">
+      <Filter>Source Files\rimsbs</Filter>
+    </ClCompile>
+    <ClCompile Include="rimsbs\rimsbs_eval.cpp">
+      <Filter>Source Files\rimsbs</Filter>
+    </ClCompile>
+    <ClCompile Include="rimsbs\rimsbs_intersect.cpp">
+      <Filter>Source Files\rimsbs</Filter>
+    </ClCompile>
+    <ClCompile Include="rimsbs\rimsbs_intersect1.cpp">
+      <Filter>Source Files\rimsbs</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\BoxFaces.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\SolidLocationDetail.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\SolidPrimitive.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\sp_AreaMoments.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\sp_closestPoint.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\sp_clone.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\sp_ConstructiveFrame.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\sp_ExtractFace.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\sp_FaceIndices.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\sp_getSection.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\sp_isClosedVolume.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\sp_maxUVLength.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\sp_Moments.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\sp_parameterizationSign.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\sp_Range.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\sp_RayIntersection.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\sp_same.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="solidprimitive\sp_UVToXYZ.cpp">
+      <Filter>Source Files\SolidPrimitive</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cppdellipse3d.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cppdmap4d.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cppdmatrix3d.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cppdmatrix4d.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cppdplane3d.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cppdpoint2d.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cppdpoint3d.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cppdpoint4d.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cppdrange2d.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cppdrange3d.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cppdray3d.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cppdsegment3d.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cppdtransform3d.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cppdvec2d.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cppdvec3d.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cpprotmatrix.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\cpptransform.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\DMoments3d.cpp">
+      <Filter>Source Files\structs\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refdellipse3d.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refdmap4d.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refdmatrix4d.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refdplane3d.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refdpoint2d.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refdpoint3d.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refdpoint4d.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refdrange2d.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refdrange3d.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refdrange3dArrays.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refdray3d.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refdsegment3d.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refdsegment4d.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refdvec2d.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refdvec3d.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refrotmatrix.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refrotmatrixInit.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refrotmatrixInvert.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refrotmatrixMultiply.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\reftransform.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\refrotmatrixQuery.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\reftransformInvert.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\reftransformIsXXX.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\cpp\refmethods\reftransformMultiply.cpp">
+      <Filter>Source Files\structs\cpp\refmethods</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\DBilinearPatch3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dcone3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dconic4d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\ddisk3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dellipse3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dellipse3dDMatrix3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dellipse4d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dellipsoid3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dmap4d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dmatrix2d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dmatrix3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dmatrix4d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dplane3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dpoint2d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dpoint3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dpoint3ddvec3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dpoint4d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\drange1d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\drange2d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\drange3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dray3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\DSegment1d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dsegment3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dsegment4d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dspiral2dbase.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dtoroid3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dtransform2d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dtransform3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dvec2d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dvec3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dvec3ddmatrix3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dvec3drotmatrix.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\dvec3dtransform.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\fpoint2d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\fpoint3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\frange2d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\frange3d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\graphicspoint.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\Polynomials.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\proximitydata.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\rotmatrix.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\smallsetrange1d.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="structs\transform.cpp">
+      <Filter>Source Files\structs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\build\BentleyGeom\BentleyGeom_init.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\build\BentleyGeom\bsibasegeomPCH.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="bspline\msbsplinemaster.h">
+      <Filter>Header Files\bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="bspline\mxspline.h">
+      <Filter>Header Files\bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="bspline\sortutil.h">
+      <Filter>Header Files\bspline</Filter>
+    </ClInclude>
+    <ClInclude Include="curveprimitive\cpstructs.h">
+      <Filter>Header Files\CurvePrimitive</Filter>
+    </ClInclude>
+    <ClInclude Include="curveprimitive\CurveCurveProcessor.h">
+      <Filter>Header Files\CurvePrimitive</Filter>
+    </ClInclude>
+    <ClInclude Include="curveprimitive\CurveIntersectRotatedRay.h">
+      <Filter>Header Files\CurvePrimitive</Filter>
+    </ClInclude>
+    <ClInclude Include="funcs\RangeTreeTemplate.h">
+      <Filter>Header Files\funcs</Filter>
+    </ClInclude>
+    <ClInclude Include="gpa\ArrayWrapper.h">
+      <Filter>Header Files\gpa</Filter>
+    </ClInclude>
+    <ClInclude Include="memory\ptrcache.h">
+      <Filter>Header Files\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="mtg\mtgclip.hxx">
+      <Filter>Header Files\mtg</Filter>
+    </ClInclude>
+    <ClInclude Include="mtg\mtgintrn.h">
+      <Filter>Header Files\mtg</Filter>
+    </ClInclude>
+    <ClInclude Include="polyface\CoordinateMaps.h">
+      <Filter>Header Files\polyface</Filter>
+    </ClInclude>
+    <ClInclude Include="polyface\IndexedClipEdge.h">
+      <Filter>Header Files\polyface</Filter>
+    </ClInclude>
+    <ClInclude Include="polyface\PolyfaceSectionMTG.h">
+      <Filter>Header Files\polyface</Filter>
+    </ClInclude>
+    <ClInclude Include="regions\privinc\rg_rangetree.h">
+      <Filter>Header Files\regions</Filter>
+    </ClInclude>
+    <ClInclude Include="solidprimitive\BoxFaces.h">
+      <Filter>Header Files\SolidPrimitive</Filter>
+    </ClInclude>
+    <ClInclude Include="..\build\BentleyGeom\bsibasegeomPCH.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="bspline\bspLocal.fdf">
+      <Filter>Header Files\bspline</Filter>
+    </None>
+    <None Include="memory\jmdl_dpnt3.fdf">
+      <Filter>Header Files\memory</Filter>
+    </None>
+    <None Include="memory\jmdl_iarray.fdf">
+      <Filter>Header Files\memory</Filter>
+    </None>
+    <None Include="regions\privinc\rg_fixface.fdf">
+      <Filter>Header Files\regions</Filter>
+    </None>
+    <None Include="regions\privinc\rg_gaps.fdf">
+      <Filter>Header Files\regions</Filter>
+    </None>
+    <None Include="regions\privinc\rg_geom.fdf">
+      <Filter>Header Files\regions</Filter>
+    </None>
+    <None Include="regions\privinc\rg_merge2.fdf">
+      <Filter>Header Files\regions</Filter>
+    </None>
+    <None Include="regions\privinc\rg_rangeTree.fdf">
+      <Filter>Header Files\regions</Filter>
+    </None>
+    <None Include="..\build\BentleyGeom\BentleyGeom.mke" />
+    <None Include="..\build\BentleyGeom\BentleyGeom.mki" />
+  </ItemGroup>
+</Project>

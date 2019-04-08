@@ -1,0 +1,10 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: geom/build/bsibasegeom/test/vu02/vu02.mke $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+TESTAPP_NAME=vu02
+
+%include    $(_MakeFilePath)/../testapp.mki
