@@ -271,18 +271,18 @@ RepositoryLinkId Converter::GetRepositoryLinkIdFromAppData(DgnV8FileCR file)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryLinkId Converter::GetRepositoryLinkId(DgnV8FileCR file) const
     {
-    auto appdata = (V8FileSyncInfoIdAppData*) const_cast<DgnV8FileR>(file).FindAppData(V8FileSyncInfoIdAppData::GetKey());
-    if (nullptr != appdata)
-        return appdata->m_repositoryLinkId;
+  //  auto appdata = (V8FileSyncInfoIdAppData*) const_cast<DgnV8FileR>(file).FindAppData(V8FileSyncInfoIdAppData::GetKey());
+  //  if (nullptr != appdata)
+  //      return appdata->m_repositoryLinkId;
         
     SyncInfo::V8FileInfo finfo = const_cast<Converter*>(this)->GetSyncInfo().ComputeFileInfo(file);
     auto aspect = SyncInfo::RepositoryLinkExternalSourceAspect::FindAspectByIdentifier(GetDgnDb(), finfo.m_uniqueName);
     if (aspect.IsValid())
         {
-        SetRepositoryLinkInAppData(file, aspect.GetRepositoryLinkId());
+        //SetRepositoryLinkInAppData(file, aspect.GetRepositoryLinkId());
         return aspect.GetRepositoryLinkId();
         }
-
+    LOG.tracev(L"Writing syncinfo %s as %s", finfo.m_v8Name.c_str(), finfo.m_uniqueName.c_str());
     return const_cast<Converter*>(this)->WriteRepositoryLink(const_cast<DgnV8FileR>(file));
     }
 
@@ -3282,7 +3282,10 @@ ResolvedModelMapping RootModelConverter::_GetResolvedModelMapping(DgnV8ModelRefC
     m_monitor->_OnModelInserted(v8mm);
 
     if (LOG_MODEL_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
+        {
         LOG_MODEL.tracev("+ %s -> %s", IssueReporter::FmtModel(v8Model).c_str(), IssueReporter::FmtModel(*model).c_str());
+        LOG_MODEL.trace(modelAspect.FormatForDump(*m_dgndb, true, true).c_str());
+        }
 
     return v8mm;
     }
