@@ -713,8 +713,8 @@ void Converter::ConvertMapSettings(ViewDefinitionPtr view, DgnV8ViewInfoCP viewI
     if (0 == wcsicmp(L"Bing",name.c_str()))
         providerName = WebMercator::BingImageryProvider::prop_BingProvider();
 
-    view->GetDisplayStyle().SetBackgroundMapSettings(mapType, providerName, offset);
-
+    auto const&        modelInfo = v8Model.GetModelInfo();
+    view->GetDisplayStyle().SetBackgroundMapSettings(mapType, providerName, offset * DgnV8Api::ModelInfo::GetUorPerMaster(&modelInfo) / DgnV8Api::ModelInfo::GetUorPerMeter(&modelInfo));
     }
 
 /*---------------------------------------------------------------------------------**//**
