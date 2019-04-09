@@ -78,6 +78,7 @@ Dgn::DgnDbR db
 void ClassificationSystemsDomain::InsertDomainAuthorities(Dgn::DgnDbR db) const
     {
     InsertCodeSpec(db, CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem);
+    InsertCodeSpec(db, CLASSIFICATIONSYSTEMS_CLASS_ClassificationTable);
     }
 
 //---------------------------------------------------------------------------------------

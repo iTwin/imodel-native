@@ -26,6 +26,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification final : Dgn::DefinitionElement
         BE_PROP_NAME(Description)
         
         Dgn::DgnCode GetClassificationCode(Dgn::DgnDbR db, Utf8CP name, Dgn::DgnElementId id) const;
+        static Dgn::DgnModelPtr GetOrCreateTableSubModel(ClassificationTableCR table);
 
     protected:
         explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Classification(CreateParams const& params) : T_Super(params) {}
@@ -54,11 +55,24 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification final : Dgn::DefinitionElement
         //! Creates and inserts a Classification
         //! @param[in]  table       Classification Table in which this Classification Group will be inserted
         //! @param[in]  name        name of this Classification
+        //! @param[in]  id          id for code generation
         //! @param[in]  description description of this Classification
         //! @param[in]  group       Group this Classification is in
         //! @param[in]  specializes What Classification this Classification specializes in
         //! @return     a ptr to created Classification
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationPtr CreateAndInsert(ClassificationTableCR system, Utf8CP name, Utf8CP id, Utf8CP description, ClassificationGroupCP group, ClassificationCP specializes);
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationPtr CreateAndInsert(ClassificationTableCR table, Utf8CP name, Utf8CP id, Utf8CP description, ClassificationGroupCP group, ClassificationCP specializes);
+
+        //! Returns a classification which belongs to System <- Table hierarchy. 
+        //! If any of the pieces are missing, they are created and inserted into the database.
+        //! @param[in]  db           db that should contain the hierarchy
+        //! @param[in]  name         name of the Classification
+        //! @param[in]  id           id for code generation
+        //! @param[in]  description  description of the Classification
+        //! @param[in]  systemName   name of the Classification System that the Classification belongs to
+        //! @param[in]  tableName    name of the Classification Table that the Classification belongs to
+        //! @return     a ptr to created or queried Classification
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationPtr GetOrCreateBySystemTableNames(
+            Dgn::DgnDbR db, Utf8CP name, Utf8CP id, Utf8CP description, Utf8StringCR systemName, Utf8StringCR tableName);
 
         //!Returns this Classification Name property
         //! @return Name property of the Classification

@@ -85,9 +85,9 @@ ClassificationSystemPtr ClassificationSystem::Create
     return system;
     }
     
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Martynas.Saulius              04/2018
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas                04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 ClassificationSystemCPtr ClassificationSystem::TryGet
 (
     Dgn::DgnDbR db,
@@ -96,15 +96,34 @@ ClassificationSystemCPtr ClassificationSystem::TryGet
     {
     Dgn::DgnCode code = GetSystemCode(db, name);
     Dgn::DgnElementId id = db.Elements().QueryElementIdByCode(code);
+
     if (id.IsValid())
-        {
-        ClassificationSystemCPtr system = db.Elements().Get<ClassificationSystem>(id);
-        return system;
-        }
-    else {
-        return nullptr;
-        }
+        return ClassificationSystem::Get(db, id);
+
+    return nullptr;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas                04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassificationSystemCPtr ClassificationSystem::GetOrCreateSystemByName
+(
+    Dgn::DgnDbR db,
+    Utf8StringCR systemName
+)
+    {
+    ClassificationSystemCPtr queriedSystem = TryGet(db, systemName.c_str());
+    if (queriedSystem.IsValid())
+        return queriedSystem;
+
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, systemName.c_str());
+    if (system.IsNull())
+        return nullptr;
+
+    system->Insert();
+    return system;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius              05/2018
 //---------------------------------------------------------------------------------------

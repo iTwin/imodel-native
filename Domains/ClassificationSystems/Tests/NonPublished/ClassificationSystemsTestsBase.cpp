@@ -55,7 +55,7 @@ void ClassificationSystemsTestsBase::CopyFile(BeFileName projectPath)
 //---------------------------------------------------------------------------------------
 void ClassificationSystemsTestsBase::SetUpTestCase()
     {
-    BeFileName seedPath = SharedRepositoryManagerTestBase::BuildProjectPath(PROJECT_DEFAULT_NAME);
+    BeFileName seedPath = SharedRepositoryManagerTestBase::BuildProjectPath(PROJECT_SEED_NAME);
     BeFileName outPath;
     BeTest::GetHost().GetOutputRoot(outPath);
     BeFileName::CreateNewDirectory(outPath);

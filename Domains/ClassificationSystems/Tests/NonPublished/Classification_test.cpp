@@ -89,3 +89,67 @@ TEST_F(ClassificationTestFixture, CreateAndInsert_InsertsAndSetsGroupAndSpeciali
 
     db.SaveChanges();
 }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassificationTestFixture, GetOrCreateBySystemTableNames_NoElementExists_CreatesWholeHierarchy)
+    {
+    Dgn::DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    const Utf8String classificationSystemName = "Test System";
+    ClassificationSystemCPtr system = ClassificationSystem::TryGet(db, classificationSystemName.c_str());
+    ASSERT_FALSE(system.IsValid()) << "System already exists";
+
+    const Utf8String classificationTableName = "Test Table";
+    const Utf8String classificationName = "Test Classification";
+
+    ClassificationPtr classification = Classification::GetOrCreateBySystemTableNames(
+        db, classificationName.c_str(), "01-00-00", "", classificationSystemName, classificationTableName);
+    ASSERT_TRUE(classification.IsValid()) << "Classification did not get created";
+
+    system = ClassificationSystem::TryGet(db, classificationSystemName.c_str());
+    ASSERT_TRUE(system.IsValid()) << "System did not get created";
+
+    ClassificationTableCPtr table = ClassificationTable::TryGet(*system, classificationTableName.c_str());
+    ASSERT_TRUE(table.IsValid()) << "Table did not get created";
+
+    ASSERT_EQ(table->GetElementId(), classification->GetClassificationTableId());
+
+    ASSERT_EQ(system->GetElementId(), table->GetClassificationSystemId());
+
+    db.SaveChanges();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassificationTestFixture, GetOrCreateBySystemTableNames_HierarchyAlreadyExists_ReturnsCorrectClassification)
+{
+    Dgn::DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    const Utf8String classificationSystemName = "Test System";
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, classificationSystemName.c_str());
+    ASSERT_TRUE(system.IsValid()) << "Could not create System";
+    system->Insert();
+
+    const Utf8String classificationTableName = "Test Table";
+    ClassificationTablePtr table = ClassificationTable::Create(*system, classificationTableName.c_str());
+    ASSERT_TRUE(table.IsValid()) << "Couldnot create Table";
+    table->Insert();
+
+    const Utf8String classificationName = "Test Classification";
+    ClassificationPtr classification = Classification::CreateAndInsert(*table, classificationName.c_str(), "01-01-00", "", nullptr, nullptr);
+    ASSERT_TRUE(classification.IsValid()) << "Could not create Classification";
+
+    ClassificationPtr queriedClassification = Classification::GetOrCreateBySystemTableNames(
+        db, classificationName.c_str(), "01-01-00", "", classificationSystemName.c_str(), classificationTableName.c_str());
+
+    ASSERT_EQ(classification->GetElementId(), queriedClassification->GetElementId());
+
+    ASSERT_EQ(table->GetElementId(), queriedClassification->GetClassificationTableId());
+
+    db.SaveChanges();
+}

@@ -25,7 +25,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationTable : Dgn::DefinitionElement
 
     protected:
         explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationTable(CreateParams const& params) : T_Super(params) {}
-        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationTable(CreateParams const& params, Dgn::DgnElementId systemId, Utf8CP name);
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationTable(CreateParams const& params, ClassificationSystemCR system, Utf8CP name);
 
         friend struct ClassificationTableHandler;
 
@@ -42,9 +42,27 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationTable : Dgn::DefinitionElement
         //! @return     a ptr to created ClassificationTable
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationTablePtr Create(ClassificationSystemCR system, Utf8CP name);
 
+        //! Tries to get a ClassificationTable from the database using provided name
+        //! @param[in]  system   Classification System that is set as Table's parent
+        //! @param[in]  name     Classification Table's name
+        //! @return     a ptr to the ClassificationTable
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationTableCPtr TryGet(ClassificationSystemCR system, Utf8StringCR name);
+
+        //! Tries to get a ClassificationTable from the database using provided name, if it does not exist, creates a new one.
+        //! @param[in]  system   Classification System that is set as Table's parent
+        //! @param[in]  name     Classification Table's name
+        //! @return     a ptr to the ClassificationTable
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationTableCPtr GetOrCreateTableByName(ClassificationSystemCR system, Utf8StringCR name);
+
         //!Returns this Classification Table Name property
         //! @return Name property of the Classification Table
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetUserLabel(); }
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const;
+
+        //! Gets ClassificationTable code generated from given parameters
+        //! @param[in]  db     db that contains code specs
+        //! @param[in]  name   name of the ClassificationTable that will be used for code generation
+        //! @return     generated code
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static Dgn::DgnCode GetTableCode(ClassificationSystemCR system, Utf8CP name);
 
         //!Returns id of the Classification System that has this Classification Table
         //! @return Id of Classification System that has this Classification Table

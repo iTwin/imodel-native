@@ -9,6 +9,7 @@
 #include "PublicApi/Classification.h"
 #include "PublicApi/ClassificationGroup.h"
 #include "PublicApi/ClassificationTable.h"
+#include "PublicApi/ClassificationSystem.h"
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
@@ -26,6 +27,18 @@ Dgn::DgnCode Classification::GetClassificationCode
 ) const
     {
     return Dgn::DgnCode(db.CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem), id, name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas                04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnModelPtr Classification::GetOrCreateTableSubModel(ClassificationTableCR table)
+    {
+    Dgn::DgnModelPtr model = table.GetSubModel();
+    if (model.IsNull())
+        model = Dgn::DefinitionModel::CreateAndInsert(table);
+
+    return model;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -74,9 +87,7 @@ ClassificationPtr Classification::CreateAndInsert
     {
     Dgn::DgnDbR db = table.GetDgnDb();
 
-    Dgn::DgnModelPtr model = table.GetSubModel();
-    if (model.IsNull())
-        model = Dgn::DefinitionModel::CreateAndInsert(table);
+    Dgn::DgnModelPtr model = GetOrCreateTableSubModel(table);
 
     if (model.IsNull())
         {
@@ -91,6 +102,46 @@ ClassificationPtr Classification::CreateAndInsert
     if (group != nullptr)
         classification->SetGroupId(group->GetElementId());
     return classification;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas                04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassificationPtr Classification::GetOrCreateBySystemTableNames
+(
+    Dgn::DgnDbR db,
+    Utf8CP name,
+    Utf8CP id,
+    Utf8CP description,
+    Utf8StringCR systemName,
+    Utf8StringCR tableName
+)
+    {
+    ClassificationSystemCPtr system = ClassificationSystem::GetOrCreateSystemByName(db, systemName);
+    if (system.IsNull())
+        {
+        BeAssert(!"Could not get or create system");
+        return nullptr;
+        }
+
+    ClassificationTableCPtr table = ClassificationTable::GetOrCreateTableByName(*system, tableName);
+    if (table.IsNull())
+        {
+        BeAssert(!"Could not get or create table");
+        return nullptr;
+        }
+
+    Dgn::DgnModelPtr model = GetOrCreateTableSubModel(*table);
+
+    for (auto classificationEntry : table->MakeClassificationIterator())
+        {
+        ClassificationCPtr classification = Classification::Get(db, classificationEntry.GetElementId());
+
+        if (classification.IsValid())
+            return const_cast<Classification*>(classification.get());
+        }
+
+    return Classification::CreateAndInsert(*table, name, id, description, nullptr, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

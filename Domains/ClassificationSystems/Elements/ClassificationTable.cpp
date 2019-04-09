@@ -15,17 +15,30 @@ BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationTable)
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::DgnCode ClassificationTable::GetTableCode
+(
+    ClassificationSystemCR system,
+    Utf8CP name
+)
+    {
+    return Dgn::DgnCode(system.GetDgnDb().CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationTable), system.GetElementId(), name);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Elonas.Seviakovas               03/2019
 //---------------+---------------+---------------+---------------+---------------+------
 ClassificationTable::ClassificationTable
 (
     CreateParams const& params, 
-    Dgn::DgnElementId systemId,
+    ClassificationSystemCR system,
     Utf8CP name
 ) : ClassificationTable(params)
     {
-    SetUserLabel(name);
-    SetClassificationSystemId(systemId);
+    Dgn::DgnCode code = GetTableCode(system, name);
+    SetCode(code);
+    SetClassificationSystemId(system.GetElementId());
     }
 
 //--------------------------------------------------------------------------------------
@@ -41,7 +54,52 @@ ClassificationTablePtr ClassificationTable::Create
     Dgn::DgnClassId classId = QueryClassId(db);
     Dgn::DgnElement::CreateParams params(db, Building::Shared::BuildingUtils::GetOrCreateDefinitionModel(db, "ClassificationSystems")->GetModelId(), classId);
 
-    return new ClassificationTable(params, system.GetElementId(), name);
+    return new ClassificationTable(params, system, name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas                04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassificationTableCPtr ClassificationTable::TryGet
+(
+    ClassificationSystemCR system,
+    Utf8StringCR name
+)
+    {
+    Dgn::DgnCode code = GetTableCode(system, name.c_str());
+    Dgn::DgnElementId id = system.GetDgnDb().Elements().QueryElementIdByCode(code);
+
+    if (id.IsValid())
+        return ClassificationTable::Get(system.GetDgnDb(), id);
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas                04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassificationTableCPtr ClassificationTable::GetOrCreateTableByName
+(
+    ClassificationSystemCR classificationSystem,
+    Utf8StringCR name
+)
+    {
+    ClassificationTableCPtr queriedTable = TryGet(classificationSystem, name);
+
+    if (queriedTable.IsValid())
+        {
+        Dgn::DgnElementId systemId = queriedTable->GetClassificationSystemId();
+        if (systemId.IsValid() && systemId == classificationSystem.GetElementId())
+            return queriedTable;
+        }
+
+    // If we got here that means table is either non existant or does not belong to specified system
+    ClassificationTablePtr table = ClassificationTable::Create(classificationSystem, name.c_str());
+    if (table.IsNull())
+        return nullptr;
+
+    table->Insert();
+    return table;
     }
 
 //--------------------------------------------------------------------------------------
@@ -58,12 +116,18 @@ void ClassificationTable::SetClassificationSystemId
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Elonas.Seviakovas               03/2019
 //---------------+---------------+---------------+---------------+---------------+------
+Utf8CP ClassificationTable::GetName() const
+    {
+    return GetCode().GetValueUtf8CP();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas               03/2019
+//---------------+---------------+---------------+---------------+---------------+------
 Dgn::DgnElementId ClassificationTable::GetClassificationSystemId() const
     {
     return GetParentId();
     }
-
-
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  08/2018
@@ -107,7 +171,7 @@ void ClassificationTable::GetClassificationDataVerbose
     elementData["classifications"] = Json::Value(Json::arrayValue);
     elementData["groups"] = Json::Value(Json::arrayValue);
     for (Dgn::ElementIteratorEntry elementIter : MakeClassificationGroupIterator())
-    {
+        {
         Json::Value elementValue;
         elementValue["id"] = elementIter.GetElementId().ToHexStr();
 
@@ -116,10 +180,10 @@ void ClassificationTable::GetClassificationDataVerbose
 
         elementValue["label"] = classificationGroup->GetName();
         elementData["groups"].append(elementValue);
-    }
+        }
 
     for (Dgn::ElementIteratorEntry elementIter : MakeClassificationIterator())
-    {
+        {
         Json::Value elementValue;
         elementValue["id"] = elementIter.GetElementId().ToHexStr();
 
@@ -129,8 +193,7 @@ void ClassificationTable::GetClassificationDataVerbose
         elementValue["label"] = classification->GetName();
         elementValue["groupId"] = classification->GetGroupId().ToHexStr();
         elementData["classifications"].append(elementValue);
+        }
     }
-    }
-
 
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
