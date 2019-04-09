@@ -1,11 +1,9 @@
 
-GenerateSIDTests.GetUserSID_Success
-PolicyProviderTests.GetPolicy_Success
-PolicyProviderTests.GetPolicy_GetPolicyFailure
-PolicyProviderTests.GetPolicy_GetCertificateFailure
-PolicyProviderTests.GetPolicyWithKey_Success
-LogFileHelperTests.GetLogFiles_Success
+# ---- Example tests ----
 ClientTests.JsonExample
 AccessKeyClientTests.JsonExample
 SaasClientTests.JsonExample
-SaasClientTests.CreateSaasClientFromFactory_Success
+
+# ---- These tests do not pass on Linux ----
+GenerateSIDTests.GetUserSID_Success
+LogFileHelperTests.GetLogFiles_Success
