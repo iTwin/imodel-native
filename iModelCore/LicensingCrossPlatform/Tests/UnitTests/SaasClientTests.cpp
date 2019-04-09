@@ -106,7 +106,7 @@ void SaasClientTests::SetUpTestCase()
     EXPECT_EQ(SUCCESS, L10N::Initialize(BeSQLite::L10N::SqlangFiles(path)));
     }
 
-TEST_F(SaasClientTests, DISABLED_JsonExample)
+TEST_F(SaasClientTests, JsonExample)
     {
     BeFileName testJson;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);

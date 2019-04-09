@@ -21,27 +21,8 @@
         </Bindings>
     </Part>
 
-    <Part Name="Licensing" >
-        <SubPart PartName="Licensing-Winx64-Only" />
-        <SubPart PartName="Licensing-iOSARMActive-Only" />
-        <SubPart PartName="Licensing-iOSARM64-Only" />
-        <SubPart PartName="Licensing-AndroidARM64-Only" LibType="Static" />
-    </Part>
-
-    <Part Name="Licensing-Winx64-Only" OnlyPlatforms="x64">
-        <SubPart PartName="LicensingNativeLib" LibType="Dynamic" />
-    </Part>
-
-    <Part Name="Licensing-iOSARMActive-Only" OnlyPlatforms="iOSARMActive">
-        <SubPart PartName="LicensingNativeLib" LibType="Static" />
-    </Part>
-
-    <Part Name="Licensing-iOSARM64-Only" OnlyPlatforms="iOSARM64">
-        <SubPart PartName="LicensingNativeLib" LibType="Static" />
-    </Part>
-
-    <Part Name="Licensing-AndroidARM64-Only" OnlyPlatforms="AndroidARM64">
-        <SubPart PartName="LicensingNativeLib" LibType="Static" />
+    <Part Name="Licensing" OnlyPlatforms="x64,Linux*,iOSARM64,AndroidARM64">
+        <SubPart PartName="LicensingNativeLib" />
     </Part>
 
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
@@ -79,7 +60,7 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="GtestIntegration" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingIntegrationTest -dTEST_COLLECTION_PRODUCT=Licensing-IntegrationTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="GtestIntegration" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingIntegrationTest -dTEST_COLLECTION_PRODUCT=Licensing-IntegrationTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="Licensing-IntegrationTests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
 
@@ -89,7 +70,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="GtestUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingUnitTest -dTEST_COLLECTION_PRODUCT=Licensing-UnitTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="GtestUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingUnitTest -dTEST_COLLECTION_PRODUCT=Licensing-UnitTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="Licensing-UnitTests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
 
@@ -108,7 +89,7 @@
         </Bindings>
     </Part>    
 
-    <Part Name="RunGtestUnit" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Licensing-GtestUnit -dGTEST_NAME=LicensingUnitTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtestUnit" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Licensing-GtestUnit -dGTEST_NAME=LicensingUnitTest" OnlyPlatforms="x64,Linux*">
         <SubProduct ProductName="Licensing-GtestUnit" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
 

@@ -43,6 +43,7 @@ BentleyStatus CreateLogFiles(BeFileNameCR logFilesDir)
     return SUCCESS;
     }
 
+// failing on linux, logFile.Create("/testLogFile1.csv") is failing
 TEST_F(LogFileHelperTests, GetLogFiles_Success)
     {
     BeFileName logFilesDir;

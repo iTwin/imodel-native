@@ -33,9 +33,6 @@ SaasClientImpl::SaasClientImpl
     m_productId = productId;
     m_featureString = featureString;
     m_ulasProvider = ulasProvider;
-    m_correlationId = BeSQLite::BeGuid(true).ToString();
-    m_timeRetriever = TimeRetriever::Get();
-    m_delayedExecutor = DelayedExecutor::Get();
     }
 
 
