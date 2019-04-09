@@ -3350,7 +3350,10 @@ void TileContext::AddPartGeom(Render::GraphicBuilderR graphic, DgnGeometryPartId
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileContext::AddSolidPrimitiveGeom(ISolidPrimitiveR primitive, TransformCR localToWorld, DisplayParamsCR displayParams)
     {
-    if (!AllowInstancing())
+    // ###TODO_INSTANCING: We instance far too aggressively, producing far too many draw calls and killing performance.
+    // Need a better heuristic to decide between instancing and batching.
+    static bool s_instanceSolidPrimitives = false;
+    if (!s_instanceSolidPrimitives || !AllowInstancing())
         return false;
 
     DRange3d partRange;
