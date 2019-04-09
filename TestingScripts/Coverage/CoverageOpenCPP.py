@@ -188,6 +188,7 @@ class CoverageOpenCPP:
     #-------------------------------------------------------------------------------------------
     def runCoverage(self, methods, reportType=None):
         covSuccess = False
+        logPath = ''
         #Attempt to run Coverage against all possible exes
         for comp in self.comps:
             print 'Try to run Coverage for: ' + comp
@@ -201,10 +202,12 @@ class CoverageOpenCPP:
                     cov.editModules(moduleFilter)
 
                 if 'Bridges\\Mstn' in str(cmp.RepoPathForComp(comp)):
+                    logPath = str(cmp.RepoPathForComp(comp))
                     cov.set_SourcePath(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Mstn','iModelBridgeCore')) #Mstn is using iModelBridgeCore
                     cov.set_SourcePath2(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Mstn','iModelCore')) #Mstn is also using iModelCore
                 else:
                     cov.set_SourcePath(cmp.RepoPathForComp(comp))
+                    logPath = str(cmp.RepoPathForComp(comp))
                 
                 cov.set_ExportType('html')
                 if cov.covTestExe(testExe):  # if a single run completes, mark it success
@@ -212,6 +215,7 @@ class CoverageOpenCPP:
                 if methods:
                     self.methodsHtml()
                 cov.createZip(testExe)
+                cov.deleteLogs(logPath) #delete log file
             else:
                 if not os.path.exists(os.path.join(self.repoPath, os.path.basename(testExe)+'.xml')):
                     cov = CodeCoverage()
@@ -219,12 +223,15 @@ class CoverageOpenCPP:
                     if 'Bridges\\Mstn' in str(cmp.RepoPathForComp(comp)):
                         cov.set_SourcePath(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Mstn','iModelBridgeCore')) #Mstn is using iModelBridgeCore
                         cov.set_SourcePath2(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Mstn','iModelCore')) #Mstn is also using iModelCore
+                        logPath = str(cmp.RepoPathForComp(comp))
                     else:
                         cov.set_SourcePath(cmp.RepoPathForComp(comp))
+                        logPath = str(cmp.RepoPathForComp(comp))
                     if cov.covTestExe(testExe):  # if a single run completes, mark it success
                         covSuccess = True
                 else: #XML output is already there.
                     covSuccess = True
+                cov.deleteLogs(logPath)
         return covSuccess
 
     #-------------------------------------------------------------------------------------------

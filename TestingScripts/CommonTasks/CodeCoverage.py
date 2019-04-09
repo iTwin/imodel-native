@@ -92,5 +92,9 @@ class CodeCoverage:
             return False
         else:
             return True
+    
     def editModules(self, moduleFilter):
         self.modules = ' --modules=' + moduleFilter
+
+    def deleteLogs(self, source):
+        os.remove(source +  "\LastCoverageResults.log")    
