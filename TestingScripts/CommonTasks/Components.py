@@ -45,7 +45,7 @@ Components = {'BeHttp':                 {'dll': 'BeHttpM02.dll', 'exe': 'BeHttpT
               'Units':                  {'dll': 'UnitsM02.dll', 'exe': 'UnitsTest',
                                          'ignore':['Units','Tests'],
                                          'owner': 'Colin Kerr'},
-              'Licensing':               {'dll': 'LicensingM02.dll', 'exe': 'LicensingTest',
+              'Licensing':               {'dll': 'LicensingM02.dll', 'exe': 'LicensingUnitTest',
                                          'ignore':['LicensingCrossPlatform','Tests','UnitTests'],
                                          'pdb': ['Licensing'],
                                          'owner': 'Jeff Marker',
