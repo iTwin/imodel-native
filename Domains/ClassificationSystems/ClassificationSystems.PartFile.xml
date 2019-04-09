@@ -130,6 +130,7 @@
     <Part Name="ClassificationSystemsDomain" BentleyBuildMakeFile="Domain/ClassificationSystemsDomain.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="ClassificationSystemsHandlers"/>
+        <SubPart PartName="ClassificationSystemsSchema"/>
         <SubPart PartName="BeJsonCpp" Repository="libsrc-jsoncpp" PartFile="BeJsonCpp"/>
         <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
         <Bindings>
