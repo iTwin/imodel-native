@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <BuildingShared/BuildingSharedApi.h>
 #include <ClassificationSystems/Domain/ClassificationSystemsMacros.h>
+#include <BuildingShared/DgnUtils/BuildingDgnUtilsAPI.h>
 #include <ClassificationSystems/Elements/ForwardDeclarations.h>
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE

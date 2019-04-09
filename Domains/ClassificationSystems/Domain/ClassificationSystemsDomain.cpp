@@ -49,8 +49,8 @@ Dgn::DgnDbR db
 ) const
     {
     ClassificationSystemsDomain::InsertDomainAuthorities(db);
-    ClassificationSystemsDomain::InsertStandardDefinitionSystems(db);
-    ClassificationSystemsDomain::InsertMasterFormatDefinitions(db);
+    //ClassificationSystemsDomain::InsertStandardDefinitionSystems(db);
+    //ClassificationSystemsDomain::InsertMasterFormatDefinitions(db);
     //ClassificationSystemsDomain::InsertUniFormatDefinitions(db);
     /*ClassificationSystemsDomain::InsertOmniClass11Definitions(db);
     ClassificationSystemsDomain::InsertOmniClass12Definitions(db);

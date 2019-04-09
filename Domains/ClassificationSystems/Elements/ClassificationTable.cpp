@@ -9,6 +9,7 @@
 #include "PublicApi/ClassificationGroup.h"
 #include "PublicApi/ClassificationSystem.h"
 #include "PublicApi/ClassificationTable.h"
+#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 

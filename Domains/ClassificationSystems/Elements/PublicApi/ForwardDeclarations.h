@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
+#include <ClassificationSystems/Domain/ClassificationSystemsMacros.h>
 
 //---------------------------------------------------------------------------------------
 // Forward declarations for element refcounted typedefs
