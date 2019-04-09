@@ -282,7 +282,7 @@ RepositoryLinkId Converter::GetRepositoryLinkId(DgnV8FileCR file) const
         //SetRepositoryLinkInAppData(file, aspect.GetRepositoryLinkId());
         return aspect.GetRepositoryLinkId();
         }
-    LOG.tracev(L"Writing syncinfo %s as %s", finfo.m_v8Name.c_str(), finfo.m_uniqueName.c_str());
+    LOG.tracev("Writing syncinfo %s as %s", finfo.m_v8Name.c_str(), finfo.m_uniqueName.c_str());
     return const_cast<Converter*>(this)->WriteRepositoryLink(const_cast<DgnV8FileR>(file));
     }
 
