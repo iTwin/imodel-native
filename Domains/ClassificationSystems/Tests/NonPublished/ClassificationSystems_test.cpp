@@ -144,3 +144,51 @@ TEST_F(ClassificationSystemsTestFixture, PropertiesAreSetProperly)
     ASSERT_TRUE(classification3->GetSpecializationId() == classification1->GetElementId()) << "specialization was not set properly";
     db.SaveChanges();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas               04/20189
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassificationSystemsTestFixture, ECPrpertiesAreSetProperly)
+{
+    DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    Utf8String name = "TestSys";
+
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, name.c_str());
+    ASSERT_TRUE(system.IsValid()) << "Failed to create system";
+
+    system->Insert();
+
+    // Source
+    Utf8String source = system->GetSource();
+    ASSERT_TRUE(Utf8String::IsNullOrEmpty(source.c_str()));
+
+    Utf8String systemSource = "Test Source";
+    system->SetSource(systemSource);
+
+    source = system->GetSource();
+    ASSERT_TRUE(systemSource.Equals(source));
+
+    // Edition
+    Utf8String edition = system->GetEdition();
+    ASSERT_TRUE(Utf8String::IsNullOrEmpty(edition.c_str()));
+
+    Utf8String systemEdition = "Test Edition";
+    system->SetEdition(systemEdition);
+
+    edition = system->GetEdition();
+    ASSERT_TRUE(systemEdition.Equals(edition));
+
+    // Location
+    Utf8String location = system->GetLocation();
+    ASSERT_TRUE(Utf8String::IsNullOrEmpty(location.c_str()));
+
+    Utf8String systemLocation = "Test Location";
+    system->SetLocation(systemLocation);
+
+    location = system->GetLocation();
+    ASSERT_TRUE(systemLocation.Equals(location));
+
+    db.SaveChanges();
+}

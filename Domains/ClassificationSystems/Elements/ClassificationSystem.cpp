@@ -133,4 +133,52 @@ Utf8CP ClassificationSystem::GetName() const
     return GetCode().GetValueUtf8CP();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ClassificationSystem::GetSource() const
+{
+    return GetPropertyValueString(prop_Source());
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClassificationSystem::SetSource(Utf8StringCR source)
+{
+    SetPropertyValue(prop_Source(), source.c_str());
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ClassificationSystem::GetEdition() const
+{
+    return GetPropertyValueString(prop_Edition());
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClassificationSystem::SetEdition(Utf8StringCR edition)
+{
+    SetPropertyValue(prop_Edition(), edition.c_str());
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ClassificationSystem::GetLocation() const
+{
+    return GetPropertyValueString(prop_Location());
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClassificationSystem::SetLocation(Utf8StringCR location)
+{
+    SetPropertyValue(prop_Location(), location.c_str());
+}
+
 END_CLASSIFICATIONSYSTEMS_NAMESPACE

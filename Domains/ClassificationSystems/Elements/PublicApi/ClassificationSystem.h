@@ -33,6 +33,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem final : Dgn::DefinitionEleme
         virtual void _SerializeProperties(Json::Value& elementData) const override;
         virtual void _FormatSerializedProperties(Json::Value& elementData) const override;
 
+        BE_PROP_NAME(Source);
+        BE_PROP_NAME(Edition);
+        BE_PROP_NAME(Location);
     public:
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystem, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
 
@@ -59,6 +62,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem final : Dgn::DefinitionEleme
 
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static Dgn::ElementIterator MakeIterator(Dgn::DgnDbR dgnDbR);
 
+        //---------------------------------------------------------------------------------------
+        // Getters and setters
+        //---------------------------------------------------------------------------------------
         //! Gets the name of this ClassificationSystem
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const;
 
@@ -67,6 +73,30 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem final : Dgn::DefinitionEleme
         //! @param[in]  name   name of the ClassificationSystem that will be used for code generation
         //! @return     generated code
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static Dgn::DgnCode GetSystemCode(Dgn::DgnDbR db, Utf8CP name);
+
+        //! Gets source of this classification
+        //! @return  source of this classification
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8String GetSource() const;
+
+        //! Sets source of this classification
+        //! @param[in]  source   new source for this classification
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT void SetSource(Utf8StringCR source);
+
+        //! Gets edition of this classification
+        //! @return  edition of this classification
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8String GetEdition() const;
+
+        //! Sets edition of this classification
+        //! @param[in]  edition   new edition for this classification
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT void SetEdition(Utf8StringCR edition);
+
+        //! Gets location of this classification
+        //! @return  location of this classification
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8String GetLocation() const;
+
+        //! Sets location of this classification
+        //! @param[in]  location   new location for this classification
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT void SetLocation(Utf8StringCR location);
     };
     
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
