@@ -1,0 +1,67 @@
+#----------------------------------------------------------------------
+#
+#     $Source: iModelBridge/Fwk/Registry/iModelBridgeAssignMain.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+appName     = iModelBridgeAssign
+baseDir     = $(_MakeFilePath)
+
+
+o = $(OutputRootDir)Build/$(appName)/
+always:
+    ~mkdir $(o)
+
+iModelBridgeAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/
+iModelBridgePrivateAPISrc = $(SrcRoot)DgnDbSync/PrivateAPI/
+dirToSearch  = $(iModelBridgePrivateAPISrc)
+%include cincapnd.mki
+
+nameToDefine = __IMODEL_BRIDGE_FWK_BUILD__
+%include cdefapnd.mki
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+DLM_NAME        =% $(appName)
+CCompPDBName    =% $(appName)
+
+MultiCompileDepends = $(_MakeFileSpec)
+
+%include MultiCppCompileRule.mki
+
+$(o)iModelBridgeAssignMain$(oext): $(baseDir)iModelBridgeAssignMain.cpp $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeRegistry.h ${MultiCompileDepends}
+
+$(o)iModelBridgeRegistry$(oext): $(baseDir)iModelBridgeRegistry.cpp $(iModelBridgeAPISrc)iModelBridgeFwkTypes.h $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeRegistry.h ${MultiCompileDepends}
+
+$(o)iModelBridgeRegistryUtils$(oext): $(baseDir)iModelBridgeRegistryUtils.cpp $(iModelBridgeAPISrc)iModelBridgeFwkTypes.h $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeRegistry.h ${MultiCompileDepends}
+
+$(o)cpl_spawn$(oext): $(baseDir)cpl_spawn.cpp $(baseDir)cpl_spawn.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+
+EXE_DEST     = $(o)
+EXE_NAME     = $(appname)
+EXE_OBJS     = $(MultiCompileObjectList)
+EXE_TMP_DIR  = $(o)
+EXE_CONTEXT_LOCATION = $(BuildContext)Delivery/exe/
+
+%ifdef __unix
+
+%include $(SharedMki)rollUpSubPartsLibsThin.mki
+EXE_OBJS + $(THIN_ARCHIVE_PATH)
+
+%else
+
+EXE_LOPT1    = -entry:wmainCRTStartup
+
+EXE_OBJS  + $[@realpath $[@wildcard $(BuildContext)SubParts/Libs/*$(stlibext)]]
+LINKER_LIBRARIES = $(BENTLEY_WIN32_LINK_CLibraries)
+%endif
+
+%include $(sharedMki)linktool.mki

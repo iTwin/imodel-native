@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension" xmlns:bal="http://schemas.microsoft.com/wix/BalExtension" xmlns:wbb="urn:schemas-bentley-com:wixBundleBuild">
+    <?include wixBundleBuildDefinitions.wxi?>
+	<?include $(var.BBInstallSetDefinitionWxi)?>
+    <?include InstallSetDefintion.wxi?>
+    
+    <!-- iModel Bridge for DWG has a GPR ID 2706 -->
+    <Bundle Name="$(var.bbVarBundleName)" Version="$(var.INSTALLER_PRODUCT_VERSION)" UpgradeCode="$(var.bbVarBundleUpgradeCode)" Condition="VersionNT64  > v6.1 OR (VersionNT64 > v6.0 AND VersionNT64 &lt; v6.2 AND ServicePackLevel >= 1)" DisableModify="no" Manufacturer="Bentley Systems, Incorporated" HelpUrl="https://communities.bentley.com/products/default.aspx" UpdateUrl="http://www.bentley.com/downloads" AboutUrl="http://apps.bentley.com/bentleyconnect/" Copyright="Copyright © 2016 Bentley Systems, Incorporated. All rights reserved." Tag="BE;SP=0;LCID=$(var.LANGUAGE_LCID);PID=2706;Win64=True">
+        
+        <BootstrapperApplicationRef Id="ManagedBootstrapperApplicationHost">
+            <PayloadGroupRef Id="InstallFrameworkManagedBootstrapper"/>
+        </BootstrapperApplicationRef>
+
+        <WixVariable Id="WixMbaPrereqPackageId" Value="Nothing" />
+        <WixVariable Id="WixMbaPrereqLicenseUrl" Value="Nothing.rtf" />
+        
+        <Chain ParallelCache="yes">
+            <MsiPackage Id="PowerProductPackage" SourceFile="$(var.PowerProductPath)$(var.bbVarProductShortName)$(var.bbVarProductTargetPlatform).msi"  Compressed="yes"  Visible="no" EnableFeatureSelection="yes" ForcePerMachine="yes" Description="iModel Bridge Service - Autodesk(R) DWG(TM)">
+                <MsiProperty Name="INSTALLDIR" Value="[InstallDirectory]"/>
+                <MsiProperty Name="PACKAGE_HOMEROOT" Value="[ConfigurationDirectory]"/>
+                <MsiProperty Name="FROMLAUNCHSETUP" Value="1"/>
+                <MsiProperty Name="WIXUI_SHORTCUTSDIALOGDESKTOPCHECKBOX" Value="[InstallDesktopShortcut]"/>
+                <MsiProperty Name="BUNDLEPROVIDERKEY" Value="[WixBundleProviderKey]"/>
+
+                <!--Bundle Properties for Bundle Bentley registration.-->
+                <MsiProperty Name="BE_BUNDLE_NAME"                    Value="[WixBundleName]"/>
+                <MsiProperty Name="BE_BUNDLE_VERSION"                 Value="[WixBundleVersion]"/>
+                <MsiProperty Name="BE_BUNDLE_BUILDTYPE"               Value="[BeBuildType]"/>
+                <MsiProperty Name="BE_BUNDLE_DEPLOYMENTIMAGE_GUID"    Value="[BeLayoutGUID]"/>
+
+                <MsiProperty Name="USER_CONFIGURATION_LOCATION" Value="[SharedConfigurationDirectory]"/>
+
+                <wbb:PackageSource InstallSetContext="DwgConverter" PathMacro="PowerProductPath" />
+            </MsiPackage>
+           
+        </Chain>
+
+        <wbb:Pages>
+            <wbb:Page Name="InstallDirectorySelectionPage" Source="SetupPagesLib.dll" Xaml="InstallDirectorySelectionUserControl.xaml">NOT BeUpgradingProductCodes</wbb:Page>/>
+            <wbb:Page Name="WelcomeDialogInstallPage"       Source="SetupPagesLib.dll" Xaml="WelcomeDialogInstallUserControl.xaml">BeUpgradingProductCodes</wbb:Page>/>
+            <wbb:Page Name="UninstallVerificationPage" Source="SetupPagesLib.dll" Xaml="UninstallVerificationUserConstrol.xaml">BePlannedAction="Uninstall"</wbb:Page>
+            <wbb:Page Name="PPCustomWorkSpacesPage" Source="SetupPagesLib.dll" Xaml="PPCustomWorkSpacesUserControl.xaml"/>
+            <wbb:Page Name="DeploymentImageSettingsPage" Source="SetupPagesLib.dll" Xaml="DeploymentImageSettingsControl.xaml"/>
+            <wbb:Page Name="FeatureConfigPage" Source="SetupPagesLib.dll" Xaml="FeatureConfigUserControl.xaml">NOT BePlannedAction="Uninstall" AND NOT BePlannedAction="Repair" AND NOT BeSkipFeatureConfigDialog</wbb:Page>
+            <wbb:Page Name="ProxySettingsPage" Source="SetupPagesLib.dll" Xaml="ProxySettingsUserControl.xaml"/>
+            <wbb:Page Name="ErrorPage" Source="SetupPagesLib.dll" Xaml="ErrorUserControl.xaml"/>
+            <wbb:Page Name="MaintenancePage" Source="SetupPagesLib.dll" Xaml="MaintenanceUserControl.xaml"/>
+            <wbb:Page Name="RepairSelectionPage" Source="SetupPagesLib.dll" Xaml="RepairSelectionUserControl.xaml">BePlannedAction="Repair"</wbb:Page>
+            <wbb:Page Name="AddedPackagePage" Source="SetupPagesLib.dll" Xaml="AddedPackageUserControl.xaml"/>
+            <wbb:Page Name="WarningPage" Source="SetupPagesLib.dll" Xaml="WarningUserControl.xaml"/>
+            <wbb:Page Name="CompanionProductInstallDirSelectionPage" Source="SetupPagesLib.dll" Xaml="CompanionProductInstallDirSelectionUserControl.xaml">NOT BeUpgradingProductCodes</wbb:Page>/>
+            <wbb:Page Name="CompanionProductConfigurationSettingsPage" Source="SetupPagesLib.dll" Xaml="CompanionProductConfigurationSettingsUserControl.xaml"/>
+            <wbb:Page Name="CompanionProductSelectionPage" Source="SetupPagesLib.dll" Xaml="CompanionProductSelectionUserControl.xaml"/>
+            <wbb:Page Name="CompanionProductFeatureSelectionPage" Source="SetupPagesLib.dll" Xaml="CompanionProductFeatureSelectionUserControl.xaml"/>
+            <wbb:Page Name="LumenRTInstallDirectorySelectionPage" Source="LumenRTExtension.dll" Xaml="InstallDirSelection.xaml"/>
+            <wbb:Page Name="LumenRTUserInformationPage" Source="LumenRTExtension.dll" Xaml="LumenRTUserInformation.xaml"/>
+            <wbb:Page Name="RedefineWixPackageCachePage" Source="SetupPagesLib.dll" Xaml="RedefineWixPackageCacheUserControl.xaml"/>
+        </wbb:Pages>
+
+        <!--<wbb:UISequences>
+            <wbb:UISequence Action="Install">InstallDirectorySelectionPage,WelcomeDialogInstallPage,FeatureConfigPage</wbb:UISequence>
+            <wbb:UISequence Action="Layout">InstallDirectorySelectionPage,DeploymentImageSettingsPage,FeatureConfigPage</wbb:UISequence>
+            <wbb:UISequence Action="Modify">FeatureConfigPage</wbb:UISequence>
+            <wbb:UISequence Action="Repair">RepairSelectionPage</wbb:UISequence>
+            <wbb:UISequence Action="Uninstall">UninstallVerificationPage</wbb:UISequence>
+            <wbb:UISequence Action="Maintenance">MaintenancePage,FeatureConfigPage,RepairSelectionPage,UninstallVerificationPage</wbb:UISequence>
+        </wbb:UISequences>-->
+
+        <wbb:UISequences>
+          <wbb:UISequence Action="Install">CompanionProductSelectionPage,CompanionProductInstallDirSelectionPage</wbb:UISequence>
+          <wbb:UISequence Action="Layout">CompanionProductSelectionPage,CompanionProductInstallDirSelectionPage,DeploymentImageSettingsPage</wbb:UISequence>
+          <wbb:UISequence Action="Modify">CompanionProductSelectionPage</wbb:UISequence>
+          <wbb:UISequence Action="Repair">RepairSelectionPage</wbb:UISequence>
+          <wbb:UISequence Action="Uninstall">UninstallVerificationPage</wbb:UISequence>
+          <wbb:UISequence Action="Maintenance">MaintenancePage,CompanionProductSelectionPage,CompanionProductFeatureSelectionPage,RepairSelectionPage,UninstallVerificationPage</wbb:UISequence>
+        </wbb:UISequences>
+
+        <?ifdef BBinstallerBuildTypeRelease?>
+        <Variable Name="InstallDirectory" Value="[ProgramFiles64Folder]Bentley\DwgBridge\" Persisted="yes" Type="string"/>
+        <?else?>
+        <Variable Name="InstallDirectory" Value="[ProgramFiles64Folder]Bentley\$(var.bbVarProductShortName)-$(var.INSTALLER_PRODUCT_VERSION)\" Persisted="yes" Type="string"/>
+        <?endif?>
+
+        <!--List of properties to save value of, while creating the Deployment Image-->
+        <Variable Name="LayoutSavePropertyList" Type="string" Value="InstallDirectory;ConfigurationDirectory;InstallDesktopShortcut;LumenRTInstallDirectory;LumenRTUserName;LumenRTCompanyName;SharedConfigurationDirectory"/>
+        <Variable Name="BePathPropertyList" Value="InstallDirectory;ConfigurationDirectory;SharedConfigurationDirectory;LumenRTInstallDirectory"/>
+
+        <!--List of Bundle properties, in addition to Windows Standard Path propties, available when user try to add package.-->
+        <Variable Name="AddedPackageAvailablePropertyList" Type="string" Value="InstallDirectory;ConfigurationDirectory"/>
+
+    </Bundle>
+</Wix>
+
