@@ -184,7 +184,24 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, ECInstanceChangeEven
 +===============+===============+===============+===============+===============+======*/
 struct RulesDrivenECPresentationManagerMultithreadingRealConnectionTests : RulesDrivenECPresentationManagerMultithreadingTestsBase
     {
+    ECDb m_db;
     IConnectionManager* _CreateConnectionManager() const override {return new ConnectionManager();}
+    virtual void SetUp() override
+        {
+        RulesDrivenECPresentationManagerMultithreadingTestsBase::SetUp();
+
+        BeFileName projectPath;
+        BeTest::GetHost().GetTempDir(projectPath);
+        projectPath.AppendToPath(L"RulesDrivenECPresentationManagerMultithreadingRealConnectionTests");
+        BeFileName::CreateNewDirectory(projectPath);
+        projectPath.AppendToPath(WString(BeTest::GetNameOfCurrentTest(), true).c_str());
+        projectPath.BeDeleteFile();
+        BeFileName::BeCopyFile(WString(s_project->GetECDbPath(), true).c_str(), projectPath, true);
+        m_db.OpenBeSQLiteDb(projectPath, Db::OpenParams(Db::OpenMode::ReadWrite));
+
+        m_connection = m_connections->CreateConnection(m_db).get();
+        Sync();
+        }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -201,14 +218,14 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
     m_manager->GetLocaters().RegisterLocater(*locater);
 
     // lock the db using the primary connection
-    s_project->GetECDb().GetDefaultTransaction()->Cancel();
-    Savepoint txn(s_project->GetECDb(), "Lock primary", true, BeSQLiteTxnMode::Exclusive);
+    m_db.GetDefaultTransaction()->Cancel();
+    Savepoint txn(m_db, "Lock primary", true, BeSQLiteTxnMode::Exclusive);
     ASSERT_TRUE(txn.IsActive());
 
     // attempt to get some data (don't expect to get any, but make sure request succeeds)
     NavNodeKeyCPtr key = LabelGroupingNodeKey::Create("label", {"a", "b", "c"}, 1);
     RulesDrivenECPresentationManager::NavigationOptions options(ruleset->GetRuleSetId().c_str(), RuleTargetTree::TargetTree_MainTree);
-    folly::Future<size_t> count = m_manager->GetRootNodesCount(s_project->GetECDb(), options.GetJson());
+    folly::Future<size_t> count = m_manager->GetRootNodesCount(m_db, options.GetJson());
 
     // verify we don't get any result for 1 second
     count.wait(std::chrono::seconds(1));
@@ -216,7 +233,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
 
     // unlock the db
     txn.Cancel();
-    s_project->GetECDb().GetDefaultTransaction()->Begin();
+    m_db.GetDefaultTransaction()->Begin();
 
     // verify we do get the result after the lock is released
     size_t countResult = count.get();
@@ -229,8 +246,8 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
 TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, SetsUpCustomFunctionsInBothPrimaryAndProxyConnections)
     {
     // prepare the dataset
-    ECClassCP ecClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, nullptr, true);
+    ECClassCP ecClass = m_db.Schemas().GetClass("RulesEngineTest", "Widget");
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *ecClass, nullptr, true);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -247,7 +264,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, SetsUp
 
     // get content
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
     ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
 
     // assert
@@ -262,8 +279,8 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, SetsUp
 TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, UnregisterCustomFunctionsInBothPrimaryAndProxyConnections)
     {
     // prepare the dataset
-    ECClassCP ecClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, nullptr, true);
+    ECClassCP ecClass = m_db.Schemas().GetClass("RulesEngineTest", "Widget");
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *ecClass, nullptr, true);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -280,20 +297,20 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Unregi
 
     // get content
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
     ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
 
     // Assert that custom functions are registered
     ASSERT_TRUE(content.IsValid());
     DbFunction* function = nullptr;
-    s_project->GetECDb().TryGetSqlFunction(function, FUNCTION_NAME_IsOfClass, 3);
+    m_db.TryGetSqlFunction(function, FUNCTION_NAME_IsOfClass, 3);
     ASSERT_NE(nullptr, function);
     
     // Remove presentation manager
     DELETE_AND_CLEAR(m_manager);
 
     // Assert that custom functions are unregistered
-    s_project->GetECDb().TryGetSqlFunction(function, FUNCTION_NAME_IsOfClass, 3);
+    m_db.TryGetSqlFunction(function, FUNCTION_NAME_IsOfClass, 3);
     ASSERT_EQ(nullptr, function);
     }
 
@@ -318,8 +335,8 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
     ECSchema::ReadFromXmlString(schema, schemaXML, *context);
     
     // prepare the dataset
-    ECClassCP ecClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, nullptr, true);
+    ECClassCP ecClass = m_db.Schemas().GetClass("RulesEngineTest", "Widget");
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *ecClass, nullptr, true);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -336,14 +353,14 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
 
     // get content
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
     ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
 
     // Attempt to trigger a deadlock by importing a schema and ask for content again
     bvector<ECSchemaCP> schemaList = bvector<ECSchemaCP>{ schema.get() };
-    s_project->GetECDb().Schemas().ImportSchemas(schemaList);
+    m_db.Schemas().ImportSchemas(schemaList);
 
-    descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    descriptor = m_manager->GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
     content = m_manager->GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
     }
