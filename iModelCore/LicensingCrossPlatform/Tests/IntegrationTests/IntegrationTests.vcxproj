@@ -44,13 +44,17 @@
     </BuildLog>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AccessKeyClientIntegrationTests.cpp" />
     <ClCompile Include="ClientIntegrationTests.cpp" />
     <ClCompile Include="DummyPolicyHelper.cpp" />
+    <ClCompile Include="SaasClientIntegrationTests.cpp" />
     <ClCompile Include="TestsHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AccessKeyClientIntegrationTests.h" />
     <ClInclude Include="ClientIntegrationTests.h" />
     <ClInclude Include="DummyPolicyHelper.h" />
+    <ClInclude Include="SaasClientIntegrationTests.h" />
     <ClInclude Include="TestsHelper.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

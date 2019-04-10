@@ -36,7 +36,7 @@ BentleyStatus UlasProvider::PostUsageLogs(ClientInfoPtr clientInfo, BeFileNameCR
     bvector<WString> logFiles;
     BeFileName logPath(dbPath.GetDirectoryName());
 
-    fileName.Sprintf("LicUsageLog.%s.csv", BeGuid(true).ToString().c_str());
+    fileName.Sprintf("LicUsageLog.%s.csv", BeSQLite::BeGuid(true).ToString().c_str());
 
     logPath.AppendToPath(BeFileName(fileName));
 
@@ -121,7 +121,7 @@ BentleyStatus UlasProvider::PostFeatureLogs(ClientInfoPtr clientInfo, BeFileName
     bvector<WString> logFiles;
     BeFileName featureLogPath(dbPath.GetDirectoryName());
 
-    fileName.Sprintf("LicFeatureLog.%s.csv", BeGuid(true).ToString().c_str());
+    fileName.Sprintf("LicFeatureLog.%s.csv", BeSQLite::BeGuid(true).ToString().c_str());
 
     featureLogPath.AppendToPath(BeFileName(fileName));
 

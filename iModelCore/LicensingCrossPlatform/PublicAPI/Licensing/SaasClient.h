@@ -18,10 +18,10 @@
 #include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
 
+#include <Licensing/Utils/FeatureEvent.h>
 //#include <Licensing/Utils/FeatureUserDataMap.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
-USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
@@ -47,7 +47,7 @@ public:
         (
         int productId = 0,
         Utf8StringCR featureString = "",
-        IHttpHandlerPtr customHttpHandler = nullptr
+        Http::IHttpHandlerPtr customHttpHandler = nullptr
         );
 
     //! Send realtime usage
@@ -55,6 +55,11 @@ public:
     //! @param[in] version version for this usage
     //! @param[in] projectId projectId of this usage
     LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
+
+    //! Mark realtime feature
+    //! @param[in] accessToken OIDC token of user to mark feature against
+    //! @param[in] featureEvent The feature event to mark
+    LICENSING_EXPORT folly::Future<BentleyStatus> MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent);
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

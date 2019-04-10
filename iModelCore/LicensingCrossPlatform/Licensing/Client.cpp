@@ -30,14 +30,14 @@ Client::Client
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr Client::Create
     (
-    const ConnectSignInManager::UserInfo& userInfo,
-    ClientInfoPtr clientInfo,
-    std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+    const WebServices::ConnectSignInManager::UserInfo& userInfo,
+	WebServices::ClientInfoPtr clientInfo,
+    std::shared_ptr<WebServices::IConnectAuthenticationProvider> authenticationProvider,
     BeFileNameCR dbPath,
     bool offlineMode,
     Utf8StringCR projectId,
     Utf8StringCR featureString,
-    IHttpHandlerPtr httpHandler,
+    Http::IHttpHandlerPtr httpHandler,
     AuthType authType
     )
     {

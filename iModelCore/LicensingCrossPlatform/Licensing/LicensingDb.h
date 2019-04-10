@@ -16,8 +16,6 @@
 #define LICENSE_CLIENT_SCHEMA_NAME      "LICENSINGSCHEMA"
 #define LICENSE_CLIENT_SCHEMA_VERSION   1.0
 
-USING_NAMESPACE_BENTLEY_SQLITE
-
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
@@ -26,7 +24,7 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 struct LicensingDb : ILicensingDb
 {
 private:
-    Db m_db;
+	BeSQLite::Db m_db;
 
     const Utf8String GRACESTART = "GRACESTART";
 
