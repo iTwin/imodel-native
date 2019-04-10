@@ -1,0 +1,14 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Docs/Prewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+DocumentationDir = $(_MakeFilePath)
+OverviewPagesDir = $(DocumentationDir)Overview/
+
+always:
+    ~linkdir "$(BuildContext)Delivery/Docs/Pages = $(OverviewPagesDir)"

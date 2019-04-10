@@ -1,0 +1,38 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Source/Dependencies.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+ECPresentationPublicHeaders     = $(PublicApiDirectory)ECPresentation.h         \
+                                  $(PublicApiDirectory)ECPresentationTypes.h    \
+                                  $(PublicApiDirectory)ExtendedData.h           \
+                                  $(PublicApiDirectory)NavNode.h                \
+                                  $(PublicApiDirectory)Content.h                \
+                                  $(PublicApiDirectory)DataSource.h             \
+                                  $(PublicApiDirectory)IECPresentationManager.h \
+                                  $(PublicApiDirectory)SelectionManager.h       \
+                                  $(PublicApiDirectory)IECPresentationSerializer.h\
+                                  $(PublicApiDirectory)DefaultECPresentationSerializer.h\
+                                  $(PublicApiDirectory)Connection.h             \
+                                  $(PublicApiDirectory)Update.h                 \
+                                  $(PublicApiDirectory)ContentFieldEditors.h    \
+                                  $(PublicApiDirectory)KeySet.h                 
+
+ECPresentationInternalHeaders   = $(SourceDirectory)ECDbBasedCache.h            \
+                                  $(SourceDirectory)ValueHelpers.h
+
+ECPresentationXliffHeaders      = $(XliffsDirectory)ECPresentation.xliff.h
+
+ECPresentationHeaders           = $(ECPresentationPublicHeaders) $(ECPresentationInternalHeaders) $(ECPresentationXliffHeaders)
+
+ECPresentationMkis              = $(SourceDirectory)CompileOptions.mki          \
+                                  $(SourceDirectory)Dependencies.mki            \
+                                  $(SourceDirectory)ECPresentation.mki
+
+ECPresentationDependencies      = $(ECPresentationHeaders) $(ECPresentationMkis)
+
+ECPresentationMakefiles         + $(ECPresentationMkis)
+
+%include $(SourceDirectory)RulesDriven/Dependencies.mki
