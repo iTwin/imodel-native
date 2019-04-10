@@ -58,8 +58,14 @@ def callForPull(args, config):
     cmd = getBBCmd() + ' -v {0} -a "{1}" -s "{2}" pull'.format(args.verbosity, '+'.join(allArchs), '+'.join(allStrats))
 
     if args.bdfdir:
+        candidateBdf = stratConfig['name']
+        if 'slave_pull_bdf' in config and config['slave_pull_bdf']:
+            candidateBdf = config['slave_pull_bdf']
+
         # BDF names must be lower-case because BentleyBootstrap.py always lower-cases its input, which affects case-sensitive file systems.
-        cmd += ' -r ' + os.path.join(args.bdfdir, stratConfig['name'].lower() + '.xml')
+        candidateBdf = candidateBdf.lower()
+
+        cmd += ' -r ' + os.path.join(args.bdfdir, candidateBdf + '.xml')
 
     print(cmd)
     cmdStartTime = time.time()
