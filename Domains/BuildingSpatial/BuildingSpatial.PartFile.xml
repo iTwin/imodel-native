@@ -5,16 +5,14 @@
     >
         
     <Part Name="BuildingSpatial" >
+      <SubPart PartName="BuildingSpatialDomain"/>
       <SubPart PartName="BuildingSpatialElements"/>
       <SubPart PartName="BuildingSpatialHandlers"/>
       <SubPart PartName="BuildingSpatialSchema"/>
     </Part>
 
-    <Part Name="BuildingSpatialSchema" BentleyBuildMakeFile="BuildingSpatialSchema.prewire.mke">
-        <SubPart PartName="SpatialCompositionSchema" Repository="DgnDomains-SpatialComposition" PartFile="SpatialComposition" />
-        <Bindings>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain">ECSchemas/Domain/BuildingSpatial*.xml</Files>
-        </Bindings>
+    <Part Name="BuildingSpatialSchema" >
+        <SubPart PartName="BuildingSpatial" Repository="BisSchemas" PartFile="BisSchemas" />
     </Part>
 
     <Part Name="BuildingSpatialApi" BentleyBuildMakeFile="BuildingSpatialApi.prewire.mke">
@@ -36,6 +34,7 @@
       <SubPart PartName="BuildingSpatial-Gtest"/>
       <Directories DirectoryListName="BuildingSpatialGTestDirectories"/>
     </Product>
+	
     <ProductDirectoryList ListName="BuildingSpatialGTestDirectories">
       <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
       <ProductDirectory Name="Gtest-NativeAssemblies" Path="" LibType="Static"/>

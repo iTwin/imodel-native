@@ -13,6 +13,8 @@
 #define USING_NAMESPACE_BUILDINGSPATIAL using namespace BENTLEY_NAMESPACE_NAME::BUILDINGSPATIAL_NAMESPACE_NAME;
 
 #define BUILDINGSPATIAL_SCHEMA_NAME                          "BuildingSpatial"
+#define BUILDINGSPATIAL_SCHEMA_PATH                          L"ECSchemas/Domain/BuildingSpatial.ecschema.xml"
+
 #define BUILDINGSPATIAL_CLASS_Building                       "Building"
 #define BUILDINGSPATIAL_CLASS_Space                          "Space"
 #define BUILDINGSPATIAL_CLASS_Story                          "Story"
