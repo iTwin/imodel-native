@@ -1,0 +1,35 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: mki/SchemaRoundtripValidation/SchemaRoundtripValidation.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+SrcDir = $(_MakeFilePath)
+
+ProductDir = $(OutputRootDir)Product/SchemaRoundtripValidation/
+
+pathToSchemas1=$(ProductDir)Assets/ECSchemas/Dgn/
+pathToSchemas2=$(ProductDir)Assets/ECSchemas/Domain/
+schemaDirectoryArr=$(pathToSchemas1),$(pathToSchemas2)
+
+pathToRefSchemas1=$(pathToSchemas1)
+pathToRefSchemas2=$(pathToSchemas2)
+pathToRefSchemas3=$(ProductDir)Assets/ECSchemas/ECDb/
+pathToRefSchemas4=$(ProductDir)Assets/ECSchemas/Standard/
+pathToRefSchemas5=$(ProductDir)Assets/ECSchemas/ECDb/
+pathToRefSchemas6=$(ProductDir)Assets/ECSchemas/V3Conversion/
+referenceDirectoryArr=$(pathToRefSchemas1),$(pathToRefSchemas2),$(pathToRefSchemas3),$(pathToRefSchemas4),$(pathToRefSchemas5),$(pathToRefSchemas6)
+
+nativeSchemaRoundtripExe=$(ProductDir)SchemaRoundtrip.exe
+nativeSchemaComparisonExe=$(ProductDir)SchemaComparison.exe
+managedECSchemaUtilityExe=$(ProductDir)ECSchemaUtility/ECSchemaUtility.exe
+
+# Possible options:
+#   -OutputLogsOnError
+#   -EnableWriteDebug
+#   -ContinueOnError
+options=-OutputLogsOnError -EnableWriteDebug 
+
+always:
+    PowerShell.exe -executionpolicy remotesigned -command $(SrcDir)SchemaRoundtripValidation.ps1 -NativeSchemaRoundtrip $(nativeSchemaRoundtripExe) -NativeSchemaComparison $(nativeSchemaComparisonExe) -ManagedECSchemaUtility $(managedECSchemaUtilityExe) -SchemaDirs $(schemaDirectoryArr) -RefDirs $(referenceDirectoryArr) $(options)
