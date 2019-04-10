@@ -1,0 +1,23 @@
+{
+  "configurations": [
+    {
+      "inheritEnvironments": [
+        "msvc_x64"
+      ],
+      "name": "x64-Debug",
+      "includePath": [
+        "${env.OutRoot}Winx64\\BuildContexts\\MstnBridge\\PublicAPI\\",
+        "${env.OutRoot}Winx64\\BuildContexts\\MstnBridge\\VendorAPI\\",
+        "${env.INCLUDE}",
+        "${workspaceRoot}\\**"
+      ],
+      "defines": [
+        "WIN32",
+        "_DEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "intelliSenseMode": "windows-msvc-x64"
+    }
+  ]
+}
