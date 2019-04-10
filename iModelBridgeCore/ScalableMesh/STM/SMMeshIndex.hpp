@@ -4741,14 +4741,14 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
                 polys.resize(polys.size() - 1);
                 clipIds.resize(clipIds.size() - 1);
                 continue;
-                }
-
-            if (s_simplifyOverviewClips && this->m_nodeHeader.m_level <= SM_SIMPLIFY_OVERVIEW_CLIPS_MAX_LEVEL && polys.back().size() >= this->m_nodeHeader.m_nodeCount)
-            {
+                }            
+                
+            if (s_simplifyOverviewClips && this->m_nodeHeader.m_level <= SM_SIMPLIFY_OVERVIEW_CLIPS_MAX_LEVEL && this->m_SMIndex->m_indexHeader.m_depth > SM_SIMPLIFY_OVERVIEW_CLIPS_MAX_LEVEL && polys.back().size() >= this->m_nodeHeader.m_nodeCount)
+                {
                 if (minEdgeLength == DBL_MAX)
                     minEdgeLength = ComputeMinEdgeLength(&points[0], pointsPtr->size(), &(*ptIndices)[0], ptIndices->size());
                 SimplifyPolygonToMinEdge(minEdgeLength / 2.0, polys.back());
-            }
+                }
 
             int nOfLoops = 0;
             if (geom == SMClipGeometryType::ComplexPolygon)
