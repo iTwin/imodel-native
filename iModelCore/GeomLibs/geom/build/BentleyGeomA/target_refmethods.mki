@@ -1,0 +1,150 @@
+#--------------------------------------------------------------------------------------+
+#
+#     $Source: geom/build/BentleyGeomA/target_refmethods.mki $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+#
+# Include this file in your .mke file to get the complete list
+# of input/output dependencies, with the output names bracketed by
+# macroed names so you can vary the directory and type of dependency
+# each time you include the file.
+#
+# (begin structs_sources.mki)
+geomSrcPubGeomInteral = $(geomSrcPubGeom)internal/
+
+$(OUT_DIR)refdpoint2d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdpoint2d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdpoint3d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdpoint3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refOperatorOverload$(OUT_EXT) : $(geomSrcStructsCpp)refmethods/refOperatorOverload.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdpoint4d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdpoint4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+$(OUT_DIR)refdvec3d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdvec3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdvec2d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdvec2d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+$(OUT_DIR)refdrange3d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdrange3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdrange3dArrays$(OUT_EXT)   : $(geomSrcStructsCpp)refmethods/refdrange3dArrays.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdrange2d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdrange2d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+$(OUT_DIR)refdsegment3d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdsegment3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refrotmatrix$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refrotmatrix.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refrotmatrixMultiply$(OUT_EXT)   : $(geomSrcStructsCpp)refmethods/refrotmatrixMultiply.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refrotmatrixInit$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refrotmatrixInit.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refrotmatrixInvert$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refrotmatrixInvert.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refrotmatrixQuery$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refrotmatrixQuery.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)reftransform$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/reftransform.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)reftransformMultiply$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/reftransformMultiply.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)reftransformIsXXX$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/reftransformIsXXX.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)reftransformInvert$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/reftransformInvert.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdmatrix4d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdmatrix4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+
+
+
+
+$(OUT_DIR)refdplane3d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdplane3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdray3d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdray3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)Angle$(OUT_EXT)           : $(geomSrcFuncs)Angle.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)YawPitchRollAnglesInDegrees$(OUT_EXT)    : $(geomSrcFuncs)YawPitchRollAnglesInDegrees.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#$(OUT_DIR)trigfuncs$(OUT_EXT)       : $(geomSrcFuncs)trigfuncs.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)drange1d$(OUT_EXT)      : $(geomSrcStructs)drange1d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)DSegment1d$(OUT_EXT)      : $(geomSrcStructs)DSegment1d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)DTriangle3d$(OUT_EXT)      : $(geomSrcStructs)DTriangle3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+
+
+
+$(OUT_DIR)DPoint3dOps$(OUT_EXT)     : $(geomSrcFuncs)DPoint3dOps.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)DoubleOps$(OUT_EXT)     : $(geomSrcFuncs)DoubleOps.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#$(OUT_DIR)PolylineOps$(OUT_EXT)     : $(geomSrcFuncs)PolylineOps.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)PolylineOffset$(OUT_EXT)     : $(geomSrcFuncs)PolylineOffset.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#$(OUT_DIR)PolygonOps$(OUT_EXT)     : $(geomSrcFuncs)PolygonOps.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)dpoint3ddvec3d$(OUT_EXT)  : $(geomSrcStructs)dpoint3ddvec3d.cpp   $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+
+$(OUT_DIR)newton$(OUT_EXT)          : $(geomSrcFuncs)newton.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)memfuncs$(OUT_EXT)        : $(geomSrcFuncs)memfuncs.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)BSIQuadrature$(OUT_EXT)   : $(geomSrcFuncs)BSIQuadrature.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)dspiral2dbase$(OUT_EXT) : $(geomSrcStructs)dspiral2dbase.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#$(OUT_DIR)catenary$(OUT_EXT) : $(geomSrcStructs)catenary.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+$(OUT_DIR)GeomPrintFuncs$(OUT_EXT)      : $(vuSrc)GeomPrintFuncs.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#BuildDMap4d=1
+%ifdef BuildDMap4d
+$(OUT_DIR)refdmap4d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdmap4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)dmap4d$(OUT_EXT)          : $(geomSrcStructs)dmap4d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)dmatrix4d$(OUT_EXT)       : $(geomSrcStructs)dmatrix4d.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdsegment4d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdsegment4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+%endif
+
+$(OUT_DIR)refdsegment4d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdsegment4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdellipse3d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdellipse3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)ellipticintegrals$(OUT_EXT)   : $(geomSrcFuncs)ellipticintegrals.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)bezrootConics$(OUT_EXT)        : $(geomSrcBezier)bezrootConics.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#$(OUT_DIR)FacetOptions$(OUT_EXT)        : $(geomSrcPolyface)FacetOptions.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)quadeqn$(OUT_EXT)         : $(geomSrcFuncs)quadeqn.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)svd$(OUT_EXT)             : $(geomSrcFuncs)svd.cpp            $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#$(OUT_DIR)lineargeom$(OUT_EXT)             : $(geomSrcFuncs)lineargeom.cpp            $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)Polynomials$(OUT_EXT) : $(geomSrcStructs)Polynomials.cpp $(geomSrcPubGeom)Polynomials.h $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)bezeval$(OUT_EXT)        : $(geomSrcBezier)bezeval.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)bezroot$(OUT_EXT)        : $(geomSrcBezier)bezroot.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)analyticroots$(OUT_EXT)   : $(geomSrcFuncs)analyticroots.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)eigensys3d$(OUT_EXT)      : $(geomSrcFuncs)eigensys3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+

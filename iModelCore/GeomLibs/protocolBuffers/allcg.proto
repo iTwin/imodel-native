@@ -1,0 +1,464 @@
+//===============================================================================
+// google protocol buffer mapping for Bentley Common Geometry
+
+package Bentley.Geometry.Proto;
+//===============================================================================
+// section 1 --- simple hand crafted types
+message DPoint3d
+    {
+    required double x = 1;
+    required double y = 2;
+    required double z = 3;
+    }
+
+message DPoint2d
+    {
+    required double x = 1;
+    required double y = 2;
+    }
+
+message DVector3d
+    {
+    required double x = 1;
+    required double y = 2;
+    required double z = 3;
+    }
+message IPlacement
+    {
+    required DPoint3d   orgin   = 1;
+    required DVector3d  vectorZ = 2;
+    required DVector3d  vectorX = 3;
+    }
+
+message Angle
+    {
+    required double degrees = 1;
+    }
+
+message DEllipse3d
+    {
+    required double centerX = 1;
+    required double centerY = 2;
+    required double centerZ = 3;
+    required double vector0X = 4;
+    required double vector0Y = 5;
+    required double vector0Z = 6;
+    required double vector90X = 7;
+    required double vector90Y = 8;
+    required double vector90Z = 9;
+
+    required double startRadians = 10;
+    required double sweepRadians = 11;
+    }
+
+message DTransform3d
+    {
+    required double axx = 1;
+    required double axy = 2;
+    required double axz = 3;
+    required double axw = 4;
+
+    required double ayx = 5;
+    required double ayy = 6;
+    required double ayz = 7;
+    required double ayw = 8;
+
+    required double azx = 9;
+    required double azy = 10;
+    required double azz = 11;
+    required double azw = 12;
+    }
+    
+message LoopType
+    {
+      enum LoopTypeEnum
+        {
+        Parity = 1;
+        InteriorToLeft = 2;
+        }
+    
+    required LoopTypeEnum loopType = 1;
+    }    
+
+//===============================================================================
+// section 2 -- interface types -- each IXXX is an enumeration of all its possible subtypes.
+//   This is a guess at how to handle subclassing.  Surely there's a better way?
+//   (Only one should ever be present in an instance -- can we specify that?)
+
+message ISinglePoint
+    {
+    optional Coordinate coordinate = 1;
+    optional SharedGroupInstance sharedGruopInstance = 2;
+    optional SingleLineText singleLineText = 3;
+    optional TransformedGeometry transformedGeometry = 4;
+    optional Vector vector = 5;
+    }
+// Hmm.  what is IPoint versus ISinglePoint?
+message IPoint
+    {
+    optional ISinglePoint singlePoint = 1;
+    }    
+message IPrimitiveCurve
+    {
+    optional LineSegment    lineSegment = 1;
+    optional LineString     lineString = 2;
+    optional CircularArc    circularArc = 3;
+    optional EllipticArc    ellipticArc = 4;
+    optional BsplineCurve   bsplineCurve = 5;
+    optional TransitionSpiral transitionSpiral = 6;
+    }
+message ICurve
+    {
+    optional IPrimitiveCurve primtiveCurve = 1;
+    optional CurveChain curveChain = 2;
+    }    
+
+message ICurveChain
+    {
+    optional CurveChain curveChain = 1;
+    }
+message ISolid
+    {
+    optional IAnalyticSolid analyticSolid = 1;
+    optional SolidBySweptSurface solidBySweptSurface = 102;
+    }
+
+message IAnalyticSolid
+    {
+    optional Block block = 1;
+    optional CircularCone circularCone = 2;
+    optional SkewedCone skewedCone = 3;
+    optional Sphere sphere = 4;
+    optional TorusPipe torusPipe = 5;
+    }    
+
+message ISurface
+    {
+    optional Polygon                polygon         = 1;
+    optional CircularDisk           circularDisk    = 2;
+    optional EllipticDisk           ellipticDisk    = 3;
+    optional BsplineSurface         bsplineSuface   = 100;
+    optional IndexedMesh            indexedMesh     = 101;
+    optional ParametricSurfacePatch parametricSurfacePatch = 102;
+    optional SurfaceBySweptCurve    surfaceBySweptCurve= 103;
+    optional SurfaceGroup           surfaceGroup = 104;
+    optional SurfacePatch           surfacePatch = 105;
+    }    
+
+message ISurfacePatch
+    {
+    optional ParametricSurfacePatch parametricSurfacePatch = 1;
+    }    
+
+message IParametricSurface
+    {
+    optional BsplineSurface bsplineSuface = 1;
+    }
+message IGeometry
+    {
+    optional IPoint point = 1;
+    optional ICurve curve = 2;
+    optional ISurface surface = 3;
+    optional ISolid solid = 4;
+    }
+    
+//===============================================================================    
+// section 3 -- main body of CG types
+   
+    
+    
+
+
+message Block
+{
+required IPlacement placement = 1;
+required DPoint3d cornerA = 2;
+required DPoint3d cornerB = 3;
+required bool bSolidFlag = 4;
+}
+
+message BsplineCurve
+{
+required int32 Order = 1;
+required bool Closed = 2;
+repeated DPoint3d ControlPoint = 3;
+repeated double Weight = 4;
+repeated double Knot = 5;
+}
+
+message BsplineSurface
+{
+required int32 OrderU = 1;
+required bool ClosedU = 2;
+required int32 NumUControlPoint = 3;
+required int32 OrderV = 4;
+required bool ClosedV = 5;
+required int32 NumVControlPoint = 6;
+repeated DPoint3d ControlPoint = 7;
+repeated double Weight = 8;
+repeated double KnotU = 9;
+repeated double KnotV = 10;
+}
+
+message CircularArc
+{
+required IPlacement placement = 1;
+required double radius = 2;
+required Angle startAngle = 3;
+required Angle sweepAngle = 4;
+}
+
+message CircularCone
+{
+required IPlacement placement = 1;
+required double height = 2;
+required double radiusA = 3;
+required double radiusB = 4;
+required bool bSolidFlag = 5;
+}
+
+message CircularCylinder
+{
+required IPlacement placement = 1;
+required double height = 2;
+required double radius = 3;
+required bool bSolidFlag = 4;
+}
+
+message CircularDisk
+{
+required IPlacement placement = 1;
+required double radius = 2;
+}
+
+message Coordinate
+{
+required DPoint3d xyz = 1;
+}
+
+message CurveReference
+{
+required ICurve ParentCurve = 1;
+required bool Reversed = 2;
+}
+
+message EllipticArc
+{
+required IPlacement placement = 1;
+required double radiusA = 2;
+required double radiusB = 3;
+required Angle startAngle = 4;
+required Angle sweepAngle = 5;
+}
+
+message EllipticDisk
+{
+required IPlacement placement = 1;
+required double radiusA = 2;
+required double radiusB = 3;
+}
+
+message IndexedMesh
+{
+repeated DPoint3d Coord = 1;
+repeated int32 CoordIndex = 2;
+repeated DPoint2d Param = 3;
+repeated int32 ParamIndex = 4;
+repeated DVector3d Normal = 5;
+repeated int32 NormalIndex = 6;
+repeated DVector3d Color = 7;
+repeated int32 ColorIndex = 8;
+}
+
+message InterpolatingCurve
+{
+required int32 EndConditionCode = 1;
+required int32 KnotCode = 2;
+required DVector3d StartVector = 3;
+required DVector3d EndVector = 4;
+repeated DPoint3d Point = 5;
+repeated double Knot = 6;
+}
+
+message LineSegment
+{
+required DPoint3d startPoint = 1;
+required DPoint3d endPoint = 2;
+}
+
+message LineString
+{
+repeated DPoint3d Point = 1;
+}
+
+message Polygon
+{
+repeated DPoint3d Point = 1;
+}
+
+message PrimitiveCurveReference
+{
+required IPrimitiveCurve ParentCurve = 1;
+required bool Reversed = 2;
+}
+
+message SharedGroupInstance
+{
+required string SharedGroupName = 1;
+required DTransform3d Transform = 2;
+}
+
+message ShelledSolid
+{
+required ISurface BoundingSurface = 1;
+}
+
+message SingleLineText
+{
+required IPlacement placement = 1;
+required string textString = 2;
+required string fontName = 3;
+required double characterXSize = 4;
+required double characterYSize = 5;
+required int32 justification = 6;
+}
+
+message SkewedCone
+{
+required IPlacement placement = 1;
+required DPoint3d centerB = 2;
+required double radiusA = 3;
+required double radiusB = 4;
+required bool bSolidFlag = 5;
+}
+
+message SolidBySweptSurface
+{
+required ISurface BaseGeometry = 1;
+required ICurve RailCurve = 2;
+}
+
+message Sphere
+{
+required IPlacement placement = 1;
+required double radius = 2;
+}
+
+message Spiral
+{
+required string SpiralType = 1;
+required DPoint3d StartPoint = 2;
+required Angle StartBearing = 3;
+required double StartCurvature = 4;
+required DPoint3d EndPoint = 5;
+required Angle EndBearing = 6;
+required double EndCurvature = 7;
+required IGeometry Geometry = 8;
+}
+
+message SurfaceBySweptCurve
+{
+required ICurve BaseGeometry = 1;
+required ICurve RailCurve = 2;
+}
+
+message TorusPipe
+{
+required IPlacement placement = 1;
+required double radiusA = 2;
+required double radiusB = 3;
+required Angle startAngle = 4;
+required Angle sweepAngle = 5;
+required bool bSolidFlag = 6;
+}
+
+message TransformedGeometry
+{
+required DTransform3d Transform = 1;
+required IGeometry Geometry = 2;
+}
+
+message TransitionSpiral
+{
+required string SpiralType = 1;
+required IPlacement Placement = 2;
+required Angle StartBearing = 3;
+required double StartRadius = 4;
+required Angle EndBearing = 5;
+required double EndRadius = 6;
+required double ActiveStartFraction = 7;
+required double ActiveEndFraction = 8;
+required IGeometry Geometry = 9;
+}
+
+message Vector
+{
+required DPoint3d xyz = 1;
+required DVector3d vector = 2;
+}
+
+message AdjacentSurfacePatches
+{
+repeated ISurfacePatch Patch = 1;
+}
+
+message Group
+{
+repeated IGeometry Member = 1;
+}
+
+message CurveChain
+{
+repeated IPrimitiveCurve Curve = 1;
+}
+
+message CurveGroup
+{
+repeated ICurve Curve = 1;
+}
+
+message Operation
+{
+required string Name = 1;
+repeated IGeometry Member = 2;
+}
+
+message ParametricSurfacePatch
+{
+required IParametricSurface Surface = 1;
+repeated ICurveChain CurveChain = 2;
+required LoopType LoopType = 3;
+}
+
+message PointChain
+{
+repeated ISinglePoint Point = 1;
+}
+
+message PointGroup
+{
+repeated IPoint Member = 1;
+}
+
+message SharedGroupDef
+{
+required string Name = 1;
+required IGeometry Geometry = 2;
+}
+
+message SolidGroup
+{
+repeated ISolid Solid = 1;
+}
+
+message SurfaceGroup
+{
+repeated ISurface Surface = 1;
+}
+
+message SurfacePatch
+{
+required ICurveChain ExteriorLoop = 1;
+repeated ICurveChain HoleLoop = 2;
+}
+
