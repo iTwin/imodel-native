@@ -1,0 +1,21 @@
+#----------------------------------------------------------------------------------------
+#   Tests that are ignored on purpose
+#----------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------
+#   Tests that need attention
+#----------------------------------------------------------------------------------------
+
+FormatParsingSetTest.IdentityIncorrectLeadingPlusAndMinus
+FormatParsingSetTest.FractionCanUseUnderscoreBetweenIntegerAndFractionalComponent
+FormatParsingSetTest.CompositeFormats_IGNORED
+
+# Failing on linux after merge from bim02dev.
+#FormattingTestFixture.Simple
+#LocaleTests.BasicTest
+#UnitNameMappingsTests.OldNameToNewNameToOldNameRoundtrip
+#UnitNameMappingsTests.NewNameToOldNameToNewNameRoundtrip
+#UnitNameMappingsTests.NewNameToECNameToNewNameRoundtrip
+#UnitNameMappingsTests.ECNameToNewNameToECNameRoundtrip
+#UnitNameMappingsTests.OldNameToECNameToOldNameRoundtrip
+#UnitNameMappingsTests.ECNameToOldNameToECNameRoundtrip
