@@ -1,0 +1,15 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: BuildingCommonSchema/BuildingCommonSchema.prewire.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+$(targetAPIDir)BuildingCommon : $(_MakeFilePath)BuildingCommonSchema/PublicAPI/BuildingCommon
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+#$(targetSchemasDir)BuildingCommon.ecschema.xml : $(_MakeFilePath)BuildingCommonSchema\EC3_Schemas\BuildingCommon.ecschema.xml
+#    $(LinkFirstDepToFirstTarget)
+
+    
