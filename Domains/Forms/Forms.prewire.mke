@@ -1,0 +1,13 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Forms.prewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+always:
+    @CreateSymLinks.py -m"$(BuildContext)PublicAPI\FormsDomain\=$(_MakeFilePath)PublicAPI\*.h"
+    @CreateSymLinks.py -f"$(BuildContext)ECSchemas\Domain\Forms.ecschema.xml=$(_MakeFilePath)Forms.ecschema.xml"
+

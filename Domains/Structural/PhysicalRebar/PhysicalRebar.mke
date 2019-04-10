@@ -1,0 +1,100 @@
+#--------------------------------------------------------------------------------------+
+#
+#     $Source: PhysicalRebar/PhysicalRebar.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------+
+%include mdl.mki
+%include $(SrcRoot)DgnDomains/PhysicalRebar/PhysicalRebar.mki
+
+#--------------------------------------------------------------------------------------
+#   Macros
+#--------------------------------------------------------------------------------------
+appSrc = $(_MakeFilePath)
+appPublicApi = $(appSrc)PublicAPI/$(appName)/
+MultiCompileDepends = $(_MakeFileSpec) $(appSrc)PhysicalRebarInternal.h $(appPublicApi)PhysicalRebarApi.h
+
+always :
+!~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Pre - compiled header
+#----------------------------------------------------------------------
+PchCompiland = $(appSrc)PhysicalRebarInternal.cpp
+PchOutputDir = $(o)
+PchExtraOptions = -Zm160
+PchExplicitDepends = $(MultiCompileDepends)
+
+% if defined(winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
+# Avoid internal compiler error in GCC using windows ndk toolchain
+GCC_NO_PRE_COMPILED_HEADER = 1
+% endif
+
+CompileOptionsMki = $(SrcRoot)DgnDomains/PhysicalRebar/PhysicalRebar.mki
+%include $(CompileOptionsMki)
+% include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts = $(UsePrecompiledHeaderOptions)
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)Handlers$(oext) : $(_MakeFilePath)Handlers.cpp ${MultiCompileDepends} $(appPublicApi)Handlers.h
+
+$(o)IReinforcable$(oext) : $(_MakeFilePath)IReinforcable.cpp ${MultiCompileDepends} $(appPublicApi)IReinforcable.h
+
+$(o)PhysicalRebarDomain$(oext) : $(_MakeFilePath)PhysicalRebarDomain.cpp ${MultiCompileDepends} $(appPublicApi)PhysicalRebarDomain.h
+
+$(o)Rebar$(oext) : $(_MakeFilePath)Rebar.cpp ${MultiCompileDepends} $(appPublicApi)Rebar.h
+
+$(o)RebarAccessory$(oext) : $(_MakeFilePath)RebarAccessory.cpp ${MultiCompileDepends} $(appPublicApi)RebarAccessory.h
+
+$(o)RebarAssembly$(oext) : $(_MakeFilePath)RebarAssembly.cpp ${MultiCompileDepends} $(appPublicApi)RebarAssembly.h
+
+$(o)RebarEndDevice$(oext) : $(_MakeFilePath)RebarEndDevice.cpp ${MultiCompileDepends} $(appPublicApi)RebarEndDevice.h
+
+$(o)RebarEndTreatment$(oext) : $(_MakeFilePath)RebarEndTreatment.cpp ${MultiCompileDepends} $(appPublicApi)RebarEndTreatment.h
+
+$(o)RebarLayoutType$(oext) : $(_MakeFilePath)RebarLayoutType.cpp ${MultiCompileDepends} $(appPublicApi)RebarLayoutType.h
+
+$(o)RebarMaterial$(oext) : $(_MakeFilePath)RebarMaterial.cpp ${MultiCompileDepends} $(appPublicApi)RebarMaterial.h
+
+$(o)RebarMechanicalSplice$(oext) : $(_MakeFilePath)RebarMechanicalSplice.cpp ${MultiCompileDepends} $(appPublicApi)RebarMechanicalSplice.h
+
+$(o)RebarSet$(oext) : $(_MakeFilePath)RebarSet.cpp ${MultiCompileDepends} $(appPublicApi)RebarSet.h
+
+$(o)RebarSize$(oext) : $(_MakeFilePath)RebarSize.cpp ${MultiCompileDepends} $(appPublicApi)RebarSize.h
+
+$(o)RebarSplicedEnd$(oext) : $(_MakeFilePath)RebarSplicedEnd.cpp ${MultiCompileDepends} $(appPublicApi)RebarSplicedEnd.h
+
+$(o)RebarTerminator$(oext) : $(_MakeFilePath)RebarTerminator.cpp ${MultiCompileDepends} $(appPublicApi)RebarTerminator.h
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME = $(appName)
+DLM_OBJECT_FILES = $(MultiCompileObjectList)
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_PCH = $(o)PhysicalRebarInternal$(oext)
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_NOENTRY = 1
+DLM_CONTEXT_LOCATION = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES = $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+
+% include $(sharedMki)linkLibrary.mki

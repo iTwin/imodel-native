@@ -2,24 +2,37 @@
  |
  |     $Source: Tasks/AsyncTask.cpp $
  |
- |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include <Bentley/Tasks/AsyncTask.h>
 #include <Bentley/Tasks/AsyncTasksManager.h>
 #include <Bentley/Tasks/TaskScheduler.h>
 #include "ThreadingLogging.h"
+#include <set>
 
 USING_NAMESPACE_BENTLEY_TASKS
 
 bool AsyncTask::s_stackInfoEnabled = false;
 
+BeMutex AsyncTask::s_activeTasksMutex;
+std::set<AsyncTask*> AsyncTask::s_activeTasks;
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas     10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTask::AsyncTask () 
+AsyncTask::AsyncTask (size_t stackDepth) 
     : m_executed (false), m_completed (false), m_priority (Priority::Normal)
     {
+    if (s_stackInfoEnabled)
+        {    
+        BeMutexHolder lock(s_activeTasksMutex);
+        s_activeTasks.insert(this);
+        }
+
+    // Skip std::make_shared that takes up 2 frames (Win x64, VS2017) and is usually used to construct AsyncTask
+    stackDepth += 2;
+    SetStackInfo(++stackDepth); 
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -27,8 +40,138 @@ AsyncTask::AsyncTask ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTask::~AsyncTask ()
     {
+    if (s_stackInfoEnabled)
+        {
+        BeMutexHolder lock(s_activeTasksMutex);
+        s_activeTasks.erase(this);
+        }
+
     if (m_stackInfo)
         delete m_stackInfo;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String AsyncTask::GetTaskDescription(AsyncTask& task, ITaskScheduler* scheduler, int padding)
+    {
+    Utf8String stackInfo;
+    if (task.m_stackInfo)
+        {
+        stackInfo.Sprintf("%s %s:(%d)",
+                          task.m_stackInfo->functionName.c_str(),
+                          task.m_stackInfo->fileName.c_str(),
+                          task.m_stackInfo->fileLine);
+        }
+
+    Utf8String paddingStr(padding * 4, ' ');
+    Utf8String paddingStrDouble((padding + 1) * 4, ' ');
+
+    Utf8String msg;
+
+    msg += Utf8PrintfString("%s[%p] %s %s (%s_%s)%s (%s)\n",
+                            paddingStr.c_str(), &task,
+                            task.m_completed ? "Completed" : "NotCompleted",
+                            task.m_executed ? "Executed" : "NotExecuted",
+                            task.m_completed ? "C" : "NC",
+                            task.m_executed ? "E" : "NE",
+                            scheduler ? Utf8PrintfString(" Scheduler:[%p]", scheduler).c_str() : "",
+                            stackInfo.c_str());
+
+    if (!task.m_parentTasks.empty())
+        {
+        msg += paddingStrDouble + "Parents (tasks in which this was created):\n";
+        for (auto otherTask : task.m_parentTasks)
+            msg += Utf8PrintfString("%s[%p]\n", paddingStrDouble.c_str(), &*otherTask);
+        }
+
+    if (!task.m_subTasks.empty())
+        {
+        msg += paddingStrDouble + "SubTasks (tasks that block completion):\n";
+        for (auto otherTask : task.m_subTasks)
+            msg += GetTaskDescription(*otherTask, nullptr, padding + 1);
+        }
+
+    if (!task.m_thenTasks.empty())
+        {
+        msg += paddingStrDouble + "ThenTasks (chained tasks):\n";
+        for (auto otherTask : task.m_thenTasks)
+            msg += GetTaskDescription(*otherTask.first, &*otherTask.second, padding + 1);
+        }
+
+    return msg;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AsyncTask::IsTaskReferencedInSubTasks(AsyncTask& refTask, AsyncTask& inTask)
+    {
+    for (auto task : inTask.m_subTasks)
+        {
+        if (&refTask == &*task)
+            return true;
+        if (IsTaskReferencedInSubTasks(refTask, *task))
+            return true;
+        }
+    return false;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::set<AsyncTask*> AsyncTask::FilterTasks(std::set<AsyncTask*> tasks)
+    {
+    for (auto it = tasks.begin(); it != tasks.end();)
+        {
+        bool isReferenced = false;
+        for (auto task : tasks)
+            {
+            if (&*task == &**it)
+                continue;
+
+            if (!IsTaskReferencedInSubTasks(**it, *task))
+                continue;
+
+            isReferenced = true;
+            break;
+            }
+
+        if (isReferenced)
+            it = tasks.erase(it);
+        else
+            it++;
+        }
+    return tasks;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String AsyncTask::DebugActiveTasks()
+    {
+    BeMutexHolder lock(s_activeTasksMutex);
+    Utf8String msg;
+
+    if (!s_stackInfoEnabled)
+        {
+        msg = "Debugging is disabled.";
+        return msg;
+        }
+
+    msg += "--------------------------- All tasks in hierarchy: ----------------------------\n";
+
+    for (auto task : FilterTasks(s_activeTasks))
+        msg += GetTaskDescription(*task, nullptr, 0);
+
+    msg += "---------------------------------- All tasks: ----------------------------------\n";
+
+    for (auto task : s_activeTasks)
+        msg += Utf8PrintfString("[%p]\n", &*task);
+
+    msg += "------------------------------------- End --------------------------------------\n";
+
+    return msg;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -49,8 +192,16 @@ void AsyncTask::SetStackInfoEnabled(bool enabled)
 void AsyncTask::SetStackInfo(size_t frameIndex)
     {
 #ifdef DEBUG
-    if (s_stackInfoEnabled)
-        m_stackInfo = new BeDebugUtilities::StackFrameInfo(BeDebugUtilities::GetStackFrameInfoAt(frameIndex + 1));
+    if (!s_stackInfoEnabled)
+        return;
+
+    if (m_stackInfo)
+        return;
+
+    frameIndex += 1; // Skip this function
+
+    auto info = BeDebugUtilities::GetStackFrameInfoAt(frameIndex);
+    m_stackInfo = new BeDebugUtilities::StackFrameInfo(std::move(info));
 #endif
     }
 
@@ -406,7 +557,7 @@ BEGIN_BENTLEY_TASKS_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<void> CreateCompletedAsyncTask ()
     {
-    auto task = std::make_shared<PackagedAsyncTask<void>> ([=]{});
+    auto task = std::make_shared<PackagedAsyncTask<void>> ([=]{}, 1);
     task->Execute();
     return task;
     }

@@ -1,0 +1,14 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: ArchitecturalPhysicalSchema/ArchitecturalPhysicalSchema.prewire.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+$(targetAPIDir)ArchitecturalPhysical : $(_MakeFilePath)ArchitecturalPhysicalSchema/PublicAPI/ArchitecturalPhysical
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(targetSchemasDir)ArchitecturalPhysical.ecschema.xml : $(_MakeFilePath)ArchitecturalPhysicalSchema\EC3_Schemas\ArchitecturalPhysical.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+

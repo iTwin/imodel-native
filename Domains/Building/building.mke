@@ -1,0 +1,126 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: building.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+CompileOptionsMki   = $(SrcRoot)imodel02/Domains/Building/BuildingCompileOptions.mki
+%include $(CompileOptionsMki)
+
+
+ArchPhysSrc       = $(_MakeFilePath)ArchitecturalPhysicalschema/
+ArchPhysPublicApi = $(ArchPhysSrc)PublicAPI/ArchitecturalPhysical/
+
+BldgPhysSrc       = $(_MakeFilePath)BuildingPhysicalschema/
+BldgPhysPublicApi = $(BldgPhysSrc)PublicAPI/BuildingPhysical/
+
+BldgCmnSrc        = $(_MakeFilePath)BuildingCommonschema/
+BldgCmnPublicApi  = $(BldgCmnSrc)PublicAPI/BuildingCommon/
+
+MechFuncSrc        = $(_MakeFilePath)MechanicalFunctional/
+MechFuncPublicApi  = $(MechFuncSrc)PublicAPI/MechanicalFunctional/
+
+
+#--------------------------------------------------------------------------------------
+#   Macros
+#--------------------------------------------------------------------------------------
+appSrc              = $(_MakeFilePath)
+appPublicApi        = $(appSrc)PublicAPI/$(appName)/
+MultiCompileDepends = $(_MakeFileSpec) \
+                      $(appSrc)BuildingDomainInternal.h \
+                 
+#                      $(ArchPhysPublicApi)ArchitecturalPhysicalApi.h \
+#                      $(BldgPhysPublicApi)BuildingPhysicalApi.h \
+#                      $(BldgCmnPublicApi)BuildingCommonApi.h \
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Pre-compiled header
+#----------------------------------------------------------------------
+PchCompiland        = $(appSrc)BuildingDomainInternal.cpp
+PchOutputDir        = $(o)
+PchExtraOptions     = -Zm160
+PchExplicitDepends  = $(MultiCompileDepends)
+
+%if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
+    # Avoid internal compiler error in GCC using windows ndk toolchain
+    GCC_NO_PRE_COMPILED_HEADER = 1
+%endif
+
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+
+%include MultiCppCompileRule.mki
+
+$(o)ArchitecturalPhysicalDomain$(oext) : $(ArchPhysSrc)ArchitecturalPhysicalDomain.cpp ${MultiCompileDepends} $(ArchPhysPublicApi)ArchitecturalPhysicalDomain.h
+
+#$(o)BuildingCommonDomain$(oext) : $(BldgCmnSrc)BuildingCommonDomain.cpp ${MultiCompileDepends} $(BldgCmnPublicApi)BuildingCommonDomain.h
+
+#$(o)MechanicalFunctionalDomain$(oext) : $(MechFuncSrc)MechanicalFunctionalDomain.cpp ${MultiCompileDepends} $(MechFuncPublicApi)MechanicalFunctionalDomain.h
+
+$(o)BuildingPhysicalDomain$(oext) : $(BldgPhysSrc)BuildingPhysicalDomain.cpp ${MultiCompileDepends} $(BldgPhysPublicApi)BuildingPhysicalDomain.h
+
+#$(o)Door$(oext) : $(ArchPhysSrc)Door.cpp ${MultiCompileDepends} $(ArchPhysPublicApi)Door.h
+
+#$(o)Window$(oext) : $(ArchPhysSrc)Window.cpp ${MultiCompileDepends} $(ArchPhysPublicApi)Window.h
+
+#$(o)Wall$(oext) : $(ArchPhysSrc)Wall.cpp ${MultiCompileDepends} $(ArchPhysPublicApi)wall.h
+
+$(o)BuildingPhysicalModel$(oext) : $(BldgPhysSrc)BuildingPhysicalModel.cpp ${MultiCompileDepends} $(BldgPhysPublicApi)BuildingPhysicalModel.h
+
+$(o)BuildingDomainUtilities$(oext) : $(appSrc)BuildingDomainUtilities.cpp ${MultiCompileDepends} $(appPublicApi)BuildingDomainUtilities.h
+
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_PCH              = $(o)BuildingDomainInternal$(oext) 
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_DLS                  = 1
+DLM_NO_DEF                  = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeJsonCpp$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)Units$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)AecUnits$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)GridsDomain$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)StructuralDomain$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)Profiles$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)FormsDomain$(libext)
+
+
+
+%include $(sharedMki)linkLibrary.mki
+
+
+
+
+

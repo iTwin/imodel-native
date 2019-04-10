@@ -1,0 +1,22 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: CivilBaseGeometry/CivilBaseGeometry.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include CivilBaseGeometry.Analyzer.mki
+%include mdl.mki
+
+ContextDeliveryDir = $(BuildContext)Delivery/
+
+#--------------------------------------------------------------------------------------
+# Define commonly used locations
+#--------------------------------------------------------------------------------------
+appName         = CivilBaseGeometry
+appSrc          = $(SrcRoot)imodel02/Domains/CivilGeometry/CivilBaseGeometry/Native/
+appPublicApi    = $(appSrc)PublicAPI/$(appName)/
+o               = $(OutBuildDir)/$(appName)/
+
+always:
+    !~@mkdir $(o)

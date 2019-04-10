@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeDebugUtilities.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,7 @@
 #include "Bentley.h"
 #include "WString.h"
 #include <time.h>
+#include <vector>
 
 BEGIN_BENTLEY_NAMESPACE
 
@@ -37,8 +38,14 @@ struct BeDebugUtilities
     BENTLEYDLL_EXPORT static Utf8String GetStackTraceDescription(size_t maxFrames);
     
     //! Get stack frame information at specific index. 0 is current frame.
+    //! WARNING: getting stack information at runtime is slow.
     //! NOTE: implemented for Windows x64 only
     BENTLEYDLL_EXPORT static StackFrameInfo GetStackFrameInfoAt(size_t frameIndex);
+
+    //! Get stack frames information at specific index and up. 0 is current frame.
+    //! WARNING: getting multiple stack frames at runtime is slow, consider using GetStackFrameInfoAt() instead.
+    //! NOTE: implemented for Windows x64 only
+    BENTLEYDLL_EXPORT static std::vector<StackFrameInfo> GetStackFrameInfosAt(size_t frameIndex, size_t frameCount);
 
     //! Get process memory use in bytes
     //! @return bytes currently allocated by process. Zero if not implemented or could not get information.

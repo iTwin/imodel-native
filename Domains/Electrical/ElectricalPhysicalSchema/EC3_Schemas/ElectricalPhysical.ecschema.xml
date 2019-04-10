@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="ElectricalPhysical" alias="elec" version="01.00.00" description="Bentley Electrical Schema" displayLabel="Bentley Electrical Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+	<ECSchemaReference name="BisCore" version="01.00.00" alias="bis" />
+	
+    <ECEntityClass typeName="Device" description="This class defines an instance of a device.">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+		<ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Position" typeName="point3d" description="Origin position of a device." displayLabel="Position"/>
+        <ECProperty propertyName="Name" typeName="string" displayLabel="Name">
+        </ECProperty>
+    </ECEntityClass>
+	
+	<ECEntityClass typeName="ElectricalPhysicalModel" displayLabel="Electrical Physical Model">
+        <BaseClass>bis:PhysicalModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ElectricalTypeDefinitionModel" displayLabel="Electrical Type Definition Model">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+	
+</ECSchema>

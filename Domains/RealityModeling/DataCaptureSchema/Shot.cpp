@@ -422,9 +422,9 @@ void Shot::_OnDeleted() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Shot::_CopyFrom(DgnElementCR el)
+void Shot::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
     auto other = dynamic_cast<ShotCP>(&el);
     BeAssert(nullptr != other);
     if (nullptr == other)

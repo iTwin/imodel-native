@@ -1,0 +1,27 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Building.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+targetAPIDir = $(BuildContext)PublicAPI/BuildingDomain/
+
+targetSchemasDir = $(BuildContext)ECSchemas/Domain/
+
+$(targetAPIDir)BuildingDomainApi.h : $(_MakeFilePath)PublicApi\BuildingDomain\BuildingDomainApi.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetAPIDir)BuildingDomainUtilities.h : $(_MakeFilePath)PublicApi\BuildingDomain\BuildingDomainUtilities.h
+    $(LinkFirstDepToFirstTarget)
+
+%include $(_MakeFilePath)ArchitecturalPhysicalSchema/ArchitecturalPhysicalSchema.prewire.mki
+    
+%include $(_MakeFilePath)BuildingPhysicalSchema/BuildingPhysicalSchema.prewire.mki
+
+#%include $(_MakeFilePath)MechanicalFunctional/MechanicalFunctional.prewire.mki
+
+%include $(_MakeFilePath)BuildingCommonSchema/BuildingCommonSchema.prewire.mki
+    

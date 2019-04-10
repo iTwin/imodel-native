@@ -1,5 +1,6 @@
 {
     "pull_augment": "SkipPull_imodel02",
+    "slave_pull_bdf": "MstnBridge",
 
     "strategies": [
         {
@@ -49,6 +50,15 @@
             "prg_id": "1937",
             "version_seed": "2.1.0",
             "has_installers": "true",
+            "depends" : [
+                "iModelBridgeCore"
+            ]
+        },
+        {
+            "name": "BuildingDomain",
+            "archs": "x64",
+            "prg_id": "2246",
+            "version_seed": "2.1.0",
             "depends" : [
                 "iModelBridgeCore"
             ]

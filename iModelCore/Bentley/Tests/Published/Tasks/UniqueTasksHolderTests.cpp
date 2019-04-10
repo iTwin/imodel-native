@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/Tasks/UniqueTasksHolderTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -233,6 +233,38 @@ TEST_F (UniqueTasksHolderTests, CancelTask_CalledForExistingTask_TaskTokenIsSetT
     holder.CancelTask (1);
 
     t1->Execute ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
+TEST_F(UniqueTasksHolderTests, CancelTask_CalledForExistingTask_ReturnsTask)
+    {
+    UniqueTasksHolder<int, int> holder;
+
+    auto t1 = holder.GetTask(1, [] (ICancellationTokenPtr token)
+        {
+        return std::make_shared<PackagedAsyncTask<int>>([] {return 1; });
+        });
+    auto t2 = holder.CancelTask(1);
+
+    EXPECT_EQ(t2, t1);
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
+TEST_F(UniqueTasksHolderTests, CancelTask_CalledForNotExistingTask_ReturnsNull)
+    {
+    UniqueTasksHolder<int, int> holder;
+
+    auto t1 = holder.GetTask(1, [] (ICancellationTokenPtr token)
+        {
+        return std::make_shared<PackagedAsyncTask<int>>([] {return 1; });
+        });
+    auto t2 = holder.CancelTask(42);
+
+    EXPECT_EQ(t2, nullptr);
     }
 
 //---------------------------------------------------------------------------------------

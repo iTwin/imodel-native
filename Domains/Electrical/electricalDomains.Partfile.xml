@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+
+    <Part Name="ElectricalDomains" PrgOutputDir="DesignModelingDomainsSDK">
+        <!-- <SubPart PartName="RunElectricalDomainTests"/> -->
+        <SubPart PartName="DesignModelingDomainsSDK-Only"/>
+        <!-- <SubProduct ProductName="StructuralDomainsTested" PartFile="Domains/Structural/StructuralDomains"    Repository="imodel02"/> -->
+    </Part>
+	
+	
+    <Part Name="ElectricalDomainsWithGist" PrgOutputDir="DgnClientSdk" Sequential="true">
+		<SubPart PartName="DgnClientSdk-Tested" PartFile="DgnClientFx" Repository="DgnClientFx"/>
+        <SubPart PartName="Gist" PartFile="Gist" Repository="Gist"/>
+        <SubPart PartName="ElectricalDomains"/>
+    </Part>
+	
+	
+    <Part Name="ElectricalDomain" BentleyBuildMakeFile="Electrical.mke" ApiNumber="M02">
+        <SubPart PartName="ElectricalPhysicalPublicAPI"/>
+        <SubPart PartName="DgnPlatformDLL"  PartFile="iModelCore/DgnPlatform/DgnPlatform"  Repository="imodel02" />
+
+        <Bindings>
+            <Libs>Delivery/$(libprefix)ElectricalDomain$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)ElectricalDomain$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+	
+	<Part Name="ElectricalPhysicalPublicAPI" BentleyBuildMakeFile="Electrical.prewire.mke" ApiNumber="M02">
+        <Bindings>
+            <PublicAPI Domain="ElectricalDomain"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/ElectricalPhysical.ecschema.xml
+            </Files>
+
+            <Directory SourceName="PublicApi/ElectricalDomain" ProductDirectoryName="ElectricalDomainIncludes" />
+
+        </Bindings>
+    </Part>
+	
+	<Part Name="DesignModelingDomainsSDK-Only" OnlyPlatforms="x64">
+        <SubProduct ProductName="DesignModelingDomainsSDK"/>
+    </Part>
+	
+	<Product Name="DesignModelingDomainsSDK"  SaveProduct="true">
+        <SubPart PartName="ElectricalDomain"/>
+        <Directories DirectoryListName="DesignModelingDomainsSDK"/>
+    </Product>
+
+  
+    <ProductDirectoryList ListName="DesignModelingDomainsSDK">
+        <ProductDirectory Name="PublicAPI"                               Deliver="true" Path="PublicAPI"/>
+        <ProductDirectory Name="VendorAPI"                               Deliver="true" Path="VendorAPI"/>
+        <ProductDirectory Name="VendorNotices"                           Deliver="true" Path="VendorNotices"/>
+        <ProductDirectory Name="VendorNotices"                           Deliver="true" Path="VendorNotices" LibType="static"/>
+        <ProductDirectory Name="Assets"                                  Deliver="true" Path="Assets"/>
+        <ProductDirectory Name="ComponentAssets"                         Deliver="true" Path="Assets"/>
+        <ProductDirectory Name="Assets"                                  Deliver="true" Path="Assets" LibType="static"/>
+        <ProductDirectory Name="Assemblies"                              Deliver="true" Path="Assemblies"/>
+        <ProductDirectory Name="sqlang"                                  Deliver="true" Path="sqlang" RelativeTo="Assets"/>
+        <ProductDirectory Name="sqlang"                                  Deliver="true" Path="sqlang" RelativeTo="Assets" LibType="static"/>
+        <ProductDirectory Name="Libs"                                    Deliver="true" Path="lib/x64"/>
+        <ProductDirectory Name="BuildingDomainIncludes"                  Deliver="true" Path="Include/BuildingDomain"/>
+        <ProductDirectory Name="PlantPrototypeIncludes"                  Deliver="true" Path="Include/PlantPrototype"/>
+        <ProductDirectory Name="SpacePlanningDomainIncludes"             Deliver="true" Path="Include/SpacePlanningDomain"/>
+        <ProductDirectory Name="SpacePlanningIncludes"                   Deliver="true" Path="Include/SpacePlanningDomain"/>
+        <ProductDirectory Name="StructuralDomainIncludes"                Deliver="true" Path="Include/StructuralDomain"/>
+        <ProductDirectory Name="BuildingSpacePlanningDomainIncludes"     Deliver="true" Path="Include/BuildingSpacePlanningDomain"/>
+        <ProductDirectory Name="GridsIncludes"                           Deliver="true" Path="Include/Grids"/>
+        <ProductDirectory Name="ConstraintSystemIncludes"                Deliver="true" Path="Include/ConstraintSystem"/>
+        <ProductDirectory Name="PlantDomainSchemasDir"                   Deliver="true" Path="Assets/ECSchemas/Domain"/>
+        <ProductDirectory Name="PlantDomainAssembliesDir"                Deliver="true" Path="Assemblies"/>
+		<ProductDirectory Name="ElectricalDomainIncludes"                Deliver="true" Path="Include/ElectricalDomain"/>
+        
+        <!-- Adding these to silence the warnings... if you want them, deliver them properly... -->
+        <ProductDirectory Name="Assemblies" LibType="static" Deliver="false"/>
+    </ProductDirectoryList>
+    
+</BuildContext>

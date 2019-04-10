@@ -1,0 +1,20 @@
+#--------------------------------------------------------------------------------------+
+#
+#     $Source: Profiles/ProfilesDomainDLL.prewire.mke $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------+
+%include mdl.mki
+
+#----------------------------------------------------------------------------------------
+#   Prewire Public API headers
+#----------------------------------------------------------------------------------------
+$(BuildContext)PublicAPI\Profiles : $(_MakeFilePath)src\PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+#----------------------------------------------------------------------------------------
+#   Prewire Private API headers
+#----------------------------------------------------------------------------------------
+$(BuildContext)PrivateAPI\ProfilesInternal : $(_MakeFilePath)src\PrivateAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)

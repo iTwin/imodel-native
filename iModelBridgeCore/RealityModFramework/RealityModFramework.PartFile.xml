@@ -11,7 +11,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform/RealityPlatform.mke" OnlyPlatforms="x86,x64, androidarm7a, AndroidArm64, iOSArm64" ApiNumber="B02">
+    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform/RealityPlatform.mke" OnlyPlatforms="x86,x64, androidarm7a, AndroidArm64, iOSArm64" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <SubPart PartName="BeXml" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
@@ -23,7 +23,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="RealityPlatformTools" BentleyBuildMakeFile="RealityPlatformToolsComplete/RealityPlatformTools.mke" OnlyPlatforms="x64" ApiNumber="B02">
+    <Part Name="RealityPlatformTools" BentleyBuildMakeFile="RealityPlatformToolsComplete/RealityPlatformTools.mke" OnlyPlatforms="x64" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="Curl"                       PartFile="Libsrc-Nugets"             Repository="bsicommon"/>
@@ -37,7 +37,7 @@
     </Part>
     
     <!-- depending on the target platform, use either the RealityPlatformTools definition above or below, comment out the other -->
-    <Part Name="RealityPlatformToolsLight" BentleyBuildMakeFile="RealityPlatformToolsLight/RealityPlatformToolsLight.mke" OnlyPlatforms="x64, androidarm7a, AndroidArm64" ApiNumber="B02">
+    <Part Name="RealityPlatformToolsLight" BentleyBuildMakeFile="RealityPlatformToolsLight/RealityPlatformToolsLight.mke" OnlyPlatforms="x64, androidarm7a, AndroidArm64" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="BeJsonCpp"                  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"                 Repository="imodel02"/>
@@ -48,7 +48,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="RealityPlatformToolsNoCC" BentleyBuildMakeFile="RealityPlatformToolsNoCC/RealityPlatformToolsNoCC.mke" OnlyPlatforms="x64, androidarm7a, AndroidArm64, iOSArm64" ApiNumber="B02">
+    <Part Name="RealityPlatformToolsNoCC" BentleyBuildMakeFile="RealityPlatformToolsNoCC/RealityPlatformToolsNoCC.mke" OnlyPlatforms="x64, androidarm7a, AndroidArm64, iOSArm64" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="Curl"                       PartFile="Libsrc-Nugets"             Repository="bsicommon"/>

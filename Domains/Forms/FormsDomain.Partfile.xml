@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+    <!-- A convenience to platform developers that want to build platform and use Gist as their testbed. -->
+    <Part Name="FormsDomainWithGist" PrgOutputDir="DgnClientSdk" Sequential="true">
+        <SubPart PartName="DgnClientSdk-Tested" PartFile="DgnClientFx" Repository="DgnClientFx"/>
+        <SubPart PartName="Gist" PartFile="Gist" Repository="Gist"/>
+        <SubProduct ProductName="FormsDomainTested"/>
+    </Part>
+
+    <Product Name="FormsDomainSDK">
+        <SubPart PartName="FormsDomainDLL"/>
+        <Directories DirectoryListName="FormsDomainSDKDirs"/>
+    </Product>
+
+    <Product Name="FormsDomainTested">
+        <SubProduct ProductName="FormsDomainSDK"/>
+        <SubPart PartName="RunFormsDomainTests"/>
+        <Directories DirectoryListName="FormsDomainSDKDirs"/>
+        <Directories DirectoryListName="FormsDomainTestDirs"/>
+    </Product>
+
+    <Part Name="FormsDomainPublicAPI" BentleyBuildMakeFile="Forms.prewire.mke" ApiNumber="M02">
+        <Bindings>
+            <PublicAPI Domain="FormsDomain"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/Forms.ecschema.xml
+            </Files>
+            <Directory SourceName="PublicAPI/FormsDomain" ProductDirectoryName="FormsDomainIncludes" />
+        </Bindings>
+    </Part>
+
+    <Part Name="FormsDomainDLL" BentleyBuildMakeFile="Forms.mke" ApiNumber="M02">
+        <SubPart PartName="DgnPlatformDLL"  PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
+        <SubPart PartName="ProfilesDomainDLL"  PartFile="Domains/Profiles/ProfilesDomain" Repository="imodel02" />
+        <SubPart PartName="FormsDomainPublicAPI"/>
+        <Bindings>
+            <Libs>
+                Delivery/$(libprefix)FormsDomain$(libext)
+            </Libs>
+            <Assemblies>
+                Delivery/$(shlibprefix)FormsDomain$(ApiNumber)$(shlibext)
+            </Assemblies>
+            <!-- <Files ProductDirectoryName="Libs" >
+                Delivery/$(libprefix)StructuralDomain$(libext)
+                Delivery/$(shlibprefix)StructuralDomain$(ApiNumber)$(shlibext)
+            </Files> -->
+        </Bindings>
+    </Part>
+
+    <Part Name="FormsDomainTestsExe" DeferType="FormsDomainTests" BentleyBuildMakeFile="Tests/Tests.mke">
+        <SubPart PartName="google_gtest_lib"     PartFile="iModelCore/util/gtest/gtest"         Repository="imodel02"  />
+        <SubPart PartName="DgnView"              PartFile="DgnDisplay"    Repository="DgnDisplay"  />
+        <!--SubPart PartName="DgnDbTestUtils"       PartFile="DgnPlatform"   Repository="DgnPlatform" /-->
+        <SubPart PartName="DgnPlatformSqlang"    PartFile="iModelCore/DgnPlatform/DgnPlatform"   Repository="imodel02" />
+        <SubPart PartName="FormsDomainDLL"/>
+        <Bindings>
+            <Assemblies>Delivery/$(shlibprefix)FormsDomainTests.exe</Assemblies>
+            <Files ProductDirectoryName="FormsDomainRoot">
+                Delivery/FormsDomainTests.logging.config.xml
+                Delivery/ignore_list.txt
+            </Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">
+                Delivery/FormsDomainTests_en-US.sqlang.db3
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RunFormsDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" 
+          BentleyBuildMakeOptions="-dGTEST_PRODUCT=FormsDomainTested\  -dGTEST_NAME=FormsDomainTests" ExcludeLibType="Static">
+        <SubPart PartName="FormsDomainTestsExe"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">
+                Delivery/Gtest/Logs/FormsDomainTests.log
+            </Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="FormsDomainTestDirs">
+        <ProductDirectory Name="VendorNotices"                  Deliver="false" />
+        <ProductDirectory Name="Libs"                           Deliver="false" />
+        <ProductDirectory Name="FormsDomainIncludes"            Deliver="false" />
+        <ProductDirectory Name="ProfilesDomainIncludes"         Deliver="false" />
+        <ProductDirectory Name="UnitTests-Assets"               Deliver="false" />
+        <ProductDirectory Name="UnitTests-IgnoreList"           Deliver="false" />
+        <ProductDirectory Name="UnitTests-Objects"              Deliver="false" />
+    </ProductDirectoryList>
+
+    <ProductDirectoryList ListName="FormsDomainSDKDirs">
+        <ProductDirectory Name="FormsDomainRoot"                 Path=""/>
+        <ProductDirectory Name="Assemblies"                      RelativeTo="FormsDomainRoot" Path=""/>
+        <ProductDirectory Name="Assemblies"                      LibType="static" Deliver="false"/>
+        <ProductDirectory Name="Libs"                            RelativeTo="FormsDomainRoot" Path=""/>
+        <ProductDirectory Name="Assets"                          RelativeTo="FormsDomainRoot" Path="Assets"/>
+        <ProductDirectory Name="Assets"                          LibType="static" Deliver="false" />
+        <ProductDirectory Name="FormsDomainIncludes"             RelativeTo="FormsDomainRoot" Path="Include/FormsDomain"/>
+        <ProductDirectory Name="ProfilesDomainIncludes"          Deliver="false" />
+        <ProductDirectory Name="VendorNotices"                   RelativeTo="FormsDomainRoot" Path="VendorNotices"/>
+        <ProductDirectory Name="VendorNotices"                   LibType="static" RelativeTo="FormsDomainRoot" Path="VendorNotices"/>
+    </ProductDirectoryList>
+
+</BuildContext>

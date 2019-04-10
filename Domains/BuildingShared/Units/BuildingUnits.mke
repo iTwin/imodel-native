@@ -1,0 +1,56 @@
+#----------------------------------------------------------------------
+#     $Source: Units/BuildingUnits.mke $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------
+%if defined (DGNV8_BUILD)
+    PolicyFile = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+%endif
+%include mdl.mki
+
+AppName = BuildingUnits
+CCompPDBName = $(AppName)
+
+o = $(OutputRootDir)build/ConceptBuilding/BuildingUnits/
+
+nameToDefine = __BUILDINGSHAREDUNITS_BUILD__
+%include cdefapnd.mki
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+BuildingUnitsPublicApi = $(_MakeFilePath)PublicAPI/
+
+$(o)UnitConverter$(oext) : $(_MakeFilePath)UnitConverter.cpp ${MultiCompileDepends} $(BuildingUnitsPublicApi)UnitConverter.h
+
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+%if defined (DGNV8_BUILD)
+    DLM_NO_DLS = 1
+    DLM_NO_DEF = 1
+%endif
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+
+%include $(sharedMki)linkLibrary.mki
+

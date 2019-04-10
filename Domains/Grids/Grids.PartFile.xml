@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
+    >
+
+
+    <ProductDirectoryList ListName="GridsDirectories">
+      <ProductDirectory Name="Assemblies" Path=""/>
+      <ProductDirectory Name="Assets" Path="Assets"/>
+      <ProductDirectory Name="Assets" LibType="static" Path="Assets"/>
+      <ProductDirectory Name="VendorNotices" Path="Notices"/>
+      <ProductDirectory Name="VendorNotices" Path="Notices" LibType="static" />
+      <ProductDirectory Name="GridsIncludes" Path="Grids" />
+      <ProductDirectory Name="TestsBackdoorIncludes" Path="TestsBackdoor" />
+      <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="" />
+      <ProductDirectory Name="BentleyDesktopClientApi" Path="" />
+      <ProductDirectory Name="BentleyClientSharedAssemblies" Path="" />
+      <ProductDirectory Name="BuildingSharedIncludes" Path="BuildingShared" />
+    </ProductDirectoryList>
+
+    <ProductDirectoryList ListName="GridsGTestDirectories">
+      <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+      <ProductDirectory Name="Gtest-NativeAssemblies" Path="" LibType="Static"/>
+      <ProductDirectory Name="Assemblies" Path=""/>
+      <ProductDirectory Name="Assemblies" Path="" LibType="Static"/>
+      <ProductDirectory Name="Assets" Path="Assets-g"/>
+      <ProductDirectory Name="Assets" Path="Assets-g" LibType="static"/>
+      <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
+      <ProductDirectory Name="Gtest-Assets" Path="Assets" LibType="Static"/>
+      <ProductDirectory Name="VendorNotices" Deliver="false" />
+      <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+      <ProductDirectory Name="UnitTests-Objects" Path="unittests" />
+    </ProductDirectoryList>
+
+    <Part Name="GridsSchema">
+      <SubPart PartName="GridsSchema" Repository="BisSchemas" PartFile="BisSchemasIModelCore" />
+    </Part>
+
+    <Part Name="GridsApi" BentleyBuildMakeFile="GridsApi.prewire.mke">
+      <Bindings>
+        <Directory SourceName="PublicApi/Grids" ProductDirectoryName="GridsIncludes" />
+        <PublicAPI Domain="Grids"/>
+      </Bindings>
+    </Part>
+    
+    <Part Name="GridElements" BentleyBuildMakeFile="Elements/GridElements.mke">
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="GridsApi"/>
+        <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)GridElements$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)GridElements$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="GridHandlers" BentleyBuildMakeFile="Handlers/GridHandlers.mke">
+      <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+      <SubPart PartName="GridElements"/>
+      <Bindings>
+        <Libs>Delivery/$(libprefix)GridHandlers$(libext)</Libs>
+        <Assemblies>Delivery/$(shlibprefix)GridHandlers$(shlibext)</Assemblies>
+      </Bindings>
+    </Part>
+
+    <Part Name="GridStrategies" BentleyBuildMakeFile="Strategies/GridStrategies.mke">
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="BuildingUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
+        <SubPart PartName="GeometryManipulationStrategies" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
+        <SubPart PartName="DgnElementManipulationStrategies" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
+        <SubPart PartName="GridElements"/>
+        <SubPart PartName="GridsApi"/>
+        <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
+        <Bindings>
+        <Libs>Delivery/$(libprefix)GridStrategies$(libext)</Libs>
+        <Assemblies>Delivery/$(shlibprefix)GridStrategies$(shlibext)</Assemblies>
+      </Bindings>
+    </Part>
+    
+    <Part Name="GridManipulatorExtensions" BentleyBuildMakeFile="ManipulatorExtensions/GridManipulatorExtensions.mke">
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform" />
+        <SubPart PartName="DgnView" Repository="DgnDisplay" PartFile="DgnDisplay" />
+        <SubPart PartName="GridsApi" />
+        <SubPart PartName="GridElements" />
+        <SubPart PartName="GridHandlers" />
+        <SubPart PartName="GridStrategies" />
+        <SubPart PartName="StrategyPlatform" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)GridManipulatorExtensions$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)GridManipulatorExtensions$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+        
+    <Part Name="Grids" >
+      <SubPart PartName="GridsDomain"/>
+      <SubPart PartName="GridElements"/>
+      <SubPart PartName="GridHandlers"/>
+      <SubPart PartName="GridsSchema"/>
+    </Part>
+
+
+    <Part Name="Grids-Tested">
+      <SubPart PartName="Grids"/>
+      <SubPart PartName="Gtest-RunAggregator"/>
+    </Part>
+
+    <Part Name="Gtest-RunAggregator" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+      <SubPart PartName="RunGtest"/>
+    </Part>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests/RunTests.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Grids-GtestProduct/GridsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+      <SubProduct ProductName="Grids-GtestProduct" />
+      <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+      <Bindings>
+        <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/GridsTest.log</Files>
+      </Bindings>
+    </Part>
+
+    <Product Name="Grids-GtestProduct" >
+      <SubPart PartName="Grids-Gtest"/>
+      <Directories DirectoryListName="GridsDirectories"/>
+      <Directories DirectoryListName="GridsGTestDirectories"/>
+    </Product>
+
+    <Part Name="Grids-Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke"
+      BentleyBuildMakeOptions="-dTEST_NAME=GridsTest -dTEST_COLLECTION_PRODUCT=Grids-TestsProduct -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+      <SubProduct ProductName="Grids-TestsProduct"/>
+      <SubPart PartName="DgnClientSdk-TestHelpers" Repository="DgnClientFx" PartFile="DgnClientFx"/>
+      <Bindings>
+        <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/GridsTest/Assemblies/*</Files>
+        <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/GridsTest/Assets" />
+      </Bindings>
+    </Part>
+
+    <Product Name="Grids-TestsProduct">
+      <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+      <SubPart PartName="Grids-Tests"/>
+      <SubPart PartName="DgnPlatformSqlang" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+      <Directories DirectoryListName="GridsDirectories"/>
+      <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+
+    <Part Name="Grids-Tests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+      <SubPart PartName="BuildSharedTestUtils" PartFile="Domains/BuildingShared/BuildingShared" Repository="imodel02" />
+      <SubPart PartName="PrewireForUnitTests"/>
+      <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
+      <SubPart PartName="Grids"/>
+      <Bindings>
+        <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+      </Bindings>
+    </Part>
+
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+      <Bindings>
+        <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="Grids">
+          Delivery/UnitTests/ignore_list.txt
+        </Files>
+      </Bindings>
+    </Part>
+  
+    <Part Name="GridsDomain" BentleyBuildMakeFile="Domain/GridsDomain.mke">
+      <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+      <SubPart PartName="GridHandlers"/>
+      <SubPart PartName="BeJsonCpp" Repository="imodel02" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"/>
+      <Bindings>
+        <Libs>Delivery/$(libprefix)GridsDomain$(libext)</Libs>
+        <Assemblies>Delivery/$(shlibprefix)GridsDomain$(shlibext)</Assemblies>
+      </Bindings>
+    </Part>
+    
+</BuildContext>

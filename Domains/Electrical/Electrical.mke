@@ -1,0 +1,95 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Electrical.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+CompileOptionsMki   = $(SrcRoot)imodel02/Domains/Electrical/ElectricalCompileOptions.mki
+%include $(CompileOptionsMki)
+
+ElectricalPhysSrc       = $(_MakeFilePath)ElectricalPhysicalschema/
+ElectricalPhysPublicApi = $(ElectricalPhysSrc)PublicAPI/ElectricalPhysical/
+
+#--------------------------------------------------------------------------------------
+#   Macros
+#--------------------------------------------------------------------------------------
+appSrc              = $(_MakeFilePath)
+appPublicApi        = $(appSrc)PublicAPI/$(appName)/
+MultiCompileDepends = $(_MakeFileSpec) \
+                      $(appSrc)ElectricalDomainInternal.h \
+
+always:
+    !~@mkdir $(o)
+	
+#----------------------------------------------------------------------
+#   Pre-compiled header
+#----------------------------------------------------------------------
+PchCompiland        = $(appSrc)ElectricalDomainInternal.cpp
+PchOutputDir        = $(o)
+PchExtraOptions     = -Zm160
+PchExplicitDepends  = $(MultiCompileDepends)
+
+%if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
+    # Avoid internal compiler error in GCC using windows ndk toolchain
+    GCC_NO_PRE_COMPILED_HEADER = 1
+%endif
+
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+
+%include MultiCppCompileRule.mki
+
+$(o)ElectricalPhysicalDomain$(oext) : $(ElectricalPhysSrc)ElectricalPhysicalDomain.cpp ${MultiCompileDepends} $(ElectricalPhysPublicApi)ElectricalPhysicalDomain.h
+
+$(o)Device$(oext) : $(ElectricalPhysSrc)Device.cpp ${MultiCompileDepends} $(ElectricalPhysPublicApi)Device.h
+
+$(o)ElectricalPhysicalModel$(oext) : $(ElectricalPhysSrc)ElectricalPhysicalModel.cpp ${MultiCompileDepends} $(ElectricalPhysPublicApi)ElectricalPhysicalModel.h
+
+$(o)ElectricalDomainUtilities$(oext) : $(appSrc)ElectricalDomainUtilities.cpp ${MultiCompileDepends} $(appPublicApi)ElectricalDomainUtilities.h
+
+
+%include MultiCppCompileGo.mki
+
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_PCH              = $(o)ElectricalDomainInternal$(oext) 
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_DLS                  = 1
+DLM_NO_DEF                  = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeJsonCpp$(libext)
+
+
+%include $(sharedMki)linkLibrary.mki
+
+
+
+
+

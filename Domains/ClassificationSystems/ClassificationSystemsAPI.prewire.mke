@@ -1,0 +1,24 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: ClassificationSystemsAPI.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+
+#link Public header file to build context    
+
+$(BuildContext)PublicAPI/ClassificationSystems/ClassificationSystemsApi.h : $(_MakeFilePath)PublicApi/ClassificationSystemsApi.h
+    $(LinkFirstDepToFirstTarget)
+    
+$(BuildContext)PublicAPI/ClassificationSystems/Domain : $(_MakeFilePath)Domain/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/ClassificationSystems/Elements : $(_MakeFilePath)Elements/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+    
+$(BuildContext)PublicAPI/ClassificationSystems/Handlers : $(_MakeFilePath)Handlers/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+

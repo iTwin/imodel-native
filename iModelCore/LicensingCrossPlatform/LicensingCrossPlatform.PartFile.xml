@@ -194,7 +194,7 @@
         BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=LicensingUnitTest -dTEST_COLLECTION_PRODUCT=Licensing-UnitTests"
         OnlyPlatforms="WinRT*"
-        ApiNumber="B02"
+        ApiNumber="M02"
         >
         <SubProduct ProductName="Licensing-UnitTests"/>
         <SubPart PartName="UwpTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>

@@ -1,0 +1,41 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Internal/CommonCommands.txt $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+[BUILD GIST]
+Gist is not included in our buildstrategy/partfile, pull & build it with:
+    bb -r Gist -f Gist -p Gist p && bb -r Gist -f Gist -p Gist b
+
+[RUN GIST]
+    %OutRoot%Winx64\Product\GistWinDesktop\Gist.exe
+
+[RUN TESTS]
+To run only certain tests add a filter option: "-dGTEST_FILTER=--gtest_filter=[YourFilter]" to bmake command:
+    bb re RunProfilesTests -dGTEST_FILTER=--gtest_filter=CShapeProfile*
+
+[DEBUG TESTS]
+To run/debug tests from Visual Studio:
+    Right-click on 'ProfilesDomainTests' project and click 'Set as StartUp Project'.
+    If you haven't built the tests or have updated the code: run the build command from shell (or hit 'Build'->'Build ProfilesDomainTests' from IDE menu).
+    Pressing F5 should run the exe and attach the debugger.
+    To run specific tests: 'ProfilesDomainTests'->'Properties'->'Debugging'->'Command Arguments' and add "--gtest_filter=[YourDesiredFilter]".
+    NOTE: Make sure you run VisualStudio from shell.
+
+[UI TESTS]
+Run geometry generation test:
+    bb re RunProfilesTests -dGTEST_FILTER=--gtest_filter=GeometryTestCase*
+
+Open generated bim with Gist:
+    %localappdata%\Temp\ProfilesTests\ProfilesTests_Working.bim
+
+Handy doskey (build and run filtered tests):
+    doskey RunTests = bb re ProfilesTests ^&^& bb re RunProfilesTests -c ^&^& bb re RunProfilesTests -dGTEST_FILTER=--gtest_filter=$*
+    Usage: "runtests IShape*"
+
+[CODE COVERAGE]
+Generate code coverage report:
+    bb -p ProfilesCodeCoverage p && bb -p ProfilesCodeCoverage b

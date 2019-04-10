@@ -1,0 +1,193 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="structural.mke" />
+    <None Include="Structural.prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="StructuralDomains.Partfile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+    <Xml Include="StructuralPhysical.ecschema.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Beam.cpp" />
+    <ClCompile Include="Brace.cpp" />
+    <ClCompile Include="Column.cpp" />
+    <ClCompile Include="ConcreteMaterialProperties.cpp" />
+    <ClCompile Include="FoundationMember.cpp" />
+    <ClCompile Include="MaterialProperties.cpp" />
+    <ClCompile Include="Pile.cpp" />
+    <ClCompile Include="PileCap.cpp" />
+    <ClCompile Include="Slab.cpp" />
+    <ClCompile Include="SpreadFooting.cpp" />
+    <ClCompile Include="SteelMaterialProperties.cpp" />
+    <ClCompile Include="StripFooting.cpp" />
+    <ClCompile Include="StructuralAddition.cpp" />
+    <ClCompile Include="StructuralDomainUtilities.cpp" />
+    <ClCompile Include="StructuralElement.cpp" />
+    <ClCompile Include="StructuralMember.cpp" />
+    <ClCompile Include="StructuralPhysicalDomain.cpp" />
+    <ClCompile Include="StructuralPhysicalModel.cpp" />
+    <ClCompile Include="StructuralSubtraction.cpp" />
+    <ClCompile Include="Wall.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PublicAPI\Beam.h" />
+    <ClInclude Include="PublicAPI\Brace.h" />
+    <ClInclude Include="PublicAPI\Column.h" />
+    <ClInclude Include="PublicAPI\ConcreteMaterialProperties.h" />
+    <ClInclude Include="PublicAPI\FoundationMember.h" />
+    <ClInclude Include="PublicAPI\MaterialProperties.h" />
+    <ClInclude Include="PublicAPI\Pile.h" />
+    <ClInclude Include="PublicAPI\PileCap.h" />
+    <ClInclude Include="PublicAPI\Slab.h" />
+    <ClInclude Include="PublicAPI\SpreadFooting.h" />
+    <ClInclude Include="PublicAPI\SteelMaterialProperties.h" />
+    <ClInclude Include="PublicAPI\StripFooting.h" />
+    <ClInclude Include="PublicAPI\StructuralAddition.h" />
+    <ClInclude Include="PublicAPI\StructuralDomainApi.h" />
+    <ClInclude Include="PublicAPI\StructuralDomainUtilities.h" />
+    <ClInclude Include="PublicAPI\StructuralElement.h" />
+    <ClInclude Include="PublicAPI\StructuralMember.h" />
+    <ClInclude Include="PublicAPI\StructuralPhysicalApi.h" />
+    <ClInclude Include="PublicAPI\StructuralPhysicalDefinitions.h" />
+    <ClInclude Include="PublicAPI\StructuralPhysicalDomain.h" />
+    <ClInclude Include="PublicAPI\StructuralPhysicalModel.h" />
+    <ClInclude Include="PublicAPI\StructuralSubtraction.h" />
+    <ClInclude Include="PublicAPI\Wall.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7317B658-8A6E-4A68-857A-2DFA99B98479}</ProjectGuid>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <Keyword>ManagedCProj</Keyword>
+    <RootNamespace>StructuralDomain</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CLRSupport>true</CLRSupport>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CLRSupport>true</CLRSupport>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CLRSupport>false</CLRSupport>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CLRSupport>true</CLRSupport>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <EnableManagedIncrementalBuild>false</EnableManagedIncrementalBuild>
+    <IncludePath>$(SRCROOT)DgnDomains\Structural;$(OUTROOT)Winx64\BuildContexts\StructuralDomains\PublicAPI;$(OUTROOT)Winx64\BuildContexts\StructuralDomains\VendorAPI;$(IncludePath)</IncludePath>
+    <NMakeBuildCommandLine>bb -ax64 -p StructuralDomainDLL b -b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 re StructuralDomainDLL</NMakeReBuildCommandLine>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies />
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__STRUCTURAL_DOMAIN_BUILD__;BENTLEY_WIN32;</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SRCROOT)DgnDomains\Structural\PublicAPI\StructuralDomain;$(SRCROOT)DgnDomains\Structural;$(OUTROOT)Winx64\BuildContexts\StructuralDomains\PublicAPI;$(OUTROOT)Winx64\BuildContexts\StructuralDomains\VendorAPI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies />
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies />
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies />
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

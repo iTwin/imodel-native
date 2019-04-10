@@ -1,0 +1,337 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Profiles/src/PublicAPI/ProfilesDefinitions.h $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+#include <Bentley\Bentley.h>
+#include <Bentley\WString.h>
+#include <Bentley\BeNumerical.h>
+#include <ECDb\ECDbApi.h>
+#include <DgnPlatform\DgnPlatformApi.h>
+#include <Geom\GeomApi.h>
+#include <Geom\Angle.h>
+
+#ifdef __PROFILES_BUILD__
+#define PROFILES_EXPORT EXPORT_ATTRIBUTE
+#else
+#define PROFILES_EXPORT IMPORT_ATTRIBUTE
+#endif
+
+#define BEGIN_BENTLEY_PROFILES_NAMESPACE        BEGIN_BENTLEY_NAMESPACE namespace Profiles {
+#define END_BENTLEY_PROFILES_NAMESPACE          } END_BENTLEY_NAMESPACE
+#define USING_NAMESPACE_BENTLEY_PROFILES        using namespace BENTLEY_NAMESPACE_NAME::Profiles;
+
+BEGIN_BENTLEY_PROFILES_NAMESPACE
+END_BENTLEY_PROFILES_NAMESPACE
+
+#define PRF_SCHEMA_NAME                             "Profiles"
+#define PRF_SCHEMA_ALIAS                            "prf"
+#define PRF_SCHEMA_FILE                             L"Profiles.ecschema.xml"
+#define PRF_SCHEMA_LOCATION                         L"ECSchemas/Domain/"
+#define PRF_SCHEMA_PATH                             PRF_SCHEMA_LOCATION PRF_SCHEMA_FILE
+#define PRF_SCHEMA(name)                            PRF_SCHEMA_NAME "." name
+#define PRF_SCHEMA_CODE(name)                       PRF_SCHEMA_NAME "_" name
+#define PRF_LOGGER_NAMESPACE                        "ProfilesDomain"
+
+
+//-----------------------------------------------------------------------------------------
+// ECClass names
+//-----------------------------------------------------------------------------------------
+
+// Elements
+#define PRF_CLASS_AsymmetricIShapeProfile                            "AsymmetricIShapeProfile"
+#define PRF_CLASS_BentPlateProfile                                   "BentPlateProfile"
+#define PRF_CLASS_CardinalPoint                                      "CardinalPoint"
+#define PRF_CLASS_CShapeProfile                                      "CShapeProfile"
+#define PRF_CLASS_CapsuleProfile                                     "CapsuleProfile"
+#define PRF_CLASS_CenterLineCShapeProfile                            "CenterLineCShapeProfile"
+#define PRF_CLASS_CenterLineLShapeProfile                            "CenterLineLShapeProfile"
+#define PRF_CLASS_CenterLineZShapeProfile                            "CenterLineZShapeProfile"
+#define PRF_CLASS_ParametricProfile                                  "ParametricProfile"
+#define PRF_CLASS_CompositeProfile                                   "CompositeProfile"
+#define PRF_CLASS_ArbitraryCenterLineProfile                         "ArbitraryCenterLineProfile"
+#define PRF_CLASS_ArbitraryCompositeProfile                          "ArbitraryCompositeProfile"
+#define PRF_CLASS_ArbitraryShapeProfile                              "ArbitraryShapeProfile"
+#define PRF_CLASS_DerivedProfile                                     "DerivedProfile"
+#define PRF_CLASS_DoubleCShapeProfile                                "DoubleCShapeProfile"
+#define PRF_CLASS_DoubleLShapeProfile                                "DoubleLShapeProfile"
+#define PRF_CLASS_EllipseProfile                                     "EllipseProfile"
+#define PRF_CLASS_CircleProfile                                      "CircleProfile"
+#define PRF_CLASS_HollowCircleProfile                                "HollowCircleProfile"
+#define PRF_CLASS_HollowRectangleProfile                             "HollowRectangleProfile"
+#define PRF_CLASS_IShapeProfile                                      "IShapeProfile"
+#define PRF_CLASS_LShapeProfile                                      "LShapeProfile"
+#define PRF_CLASS_Profile                                            "Profile"
+#define PRF_CLASS_RectangleProfile                                   "RectangleProfile"
+#define PRF_CLASS_RegularPolygonProfile                              "RegularPolygonProfile"
+#define PRF_CLASS_RoundedRectangleProfile                            "RoundedRectangleProfile"
+#define PRF_CLASS_SchifflerizedLShapeProfile                         "SchifflerizedLShapeProfile"
+#define PRF_CLASS_SinglePerimeterProfile                             "SinglePerimeterProfile"
+#define PRF_CLASS_TShapeProfile                                      "TShapeProfile"
+#define PRF_CLASS_TTShapeProfile                                     "TTShapeProfile"
+#define PRF_CLASS_TrapeziumProfile                                   "TrapeziumProfile"
+#define PRF_CLASS_ZShapeProfile                                      "ZShapeProfile"
+#define PRF_CLASS_MaterialProfileDefinition                          "MaterialProfileDefinition"
+#define PRF_CLASS_MaterialProfile                                    "MaterialProfile"
+
+// Relationships
+#define PRF_REL_SinglePerimeterProfileOwnsDerivedProfile                        "SinglePerimeterProfileOwnsDerivedProfile"
+#define PRF_REL_LShapeProfileOwnsDoubleLShapeProfile                            "LShapeProfileOwnsDoubleLShapeProfile"
+#define PRF_REL_CShapeProfileOwnsDoubleCShapeProfile                            "CShapeProfileOwnsDoubleCShapeProfile"
+#define PRF_REL_MaterialProfileRefersToProfile                                  "MaterialProfileRefersToProfile"
+
+// Properties
+#define PRF_PROP_AsymmetricIShapeProfile_TopFlangeWidth                          "TopFlangeWidth"
+#define PRF_PROP_AsymmetricIShapeProfile_BottomFlangeWidth                       "BottomFlangeWidth"
+#define PRF_PROP_AsymmetricIShapeProfile_Depth                                   "Depth"
+#define PRF_PROP_AsymmetricIShapeProfile_TopFlangeThickness                      "TopFlangeThickness"
+#define PRF_PROP_AsymmetricIShapeProfile_BottomFlangeThickness                   "BottomFlangeThickness"
+#define PRF_PROP_AsymmetricIShapeProfile_WebThickness                            "WebThickness"
+#define PRF_PROP_AsymmetricIShapeProfile_TopFlangeFilletRadius                   "TopFlangeFilletRadius"
+#define PRF_PROP_AsymmetricIShapeProfile_TopFlangeEdgeRadius                     "TopFlangeEdgeRadius"
+#define PRF_PROP_AsymmetricIShapeProfile_TopFlangeSlope                          "TopFlangeSlope"
+#define PRF_PROP_AsymmetricIShapeProfile_BottomFlangeFilletRadius                "BottomFlangeFilletRadius"
+#define PRF_PROP_AsymmetricIShapeProfile_BottomFlangeEdgeRadius                  "BottomFlangeEdgeRadius"
+#define PRF_PROP_AsymmetricIShapeProfile_BottomFlangeSlope                       "BottomFlangeSlope"
+#define PRF_PROP_BentPlateProfile_Width                                          "Width"
+#define PRF_PROP_BentPlateProfile_BendAngle                                      "BendAngle"
+#define PRF_PROP_BentPlateProfile_BendOffset                                     "BendOffset"
+#define PRF_PROP_BentPlateProfile_FilletRadius                                   "FilletRadius"
+#define PRF_PROP_CardinalPoint_Name                                              "Name"
+#define PRF_PROP_CardinalPoint_Location                                          "Location"
+#define PRF_PROP_CShapeProfile_FlangeWidth                                       "FlangeWidth"
+#define PRF_PROP_CShapeProfile_Depth                                             "Depth"
+#define PRF_PROP_CShapeProfile_FlangeThickness                                   "FlangeThickness"
+#define PRF_PROP_CShapeProfile_WebThickness                                      "WebThickness"
+#define PRF_PROP_CShapeProfile_FilletRadius                                      "FilletRadius"
+#define PRF_PROP_CShapeProfile_FlangeEdgeRadius                                  "FlangeEdgeRadius"
+#define PRF_PROP_CShapeProfile_FlangeSlope                                       "FlangeSlope"
+#define PRF_PROP_CapsuleProfile_Width                                            "Width"
+#define PRF_PROP_CapsuleProfile_Depth                                            "Depth"
+#define PRF_PROP_CenterLineCShapeProfile_FlangeWidth                             "FlangeWidth"
+#define PRF_PROP_CenterLineCShapeProfile_Depth                                   "Depth"
+#define PRF_PROP_CenterLineCShapeProfile_FilletRadius                            "FilletRadius"
+#define PRF_PROP_CenterLineCShapeProfile_Girth                                   "Girth"
+#define PRF_PROP_CenterLineLShapeProfile_Width                                   "Width"
+#define PRF_PROP_CenterLineLShapeProfile_Depth                                   "Depth"
+#define PRF_PROP_CenterLineLShapeProfile_FilletRadius                            "FilletRadius"
+#define PRF_PROP_CenterLineLShapeProfile_Girth                                   "Girth"
+#define PRF_PROP_CenterLineZShapeProfile_FlangeWidth                             "FlangeWidth"
+#define PRF_PROP_CenterLineZShapeProfile_Depth                                   "Depth"
+#define PRF_PROP_CenterLineZShapeProfile_FilletRadius                            "FilletRadius"
+#define PRF_PROP_CenterLineZShapeProfile_Girth                                   "Girth"
+#define PRF_PROP_CircleProfile_Radius                                            "Radius"
+#define PRF_PROP_DerivedProfile_BaseProfile                                      "BaseProfile"
+#define PRF_PROP_DerivedProfile_Offset                                           "Offset"
+#define PRF_PROP_DerivedProfile_Scale                                            "Scale"
+#define PRF_PROP_DerivedProfile_Rotation                                         "Rotation"
+#define PRF_PROP_DerivedProfile_MirrorAboutYAxis                                 "MirrorAboutYAxis"
+#define PRF_PROP_DoubleCShapeProfile_Spacing                                     "Spacing"
+#define PRF_PROP_DoubleCShapeProfile_SingleProfile                               "SingleProfile"
+#define PRF_PROP_DoubleLShapeProfile_Spacing                                     "Spacing"
+#define PRF_PROP_DoubleLShapeProfile_Type                                        "Type"
+#define PRF_PROP_DoubleLShapeProfile_SingleProfile                               "SingleProfile"
+#define PRF_PROP_EllipseProfile_XRadius                                          "XRadius"
+#define PRF_PROP_EllipseProfile_YRadius                                          "YRadius"
+#define PRF_PROP_HollowCircleProfile_Radius                                      "Radius"
+#define PRF_PROP_HollowRectangleProfile_Width                                    "Width"
+#define PRF_PROP_HollowRectangleProfile_Depth                                    "Depth"
+#define PRF_PROP_HollowRectangleProfile_InnerFilletRadius                        "InnerFilletRadius"
+#define PRF_PROP_HollowRectangleProfile_OuterFilletRadius                        "OuterFilletRadius"
+#define PRF_PROP_ICenterLineProfile_CenterLine                                   "CenterLine"
+#define PRF_PROP_ICenterLineProfile_WallThickness                                "WallThickness"
+#define PRF_PROP_IShapeProfile_FlangeWidth                                       "FlangeWidth"
+#define PRF_PROP_IShapeProfile_Depth                                             "Depth"
+#define PRF_PROP_IShapeProfile_FlangeThickness                                   "FlangeThickness"
+#define PRF_PROP_IShapeProfile_WebThickness                                      "WebThickness"
+#define PRF_PROP_IShapeProfile_FilletRadius                                      "FilletRadius"
+#define PRF_PROP_IShapeProfile_FlangeEdgeRadius                                  "FlangeEdgeRadius"
+#define PRF_PROP_IShapeProfile_FlangeSlope                                       "FlangeSlope"
+#define PRF_PROP_LShapeProfile_Width                                             "Width"
+#define PRF_PROP_LShapeProfile_Depth                                             "Depth"
+#define PRF_PROP_LShapeProfile_Thickness                                         "Thickness"
+#define PRF_PROP_LShapeProfile_FilletRadius                                      "FilletRadius"
+#define PRF_PROP_LShapeProfile_EdgeRadius                                        "EdgeRadius"
+#define PRF_PROP_LShapeProfile_LegSlope                                          "LegSlope"
+#define PRF_PROP_Profile_Name                                                    "Name"
+#define PRF_PROP_Profile_Shape                                                   "Shape"
+#define PRF_PROP_Profile_CardinalPoints                                          "CardinalPoints"
+#define PRF_PROP_RectangleProfile_Width                                          "Width"
+#define PRF_PROP_RectangleProfile_Depth                                          "Depth"
+#define PRF_PROP_RegularPolygonProfile_SideCount                                 "SideCount"
+#define PRF_PROP_RegularPolygonProfile_SideLength                                "SideLength"
+#define PRF_PROP_RoundedRectangleProfile_Width                                   "Width"
+#define PRF_PROP_RoundedRectangleProfile_Depth                                   "Depth"
+#define PRF_PROP_RoundedRectangleProfile_RoundingRadius                          "RoundingRadius"
+#define PRF_PROP_SchifflerizedLShapeProfile_LegLength                            "LegLength"
+#define PRF_PROP_SchifflerizedLShapeProfile_Thickness                            "Thickness"
+#define PRF_PROP_SchifflerizedLShapeProfile_LegBendOffset                        "LegBendOffset"
+#define PRF_PROP_SchifflerizedLShapeProfile_FilletRadius                         "FilletRadius"
+#define PRF_PROP_SchifflerizedLShapeProfile_EdgeRadius                           "EdgeRadius"
+#define PRF_PROP_CustomCardinalPointsAspect_Points                               "Points"
+#define PRF_PROP_TShapeProfile_FlangeWidth                                       "FlangeWidth"
+#define PRF_PROP_TShapeProfile_Depth                                             "Depth"
+#define PRF_PROP_TShapeProfile_FlangeThickness                                   "FlangeThickness"
+#define PRF_PROP_TShapeProfile_WebThickness                                      "WebThickness"
+#define PRF_PROP_TShapeProfile_FilletRadius                                      "FilletRadius"
+#define PRF_PROP_TShapeProfile_FlangeEdgeRadius                                  "FlangeEdgeRadius"
+#define PRF_PROP_TShapeProfile_FlangeSlope                                       "FlangeSlope"
+#define PRF_PROP_TShapeProfile_WebEdgeRadius                                     "WebEdgeRadius"
+#define PRF_PROP_TShapeProfile_WebSlope                                          "WebSlope"
+#define PRF_PROP_TTShapeProfile_FlangeWidth                                      "FlangeWidth"
+#define PRF_PROP_TTShapeProfile_Depth                                            "Depth"
+#define PRF_PROP_TTShapeProfile_FlangeThickness                                  "FlangeThickness"
+#define PRF_PROP_TTShapeProfile_WebThickness                                     "WebThickness"
+#define PRF_PROP_TTShapeProfile_WebSpacing                                       "WebSpacing"
+#define PRF_PROP_TTShapeProfile_FilletRadius                                     "FilletRadius"
+#define PRF_PROP_TTShapeProfile_FlangeEdgeRadius                                 "FlangeEdgeRadius"
+#define PRF_PROP_TTShapeProfile_FlangeSlope                                      "FlangeSlope"
+#define PRF_PROP_TTShapeProfile_WebEdgeRadius                                    "WebEdgeRadius"
+#define PRF_PROP_TTShapeProfile_WebSlope                                         "WebSlope"
+#define PRF_PROP_TrapeziumProfile_TopWidth                                       "TopWidth"
+#define PRF_PROP_TrapeziumProfile_BottomWidth                                    "BottomWidth"
+#define PRF_PROP_TrapeziumProfile_Depth                                          "Depth"
+#define PRF_PROP_TrapeziumProfile_TopOffset                                      "TopOffset"
+#define PRF_PROP_ZShapeProfile_FlangeWidth                                       "FlangeWidth"
+#define PRF_PROP_ZShapeProfile_Depth                                             "Depth"
+#define PRF_PROP_ZShapeProfile_FlangeThickness                                   "FlangeThickness"
+#define PRF_PROP_ZShapeProfile_WebThickness                                      "WebThickness"
+#define PRF_PROP_ZShapeProfile_FilletRadius                                      "FilletRadius"
+#define PRF_PROP_ZShapeProfile_FlangeEdgeRadius                                  "FlangeEdgeRadius"
+#define PRF_PROP_ZShapeProfile_FlangeSlope                                       "FlangeSlope"
+#define PRF_PROP_MaterialProfile_Material                                        "Material"
+#define PRF_PROP_MaterialProfile_Profile                                         "Profile"
+
+
+//-----------------------------------------------------------------------------------------
+// Category names
+//-----------------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------------------
+// CodeSpec names and CodeValue string formats
+//-----------------------------------------------------------------------------------------
+#define PRF_CODESPEC_StandardCatalogProfile                 PRF_SCHEMA_ALIAS ":StandardCatalogProfile"
+#define PRF_CODEVALUE_FORMAT_StandardCatalogProfile         "%s %s %s %s"
+
+//-----------------------------------------------------------------------------------------
+// Define standard static QueryClass/QueryClassId methods on Elements and Aspects
+//-----------------------------------------------------------------------------------------
+#define DECLARE_PROFILES_QUERYCLASS_METHODS(_name_)                                                     \
+    /** Query the `DgnClassId` associated with _name_. */                                               \
+    /** @param[in] db Instance of the `DgnDb` to retrieve the `DgnClassId` from. */                     \
+    /** @param[in] pClassName name of the class to retrieve, default value - PRF_CLASS_##_name_. */     \
+    static Dgn::DgnClassId QueryClassId (Dgn::DgnDb const& db, Utf8CP pClassName = PRF_CLASS_##_name_)  \
+        { return Dgn::DgnClassId (db.Schemas().GetClassId (PRF_SCHEMA_NAME, pClassName)); }             \
+    /** Query the `ECClass` associated with _name_. */                                                  \
+    /** @param[in] db Instance of the `DgnDb` to retrieve the `ECClass` from. */                        \
+    /** @param[in] pClassName name of the class to retrieve, default value - PRF_CLASS_##_name_. */     \
+    static ECN::ECClassCP QueryClass (Dgn::DgnDb const& db, Utf8CP pClassName = PRF_CLASS_##_name_)     \
+        { return (db.Schemas().GetClass (PRF_SCHEMA_NAME, pClassName)); }
+
+//-----------------------------------------------------------------------------------------
+// Macro to declare Get, GetForEdit, Insert, Update methods on elements. Pointers (Ptr, CPtr) must be defined.
+//-----------------------------------------------------------------------------------------
+#define DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS(_name_)                                                                                   \
+    /** Get an readonly instance of a _name_ from the `DgnDb`. */                                                                           \
+    /** @param[in] db Instance of the `DgnDb` to retrieve the _name_ from. */                                                               \
+    /** @param[in] id Id of the _name_ to retrieve. */                                                                                      \
+    PROFILES_EXPORT static _name_##CPtr Get       (Dgn::DgnDb const& db, Dgn::DgnElementId id) { return db.Elements().Get< _name_ > (id); } \
+    /** Get an editable instance of a _name_ from the DgnDb. */                                                                             \
+    /** @param[in] db Instance of the DgnDb to retrieve the _name_ from. */                                                                 \
+    /** @param[in] id Id of the _name_ to retrieve. */                                                                                      \
+    /** @return If _name_ with given ID exists in `DgnDb` a readonly instance of it is returned, nullptr otherwise. */                      \
+    PROFILES_EXPORT static _name_##Ptr  GetForEdit (Dgn::DgnDb const& db, Dgn::DgnElementId id) { return db.Elements().GetForEdit< _name_ > (id); }
+
+#define DECLARE_PROFILES_ELEMENT_BASE_GET_UPDATE_METHODS(_name_)                                            \
+    DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS (_name_)                                                      \
+    /** Performs a database `Update` operation on the instance. */                                          \
+    /** @details Updates the persistent state of a _name_ in the `DgnDb` from this modified copy of it. */  \
+    /** @param[in] pStatus Status of the operation. */                                                      \
+    /** @return On success - readonly instance of an updated _name_, otherwise a nullptr. */                \
+    PROFILES_EXPORT _name_##CPtr Update (Dgn::DgnDbStatus* pStatus = nullptr) { return GetDgnDb().Elements().Update< _name_ > (*this, pStatus); }
+
+#define DECLARE_PROFILES_ELEMENT_BASE_METHODS(_name_)                                       \
+    DECLARE_PROFILES_ELEMENT_BASE_GET_UPDATE_METHODS (_name_)                               \
+    /** Performs a database `Insert` operation on the instance. */                          \
+    /** Inserts this _name_ into the `DgnDb`. */                                            \
+    /** @param[in] pStatus Status of the operation. */                                      \
+    /** @return On success - readonly instance of an inserted _name_, nullptr otherwise. */ \
+    PROFILES_EXPORT _name_##CPtr Insert (Dgn::DgnDbStatus* pStatus = nullptr) { return GetDgnDb().Elements().Insert< _name_ > (*this, pStatus); }
+
+//-----------------------------------------------------------------------------------------
+// Macro to declare T_Super and internal constructor for CreateParams
+//-----------------------------------------------------------------------------------------
+#define DECLARE_PROFILES_CREATE_PARAMS_BASE_METHODS(_name_) \
+public:                                                     \
+/** @private */                                             \
+DEFINE_T_SUPER(_name_::T_Super::CreateParams);              \
+/** @private */                                             \
+explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+
+
+//-----------------------------------------------------------------------------------------
+// Define standard typedefs (P, CP, R, CR) in the Profiles namespace
+//-----------------------------------------------------------------------------------------
+#define PROFILES_TYPEDEFS(_name_) \
+    BEGIN_BENTLEY_PROFILES_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS (_name_) END_BENTLEY_PROFILES_NAMESPACE
+
+//-----------------------------------------------------------------------------------------
+// Define RefCountedPtr and CPtr types
+//-----------------------------------------------------------------------------------------
+#define PROFILES_REFCOUNTED_PTR(_name_) \
+    BEGIN_BENTLEY_PROFILES_NAMESPACE struct _name_; DEFINE_REF_COUNTED_PTR (_name_) END_BENTLEY_PROFILES_NAMESPACE
+
+//-----------------------------------------------------------------------------------------
+// Define both RefCounterPtr/CPtr and (P, CP, R, CR) types
+//-----------------------------------------------------------------------------------------
+#define PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(_name_) \
+    BEGIN_BENTLEY_PROFILES_NAMESPACE                 \
+        DEFINE_POINTER_SUFFIX_TYPEDEFS (_name_)      \
+        DEFINE_REF_COUNTED_PTR (_name_)              \
+    END_BENTLEY_PROFILES_NAMESPACE
+
+
+//-----------------------------------------------------------------------------------------
+// Define typedefs and Ptrs in the Profiles namespace
+//-----------------------------------------------------------------------------------------
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (AsymmetricIShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (BentPlateProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CapsuleProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CenterLineCShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CenterLineLShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CenterLineZShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (ParametricProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CompositeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (ArbitraryCenterLineProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (ArbitraryCompositeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (ArbitraryShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (DerivedProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (DoubleCShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (DoubleLShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (EllipseProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CircleProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (HollowCircleProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (HollowRectangleProfile)
+PROFILES_TYPEDEFS (ICenterLineProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (IShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (LShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (Profile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (RectangleProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (RegularPolygonProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (RoundedRectangleProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (SchifflerizedLShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (SinglePerimeterProfile)
+PROFILES_TYPEDEFS (CustomCardinalPoint)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CustomCardinalPointsAspect)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (TShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (TTShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (TrapeziumProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (ZShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (MaterialProfileDefinition)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (MaterialProfile)

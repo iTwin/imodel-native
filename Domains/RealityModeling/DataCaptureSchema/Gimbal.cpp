@@ -425,9 +425,9 @@ void Gimbal::_OnDeleted() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Chantal.Poulin                    03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Gimbal::_CopyFrom(DgnElementCR el)
+void Gimbal::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
     auto other = dynamic_cast<GimbalCP>(&el);
     BeAssert(nullptr != other);
     if (nullptr == other)
