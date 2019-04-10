@@ -130,6 +130,8 @@ def LogPathForComp(compToFind):
         logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', exeName, exeName, 'run', 'logs', 'test.log')
     elif compToFind.lower() == 'dgnv8convertertests' or compToFind.lower() == 'mstnbridgetests': # it has different naming convention
         logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', exeName, exeName, 'run', 'logs', 'test.log')
+    elif compToFind.lower() == 'licensing': # it has different naming convention
+        logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', compToFind+'-GTestUnit', exeName, 'run', 'logs', 'test.log')
     else:
         logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', compToFind+'-GTest', exeName, 'run', 'logs', 'test.log')
     return logPath
@@ -142,6 +144,8 @@ def ExePathForComp(compToFind):
         exePath = os.path.join('%OutRoot%Winx64', 'Product', exeName, exeName+'.exe')
     elif compToFind.lower() == 'dgnv8convertertests' or compToFind.lower() == 'mstnbridgetests': # it has different naming convention
         exePath = os.path.join('%OutRoot%Winx64', 'Product', exeName, exeName+'.exe')
+    elif compToFind.lower() == 'licensing':
+        exePath = os.path.join('%OutRoot%Winx64', 'Product', compToFind+'-GTestUnit', exeName+'.exe')
     else:
         exePath = os.path.join('%OutRoot%Winx64', 'Product', compToFind+'-GTest', exeName+'.exe')
     return exePath
