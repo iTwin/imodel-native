@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmIo.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -3411,7 +3411,9 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Writing Tin  Object At File Position %8ld Fr
        flistP = flistAddrP(dtmP,n) ;
        fList.nextPnt = flistP->nextPnt ;
        fList.nextPtr = flistP->nextPtr ;
-       fList.dtmFeature = *(featureMapP+flistP->dtmFeature) ;
+       if (DTM_NULL_PNT == flistP->dtmFeature)
+           fList.dtmFeature = DTM_NULL_PNT;
+       else fList.dtmFeature = *(featureMapP+flistP->dtmFeature) ;
        if( fList.nextPnt == DTM_NULL_PNT ) fList.nextPnt = TIN_NULL_PNT ;
        if( fList.nextPtr == DTM_NULL_PTR ) fList.nextPtr = TIN_NULL_PTR ;
        if( bcdtmStream_fwrite(&fList,sizeof(DTM_FEATURE_LIST_VER200),1,dtmStreamP) != 1 )
