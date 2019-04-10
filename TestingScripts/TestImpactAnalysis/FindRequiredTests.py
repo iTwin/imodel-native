@@ -184,7 +184,7 @@ def main():
     if os.path.exists(sfLog):
         os.remove(sfLog)
     src_branch = 'origin/' + os.path.basename(os.getenv('SourceBranch'))
-    tgt_branch = os.path.basename(os.getenv('TargetBranch'))
+    tgt_branch = 'origin/' + os.path.basename(os.getenv('TargetBranch'))
     for repo in repos:
         print 'Checking files at path: ' + repo
         os.chdir(cmp.RepoPathForComp(repo))
