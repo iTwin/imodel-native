@@ -10,8 +10,8 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
-// WIP_LICENSING_FOR_LINUX_AND_MACOS
-#if defined(BENTLEYCONFIG_OS_APPLE_MACOS) || defined(BENTLEYCONFIG_OS_LINUX)
+// WIP_LICENSING_FOR_MACOS
+#if defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 #include <folly/BeFolly.h>
 #include <folly/futures/Future.h>
 
@@ -25,7 +25,7 @@ struct SaasClient
     static SaasClientPtr Create() { return std::make_shared<SaasClient>(); }
     folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR appVersion, Utf8StringCR projectId)
         {
-        IModelJsNative::JsInterop::GetLogger().warning("Usage tracking not supported yet on Linux and MacOS.");
+        IModelJsNative::JsInterop::GetLogger().warning("Usage tracking not supported yet on MacOS.");
         return folly::makeFuture(ERROR);
         }
     };

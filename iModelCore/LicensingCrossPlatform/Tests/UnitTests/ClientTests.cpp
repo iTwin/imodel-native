@@ -167,7 +167,7 @@ ClientImplPtr ClientTests::CreateTestClient(ConnectSignInManager::UserInfo userI
         );
     }
 
-TEST_F(ClientTests, DISABLED_JsonExample)
+TEST_F(ClientTests, JsonExample)
 {
 	BeFileName testJson;
 	BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);
