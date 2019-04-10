@@ -211,7 +211,7 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     Utf8String pemFileName;
 
-#ifdef VANCOUVER_API //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error.
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)  //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error.
     GetCertificateAutoritiesFileUrl(pemFileName);
     curl_easy_setopt(curl, CURLOPT_CAINFO, pemFileName.c_str());
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
