@@ -118,35 +118,35 @@ void BatchIdMap::ToJson(Json::Value& value) const
 TilePublisher::TilePublisher(TileNodeCR tile, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS)
     : m_batchIds(TileSource::None), m_centroid(tile.GetTileCenter()), m_tile(&tile), m_context(nullptr)
     {
-    m_tileTransform = Transform::From(m_centroid);
     m_centroid = DPoint3d::From(0, 0, 0);
     m_meshes = m_tile->GenerateMeshes();
-
-    // UPDATE --> Setting the gltf tile transform fixes display issues so there is actually no need to set CESIUM_RTC or RTC_CENTER at all.
-    // //1. CESIUM_RTC does not work when root tileset contains a non-identity transform
-    // //2. Point to point reprojection is not necessary
-    // //3. TODO: Must investigate the use of RTC_CENTER instead
+#if 0
+    // 1. CESIUM_RTC does not work when root tileset contains a non-identity transform
+    // 2. Point to point reprojection is not necessary
+    // 3. TODO: Must investigate the use of RTC_CENTER instead
     if (!m_meshes.empty())
         {
-        //if (sourceGCS != nullptr && sourceGCS != destinationGCS && !destinationGCS->IsEquivalent(*sourceGCS))
-        //    {
-        //    m_meshes[0]->ReprojectPoints(sourceGCS, destinationGCS);
-        //
-        //    GeoPoint inLatLong, outLatLong;
-        //    if (sourceGCS->LatLongFromCartesian(inLatLong, m_centroid) != SUCCESS)
-        //        assert(false);
-        //    if (sourceGCS->LatLongFromLatLong(outLatLong, inLatLong, *destinationGCS) != SUCCESS)
-        //        assert(false);
-        //    if (destinationGCS->XYZFromLatLong(m_centroid, outLatLong) != SUCCESS)
-        //        assert(false);
-        //    }
+        if (sourceGCS != nullptr && sourceGCS != destinationGCS && !destinationGCS->IsEquivalent(*sourceGCS))
+            {
+            m_meshes[0]->ReprojectPoints(sourceGCS, destinationGCS);
 
-        // Translate the points near zero to avoid jittering and artifacts in Cesium based viewers
-        Transform dbToTile;
-        dbToTile.InverseOf(m_tileTransform);
+            GeoPoint inLatLong, outLatLong;
+            if (sourceGCS->LatLongFromCartesian(inLatLong, m_centroid) != SUCCESS)
+                assert(false);
+            if (sourceGCS->LatLongFromLatLong(outLatLong, inLatLong, *destinationGCS) != SUCCESS)
+                assert(false);
+            if (destinationGCS->XYZFromLatLong(m_centroid, outLatLong) != SUCCESS)
+                assert(false);
+            }
 
-        m_meshes[0]->ApplyTransform(dbToTile);
+        // Convert points to follow Y-up convention and translate to zero (avoids jittering for distant datasets)
+        Transform transform = Transform::FromRowValues(1, 0, 0, -m_centroid.x,
+                                                       0, 1, 0, -m_centroid.y,
+                                                       0, 0, 1, -m_centroid.z);
+        
+        m_meshes[0]->ApplyTransform(transform);
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -583,13 +583,6 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
     rootNode["scenes"]["defaultScene"]["nodes"].append("node_0");
     rootNode["nodes"]["node_0"]["meshes"] = Json::arrayValue;
     rootNode["nodes"]["node_0"]["meshes"].append("mesh_0");
-    rootNode["nodes"]["node_0"]["matrix"] = Json::arrayValue;
-    DMatrix4d   matrix = DMatrix4d::From(m_tileTransform);
-    auto&       transformValue = rootNode["nodes"]["node_0"]["matrix"];
-
-    for(size_t i = 0; i < 4; i++)
-        for(size_t j = 0; j < 4; j++)
-            transformValue.append(matrix.coff[j][i]);
     }
 
 ///*---------------------------------------------------------------------------------**//**
