@@ -1,0 +1,57 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: RealityAdmin/LoadTesters/GCSLoadTester/GCSLoadTest.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+appName         = GCSLoadTest
+baseDir         = $(_MakeFilePath)
+o               = $(OutputRootDir)Build/GCSLoadTest/
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    ~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)GCSLoadTest$(oext) : $(baseDir)GCSLoadTest.cpp $(baseDir)GCSLoadTest.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#       Lib creation
+#----------------------------------------------------------------------
+EXE_DEST  = $(o)
+EXE_NAME  = $(appName)
+EXE_OBJS  = $(o)GCSLoadTest$(oext) 
+#EXE_LOPT1 = -entry:mainCRTStartup
+
+
+LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
+                       $(ContextSubpartsLibs)BentleyGeom$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext)\
+                       $(ContextSubpartsLibs)$(libprefix)RealityPlatformTools$(libext)\
+                       $(ContextSubpartsLibs)$(libprefix)RealityAdmin$(libext)\
+                       $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)LoadTestBase$(libext) \
+                       $(ContextSubpartsLibs)CCApi$(libext) \
+                       odbc32$(libext)
+
+# windows specific for Unzipfile
+#LINKER_LIBRARIES   +  $(ntPlatformLib)OleAut32.lib                       
+
+%include $(SharedMki)linktool.mki
+
+
