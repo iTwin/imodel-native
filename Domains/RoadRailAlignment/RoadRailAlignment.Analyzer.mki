@@ -1,0 +1,16 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: RoadRailAlignment.Analyzer.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+%if defined (ROADRAILALIGNMENT_ANALYZE) || (defined(PRG) && !defined(SUBNET_PRG))
+    ENABLE_COMPILER_ANALYZE = 1
+    SECURITY_ONLY_COMPILER_ANALYZE = 1
+    %if defined(NOSTRICT)
+        %error ANALYZE_WARNINGS_TO_ERRORS requires NOSTRICT to be turned off
+    %endif
+    ANALYZE_WARNINGS_TO_ERRORS = 1
+%endif
