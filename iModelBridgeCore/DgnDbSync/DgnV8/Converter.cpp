@@ -191,7 +191,6 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
         if (hashNew.GetHashString().Equals(hashOld.GetHashString()))
             {
             // If the link hasn't changed, then don't request locks or write to the BIM.
-            //SetRepositoryLinkInAppData(file, RepositoryLinkId(rlink->GetElementId().GetValue()));
             _OnFileDiscovered(file);
             return RepositoryLinkId(rlink->GetElementId().GetValue());
             }
@@ -219,7 +218,6 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
         return RepositoryLinkId();
         }
 
-    //SetRepositoryLinkInAppData(file, RepositoryLinkId(rlinkPost->GetElementId().GetValue()));
     _OnFileDiscovered(file);
 
 #ifndef NDEBUG
@@ -262,27 +260,13 @@ void Converter::SetRepositoryLinkInAppData(DgnV8FileCR file, RepositoryLinkId rl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryLinkId Converter::GetRepositoryLinkIdFromAppData(DgnV8FileCR file)
-    {
-    auto appdata = (V8FileSyncInfoIdAppData*) const_cast<DgnV8FileR>(file).FindAppData(V8FileSyncInfoIdAppData::GetKey());
-    return (nullptr == appdata) ? RepositoryLinkId() : appdata->m_repositoryLinkId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryLinkId Converter::GetRepositoryLinkId(DgnV8FileCR file) const
     {
-  //  auto appdata = (V8FileSyncInfoIdAppData*) const_cast<DgnV8FileR>(file).FindAppData(V8FileSyncInfoIdAppData::GetKey());
-  //  if (nullptr != appdata)
-  //      return appdata->m_repositoryLinkId;
-        
     SyncInfo::V8FileInfo finfo = const_cast<Converter*>(this)->GetSyncInfo().ComputeFileInfo(file);
     auto aspect = SyncInfo::RepositoryLinkExternalSourceAspect::FindAspectByIdentifier(GetDgnDb(), finfo.m_uniqueName);
     if (aspect.IsValid())
         {
         _OnFileDiscovered(file);
-        //SetRepositoryLinkInAppData(file, aspect.GetRepositoryLinkId());
         return aspect.GetRepositoryLinkId();
         }
     LOG.tracev("Writing syncinfo %s as %s", finfo.m_v8Name.c_str(), finfo.m_uniqueName.c_str());
