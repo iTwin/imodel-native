@@ -660,6 +660,50 @@ TEST_F(ECConversionTests, UpdateExistingWithNewInstance)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECConversionTests, MultipleInstancesOfSameClass)
+    {
+    LineUpFiles(L"UpdateUsingSecondary.bim", L"Test3d.dgn", false);
+
+    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+    ECObjectsV8::ECSchemaPtr schema;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, s_testSchemaXml, *schemaContext));
+
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+    DgnV8Api::ElementId eid;
+        {
+        v8editor.AddLine(&eid);
+        DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance2;
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance3;
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance4;
+        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"TestClass"));
+        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance2, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"TestClass"));
+        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance3, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"TestClass"));
+        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance4, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"TestClass"));
+        }
+
+    m_count = 0;
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        Utf8String selEcSql;
+        selEcSql.append("SELECT count(*) FROM test.TestClassElementAspect");
+        EC::ECSqlStatement stmt;
+        stmt.Prepare(*db, selEcSql.c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(4, stmt.GetValueInt(0));
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            04/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, UpdateWithSecondaryInstances)
