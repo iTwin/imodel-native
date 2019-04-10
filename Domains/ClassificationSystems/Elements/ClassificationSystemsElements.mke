@@ -1,0 +1,60 @@
+#----------------------------------------------------------------------
+#     $Source: Elements/ClassificationSystemsElements.mke $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------
+AppName = ClassificationSystemsElements
+CCompPDBName = $(AppName)
+
+%include mdl.mki
+
+o = $(OutputRootDir)build/ClassificationSystems/Elements/
+
+nameToDefine = __CLASSIFICATIONSYSTEMSELEMENTS_BUILD__
+%include cdefapnd.mki
+
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)Classification$(oext) : $(_MakeFilePath)Classification.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\Classification.h
+
+$(o)ClassificationGroup$(oext) : $(_MakeFilePath)ClassificationGroup.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\ClassificationGroup.h
+
+$(o)ClassificationSystem$(oext) : $(_MakeFilePath)ClassificationSystem.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\ClassificationSystem.h
+
+$(o)ClassificationTable$(oext) : $(_MakeFilePath)ClassificationTable.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\ClassificationTable.h
+
+$(o)IClassified$(oext) : $(_MakeFilePath)IClassified.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\IClassified.h
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingDgnUtils$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
+
+
+%include $(sharedMki)linkLibrary.mki
+
