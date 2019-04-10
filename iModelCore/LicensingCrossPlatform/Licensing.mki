@@ -1,0 +1,90 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Licensing.mki $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+%include MultiCppCompileRule.mki
+
+Headers =
+Headers + $(SourceDir)ClientImpl.h
+Headers + $(SourceDir)AccessKeyClientImpl.h
+Headers + $(SourceDir)ISaasClient.h
+Headers + $(SourceDir)SaasClientImpl.h
+Headers + $(SourceDir)GenerateSID.h
+Headers + $(SourceDir)Policy.h
+Headers + $(SourceDir)ILicensingDb.h
+Headers + $(SourceDir)LicensingDb.h
+Headers + $(SourceDir)FreeApplicationPolicyHelper.h
+Headers + $(PublicApiDir)Client.h
+Headers + $(PublicApiDir)AccessKeyClient.h
+Headers + $(PublicApiDir)SaasClient.h
+Headers + $(PublicApiDir)LicenseStatus.h
+Headers + $(PublicApiDir)Licensing.h
+Headers + $(PublicApiDir)Utils/DelayedExecutor.h
+Headers + $(PublicApiDir)Utils/FeatureUserDataMap.h
+Headers + $(PublicApiDir)Utils/InMemoryJsonLocalState.h
+Headers + $(PublicApiDir)Utils/JWToken.h
+Headers + $(PublicApiDir)Utils/LogFileHelper.h
+Headers + $(PublicApiDir)Utils/SCVWritter.h
+Headers + $(PublicApiDir)Utils/TimeRetriever.h
+Headers + $(PublicApiDir)Utils/UrlSafeBase64Utilities.h
+Headers + $(PublicApiDir)Utils/DateHelper.h
+Headers + $(PublicApiDir)Utils/FeatureEvent.h
+Headers + $(SourceDir)Providers/IPolicyProvider.h
+Headers + $(SourceDir)Providers/PolicyProvider.h
+Headers + $(SourceDir)Providers/IBuddiProvider.h
+Headers + $(SourceDir)Providers/BuddiProvider.h
+Headers + $(SourceDir)Providers/IAuthHandlerProvider.h
+Headers + $(SourceDir)Providers/AuthHandlerProvider.h
+Headers + $(SourceDir)Providers/IUlasProvider.h
+Headers + $(SourceDir)Providers/UlasProvider.h
+
+#---------------------------------------------------------------------------------------+
+#   Files to compile 
+#---------------------------------------------------------------------------------------+
+$(o)Client$(oext)                    : $(SourceDir)Client.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)ClientImpl$(oext)                : $(SourceDir)ClientImpl.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)AccessKeyClient$(oext)           : $(SourceDir)AccessKeyClient.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)AccessKeyClientImpl$(oext)       : $(SourceDir)AccessKeyClientImpl.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)SaasClient$(oext)                : $(SourceDir)SaasClient.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)SaasClientImpl$(oext)            : $(SourceDir)SaasClientImpl.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)LicensingDb$(oext)               : $(SourceDir)LicensingDb.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)Policy$(oext)                    : $(SourceDir)Policy.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)GenerateSID$(oext)               : $(SourceDir)GenerateSID.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)SCVWritter$(oext)                : $(SourceDir)Utils/SCVWritter.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)JWToken$(oext)                   : $(SourceDir)Utils/JWToken.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)InMemoryJsonLocalState$(oext)    : $(SourceDir)Utils/InMemoryJsonLocalState.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)UrlSafeBase64Utilities$(oext)    : $(SourceDir)Utils/UrlSafeBase64Utilities.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)DelayedExecutor$(oext)           : $(SourceDir)Utils/DelayedExecutor.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)LogFileHelper$(oext)             : $(SourceDir)Utils/LogFileHelper.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)FeatureUserDataMap$(oext)        : $(SourceDir)Utils/FeatureUserDataMap.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)BuddiProvider$(oext)             : $(SourceDir)Providers/BuddiProvider.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)AuthHandlerProvider$(oext)       : $(SourceDir)Providers/AuthHandlerProvider.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)PolicyProvider$(oext)            : $(SourceDir)Providers/PolicyProvider.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)UlasProvider$(oext)              : $(SourceDir)Providers/UlasProvider.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)FeatureEvent$(oext)             : $(SourceDir)Utils/FeatureEvent.cpp $(Headers) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki

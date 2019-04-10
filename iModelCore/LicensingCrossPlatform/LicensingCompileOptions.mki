@@ -1,0 +1,20 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: LicensingCompileOptions.mki $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+ENABLE_CPP_CX_EXTENSIONS = 1
+
+# target platform needs to be defined (this is included before mdl.mki when it is included by PreCompileHeader.mke)
+%if !defined (__mdlMKI__)
+    %include mdl.mki
+%endif
+
+#--------------------------------------------------------------------------------------
+#   Building the Licensing library
+#--------------------------------------------------------------------------------------
+nameToDefine = __BELICENSING_BUILD__
+%include cdefapnd.mki
