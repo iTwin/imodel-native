@@ -14,6 +14,9 @@ struct LightTests : public ConverterTestBaseFixture
     {
     DEFINE_T_SUPER(ConverterTestBaseFixture);
     void SetUp();
+
+    void CreateLightWithInstance(DgnV8Api::LightElementPtr light);
+    void CreateLight(DgnV8Api::LightElementPtr light);
     };
 
 //---------------------------------------------------------------------------------------
@@ -30,6 +33,88 @@ void LightTests::SetUp()
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+void LightTests::CreateLightWithInstance(DgnV8Api::LightElementPtr light)
+    {
+    DgnV8Api::ElementId eidWithInst;
+
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+    if (true)
+        {
+        // Create Light
+        light->SetModelRef(v8editor.m_defaultModel);
+        light->Save();
+        DgnV8Api::ElementHandle eh(light->GetElementRef());
+        eidWithInst = eh.GetElementId();
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Foo" isDomainClass="True">
+                <ECProperty propertyName="Goo" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml";
+
+        ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+        ECObjectsV8::ECSchemaPtr schema;
+        EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+        EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"Foo"));
+        Bentley::ECN::ECValue v;
+        v.SetUtf8CP("PointLightHandler");
+        createdDgnECInstance->SetValue(L"Goo", v);
+        createdDgnECInstance->WriteChanges();
+        v8editor.Save();
+        }
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        SyncInfoReader syncInfo(m_params, db);
+        RepositoryLinkId editV8FileSyncInfoId;
+        syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
+        DgnModelId editModelId;
+        syncInfo.MustFindModelByV8ModelId(editModelId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
+        DgnElementId dgnDbElementId;
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editModelId, eidWithInst);
+
+        auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);
+        ASSERT_TRUE(dgnDbElement.IsValid());
+
+        Utf8String selEcSql;
+        selEcSql.append("SELECT [Goo] FROM TestSchema.FooElementAspect WHERE [Element].[Id]=?");
+        EC::ECSqlStatement stmt;
+        stmt.Prepare(*db, selEcSql.c_str());
+        stmt.BindId(1, dgnDbElementId);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_TRUE(0 == strcmp("PointLightHandler", stmt.GetValueText(0)));
+        }
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+void LightTests::CreateLight(DgnV8Api::LightElementPtr light)
+    {
+
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+    if (true)
+        {
+        // Create Light
+        light->SetModelRef(v8editor.m_defaultModel);
+        light->Save();
+        v8editor.Save();
+        }
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     04/10
 //---------------------------------------------------------------------------------------
@@ -212,7 +297,7 @@ static DgnV8Api::LightElementPtr createSpotLightElement(bool setTypeOnly)
     map->SetVerticalWrap(DgnV8Api::LightMap::WRAPMODE_Repeat);
     map->SetMode(DgnV8Api::MapMode::Spherical);
 
-    LxoConstantProcedureP constant = reinterpret_cast <LxoConstantProcedureP> (map->AddLxoProcedure(LxoProcedure::PROCEDURETYPE_Constant));
+    LxoConstantProcedureP constant = reinterpret_cast <LxoConstantProcedureP> (map->AddLxoProcedure(DgnV8Api::LxoProcedure::PROCEDURETYPE_Constant));
     constant->GetColorR().red = 159.0f / 255.0f;
     constant->GetColorR().green = 57.0f / 255.0f;
     constant->GetColorR().blue = 121.0f / 255.0f;
@@ -228,14 +313,14 @@ static DgnV8Api::LightElementPtr createSpotLightElement(bool setTypeOnly)
     map->SetVerticalWrap(DgnV8Api::LightMap::WRAPMODE_Repeat);
     map->SetMode(DgnV8Api::MapMode::FrontProject);
 
-    LxoDotProcedureP dot = reinterpret_cast <LxoDotProcedureP> (map->AddLxoProcedure(LxoProcedure::PROCEDURETYPE_Dot));
+    LxoDotProcedureP dot = reinterpret_cast <LxoDotProcedureP> (map->AddLxoProcedure(DgnV8Api::LxoProcedure::PROCEDURETYPE_Dot));
     dot->GetDotColorR().red = 79.0f / 255.0f;
     dot->GetDotColorR().green = 184.0f / 255.0f;
     dot->GetDotColorR().blue = 159.0f / 255.0f;
     dot->GetFillerColorR().red = 13.0f / 255.0f;
     dot->GetFillerColorR().green = 18.0f / 255.0f;
     dot->GetFillerColorR().blue = 82.0f / 255.0f;
-    dot->SetDotType(LxoDotProcedure::DOTTYPE_Hexagon);
+    dot->SetDotType(DgnV8Api::LxoDotProcedure::DOTTYPE_Hexagon);
     dot->SetDotAlpha(47.169811);
     dot->SetFillerAlpha(7.54717);
     dot->SetTransitionWidth(39.9);
@@ -343,61 +428,51 @@ TEST_F(LightTests, LightSetup)
 TEST_F(LightTests, CreatePointLightWithECInstance)
     {
     LineUpFiles(L"PointLight.bim", L"Test3d.dgn", false);
-    DgnV8Api::ElementId eidWithInst;
+    DgnV8Api::LightElementPtr light = createPointLightElement(false);
 
-    V8FileEditor v8editor;
-    v8editor.Open(m_v8FileName);
-    if (true)
-        {
-        // Create Light
-        DgnV8Api::LightElementPtr light = createPointLightElement(false);
-        light->SetModelRef(v8editor.m_defaultModel);
-        light->Save();
-        DgnV8Api::ElementHandle eh(light->GetElementRef());
-        eidWithInst = eh.GetElementId();
-        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Foo" isDomainClass="True">
-                <ECProperty propertyName="Goo" typeName="string" />
-            </ECClass>
-        </ECSchema>)xml";
+    CreateLightWithInstance(light);
+    }
 
-        ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
-        ECObjectsV8::ECSchemaPtr schema;
-        EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
-        EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(LightTests, CreateDistantLightWithECInstance)
+    {
+    LineUpFiles(L"DistantLight.bim", L"Test3d.dgn", false);
+    DgnV8Api::LightElementPtr light = createDistantLightElement(false);
 
-        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
-        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"Foo"));
-        Bentley::ECN::ECValue v;
-        v.SetUtf8CP("PointLightHandler");
-        createdDgnECInstance->SetValue(L"Goo", v);
-        createdDgnECInstance->WriteChanges();
-        v8editor.Save();
-        }
+    CreateLightWithInstance(light);
+    }
 
-    DoConvert(m_dgnDbFileName, m_v8FileName);
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(LightTests, CreateSpotLightWithECInstance)
+    {
+    LineUpFiles(L"SpotLight.bim", L"Test3d.dgn", false);
+    DgnV8Api::LightElementPtr light = createSpotLightElement(false);
 
-    if (true)
-        {
-        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        SyncInfoReader syncInfo(m_params, db);
-        RepositoryLinkId editV8FileSyncInfoId;
-        syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
-        DgnModelId editModelId;
-        syncInfo.MustFindModelByV8ModelId(editModelId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
-        DgnElementId dgnDbElementId;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editModelId, eidWithInst);
+    CreateLightWithInstance(light);
+    }
 
-        auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);
-        ASSERT_TRUE(dgnDbElement.IsValid());
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(LightTests, CreateAreaLightWithECInstance)
+    {
+    LineUpFiles(L"AreaLight.bim", L"Test3d.dgn", false);
+    DgnV8Api::LightElementPtr light = createAreaLightElement(false);
 
-        Utf8String selEcSql;
-        selEcSql.append("SELECT [Goo] FROM TestSchema.FooElementAspect WHERE [Element].[Id]=?");
-        EC::ECSqlStatement stmt;
-        stmt.Prepare(*db, selEcSql.c_str());
-        stmt.BindId(1, dgnDbElementId);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_TRUE(0 == strcmp("PointLightHandler", stmt.GetValueText(0)));
-        }
+    CreateLight(light);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(LightTests, CreateSkyOpeningLightWithECInstance)
+    {
+    LineUpFiles(L"SkyOpeningLight.bim", L"Test3d.dgn", false);
+    DgnV8Api::LightElementPtr light = createSkyOpeningLightElement(false);
+
+    CreateLight(light);
     }
