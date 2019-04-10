@@ -191,7 +191,8 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
         if (hashNew.GetHashString().Equals(hashOld.GetHashString()))
             {
             // If the link hasn't changed, then don't request locks or write to the BIM.
-            SetRepositoryLinkInAppData(file, RepositoryLinkId(rlink->GetElementId().GetValue()));
+            //SetRepositoryLinkInAppData(file, RepositoryLinkId(rlink->GetElementId().GetValue()));
+            _OnFileDiscovered(file);
             return RepositoryLinkId(rlink->GetElementId().GetValue());
             }
         }
@@ -218,7 +219,8 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
         return RepositoryLinkId();
         }
 
-    SetRepositoryLinkInAppData(file, RepositoryLinkId(rlinkPost->GetElementId().GetValue()));
+    //SetRepositoryLinkInAppData(file, RepositoryLinkId(rlinkPost->GetElementId().GetValue()));
+    _OnFileDiscovered(file);
 
 #ifndef NDEBUG
     {
@@ -279,6 +281,7 @@ RepositoryLinkId Converter::GetRepositoryLinkId(DgnV8FileCR file) const
     auto aspect = SyncInfo::RepositoryLinkExternalSourceAspect::FindAspectByIdentifier(GetDgnDb(), finfo.m_uniqueName);
     if (aspect.IsValid())
         {
+        _OnFileDiscovered(file);
         //SetRepositoryLinkInAppData(file, aspect.GetRepositoryLinkId());
         return aspect.GetRepositoryLinkId();
         }
@@ -2355,7 +2358,7 @@ void Converter::OnNamedGroupConverted(DgnV8EhCR v8eh, DgnClassId elementClassId)
     BECN::ECClassCP elementClass = GetDgnDb().Schemas().GetClass(ECN::ECClassId(elementClassId.GetValue()));
     bool namedGroupHasOwnershipFlag = DetermineNamedGroupOwnershipFlag(*elementClass);
     if (namedGroupHasOwnershipFlag)
-        V8NamedGroupInfo::AddNamedGroupWithOwnershipHint(v8eh);
+        V8NamedGroupInfo::AddNamedGroupWithOwnershipHint(v8eh, *this);
     }
 
 //---------------------------------------------------------------------------------------

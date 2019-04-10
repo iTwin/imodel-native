@@ -3333,7 +3333,7 @@ private:
     ~V8NamedGroupInfo();
 
 public:
-    static void AddNamedGroupWithOwnershipHint(DgnV8EhCR);
+    static void AddNamedGroupWithOwnershipHint(DgnV8EhCR, Converter& converter);
     static bool TryGetNamedGroupsWithOwnershipHint(bset<DgnV8Api::ElementId> const*&, RepositoryLinkId);
     static void Reset();
     };
