@@ -162,21 +162,28 @@ ECObjectsStatus ECSchemaValidator::BaseECValidator(ECSchemaCR schema)
     //       An enhancement should go towards making a const correct Validate in the future.
     if (!const_cast<ECSchemaR>(schema).Validate(false) || !schema.IsECVersion(ECVersion::Latest))
         {
-        LOG.errorv("Schema is not valid as ECVersion, %s", ECSchema::GetECVersionString(ECVersion::Latest));
+        LOG.errorv("Schema '%s' does not pass EC validation required to convert to the latest ECVersion, %s", schema.GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest));
         status = ECObjectsStatus::Error;
         }
 
     // RULE: The schema's written version must be at least EC3.1.
     if (!schema.OriginalECXmlVersionAtLeast(ECVersion::V3_1))
         {
-        LOG.errorv("Schema ECXML Version is not the latest ECVersion, %s", ECSchema::GetECVersionString(ECVersion::Latest));
-        status = ECObjectsStatus::Error;
+        Utf8String message = Utf8PrintfString("Schema '%s' original ECXML Version is '%u.%u' but must be at least EC 3.1", schema.GetFullSchemaName().c_str(),
+                                              schema.GetOriginalECXmlVersionMajor(), schema.GetOriginalECXmlVersionMinor());
+        if (schema.IsDynamicSchema())
+            LOG.warning(message.c_str());
+        else
+            {
+            LOG.errorv(message.c_str());
+            status = ECObjectsStatus::Error;
+            }
         }
 
     // RULE: If the schema contains 'dynamic' (case-insensitive) in its name it must apply the CoreCA:DynamicSchema custom attribute.
     if (schema.GetName().ContainsI("dynamic") && !schema.IsDynamicSchema())
         {
-        LOG.errorv("Schema name contains 'dynamic' but does not appy the 'DynamicSchema' ECCustomAttribute");
+        LOG.errorv("Schema '%s' contains 'dynamic' in it's name but does not appy the 'DynamicSchema' ECCustomAttribute", schema.GetFullSchemaName().c_str());
         status = ECObjectsStatus::Error;
         }
 
