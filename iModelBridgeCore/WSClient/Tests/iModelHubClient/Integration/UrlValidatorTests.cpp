@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/UrlValidatorTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -96,6 +96,7 @@ Utf8String genericizeUrl(Utf8String url)
         R"_(LockLevel\+gt\+(\d+))_",                    // LockLevel query string param (any numeric value)
         R"_(ReleasedWithChangeSetIndex\+gt\+(\d+))_",   // ReleasedWithChangeSetIndex query string param (any numeric value)
         R"_(InitializationState\+gt\+(\d+))_",          // InitializationState query string param (any numeric value)
+        R"_(Index\+gt\+(\d+))_",                        // Index query string param (any numeric value)
         R"_(Index\+le\+(\d+))_",                        // Index query string param (any numeric value)
         R"_(top=(\d+))_",                               // Any 'top' query string param (any numeric value)
         R"_(id\+in\+%5B'(.+)'%5D)_"                     // Any 'id in' query query param within URL-encoded brackets (any characters between first and last quote)
@@ -112,6 +113,7 @@ Utf8String genericizeUrl(Utf8String url)
         R"_(LockLevel+gt+*)_",
         R"_(ReleasedWithChangeSetIndex+gt+*)_",
         R"_(InitializationState+gt+*)_",
+        R"_(Index+gt+*)_",
         R"_(Index+le+*)_",
         R"_(top=*)_",
         R"_(id+in+['*'])_",
