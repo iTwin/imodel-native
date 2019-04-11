@@ -69,13 +69,17 @@ def getChangedTests(reportPath, comp):
 def getTests(reportPath, comp):
     testList = []
     testLog = cmp.LogPathForComp(comp)
+    testExe = cmp.ExePathForComp(comp)
     print testLog
     if os.path.exists(testLog):
         tr = TestResults(testLog)
         testList = tr.getAllTests()
     else:
         print printColored('Test log not found. Running the tests first', 'cyan', True)
-        testLogNew = os.path.join(reportPath, comp+'_test.log')
+        reportDir = os.path.join(reportPath, comp)
+        if not os.path.exists(reportDir):
+            os.mkdir(reportDir)
+        testLogNew = os.path.join(reportDir, 'test.log')
         cmdForTests = testExe + ' > ' + testLogNew
         print cmdForTests
         result = os.system(cmdForTests)

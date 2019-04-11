@@ -37,10 +37,10 @@ def getMapFromFile(fileName):
     fn, fx = os.path.splitext(os.path.basename(fileName))
     fp = fn.split('_')
     ff = ''
-    for i in range(0, len(fp) - 1):
+    for i in range(0, len(fp)):
         ff = ff + fp[i] + '_'
     for f in os.listdir(os.path.dirname(fileName)):
-        if f.startswith(ff):
+        if f.startswith(ff[:-1]):
             files.append(os.path.join(os.path.dirname(fileName),f))
     for fl in files:
         f = open(fl, 'r')
@@ -168,7 +168,7 @@ def writeMapToFile(fileName, tiaMap, comp):
         mapFile.write(testExe + ' --gtest_filter=')
         
         if not os.path.exists(testLog):
-            testLog = os.path.join(os.path.pardir(fileName), 'tests.log')
+            testLog = os.path.join(os.path.pardir(fileName), comp, 'test.log')
         tr = TestResults(testLog)
         for testCase in tiaMap[name]:
             if len(tiaMap[name][testCase]) == tr.getFixtureTestCount(testCase):

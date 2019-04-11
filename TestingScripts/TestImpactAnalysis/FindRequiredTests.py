@@ -71,8 +71,8 @@ def getTests(sfName, dll):
         print  "\nRun for component: " + dll + "\n"
         name_find = 'TIAMap_' + dll + '_' + comp
         for f in os.listdir(tiaMapDir):
-            if f.startswith(name_find):
-                fileName =  os.path.join(tiaMapDir,  + f)
+            if f.lower().startswith(name_find.lower()):
+                fileName =  os.path.join(tiaMapDir,  f)
                 print "\n Map file: " + fileName + "\n"
                 if os.path.exists(fileName):
                     mapFile = open(fileName,'r')
