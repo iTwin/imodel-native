@@ -5319,6 +5319,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
         if (shouldClearDiffsets)
             {
             diffSetPtr->clear();
+            m_nbClips = 0;
             ISDiffSetDataStorePtr nodeDiffsetStore;
             bool result = this->m_SMIndex->GetDataStore()->GetSisterNodeDataStore(nodeDiffsetStore, &this->m_nodeHeader, false);
             BeAssert(result == true);
