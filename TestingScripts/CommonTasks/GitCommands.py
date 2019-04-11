@@ -60,7 +60,7 @@ class GitCommand:
 
     def files_last_commit(self):
         sFiles = []
-        srcRoot = os.getenv('SrcRoot')
+        srcRoot = os.path.join(os.getenv('SrcRoot'), 'imodel02')
         success = self.execute('git show --oneline --name-only --pretty=""')
         if not success:
             return sFiles
@@ -78,7 +78,7 @@ class GitCommand:
 
     def files_incoming(self):
         sFiles = []
-        srcRoot = os.getenv('SrcRoot')
+        srcRoot = os.path.join(os.getenv('SrcRoot'), 'imodel02')
         success = self.execute('git fetch && git diff --name-only ..origin')
         if not success:
             return sFiles
@@ -96,7 +96,7 @@ class GitCommand:
 
     def files_branches(self, sb, tb):
         sFiles = []
-        srcRoot = os.getenv('SrcRoot')
+        srcRoot = os.path.join(os.getenv('SrcRoot'), 'imodel02')
         success = self.execute('git show --oneline --name-only --pretty="" ' + sb + ' ' + tb)
         if not success:
             return sFiles
@@ -108,6 +108,7 @@ class GitCommand:
                     if fullPath not in sFiles:
                         sFiles.append(fullPath)
             for f in sFiles:
+                print f
                 if not os.path.exists(f):
                     sFiles.remove(f)
             return sFiles
