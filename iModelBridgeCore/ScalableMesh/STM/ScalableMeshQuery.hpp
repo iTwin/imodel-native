@@ -2240,7 +2240,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::HasCorrectClip
     
     for (auto& clipToShow : clipsToShow)
         {                    
-        if (meshNode->HasClip(clipToShow))
+        if (meshNode->HasClip(clipToShow, false))
             {        
             size_t clipInd = 0;
 
