@@ -59,10 +59,11 @@ class GitCommand:
         return bexist
 
     def files_last_commit(self):
-        srcRoot = os.path.dirname(self.work_dir)
+        sFiles = []
+        srcRoot = os.getenv('SrcRoot')
         success = self.execute('git show --oneline --name-only --pretty=""')
         if not success:
-            return []
+            return sFiles
         else:
             lines = self.res.split('\n')
             for line in lines:
@@ -76,10 +77,11 @@ class GitCommand:
             return sFiles
 
     def files_incoming(self):
-        srcRoot = os.path.dirname(self.work_dir)
+        sFiles = []
+        srcRoot = os.getenv('SrcRoot')
         success = self.execute('git fetch && git diff --name-only ..origin')
         if not success:
-            return []
+            return sFiles
         else:
             lines = self.res.split('\n')
             for line in lines:
@@ -93,10 +95,11 @@ class GitCommand:
             return sFiles
 
     def files_branches(self, sb, tb):
-        srcRoot = os.path.dirname(self.work_dir)
+        sFiles = []
+        srcRoot = os.getenv('SrcRoot')
         success = self.execute('git show --oneline --name-only --pretty="" ' + sb + ' ' + tb)
         if not success:
-            return []
+            return sFiles
         else:
             lines = self.res.split('\n')
             for line in lines:
