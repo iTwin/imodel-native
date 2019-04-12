@@ -22,6 +22,7 @@
         <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <SubPart PartName="ECObjectsNative" PartFile="iModelCore/ecobjects/ECObjects" Repository="imodel02"/>
         <SubPart PartName="iModelCoreSqlang" PartFile="iModelCore/iModelCoreL10N" Repository="imodel02"/>
+        <SubPart PartName="Licensing" PartFile="iModelCore/LicensingCrossPlatform/LicensingCrossPlatform" Repository="imodel02" />
     </Part>
 
     <Part Name="RunUnitTests" DeferType="RunUnitTests">
