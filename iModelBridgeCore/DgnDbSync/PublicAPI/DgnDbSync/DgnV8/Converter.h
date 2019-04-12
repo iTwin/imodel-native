@@ -1136,9 +1136,8 @@ public:
     DGNDBSYNC_EXPORT RefCountedCPtr<RepositoryLink> GetRepositoryLinkElement(RepositoryLinkId) const;
     RefCountedCPtr<RepositoryLink> GetRepositoryLinkElement(DgnV8FileCR file) const {return GetRepositoryLinkElement(GetRepositoryLinkId(file));}
 
-    DGNDBSYNC_EXPORT RepositoryLinkId GetRepositoryLinkId(DgnV8FileCR) const;  // This may in fact add appdata to the file
-    DGNDBSYNC_EXPORT static RepositoryLinkId GetRepositoryLinkIdFromAppData(DgnV8FileCR); // Call this only if you know that the id has already been cached, e.g., by a prior call to GetRepositoryLinkId
-
+    DGNDBSYNC_EXPORT RepositoryLinkId GetRepositoryLinkId(DgnV8FileCR) const; 
+    
     //! Open the specified V8File and make sure that it is registered in SyncInfo. 
     //! <em>This function should not be used for spatial models.</em>
     DgnFilePtr OpenAndRegisterV8FileForDrawings(DgnV8Api::DgnFileStatus &, BeFileNameCR);
@@ -3333,7 +3332,7 @@ private:
     ~V8NamedGroupInfo();
 
 public:
-    static void AddNamedGroupWithOwnershipHint(DgnV8EhCR);
+    static void AddNamedGroupWithOwnershipHint(DgnV8EhCR, Converter& converter);
     static bool TryGetNamedGroupsWithOwnershipHint(bset<DgnV8Api::ElementId> const*&, RepositoryLinkId);
     static void Reset();
     };

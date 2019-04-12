@@ -320,9 +320,9 @@ bmap<RepositoryLinkId, bset<DgnV8Api::ElementId>> V8NamedGroupInfo::s_namedGroup
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
 //static
-void V8NamedGroupInfo::AddNamedGroupWithOwnershipHint(DgnV8EhCR v8eh)
+void V8NamedGroupInfo::AddNamedGroupWithOwnershipHint(DgnV8EhCR v8eh, Converter& converter)
     {
-    s_namedGroupsWithOwnershipHint[Converter::GetRepositoryLinkIdFromAppData(*v8eh.GetDgnFileP())].insert(v8eh.GetElementId());
+    s_namedGroupsWithOwnershipHint[converter.GetRepositoryLinkId(*v8eh.GetDgnFileP())].insert(v8eh.GetElementId());
     }
 
 //---------------------------------------------------------------------------------------

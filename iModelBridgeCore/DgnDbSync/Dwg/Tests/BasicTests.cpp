@@ -553,3 +553,32 @@ TEST_F(BasicTests, ImportModelspaceAs2dModel)
     delete importer;
     CountImportedElements (BIS_SCHEMA(BIS_CLASS_DrawingGraphic));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BasicTests, AddBinaryData)
+    {
+    LineUpFiles(L"addbinary.bim", L"basictype.dwg", true); 
+
+    // create a host for both a DwgFileEditor as well as for updating db:
+    InitializeImporterOptions (m_dwgFileName, true);
+    DwgImporter*    updater = new DwgImporter(m_options);
+    ASSERT_NOT_NULL (updater);
+
+    // test adding binary data to the red circle in basictype.dwg
+    DwgDbHandle circleHandle(0x182);
+    static WCharCP  s_dictionaryKey = L"test adding binary data";
+
+    DwgFileEditor   editor(m_dwgFileName);
+    editor.AddBinaryData (circleHandle, s_dictionaryKey);
+    editor.SaveFile ();
+
+    DoUpdate (updater, m_dgnDbFileName, m_dwgFileName);
+
+    delete updater;
+
+    // reopen the DWG file and check the existence of the binary data previously added
+    editor.OpenFile (m_dwgFileName);
+    editor.CheckBinaryData (circleHandle, s_dictionaryKey);
+    }

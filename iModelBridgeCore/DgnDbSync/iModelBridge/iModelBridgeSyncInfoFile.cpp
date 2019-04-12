@@ -548,6 +548,12 @@ void iModelExternalSourceAspect::SetProperties(rapidjson::Document const& json)
 rapidjson::Document iModelExternalSourceAspect::GetProperties() const
     {
     rapidjson::Document json(rapidjson::kObjectType);
+    if (m_instance.IsNull())
+        {
+        LOG.errorv("iModelExternalSourceAspect::GetProperties() called with null instance");
+        return json;
+        }
+
     ECN::ECValue props;
     BeAssert(m_instance.IsValid());
     if (m_instance.IsNull())
