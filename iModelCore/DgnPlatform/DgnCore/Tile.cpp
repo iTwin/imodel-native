@@ -3041,7 +3041,7 @@ void ElementMeshGenerator::ClipPoints(StrokesR strokes) const
         {
         auto eraseAt = std::remove_if(stroke.m_points.begin(), stroke.m_points.end(), [&](DPoint3dCR pt) { return !GetTileRange().IsContained(pt); });
         if (stroke.m_points.end() != eraseAt)
-            stroke.m_points.erase(eraseAt);
+            stroke.m_points.erase(eraseAt, stroke.m_points.end());
         }
     }
 
