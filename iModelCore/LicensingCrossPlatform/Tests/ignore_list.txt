@@ -3,6 +3,3 @@
 ClientTests.JsonExample
 AccessKeyClientTests.JsonExample
 SaasClientTests.JsonExample
-
-# ---- These tests do not pass on Linux ----
-GenerateSIDTests.GetUserSID_Success
