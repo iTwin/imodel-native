@@ -122,6 +122,7 @@ always:
 				%if defined (GTEST_PRODUCT)
 					>$(LogDir)run.bat
 					python $(SrcRoot)imodel02\TestingScripts\Coverage\CoverageOpenCPP.py --component=$(GTEST_PRODUCT) --localReport > $(ResultsCapture)
+					$(exeName) $(GTEST_EXTRA_ARGS) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
 					exit
 					<
 					-$(RunPrefix) $(LogDir)run.bat
