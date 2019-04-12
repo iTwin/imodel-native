@@ -2,13 +2,13 @@
 #
 #  $Source: Tests/iModelHubClient/OidcNativeClientPrewire.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
 
 baseDir = $(_MakeFilePath)
-oidcClientNugetDir = $(SrcRoot)nuget/Testing.OidcNativeClient.1.0.4/
+oidcClientNugetDir = $(SrcRoot)nuget/Testing.OidcNativeClient.1.0.5/
 
 $(BuildContext)PublicAPI/OidcNativeClient/OidcNative.h : $(oidcClientNugetDir)include/OidcNative.h
     $(LinkFirstDepToFirstTarget)
