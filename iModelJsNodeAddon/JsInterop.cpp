@@ -5,6 +5,9 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#if defined (_WIN32) && !defined(BENTLEY_WINRT)
+#include <windows.h>
+#endif
 #include "IModelJsNative.h"
 #include <Bentley/Base64Utilities.h>
 #include <Bentley/Desktop/FileSystem.h>
@@ -142,12 +145,17 @@ void JsInterop::Initialize(BeFileNameCR addonDllDir, Napi::Env env, BeFileNameCR
     s_addonDllDir = addonDllDir;
     s_tempDir = tempDir;
 
-#if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
+#if defined(BENTLEYCONFIG_OS_WINDOWS_DESKTOP) // excludes WinRT
     // Include this location for delay load of pskernel...
     WString newPath;
     newPath = L"PATH=" + addonDllDir + L";";
     newPath.append(::_wgetenv(L"PATH"));
     _wputenv(newPath.c_str());
+
+    // Defeat node's attempt to turn off WER
+    auto errMode = GetErrorMode();
+    errMode &= ~SEM_NOGPFAULTERRORBOX;
+    SetErrorMode(errMode);
 #endif
 
     static std::once_flag s_initFlag;
