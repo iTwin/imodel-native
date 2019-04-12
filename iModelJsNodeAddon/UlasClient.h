@@ -15,8 +15,8 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 #include <Bentley/BentleyConfig.h>
-// WIP_LICENSING_FOR_MACOS
-#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+// WIP_LICENSING_FOR_LINUX_AND_MACOS
+#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS) && !defined(BENTLEYCONFIG_OS_LINUX)
 #include <Licensing/SaasClient.h>
 #else
 namespace Licensing
