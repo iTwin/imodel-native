@@ -20,7 +20,7 @@ void LicensingDbTests::SetUpTestCase()
 	BeFileName tmpDir;
 	BeTest::GetHost().GetTempDir(tmpDir);
 
-	BeSQLiteLib::Initialize(tmpDir);
+    BeSQLite::BeSQLiteLib::Initialize(tmpDir);
 
 	Test::SetUpTestCase();
 	}
@@ -95,7 +95,7 @@ TEST_F(LicensingDbTests, OpenOrCreate_OpenAndUpdateExistingDatabase_Success)
     LicensingDb db;
     Utf8String fileName;
 
-    fileName.Sprintf("Licensing-%s.db", BeGuid(true).ToString().c_str());
+    fileName.Sprintf("Licensing-%s.db", BeSQLite::BeGuid(true).ToString().c_str());
     EXPECT_SUCCESS(OpenOrCreateTestDb(db, BeFileName(fileName)));
 
     EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
@@ -118,19 +118,19 @@ TEST_F(LicensingDbTests, OpenOrCreate_OpenAndUpdateExistingDatabase_Success)
 
     db.Close();
 
-    Db testDb;
-    Statement stmt;
+    BeSQLite::Db testDb;
+    BeSQLite::Statement stmt;
     double testSchemaVersion = .90;
     Utf8String updateStatement;
     BeFileName tmpDir;
     BeTest::GetHost().GetTempDir(tmpDir);
 
-    EXPECT_EQ(DbResult::BE_SQLITE_OK, testDb.OpenBeSQLiteDb(tmpDir.AppendToPath(BeFileName(fileName)), Db::OpenParams(Db::OpenMode::ReadWrite)));
+    EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, testDb.OpenBeSQLiteDb(tmpDir.AppendToPath(BeFileName(fileName)), BeSQLite::Db::OpenParams(BeSQLite::Db::OpenMode::ReadWrite)));
 
     updateStatement.Sprintf("UPDATE eimVersion SET SchemaVersion = %f WHERE rowid = 1", testSchemaVersion);
     stmt.Prepare(testDb, (Utf8CP) updateStatement.c_str());
-    DbResult res = stmt.Step();
-    EXPECT_EQ(DbResult::BE_SQLITE_DONE, res);
+    BeSQLite::DbResult res = stmt.Step();
+    EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_DONE, res);
 
     stmt.Finalize();
     testDb.CloseDb();
@@ -143,7 +143,7 @@ TEST_F(LicensingDbTests, WriteUsageToCSVFile_MultipleRecords_CreatesCorrectFile)
     LicensingDb db;
     Utf8String fileName;
 
-    fileName.Sprintf("Licensing-%s.db", BeGuid(true).ToString().c_str());
+    fileName.Sprintf("Licensing-%s.db", BeSQLite::BeGuid(true).ToString().c_str());
     EXPECT_SUCCESS(OpenOrCreateTestDb(db, BeFileName(fileName)));
 
     Utf8String eventTime1 = DateTime::GetCurrentTimeUtc().ToString();
@@ -172,7 +172,7 @@ TEST_F(LicensingDbTests, WriteUsageToCSVFile_MultipleRecords_CreatesCorrectFile)
 
     BeFileName tmpFile;
     Utf8String csvFile;
-    csvFile.Sprintf("Usages-%s.csv", BeGuid(true).ToString().c_str());
+    csvFile.Sprintf("Usages-%s.csv", BeSQLite::BeGuid(true).ToString().c_str());
     BeTest::GetHost().GetTempDir(tmpFile);
     tmpFile.AppendToPath(BeFileName(csvFile));
     EXPECT_SUCCESS(db.WriteUsageToCSVFile(tmpFile));
@@ -190,7 +190,7 @@ TEST_F(LicensingDbTests, WriteFeatureToCSVFile_MultipleRecords_CreatesCorrectFil
     Utf8String fileName;
     using namespace std::chrono_literals;
 
-    fileName.Sprintf("Licensing-%s.db", BeGuid(true).ToString().c_str());
+    fileName.Sprintf("Licensing-%s.db", BeSQLite::BeGuid(true).ToString().c_str());
     EXPECT_SUCCESS(OpenOrCreateTestDb(db, BeFileName(fileName)));
 
     Utf8String userData = "Name^Parasolid#Description^Comprehensive capabilities extend to over 750 functions that include a wealth of model creation and editing utilities.#"
@@ -222,7 +222,7 @@ TEST_F(LicensingDbTests, WriteFeatureToCSVFile_MultipleRecords_CreatesCorrectFil
 
     BeFileName tmpFile;
     Utf8String csvFile;
-    csvFile.Sprintf("Features-%s.csv", BeGuid(true).ToString().c_str());
+    csvFile.Sprintf("Features-%s.csv", BeSQLite::BeGuid(true).ToString().c_str());
     BeTest::GetHost().GetTempDir(tmpFile);
     tmpFile.AppendToPath(BeFileName(csvFile));
     EXPECT_SUCCESS(db.WriteFeatureToCSVFile(tmpFile));

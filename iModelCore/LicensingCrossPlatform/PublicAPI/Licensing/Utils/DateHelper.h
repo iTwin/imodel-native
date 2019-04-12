@@ -11,7 +11,7 @@
 
 #include <Licensing/Licensing.h>
 #include <Bentley/DateTime.h>
-#if defined(__APPLE__) || defined(ANDROID)
+#if defined(__APPLE__) || defined(ANDROID) || defined(BENTLEYCONFIG_OS_LINUX)
 #import <math.h>
 #endif
 

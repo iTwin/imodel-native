@@ -217,6 +217,7 @@ TEST_F(PolicyProviderTests, GetCertificate_Failure)
         }
     }
 
+// can't tell which order folly::collectAll will call (seems to be different linux vs windows)
 TEST_F(PolicyProviderTests, GetPolicy_Success)
     {
     // assert our outgoing request matches expectation
@@ -249,6 +250,7 @@ TEST_F(PolicyProviderTests, GetPolicy_Success)
     EXPECT_EQ(expectedJson, resultJson);
     }
 
+// can't tell which order folly::collectAll will call (seems to be different linux vs windows)
 TEST_F(PolicyProviderTests, GetPolicy_GetPolicyFailure)
     {
     // assert that we we fall into catch on failure getting the policy
@@ -287,6 +289,7 @@ TEST_F(PolicyProviderTests, GetPolicy_GetPolicyFailure)
         }
     }
 
+// can't tell which order folly::collectAll will call (seems to be different linux vs windows)
 TEST_F(PolicyProviderTests, GetPolicy_GetCertificateFailure)
     {
     // assert that we we fall into catch on failure getting the cert
@@ -325,6 +328,7 @@ TEST_F(PolicyProviderTests, GetPolicy_GetCertificateFailure)
         }
     }
 
+// can't tell which order folly::collectAll will call (seems to be different linux vs windows)
 TEST_F(PolicyProviderTests, GetPolicyWithKey_Success)
     {
     // assert our outgoing request matches expectation

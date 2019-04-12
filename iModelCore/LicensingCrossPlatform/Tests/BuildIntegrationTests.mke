@@ -43,4 +43,4 @@ $(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
 %endif
 
 always:
-    CreateSymLinks.py -d $(OutRoot)$(arch)\Product\Licensing-IntegrationTests\Assets\TestAssets=$(SrcRoot)licensingcrossplatform\Tests\IntegrationTests\Assets
+    CreateSymLinks.py -d $(OutRoot)$(arch)/Product/Licensing-IntegrationTests/Assets/TestAssets=$(SrcRoot)licensingcrossplatform/Tests/IntegrationTests/Assets
