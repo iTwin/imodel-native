@@ -539,7 +539,8 @@ TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedEntityProperty)
 //---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     {
-    // Element Aspect Relationship Tests
+    IECInstancePtr dynamicCAInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance("DynamicSchema");
+    // Element Aspect Relationship TestsF
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
@@ -553,6 +554,9 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "There is no relationship, so validation should fail";
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->SetCustomAttribute(*dynamicCAInstance);
+    ASSERT_TRUE(validator.Validate(*schema)) << "There is no derived aspect relationship but schema is marked as dynamic so validation should pass";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -586,6 +590,9 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "Missing base class in TestRelationship. Validation should fail.";
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->SetCustomAttribute(*dynamicCAInstance);
+    ASSERT_FALSE(validator.Validate(*schema)) << "TestRelationship has an aspect as an endpoint but does not derive from ElementOwnsMultiAspect.  This should fail even though the schema is dynamic";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -732,6 +739,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     {
+    IECInstancePtr dynamicCAInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance("DynamicSchema");
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
@@ -745,6 +753,9 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "There is no relationship, so validation should fail";
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->SetCustomAttribute(*dynamicCAInstance);
+    ASSERT_TRUE(validator.Validate(*schema)) << "There is no relationship but schema is marked as dynamic so validation should pass";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -777,6 +788,9 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "Missing base class in TestRelationship. Validation should fail.";
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->SetCustomAttribute(*dynamicCAInstance);
+    ASSERT_FALSE(validator.Validate(*schema)) << "TestRelationship has an aspect as an endpoint but does not derive from ElementOwnsUniqueAspect.  This should fail even though the schema is dynamic";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +

@@ -491,9 +491,15 @@ static ECObjectsStatus CheckBisAspects(bool& entityDerivesFromSpecifiedClass, EC
     entityDerivesFromSpecifiedClass = true;
     if (!foundValidRelationshipConstraint)
         {
-        LOG.errorv("Entity class derives from '%s' so it must be a supported target constraint in a relationship that derives from '%s'",
-            derivedClassName, derivedRelationshipClassName);
-        return ECObjectsStatus::Error;
+        Utf8String errorMessage = Utf8PrintfString("Entity class derives from '%s' so it must be a supported target constraint in a relationship that derives from '%s'",
+                                                   derivedClassName, derivedRelationshipClassName);
+        if (!entity.GetSchema().IsDynamicSchema())
+            {
+            LOG.error(errorMessage.c_str());
+            return ECObjectsStatus::Error;
+            }
+        else
+            LOG.warning(errorMessage.c_str());
         }
 
     return ECObjectsStatus::Success;
