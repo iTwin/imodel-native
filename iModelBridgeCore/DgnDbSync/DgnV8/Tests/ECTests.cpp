@@ -846,6 +846,29 @@ TEST_F(ECConversionTests, CreateAndUpdateSecondaryInstanceWithProperties)
         ASSERT_TRUE(0 == strcmp("String2", stmt.GetValueText(1)));
         }
 
+    // Create a new element with a secondary instance
+    DgnV8Api::ElementId eid2;
+        {
+        v8editor.AddLine(&eid2);
+        DgnV8Api::ElementHandle eh(eid2, v8editor.m_defaultModel);
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance4;
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance5;
+        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance4, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"TestClass"));
+        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance5, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"DerivedClass"));
+
+        ECObjectsV8::ECValue v;
+        v.SetString(L"String");
+        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, createdDgnECInstance5->SetValue(L"String", v));
+
+        v.SetString(L"String2");
+        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, createdDgnECInstance5->SetValue(L"String2", v));
+
+        const DgnV8Api::DgnECInstanceEnabler& nativeEnabler = createdDgnECInstance5->GetDgnECInstanceEnabler();
+        nativeEnabler.ReplaceInstanceOnElement(NULL, *createdDgnECInstance5, createdDgnECInstance5->GetModelRef(),
+                                               createdDgnECInstance5->GetElementRef(), createdDgnECInstance5->GetLocalId());
+        v8editor.Save();
+        }
+        DoUpdate(m_dgnDbFileName, m_v8FileName, false);
     }
 
 //---------------------------------------------------------------------------------------

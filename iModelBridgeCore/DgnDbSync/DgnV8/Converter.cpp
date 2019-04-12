@@ -2292,7 +2292,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
         if (!isNewElement)
             GetChangeDetector()._IsElementChanged(changeInfo, *this, v8eh, v8mm);
 
-        if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(&changeInfo.m_v8ElementAspect, results, ecContent.m_secondaryV8Instances))
+        if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(&changeInfo.m_v8ElementAspect, results, ecContent.m_secondaryV8Instances, isNewElement))
             return BSIERROR;
         }
 
