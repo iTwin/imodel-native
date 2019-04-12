@@ -47,17 +47,6 @@ SaasClientImplPtr CreateTestSaasClient(IUlasProviderPtr ulasProvider, int produc
         );
     }
 
-// Note: cannot use mocks with clients created with the factory
-SaasClientPtr CreateTestSaasClientFromFactory(int productId = std::atoi(TEST_PRODUCT_ID))
-    {
-    return SaasClient::Create
-        (
-        productId,
-        "",
-        nullptr
-        );
-    }
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -127,13 +116,6 @@ TEST_F(SaasClientTests, JsonExample)
     EXPECT_EQ(a, 0);
     EXPECT_NE(b, 0);
     EXPECT_NE(c, 0);
-    }
-
-TEST_F(SaasClientTests, CreateSaasClientFromFactory_Success)
-    {
-    auto client = CreateTestSaasClientFromFactory();
-
-    EXPECT_NE(nullptr, client);
     }
 
 TEST_F(SaasClientTests, SaasClientTrackUsage_Success)
