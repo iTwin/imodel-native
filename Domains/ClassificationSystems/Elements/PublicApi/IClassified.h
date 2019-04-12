@@ -2,10 +2,13 @@
 |
 |     $Source: Elements/PublicApi/IClassified.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <ClassificationSystems/Domain/ClassificationSystemsMacros.h>
+#include <BuildingShared/DgnUtils/BuildingDgnUtilsAPI.h>
+#include <ClassificationSystems/Elements/ForwardDeclarations.h>
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
@@ -26,6 +29,7 @@ struct IClassified
     public:
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::ElementIdIterator MakeClassificationsIterator() const;
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationCPtr GetClassification(ClassificationSystemCR system) const;
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT bvector<ClassificationCPtr> GetClassifications(ClassificationSystemCR system) const;
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT void AddClassification(ClassificationCR classification);
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT void RemoveClassification(ClassificationCR classification);
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT bool IsClassifiedAs(ClassificationCR classification) const;

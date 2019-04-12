@@ -1,3 +1,4 @@
+
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: Licensing/AccessKeyClient.cpp $
@@ -31,12 +32,12 @@ AccessKeyClient::AccessKeyClient
 AccessKeyClientPtr AccessKeyClient::Create
 (
     Utf8StringCR accessKey,
-    ClientInfoPtr clientInfo,
+	WebServices::ClientInfoPtr clientInfo,
     BeFileNameCR dbPath,
     bool offlineMode,
     Utf8StringCR projectId,
     Utf8StringCR featureString,
-    IHttpHandlerPtr httpHandler
+    Http::IHttpHandlerPtr httpHandler
 )
     {
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();

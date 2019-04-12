@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #     $Source: Elements/ClassificationSystemsElements.mke $
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
 AppName = ClassificationSystemsElements
 CCompPDBName = $(AppName)
@@ -24,7 +24,13 @@ nameToDefine = __CLASSIFICATIONSYSTEMSELEMENTS_BUILD__
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)ClassificationSystemsElements$(oext) : $(_MakeFilePath)ClassificationSystemsElements.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\ClassificationSystemsElements.h
+$(o)Classification$(oext) : $(_MakeFilePath)Classification.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\Classification.h
+
+$(o)ClassificationGroup$(oext) : $(_MakeFilePath)ClassificationGroup.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\ClassificationGroup.h
+
+$(o)ClassificationSystem$(oext) : $(_MakeFilePath)ClassificationSystem.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\ClassificationSystem.h
+
+$(o)ClassificationTable$(oext) : $(_MakeFilePath)ClassificationTable.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\ClassificationTable.h
 
 $(o)IClassified$(oext) : $(_MakeFilePath)IClassified.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\IClassified.h
 

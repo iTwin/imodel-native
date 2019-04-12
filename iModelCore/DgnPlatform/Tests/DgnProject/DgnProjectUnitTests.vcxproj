@@ -102,6 +102,7 @@
     <ClCompile Include="Published\MemoryManager_Test.cpp" />
     <ClCompile Include="Published\NotificationManager_Test.cpp" />
     <ClCompile Include="Published\Revision_Test.cpp" />
+    <ClCompile Include="Published\SchemaValidation_Test.cpp" />
     <ClCompile Include="Published\SchemaVersion_Test.cpp" />
     <ClCompile Include="Published\Tag_Test.cpp" />
     <ClCompile Include="Published\TextAnnotationElement_Test.cpp" />

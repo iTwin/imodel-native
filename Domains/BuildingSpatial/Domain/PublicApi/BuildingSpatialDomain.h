@@ -24,7 +24,7 @@ struct BuildingSpatialDomain : Dgn::DgnDomain
     DOMAIN_DECLARE_MEMBERS(BuildingSpatialDomain, EXPORT_ATTRIBUTE)
 
 private:
-    WCharCP _GetSchemaRelativePath () const override { return L"ECSchemas/Domain/BuildingSpatial.ecschema.xml"; }
+    WCharCP _GetSchemaRelativePath () const override { return BUILDINGSPATIAL_SCHEMA_PATH; }
     virtual void _OnSchemaImported(Dgn::DgnDbR) const override;
 
     void InsertDomainAuthorities (Dgn::DgnDbR) const;

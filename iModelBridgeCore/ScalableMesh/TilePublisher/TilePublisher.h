@@ -193,7 +193,6 @@ private:
     BatchIdMap              m_batchIds;
     std::FILE*              m_outputFile;
     DPoint3d                m_centroid;
-    Transform               m_tileTransform;
     TileMeshList            m_meshes;
     TileNodeCPtr            m_tile = nullptr;
     ByteStream              m_binaryData;

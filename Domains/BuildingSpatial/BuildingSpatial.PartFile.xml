@@ -5,16 +5,14 @@
     >
         
     <Part Name="BuildingSpatial" >
+      <SubPart PartName="BuildingSpatialDomain"/>
       <SubPart PartName="BuildingSpatialElements"/>
       <SubPart PartName="BuildingSpatialHandlers"/>
       <SubPart PartName="BuildingSpatialSchema"/>
     </Part>
 
-    <Part Name="BuildingSpatialSchema" BentleyBuildMakeFile="BuildingSpatialSchema.prewire.mke">
-        <SubPart PartName="SpatialCompositionSchema" Repository="imodel02" PartFile="Domains/SpatialComposition/SpatialComposition" />
-        <Bindings>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain">ECSchemas/Domain/BuildingSpatial*.xml</Files>
-        </Bindings>
+    <Part Name="BuildingSpatialSchema" >
+        <SubPart PartName="BuildingSpatial" Repository="BisSchemas" PartFile="BisSchemas" />
     </Part>
 
     <Part Name="BuildingSpatialApi" BentleyBuildMakeFile="BuildingSpatialApi.prewire.mke">
@@ -36,6 +34,7 @@
       <SubPart PartName="BuildingSpatial-Gtest"/>
       <Directories DirectoryListName="BuildingSpatialGTestDirectories"/>
     </Product>
+	
     <ProductDirectoryList ListName="BuildingSpatialGTestDirectories">
       <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
       <ProductDirectory Name="Gtest-NativeAssemblies" Path="" LibType="Static"/>
@@ -73,6 +72,7 @@
       <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
       <SubPart PartName="BuildingSpatial"/>
       <SubPart PartName="BuildingSpatialDomain"/>
+      <SubPart PartName="SpatialCompositionDomain" Repository="DgnDomains-SpatialComposition" PartFile="SpatialComposition" />
       <SubPart PartName="ClassificationSystemsDomain" Repository="imodel02" PartFile="Domains/ClassificationSystems/ClassificationSystems"/>
       <Bindings>
         <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="BuildingSpatial/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
@@ -88,32 +88,32 @@
       </Bindings>
     </Part>
     
-    <Part Name="BuildingSpatialHandlers" BentleyBuildMakeFile="Handlers/BuildingSpatialHandlers.mke">
+    <Part Name="BuildingSpatialHandlers" BentleyBuildMakeFile="Handlers/BuildingSpatialHandlers.mke" ApiNumber="B02">
         <SubPart PartName="BuildingSpatialElements"/>
         <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingSpatialHandlers$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)BuildingSpatialHandlers$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)BuildingSpatialHandlers$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
-    <Part Name="BuildingSpatialDomain" BentleyBuildMakeFile="Domain/BuildingSpatialDomain.mke">
+    <Part Name="BuildingSpatialDomain" BentleyBuildMakeFile="Domain/BuildingSpatialDomain.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="BuildingSpatialSchema" />
         <SubPart PartName="BuildingSpatialHandlers"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingSpatialDomain$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)BuildingSpatialDomain$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)BuildingSpatialDomain$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
-    <Part Name="BuildingSpatialElements" BentleyBuildMakeFile="Elements/BuildingSpatialElements.mke">
+    <Part Name="BuildingSpatialElements" BentleyBuildMakeFile="Elements/BuildingSpatialElements.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="BuildingSpatialApi"/>
         <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingSpatialElements$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)BuildingSpatialElements$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)BuildingSpatialElements$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 

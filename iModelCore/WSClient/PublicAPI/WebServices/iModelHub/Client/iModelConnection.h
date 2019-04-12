@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/iModelHub/Client/iModelConnection.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -181,6 +181,7 @@ private:
     static PredownloadManagerPtr s_preDownloadManager;
     bool m_subscribedForPreDownload = false;
 
+    uint64_t                   m_pageSize = 100000;
     iModelInfo                 m_iModelInfo;
 
     IWSRepositoryClientPtr     m_wsRepositoryClient;
@@ -333,17 +334,22 @@ private:
     //! Gets single ChangeSet by Id
     ChangeSetInfoTaskPtr GetChangeSetByIdInternal(Utf8StringCR changeSetId, bool loadAccessKey, ICancellationTokenPtr cancellationToken) const;
 
-    //! Get all ChangeSet information based on a query.
+    //! Get all ChangeSet information based on a query (repeated).
     ChangeSetsInfoTaskPtr ChangeSetsFromQueryInternal(WSQuery const& query, bool parseFileAccessKey, 
                                                       ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Get all ChangeSet information based on a query (repeated).
-    ChangeSetsInfoTaskPtr ChangeSetsFromQuery(WSQuery const& query, bool parseFileAccessKey, 
-                                              ICancellationTokenPtr cancellationToken = nullptr) const;
+    //! Get all ChangeSet information based on a query by chunks.
+    ChangeSetsInfoTaskPtr GetChangeSetsFromQueryByChunks(WSQuery query, bool parseFileAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Get all of the changeSets after the specific ChangeSetId.
-    ChangeSetsInfoTaskPtr GetChangeSetsInternal(WSQuery const& query, bool parseFileAccessKey, 
-                                                ICancellationTokenPtr cancellationToken = nullptr) const;
+    //! Get all ChangeSet information based on a query by chunks recursively.
+    ChangeSetsInfoTaskPtr GetChangeSetsFromQueryByChunksRecursively
+    (
+    WSQueryPtr query,
+    bool parseFileAccessKey,
+    Utf8StringCR originalFilter,
+    ChangeSetsInfoResultPtr finalResult,
+    ICancellationTokenPtr cancellationToken
+    ) const;
 
     //! Get all of the changeSets.
     ChangeSetsInfoTaskPtr GetAllChangeSetsInternal(bool loadAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -531,6 +537,12 @@ public:
     //! @param[in] client
     //! @private
     void SetAzureBlobStorageClient(IAzureBlobStorageClientPtr client) { m_azureClient = client; }
+
+    //! Sets page size.
+    //! @param[in] pageSize 
+    //! @note Codes, Locks and ChangeSets are queried by pages.
+    //! @private
+    void SetPageSize(uint64_t pageSize) { m_pageSize = pageSize; }
 
     //! Gets VersionsManager
     //! @return Versions manager

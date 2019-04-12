@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/BriefcasePullTests.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelTestsBase.h"
@@ -154,11 +154,11 @@ TEST_F(BriefcasePullTests, DownloadStandaloneBriefcaseUpdatedToVersion)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcasePullTests, DownloadStandaloneBriefcaseUpdatedToVersionInvalidVersion)
     {
-    BeFileNameResult acquireResult = s_client->DownloadStandaloneBriefcaseUpdatedToVersion(*s_info, "InvalidId", [=](iModelInfo imodelInfo, FileInfo fileInfo)
+    BeFileNameResult acquireResult = s_client->DownloadStandaloneBriefcaseUpdatedToVersion(*s_info, "11111111-1111-4111-8111-111111111111", [=](iModelInfo imodelInfo, FileInfo fileInfo)
         {
         BeFileName filePath = OutputDir();
         filePath.AppendToPath(BeFileName(imodelInfo.GetId()));
-        filePath.AppendToPath(BeFileName("InvalidId"));
+        filePath.AppendToPath(BeFileName("11111111-1111-4111-8111-111111111111"));
         filePath.AppendToPath(BeFileName(fileInfo.GetFileName()));
         return filePath;
         })->GetResult();

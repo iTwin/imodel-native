@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/VersionsManager.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/VersionsManager.h>
@@ -275,7 +275,7 @@ ChangeSetsInfoTaskPtr VersionsManager::GetVersionChangeSets(Utf8String versionId
     if (Utf8String::IsNullOrEmpty(versionId.c_str()))
         return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(Error::Id::InvalidVersion));
 
-    return m_connection->ChangeSetsFromQueryInternal(CreateVersionChangeSetsQuery(versionId, fileId), false, cancellationToken);
+    return m_connection->GetChangeSetsFromQueryByChunks(CreateVersionChangeSetsQuery(versionId, fileId), false, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -290,8 +290,8 @@ ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsBetweenVersions(Utf8String f
     if (Utf8String::IsNullOrEmpty(firstVersionId.c_str()) || Utf8String::IsNullOrEmpty(secondVersionId.c_str()))
         return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(Error::Id::InvalidVersion));
 
-    return m_connection->ChangeSetsFromQueryInternal(CreateChangeSetsBetweenVersionsQuery(firstVersionId, secondVersionId, fileId), false, 
-                                                     cancellationToken);
+    return m_connection->GetChangeSetsFromQueryByChunks(CreateChangeSetsBetweenVersionsQuery(firstVersionId, secondVersionId, fileId), false,
+                                                        cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -307,7 +307,7 @@ ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsAfterVersion(Utf8String vers
     if (Utf8String::IsNullOrEmpty(versionId.c_str()))
         return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(Error::Id::InvalidVersion));
 
-    return m_connection->ChangeSetsFromQueryInternal(CreateChangeSetsAfterVersionQuery(versionId, fileId), false, cancellationToken);
+    return m_connection->GetChangeSetsFromQueryByChunks(CreateChangeSetsAfterVersionQuery(versionId, fileId), false, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -322,6 +322,6 @@ ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsBetweenVersionAndChangeSet(U
 
     if (Utf8String::IsNullOrEmpty(versionId.c_str()))
         return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(Error::Id::InvalidVersion));
-    return m_connection->ChangeSetsFromQueryInternal(CreateChangeSetsBetweenVersionAndChangeSetQuery(versionId, changeSetId, fileId), false, 
-                                                     cancellationToken);
+    return m_connection->GetChangeSetsFromQueryByChunks(CreateChangeSetsBetweenVersionAndChangeSetQuery(versionId, changeSetId, fileId), false,
+                                                        cancellationToken);
     }

@@ -1355,6 +1355,102 @@ TEST_F(ClassTest, LookupClassTest)
     ASSERT_EQ(1, refingSchema->GetClassCount());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bao.Tran                         05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ClassTest, DowncastClassTest) 
+    {
+    ECClass *ecClass;
+
+    ECSchemaPtr ecSchema;
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(ecSchema, "TestSchema", "TestSchema", 3, 1, 0));
+
+    ECEntityClassP ecEntity;
+    EC_ASSERT_SUCCESS(ecSchema->CreateEntityClass(ecEntity, "TestEntity"));
+    ecClass = ecSchema->GetClassP("TestEntity");
+    ASSERT_TRUE(ecClass->IsEntityClass());
+    ASSERT_FALSE(ecClass->IsRelationshipClass());
+    ASSERT_FALSE(ecClass->IsStructClass());
+    ASSERT_FALSE(ecClass->IsCustomAttributeClass());
+    ASSERT_FALSE(ecClass->IsMixin());
+    ASSERT_NE(ecClass->GetEntityClassCP(), nullptr);
+    ASSERT_NE(ecClass->GetEntityClassP(), nullptr);
+    ASSERT_EQ(ecClass->GetRelationshipClassP(), nullptr);
+    ASSERT_EQ(ecClass->GetRelationshipClassP(), nullptr);
+    ASSERT_EQ(ecClass->GetStructClassCP(), nullptr);
+    ASSERT_EQ(ecClass->GetStructClassP(), nullptr);
+    ASSERT_EQ(ecClass->GetCustomAttributeClassCP(), nullptr);
+    ASSERT_EQ(ecClass->GetCustomAttributeClassP(), nullptr);
+
+    ECRelationshipClassP ecRelationship;
+    EC_ASSERT_SUCCESS(ecSchema->CreateRelationshipClass(ecRelationship, "TestRelationship", "TestRelationship"));
+    ecClass = ecSchema->GetClassP("TestRelationship");
+    ASSERT_FALSE(ecClass->IsEntityClass());
+    ASSERT_TRUE(ecClass->IsRelationshipClass());
+    ASSERT_FALSE(ecClass->IsStructClass());
+    ASSERT_FALSE(ecClass->IsCustomAttributeClass());
+    ASSERT_FALSE(ecClass->IsMixin());
+    ASSERT_EQ(ecClass->GetEntityClassCP(), nullptr);
+    ASSERT_EQ(ecClass->GetEntityClassP(), nullptr);
+    ASSERT_NE(ecClass->GetRelationshipClassCP(), nullptr);
+    ASSERT_NE(ecClass->GetRelationshipClassP(), nullptr);
+    ASSERT_EQ(ecClass->GetStructClassCP(), nullptr);
+    ASSERT_EQ(ecClass->GetStructClassP(), nullptr);
+    ASSERT_EQ(ecClass->GetCustomAttributeClassCP(), nullptr);
+    ASSERT_EQ(ecClass->GetCustomAttributeClassP(), nullptr);
+
+    ECStructClassP ecStruct;
+    EC_ASSERT_SUCCESS(ecSchema->CreateStructClass(ecStruct, "TestStruct"));
+    ecClass = ecSchema->GetClassP("TestStruct");
+    ASSERT_FALSE(ecClass->IsEntityClass());
+    ASSERT_FALSE(ecClass->IsRelationshipClass());
+    ASSERT_TRUE(ecClass->IsStructClass());
+    ASSERT_FALSE(ecClass->IsCustomAttributeClass());
+    ASSERT_FALSE(ecClass->IsMixin());
+    ASSERT_EQ(ecClass->GetEntityClassCP(), nullptr);
+    ASSERT_EQ(ecClass->GetEntityClassP(), nullptr);
+    ASSERT_EQ(ecClass->GetRelationshipClassP(), nullptr);
+    ASSERT_EQ(ecClass->GetRelationshipClassP(), nullptr);
+    ASSERT_NE(ecClass->GetStructClassCP(), nullptr);
+    ASSERT_NE(ecClass->GetStructClassP(), nullptr);
+    ASSERT_EQ(ecClass->GetCustomAttributeClassCP(), nullptr);
+    ASSERT_EQ(ecClass->GetCustomAttributeClassP(), nullptr);
+
+    ECCustomAttributeClassP ecCustomAttribute;
+    EC_ASSERT_SUCCESS(ecSchema->CreateCustomAttributeClass(ecCustomAttribute, "TestCustomAttribute"));
+    ecClass = ecSchema->GetClassP("TestCustomAttribute");
+    ASSERT_FALSE(ecClass->IsEntityClass());
+    ASSERT_FALSE(ecClass->IsRelationshipClass());
+    ASSERT_FALSE(ecClass->IsStructClass());
+    ASSERT_TRUE(ecClass->IsCustomAttributeClass());
+    ASSERT_FALSE(ecClass->IsMixin());
+    ASSERT_EQ(ecClass->GetEntityClassCP(), nullptr);
+    ASSERT_EQ(ecClass->GetEntityClassP(), nullptr);
+    ASSERT_EQ(ecClass->GetRelationshipClassCP(), nullptr);
+    ASSERT_EQ(ecClass->GetRelationshipClassP(), nullptr);
+    ASSERT_EQ(ecClass->GetStructClassCP(), nullptr);
+    ASSERT_EQ(ecClass->GetStructClassP(), nullptr);
+    ASSERT_NE(ecClass->GetCustomAttributeClassCP(), nullptr);
+    ASSERT_NE(ecClass->GetCustomAttributeClassP(), nullptr);
+
+    ECEntityClassP ecMixin;
+    EC_ASSERT_SUCCESS(ecSchema->CreateMixinClass(ecMixin, "TestMixin", *ecEntity));
+    ecClass = ecSchema->GetClassP("TestMixin");
+    ASSERT_TRUE(ecClass->IsEntityClass());
+    ASSERT_FALSE(ecClass->IsRelationshipClass());
+    ASSERT_FALSE(ecClass->IsStructClass());
+    ASSERT_FALSE(ecClass->IsCustomAttributeClass());
+    ASSERT_TRUE(ecClass->IsMixin());
+    ASSERT_NE(ecClass->GetEntityClassCP(), nullptr);
+    ASSERT_NE(ecClass->GetEntityClassP(), nullptr);
+    ASSERT_EQ(ecClass->GetRelationshipClassCP(), nullptr);
+    ASSERT_EQ(ecClass->GetRelationshipClassP(), nullptr);
+    ASSERT_EQ(ecClass->GetStructClassCP(), nullptr);
+    ASSERT_EQ(ecClass->GetStructClassP(), nullptr);
+    ASSERT_EQ(ecClass->GetCustomAttributeClassCP(), nullptr);
+    ASSERT_EQ(ecClass->GetCustomAttributeClassP(), nullptr);
+    }
+
 //=======================================================================================
 //! PropertyCopyTest
 //=======================================================================================

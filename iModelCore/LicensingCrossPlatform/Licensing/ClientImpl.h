@@ -39,8 +39,6 @@
 #define HEARTBEAT_THREAD_DELAY_MS           1000
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
-USING_NAMESPACE_BENTLEY_HTTP
-USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
@@ -56,8 +54,8 @@ protected:
         Utf8String featureUserData;
         };
 
-    ClientInfoPtr m_clientInfo;
-	ConnectSignInManager::UserInfo m_userInfo;
+	WebServices::ClientInfoPtr m_clientInfo;
+	WebServices::ConnectSignInManager::UserInfo m_userInfo;
     BeFileName m_dbPath;
     ITimeRetrieverPtr m_timeRetriever;
     IDelayedExecutorPtr m_delayedExecutor;
@@ -119,8 +117,8 @@ public:
 
     LICENSING_EXPORT ClientImpl
         (
-		const ConnectSignInManager::UserInfo& userInfo,
-        ClientInfoPtr clientInfo,
+		const WebServices::ConnectSignInManager::UserInfo& userInfo,
+        WebServices::ClientInfoPtr clientInfo,
         BeFileNameCR db_path,
         bool offlineMode,
         IPolicyProviderPtr policyProvider,

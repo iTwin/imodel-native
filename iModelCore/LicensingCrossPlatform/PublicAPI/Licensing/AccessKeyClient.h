@@ -19,7 +19,6 @@
 #include <Licensing/Utils/FeatureUserDataMap.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
-USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
@@ -48,12 +47,12 @@ struct AccessKeyClient
         LICENSING_EXPORT static AccessKeyClientPtr Create
         (
             Utf8StringCR accessKey,
-            ClientInfoPtr clientInfo,
+			WebServices::ClientInfoPtr clientInfo,
             BeFileNameCR dbPath,
             bool offlineMode,
             Utf8StringCR projectId = "",
             Utf8StringCR featureString = "",
-            IHttpHandlerPtr customHttpHandler = nullptr
+            Http::IHttpHandlerPtr customHttpHandler = nullptr
         );
 
         //! StartApplication performs actions and creates threads required for usage posting and policy requests, returns LicenseStatus

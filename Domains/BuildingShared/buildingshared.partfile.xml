@@ -38,27 +38,27 @@
         </Bindings>
     </Part>
     
-    <Part Name="BuildingUtils" BentleyBuildMakeFile="Utils/BuildingUtils.mke">
+    <Part Name="BuildingUtils" BentleyBuildMakeFile="Utils/BuildingUtils.mke" ApiNumber="B02">
         <SubPart PartName="BuildingSharedApi"/>
         <SubPart PartName="GeomDlls" Repository="imodel02" PartFile="iModelCore/GeomLibs/geomlibs"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingUtils$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)BuildingUtils$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)BuildingUtils$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="BuildingDgnUtils" BentleyBuildMakeFile="DgnUtils/BuildingDgnUtils.mke">
+    <Part Name="BuildingDgnUtils" BentleyBuildMakeFile="DgnUtils/BuildingDgnUtils.mke" ApiNumber="B02">
         <SubPart PartName="BuildingSharedApi" />
         <SubPart PartName="RoadRailPhysical"   PartFile="Domains/RoadRailPhysical/RoadRailPhysical"  Repository="imodel02" />
         <SubPart PartName="BuildingUnits" />
         <SubPart PartName="BuildingUtils" />
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingDgnUtils$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)BuildingDgnUtils$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)BuildingDgnUtils$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
-    <Part Name="BuildingDgnViewUtils" BentleyBuildMakeFile="DgnViewUtils/BuildingDgnViewUtils.mke">
+    <Part Name="BuildingDgnViewUtils" BentleyBuildMakeFile="DgnViewUtils/BuildingDgnViewUtils.mke" ApiNumber="B02">
         <SubPart PartName="BuildingSharedApi" />
         <SubPart PartName="DgnClientFxPublicApi" Repository="DgnClientFx" PartFile="DgnClientFx" />
         <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx" />
@@ -67,16 +67,16 @@
         <SubPart PartName="BuildingUtils" />
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingDgnViewUtils$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)BuildingDgnViewUtils$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)BuildingDgnViewUtils$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
-    <Part Name="BuildingUnits" BentleyBuildMakeFile="Units/BuildingUnits.mke">
+    <Part Name="BuildingUnits" BentleyBuildMakeFile="Units/BuildingUnits.mke" ApiNumber="B02">
         <SubPart PartName="BuildingSharedApi"/>
         <SubPart PartName="GeomDlls" Repository="imodel02" PartFile="iModelCore/GeomLibs/geomlibs"/>
         <Bindings>
           <Libs>Delivery/$(libprefix)BuildingUnits$(libext)</Libs>
-          <Assemblies>Delivery/$(shlibprefix)BuildingUnits$(shlibext)</Assemblies>
+          <Assemblies>Delivery/$(shlibprefix)BuildingUnits$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -88,29 +88,29 @@
         <SubPart PartName="DgnElementManipulationStrategies"/>
     </Part>
 
-    <Part Name="GeometryManipulationStrategies" BentleyBuildMakeFile="GeometryManipulationStrategies/GeometryManipulationStrategies.mke">
+    <Part Name="GeometryManipulationStrategies" BentleyBuildMakeFile="GeometryManipulationStrategies/GeometryManipulationStrategies.mke" ApiNumber="B02">
         <SubPart PartName="BuildingUtils"/>
         <SubPart PartName="BuildingUnits"/>
         <SubPart PartName="BuildingSharedApi"/>
         <SubPart PartName="GeomDlls" Repository="imodel02" PartFile="iModelCore/GeomLibs/geomlibs"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)GeometryManipulationStrategies$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)GeometryManipulationStrategies$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)GeometryManipulationStrategies$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="DgnElementManipulationStrategies" BentleyBuildMakeFile="DgnElementManipulationStrategies/DgnElementManipulationStrategies.mke">
+    <Part Name="DgnElementManipulationStrategies" BentleyBuildMakeFile="DgnElementManipulationStrategies/DgnElementManipulationStrategies.mke" ApiNumber="B02">
         <SubPart PartName="GeometryManipulationStrategies"/>
         <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="UnitsNative" PartFile="iModelCore/Units/Units" Repository="imodel02" />
         <SubPart PartName="GeomDlls" Repository="imodel02" PartFile="iModelCore/GeomLibs/geomlibs"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)DgnElementManipulationStrategies$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)DgnElementManipulationStrategies$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)DgnElementManipulationStrategies$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="StrategyPlatform" BentleyBuildMakeFile="StrategyPlatform/StrategyPlatform.mke">
+    <Part Name="StrategyPlatform" BentleyBuildMakeFile="StrategyPlatform/StrategyPlatform.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform" />
         <SubPart PartName="BeSQLite" Repository="imodel02" PartFile="iModelCore/BeSQLite/BeSQLite" />
         <SubPart PartName="DgnView" Repository="DgnDisplay" PartFile="DgnDisplay" />
@@ -118,7 +118,7 @@
         <SubPart PartName="DgnElementManipulationStrategies" />
         <Bindings>
             <Libs>Delivery/$(libprefix)StrategyPlatform$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)StrategyPlatform$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)StrategyPlatform$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     

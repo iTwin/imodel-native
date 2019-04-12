@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/iModelConnection.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/iModelConnection.h>
@@ -1243,6 +1243,74 @@ StatusTaskPtr iModelConnection::UnsubscribeEventsCallback(EventCallbackPtr callb
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Andrius.Zonys                   03/2019
+//---------------------------------------------------------------------------------------
+ChangeSetsInfoTaskPtr iModelConnection::GetChangeSetsFromQueryByChunks
+(
+WSQuery                     query,
+bool                        parseFileAccessKey,
+ICancellationTokenPtr       cancellationToken
+) const
+    {
+    const Utf8String methodName = "iModelConnection::GetChangeSetsFromQueryByChunks";
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
+
+    Utf8String originalFilter = query.GetFilter();
+    query.SetOrderBy(ServerSchema::Property::Index);
+    query.SetTop(m_pageSize);
+
+    ChangeSetsInfoResultPtr finalResult = std::make_shared<ChangeSetsInfoResult>();
+    finalResult->SetSuccess(bvector<ChangeSetInfoPtr>());
+
+    return GetChangeSetsFromQueryByChunksRecursively(std::make_shared<WSQuery>(query), parseFileAccessKey, originalFilter, finalResult, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Andrius.Zonys                   03/2019
+//---------------------------------------------------------------------------------------
+ChangeSetsInfoTaskPtr iModelConnection::GetChangeSetsFromQueryByChunksRecursively
+(
+WSQueryPtr query,
+bool parseFileAccessKey,
+Utf8StringCR originalFilter,
+ChangeSetsInfoResultPtr finalResult,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "iModelConnection::GetChangeSetsFromQueryByChunksRecursively";
+    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
+
+    return ChangeSetsFromQueryInternal(*query, parseFileAccessKey, cancellationToken)->Then([=](ChangeSetsInfoResultCR changeSetsResult)
+        {
+        if (!changeSetsResult.IsSuccess())
+            {
+            finalResult->SetError(changeSetsResult.GetError());
+            LogHelper::Log(SEVERITY::LOG_WARNING, "iModelConnection::GetChangeSetsFromQueryByChunksRecursively", changeSetsResult.GetError().GetMessage().c_str());
+            return;
+            }
+
+        bvector<ChangeSetInfoPtr> changeSets = changeSetsResult.GetValue();
+        finalResult->GetValue().insert(finalResult->GetValue().end(), changeSets.begin(), changeSets.end());
+
+        if (changeSets.size() != m_pageSize)
+            return;
+
+        uint64_t lastIndex = changeSets.rbegin()->get()->GetIndex();
+        if (originalFilter.empty())
+            query->SetFilter(Utf8PrintfString("%s+gt+%u", ServerSchema::Property::Index, lastIndex));
+        else
+            query->SetFilter(Utf8PrintfString("(%s)+and+%s+gt+%u", originalFilter.c_str(), ServerSchema::Property::Index, lastIndex));
+
+        GetChangeSetsFromQueryByChunksRecursively(query, parseFileAccessKey, originalFilter, finalResult, cancellationToken);
+        })->Then<ChangeSetsInfoResult>([=]
+            {
+            return *finalResult;
+            });
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 ChangeSetsInfoTaskPtr iModelConnection::ChangeSetsFromQueryInternal
@@ -1256,91 +1324,36 @@ ICancellationTokenPtr       cancellationToken
     auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
 
-    return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)->Then<ChangeSetsInfoResult>
-        ([=](const WSObjectsResult& changeSetsInfoResult)
+    return ExecuteWithRetry<bvector<ChangeSetInfoPtr>>([=]()
         {
-        if (changeSetsInfoResult.IsSuccess())
+        return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)->Then<ChangeSetsInfoResult>
+            ([=](const WSObjectsResult& changeSetsInfoResult)
             {
-            bvector<ChangeSetInfoPtr> indexedChangeSets;
-            if (!changeSetsInfoResult.GetValue().GetRapidJsonDocument().IsNull())
+            if (changeSetsInfoResult.IsSuccess())
                 {
-                for (auto const& value : changeSetsInfoResult.GetValue().GetInstances())
+                bvector<ChangeSetInfoPtr> indexedChangeSets;
+                if (!changeSetsInfoResult.GetValue().GetRapidJsonDocument().IsNull())
                     {
-                    auto changeSetInfo = ChangeSetInfo::Parse(value);
-                    if (parseFileAccessKey)
+                    for (auto const& value : changeSetsInfoResult.GetValue().GetInstances())
                         {
-                        auto fileAccessKey = FileAccessKey::ParseFromRelated(value);
-                        changeSetInfo->SetFileAccessKey(fileAccessKey);
+                        auto changeSetInfo = ChangeSetInfo::Parse(value);
+                        if (parseFileAccessKey)
+                            {
+                            auto fileAccessKey = FileAccessKey::ParseFromRelated(value);
+                            changeSetInfo->SetFileAccessKey(fileAccessKey);
+                            }
+
+                        indexedChangeSets.push_back(changeSetInfo);
                         }
-
-                    indexedChangeSets.push_back(changeSetInfo);
                     }
-                }
-
-            std::sort(indexedChangeSets.begin(), indexedChangeSets.end(), [](ChangeSetInfoPtr a, ChangeSetInfoPtr b)
-                {
-                return a->GetIndex() < b->GetIndex();
-                });
-            return ChangeSetsInfoResult::Success(indexedChangeSets);
-            }
-        else
-            {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, changeSetsInfoResult.GetError().GetMessage().c_str());
-            return ChangeSetsInfoResult::Error(changeSetsInfoResult.GetError());
-            }
-        });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr iModelConnection::ChangeSetsFromQuery
-(
-const WebServices::WSQuery& query,
-bool                        parseFileAccessKey,
-ICancellationTokenPtr       cancellationToken
-) const
-    {
-    return ExecuteWithRetry<bvector<ChangeSetInfoPtr>>([=]()
-        {
-        return ChangeSetsFromQueryInternal(query, parseFileAccessKey, cancellationToken);
-        });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             02/2017
-//---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr iModelConnection::GetChangeSetsInternal
-(
-const WebServices::WSQuery& query,
-bool                        parseFileAccessKey,
-ICancellationTokenPtr       cancellationToken
-) const
-    {
-    const Utf8String methodName = "iModelConnection::GetChangeSetsInternal";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    std::shared_ptr<ChangeSetsInfoResult> finalResult = std::make_shared<ChangeSetsInfoResult>();
-
-    return ExecuteWithRetry<bvector<ChangeSetInfoPtr>>([=]()
-        {
-        return ChangeSetsFromQueryInternal(query, parseFileAccessKey, cancellationToken)->Then([=](ChangeSetsInfoResultCR changeSetsResult)
-            {
-            if (changeSetsResult.IsSuccess())
-                {
-                finalResult->SetSuccess(changeSetsResult.GetValue());
-                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+                return ChangeSetsInfoResult::Success(indexedChangeSets);
                 }
             else
                 {
-                finalResult->SetError(changeSetsResult.GetError());
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsResult.GetError().GetMessage().c_str());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, changeSetsInfoResult.GetError().GetMessage().c_str());
+                return ChangeSetsInfoResult::Error(changeSetsInfoResult.GetError());
                 }
-            })->Then<ChangeSetsInfoResult>([=]()
-                {
-                return *finalResult;
-                });
+            });
         });
     }
 
@@ -1366,7 +1379,7 @@ ICancellationTokenPtr cancellationToken
         query.SetSelect(selectString);
         }
 
-    return GetChangeSetsInternal(query, loadAccessKey, cancellationToken);
+    return GetChangeSetsFromQueryByChunks(query, loadAccessKey, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1495,7 +1508,7 @@ ChangeSetsTaskPtr iModelConnection::DownloadChangeSets(std::deque<ObjectId>& cha
 
     std::shared_ptr<ChangeSetsResult> finalResult = std::make_shared<ChangeSetsResult>();
 
-    return GetChangeSetsInternal(query, true, cancellationToken)
+    return GetChangeSetsFromQueryByChunks(query, true, cancellationToken)
         ->Then([=](ChangeSetsInfoResultCR changeSetsQueryResult) {
         if (!changeSetsQueryResult.IsSuccess())
             {
@@ -1577,7 +1590,7 @@ ChangeSetsInfoTaskPtr iModelConnection::GetAllChangeSetsInternal(bool loadAccess
     const Utf8String methodName = "iModelConnection::GetAllChangeSetsInternal";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet);
-    return ChangeSetsFromQuery(query, loadAccessKey, cancellationToken);
+    return GetChangeSetsFromQueryByChunks(query, loadAccessKey, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2870,15 +2883,13 @@ ICancellationTokenPtr cancellationToken
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     CHECK_BRIEFCASEID(briefcaseId, LockInfoSetResult);
 
-    CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
-
-    StatusTaskPtr task;
     if (!briefcaseId.IsValid())
         {
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "BriefcaseId is invalid.");
         return CreateCompletedAsyncTask(LockInfoSetResult::Error(Error::Id::InvalidBriefcase));
         }
 
+    CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
     auto result = ExecuteAsync(QueryLocksInternal(briefcaseId, finalValue, cancellationToken));
 
     if (result->IsSuccess())
@@ -3139,7 +3150,7 @@ ChangeSetsInfoTaskPtr iModelConnection::GetChangeSetsBetween(Utf8StringCR firstC
     if (Utf8String::IsNullOrEmpty(firstChangeSetId.c_str()) && Utf8String::IsNullOrEmpty(secondChangeSetId.c_str()))
         return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(Error::Id::InvalidChangeSet));
 
-    return ChangeSetsFromQueryInternal(CreateBetweenChangeSetsQuery(firstChangeSetId, secondChangeSetId, fileId), false, cancellationToken);
+    return GetChangeSetsFromQueryByChunks(CreateBetweenChangeSetsQuery(firstChangeSetId, secondChangeSetId, fileId), false, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------

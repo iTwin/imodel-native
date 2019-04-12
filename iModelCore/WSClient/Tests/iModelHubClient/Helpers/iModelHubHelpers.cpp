@@ -557,16 +557,16 @@ namespace iModelHubHelpers
     +---------------+---------------+---------------+---------------+---------------+------*/
     Utf8String Utf8GuidString(Utf8CP format)
         {
-        return Utf8PrintfString(format, BeSQLite::BeGuid(true));
+        return Utf8PrintfString(format, BeSQLite::BeGuid(true).ToString().c_str());
         }
 
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              11/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    StatusResult AddChangeSets(BriefcaseR briefcase, uint32_t count, uint32_t statingNumber, bool needsPull, bool expectSuccess)
+    StatusResult AddChangeSets(BriefcaseR briefcase, uint32_t count, uint32_t startingNumber, bool needsPull, bool expectSuccess)
         {
-        DgnModelPtr model = CreateModel(Utf8GuidString("AddChangeSetsModel%s").c_str(), briefcase.GetDgnDb());
-        for (uint32_t i = statingNumber; i < statingNumber + count; ++i)
+        DgnModelPtr model = CreateModel(Utf8GuidString("AddChangeSetsModel_%s").c_str(), briefcase.GetDgnDb());
+        for (uint32_t i = startingNumber; i < startingNumber + count; ++i)
             {
             CreateElement(*model);
             ChangeSetsResult result = PullMergeAndPush(briefcase, expectSuccess, false, true, expectSuccess);

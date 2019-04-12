@@ -1642,6 +1642,7 @@ friend struct ECProperty; // for access to InvalidateDefaultStandaloneEnabler() 
 friend struct ECSchemaConverter;
 
 private:
+    const ECClassType               m_classType;
     CachedSchemaQualifiedName m_fullName;
     CachedUtf8String        m_ecsqlName;
     Utf8String                      m_description;
@@ -1695,7 +1696,7 @@ protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
-    ECClass (ECSchemaCR schema);
+    ECClass (ECClassType classType, ECSchemaCR schema);
     virtual ~ECClass();
 
     ECObjectsStatus AddProperty(ECPropertyP pProperty, Utf8StringCR name);
@@ -1735,20 +1736,6 @@ protected:
     virtual bool _ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const;
     bool _ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties, bvector<bpair<Utf8String, Json::Value>> attributes) const;
 
-    virtual ECClassType _GetClassType() const {return ECClassType::Entity;} // default type
-
-    virtual ECRelationshipClassCP _GetRelationshipClassCP() const {return nullptr;} // used to avoid dynamic_cast
-    virtual ECRelationshipClassP _GetRelationshipClassP() {return nullptr;} // used to avoid dynamic_cast
-
-    virtual ECEntityClassCP _GetEntityClassCP() const {return nullptr;} // used to avoid dynamic_cast
-    virtual ECEntityClassP _GetEntityClassP() {return nullptr;} // used to avoid dynamic_cast
-
-    virtual ECStructClassCP _GetStructClassCP() const {return nullptr;} // used to avoid dynamic_cast
-    virtual ECStructClassP _GetStructClassP() {return nullptr;} // used to avoid dynamic_cast
-
-    virtual ECCustomAttributeClassCP _GetCustomAttributeClassCP() const {return nullptr;} // used to avoid dynamic_cast
-    virtual ECCustomAttributeClassP _GetCustomAttributeClassP() {return nullptr;} // used to avoid dynamic_cast
-
     virtual bool _Validate() const = 0;
 
     void InvalidateDefaultStandaloneEnabler() const;
@@ -1779,35 +1766,35 @@ public:
     //! Returns the StandaloneECEnabler for this class
     ECOBJECTS_EXPORT StandaloneECEnablerPtr GetDefaultStandaloneEnabler() const;
 
-    ECClassType GetClassType() const {return _GetClassType();} //!< The type of derived ECClass this is
+    ECClassType GetClassType() const {return m_classType;} //!< The type of derived ECClass this is
 
     //! Is the class a Mixin.
     //! Returns true if this class is an Entity class and has the CoreCustomAttributes:IsMixin custom attribute applied.
     bool IsMixin() const {return IsEntityClass() && IsDefinedLocal("CoreCustomAttributes", "IsMixin");}
-    bool IsEntityClass() const {return ECClassType::Entity == GetClassType();} //!< Is the class an entity class
-    bool IsStructClass() const {return ECClassType::Struct == GetClassType();} //!< Is the class a struct class
-    bool IsCustomAttributeClass() const {return ECClassType::CustomAttribute == GetClassType();} //!< Is the class a custom attribute class
-    bool IsRelationshipClass() const {return ECClassType::Relationship == GetClassType();} //!< Is the class a relationship class
+    bool IsEntityClass() const {return ECClassType::Entity == m_classType;} //!< Is the class an entity class
+    bool IsStructClass() const {return ECClassType::Struct == m_classType;} //!< Is the class a struct class
+    bool IsCustomAttributeClass() const {return ECClassType::CustomAttribute == m_classType;} //!< Is the class a custom attribute class
+    bool IsRelationshipClass() const {return ECClassType::Relationship == m_classType;} //!< Is the class a relationship class
 
-    //! Used to avoid dynamic_cast
-    ECRelationshipClassCP GetRelationshipClassCP() const {return _GetRelationshipClassCP();}
-    //! Used to avoid dynamic_cast
-    ECRelationshipClassP GetRelationshipClassP() {return _GetRelationshipClassP();}
+    //! return ECRelationshipClass const pointer if IsRelationshipClass() return true else nullptr
+    ECRelationshipClassCP GetRelationshipClassCP() const {return IsRelationshipClass() ? reinterpret_cast<ECRelationshipClassCP>(this) : nullptr;}
+    //! return ECRelationshipClass pointer if IsRelationshipClass() return true else nullptr
+    ECRelationshipClassP GetRelationshipClassP() {return IsRelationshipClass() ? reinterpret_cast<ECRelationshipClassP>(this) : nullptr;}
 
-    //! Used to avoid dynamic_cast
-    ECEntityClassCP GetEntityClassCP() const {return _GetEntityClassCP();}
-    //! Used to avoid dynamic_cast
-    ECEntityClassP GetEntityClassP() {return _GetEntityClassP();}
+    //! return ECEntityClass const pointer if IsEntityClass() return true else nullptr
+    ECEntityClassCP GetEntityClassCP() const {return IsEntityClass() ? reinterpret_cast<ECEntityClassCP>(this) : nullptr;}
+    //! return ECEntityClass pointer if IsEntityClass() return true else nullptr
+    ECEntityClassP GetEntityClassP() {return IsEntityClass() ? reinterpret_cast<ECEntityClassP>(this) : nullptr;}
 
-    //! Used to avoid dynamic_cast
-    ECCustomAttributeClassCP GetCustomAttributeClassCP() const {return _GetCustomAttributeClassCP();}
-    //! Used to avoid dynamic_cast
-    ECCustomAttributeClassP GetCustomAttributeClassP() {return _GetCustomAttributeClassP();}
+    //! return ECCustomAttributeClass const pointer if IsCustomAttributeClass() return true else nullptr
+    ECCustomAttributeClassCP GetCustomAttributeClassCP() const {return IsCustomAttributeClass() ? reinterpret_cast<ECCustomAttributeClassCP>(this) : nullptr;}
+    //! return ECCustomAttributeClass pointer if IsCustomAttributeClass() return true else nullptr
+    ECCustomAttributeClassP GetCustomAttributeClassP() {return IsCustomAttributeClass() ? reinterpret_cast<ECCustomAttributeClassP>(this) : nullptr;}
 
-    //! Used to avoid dynamic_cast
-    ECStructClassCP GetStructClassCP() const {return _GetStructClassCP();}
-    //! Used to avoid dynamic_cast
-    ECStructClassP GetStructClassP() {return _GetStructClassP();}
+    //! return ECStructClass const pointer if IsStructClass() return true else nullptr
+    ECStructClassCP GetStructClassCP() const {return IsStructClass() ? reinterpret_cast<ECStructClassCP>(this) : nullptr;}
+    //! return ECStructClass pointer if IsStructClass() return true else nullptr
+    ECStructClassP GetStructClassP() {return IsStructClass() ? reinterpret_cast<ECStructClassP>(this) : nullptr;}
 
     ECClassModifier GetClassModifier() const {return m_modifier;} //!< Returns the class modifier
     void SetClassModifier(ECClassModifier modifier) {m_modifier = modifier;} //!< Sets the class modifier
@@ -1994,7 +1981,6 @@ friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlWriter;
 
 private:
-
     bool _Validate() const override;
     bool VerifyMixinHierarchy(bool thisIsMixin, ECEntityClassCP baseAsEntity) const;
 
@@ -2002,14 +1988,11 @@ protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
-    ECEntityClass(ECSchemaCR schema) : ECClass(schema) {}
+    ECEntityClass(ECSchemaCR schema) : ECClass(ECClassType::Entity, schema) {}
     virtual ~ECEntityClass() {}
 
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
     bool _ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const override;
-    ECEntityClassCP _GetEntityClassCP() const override {return this;}
-    ECEntityClassP _GetEntityClassP() override {return this;}
-    ECClassType _GetClassType() const override {return ECClassType::Entity;}
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::EntityClass;}
     ECObjectsStatus _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true) override;
 
@@ -2052,7 +2035,7 @@ private:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is private.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
-    ECCustomAttributeClass(ECSchemaCR schema) : ECClass(schema), m_containerType(CustomAttributeContainerType::Any) {}
+    ECCustomAttributeClass(ECSchemaCR schema) : ECClass(ECClassType::CustomAttribute, schema), m_containerType(CustomAttributeContainerType::Any) {}
     virtual ~ECCustomAttributeClass () {}
 
     bool _Validate() const override {return true;}
@@ -2061,9 +2044,6 @@ protected:
     SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
     bool _ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const override;
-    ECClassType _GetClassType() const override {return ECClassType::CustomAttribute;}
-    ECCustomAttributeClassCP _GetCustomAttributeClassCP() const override {return this;}
-    ECCustomAttributeClassP _GetCustomAttributeClassP() override {return this;}
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::CustomAttributeClass;}
 
 public:
@@ -2094,16 +2074,13 @@ private:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is private.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
-    ECStructClass(ECSchemaCR schema) : ECClass(schema) {}
+    ECStructClass(ECSchemaCR schema) : ECClass(ECClassType::Struct, schema) {}
     virtual ~ECStructClass () {}
 
     bool _Validate() const override {return true;}
 
 protected:
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
-    ECClassType _GetClassType() const override {return ECClassType::Struct;}
-    ECStructClassCP _GetStructClassCP() const override {return this;}
-    ECStructClassP _GetStructClassP() override {return this;}
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::StructClass;}
 };
 
@@ -2365,7 +2342,7 @@ private:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is private.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
     //  of a schema.
-    ECRelationshipClass(ECSchemaCR schema, bool verify = true) : ECClass(schema), m_strength(StrengthType::Referencing), m_strengthDirection(ECRelatedInstanceDirection::Forward), m_verify(verify), m_verified(false)
+    ECRelationshipClass(ECSchemaCR schema, bool verify = true) : ECClass(ECClassType::Relationship, schema), m_strength(StrengthType::Referencing), m_strengthDirection(ECRelatedInstanceDirection::Forward), m_verify(verify), m_verified(false)
         {
         m_source = new ECRelationshipConstraint(this, true, verify);
         m_target = new ECRelationshipConstraint(this, false, verify);
@@ -2386,9 +2363,6 @@ protected:
     SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
     SchemaReadStatus _ReadXmlContents(BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<Utf8String>& droppedAliases, bvector<NavigationECPropertyP>& navigationProperties) override;
 
-    ECRelationshipClassCP _GetRelationshipClassCP() const override {return this;}
-    ECRelationshipClassP _GetRelationshipClassP()  override {return this;}
-    ECClassType _GetClassType() const override {return ECClassType::Relationship;}
     ECObjectsStatus _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true) override;
     ECObjectsStatus _RemoveBaseClass(ECClassCR baseClass) override {m_verified = false; return ECClass::_RemoveBaseClass(baseClass);}
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::RelationshipClass;}

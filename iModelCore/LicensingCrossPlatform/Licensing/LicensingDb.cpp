@@ -11,6 +11,7 @@
 #include "Logging.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
+USING_NAMESPACE_BENTLEY_SQLITE
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
