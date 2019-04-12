@@ -40,7 +40,7 @@
       </Bindings>
     </Part>
     
-    <Part Name="ClassificationSystemsElements" BentleyBuildMakeFile="Elements/ClassificationSystemsElements.mke" ApiNumber="B02">
+    <Part Name="ClassificationSystemsElements" BentleyBuildMakeFile="Elements/ClassificationSystemsElements.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="ClassificationSystemsApi"/>
         <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
@@ -50,7 +50,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="ClassificationSystemsHandlers" BentleyBuildMakeFile="Handlers/ClassificationSystemsHandlers.mke" ApiNumber="B02">
+    <Part Name="ClassificationSystemsHandlers" BentleyBuildMakeFile="Handlers/ClassificationSystemsHandlers.mke" ApiNumber="M02">
       <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
       <SubPart PartName="ClassificationSystemsElements"/>
       <Bindings>
@@ -127,7 +127,7 @@
       </Bindings>
     </Part>
   
-    <Part Name="ClassificationSystemsDomain" BentleyBuildMakeFile="Domain/ClassificationSystemsDomain.mke" ApiNumber="B02">
+    <Part Name="ClassificationSystemsDomain" BentleyBuildMakeFile="Domain/ClassificationSystemsDomain.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="ClassificationSystemsHandlers"/>
         <SubPart PartName="ClassificationSystemsSchema"/>

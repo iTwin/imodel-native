@@ -12,7 +12,7 @@
     </Part>
 
     <Part Name="BuildingSpatialSchema" >
-        <SubPart PartName="BuildingSpatial" Repository="BisSchemas" PartFile="BisSchemas" />
+        <SubPart PartName="BuildingSpatial" Repository="BisSchemas" PartFile="BisSchemasIModelCore" />
     </Part>
 
     <Part Name="BuildingSpatialApi" BentleyBuildMakeFile="BuildingSpatialApi.prewire.mke">
@@ -72,7 +72,7 @@
       <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
       <SubPart PartName="BuildingSpatial"/>
       <SubPart PartName="BuildingSpatialDomain"/>
-      <SubPart PartName="SpatialCompositionDomain" Repository="DgnDomains-SpatialComposition" PartFile="SpatialComposition" />
+      <SubPart PartName="SpatialCompositionDomain" Repository="imodel02" PartFile="Domains/SpatialComposition/SpatialComposition" />
       <SubPart PartName="ClassificationSystemsDomain" Repository="imodel02" PartFile="Domains/ClassificationSystems/ClassificationSystems"/>
       <Bindings>
         <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="BuildingSpatial/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
@@ -88,7 +88,7 @@
       </Bindings>
     </Part>
     
-    <Part Name="BuildingSpatialHandlers" BentleyBuildMakeFile="Handlers/BuildingSpatialHandlers.mke" ApiNumber="B02">
+    <Part Name="BuildingSpatialHandlers" BentleyBuildMakeFile="Handlers/BuildingSpatialHandlers.mke" ApiNumber="M02">
         <SubPart PartName="BuildingSpatialElements"/>
         <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
         <Bindings>
@@ -97,7 +97,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="BuildingSpatialDomain" BentleyBuildMakeFile="Domain/BuildingSpatialDomain.mke" ApiNumber="B02">
+    <Part Name="BuildingSpatialDomain" BentleyBuildMakeFile="Domain/BuildingSpatialDomain.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="BuildingSpatialSchema" />
         <SubPart PartName="BuildingSpatialHandlers"/>
@@ -107,7 +107,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="BuildingSpatialElements" BentleyBuildMakeFile="Elements/BuildingSpatialElements.mke" ApiNumber="B02">
+    <Part Name="BuildingSpatialElements" BentleyBuildMakeFile="Elements/BuildingSpatialElements.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="BuildingSpatialApi"/>
         <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
