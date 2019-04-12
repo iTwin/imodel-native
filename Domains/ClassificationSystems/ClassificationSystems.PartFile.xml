@@ -40,22 +40,22 @@
       </Bindings>
     </Part>
     
-    <Part Name="ClassificationSystemsElements" BentleyBuildMakeFile="Elements/ClassificationSystemsElements.mke">
+    <Part Name="ClassificationSystemsElements" BentleyBuildMakeFile="Elements/ClassificationSystemsElements.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="ClassificationSystemsApi"/>
         <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
         <Bindings>
             <Libs>Delivery/$(libprefix)ClassificationSystemsElements$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)ClassificationSystemsElements$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)ClassificationSystemsElements$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="ClassificationSystemsHandlers" BentleyBuildMakeFile="Handlers/ClassificationSystemsHandlers.mke">
+    <Part Name="ClassificationSystemsHandlers" BentleyBuildMakeFile="Handlers/ClassificationSystemsHandlers.mke" ApiNumber="M02">
       <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
       <SubPart PartName="ClassificationSystemsElements"/>
       <Bindings>
         <Libs>Delivery/$(libprefix)ClassificationSystemsHandlers$(libext)</Libs>
-        <Assemblies>Delivery/$(shlibprefix)ClassificationSystemsHandlers$(shlibext)</Assemblies>
+        <Assemblies>Delivery/$(shlibprefix)ClassificationSystemsHandlers$(ApiNumber)$(shlibext)</Assemblies>
       </Bindings>
     </Part>
         
@@ -127,14 +127,15 @@
       </Bindings>
     </Part>
   
-    <Part Name="ClassificationSystemsDomain" BentleyBuildMakeFile="Domain/ClassificationSystemsDomain.mke">
+    <Part Name="ClassificationSystemsDomain" BentleyBuildMakeFile="Domain/ClassificationSystemsDomain.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="ClassificationSystemsHandlers"/>
+        <SubPart PartName="ClassificationSystemsSchema"/>
         <SubPart PartName="BeJsonCpp" Repository="imodel02" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"/>
         <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
         <Bindings>
             <Libs>Delivery/$(libprefix)ClassificationSystemsDomain$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)ClassificationSystemsDomain$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)ClassificationSystemsDomain$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     

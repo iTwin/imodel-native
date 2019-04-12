@@ -32,7 +32,7 @@ void ECClass::SetErrorHandling (bool doAssert)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECClass::ECClass (ECSchemaCR schema) : m_schema(schema), m_modifier(ECClassModifier::None), m_xmlComments(), m_contentXmlComments() { }
+ECClass::ECClass (ECClassType classType, ECSchemaCR schema) : m_classType(classType), m_schema(schema), m_modifier(ECClassModifier::None), m_xmlComments(), m_contentXmlComments() { }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

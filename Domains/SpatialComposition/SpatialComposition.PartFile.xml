@@ -7,13 +7,12 @@
     <Part Name="SpatialComposition">
         <SubPart PartName="SpatialCompositionSchema"/>
         <SubPart PartName="SpatialCompositionApi"/>
+        <SubPart PartName="SpatialCompositionDomain"/>
+        <SubPart PartName="SpatialCompositionElements"/>
     </Part>
 
-    <Part Name="SpatialCompositionSchema" BentleyBuildMakeFile="SpatialCompositionSchema.prewire.mke">
-        <SubPart PartName="AecUnitsPublicAPI" Repository="imodel02" PartFile="Domains/AecUnits/AecUnits" />
-        <Bindings>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain">ECSchemas/Domain/SpatialComposition*.xml</Files>
-        </Bindings>
+    <Part Name="SpatialCompositionSchema">
+        <SubPart PartName="SpatialComposition" Repository="BisSchemas" PartFile="BisSchemasIModelCore" />
     </Part>
 
     <Part Name="SpatialCompositionApi" BentleyBuildMakeFile="SpatialCompositionApi.prewire.mke">
@@ -22,13 +21,22 @@
         </Bindings>
     </Part>
     
-    <Part Name="SpatialCompositionElements" BentleyBuildMakeFile="Elements/SpatialCompositionElements.mke">
+    <Part Name="SpatialCompositionElements" BentleyBuildMakeFile="Elements/SpatialCompositionElements.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="SpatialCompositionApi"/>
         <SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
         <Bindings>
             <Libs>Delivery/$(libprefix)SpatialCompositionElements$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)SpatialCompositionElements$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)SpatialCompositionElements$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="SpatialCompositionDomain" BentleyBuildMakeFile="Domain/SpatialCompositionDomain.mke" ApiNumber="M02">
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="SpatialCompositionSchema" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)SpatialCompositionDomain$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)SpatialCompositionDomain$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     

@@ -26,6 +26,9 @@
         <SubPart PartName="BuildingPhysicalPublicAPI"/>
         <SubPart PartName="AecUnitsDomain"             PartFile="Domains/AecUnits/AecUnits"              Repository="imodel02"/>
         <SubPart PartName="BuildingSpatialDomain" Repository="imodel02" PartFile="Domains/BuildingSpatial/BuildingSpatial" />
+        <SubPart PartName="SpatialCompositionDomain" Repository="imodel02" PartFile="Domains/SpatialComposition/SpatialComposition" />
+        <SubPart PartName="ClassificationSystemsDomain" Repository="imodel02" PartFile="Domains/ClassificationSystems/ClassificationSystems" />
+        <SubPart PartName="GeometryManipulationStrategies" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
         <!--SubPart PartName="ConstraintModelSchema"      PartFile="ConstraintSystem"      Repository="DgnDomains-ConstraintSystem"/-->
         <SubPart PartName="Grids"                      PartFile="Domains/Grids/Grids"                 Repository="imodel02"/>
         <SubPart PartName="StructuralDomainDLL"        PartFile="Domains/Structural/StructuralDomains"     Repository="imodel02"/>
@@ -135,6 +138,7 @@
         <!--<SubPart PartName="SpacePlanningDomain"             PartFile="BuildingSpacePlanning"    Repository="DgnDomains-BuildingSpacePlanning"/> -->
         <SubPart PartName="ClassificationSystemsDomain" Repository="imodel02" PartFile="Domains/ClassificationSystems/ClassificationSystems" />
         <SubPart PartName="BuildingSpatialDomain"           Repository="imodel02" PartFile="Domains/BuildingSpatial/BuildingSpatial" />
+        <SubPart PartName="SpatialCompositionDomain"        Repository="imodel02" PartFile="Domains/SpatialComposition/SpatialComposition" />
         <SubPart PartName="StructuralDomainDLL"             PartFile="Domains/Structural/StructuralDomains"        Repository="imodel02"/>
         <SubPart PartName="ProfilesDomainDLL"               PartFile="Domains/Profiles/ProfilesDomain"           Repository="imodel02"/>
         <SubPart PartName="FormsDomainDLL"                  PartFile="Domains/Forms/FormsDomain"              Repository="imodel02"/>

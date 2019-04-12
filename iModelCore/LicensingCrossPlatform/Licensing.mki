@@ -32,6 +32,7 @@ Headers + $(PublicApiDir)Utils/SCVWritter.h
 Headers + $(PublicApiDir)Utils/TimeRetriever.h
 Headers + $(PublicApiDir)Utils/UrlSafeBase64Utilities.h
 Headers + $(PublicApiDir)Utils/DateHelper.h
+Headers + $(PublicApiDir)Utils/FeatureEvent.h
 Headers + $(SourceDir)Providers/IPolicyProvider.h
 Headers + $(SourceDir)Providers/PolicyProvider.h
 Headers + $(SourceDir)Providers/IBuddiProvider.h
@@ -40,8 +41,6 @@ Headers + $(SourceDir)Providers/IAuthHandlerProvider.h
 Headers + $(SourceDir)Providers/AuthHandlerProvider.h
 Headers + $(SourceDir)Providers/IUlasProvider.h
 Headers + $(SourceDir)Providers/UlasProvider.h
-Headers + $(SourceDir)Utils/FeatureEvent.h
-
 
 #---------------------------------------------------------------------------------------+
 #   Files to compile 

@@ -7,7 +7,7 @@
         <SubPart PartName="RunGtest" />
     </Part>
 
-    <Part Name="iModelJs" BentleyBuildMakeFile="iModelJs.mke" ApiNumber="B02">
+    <Part Name="iModelJs" BentleyBuildMakeFile="iModelJs.mke" ApiNumber="M02">
         <RequiredRepository>Libsrc-websocketpp</RequiredRepository>
 
         <SubPart PartName="WebSocketPP" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
@@ -35,7 +35,7 @@
     <!-- ========================================================================================================
       Platform-specific apps IOS
      ======================================================================================================== -->
-    <Part Name="iModelJsHost" BentleyBuildMakeFile="nonport/Native/IModelJsHost.mke" ApiNumber="B02">
+    <Part Name="iModelJsHost" BentleyBuildMakeFile="nonport/Native/IModelJsHost.mke" ApiNumber="M02">
            <SubPart PartName="iModelJs" LibType="Static" />
            <Bindings>
             <PublicAPI ProductDirectoryName="iModelJsHostPublicAPI" Domain="iModelJsHost" />
@@ -222,7 +222,7 @@
         BentleyBuildMakeFile="${SrcRoot}imodel02/iModelCore/BeGTest/uwp/MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=iModelJs -dTEST_COLLECTION_PRODUCT=iModelJs-Tests -dTEST_FRAMEWORK_SQLANG=iModelJsNodeAddon_en.sqlang.db3"
         OnlyPlatforms="WinRT*"
-        ApiNumber="B02"
+        ApiNumber="M02"
         >
         <SubProduct ProductName="iModelJs-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>

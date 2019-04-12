@@ -13,6 +13,8 @@ struct ClassificationSystemsTestsBase : BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::
         virtual BeFileName GetGivenProjectPath() override;
         virtual void CopyFile(BeFileName projectPath) override;
         static void SetUpTestCase();
+
+        static ClassificationTablePtr CreateAndInsertTable(Dgn::DgnDbR db);
     };
 
 END_CLASSIFICATIONSYSTEMS_NAMESPACE

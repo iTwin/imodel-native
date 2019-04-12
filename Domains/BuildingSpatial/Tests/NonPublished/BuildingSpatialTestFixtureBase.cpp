@@ -13,6 +13,7 @@
 #include <DgnView/DgnViewLib.h>
 #include <DgnPlatform/FunctionalDomain.h>
 #include <BuildingSpatial/Domain/BuildingSpatialDomain.h>
+#include <SpatialComposition/Domain/SpatialCompositionDomain.h>
 #include <DgnPlatform/DgnPlatformAPI.h>
 #include "BuildingSpatialTestFixtureBase.h"
 
@@ -32,6 +33,7 @@ USING_NAMESPACE_BUILDINGSPATIAL
 void StaticRegisterDomains()
     {
     DgnDomains::RegisterDomain(Dgn::FunctionalDomain::GetDomain(), DgnDomain::Required::Yes);
+    DgnDomains::RegisterDomain(SPATIALCOMPOSITION_NAMESPACE_NAME::SpatialCompositionDomain::GetDomain(), DgnDomain::Required::Yes);
     DgnDomains::RegisterDomain(BuildingSpatialDomain::GetDomain(), DgnDomain::Required::Yes);
     }
 //---------------------------------------------------------------------------------------

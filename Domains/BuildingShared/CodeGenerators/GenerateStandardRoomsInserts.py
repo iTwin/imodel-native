@@ -4,8 +4,50 @@
 import sys
 import xml.etree.ElementTree as ET
 import os.path
-
+from datetime import datetime
 from collections import defaultdict
+
+helpOutput = '''
+GenerateClassificationInserts.py [--help] InputFilePath OutputFilePath
+
+Takes classification xml file, located in InputFilePath and parses it to C++ insert methods located at OutputFilePath
+
+Options:
+    --help     Shows this help message and exit terminates this script
+'''
+
+fileTemplate = '''/*--------------------------------------------------------------------------------------+
+|
+|  $Source: CodeGenerators/GenerateStandardRoomsInserts.py $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+//===========================================================================================
+// WARNING: This is an automatically generated code for building classification inserts 
+// WARNING: To generate, call "bb -r BuildingShared -f BuildingShared -p CodeGenerators b -c"
+//===========================================================================================
+
+
+#include <ClassificationSystems/ClassificationSystemsApi.h>
+#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h> 
+
+
+namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
+
+BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
+
+void ClassificationSystemsDomain::InsertStandardDefinitionSystems(Dgn::DgnDbR db) const
+    {{
+    ClassificationSystemPtr system;
+    ClassificationTablePtr table;
+    ClassificationGroupPtr group;
+
+{code}
+    }}
+
+END_CLASSIFICATIONSYSTEMS_NAMESPACE
+'''
 
 def Insert(standardDict, standard, name, category):
     if standard not in standardDict:
@@ -13,42 +55,13 @@ def Insert(standardDict, standard, name, category):
     standardDict[standard][category].append(name)
 
 if (len(sys.argv) < 2) or (not os.path.isfile(sys.argv[1])) or (sys.argv[1] == '--help'):
-    print("GenerateClassificationInserts.py [--help] InputFilePath OutputFilePath\
-\n\nTakes classification xml file, located in InputFilePath and parses it to C++ \
-insert methods located at OutputFilePath\
-\n\nOptions:\n  --help     Shows this help message and exit terminates this script")
+    print(helpOutput)
     sys.exit()
+
 tree = ET.parse(sys.argv[1])
 root = tree.getroot()
-f = open(sys.argv[2], 'w')
-f.write('''/*--------------------------------------------------------------------------------------+
-|
-|  $Source: CodeGenerators/GenerateStandardRoomsInserts.py $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
-|
-+--------------------------------------------------------------------------------------*/
-//===========================================================================================
-// WARNING: This is an automatically generated code for building classification inserts 
-// WARNING: To generate, call "bb -r BuildingShared -f BuildingShared -p CodeGenerators b -c"
-//===========================================================================================\n
-
-#include <ClassificationSystems/ClassificationSystemsApi.h>
-#include <DgnClientFx/DgnClientApp.h>
-#include <BuildingShared\BuildingSharedApi.h>
-
-
-namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
-
-BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE\n''')
-
-
-f.write('void ClassificationSystemsDomain::InsertStandardDefinitionSystems(Dgn::DgnDbR db) const\n')
-f.write('    {\n')
-f.write('    ClassificationSystemPtr system;\n')
-f.write('    ClassificationGroupPtr group;\n')
-
 roomDict = {}
+code = ""
 for standardRoom in root.find('List').findall('StandardRoom'):
     name = standardRoom.find('Name').text
     category = standardRoom.find('Category').text
@@ -58,16 +71,27 @@ for standardRoom in root.find('List').findall('StandardRoom'):
     elif calcStandard == 'eASHRAE':
         catalogue = standardRoom.find('Catalogue').text
         Insert(roomDict, ('ASHRAE'+catalogue), name, category)
+
 for standard in roomDict:
-    output = "    system = InsertSystem(db, \""+standard+"\");\n"
-    f.write(output);
+    code += '    system = InsertSystem(db, "{standard}");\n'.format(standard=standard)
+    code += '    table = InsertTable(*system, "{standard} Table");\n'.format(standard=standard)
+
     for category in roomDict[standard]:
-        output = "    group = InsertGroup(*system, \""+category+"\");\n"
-        f.write(output);
+        code += '\n    group = InsertGroup(*table, "{category}");\n'.format(category = category)
+
         for name in roomDict[standard][category]:
-            output = "    InsertClassification(*system, \""+name+"\", \""+ name +"\", \"\", group.get(), nullptr);\n"
-            f.write(output);
-f.write('    }\n\nEND_CLASSIFICATIONSYSTEMS_NAMESPACE\n')
+            code += '    InsertClassification(*table, "{name}", "{name}", "", group.get(), nullptr);\n'.format(name = name)
+
+outputPath = sys.argv[2]
+
+filledTemplate = fileTemplate.format(
+    generatedFileName = os.path.basename(outputPath),
+    currentYear = datetime.now().strftime('%Y'),
+    code = code
+)
+
+f = open(outputPath, 'w')
+f.write(filledTemplate)
 f.close()
 for standard in roomDict:
     print(standard + "\n")

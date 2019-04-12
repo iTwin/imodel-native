@@ -10,7 +10,7 @@
 #include <Licensing/Licensing.h>
 #include <Bentley/BeVersion.h>
 #include <folly/BeFolly.h>
-#include "Utils/FeatureEvent.h"
+#include <Licensing/Utils/FeatureEvent.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 

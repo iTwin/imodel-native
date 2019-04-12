@@ -2,10 +2,13 @@
 |
 |     $Source: Elements/IClassified.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "PublicApi/ClassificationSystemsElements.h"
+#include "PublicApi/IClassified.h"
+#include "PublicApi/Classification.h"
+#include "PublicApi/ClassificationTable.h"
+#include "PublicApi/ClassificationSystem.h"
 
 USING_NAMESPACE_CLASSIFICATIONSYSTEMS
 USING_NAMESPACE_BUILDING_SHARED
@@ -49,11 +52,44 @@ ClassificationCPtr IClassified::GetClassification(ClassificationSystemCR system)
         if (classification.IsNull())
             continue;
 
-        if (classification->GetClassificationSystemId() == elemId)
+        ClassificationTableCPtr table = ClassificationTable::Get(db, classification->GetClassificationTableId());
+        if (table.IsNull())
+            continue;
+
+        if (table->GetClassificationSystemId() == elemId)
             return classification;
         }
 
     return nullptr;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<ClassificationCPtr> IClassified::GetClassifications(ClassificationSystemCR system) const
+    {
+    Dgn::DgnDbR db = _GetAsDgnElement().GetDgnDb();
+
+    Dgn::DgnElementId elemId = system.GetElementId();
+    BeAssert(elemId.IsValid());
+
+    bvector<ClassificationCPtr> classificationList;
+
+    for (ElementIdIteratorEntry classificationEntry : MakeClassificationsIterator())
+        {
+        ClassificationCPtr classification = Classification::Get(db, classificationEntry.GetElementId());
+        if (classification.IsNull())
+            continue;
+
+        ClassificationTableCPtr table = ClassificationTable::Get(db, classification->GetClassificationTableId());
+        if (table.IsNull())
+            continue;
+
+        if (table->GetClassificationSystemId() == elemId)
+            classificationList.push_back(classification);
+        }
+
+    return classificationList;
     }
 
 //--------------------------------------------------------------------------------------
@@ -67,10 +103,11 @@ void IClassified::AddClassification(ClassificationCR classification)
     if (IsClassifiedAs(classification))
         return;
 
-    ClassificationSystemCPtr system = classification.GetDgnDb().Elements().Get<ClassificationSystem>(classification.GetClassificationSystemId());
+    ClassificationTableCPtr table = ClassificationTable::Get(classification.GetDgnDb(), classification.GetClassificationTableId());
+    BeAssert(table.IsValid());
+
+    ClassificationSystemCPtr system = ClassificationSystem::Get(classification.GetDgnDb(), table->GetClassificationSystemId());
     BeAssert(system.IsValid());
-    if (GetClassification(*system).IsValid())
-        return;
 
     Dgn::DgnDbR db = _GetAsDgnElement().GetDgnDb();
     Dgn::DgnElementId targetId = classification.GetElementId();

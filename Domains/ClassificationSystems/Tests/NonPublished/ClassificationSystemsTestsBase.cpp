@@ -55,10 +55,33 @@ void ClassificationSystemsTestsBase::CopyFile(BeFileName projectPath)
 //---------------------------------------------------------------------------------------
 void ClassificationSystemsTestsBase::SetUpTestCase()
     {
-    BeFileName seedPath = SharedRepositoryManagerTestBase::BuildProjectPath(PROJECT_DEFAULT_NAME);
+    BeFileName seedPath = SharedRepositoryManagerTestBase::BuildProjectPath(PROJECT_SEED_NAME);
     BeFileName outPath;
     BeTest::GetHost().GetOutputRoot(outPath);
     BeFileName::CreateNewDirectory(outPath);
     seedPath.BeDeleteFile();
     CreateSeedDb(PROJECT_SEED_NAME, PROJECT_TEMP_FOLDER, &StaticRegisterDomains);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Elonas.Seviakovas               04/19
+//---------------------------------------------------------------------------------------
+ClassificationTablePtr ClassificationSystemsTestsBase::CreateAndInsertTable(Dgn::DgnDbR db)
+{
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, "Test Classification System");
+
+    Dgn::DgnDbStatus status;
+    system->Insert(&status);
+    if(status != Dgn::DgnDbStatus::Success)
+        return nullptr;
+
+    ClassificationTablePtr table = ClassificationTable::Create(*system, "Test Classification Table");
+    if (!table.IsValid())
+        return nullptr;
+
+    table->Insert(&status);
+    if (status != Dgn::DgnDbStatus::Success)
+        return nullptr;
+
+    return table;
+}
