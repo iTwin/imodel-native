@@ -79,8 +79,8 @@ describe("DataValidationTests", () => {
                     const mm = mms[mml];
                     if (dsManager.ignore(mm.name)) {
                         mms.splice(mml, 1);
-                    } 
-                }        
+                    }
+                }
                 if (mms.length === 0)
                     compare = true;
                 reporter.addResult(dt.name, compare, mms, dt.lhsPath, dt.rhsPath, dt.basePath);

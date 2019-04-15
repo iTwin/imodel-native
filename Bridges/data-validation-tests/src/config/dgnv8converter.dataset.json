@@ -1,0 +1,13 @@
+{
+    "name": "Paths for each stream",
+    "bim0200": {
+        "input": "//bentley/shares/Temp/MajdU/ConversionDataset",
+        "latest": "",
+        "previous": ""
+    },
+    "imodel02": {
+        "input": "//bentley/shares/Temp/MajdU/ConversionDataset",
+        "latest": "//bentley.com/shares/Temp/MajdU/imodel02Output/latest",
+        "previous": "//bentley.com/shares/Temp/MajdU/imodel02Output/previous"
+    }
+}
