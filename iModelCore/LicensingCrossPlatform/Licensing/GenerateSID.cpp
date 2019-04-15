@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/Licensing/GenerateSID.cpp $
+|     $Source: Licensing/GenerateSID.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "GenerateSID.h"
@@ -12,6 +12,14 @@
 #include <Bentley/WString.h>
 
 #include <openssl/evp.h>
+
+#if ! defined(SIZEOF_WCHAR)
+#if WCHAR_MAX > 0x10000
+#define SIZEOF_WCHAR 4
+#else
+#define SIZEOF_WCHAR 2
+#endif
+#endif
 
 USING_NAMESPACE_BENTLEY_LICENSING
 
@@ -92,7 +100,7 @@ std::vector<Byte> GenerateSID::CalculateHash(std::vector<Byte> byteString) const
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod
+* @bsimethod                                                        Jason.Wichert 4/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String GenerateSID::GenerateSHA1Hash(Utf8StringCR inputString) const
     {
@@ -108,13 +116,30 @@ Utf8String GenerateSID::GenerateSHA1Hash(Utf8StringCR inputString) const
 
     memcpy(&result[0], fullString.c_str(), result.size());
 
+    // on linux and macOS, wchar_t has a byte size of 4, on windows it is 2
+    std::vector<Byte> adjustedResult;
+#if SIZEOF_WCHAR == 2
+    adjustedResult = result;
+#else
+    // make byte array the same as in windows, to get an identical hash result
+    adjustedResult.resize(result.size() / 2);
+
+    int j = 0;
+    for (int i = 0; i < result.size(); i += 2)
+        {
+        // take just the first 2 bytes of the array
+        adjustedResult[j++] = result[i++];
+        adjustedResult[j++] = result[i++];
+        }
+#endif
+
     for (int i = 0; i < NUM_SHA1HASH_ITERATIONS; i++)
         {
-        data = result;
-        result = CalculateHash(data);
+        data = adjustedResult;
+        adjustedResult = CalculateHash(data);
         }
 
-    return Base64Utilities::Encode((Utf8CP) &result[0], result.size());
+    return Base64Utilities::Encode((Utf8CP) &adjustedResult[0], adjustedResult.size());
     }
 
 /*--------------------------------------------------------------------------------------+
