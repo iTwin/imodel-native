@@ -144,7 +144,7 @@ def callEachStrategy(args, config, verData):
                 continue
 
             # Installers are expensive... try to short-circuit.
-            if ('has_installers' not in stratConfig) or (stratConfig['has_installers'] != 'true'):
+            if ('has_installers' not in stratConfig) or (stratConfig['has_installers'] not in ['basic', 'bundle']):
                 print('INFO: Not creating installers for ' + stratConfig['name'] + ' because configuration does not indicate it creates any.')
                 continue
             
@@ -157,7 +157,10 @@ def callEachStrategy(args, config, verData):
             bbEnv = os.environ.copy()
             bbEnv['INSTALLER_SKIP_VALIDATION'] = '1'
 
-            action = 'buildinstallset'
+            if stratConfig['has_installers'] == 'basic':
+                action = 'buildinstallset'
+            else: # bundle
+                action = ['buildinstallset', 'bundlebuild get', 'bundlebuild build']
         elif 'diffreport' == args.action:
             action = 'diffreport ' + args.bdf1 + ' ' + args.bdf2 + ' ' '--outputPath=' + args.diffOutDir
         elif 'clean' == args.action:
@@ -171,10 +174,19 @@ def callEachStrategy(args, config, verData):
 
         archArg = ('-a ' + (args.arch if args.arch else stratConfig['archs'])) if not noArch else ''
 
-        cmd = getBBCmd() + ' -v {0} -s "{1}" {2} {3}'.format(args.verbosity, bbStrats, archArg, action)
-        print(cmd)
+        if not isinstance(action, list):
+            action = [action]
+
         cmdStartTime = time.time()
-        status = subprocess.call(cmd, shell=True, env=(bbEnv if bbEnv else os.environ))
+
+        for currAction in action:
+            cmd = getBBCmd() + ' -v {0} -s "{1}" {2} {3}'.format(args.verbosity, bbStrats, archArg, currAction)
+            print(cmd)
+            
+            status = subprocess.call(cmd, shell=True, env=(bbEnv if bbEnv else os.environ))
+            if status != 0:
+                break
+        
         callTimes[stratConfig['name']] = doubleToTimeString(cmdStartTime, time.time())
         
         # On Linux, `bash` seems to return 256 on an error, regardless of what the SH script actually returns.
