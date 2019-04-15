@@ -1165,7 +1165,8 @@ void SimplifyGraphic::ClipAndProcessBody(IBRepEntityCR geom)
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
         unhandled = IGeometryProcessor::UnhandledPreference::BRep;
 
-    bool isSolidOrSheet = (IBRepEntity::EntityType::Sheet == geom.GetEntityType() || IBRepEntity::EntityType::Solid == geom.GetEntityType());
+    auto entityType = geom.GetEntityType();
+    bool isSolidOrSheet = (IBRepEntity::EntityType::Sheet == entityType || IBRepEntity::EntityType::Solid == entityType);
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled) && doClipping && isSolidOrSheet) // Already had a chance at un-clipped solid...
         {

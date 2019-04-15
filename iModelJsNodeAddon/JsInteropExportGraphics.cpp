@@ -12,102 +12,135 @@
 using namespace IModelJsNative;
 
 //=======================================================================================
-// @bsistruct                                                   Matt.Gooding    02/19
+// @bsistruct                                                   Matt.Gooding    04/19
+//=======================================================================================
+struct IntermediateMesh
+{
+uint32_t                        m_indexCount;
+uint32_t                        m_pointCount;
+uint32_t                        m_normalCount;
+// Indices are zero-based, no blocking, no sign for edge visibility
+std::unique_ptr<DPoint3d[]>     m_points;
+std::unique_ptr<int32_t[]>      m_pointIndices;
+std::unique_ptr<FPoint3d[]>     m_normals;
+std::unique_ptr<int32_t[]>      m_normalIndices;
+std::unique_ptr<FPoint2d[]>     m_params; // No index array, already unified with point indices
+
+IntermediateMesh(PolyfaceQueryCR pf, TransformCR transform, std::unique_ptr<FPoint2d[]>&& srcParams)
+    :
+    m_indexCount((uint32_t)(pf.GetPointIndexCount() - (pf.GetPointIndexCount() / 4))), // no blocking in output
+    m_pointCount((uint32_t) pf.GetPointCount()),
+    m_normalCount((uint32_t) pf.GetNormalCount()),
+    m_points(new DPoint3d[m_pointCount]),
+    m_pointIndices(new int32_t[m_indexCount]),
+    m_normals(new FPoint3d[m_normalCount]),
+    m_normalIndices(new int32_t[m_indexCount]),
+    m_params(std::move(srcParams))
+    {
+    bool isIdentity = transform.IsIdentity();
+    bool isMirrored = !isIdentity && transform.Determinant() < 0;
+    // Account for potential winding order change with mirroring transform
+    uint32_t indexOffset1 = isMirrored ? 2 : 1;
+    uint32_t indexOffset2 = isMirrored ? 1 : 2;
+
+    // Remove blocking, switch to zero-index, discard edge visibility
+    uint32_t srcIndexCount = (uint32_t) pf.GetPointIndexCount();
+    int32_t const* srcPointIndices = pf.GetPointIndexCP();
+    for (uint32_t dst = 0, src = 0; src < srcIndexCount; src += 4, dst += 3)
+        {
+        m_pointIndices[dst]     = abs(srcPointIndices[src]) - 1;
+        m_pointIndices[dst + 1] = abs(srcPointIndices[src + indexOffset1]) - 1;
+        m_pointIndices[dst + 2] = abs(srcPointIndices[src + indexOffset2]) - 1;
+        }
+
+    // Remove blocking, switch to zero-index (no sign visibility on normals)
+    int32_t const* srcNormalIndices = pf.GetNormalIndexCP();
+    for (uint32_t dst = 0, src = 0; src < srcIndexCount; src += 4, dst += 3)
+        {
+        m_normalIndices[dst]        = srcNormalIndices[src] - 1;
+        m_normalIndices[dst + 1]    = srcNormalIndices[src + indexOffset1] - 1;
+        m_normalIndices[dst + 2]    = srcNormalIndices[src + indexOffset2] - 1;
+        }
+
+    // No work needed for params - if necessary, mirroring transform is applied at creation time in _ProcessPolyface
+
+    memcpy (m_points.get(), pf.GetPointCP(), sizeof(DPoint3d) * m_pointCount);
+    if (!isIdentity) transform.Multiply(m_points.get(), (int)m_pointCount);
+
+    RotMatrix normalMatrix = RotMatrix::From(transform);
+    isIdentity = normalMatrix.IsIdentity(); // check if it was just translation
+    if (!isIdentity) normalMatrix.Invert();
+
+    DPoint3dCP srcNormals = pf.GetNormalCP();
+    for (uint32_t i = 0; i < m_normalCount; ++i)
+        {
+        DPoint3d tmpNormal = srcNormals[i];
+        if (!isIdentity) { normalMatrix.MultiplyTranspose(tmpNormal); tmpNormal.Normalize(); }
+        m_normals[i] = FPoint3d::From(tmpNormal);
+        }
+    }
+}; // IntermediateMesh
+
+//=======================================================================================
+// @bsistruct                                                   Matt.Gooding    04/19
 //=======================================================================================
 struct ExportGraphicsMesh
 {
-    bvector<int>        m_indices;
-    bvector<DPoint3d>   m_points;
-    bvector<FPoint3d>   m_normals;
-    bvector<FPoint2d>   m_params;
+bvector<int>        indices;
+bvector<double>     points;
+bvector<float>      normals;
+bvector<float>      params;
 
-    void Add(ExportGraphicsMesh const& rhs)
-        {
-        int32_t pointOffset = (int32_t)m_points.size();
-        m_indices.reserve(m_indices.size() + rhs.m_indices.size());
-        for (int i = 0; i < (int)rhs.m_indices.size(); ++i)
-            m_indices.push_back(rhs.m_indices[i] + pointOffset);
-
-        m_points.resize(m_points.size() + rhs.m_points.size());
-        memcpy (&m_points[pointOffset], &rhs.m_points[0], sizeof(DPoint3d) * rhs.m_points.size());
-
-        m_normals.resize(m_normals.size() + rhs.m_normals.size());
-        memcpy (&m_normals[pointOffset], &rhs.m_normals[0], sizeof(FPoint3d) * rhs.m_normals.size());
-
-        m_params.resize(m_params.size() + rhs.m_params.size());
-        memcpy (&m_params[pointOffset], &rhs.m_params[0], sizeof(FPoint2d) * rhs.m_params.size());
-        }
+void AddVertex(DPoint3dCR p, FPoint3dCR n, FPoint2dCR uv)
+    {
+    indices.push_back((int32_t)points.size() / 3);
+    points.insert(points.end(), { p.x, p.y, p.z });
+    normals.insert(normals.end(), { n.x, n.y, n.z });
+    params.insert(params.end(), { uv.x, uv.y });
+    }
 };
 
-//=======================================================================================
-// @bsistruct                                                   Matt.Gooding    02/19
-//=======================================================================================
-struct FastVertexUnifier
-{
-    struct NodeEntry
-    {
-        int32_t newIndex; int32_t normal; FPoint2d param;
-    };
-
-    struct Node // each node is 64 bytes for cache alignment
-    {
-        constexpr static uint32_t ENTRY_COUNT = 4;
-
-        NodeEntry entries[ENTRY_COUNT];
-    };
-
-    // Indices are zero-based, no blocking, no sign for edge visibility
-    bvector<DPoint3d>           m_inPoints;
-    bvector<int32_t>            m_inPointIndices;
-    bvector<FPoint3d>           m_inNormals;
-    bvector<int32_t>            m_inNormalIndices;
-    // No index array, already unified with point indices
-    bvector<FPoint2d>           m_inParams;
-
-    // Unified indices + corresponding data
-    ExportGraphicsMesh          m_output;
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Matt.Gooding    02/19
+* @bsimethod                                                    Matt.Gooding    04/19
 * Linear speed unification of vertex indices. Each point has ENTRY_COUNT remappings
 * that can be saved. After that, just add additional vertices for each normal/param
 * combination - ROI on further remapping is poor.
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Unify()
+static void unifyIndices(IntermediateMesh const& inMesh, ExportGraphicsMesh& outMesh)
     {
-    std::unique_ptr<Node[]> remapper(new Node[m_inPoints.size()]);
-    memset(remapper.get(), 0, sizeof(Node) * m_inPoints.size());
+    struct NodeEntry { int32_t newIndex; int32_t normal; FPoint2d param; };
+    constexpr static uint32_t NODE_ENTRY_COUNT = 8;
+    struct Node { NodeEntry entries[NODE_ENTRY_COUNT]; }; // each node is 128 bytes for cache alignment
+
+    std::unique_ptr<Node[]> remapper(new Node[inMesh.m_pointCount]);
+    memset(remapper.get(), 0, sizeof(Node) * inMesh.m_pointCount);
 
     // Reserve for at least best case compression
-    m_output.m_points.reserve(m_inPoints.size());
-    m_output.m_normals.reserve(m_inPoints.size());
-    m_output.m_params.reserve(m_inPoints.size());
+    outMesh.points.reserve(outMesh.points.size() + inMesh.m_pointCount * 3);
+    outMesh.normals.reserve(outMesh.normals.size() + inMesh.m_pointCount * 3);
+    outMesh.params.reserve(outMesh.params.size() + inMesh.m_pointCount * 2);
 
-    // Index count will remain the same
-    uint32_t indexCount = (uint32_t) m_inPointIndices.size();
-    m_output.m_indices.resize(indexCount);
+    uint32_t indexCount = inMesh.m_indexCount;
+    outMesh.indices.reserve(outMesh.indices.size() + indexCount);
 
-    const float UV_TOLERANCE = 0.01f;
+    constexpr static float UV_TOLERANCE = 0.01f;
 
     for (uint32_t i = 0; i < indexCount; ++i)
         {
-        int32_t origPointIndex = m_inPointIndices[i];
-        int32_t origNormalIndex = m_inNormalIndices[i];
-        FPoint2d origParam = m_inParams[i];
+        int32_t origPointIndex = inMesh.m_pointIndices[i];
+        int32_t origNormalIndex = inMesh.m_normalIndices[i];
+        FPoint2d origParam = inMesh.m_params[i];
 
         bool foundRemap = false;
-        for (int j = 0; j < Node::ENTRY_COUNT; ++j)
+        for (int j = 0; j < NODE_ENTRY_COUNT; ++j)
             {
             NodeEntry& entry = remapper[origPointIndex].entries[j];
             if (entry.newIndex == 0) // unused entry
                 {
                 entry.normal = origNormalIndex;
                 entry.param = origParam;
-                entry.newIndex = (int32_t) m_output.m_points.size() + 1; // ONE-INDEX
-                m_output.m_indices[i] = (int32_t) m_output.m_points.size();
-                m_output.m_points.push_back(m_inPoints[origPointIndex]);
-                m_output.m_normals.push_back(m_inNormals[origNormalIndex]);
-                m_output.m_params.push_back(origParam);
+                entry.newIndex = (int32_t) (outMesh.points.size() / 3) + 1; // ONE-INDEX
+                outMesh.AddVertex(inMesh.m_points[origPointIndex], inMesh.m_normals[origNormalIndex], origParam);
                 foundRemap = true;
                 break;
                 }
@@ -116,7 +149,7 @@ void Unify()
                      std::abs(entry.param.y - origParam.y) < UV_TOLERANCE)
                 {
                 // reuse entry
-                m_output.m_indices[i] = entry.newIndex - 1; // ONE-INDEX
+                outMesh.indices.push_back(entry.newIndex - 1); // ONE-INDEX
                 foundRemap = true;
                 break;
                 }
@@ -124,105 +157,63 @@ void Unify()
 
         // Node for this point is full, just add another vertex.
         if (!foundRemap)
-            {
-            m_output.m_indices[i] = (int32_t) m_output.m_points.size();
-            m_output.m_points.push_back(m_inPoints[origPointIndex]);
-            m_output.m_normals.push_back(m_inNormals[origNormalIndex]);
-            m_output.m_params.push_back(origParam);
-            }
+            outMesh.AddVertex(inMesh.m_points[origPointIndex], inMesh.m_normals[origNormalIndex], origParam);
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Matt.Gooding    02/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SetInput(PolyfaceQueryCR pf, TransformCR transform, FPoint2dCP srcParams)
+//=======================================================================================
+// @bsistruct                                                   Matt.Gooding    04/19
+//=======================================================================================
+struct ExportGraphicsBuilder : SimplifyGraphic
+{
+DEFINE_T_SUPER(SimplifyGraphic);
+
+ExportGraphicsBuilder(Render::GraphicBuilder::CreateParams const& cp, IGeometryProcessorR gp, ViewContextR vc)
+    : T_Super(cp, gp, vc) { }
+virtual ~ExportGraphicsBuilder() { }
+
+// Ignore wireframe graphics, don't let SimplifyGraphic generate intermediates we always throw away
+void _AddLineString(int, DPoint3dCP) override { }
+void _AddLineString2d(int, DPoint2dCP, double) override { }
+void _AddPointString(int, DPoint3dCP) override { }
+void _AddPointString2d(int, DPoint2dCP, double) override { }
+void _AddTextString(TextStringCR) override { }
+void _AddTextString2d(TextStringCR, double) override { }
+void _AddDgnOle(Render::DgnOleDraw*) override { }
+bool _WantStrokeLineStyle(Render::LineStyleSymbCR, IFacetOptionsPtr&) override { return false; }
+bool _WantStrokePattern(PatternParamsCR) override { return false; }
+Render::GraphicPtr _Finish() override {m_isOpen = false; return nullptr;} // we don't use output, don't allocate!
+
+void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) override
+    { if (curve.params.closed) return T_Super::_AddBSplineCurve(curve, filled); }
+void _AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) override
+    { if (curve.params.closed) return T_Super::_AddBSplineCurve2d(curve, filled, zDepth); }
+
+Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip) const override
     {
-    bool isIdentity = transform.IsIdentity();
-    bool isMirror = !isIdentity && transform.Determinant() < 0;
+    auto result = new ExportGraphicsBuilder(Render::GraphicBuilder::CreateParams::Scene(GetDgnDb(),
+        Transform::FromProduct(GetLocalToWorldTransform(), subToGraphic)), m_processor, m_context);
 
-    uint32_t indexCount = (uint32_t) pf.GetPointIndexCount();
-    uint32_t indexCountWithoutBlocking = (indexCount / 4) * 3; // no blocking in output
-    m_inPointIndices.resize(indexCountWithoutBlocking); 
-    m_inNormalIndices.resize(indexCountWithoutBlocking);
-
-    // Account for potential winding order change with mirroring transform
-    uint32_t indexOffset1 = isMirror ? 2 : 1;
-    uint32_t indexOffset2 = isMirror ? 1 : 2;
-
-    // Remove blocking, switch to zero-index, discard edge visibility
-    int32_t const* srcPointIndices = pf.GetPointIndexCP();
-    for (uint32_t dst = 0, src = 0; src < indexCount; src += 4, dst += 3)
-        {
-        m_inPointIndices[dst] = abs(srcPointIndices[src]) - 1;
-        m_inPointIndices[dst + 1] = abs(srcPointIndices[src + indexOffset1]) - 1;
-        m_inPointIndices[dst + 2] = abs(srcPointIndices[src + indexOffset2]) - 1;
-        }
-
-    // Remove blocking, switch to zero-index (no sign visibility on normals)
-    int32_t const* srcNormalIndices = pf.GetNormalIndexCP();
-    for (uint32_t dst = 0, src = 0; src < indexCount; src += 4, dst += 3)
-        {
-        m_inNormalIndices[dst] = srcNormalIndices[src] - 1;
-        m_inNormalIndices[dst + 1] = srcNormalIndices[src + indexOffset1] - 1;
-        m_inNormalIndices[dst + 2] = srcNormalIndices[src + indexOffset2] - 1;
-        }
-
-    m_inParams.resize(indexCountWithoutBlocking);
-    for (uint32_t i = 0; i < indexCountWithoutBlocking; i += 3)
-        {
-        m_inParams[i] = srcParams[i];
-        m_inParams[i + 1] = srcParams[i + indexOffset1];
-        m_inParams[i + 2] = srcParams[i + indexOffset2];
-        }
-
-    DPoint3dCP srcPoints = pf.GetPointCP();
-    uint32_t pointCount = (uint32_t) pf.GetPointCount();
-    m_inPoints.resize(pointCount);
-    memcpy (&m_inPoints[0], srcPoints, sizeof(DPoint3d) * pointCount);
-    if (!isIdentity)
-        transform.Multiply(&m_inPoints[0], (int)pointCount);
-
-    RotMatrix normalMatrix = RotMatrix::From(transform);
-    isIdentity = normalMatrix.IsIdentity(); // check if it was just translation
-    if (!isIdentity)
-        normalMatrix.Invert();
-    DPoint3dCP srcNormals = pf.GetNormalCP();
-    uint32_t normalCount = (uint32_t) pf.GetNormalCount();
-    m_inNormals.resize(normalCount);
-    for (uint32_t i = 0; i < normalCount; ++i)
-        {
-        DPoint3d tmpNormal = srcNormals[i];
-        if (!isIdentity)
-            {
-            normalMatrix.MultiplyTranspose(tmpNormal);
-            tmpNormal.Normalize();
-            }
-        m_inNormals[i] = FPoint3d::From(tmpNormal);
-        }
+    result->m_currGraphicParams  = m_currGraphicParams;
+    result->m_currGeometryParams = m_currGeometryParams;
+    result->m_currGeomEntryId    = m_currGeomEntryId;
+    result->m_currClip           = (nullptr != clip ? clip->Clone(&GetLocalToWorldTransform()) : nullptr);
+    return result;
     }
-}; // FastVertexUnifier
+}; // ExportGraphicsBuilder
 
 //=======================================================================================
 // @bsistruct                                                   Matt.Gooding    02/19
 //=======================================================================================
 struct ExportGraphicsContext : NullContext
 {
-    DEFINE_T_SUPER(NullContext);
+DEFINE_T_SUPER(NullContext);
+IGeometryProcessorR m_processor;
 
-private:
-    IGeometryProcessorR m_processor;
+Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override
+    { return new ExportGraphicsBuilder(params, m_processor, *this); }
 
-    Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override
-        {
-        return new SimplifyGraphic(params, m_processor, *this);
-        }
-
-public:
-    ExportGraphicsContext(IGeometryProcessorR processor) : m_processor(processor)
-        {
-        m_purpose = processor._GetProcessPurpose();
-        }
+ExportGraphicsContext(IGeometryProcessorR processor) : m_processor(processor) {m_purpose = processor._GetProcessPurpose();}
 };
 
 //=======================================================================================
@@ -240,23 +231,14 @@ public:
         };
     bvector<CachedEntry>            m_cachedEntries;
 
-    ExportGraphicsProcessor(DgnDbR db, IFacetOptionsP facetOptions) : m_db(db), m_facetOptions(facetOptions) { }
+    ExportGraphicsProcessor(DgnDbR db, IFacetOptionsR facetOptions) : m_db(db), m_facetOptions(facetOptions) { }
     virtual ~ExportGraphicsProcessor() { }
 
 private:
-    IFacetOptionsPtr                m_facetOptions;
+    IFacetOptionsR                  m_facetOptions;
     DgnDbR                          m_db;
 
-    struct CachedMaterial
-        {
-        ColorDef    color;
-        bool        useColor;
-        bool        useAlpha;
-        Json::Value patternMap;
-        };
-    std::unordered_map<uint64_t, std::unique_ptr<CachedMaterial>> m_cachedMaterials;
-
-    IFacetOptionsP _GetFacetOptionsP() override {return m_facetOptions.get();}
+    IFacetOptionsP _GetFacetOptionsP() override {return &m_facetOptions;}
 
     UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
     UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
@@ -268,59 +250,37 @@ private:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Matt.Gooding    02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedMaterial& GetCachedMaterial(RenderMaterialId materialId)
+std::unique_ptr<Json::Value> ResolveColorAndMaterial(SimplifyGraphic& sg, ColorDef& outColor)
     {
-    std::unique_ptr<CachedMaterial>& result = m_cachedMaterials[materialId.GetValue()];
-    if (result.get()) return *result;
+    // Resolved fill color as baseline
+    outColor = sg.GetCurrentGraphicParams().GetFillColor();
 
-    result.reset(new CachedMaterial());
+    // GraphicParams material pointer will always be null since we don't have a Render::System.
+    // Look up from ID on GeometryParams instead.
+    RenderMaterialId materialId = sg.GetCurrentGeometryParams().GetMaterialId();
+    if (!materialId.IsValid()) return nullptr;
+
     RenderMaterialCPtr matElem = RenderMaterial::Get(m_db, materialId);
-    if (!matElem.IsValid())
-        {
-        result->useColor = result->useAlpha = false;
-        return *result;
-        }
+    if (!matElem.IsValid()) return nullptr;
 
     RenderingAssetCR asset = matElem->GetRenderingAsset();
     if (asset.GetBool(RENDER_MATERIAL_FlagHasBaseColor, false))
         {
         RgbFactor diffuseRgb = asset.GetColor(RENDER_MATERIAL_Color);
-        result->color.SetRed((Byte)(diffuseRgb.red * 255.0));
-        result->color.SetGreen((Byte)(diffuseRgb.green * 255.0));
-        result->color.SetBlue((Byte)(diffuseRgb.blue * 255.0));
-        result->useColor = true;
+        outColor.SetRed((Byte)(diffuseRgb.red * 255.0));
+        outColor.SetGreen((Byte)(diffuseRgb.green * 255.0));
+        outColor.SetBlue((Byte)(diffuseRgb.blue * 255.0));
         }
     if (asset.GetBool(RENDER_MATERIAL_FlagHasTransmit, false))
         {
         double transparency = asset.GetDouble(RENDER_MATERIAL_Transmit, 0.0);
-        result->color.SetAlpha((Byte)(transparency * 255.0));
-        result->useAlpha = true;
+        outColor.SetAlpha((Byte)(transparency * 255.0));
         }
 
-    result->patternMap = asset.GetPatternMap().m_value;
+    auto patternMap = asset.GetPatternMap();
+    if (!patternMap.IsValid()) return nullptr;
 
-    return *result;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Matt.Gooding    02/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef ResolveColor(SimplifyGraphic& sg, Json::Value& patternMapJson)
-    {
-    // Resolved fill color as baseline
-    ColorDef color = sg.GetCurrentGraphicParams().GetFillColor();
-
-    // GraphicParams material pointer will always be null since we don't have a Render::System.
-    // Look up from ID on GeometryParams instead.
-    RenderMaterialId materialId = sg.GetCurrentGeometryParams().GetMaterialId();
-    if (!materialId.IsValid()) return color;
-
-    CachedMaterial& cachedMaterial = GetCachedMaterial(materialId);
-    if (cachedMaterial.useColor) color.SetColorNoAlpha(cachedMaterial.color);
-    if (cachedMaterial.useAlpha) color.SetAlpha(cachedMaterial.color.GetAlpha());
-    patternMapJson = cachedMaterial.patternMap;
-
-    return color;
+    return std::unique_ptr<Json::Value>(new Json::Value(patternMap.m_value));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -333,16 +293,20 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
     if (pfQuery.GetParamIndexCP() == nullptr || pfQuery.GetParamCount() == 0) return true;
     if (pfQuery.GetMeshStyle() != MESH_ELM_STYLE_INDEXED_FACE_LOOPS) return true;
 
+    ColorDef color;
+    std::unique_ptr<Json::Value> patternMapJson = ResolveColorAndMaterial(sg, color);
+
+    uint32_t indexCount = (uint32_t)pfQuery.GetPointIndexCount();
+    uint32_t indexCountWithoutBlocking = indexCount - (indexCount / 4);
+    std::unique_ptr<FPoint2d[]> computedParams(new FPoint2d[indexCountWithoutBlocking]);
+
+    TransformCR localToWorld = sg.GetLocalToWorldTransform();
+    bool isMirrored = localToWorld.Determinant() < 0;
+
     DgnTextureId textureId;
-    Json::Value patternMapJson;
-    ColorDef color = ResolveColor(sg, patternMapJson);
-
-    uint32_t indexCountWithoutBlocking = (uint32_t)((pfQuery.GetPointIndexCount() / 4) * 3);
-    bvector<FPoint2d> effectiveParams;
-    effectiveParams.reserve(indexCountWithoutBlocking);
-
-    if (patternMapJson.isNull())
+    if (!patternMapJson.get())
         {
+        int computedParamCount = 0;
         int32_t const* srcParamIndices = pfQuery.GetParamIndexCP();
         DPoint2dCP srcParams = pfQuery.GetParamCP();
         for (uint32_t i = 0, iLimit = (uint32_t)pfQuery.GetPointIndexCount(); i < iLimit; i += 4)
@@ -350,46 +314,52 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
             for (uint32_t j = 0; j < 3; ++j)
                 {
                 DPoint2d srcParam = srcParams[srcParamIndices[i + j] - 1];
-                effectiveParams.push_back( { static_cast<float>(srcParam.x), static_cast<float>(srcParam.y) } );
+                computedParams[computedParamCount + j].x = static_cast<float>(srcParam.x);
+                computedParams[computedParamCount + j].y = static_cast<float>(srcParam.y);
                 }
+            // Apply mirror transform while constructing so we don't have to iterate through again
+            if (isMirrored) std::swap(computedParams[computedParamCount + 1], computedParams[computedParamCount + 2]);
+            computedParamCount += 3;
             }
         }
     else
         {
-        RenderingAsset::TextureMap textureMap(patternMapJson, RenderingAsset::TextureMap::Type::Pattern);
+        RenderingAsset::TextureMap textureMap(*patternMapJson.get(), RenderingAsset::TextureMap::Type::Pattern);
         Render::TextureMapping::Params textureMapParams = textureMap.GetTextureMapParams();
         textureId = textureMap.GetTextureId();
 
         bvector<DPoint2d> perFaceParams(3, DPoint2d::FromZero());
+        int computedParamCount = 0;
         for (auto visitor = PolyfaceVisitor::Attach(pfQuery); visitor->AdvanceToNextFace(); )
             {
             textureMapParams.ComputeUVParams(perFaceParams, *visitor, nullptr);
             for (int i = 0; i < 3; ++i)
-                effectiveParams.push_back( { static_cast<float>(perFaceParams[i].x), static_cast<float>(perFaceParams[i].y) } );
+                {
+                computedParams[computedParamCount + i].x = static_cast<float>(perFaceParams[i].x);
+                computedParams[computedParamCount + i].y = static_cast<float>(perFaceParams[i].y);
+                }
+            // Apply mirror transform while constructing so we don't have to iterate through again
+            if (isMirrored) std::swap(computedParams[computedParamCount + 1], computedParams[computedParamCount + 2]);
+            computedParamCount += 3;
             }
         }
 
-    FastVertexUnifier unifier;
-    unifier.SetInput(pfQuery, sg.GetLocalToWorldTransform(), &effectiveParams[0]);
-    unifier.Unify();
-
     // Bucket polyfaces together by color to save cost on NAPI transition and give users a
     // minimal number of meshes for each element.
+    ExportGraphicsMesh* exportMesh = nullptr;
     for (auto& entry : m_cachedEntries)
         {
-        if (entry.color != color || entry.textureId != textureId)
-            continue;
-
-        entry.mesh.Add(unifier.m_output);
-        return true;
+        if (entry.color != color || entry.textureId != textureId) continue;
+        exportMesh = &entry.mesh;
+        break;
+        }
+    if (exportMesh == nullptr)
+        {
+        m_cachedEntries.emplace_back(color, textureId);
+        exportMesh = &m_cachedEntries.back().mesh;
         }
 
-    m_cachedEntries.emplace_back(color, textureId);
-    ExportGraphicsMesh& cachedMesh = m_cachedEntries.back().mesh;
-    cachedMesh.m_indices = std::move(unifier.m_output.m_indices);
-    cachedMesh.m_points = std::move(unifier.m_output.m_points);
-    cachedMesh.m_normals = std::move(unifier.m_output.m_normals);
-    cachedMesh.m_params = std::move(unifier.m_output.m_params);
+    unifyIndices(IntermediateMesh(pfQuery, localToWorld, std::move(computedParams)), *exportMesh);
     return true;
     }
 }; // ExportGraphicsProcessor
@@ -430,13 +400,13 @@ struct ExportGraphicsJob
     ExportGraphicsContext           m_context;
     Napi::String                    m_elementId;
 
-    ExportGraphicsJob(DgnDbR db, IFacetOptions* fo, Napi::String elementId) :
+    ExportGraphicsJob(DgnDbR db, IFacetOptionsR fo, Napi::String elementId) :
         m_geom(db), m_db(db), m_processor(db, fo), m_context(m_processor), m_elementId(elementId) { }
 
     void Execute()
         {
         m_context.SetDgnDb(m_db);
-        m_context.VisitGeometry(m_geom);
+        m_geom.Draw(m_context, 0);
         }
 };
 
@@ -451,16 +421,13 @@ static IFacetOptionsPtr createFacetOptions(Napi::Object const& exportProps)
     double maxEdgeLength = 0.0;
 
     Napi::Value chordTolVal = exportProps.Get("chordTol");
-    if (chordTolVal.IsNumber())
-        chordTol = chordTolVal.As<Napi::Number>().DoubleValue();
+    if (chordTolVal.IsNumber()) chordTol = chordTolVal.As<Napi::Number>().DoubleValue();
 
     Napi::Value angleTolVal = exportProps.Get("angleTol");
-    if (angleTolVal.IsNumber())
-        angleTol = angleTolVal.As<Napi::Number>().DoubleValue();
+    if (angleTolVal.IsNumber()) angleTol = angleTolVal.As<Napi::Number>().DoubleValue();
 
     Napi::Value maxEdgeLengthVal = exportProps.Get("maxEdgeLength");
-    if (maxEdgeLengthVal.IsNumber())
-        maxEdgeLength = maxEdgeLengthVal.As<Napi::Number>().DoubleValue();
+    if (maxEdgeLengthVal.IsNumber()) maxEdgeLength = maxEdgeLengthVal.As<Napi::Number>().DoubleValue();
 
     auto result = IFacetOptions::CreateForSurfaces(chordTol, angleTol, maxEdgeLength, true, true, true);
     result->SetIgnoreHiddenBRepEntities(true); // act like tile generation, big perf improvement
@@ -474,35 +441,20 @@ static Napi::Value convertMesh(Napi::Env env, ExportGraphicsMesh& mesh)
     {
     Napi::Object convertedMesh = Napi::Object::New(env);
 
-    Napi::Int32Array indexArray = Napi::Int32Array::New(env, (uint32_t)mesh.m_indices.size());
-    memcpy (indexArray.Data(), &mesh.m_indices[0], mesh.m_indices.size() * sizeof(int32_t));
+    Napi::Int32Array indexArray = Napi::Int32Array::New(env, mesh.indices.size());
+    memcpy (indexArray.Data(), &mesh.indices[0], mesh.indices.size() * sizeof(int32_t));
     convertedMesh.Set("indices", indexArray);
 
-    uint32_t nVertices = (uint32_t) mesh.m_points.size();
-    Napi::Float64Array pointArray = Napi::Float64Array::New(env, nVertices * 3);
-    for (uint32_t i = 0; i < nVertices; ++i)
-        {
-        pointArray[i * 3] = mesh.m_points[i].x;
-        pointArray[i * 3 + 1] = mesh.m_points[i].y;
-        pointArray[i * 3 + 2] = mesh.m_points[i].z;
-        }
+    Napi::Float64Array pointArray = Napi::Float64Array::New(env, mesh.points.size());
+    memcpy (pointArray.Data(), &mesh.points[0], mesh.points.size() * sizeof(double));
     convertedMesh.Set("points", pointArray);
 
-    Napi::Float32Array normalArray = Napi::Float32Array::New(env, nVertices * 3);
-    for (uint32_t i = 0; i < nVertices; ++i)
-        {
-        normalArray[i * 3] = mesh.m_normals[i].x;
-        normalArray[i * 3 + 1] = mesh.m_normals[i].y;
-        normalArray[i * 3 + 2] = mesh.m_normals[i].z;
-        }
+    Napi::Float32Array normalArray = Napi::Float32Array::New(env, mesh.normals.size());
+    memcpy (normalArray.Data(), &mesh.normals[0], mesh.normals.size() * sizeof(float));
     convertedMesh.Set("normals", normalArray);
 
-    Napi::Float32Array paramArray = Napi::Float32Array::New(env, nVertices * 2);
-    for (uint32_t i = 0; i < nVertices; ++i)
-        {
-        paramArray[i * 2] = mesh.m_params[i].x;
-        paramArray[i * 2 + 1] = mesh.m_params[i].y;
-        }
+    Napi::Float32Array paramArray = Napi::Float32Array::New(env, mesh.params.size());
+    memcpy (paramArray.Data(), &mesh.params[0], mesh.params.size() * sizeof(float));
     convertedMesh.Set("params", paramArray);
 
     return convertedMesh;
@@ -544,7 +496,7 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
     Napi::Array elementIdArray = exportProps.Get("elementIdArray").As<Napi::Array>();
 
     bvector<std::unique_ptr<ExportGraphicsJob>> jobs; jobs.reserve(elementIdArray.Length());
-    bvector<folly::Future<folly::Unit>> jobHandles; jobHandles.reserve(jobs.size());
+    bvector<folly::Future<folly::Unit>> jobHandles; jobHandles.reserve(elementIdArray.Length());
 
     for (uint32_t i = 0; i < elementIdArray.Length(); ++i)
         {
@@ -562,7 +514,7 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
         auto status = db.Elements().LoadGeometryStream(geomStream, stmt->GetValueBlob(1), stmt->GetColumnBytes(1));
         if (status != DgnDbStatus::Success) continue;
 
-        ExportGraphicsJob* job = new ExportGraphicsJob(db, facetOptions.get(), napiElementId);
+        ExportGraphicsJob* job = new ExportGraphicsJob(db, *facetOptions.get(), napiElementId);
         job->m_geom.m_categoryId = stmt->GetValueId<DgnCategoryId>(0);
         job->m_geom.m_placement = getPlacement(*stmt);
         job->m_geom.m_geomStream = std::move(geomStream);

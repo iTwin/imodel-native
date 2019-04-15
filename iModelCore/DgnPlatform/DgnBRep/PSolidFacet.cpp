@@ -1457,9 +1457,10 @@ static bool facetTableToPolyfaces(IBRepEntityCR entity, bvector<PolyfaceHeaderPt
     if (SUCCESS != IFacetTopologyTable::ConvertToPolyfaces(polyfaces, faceToPolyfaces, facetTopo, facetOptions))
         return false;
 
+    bool isTwoSided = IBRepEntity::EntityType::Solid != entity.GetEntityType();
     for (size_t i=0; i<polyfaces.size(); i++)
         {
-        polyfaces[i]->SetTwoSided(IBRepEntity::EntityType::Solid != entity.GetEntityType());
+        polyfaces[i]->SetTwoSided(isTwoSided);
         polyfaces[i]->Transform(entity.GetEntityTransform());
         }
 

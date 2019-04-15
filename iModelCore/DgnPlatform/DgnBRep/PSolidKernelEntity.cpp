@@ -25,6 +25,7 @@ T_FaceAttachmentsVec    m_faceAttachmentsVec;
 public:
 
 FaceMaterialAttachments() {}
+explicit FaceMaterialAttachments(FaceAttachment face) : m_faceAttachmentsVec(1, face) { }
 
 T_FaceAttachmentsVec const& _GetFaceAttachmentsVec() const override {return m_faceAttachmentsVec;}
 T_FaceAttachmentsVec& _GetFaceAttachmentsVecR() override {return m_faceAttachmentsVec;}
@@ -354,11 +355,7 @@ IFaceMaterialAttachmentsPtr PSolidUtil::CreateNewFaceAttachments(PK_ENTITY_t ent
     if (SUCCESS != PK_BODY_ask_faces(entityTag, &nFaces, nullptr) || 0 == nFaces)
         return nullptr;
 
-    FaceMaterialAttachments* attachments = new FaceMaterialAttachments();
-
-    attachments->_GetFaceAttachmentsVecR().push_back(FaceAttachment(baseParams));
-
-    return attachments;
+    return new FaceMaterialAttachments(FaceAttachment(baseParams));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -58,7 +58,7 @@ protected:
     DGNPLATFORM_EXPORT bool _WantStrokePattern(PatternParamsCR pattern) override;
 
     bool _IsOpen() const override {return m_isOpen;}
-    Render::GraphicPtr _Finish() override;
+    DGNPLATFORM_EXPORT Render::GraphicPtr _Finish() override;
 
     GeometryStreamEntryIdCP _GetGeometryStreamEntryId() const override {return &m_currGeomEntryId;}
     void _SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) override {if (nullptr != entry) m_currGeomEntryId = *entry; else m_currGeomEntryId.Init();}

@@ -493,6 +493,89 @@ bool             addVerticesAtCrossings
 #endif
     }
 
+static int coordinateFrameAndRank
+(
+    DPoint3dCP pXYZIn,
+    size_t    numXYZ,
+    TransformR  localToWorld,
+    TransformR  worldToLocal,
+    enum LocalCoordinateSelect selector
+)
+    {
+    static double s_lengthRelTol = 1.0e-10;
+    static double s_smallLength = 1.0e-6;
+    size_t numBeforeDisconnect = 0;
+    //bool bDone = false;
+    static double sFirstEdgeFactor = 0.001;
+    bool degenerateNormal = false;
+    bool bOK = false;
+    localToWorld.InitIdentity ();
+    worldToLocal.InitIdentity ();
+
+    for (size_t i = 0; i < numXYZ && !pXYZIn[i].IsDisconnect(); i++)
+        {
+        numBeforeDisconnect++;
+        }
+    if (numBeforeDisconnect == 0)
+        return 0;
+    if (numBeforeDisconnect == 1)
+        {
+        localToWorld.InitFrom (pXYZIn[0].x, pXYZIn[0].y, pXYZIn[0].z);
+        worldToLocal.InitFrom (-pXYZIn[0].x, -pXYZIn[0].y, -pXYZIn[0].z);
+        return 0;
+        }
+    int rank = 2;   // but this may be reduced !!
+    DPoint3d origin;
+    DVec3d normal;
+    DVec3d unit01;
+    RotMatrix axes, skewFrame;
+    // usually get a good area and normal and all is fine.
+    // if degenerate to edge, get an arbitrary normal to the edge.
+    double area = bsiPolygon_polygonNormalAndArea (&normal, &origin, pXYZIn, (int)numBeforeDisconnect);
+    auto distantIndex = DPoint3dOps::MostDistantIndex (pXYZIn, (int)numBeforeDisconnect, pXYZIn[0]);
+    auto lengthRefA = sqrt (area);
+    auto lengthRef = s_smallLength + pXYZIn[0].Distance (pXYZIn[distantIndex]);
+
+    if (lengthRefA < s_lengthRelTol * lengthRef)
+        {
+        rank = 1;
+        // degenerate to edge ??
+        // recompute the normal from the distance index point ..
+        DVec3d vector = pXYZIn[distantIndex] - pXYZIn[0];
+        DVec3d vectorX, vectorY, vectorZ;
+        vector.GetNormalizedTriad (vectorX, vectorY, vectorZ);
+        normal = vectorY;
+        degenerateNormal = true;
+        }
+    // Capture x direction along first ong edge, and upwards orientation by first polygon area vectors ..
+    bOK = false;
+    for (size_t k = 1; k < numBeforeDisconnect && !bOK; k++)
+        {
+        double mag01 = unit01.NormalizedDifference(pXYZIn[k], pXYZIn[0]);
+        if (mag01 > sFirstEdgeFactor * lengthRef)
+            {
+            DVec3d perpVector;
+            perpVector.CrossProduct (normal, unit01);
+            skewFrame.InitFromColumnVectors (unit01, perpVector, normal);
+            // Policy decision:  The normal is the most reliable thing.  Keep it exactly, even if
+            // the first edge ends up not being exactly in plane.
+            axes.SquareAndNormalizeColumns (skewFrame, 2, 0);
+            localToWorld.InitFrom (axes, pXYZIn[0]);
+            bOK = worldToLocal.InverseOf (localToWorld) ? true : false;
+            }
+        }
+
+    if (bOK && selector != LOCAL_COORDINATE_SCALE_UnitAxesAtStart)
+        {
+        DRange3d localRange;
+        localRange.Init ();
+        localRange.Extend (worldToLocal, pXYZIn, (int)numXYZ);
+        Transform::CorrectCoordinateFrameXYRange (localToWorld, worldToLocal, localRange, selector);
+        }
+    return bOK ? rank : 0;
+    }
+
+
 
 bool PolygonOps::CoordinateFrame
 (
@@ -512,8 +595,8 @@ TransformR  localToWorld,
 TransformR  worldToLocal
 )
     {
-    return CoordinateFrame (pXYZIn, numXYZ, localToWorld, worldToLocal, 
-            LOCAL_COORDINATE_SCALE_UnitAxesAtStart);
+    return coordinateFrameAndRank (pXYZIn, numXYZ, localToWorld, worldToLocal, 
+            LOCAL_COORDINATE_SCALE_UnitAxesAtStart) > 0;
     }
 
 bool PolygonOps::CoordinateFrame
@@ -525,56 +608,7 @@ TransformR  worldToLocal,
 enum LocalCoordinateSelect selector
 )
     {
-    size_t numBeforeDisconnect = 0;
-    //bool bDone = false;
-    static double sFirstEdgeFactor = 0.001;
-
-    bool bOK = false;
-    localToWorld.InitIdentity ();
-    worldToLocal.InitIdentity ();
-
-    for (size_t i = 0; i < numXYZ && !pXYZIn[i].IsDisconnect(); i++)
-        {
-        numBeforeDisconnect++;
-        }
-
-    if (numBeforeDisconnect >= 3)
-        {
-        // Capture x direction along first edge, and upwards orientation by first polygon area vectors ..
-        DPoint3d origin;
-        DVec3d normal;
-        DVec3d unit01;
-        RotMatrix axes, skewFrame;
-
-        double area = bsiPolygon_polygonNormalAndArea (&normal, &origin, pXYZIn, (int)numBeforeDisconnect);
-        double lengthRef = sqrt (area);
-        bOK = false;
-        for (size_t k = 1; k < numBeforeDisconnect && !bOK; k++)
-            {
-            double mag01 = unit01.NormalizedDifference(pXYZIn[k], pXYZIn[0]);
-            if (mag01 > sFirstEdgeFactor * lengthRef)
-                {
-                DVec3d perpVector;
-                perpVector.CrossProduct (normal, unit01);
-                skewFrame.InitFromColumnVectors (unit01, perpVector, normal);
-                // Policy decision:  The normal is the most reliable thing.  Keep it exactly, even if
-                // the first edge ends up not being exactly in plane.
-                axes.SquareAndNormalizeColumns (skewFrame, 2, 0);
-                localToWorld.InitFrom (axes, pXYZIn[0]);
-                bOK = worldToLocal.InverseOf (localToWorld) ? true : false;
-                }
-            }
-        }
-
-
-    if (bOK && selector != LOCAL_COORDINATE_SCALE_UnitAxesAtStart)
-        {
-        DRange3d localRange;
-        localRange.Init ();
-        localRange.Extend (worldToLocal, pXYZIn, (int)numXYZ);
-        Transform::CorrectCoordinateFrameXYRange (localToWorld, worldToLocal, localRange, selector);
-        }
-    return bOK;
+    return coordinateFrameAndRank (pXYZIn, numXYZ, localToWorld, worldToLocal, selector) > 0;
     }
 
 bool PolygonOps::FixupAndTriangulateProjectedLoops
