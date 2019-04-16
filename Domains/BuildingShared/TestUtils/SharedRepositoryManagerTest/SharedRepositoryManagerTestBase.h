@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include <BuildingShared/BuildingSharedApi.h>
 #include <DgnPlatform\DgnPlatformApi.h>
 #include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
