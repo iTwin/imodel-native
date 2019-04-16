@@ -1,6 +1,5 @@
 #*--------------------------------------------------------------------------------------+
-#     $Source: DgnV8/Converters/DgnV8ConverterInstaller/DgnV8ConverterInstallerOpts.mki $
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #--------------------------------------------------------------------------------------*/
 
 BB_INSTALLER_SKIP_WIXBUNDLE_INSIGNIA = 1
