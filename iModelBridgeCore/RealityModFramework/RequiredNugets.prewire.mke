@@ -1,12 +1,10 @@
 #--------------------------------------------------------------------------------------
-#
-#     $Source: RequiredNugets.prewire.mke $
 #    $RCSfile: imagepp.mke,v $
 #   $Revision: 1.00 $
 #       $Date: 2016/06/02 13:34:13 $
 #     $Author: Francis.Boily $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki

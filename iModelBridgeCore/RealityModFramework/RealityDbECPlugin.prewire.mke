@@ -1,12 +1,10 @@
 #--------------------------------------------------------------------------------------
-#
-#     $Source: RealityDbECPlugin.prewire.mke $
 #    $RCSfile: imagepp.mke,v $
 #   $Revision: 1.00 $
 #       $Date: 2017/01/20 15:47:00 $
 #     $Author: Christian Tye Gingras $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
