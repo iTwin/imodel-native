@@ -1,6 +1,5 @@
 //--------------------------------------------------------------------------------------
-//     $Source: DgnCore/Annotations/Annotations.fbs $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //--------------------------------------------------------------------------------------
 
 namespace BentleyB0200.Dgn.FB;

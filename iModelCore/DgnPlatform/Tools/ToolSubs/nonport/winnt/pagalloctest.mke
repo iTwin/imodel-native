@@ -1,12 +1,10 @@
 #--------------------------------------------------------------------------------------
-#
-#     $Source: Tools/ToolSubs/nonport/winnt/pagalloctest.mke $
 #    $RCSfile: pagalloctest.mke,v $
 #   $Revision: 1.1 $
 #       $Date: 2010/08/05 15:42:11 $
 #     $Author: Chuck.Kirschman $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 #----------------------------------------------------------------------

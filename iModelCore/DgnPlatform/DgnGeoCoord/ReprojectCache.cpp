@@ -1,8 +1,6 @@
 /*----------------------------------------------------------------------+
 |
-|   $Source: DgnGeoCoord/ReprojectCache.cpp $
-|
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +----------------------------------------------------------------------*/
 #pragma  warning(disable:4189) // local variable is initialized but not referenced
