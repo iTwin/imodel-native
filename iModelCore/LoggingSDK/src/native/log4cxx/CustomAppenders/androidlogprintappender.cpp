@@ -1,8 +1,6 @@
 ﻿/*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/native/log4cxx/CustomAppenders/androidlogprintappender.cpp $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "androidlogprintappender.h"
