@@ -1025,6 +1025,9 @@ public:
         m_dgndb->RemoveFunction(StrSqlFunction::GetSingleton());
         m_dgndb->m_jsIModelDb.Reset(); // disconnect the iModelDb object
         JsInterop::CloseDgnDb(*m_dgndb);
+
+        JsInterop::RemoveCrashReportDgnDb(*m_dgndb);
+
         m_dgndb = nullptr;
 
         doDeferredLogging();
@@ -1036,6 +1039,8 @@ public:
         BeAssert(m_dgndb.IsNull());
 
         m_dgndb = &dgndb;
+
+        JsInterop::AddCrashReportDgnDb(*m_dgndb);
 
         //SetupPresentationManager();
         // NativeAppData::Add(*this);
@@ -4972,12 +4977,9 @@ static void setCrashReporting(Napi::CallbackInfo const& info)
     Napi::Object obj = info[0].As<Napi::Object>();
 
     JsInterop::CrashReportingConfig ccfg;
-    ccfg.m_crashDumpDir.SetNameA(getOptionalStringProperty(obj, "crashDumpDir", "").c_str());
+    ccfg.m_crashDir.SetNameA(getOptionalStringProperty(obj, "crashDir", "").c_str());
+    ccfg.m_writeDumpsToCrashDir     = getOptionalBooleanProperty(obj, "writeDumpsToCrashDir", false);
     ccfg.m_maxDumpsInDir            = getOptionalIntProperty(obj, "maxDumpsInDir", 50);
-    ccfg.m_maxUploadRetries         = getOptionalIntProperty(obj, "maxUploadRetries", 5);
-    ccfg.m_uploadRetryWaitInterval  = getOptionalIntProperty(obj, "uploadRetryWaitInterval", 10000);
-    ccfg.m_maxReportsPerDay         = getOptionalIntProperty(obj, "maxReportsPerDay", 1000);
-    ccfg.m_uploadUrl                = getOptionalStringProperty(obj, "uploadUrl", "");
     ccfg.m_wantFullMemory           = getOptionalBooleanProperty(obj, "wantFullMemory", false);
     if (obj.Has("params"))
         {
@@ -4994,6 +4996,12 @@ static void setCrashReporting(Napi::CallbackInfo const& info)
                 }
             }
         }
+#ifdef WIP_DUMP_UPLOAD
+    ccfg.m_maxUploadRetries         = getOptionalIntProperty(obj, "maxUploadRetries", 5);
+    ccfg.m_uploadRetryWaitInterval  = getOptionalIntProperty(obj, "uploadRetryWaitInterval", 10000);
+    ccfg.m_maxReportsPerDay         = getOptionalIntProperty(obj, "maxReportsPerDay", 1000);
+    ccfg.m_uploadUrl                = getOptionalStringProperty(obj, "uploadUrl", "");
+#endif
     ccfg.m_needsVectorExceptionHandler = true;
     JsInterop::InitializeCrashReporting(ccfg);
     }
@@ -5110,7 +5118,7 @@ static Napi::Value getLogger(Napi::CallbackInfo const& info) { return s_logger.V
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void setLogger(Napi::CallbackInfo const& info)
     {
-    s_logger = Napi::ObjectReference::New(info[0].ToObject());
+    s_logger = Napi::ObjectReference::New(info[0].ToObject());  // TODO: Set initial ref count to 1!
     s_logger.SuppressDestruct();
     }
 

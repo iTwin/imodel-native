@@ -79,15 +79,15 @@ void handleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions
 
 struct JsInterop
 {
+    static bmap<Utf8String, Utf8String> s_crashReportProperties;
+    static bmap<Dgn::DgnDb*, BeFileName> s_openDgnDbFileNames;
+
     struct CrashReportingConfig
         {
-        BeFileName m_crashDumpDir;
-        Utf8String m_uploadUrl;
+        BeFileName m_crashDir;
         bmap<Utf8String,Utf8String> m_params;
         size_t m_maxDumpsInDir;
-        size_t m_maxUploadRetries;
-        size_t m_uploadRetryWaitInterval;
-        size_t m_maxReportsPerDay;
+        bool m_writeDumpsToCrashDir;
         bool m_wantFullMemory;
         bool m_needsVectorExceptionHandler;
         };
@@ -239,7 +239,13 @@ public:
     static void StepAsync(Napi::Function& callback, Statement& stmt);
     static void StepAsync(Napi::Function& callback, ECSqlStatement& stmt, bool stepForInsert);
 
-    static void MaintainCrashDumpDir(CrashReportingConfig const&);
+    static void AddCrashReportDgnDb(Dgn::DgnDbR);
+    static void RemoveCrashReportDgnDb(Dgn::DgnDbR);
+
+    static void SetCrashReportProperty(Utf8StringCR key, Utf8StringCR value);
+    static void RemoveCrashReportProperty(Utf8StringCR key);
+
+    static void MaintainCrashDumpDir(int& maxNativeCrashTxtFileNo, CrashReportingConfig const&);
     static bmap<Utf8String,Utf8String> GetCrashReportCustomProperties(CrashReportingConfig const&);
 
     static void InitializeCrashReporting(CrashReportingConfig const&)

@@ -19,6 +19,7 @@
 static google_breakpad::ExceptionHandler* s_exceptionHandler = nullptr;
 #endif
 static bmap<Utf8String,Utf8String> s_customProperties;
+static int s_nextNativeCrashTxtFileNo;
 
 using namespace IModelJsNative;
 
@@ -41,7 +42,9 @@ static void writeCustomPropertiesToFile(bmap<Utf8String,Utf8String> const& props
         for (auto const& prop : props)
             {
             sys_write(log_fd, prop.first.c_str(), strlen(prop.first.c_str()));
+            sys_write(log_fd, ","), 1);
             sys_write(log_fd, prop.second.c_str(), strlen(prop.second.c_str()));
+            sys_write(log_fd, "\n"), 1);
             }
         sys_close(log_fd);
         }
@@ -65,12 +68,12 @@ static bool crashDone(const google_breakpad::MinidumpDescriptor& minidump, void*
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     {
-    MaintainCrashDumpDir(cfg);
+    MaintainCrashDumpDir(s_nextNativeCrashTxtFileNo, cfg);
 
     s_customProperties = GetCrashReportCustomProperties(cfg); 
 
 #ifdef COMMENT_OFF
-    google_breakpad::MinidumpDescriptor minidump_descriptor(Utf8String(cfg.m_crashDumpDir).c_str());
+    google_breakpad::MinidumpDescriptor minidump_descriptor(Utf8String(cfg.m_crashDir).c_str());
     // minidump_descriptor.set_size_limit(kMaxMinidumpFileSize); // set a limit if servers impose one
 
     s_exceptionHandler = new google_breakpad::ExceptionHandler(minidump_descriptor, NULL, crashDone, nullptr, true, -1);

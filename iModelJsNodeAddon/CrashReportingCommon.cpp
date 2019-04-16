@@ -17,22 +17,64 @@
 
 using namespace IModelJsNative;
 
+bmap<Utf8String, Utf8String> JsInterop::s_crashReportProperties;
+bmap<Dgn::DgnDb*, BeFileName> JsInterop::s_openDgnDbFileNames;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  04/19
+//---------------------------------------------------------------------------------------
+void JsInterop::AddCrashReportDgnDb(Dgn::DgnDbR db)
+    {
+    s_openDgnDbFileNames[&db] = db.GetFileName();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  04/19
+//---------------------------------------------------------------------------------------
+void JsInterop::RemoveCrashReportDgnDb(Dgn::DgnDbR db)
+    {
+    s_openDgnDbFileNames.erase(&db);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  04/19
+//---------------------------------------------------------------------------------------
+void JsInterop::SetCrashReportProperty(Utf8StringCR key, Utf8StringCR value)
+    {
+    s_crashReportProperties[key] = value;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  04/19
+//---------------------------------------------------------------------------------------
+void JsInterop::RemoveCrashReportProperty(Utf8StringCR key)
+    {
+    s_crashReportProperties.erase(key);
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::MaintainCrashDumpDir(CrashReportingConfig const& cfg)
+void JsInterop::MaintainCrashDumpDir(int& maxNativeCrashTxtFileNo, CrashReportingConfig const& cfg)
     {
-    if (!cfg.m_crashDumpDir.DoesPathExist())
-        BeFileName::CreateNewDirectory(cfg.m_crashDumpDir);
+    if (!cfg.m_crashDir.DoesPathExist())
+        BeFileName::CreateNewDirectory(cfg.m_crashDir);
 
     size_t count = 0;
+    maxNativeCrashTxtFileNo = 0;
 
     BeFileName entryName;
     bool        isDir;
-    for (BeDirectoryIterator dirs(cfg.m_crashDumpDir); dirs.GetCurrentEntry(entryName, isDir) == SUCCESS; dirs.ToNext())
+    for (BeDirectoryIterator dirs(cfg.m_crashDir); dirs.GetCurrentEntry(entryName, isDir) == SUCCESS; dirs.ToNext())
         {
-        if (!isDir)
-            ++count;
+        if (isDir)
+            continue;
+            
+        ++count;
+
+        int i;
+        if ((1 == swscanf(entryName.GetBaseName().c_str(), L"iModelJsNativeCrash-%d.txt", &i)) && (i > maxNativeCrashTxtFileNo))
+            maxNativeCrashTxtFileNo = i;
         }
 
     // Make sure there is room for one more!
@@ -40,7 +82,7 @@ void JsInterop::MaintainCrashDumpDir(CrashReportingConfig const& cfg)
         return;
     
     // TODO: Sort oldest to newest and delete the oldest first.
-    for (BeDirectoryIterator dirs(cfg.m_crashDumpDir); dirs.GetCurrentEntry(entryName, isDir) == SUCCESS; dirs.ToNext())
+    for (BeDirectoryIterator dirs(cfg.m_crashDir); dirs.GetCurrentEntry(entryName, isDir) == SUCCESS; dirs.ToNext())
         {
         if (isDir)
             continue;
