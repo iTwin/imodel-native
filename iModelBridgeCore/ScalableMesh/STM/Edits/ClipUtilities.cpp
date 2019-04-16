@@ -1902,7 +1902,7 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
             boundaryInfo.second = &clip - polygons.data();
             }
 
-        meshIsCut = meshIsCut || InsertMeshCuts(clippedMesh, vis, currentPoly, triangleBoxes, polyBox);
+        meshIsCut = InsertMeshCuts(clippedMesh, vis, currentPoly, triangleBoxes, polyBox) || meshIsCut;
 
         clipPolys.push_back(cp);
         }

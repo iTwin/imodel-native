@@ -5232,6 +5232,17 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
                 collectedIndices.push_back(polyPts[i]);
 
         curvePtr = ICurvePrimitive::CreateLineString(collectedIndices);
+        for (auto& pt : collectedIndices)
+        {
+            if (noIntersect && &pt - &polyPts[0] != 0)
+            {
+                DRange3d edgeRange = DRange3d::From(pt, collectedIndices[&pt - &collectedIndices[0] - 1]);
+                if (extRange.IntersectsWith(edgeRange))
+                {
+                    noIntersect = false;
+                }
+            }
+        }
     }
     CurveVectorPtr curveVectorPtr(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr));
 
