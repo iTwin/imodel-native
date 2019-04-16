@@ -1,8 +1,6 @@
 /*----------------------------------------------------------------------+
 |
-|   $Source: BaseGeoCoord/basegeocoord.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +----------------------------------------------------------------------*/
 #ifdef _MSC_VER
