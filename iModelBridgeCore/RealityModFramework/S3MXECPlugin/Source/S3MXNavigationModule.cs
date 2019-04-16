@@ -1,4 +1,9 @@
-﻿using Bentley.Collections;
+﻿/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+using Bentley.Collections;
 using Bentley.EC.PluginBuilder.Modules;
 using Bentley.EC.Presentation.Navigation;
 using Bentley.ECObjects.Instance;

@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include <RealityPlatform/RealityDataObjects.h>
 #include <RealityPlatformTools/WSGServices.h>
 #include <RealityPlatformTools/GeoCoordinationService.h>
