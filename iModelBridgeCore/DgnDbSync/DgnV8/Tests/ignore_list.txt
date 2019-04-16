@@ -14,3 +14,5 @@ NamedGroupTests.NamedGroupOf2dElement
 NamedGroupTests.NamedGroupAcrossReference # Sam broke this with switch to aspects for normal elements. Hopefully, Carole can fix it.
 
 ConverterTests.UseConverterAsLibrary # Sam - decide if we want to support the "record level mapping" feature of ConverterLibrary or not
+
+GeomPartTests.NormalCells # Broke with switch to PP U12 V8 SDK

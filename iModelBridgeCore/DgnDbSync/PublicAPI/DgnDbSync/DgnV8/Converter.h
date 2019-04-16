@@ -1136,9 +1136,8 @@ public:
     DGNDBSYNC_EXPORT RefCountedCPtr<RepositoryLink> GetRepositoryLinkElement(RepositoryLinkId) const;
     RefCountedCPtr<RepositoryLink> GetRepositoryLinkElement(DgnV8FileCR file) const {return GetRepositoryLinkElement(GetRepositoryLinkId(file));}
 
-    DGNDBSYNC_EXPORT RepositoryLinkId GetRepositoryLinkId(DgnV8FileCR) const;  // This may in fact add appdata to the file
-    DGNDBSYNC_EXPORT static RepositoryLinkId GetRepositoryLinkIdFromAppData(DgnV8FileCR); // Call this only if you know that the id has already been cached, e.g., by a prior call to GetRepositoryLinkId
-
+    DGNDBSYNC_EXPORT RepositoryLinkId GetRepositoryLinkId(DgnV8FileCR) const; 
+    
     //! Open the specified V8File and make sure that it is registered in SyncInfo. 
     //! <em>This function should not be used for spatial models.</em>
     DgnFilePtr OpenAndRegisterV8FileForDrawings(DgnV8Api::DgnFileStatus &, BeFileNameCR);
@@ -3299,11 +3298,11 @@ struct ElementConverter
 struct ElementAspectConverter : ElementConverter
     {
     private:
-        BentleyStatus ConvertToAspect(SyncInfo::V8ElementExternalSourceAspect*, ElementConversionResults&, ECObjectsV8::IECInstance const& v8Instance, BentleyApi::Utf8CP aspectClassSuffix) const;
+        BentleyStatus ConvertToAspect(SyncInfo::V8ElementExternalSourceAspect*, ElementConversionResults&, ECObjectsV8::IECInstance const& v8Instance, BentleyApi::Utf8CP aspectClassSuffix, bool isNewElement) const;
 
     public:
         explicit ElementAspectConverter(Converter& converter) : ElementConverter(converter) {}
-        BentleyStatus ConvertToAspects(SyncInfo::V8ElementExternalSourceAspect*, ElementConversionResults&, std::vector<std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule>> const& secondaryInstances) const;
+        BentleyStatus ConvertToAspects(SyncInfo::V8ElementExternalSourceAspect*, ElementConversionResults&, std::vector<std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule>> const& secondaryInstances, bool isNewElement) const;
     };
 
 //=======================================================================================
@@ -3333,7 +3332,7 @@ private:
     ~V8NamedGroupInfo();
 
 public:
-    static void AddNamedGroupWithOwnershipHint(DgnV8EhCR);
+    static void AddNamedGroupWithOwnershipHint(DgnV8EhCR, Converter& converter);
     static bool TryGetNamedGroupsWithOwnershipHint(bset<DgnV8Api::ElementId> const*&, RepositoryLinkId);
     static void Reset();
     };

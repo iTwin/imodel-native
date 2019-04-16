@@ -210,6 +210,8 @@ bool iModelBridgeWithSyncInfoBase::DetectSpatialDataTransformChange(TransformR n
 DgnDbStatus iModelExternalSourceAspect::AddAspect(DgnElementR el)
     {
     BeAssert(m_instance.IsValid());
+    if (m_instance.IsNull())
+        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
     return DgnElement::GenericMultiAspect::AddAspect(el, *m_instance);
     }
 
@@ -344,6 +346,9 @@ Utf8String iModelExternalSourceAspect::FormatForDump(DgnDbR db, bool includeProp
     if (includeProperties)
         {
         ECN::ECValue props;
+        BeAssert(m_instance.IsValid());
+        if (m_instance.IsNull())
+            LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
         if (ECN::ECObjectsStatus::Success == m_instance->GetValue(props, XTRN_SRC_ASPCT_JsonProperties) && !props.IsNull() && props.IsString())
             str.append("\t").append(props.GetUtf8CP());
         }
@@ -451,7 +456,10 @@ iModelExternalSourceAspect iModelExternalSourceAspect::GetAspectBySourceId(DgnDb
 DgnElementId iModelExternalSourceAspect::GetScope() const
     {
     ECN::ECValue v;
+    BeAssert(m_instance.IsValid());
     m_instance->GetValue(v, XTRN_SRC_ASPCT_Scope);
+    if (m_instance.IsNull())
+        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
     return v.GetNavigationInfo().GetId<DgnElementId>();
     }
 
@@ -461,6 +469,9 @@ DgnElementId iModelExternalSourceAspect::GetScope() const
 DgnElementId iModelExternalSourceAspect::GetElementId() const
     {
     ECN::ECValue v;
+    BeAssert(m_instance.IsValid());
+    if (m_instance.IsNull())
+        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
     m_instance->GetValue(v, "Element");
     return v.GetNavigationInfo().GetId<DgnElementId>();
     }
@@ -471,6 +482,9 @@ DgnElementId iModelExternalSourceAspect::GetElementId() const
 Utf8String iModelExternalSourceAspect::GetIdentifier() const
     {
     ECN::ECValue v;
+    BeAssert(m_instance.IsValid());
+    if (m_instance.IsNull())
+        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
     m_instance->GetValue(v, XTRN_SRC_ASPCT_Identifier);
     return v.GetUtf8CP();
     }
@@ -481,6 +495,9 @@ Utf8String iModelExternalSourceAspect::GetIdentifier() const
 Utf8String iModelExternalSourceAspect::GetKind() const 
     {
     ECN::ECValue v;
+    BeAssert(m_instance.IsValid());
+    if (m_instance.IsNull())
+        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
     m_instance->GetValue(v, XTRN_SRC_ASPCT_Kind);
     return v.GetUtf8CP();
     }
@@ -493,6 +510,9 @@ iModelExternalSourceAspect::SourceState iModelExternalSourceAspect::GetSourceSta
     SourceState ss;
 
     ECN::ECValue v;
+    BeAssert(m_instance.IsValid());
+    if (m_instance.IsNull())
+        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
     if ((ECN::ECObjectsStatus::Success == m_instance->GetValue(v, XTRN_SRC_ASPCT_Checksum)) && !v.IsNull())
         {
         ss.m_checksum = v.GetUtf8CP();
@@ -516,6 +536,9 @@ void iModelExternalSourceAspect::SetProperties(rapidjson::Document const& json)
     json.Accept(writer);
 
     ECN::ECValue props(buffer.GetString());
+    BeAssert(m_instance.IsValid());
+    if (m_instance.IsNull())
+        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
     m_instance->SetValue(XTRN_SRC_ASPCT_JsonProperties, props);
     }
 
@@ -525,7 +548,16 @@ void iModelExternalSourceAspect::SetProperties(rapidjson::Document const& json)
 rapidjson::Document iModelExternalSourceAspect::GetProperties() const
     {
     rapidjson::Document json(rapidjson::kObjectType);
+    if (m_instance.IsNull())
+        {
+        LOG.errorv("iModelExternalSourceAspect::GetProperties() called with null instance");
+        return json;
+        }
+
     ECN::ECValue props;
+    BeAssert(m_instance.IsValid());
+    if (m_instance.IsNull())
+        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
     if (ECN::ECObjectsStatus::Success != m_instance->GetValue(props, XTRN_SRC_ASPCT_JsonProperties) || !props.IsString() || props.IsNull())
         return json;
     json.Parse(props.GetUtf8CP());

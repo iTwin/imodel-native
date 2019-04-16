@@ -778,37 +778,49 @@ void RootModelConverter::_ConvertModels()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
     {
+    //1. If the file belongs to the bridge just return it.
     BeFileName fn(v8File.GetFileName().c_str());
-    bool isMyFile = _GetParams().IsFileAssignedToBridge(fn);
-    if (!isMyFile && !v8File.IsIModel())
-        {
-        // Always own embedded references:
-        if (v8File.IsEmbeddedFile())
-            return  true;
+    if (_GetParams().IsFileAssignedToBridge(fn))
+        return true;
 
-        // Before we get the bridge affinity work for references of foreign file formats, treat them as owned, so they get processed - TFS's 916434,921023.
-        auto rootFilename = _GetParams().GetInputFileName ();
-        if (!DgnV8Api::DgnFile::IsSameFile(fn.c_str(), rootFilename.c_str(), DgnV8Api::FileCompareMask::BaseNameAndExtension))
+    // 2. Is it is an iModel we have two cases
+    if (v8File.IsIModel())
+        {
+        if (v8File.IsEmbeddedFile()) //Embedded file assignments are owned by the parent.
             {
-            DgnV8Api::DgnFileFormatType   format;
-            if (Bentley::dgnFileObj_validateFile(&format, nullptr, nullptr, nullptr, nullptr, nullptr, fn.c_str()))
+            Bentley::WString packageName = const_cast<Bentley::DgnFileP>(&v8File)->GetPackageName();
+            if (_GetParams().IsFileAssignedToBridge(BeFileName(packageName.c_str())))
+                return true;
+            }
+
+        return false;
+        }
+
+    //3. Now lets check for foreign file formats that do not have a bridge assignment yet.
+    bool isMyFile = false;
+    // Before we get the bridge affinity work for references of foreign file formats, treat them as owned, so they get processed - TFS's 916434,921023.
+    auto rootFilename = _GetParams().GetInputFileName ();
+    if (!DgnV8Api::DgnFile::IsSameFile(fn.c_str(), rootFilename.c_str(), DgnV8Api::FileCompareMask::BaseNameAndExtension))
+        {
+        DgnV8Api::DgnFileFormatType   format;
+        if (Bentley::dgnFileObj_validateFile(&format, nullptr, nullptr, nullptr, nullptr, nullptr, fn.c_str()))
+            {
+            switch (format)
                 {
-                switch (format)
-                    {
-                    // These formats have bridges supporting their affinity:
-                    case DgnV8Api::DgnFileFormatType::V8:
-                    case DgnV8Api::DgnFileFormatType::V7:
-                    case DgnV8Api::DgnFileFormatType::DWG:
-                    case DgnV8Api::DgnFileFormatType::DXF:
-                    case DgnV8Api::DgnFileFormatType::RFA:
-                        break;
-                    // Other formats currently do not have bridges and need to be owned by "this" bridge:
-                    default:
-                        isMyFile = true;
-                    }
+                // These formats have bridges supporting their affinity:
+                case DgnV8Api::DgnFileFormatType::V8:
+                case DgnV8Api::DgnFileFormatType::V7:
+                case DgnV8Api::DgnFileFormatType::DWG:
+                case DgnV8Api::DgnFileFormatType::DXF:
+                case DgnV8Api::DgnFileFormatType::RFA:
+                    break;
+                // Other formats currently do not have bridges and need to be owned by "this" bridge:
+                default:
+                    isMyFile = _GetParams().IsFileAssignedToBridge(rootFilename);
                 }
             }
         }
+        
     return  isMyFile;
     }
 
@@ -1764,12 +1776,16 @@ void RootModelConverter::_FinishConversion()
 
     for (auto f : m_finishers)
         {
+        LOG.tracev ("calling DgnDbElementHandlerExtension::_OnFinishConversion for %p", f);
         f->_OnFinishConversion(*this);
+        LOG.tracev ("called DgnDbElementHandlerExtension::_OnFinishConversion for %p", f);
         }
 
     for (auto xdomain : XDomainRegistry::s_xdomains)
         {
+        LOG.tracev ("calling XDomain::_OnFinishConversion for %p", xdomain);
         xdomain->_OnFinishConversion(*this);
+        LOG.tracev ("called XDomain::_OnFinishConversion for %p", xdomain);
         }
 
     if (!IsUpdating())

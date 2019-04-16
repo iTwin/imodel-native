@@ -1471,7 +1471,8 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
          
          if (coreSchema.IsValid())
             {
-             if (ECN::ECObjectsStatus::Success != schema->AddReferencedSchema(*coreSchema))
+             ECN::ECObjectsStatus stat = schema->AddReferencedSchema(*coreSchema);
+             if (ECN::ECObjectsStatus::Success != stat && ECN::ECObjectsStatus::NamedItemAlreadyExists != stat)
                  LOG.warning("Error adding a reference to the core custom attributes schema.");
              else
                 {
@@ -2980,7 +2981,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                             return BSISUCCESS;
                         }
                     // If the existing entry we found was actually for this file, then do nothing.
-                    else if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName, Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP())))
+                    else if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName, m_converter.GetRepositoryLinkId(*v8Model.GetDgnFileP())))
                         return BSISUCCESS;
                     }
                 }
@@ -2989,7 +2990,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
 
     ECN::ECSchemaId schemaId;
 
-    DgnElementPtr repositoryLink = GetDgnDb().Elements().GetForEdit<RepositoryLink>(Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP()));
+    DgnElementPtr repositoryLink = GetDgnDb().Elements().GetForEdit<RepositoryLink>(m_converter.GetRepositoryLinkId(*v8Model.GetDgnFileP()));
     if (BeSQLite::DbResult::BE_SQLITE_OK != GetSyncInfo().InsertSchema(schemaId, repositoryLink->GetElementId(),
                                                      schemaName.c_str(),
                                                      schemaKey.GetVersionMajor(),
@@ -3162,7 +3163,7 @@ void DynamicSchemaGenerator::CheckNoECSchemaChanges(bvector<DgnV8ModelP> const& 
     for (auto& v8Model : uniqueModels)
         {
         bmap<Utf8String, uint32_t> syncInfoChecksums;
-        RepositoryLinkId v8FileId = Converter::GetRepositoryLinkIdFromAppData(*v8Model->GetDgnFileP());
+        RepositoryLinkId v8FileId = m_converter.GetRepositoryLinkId(*v8Model->GetDgnFileP());
         GetSyncInfo().RetrieveECSchemaChecksums(syncInfoChecksums, v8FileId);
         CheckECSchemasForModel(*v8Model, syncInfoChecksums);
         }
@@ -3643,7 +3644,8 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
     for (DgnV8Api::RelationshipEntry const& entry : relationships)
         {
         //schemas not captured in sync info are system schemas which we don't consider during conversion
-        if (DynamicSchemaGenerator::ExcludeSchemaFromBisification(Utf8String(entry.RelationshipSchemaName.c_str())))
+        Utf8String relationshipSchemaName(entry.RelationshipSchemaName.c_str());
+        if (DynamicSchemaGenerator::ExcludeSchemaFromBisification(relationshipSchemaName) || !_ShouldImportSchema(relationshipSchemaName, *v8Element.GetDgnModelP()))
             continue;
 
         V8ECInstanceKey v8SourceKey(ECClassName(Utf8String(entry.SourceSchemaName.c_str()).c_str(), Utf8String(entry.SourceClassName.c_str()).c_str()),
