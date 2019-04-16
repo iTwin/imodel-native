@@ -1205,8 +1205,12 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 			filePosition = cvtPtr->FirstRecord + rowNbr * cvtPtr->RowSize + eleNbr * thisPtr->RecSize;
 
 #ifdef GEOCOORD_ENHANCEMENT
+#if _RUN_TIME == _rt_MSWIN64
             /* Added support for files over 2 Giga Bytes */
-            if ((ulong32_t)(filePosition + sizeof(southEast) + sizeof(southWest)) > thisPtr->fileImageSize)
+            if ((__int64)(filePosition + sizeof(southEast) + sizeof(southWest)) > thisPtr->fileImageSize)
+#else
+			if ((long32_t)(filePosition + sizeof(southEast) + sizeof(southWest)) > thisPtr->fileImageSize)
+#endif
 #else
 			if ((long32_t)(filePosition + sizeof(southEast) + sizeof(southWest)) > thisPtr->fileImageSize)
 #endif
@@ -1225,8 +1229,13 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 			filePosition += cvtPtr->RowSize;
 
 #ifdef GEOCOORD_ENHANCEMENT
+#if _RUN_TIME == _rt_MSWIN64
             /* Added support for files over 2 Giga Bytes */
-            if ((ulong32_t)(filePosition + sizeof(northEast) + sizeof(northWest)) > thisPtr->fileImageSize)
+            if ((__int64)(filePosition + sizeof(northEast) + sizeof(northWest)) > thisPtr->fileImageSize)
+
+#else
+			if ((long32_t)(filePosition + sizeof(northEast) + sizeof(northWest)) > thisPtr->fileImageSize)
+#endif
 #else
 			if ((long32_t)(filePosition + sizeof(northEast) + sizeof(northWest)) > thisPtr->fileImageSize)
 #endif
@@ -1271,8 +1280,12 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 			filePosition = cvtPtr->FirstRecord + rowNbr * cvtPtr->RowSize + eleNbr * thisPtr->RecSize;
 
 #ifdef GEOCOORD_ENHANCEMENT
+#if _RUN_TIME == _rt_MSWIN64
             /* Added support for files over 2 Giga Bytes */
-            if ((ulong32_t)(filePosition + sizeof(southEast) + sizeof(southWest)) > thisPtr->fileImageSize)
+            if ((__int64)(filePosition + sizeof(southEast) + sizeof(southWest)) > thisPtr->fileImageSize)
+#else
+			if ((long32_t)(filePosition + sizeof(southEast) + sizeof(southWest)) > thisPtr->fileImageSize)
+#endif
 #else
 			if ((long32_t)(filePosition + sizeof(southEast) + sizeof(southWest)) > thisPtr->fileImageSize)
 #endif
@@ -1318,8 +1331,12 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 			filePosition = cvtPtr->FirstRecord + rowNbr * cvtPtr->RowSize + eleNbr * thisPtr->RecSize;
 
 #ifdef GEOCOORD_ENHANCEMENT
+#if _RUN_TIME == _rt_MSWIN64
             /* Added support for files over 2 Giga Bytes */
-            if ((ulong32_t)(filePosition + sizeof(southEast)) > thisPtr->fileImageSize)
+            if ((__int64)(filePosition + sizeof(southEast)) > thisPtr->fileImageSize)
+#else
+			if ((long32_t)(filePosition + sizeof(southEast)) > thisPtr->fileImageSize)
+#endif
 #else
 			if ((long32_t)(filePosition + sizeof(southEast)) > thisPtr->fileImageSize)
 #endif
@@ -1335,8 +1352,12 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 			filePosition += cvtPtr->RowSize;
 
 #ifdef GEOCOORD_ENHANCEMENT
+#if _RUN_TIME == _rt_MSWIN64
             /* Added support for files over 2 Giga Bytes */
-            if ((ulong32_t)(filePosition + sizeof(northEast)) > thisPtr->fileImageSize)
+            if ((__int64)(filePosition + sizeof(northEast)) > thisPtr->fileImageSize)
+#else
+			if ((long32_t)(filePosition + sizeof(northEast)) > thisPtr->fileImageSize)
+#endif
 #else
 			if ((long32_t)(filePosition + sizeof(northEast)) > thisPtr->fileImageSize)
 #endif
@@ -1376,8 +1397,12 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 			filePosition = cvtPtr->FirstRecord + rowNbr * cvtPtr->RowSize + eleNbr * thisPtr->RecSize;
 
 #ifdef GEOCOORD_ENHANCEMENT
+#if _RUN_TIME == _rt_MSWIN64
             /* Added support for files over 2 Giga Bytes */
-            if ((ulong32_t)(filePosition + sizeof(southEast)) > thisPtr->fileImageSize)
+            if ((__int64)(filePosition + sizeof(southEast)) > thisPtr->fileImageSize)
+#else
+			if ((long32_t)(filePosition + sizeof(southEast)) > thisPtr->fileImageSize)
+#endif
 #else
 			if ((long32_t)(filePosition + sizeof(southEast)) > thisPtr->fileImageSize)
 #endif
