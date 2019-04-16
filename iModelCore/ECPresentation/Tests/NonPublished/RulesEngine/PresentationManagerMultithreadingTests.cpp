@@ -1,8 +1,6 @@
 ﻿/*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/NonPublished/RulesEngine/PresentationManagerMultithreadingTests.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestHelpers.h"
