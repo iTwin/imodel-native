@@ -1,3 +1,8 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
 
 
 $(OUT_DIR)RICurvePrimitive$(OUT_EXT)      : $(geomSrcStructs)../rimsbs/RICurvePrimitive.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 

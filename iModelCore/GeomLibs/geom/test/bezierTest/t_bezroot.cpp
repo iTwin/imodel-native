@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 
 void TestOrder3RootsIn01 (double a0, double a1, double a2, int numStep)
