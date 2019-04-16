@@ -5118,7 +5118,7 @@ static Napi::Value getLogger(Napi::CallbackInfo const& info) { return s_logger.V
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void setLogger(Napi::CallbackInfo const& info)
     {
-    s_logger = Napi::ObjectReference::New(info[0].ToObject());  // TODO: Set initial ref count to 1!
+    s_logger = Napi::ObjectReference::New(info[0].ToObject(), 1);
     s_logger.SuppressDestruct();
     }
 
