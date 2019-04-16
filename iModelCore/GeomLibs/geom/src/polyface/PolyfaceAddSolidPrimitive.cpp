@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: geom/src/polyface/PolyfaceAddSolidPrimitive.cpp $
-|
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |GEOMDLLIMPEXP void AddSolidPrimitive (ISolidPrimitiveR primitive);
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>

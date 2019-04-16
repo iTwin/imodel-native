@@ -1,8 +1,6 @@
 /*----------------------------------------------------------------------+
 |
-|     $Source: geom/src/polyface/PolyfaceSectionMTG.h $
-|
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +----------------------------------------------------------------------*/
 // REMARK:  PolyfaceSection.h is included into PolyhfaceClip.h -- shared support classes.

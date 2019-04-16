@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: geom/src/bspline/bspsurf_cliptrim.cpp $
 |    $RCSfile: bspsurf_cliptrim.cpp,v $
 |   $Revision: 1.4 $
 |       $Date: 2008/06/17 02:41:53 $
 |     $Author: Peter.Yu $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
