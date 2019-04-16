@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DelegatedElementECEnabler.h>
 #include <DgnPlatform/DimensionStyleProps.r.h>
 
