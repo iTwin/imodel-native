@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/PublicAPI/ScalableTerrainModel/Plugin/IMrDTMFileUtilities.hpp $
 |    $RCSfile: IMrDTMFileUtilities.hpp,v $
 |   $Revision: 1.6 $
 |       $Date: 2012/02/22 14:21:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

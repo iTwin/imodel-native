@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/STM/Plugins/MrDTMReprojectionFilterPlugins.cpp $
 |    $RCSfile: MrDTMReprojectionFilterPlugins.cpp,v $
 |   $Revision: 1.15 $
 |       $Date: 2011/09/01 14:07:09 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>

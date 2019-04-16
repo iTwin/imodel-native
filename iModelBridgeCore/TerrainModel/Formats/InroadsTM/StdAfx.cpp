@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //---------------------------------------------------------------------------+
 // stdafx.cpp : source file that includes just the standard includes
 //	civdtm.pch will be the pre-compiled header

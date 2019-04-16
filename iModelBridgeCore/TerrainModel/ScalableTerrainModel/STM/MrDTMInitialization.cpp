@@ -1,12 +1,11 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: ScalableTerrainModel/STM/MrDTMInitialization.cpp $
 //:>    $RCSfile: MrDTMInitialization.cpp,v $
 //:>   $Revision: 1.5 $
 //:>       $Date: 2011/01/10 17:36:51 $
 //:>     $Author: Raymond.Gauthier $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 

@@ -1,12 +1,10 @@
 #--------------------------------------------------------------------------------------
-#
-#     $Source: PublicAPI/MakePublicAPI.py $
 #    $RCSfile: MakePublicAPI.py,v $
 #   $Revision: 1.2 $
 #       $Date: 2010/02/18 17:04:03 $
 #     $Author: Daryl.Holmwood $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 

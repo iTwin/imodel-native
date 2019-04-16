@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/STM/ImportPlugins/XYZAsciiFileImporter.cpp $
 |    $RCSfile: XYZAsciiFileImporter.cpp,v $
 |   $Revision: 1.39 $
 |       $Date: 2012/01/13 15:31:41 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

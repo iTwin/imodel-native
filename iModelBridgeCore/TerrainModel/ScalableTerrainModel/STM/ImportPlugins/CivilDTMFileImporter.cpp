@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/STM/ImportPlugins/CivilDTMFileImporter.cpp $
 |    $RCSfile: CivilDTMFileImporter.cpp,v $
 |   $Revision: 1.46 $
 |       $Date: 2011/11/09 18:11:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 
