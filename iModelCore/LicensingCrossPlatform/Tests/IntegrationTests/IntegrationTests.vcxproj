@@ -6,6 +6,27 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BuildTests.mke" />
+    <None Include="Prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Published\AccessKeyClientIntegrationTests.cpp" />
+    <ClCompile Include="Published\ClientIntegrationTests.cpp" />
+    <ClCompile Include="Published\DummyPolicyHelper.cpp" />
+    <ClCompile Include="Published\SaasClientIntegrationTests.cpp" />
+    <ClCompile Include="Published\TestsHelper.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Published\AccessKeyClientIntegrationTests.h" />
+    <ClInclude Include="Published\ClientIntegrationTests.h" />
+    <ClInclude Include="Published\DummyPolicyHelper.h" />
+    <ClInclude Include="Published\SaasClientIntegrationTests.h" />
+    <ClInclude Include="Published\TestsHelper.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{422E840E-183B-44B1-B3E8-CDC2238DD571}</ProjectGuid>
@@ -43,20 +64,6 @@
       <Path>$(OutDir)$(MSBuildProjectName).log</Path>
     </BuildLog>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="AccessKeyClientIntegrationTests.cpp" />
-    <ClCompile Include="ClientIntegrationTests.cpp" />
-    <ClCompile Include="DummyPolicyHelper.cpp" />
-    <ClCompile Include="SaasClientIntegrationTests.cpp" />
-    <ClCompile Include="TestsHelper.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="AccessKeyClientIntegrationTests.h" />
-    <ClInclude Include="ClientIntegrationTests.h" />
-    <ClInclude Include="DummyPolicyHelper.h" />
-    <ClInclude Include="SaasClientIntegrationTests.h" />
-    <ClInclude Include="TestsHelper.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
