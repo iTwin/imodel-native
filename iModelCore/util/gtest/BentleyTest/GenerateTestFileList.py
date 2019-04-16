@@ -1,8 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#  $Source: BentleyTest/GenerateTestFileList.py $
-#
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 import sys, os, os.path, stat, time
