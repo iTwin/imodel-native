@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include "FormsDomain\FormsDomain.h"
 #include "PublicAPI\Form.h"
 #include "PublicAPI\StraightExtrusion.h"
