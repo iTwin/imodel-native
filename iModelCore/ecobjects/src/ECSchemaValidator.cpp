@@ -843,6 +843,21 @@ ECObjectsStatus ECSchemaValidator::KindOfQuantityValidator(KindOfQuantityCR koq)
         return ECObjectsStatus::Error;
         }
 
+    // RULE: KindOfQuantity must not have duplicate presentation formats
+    ECSchemaCR schema = koq.GetSchema();
+    bset<Utf8String> uniqueFormats;
+    const auto &presentFormats = koq.GetPresentationFormats();
+    for (const auto &format : presentFormats) 
+        {
+        auto formatQualifiedName = format.GetQualifiedFormatString(schema);
+        auto resultInsertion = uniqueFormats.insert(formatQualifiedName);
+        if (!resultInsertion.second)
+            LOG.errorv("KindOfQuantity %s has a duplicate presentation format %s which is not allowed", koq.GetName().c_str(), formatQualifiedName.c_str());
+        }
+
+    if (static_cast<size_t>(uniqueFormats.size()) < presentFormats.size()) 
+        return ECObjectsStatus::Error;
+
     return ECObjectsStatus::Success;
     }
 

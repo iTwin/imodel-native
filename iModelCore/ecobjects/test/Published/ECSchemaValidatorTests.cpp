@@ -2723,4 +2723,56 @@ TEST_F(SchemaValidatorTests, ErrorsForAlreadyReleasedSchemasAreSuppressed)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bao.Tran                         04/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, DuplicatePresentationFormatsKoQ)
+    {
+        {
+        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+            "<ECSchema schemaName='DuplicateKoQ' alias='DupKoQ' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+            "   <ECSchemaReference name='Units' version='1.0.0' alias='u' />"
+            "   <ECSchemaReference name='Formats' version='1.0.0' alias='f' />"
+            "   <KindOfQuantity typeName='MyKindOfQuantity' relativeError='10e-3' persistenceUnit='u:M_PER_SEC_SQ' presentationUnits='f:DefaultRealU(4)[u:M_PER_SEC_SQ];f:DefaultRealU(4)[u:CM_PER_SEC_SQ];f:DefaultRealU(4)[u:FT_PER_SEC_SQ]'/>"
+            "</ECSchema>";
+        InitContextWithSchemaXml(goodSchemaXml.c_str());
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_TRUE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
+        }
+        {
+        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+            "<ECSchema schemaName='NoDupRareCase' alias='DupKoQ' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+            "   <ECSchemaReference name='Units' version='1.0.0' alias='u' />"
+            "   <ECSchemaReference name='Formats' version='1.0.0' alias='f' />"
+            "   <Format typeName = 'DefaultReal' displayLabel = 'real' type ='decimal' precision='4' formatTraits='keepSingleZero' />"
+            "   <KindOfQuantity typeName='MyKindOfQuantity' relativeError='10e-3' persistenceUnit='u:M_PER_SEC_SQ' presentationUnits='DefaultReal(4)[u:FT_PER_SEC_SQ];f:DefaultReal(4)[u:M_PER_SEC_SQ];f:DefaultReal(4)[u:FT_PER_SEC_SQ]'/>"
+            "</ECSchema>";
+        InitContextWithSchemaXml(goodSchemaXml.c_str());
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_TRUE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
+        }
+        {
+        Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+            "<ECSchema schemaName='dupKoQFormat' alias='DupKoQ' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+            "   <ECSchemaReference name='Units' version='1.0.0' alias='u' />"
+            "   <ECSchemaReference name='Formats' version='1.0.0' alias='f' />"
+            "   <KindOfQuantity typeName='MyKindOfQuantity' relativeError='10e-3' persistenceUnit='u:M_PER_SEC_SQ' presentationUnits='f:DefaultRealU(4)[u:M_PER_SEC_SQ];f:DefaultRealU(4)[u:M_PER_SEC_SQ];f:DefaultRealU(4)[u:FT_PER_SEC_SQ]'/>"
+            "</ECSchema>";
+        InitContextWithSchemaXml(badSchemaXml.c_str());
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_FALSE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
+        }
+        {
+        Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+            "<ECSchema schemaName='dupKoQFormat' alias='DupKoQ' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECSchemaReference name='Units' version='1.0.0' alias='u' />"
+            "   <ECSchemaReference name='Formats' version='1.0.0' alias='f' />"
+            "   <KindOfQuantity typeName='MyKindOfQuantity' relativeError='10e-3' persistenceUnit='RAD(DefaultReal)' presentationUnits='ARC_DEG(real2u);ARC_DEG(dms);ARC_DEG(dms);ARC_DEG(real2u)'/>"
+            "</ECSchema>";
+        InitContextWithSchemaXml(badSchemaXml.c_str());
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_FALSE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
+        }
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
