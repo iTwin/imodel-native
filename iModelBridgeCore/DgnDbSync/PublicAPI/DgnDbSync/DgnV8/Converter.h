@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbSync/DgnV8/Converter.h $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -3298,11 +3296,11 @@ struct ElementConverter
 struct ElementAspectConverter : ElementConverter
     {
     private:
-        BentleyStatus ConvertToAspect(SyncInfo::V8ElementExternalSourceAspect*, ElementConversionResults&, ECObjectsV8::IECInstance const& v8Instance, BentleyApi::Utf8CP aspectClassSuffix) const;
+        BentleyStatus ConvertToAspect(SyncInfo::V8ElementExternalSourceAspect*, ElementConversionResults&, ECObjectsV8::IECInstance const& v8Instance, BentleyApi::Utf8CP aspectClassSuffix, bool isNewElement) const;
 
     public:
         explicit ElementAspectConverter(Converter& converter) : ElementConverter(converter) {}
-        BentleyStatus ConvertToAspects(SyncInfo::V8ElementExternalSourceAspect*, ElementConversionResults&, std::vector<std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule>> const& secondaryInstances) const;
+        BentleyStatus ConvertToAspects(SyncInfo::V8ElementExternalSourceAspect*, ElementConversionResults&, std::vector<std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule>> const& secondaryInstances, bool isNewElement) const;
     };
 
 //=======================================================================================

@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnV8/Converter.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -2279,7 +2277,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
         if (!isNewElement)
             GetChangeDetector()._IsElementChanged(changeInfo, *this, v8eh, v8mm);
 
-        if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(&changeInfo.m_v8ElementAspect, results, ecContent.m_secondaryV8Instances))
+        if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(&changeInfo.m_v8ElementAspect, results, ecContent.m_secondaryV8Instances, isNewElement))
             return BSIERROR;
         }
 

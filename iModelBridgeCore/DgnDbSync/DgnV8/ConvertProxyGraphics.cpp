@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnV8/ConvertProxyGraphics.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -315,9 +313,9 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
     V8ElementECContent ecContent;
     bool hasPrimaryInstance = false;
     bool hasSecondaryInstances = false;
+    bool isNewElement = true;
     if (sectionedV8Element.IsValid()) // This is the 3-D element that was sectioned/projected/rendered
         {
-        bool isNewElement = true;
         if (IsUpdating())
             {
             IChangeDetector::SearchResults changeInfo;
@@ -398,7 +396,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         if (nullptr == m_elementAspectConverter)
             m_elementAspectConverter = new ElementAspectConverter(*this);
         SyncInfo::V8ElementExternalSourceAspect* nonConstXsa = const_cast<SyncInfo::V8ElementExternalSourceAspect*>(&sectionedElementXsa);
-        if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(nonConstXsa, results, ecContent.m_secondaryV8Instances))
+        if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(nonConstXsa, results, ecContent.m_secondaryV8Instances, isNewElement))
             {
             //ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicBuildFailure(), "", sectionedElementXsa.m_v8ElementId, model.GetName().c_str());
 

@@ -1,8 +1,6 @@
 #----------------------------------------------------------------------
 #
-#     $Source: BimFromDgnDb/MakeDgnDbVersionedApi.mki $
-#
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #----------------------------------------------------------------------
 # Modify the DgnDb06 PublicApi to ensure that it will not conflict with the DgnV8 PublicApi

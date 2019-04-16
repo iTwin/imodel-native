@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnV8/ECElementConverter.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -244,11 +242,11 @@ Utf8String ElementConverter::UnitResolver::_ResolveUnitName(ECPropertyCR ecPrope
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
 BentleyStatus ElementAspectConverter::ConvertToAspects(SyncInfo::V8ElementExternalSourceAspect* aspect, ElementConversionResults& results,
-                                                       std::vector<std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule>> const& secondaryInstances) const
+                                                       std::vector<std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule>> const& secondaryInstances, bool isNewElement) const
     {
     for (std::pair<ECObjectsV8::IECInstancePtr, BisConversionRule> const& v8SecondaryInstance : secondaryInstances)
         {
-        if (BSISUCCESS != ConvertToAspect(aspect, results, *v8SecondaryInstance.first, BisConversionRuleHelper::GetAspectClassSuffix(v8SecondaryInstance.second)))
+        if (BSISUCCESS != ConvertToAspect(aspect, results, *v8SecondaryInstance.first, BisConversionRuleHelper::GetAspectClassSuffix(v8SecondaryInstance.second), isNewElement))
             return BSIERROR;
         }
 
@@ -259,7 +257,7 @@ BentleyStatus ElementAspectConverter::ConvertToAspects(SyncInfo::V8ElementExtern
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ElementAspectConverter::ConvertToAspect(SyncInfo::V8ElementExternalSourceAspect* aspect, ElementConversionResults& results, ECObjectsV8::IECInstance const& v8Instance, Utf8CP aspectClassSuffix) const
+BentleyStatus ElementAspectConverter::ConvertToAspect(SyncInfo::V8ElementExternalSourceAspect* aspect, ElementConversionResults& results, ECObjectsV8::IECInstance const& v8Instance, Utf8CP aspectClassSuffix, bool isNewElement) const
     {
     BECN::ECClassCP aspectClass = GetDgnDbClass(v8Instance, aspectClassSuffix);
     if (aspectClass == nullptr)
@@ -281,7 +279,7 @@ BentleyStatus ElementAspectConverter::ConvertToAspect(SyncInfo::V8ElementExterna
 
     // Need to see if there is an existing aspect or if we are updating
     bool found = false;
-    if (m_converter.IsUpdating() && nullptr != aspect)
+    if (!isNewElement && nullptr != aspect)
         {
         auto propData = aspect->GetProperties();
         if (propData.HasMember("SecondaryInstances"))

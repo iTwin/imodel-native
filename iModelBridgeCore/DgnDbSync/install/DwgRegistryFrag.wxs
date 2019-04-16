@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-#     $Source: install/DwgRegistryFrag.wxs $
-#    $RCSfile: productShortcutFrag.wxs,v $
-#   $Revision: 1.36 $
-#       $Date: 2011/08/12 12:28:22 $
-#     $Author: Vishal.Sharma $
-#
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 -->
 
 <!-- Create shortcuts. -->
