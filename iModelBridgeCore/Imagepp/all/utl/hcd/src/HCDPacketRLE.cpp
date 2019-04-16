@@ -1,12 +1,11 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: all/utl/hcd/src/HCDPacketRLE.cpp $
 //:>    $RCSfile: HCDPacketRLE.cpp,v $
 //:>   $Revision: 1.12 $
 //:>       $Date: 2008/11/24 19:52:55 $
 //:>     $Author: Ghislain.Tardif $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
