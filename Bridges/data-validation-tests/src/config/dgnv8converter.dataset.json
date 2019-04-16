@@ -7,7 +7,7 @@
     },
     "imodel02": {
         "input": "//bentley/shares/Temp/MajdU/ConversionDataset",
-        "latest": "//bentley.com/shares/Temp/MajdU/imodel02Output/latest",
-        "previous": "//bentley.com/shares/Temp/MajdU/imodel02Output/previous"
+        "latest": "//BUILDMINION03/DgnV8ConversionHistory/imodel02Output/latest",
+        "previous": "//BUILDMINION03/DgnV8ConversionHistory/imodel02Output/previous"
     }
 }

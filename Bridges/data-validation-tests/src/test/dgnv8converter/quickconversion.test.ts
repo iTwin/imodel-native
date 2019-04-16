@@ -13,10 +13,10 @@ describe("DataValidation-QuickConversion", () => {
         reporter.setHtmlReprtName("QuickConversionReport.html");
         // tslint:disable-next-line:no-console
         console.log("Running conversion tests");
-        const latestRoot = "//isbprdfs02/DgnDb/ConversionOutput/Bim0200/latest";
-        const prevRoot = "//isbprdfs02/DgnDb/ConversionOutput/Bim0200/previous";
-        const lhsFiles: string[] = glob.sync("**/*.bim", { cwd: dsJson.imodel02.latest });
-        const rhsFiles: string[] = glob.sync("**/*.bim", { cwd: dsJson.imodel02.previous });
+        const latestRoot = dsJson.imodel02.latest;
+        const prevRoot = dsJson.imodel02.previous;
+        const lhsFiles: string[] = glob.sync("**/*.bim", { cwd: latestRoot });
+        const rhsFiles: string[] = glob.sync("**/*.bim", { cwd:  prevRoot});
 
         for (const lf of lhsFiles) {
             for (const rf of rhsFiles) {
