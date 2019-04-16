@@ -1686,6 +1686,7 @@ Render::GeometryParams  m_geomParams;
 Transform               m_geomToLocal;
 DRange3d                m_localRange;
 bool                    m_isLevelByCell;
+bool                    m_isLevelValid;
 
 };
 
@@ -2671,6 +2672,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
             partRef.m_geomToLocal = geomToLocal;
             partRef.m_localRange = localRange;
             partRef.m_isLevelByCell = DgnV8Api::LEVEL_BYCELL == pathGeom.m_path->GetCursorElem()->GetUnstableMSElementCP()->ehdr.level;
+            partRef.m_isLevelValid = pathGeom.m_path->GetCursorElem()->GetUnstableMSElementCP()->ehdr.isGraphics;
 
             geomParts.push_back(partRef);
 
@@ -3166,13 +3168,18 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
                 geomToLocal.ScaleMatrixColumns(geomToLocal, partScale, partScale, partScale);
                 }
 
-            ApplySharedCellInstanceOverrides(v8eh, geomParams); // Apply SCOverride now for a shared cell that was deemed ok for a GeometryPart...
+            // Apply SCOverride now for a shared cell that was deemed ok for a GeometryPart..
+            ApplySharedCellInstanceOverrides(v8eh, geomParams);
 
-            if (!partRef.m_isLevelByCell)
+            if (partRef.m_isLevelValid && !partRef.m_isLevelByCell)
                 lastCategoryId = geomParams.GetCategoryId();
 
             if (!targetCategoryValid && targetCategoryId == lastCategoryId)
-                targetCategoryValid = true;    
+                targetCategoryValid = true;
+
+            // Need to ignore cached category for an XGraphic symbol, 107 elements don't have a valid level and inherit from parent 106, which means it can change...
+            if (!partRef.m_isLevelValid && targetCategoryId != geomParams.GetCategoryId())
+                geomParams.SetCategoryId(targetCategoryId, false); // Preserve appearance overrides...
 
             // If category changes, need to create a new element/assembly...
             if (builder.IsValid() && builder->GetGeometryParams().GetCategoryId() != lastCategoryId)
@@ -4549,6 +4556,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
                     partRef.m_geomToLocal = geomToLocal;
                     partRef.m_localRange = localRange;
                     partRef.m_isLevelByCell = DgnV8Api::LEVEL_BYCELL == pathGeom.m_path->GetCursorElem()->GetUnstableMSElementCP()->ehdr.level;
+                    partRef.m_isLevelValid = true;
 
                     geomParts.push_back(partRef);
 
