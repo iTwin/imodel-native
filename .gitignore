@@ -7,3 +7,6 @@
 xcuserdata
 iModelJsApp.xcconfig
 .vscode
+.gradle/
+gradle.properties
+local.properties
