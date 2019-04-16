@@ -1,12 +1,10 @@
 #--------------------------------------------------------------------------------------
-#
-#     $Source: Tests/AssertCompilePublishedScalableMeshUnitTestsPolicy.mki $
 #    $RCSfile: Assert3difPolicy.mki,v $
 #   $Revision: 1.3 $
 #       $Date: 2017/10/24 12:24:14 $
 #     $Author: Richard.Bois $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 %include $(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki

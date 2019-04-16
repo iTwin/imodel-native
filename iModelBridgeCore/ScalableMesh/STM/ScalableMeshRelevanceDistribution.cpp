@@ -1,12 +1,11 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: STM/ScalableMeshRelevanceDistribution.cpp $
 //:>    $RCSfile: ScalableMeshRelevanceDistribution.cpp,v $
 //:>   $Revision: 1.6 $
 //:>       $Date: 2010/11/29 13:15:52 $
 //:>     $Author: Daryl.Holmwood $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 

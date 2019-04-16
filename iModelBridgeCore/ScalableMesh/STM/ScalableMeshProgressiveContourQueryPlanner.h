@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshProgressiveContourQueryPlanner.h $
 |    $RCSfile: ScalableMeshProgressiveContourQueryPlanner.h,v $
 |   $Revision: 1.20 $
 |       $Date: 2018/08/15 14:07:12 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

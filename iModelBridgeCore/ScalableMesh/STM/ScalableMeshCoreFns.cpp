@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshCoreFns.cpp $
 |    $RCSfile: ScalableMeshCoreFns.cpp,v $
 |   $Revision: 1.40 $
 |       $Date: 2012/11/14 18:20:56 $
 |     $Author: Daryl.Holmwood $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

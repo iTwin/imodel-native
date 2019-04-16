@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ImportPlugins/GDALFileImporter.cpp $
 |    $RCSfile: GDALFileImporter.cpp,v $
 |   $Revision: 1.0 $
 |       $Date: 2015/04/07 12:15:00 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 
