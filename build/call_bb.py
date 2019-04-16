@@ -35,10 +35,10 @@ def callForPull(args, config):
     # Otherwise glom the architectures together.
 
     if args.arch:
-        allArchs.append(args.arch)
+        allArchs.extend(args.arch.split('+'))
 
     for stratConfig in config['strategies']:
-        if args.arch and (not args.arch.lower() in stratConfig['archs'].lower().split('+')):
+        if args.arch and (not any(a for a in args.arch.split('+') if a.lower() in stratConfig['archs'].lower().split('+'))):
             continue
         
         if not args.arch:
@@ -90,7 +90,7 @@ def callEachStrategy(args, config, verData):
     for stratConfig in config['strategies']:
         print('Processing ' + stratConfig['name'] + '...')
         
-        if args.arch and not args.arch.lower() in stratConfig['archs'].lower().split('+'):
+        if args.arch and not any(a for a in args.arch.split('+') if a.lower() in stratConfig['archs'].lower().split('+')):
             continue
 
         bbStrats = stratConfig['name']
