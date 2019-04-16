@@ -861,47 +861,20 @@ BentleyStatus iModelBridgeFwk::DoInitial()
     //
     //  We need to create a new repository.
     //
+    CreateDgnDbParams createProjectParams;
+    
+    Utf8String rootSubjName(m_briefcaseName.GetBaseName());
+    createProjectParams.SetRootSubjectName(rootSubjName.c_str());
 
-    //  Initialize the bridge to do the creation.
-    //  Note: iModelBridge::_Initialize will register domains, and some of them may be required.
-    if (BSISUCCESS != InitBridge())
-        return BentleyStatus::ERROR;
-    if (true)
+    // Create the DgnDb file. All currently registered domain schemas are imported.
+    BeSQLite::DbResult createStatus;
+    auto db = DgnDb::CreateDgnDb(&createStatus, m_briefcaseName, createProjectParams);
+    if (!db.IsValid())
         {
-        iModelBridgeCallTerminate callTerminate(*m_bridge);
-
-        //  Create a new repository. (This will import all required domains and their schemas.)
-        m_isCreatingNewRepo = true;
-        m_briefcaseDgnDb = m_bridge->DoCreateDgnDb(m_modelsInserted, nullptr);
-        m_isCreatingNewRepo = false;
-        if (!m_briefcaseDgnDb.IsValid())
-            {
-            // Hopefully, this is a recoverable error. Stay in Initial state, so that we can try again.
-            return BSIERROR;
-            }
-        callTerminate.m_status = BSISUCCESS;
+        LOG.fatalv(L"Failed to create repository [%s] with error %x", m_briefcaseName.c_str(), createStatus);
+        return BSIERROR;
         }
-
-    auto rc = m_briefcaseDgnDb->SaveChanges();
-    if (BeSQLite::BE_SQLITE_OK != rc)
-        {
-        // Hopefully, this is a recoverable error. Stay in Initial state, so that we can try again.
-        LOG.fatalv("SaveChanges failed with %s", m_briefcaseDgnDb->GetLastError().c_str());
-        m_briefcaseDgnDb->AbandonChanges();
-        m_briefcaseDgnDb = nullptr;
-        m_briefcaseName.BeDeleteFile();
-        return BentleyStatus::ERROR;
-        }
-
-    BeAssert(!m_briefcaseDgnDb->Txns().HasChanges());
-
-    SaveNewModelIds();
-    m_modelsInserted.clear();   // *** CLEAR, SO THAT WE TEST WRITE/READ CODE
-
-    // Close the DgnDb that converter just created. The next states all start with a filename. Also, we
-    // must be sure that all changes are flushed to disk.
-    m_briefcaseDgnDb = nullptr;
-
+    db->SaveChanges();
     SetState(BootstrappingState::CreatedLocalDb);
 
     return BSISUCCESS;
