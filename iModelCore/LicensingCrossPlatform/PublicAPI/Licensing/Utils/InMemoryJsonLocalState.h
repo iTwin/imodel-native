@@ -1,9 +1,7 @@
 #pragma once
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/PublicAPI/Licensing/Utils/InMemoryJsonLocalState.h $
-|
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
