@@ -1,8 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: vu/doc/build/bsivudoc/bsivudoc.mke $
-#
-#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 #%if !defined (MSJ)

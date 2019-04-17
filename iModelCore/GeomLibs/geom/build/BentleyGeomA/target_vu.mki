@@ -1,8 +1,6 @@
 #--------------------------------------------------------------------------------------+
 #
-#     $Source: geom/build/BentleyGeomA/target_vu.mki $
-#
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------*/
 $(OUT_DIR)cluster$(OUT_EXT)          : $(geomSrcFuncs)cluster.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
