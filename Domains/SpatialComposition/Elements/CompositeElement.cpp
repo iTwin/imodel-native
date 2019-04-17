@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include <SpatialComposition/Elements/SpatialCompositionElementsApi.h>
 #include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
