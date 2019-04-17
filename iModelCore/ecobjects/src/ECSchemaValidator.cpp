@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/ECSchemaValidator.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -498,9 +496,15 @@ static ECObjectsStatus CheckBisAspects(bool& entityDerivesFromSpecifiedClass, EC
     entityDerivesFromSpecifiedClass = true;
     if (!foundValidRelationshipConstraint)
         {
-        LOG.errorv("Entity class derives from '%s' so it must be a supported target constraint in a relationship that derives from '%s'",
-            derivedClassName, derivedRelationshipClassName);
-        return ECObjectsStatus::Error;
+        Utf8String errorMessage = Utf8PrintfString("Entity class derives from '%s' so it must be a supported target constraint in a relationship that derives from '%s'",
+                                                   derivedClassName, derivedRelationshipClassName);
+        if (!entity.GetSchema().IsDynamicSchema())
+            {
+            LOG.error(errorMessage.c_str());
+            return ECObjectsStatus::Error;
+            }
+        else
+            LOG.warning(errorMessage.c_str());
         }
 
     return ECObjectsStatus::Success;
@@ -843,6 +847,21 @@ ECObjectsStatus ECSchemaValidator::KindOfQuantityValidator(KindOfQuantityCR koq)
         LOG.errorv("KindOfQuantity has persistence unit of unit system '%s' but must have an SI unit system", koq.GetPersistenceUnit()->GetUnitSystem()->GetName().c_str());
         return ECObjectsStatus::Error;
         }
+
+    // RULE: KindOfQuantity must not have duplicate presentation formats
+    ECSchemaCR schema = koq.GetSchema();
+    bset<Utf8String> uniqueFormats;
+    const auto &presentFormats = koq.GetPresentationFormats();
+    for (const auto &format : presentFormats) 
+        {
+        auto formatQualifiedName = format.GetQualifiedFormatString(schema);
+        auto resultInsertion = uniqueFormats.insert(formatQualifiedName);
+        if (!resultInsertion.second)
+            LOG.errorv("KindOfQuantity %s has a duplicate presentation format %s which is not allowed", koq.GetName().c_str(), formatQualifiedName.c_str());
+        }
+
+    if (static_cast<size_t>(uniqueFormats.size()) < presentFormats.size()) 
+        return ECObjectsStatus::Error;
 
     return ECObjectsStatus::Success;
     }

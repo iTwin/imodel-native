@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: test/Published/ECSchemaValidatorTests.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -539,7 +537,8 @@ TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedEntityProperty)
 //---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     {
-    // Element Aspect Relationship Tests
+    IECInstancePtr dynamicCAInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance("DynamicSchema");
+    // Element Aspect Relationship TestsF
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
@@ -553,6 +552,9 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "There is no relationship, so validation should fail";
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->SetCustomAttribute(*dynamicCAInstance);
+    ASSERT_TRUE(validator.Validate(*schema)) << "There is no derived aspect relationship but schema is marked as dynamic so validation should pass";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -586,6 +588,9 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "Missing base class in TestRelationship. Validation should fail.";
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->SetCustomAttribute(*dynamicCAInstance);
+    ASSERT_FALSE(validator.Validate(*schema)) << "TestRelationship has an aspect as an endpoint but does not derive from ElementOwnsMultiAspect.  This should fail even though the schema is dynamic";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -732,6 +737,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     {
+    IECInstancePtr dynamicCAInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance("DynamicSchema");
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
@@ -745,6 +751,9 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "There is no relationship, so validation should fail";
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->SetCustomAttribute(*dynamicCAInstance);
+    ASSERT_TRUE(validator.Validate(*schema)) << "There is no relationship but schema is marked as dynamic so validation should pass";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -777,6 +786,9 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "Missing base class in TestRelationship. Validation should fail.";
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->SetCustomAttribute(*dynamicCAInstance);
+    ASSERT_FALSE(validator.Validate(*schema)) << "TestRelationship has an aspect as an endpoint but does not derive from ElementOwnsUniqueAspect.  This should fail even though the schema is dynamic";
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
@@ -2756,6 +2768,58 @@ TEST_F(SchemaValidatorTests, ErrorsForAlreadyReleasedSchemasAreSuppressed)
         InitBisContextWithSchemaXml(goodSchemaXml.c_str());
         ASSERT_TRUE(schema.IsValid());
         EXPECT_TRUE(validator.Validate(*schema)) << "StructuralPhysical may violate the model subclassing rule with StructuralPhysicalModel";
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bao.Tran                         04/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, DuplicatePresentationFormatsKoQ)
+    {
+        {
+        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+            "<ECSchema schemaName='DuplicateKoQ' alias='DupKoQ' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+            "   <ECSchemaReference name='Units' version='1.0.0' alias='u' />"
+            "   <ECSchemaReference name='Formats' version='1.0.0' alias='f' />"
+            "   <KindOfQuantity typeName='MyKindOfQuantity' relativeError='10e-3' persistenceUnit='u:M_PER_SEC_SQ' presentationUnits='f:DefaultRealU(4)[u:M_PER_SEC_SQ];f:DefaultRealU(4)[u:CM_PER_SEC_SQ];f:DefaultRealU(4)[u:FT_PER_SEC_SQ]'/>"
+            "</ECSchema>";
+        InitContextWithSchemaXml(goodSchemaXml.c_str());
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_TRUE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
+        }
+        {
+        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+            "<ECSchema schemaName='NoDupRareCase' alias='DupKoQ' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+            "   <ECSchemaReference name='Units' version='1.0.0' alias='u' />"
+            "   <ECSchemaReference name='Formats' version='1.0.0' alias='f' />"
+            "   <Format typeName = 'DefaultReal' displayLabel = 'real' type ='decimal' precision='4' formatTraits='keepSingleZero' />"
+            "   <KindOfQuantity typeName='MyKindOfQuantity' relativeError='10e-3' persistenceUnit='u:M_PER_SEC_SQ' presentationUnits='DefaultReal(4)[u:FT_PER_SEC_SQ];f:DefaultReal(4)[u:M_PER_SEC_SQ];f:DefaultReal(4)[u:FT_PER_SEC_SQ]'/>"
+            "</ECSchema>";
+        InitContextWithSchemaXml(goodSchemaXml.c_str());
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_TRUE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
+        }
+        {
+        Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+            "<ECSchema schemaName='dupKoQFormat' alias='DupKoQ' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+            "   <ECSchemaReference name='Units' version='1.0.0' alias='u' />"
+            "   <ECSchemaReference name='Formats' version='1.0.0' alias='f' />"
+            "   <KindOfQuantity typeName='MyKindOfQuantity' relativeError='10e-3' persistenceUnit='u:M_PER_SEC_SQ' presentationUnits='f:DefaultRealU(4)[u:M_PER_SEC_SQ];f:DefaultRealU(4)[u:M_PER_SEC_SQ];f:DefaultRealU(4)[u:FT_PER_SEC_SQ]'/>"
+            "</ECSchema>";
+        InitContextWithSchemaXml(badSchemaXml.c_str());
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_FALSE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
+        }
+        {
+        Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+            "<ECSchema schemaName='dupKoQFormat' alias='DupKoQ' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "   <ECSchemaReference name='Units' version='1.0.0' alias='u' />"
+            "   <ECSchemaReference name='Formats' version='1.0.0' alias='f' />"
+            "   <KindOfQuantity typeName='MyKindOfQuantity' relativeError='10e-3' persistenceUnit='RAD(DefaultReal)' presentationUnits='ARC_DEG(real2u);ARC_DEG(dms);ARC_DEG(dms);ARC_DEG(real2u)'/>"
+            "</ECSchema>";
+        InitContextWithSchemaXml(badSchemaXml.c_str());
+        ASSERT_TRUE(schema.IsValid());
+        EXPECT_FALSE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
         }
     }
 
