@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
 // WIP_BEFILENAME_PORTABILITY - need better way of setting temp directory
 #include <windows.h>

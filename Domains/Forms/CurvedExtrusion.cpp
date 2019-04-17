@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include "FormsDomain\CurvedExtrusion.h"
 
 BEGIN_BENTLEY_FORMS_NAMESPACE
