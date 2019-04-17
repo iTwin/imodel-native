@@ -30,7 +30,7 @@ fileTemplate = """/*------------------------------------------------------------
 // WARNING: To generate, call "bb -r BuildingShared -f BuildingShared -p CodeGenerators b -c"
 //===========================================================================================\n
 
-#include <ClassificationSystems/ClassificationSystemsApi.h>
+#include "PublicApi/GeneratedInsertsApi.h"
 #include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
 
@@ -38,9 +38,9 @@ namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
-void ClassificationSystemsDomain::{functionName}(Dgn::DgnDbR db) const
+void GeneratedInserts::{functionName}(Dgn::DgnDbR db) const
     {{
-    ClassificationSystemCPtr {classSystemVariableName} = TryAndGetSystem(db, "{systemType}");
+    ClassificationSystemCPtr {classSystemVariableName} = TryAndGetSystem(db, "{systemType}", "{systemEdition}");
     ClassificationTableCPtr {classTableVariableName} = TryAndGetTable(*{classSystemVariableName} , "{tableName}");
 
 {code}
@@ -123,11 +123,18 @@ classTableVariableName = toCamelCase(systemType) + "Table"
 
 ParseSection(root, 0, systemType, classTableVariableName)
 
+systemEdition = ""
+if systemType == "MasterFormat" or systemType == "UniFormat":
+    systemEdition = "2010" 
+elif systemType == "OmniClass":
+    systemEdition = ntpath.basename(sys.argv[1]).split("_")[2].split(".")[0]
+
 filledTemplate = fileTemplate.format(
     generatedFileName = ntpath.basename(sys.argv[2]),
     currentYear = datetime.now().strftime('%Y'),
     functionName = "Insert{}Definitions".format(tp),
     systemType = systemType,
+    systemEdition = systemEdition,
     classSystemVariableName = classSystemVariableName,
     classTableVariableName = classTableVariableName,
     tableName = root.find("Name").text,
