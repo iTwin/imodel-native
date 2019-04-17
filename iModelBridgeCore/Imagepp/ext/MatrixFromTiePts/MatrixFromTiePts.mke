@@ -1,12 +1,10 @@
 #--------------------------------------------------------------------------------------
-#
-#     $Source: ext/MatrixFromTiePts/MatrixFromTiePts.mke $
 #    $RCSfile: imagepp.mke,v $
 #   $Revision: 1.50 $
 #       $Date: 2007/03/07 13:34:13 $
 #     $Author: Bern.McCarty $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 HAVE_PERMISSION_TO_COMPILE_AT_W3=1
