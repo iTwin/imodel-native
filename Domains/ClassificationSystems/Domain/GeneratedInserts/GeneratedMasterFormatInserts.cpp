@@ -12,7 +12,6 @@
 
 
 #include <ClassificationSystems/ClassificationSystemsApi.h>
-
 #include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
 
@@ -22,7 +21,7 @@ BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
 void ClassificationSystemsDomain::InsertMasterFormatDefinitions(Dgn::DgnDbR db) const
     {
-    ClassificationSystemCPtr masterFormatSystem = TryAndGetSystem(db, "MasterFormat");
+    ClassificationSystemCPtr masterFormatSystem = TryAndGetSystem(db, "MasterFormat", "2010");
     ClassificationTableCPtr masterFormatTable = TryAndGetTable(*masterFormatSystem , "MasterFormat 2010 Edition - Numbers and Titles");
 
     ClassificationPtr subsection0MasterFormat;

@@ -24,8 +24,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification final : Dgn::DefinitionElement
     DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_Classification, Dgn::DefinitionElement);
     private:
         BE_PROP_NAME(Description)
-        
-        Dgn::DgnCode GetClassificationCode(Dgn::DgnDbR db, Utf8CP name, Dgn::DgnElementId id) const;
+
         static Dgn::DgnModelPtr GetOrCreateTableSubModel(ClassificationTableCR table);
 
     protected:
@@ -62,6 +61,13 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification final : Dgn::DefinitionElement
         //! @return     a ptr to created Classification
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationPtr CreateAndInsert(ClassificationTableCR table, Utf8CP name, Utf8CP id, Utf8CP description, ClassificationGroupCP group, ClassificationCP specializes);
 
+        //! Tries to get a Classification from the database using provided name and table id
+        //! @param[in]  db       db that containes ClassificationSystem
+        //! @param[in]  id       Classification System's name
+        //! @param[in]  tableId  Classification Table's id which the Classification belongs to
+        //! @return     a ptr to Classification
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationCPtr TryGet(Dgn::DgnDbR db, Utf8StringCR id, Dgn::DgnElementId tableId);
+
         //! Returns a classification which belongs to System <- Table hierarchy. 
         //! If any of the pieces are missing, they are created and inserted into the database.
         //! @param[in]  db           db that should contain the hierarchy
@@ -72,12 +78,19 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification final : Dgn::DefinitionElement
         //! @param[in]  tableName    name of the Classification Table that the Classification belongs to
         //! @return     a ptr to created or queried Classification
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationPtr GetOrCreateBySystemTableNames(
-            Dgn::DgnDbR db, Utf8CP name, Utf8CP id, Utf8CP description, Utf8StringCR systemName, Utf8StringCR tableName);
+            Dgn::DgnDbR db, Utf8StringCR name, Utf8StringCR id, Utf8StringCR description, Utf8StringCR systemName, Utf8StringCR systemEdition, Utf8StringCR tableName);
 
         //!Returns this Classification Name property
         //! @return Name property of the Classification
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetUserLabel(); }
         
+        //! Gets Classification code generated from given parameters
+        //! @param[in]  db       db that contains code specs
+        //! @param[in]  name     name of the Classification that will be used for code generation
+        //! @param[in]  id       id of ClassificationTable that contains this Classification
+        //! @return     generated code
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static Dgn::DgnCode GetClassificationCode(Dgn::DgnDbR db, Utf8StringCR name, Dgn::DgnElementId id);
+
         //!Returns this Classification Id property
         //! @return Id property of the Classification
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetClassificationId() const { return GetCode().GetValueUtf8CP(); }

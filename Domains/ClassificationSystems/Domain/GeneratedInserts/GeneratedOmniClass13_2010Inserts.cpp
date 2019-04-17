@@ -12,7 +12,6 @@
 
 
 #include <ClassificationSystems/ClassificationSystemsApi.h>
-
 #include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
 
@@ -22,7 +21,7 @@ BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
 void ClassificationSystemsDomain::InsertOmniClass13_2010Definitions(Dgn::DgnDbR db) const
     {
-    ClassificationSystemCPtr omniClassSystem = TryAndGetSystem(db, "OmniClass");
+    ClassificationSystemCPtr omniClassSystem = TryAndGetSystem(db, "OmniClass", "2010-06-24");
     ClassificationTableCPtr omniClassTable = TryAndGetTable(*omniClassSystem , "Table 13 - Spaces by Function");
 
     ClassificationPtr subsection0OmniClass;

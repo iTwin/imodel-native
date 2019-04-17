@@ -12,7 +12,6 @@
 
 
 #include <ClassificationSystems/ClassificationSystemsApi.h>
-
 #include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
 
@@ -22,7 +21,7 @@ BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
 void ClassificationSystemsDomain::InsertUniFormatDefinitions(Dgn::DgnDbR db) const
     {
-    ClassificationSystemCPtr uniFormatSystem = TryAndGetSystem(db, "UniFormat");
+    ClassificationSystemCPtr uniFormatSystem = TryAndGetSystem(db, "UniFormat", "2010");
     ClassificationTableCPtr uniFormatTable = TryAndGetTable(*uniFormatSystem , "2010 Edition UniFormat - Levels One through Three");
 
     ClassificationPtr subsection0UniFormat;

@@ -113,14 +113,15 @@ Dgn::DgnCode ClassificationSystemsDomain::GetSystemCode
 ClassificationSystemCPtr ClassificationSystemsDomain::TryAndGetSystem
 (
     Dgn::DgnDbR db,
-    Utf8CP name
+    Utf8StringCR name,
+    Utf8StringCR edition
 ) const
     {
     //TODO Make this static in elements
-    ClassificationSystemCPtr system = ClassificationSystem::TryGet(db,name);
+    ClassificationSystemCPtr system = ClassificationSystem::TryGet(db, name, edition);
     if (system.IsNull())
         {
-        return InsertSystem(db, name);
+        return InsertSystem(db, name, edition);
         }
     else {
         return system;
@@ -161,11 +162,12 @@ ClassificationTableCPtr ClassificationSystemsDomain::TryAndGetTable
 //---------------------------------------------------------------------------------------
 ClassificationSystemPtr ClassificationSystemsDomain::InsertSystem
 (
-Dgn::DgnDbR db,
-Utf8CP name
+    Dgn::DgnDbR db,
+    Utf8StringCR name,
+    Utf8StringCR edition
 ) const
     {
-    ClassificationSystemPtr classSystem = ClassificationSystem::Create(db, name);
+    ClassificationSystemPtr classSystem = ClassificationSystem::Create(db, name, edition);
     classSystem->Insert();
     return classSystem;
     }

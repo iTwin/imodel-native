@@ -12,7 +12,7 @@
 
 
 #include <ClassificationSystems/ClassificationSystemsApi.h>
-#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
+#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h> 
 
 
 namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
@@ -25,7 +25,7 @@ void ClassificationSystemsDomain::InsertStandardDefinitionSystems(Dgn::DgnDbR db
     ClassificationTablePtr table;
     ClassificationGroupPtr group;
 
-    system = InsertSystem(db, "ASHRAE2004");
+    system = InsertSystem(db, "ASHRAE2004", "2004");
     table = InsertTable(*system, "ASHRAE2004 Table");
 
     group = InsertGroup(*table, "Recreation & Entertainment");
@@ -410,7 +410,7 @@ void ClassificationSystemsDomain::InsertStandardDefinitionSystems(Dgn::DgnDbR db
     InsertClassification(*table, "Sales Area", "Sales Area", "", group.get(), nullptr);
     InsertClassification(*table, "Shipping/Receiving", "Shipping/Receiving", "", group.get(), nullptr);
     InsertClassification(*table, "Storage - Active", "Storage - Active", "", group.get(), nullptr);
-    system = InsertSystem(db, "ASHRAE2010");
+    system = InsertSystem(db, "ASHRAE2010", "2010");
     table = InsertTable(*system, "ASHRAE2010 Table");
 
     group = InsertGroup(*table, "Recreation & Entertainment");
@@ -825,7 +825,7 @@ void ClassificationSystemsDomain::InsertStandardDefinitionSystems(Dgn::DgnDbR db
     InsertClassification(*table, "Restrooms", "Restrooms", "", group.get(), nullptr);
     InsertClassification(*table, "Sales Area", "Sales Area", "", group.get(), nullptr);
     InsertClassification(*table, "Shipping/Receiving", "Shipping/Receiving", "", group.get(), nullptr);
-    system = InsertSystem(db, "ASHRAE2007");
+    system = InsertSystem(db, "ASHRAE2007", "2007");
     table = InsertTable(*system, "ASHRAE2007 Table");
 
     group = InsertGroup(*table, "Recreation & Entertainment");
@@ -1225,7 +1225,7 @@ void ClassificationSystemsDomain::InsertStandardDefinitionSystems(Dgn::DgnDbR db
     InsertClassification(*table, "Sales Area", "Sales Area", "", group.get(), nullptr);
     InsertClassification(*table, "Shipping/Receiving", "Shipping/Receiving", "", group.get(), nullptr);
     InsertClassification(*table, "Storage - Active", "Storage - Active", "", group.get(), nullptr);
-    system = InsertSystem(db, "CIBSE");
+    system = InsertSystem(db, "CIBSE", "");
     table = InsertTable(*system, "CIBSE Table");
 
     group = InsertGroup(*table, "Industrial building");

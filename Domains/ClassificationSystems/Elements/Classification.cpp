@@ -22,11 +22,11 @@ DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(Classification)
 Dgn::DgnCode Classification::GetClassificationCode
 (
     Dgn::DgnDbR db,
-    Utf8CP name,
-    Dgn::DgnElementId id
-) const
+    Utf8StringCR id,
+    Dgn::DgnElementId tableId
+)
     {
-    return Dgn::DgnCode(db.CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem), id, name);
+    return Dgn::DgnCode(db.CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem), tableId, id);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -55,17 +55,10 @@ Classification::Classification
     ClassificationCP specializes
 ) : T_Super(params) 
     {
-    Dgn::DgnElementId elemid;
     SetUserLabel(name);
     SetDescription(description);
-    if(group != nullptr) 
-        {
-        elemid = group->GetElementId();
-        }
-    else 
-        {
-        elemid = table.GetElementId();
-        }
+
+    Dgn::DgnElementId elemid = table.GetElementId();
     Dgn::DgnCode code = GetClassificationCode(params.m_dgndb, id, elemid);
     SetCode(code);
     if(specializes != nullptr) 
@@ -107,17 +100,37 @@ ClassificationPtr Classification::CreateAndInsert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas                04/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+ClassificationCPtr Classification::TryGet
+(
+    Dgn::DgnDbR db,
+    Utf8StringCR classificationId,
+    Dgn::DgnElementId tableId
+)
+    {
+    Dgn::DgnCode code = Classification::GetClassificationCode(db, classificationId, tableId);
+    Dgn::DgnElementId id = db.Elements().QueryElementIdByCode(code);
+
+    if (id.IsValid())
+        return Classification::Get(db, id);
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas                04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 ClassificationPtr Classification::GetOrCreateBySystemTableNames
 (
     Dgn::DgnDbR db,
-    Utf8CP name,
-    Utf8CP id,
-    Utf8CP description,
+    Utf8StringCR name,
+    Utf8StringCR id,
+    Utf8StringCR description,
     Utf8StringCR systemName,
+    Utf8StringCR systemEdition,
     Utf8StringCR tableName
 )
     {
-    ClassificationSystemCPtr system = ClassificationSystem::GetOrCreateSystemByName(db, systemName);
+    ClassificationSystemCPtr system = ClassificationSystem::GetOrCreateSystemByName(db, systemName, systemEdition);
     if (system.IsNull())
         {
         BeAssert(!"Could not get or create system");
@@ -131,17 +144,12 @@ ClassificationPtr Classification::GetOrCreateBySystemTableNames
         return nullptr;
         }
 
-    Dgn::DgnModelPtr model = GetOrCreateTableSubModel(*table);
+    ClassificationCPtr classification = Classification::TryGet(db, id, table->GetElementId());
+    
+    if(classification.IsValid())
+        return classification->GetForEdit(db, classification->GetElementId());
 
-    for (auto classificationEntry : table->MakeClassificationIterator())
-        {
-        ClassificationCPtr classification = Classification::Get(db, classificationEntry.GetElementId());
-
-        if (classification.IsValid())
-            return const_cast<Classification*>(classification.get());
-        }
-
-    return Classification::CreateAndInsert(*table, name, id, description, nullptr, nullptr);
+    return Classification::CreateAndInsert(*table, name.c_str(), id.c_str(), description.c_str(), nullptr, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

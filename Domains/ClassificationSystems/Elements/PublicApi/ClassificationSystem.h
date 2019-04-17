@@ -26,7 +26,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem final : Dgn::DefinitionEleme
         
     protected:
         explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationSystem(CreateParams const& params) : T_Super(params) {}
-        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationSystem(CreateParams const& params, Utf8CP name);
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationSystem(CreateParams const& params, Utf8StringCR name, Utf8StringCR edition);
         friend struct ClassificationSystemHandler;
         friend struct ClassificationSystemsDomain;
 
@@ -45,20 +45,23 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem final : Dgn::DefinitionEleme
         //! Creates a ClassificationSystem
         //! @param[in]  db          db to insert class definition in
         //! @param[in]  name        name of the Classification System
+        //! @param[in]  edition     edition of the Classification System
         //! @return     a ptr to created ClassificationSystem
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemPtr Create(Dgn::DgnDbR db, Utf8CP name);
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemPtr Create(Dgn::DgnDbR db, Utf8StringCR name, Utf8StringCR edition);
 
         //! Tries to get a ClassificationSystem from the database using provided name
         //! @param[in]  db       db that containes ClassificationSystem
         //! @param[in]  name     Classification System's name
+        //! @param[in]  edition  Classification System's edition
         //! @return     a ptr to ClassificationSystem
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemCPtr TryGet(Dgn::DgnDbR db, Utf8CP name);
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemCPtr TryGet(Dgn::DgnDbR db, Utf8StringCR name, Utf8StringCR edition);
 
         //! Tries to get a ClassificationSystem from the database using provided name, if it does not exist, creates a new one.
         //! @param[in]  db       db that containes ClassificationSystem
         //! @param[in]  name     Classification System's name
+        //! @param[in]  edition  Classification System's edition
         //! @return     a ptr to the ClassificationSystem
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemCPtr GetOrCreateSystemByName(Dgn::DgnDbR db, Utf8StringCR name);
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemCPtr GetOrCreateSystemByName(Dgn::DgnDbR db, Utf8StringCR name, Utf8StringCR edition);
 
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static Dgn::ElementIterator MakeIterator(Dgn::DgnDbR dgnDbR);
 
@@ -69,10 +72,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem final : Dgn::DefinitionEleme
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const;
 
         //! Gets ClassificationSystem code generated from given parameters
-        //! @param[in]  db     db that contains code specs
-        //! @param[in]  name   name of the ClassificationSystem that will be used for code generation
+        //! @param[in]  db       db that contains code specs
+        //! @param[in]  name     name of the ClassificationSystem that will be used for code generation
+        //! @param[in]  edition  edition of the ClassificationSystem that will be used for code generation
         //! @return     generated code
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static Dgn::DgnCode GetSystemCode(Dgn::DgnDbR db, Utf8CP name);
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static Dgn::DgnCode GetSystemCode(Dgn::DgnDbR db, Utf8StringCR name, Utf8StringCR edition);
 
         //! Gets source of this classification
         //! @return  source of this classification

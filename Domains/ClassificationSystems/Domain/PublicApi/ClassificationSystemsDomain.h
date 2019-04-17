@@ -28,10 +28,10 @@ private:
     void InsertDomainAuthorities(Dgn::DgnDbR db) const;
     void InsertCodeSpec(Dgn::DgnDbR db, Utf8CP name) const;
     Dgn::DgnCode GetSystemCode(Dgn::DgnDbR db, Utf8CP name) const;
-    ClassificationSystemPtr InsertSystem(Dgn::DgnDbR db, Utf8CP name) const;
+    ClassificationSystemPtr InsertSystem(Dgn::DgnDbR db, Utf8StringCR name, Utf8StringCR edition) const;
     ClassificationTablePtr InsertTable(ClassificationSystemCR system, Utf8CP name) const;
     ClassificationGroupPtr InsertGroup(ClassificationTableCR table, Utf8CP name) const;
-    ClassificationSystemCPtr TryAndGetSystem(Dgn::DgnDbR db, Utf8CP name) const;
+    ClassificationSystemCPtr TryAndGetSystem(Dgn::DgnDbR db, Utf8StringCR name, Utf8StringCR edition) const;
     ClassificationTableCPtr TryAndGetTable(ClassificationSystemCR system, Utf8CP name) const;
     ClassificationPtr InsertClassification(ClassificationTableCR table, Utf8CP name, Utf8CP id, Utf8CP description, ClassificationGroupCP group, ClassificationCP specializes) const;
 //__PUBLISH_SECTION_END__

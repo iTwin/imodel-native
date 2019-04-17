@@ -22,7 +22,7 @@ TEST_F(ClassificationTableTestFixture, Create_InsertsAndSetsSubmodelSuccessfully
     db.BriefcaseManager().StartBulkOperation();
 
     Utf8CP systemName = "TestSystem";
-    ClassificationSystemPtr system = ClassificationSystem::Create(db, systemName);
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, systemName, "#01");
 
     Dgn::DgnDbStatus status;
     system->Insert(&status);
