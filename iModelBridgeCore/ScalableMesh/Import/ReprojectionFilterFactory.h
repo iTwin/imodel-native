@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: Import/ReprojectionFilterFactory.h $
 |    $RCSfile: ReprojectionFilterFactory.h,v $
 |   $Revision: 1.8 $
 |       $Date: 2011/09/07 14:21:09 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 
