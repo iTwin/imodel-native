@@ -1,8 +1,6 @@
 ﻿/*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/NonPublished/RulesEngine/NavigationQueryBuilderTests_InstancesOfSpecificClasses.cpp $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "QueryBuilderTests.h"
