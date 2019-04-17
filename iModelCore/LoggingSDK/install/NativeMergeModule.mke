@@ -1,0 +1,39 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+
+%include mdl.mki
+%include $(SrcRoot)LoggingSdk/mki/LoggingSdkCommon.mki
+
+programName         = NativeLogClientMergeModule
+
+always:
+    !~@mkdir $(o)
+
+
+#---------------------------------------------------------------------------------------
+# MSI Installer file Setup.
+#---------------------------------------------------------------------------------------
+
+baseDir             = $(_MakeFilePath)
+
+#---------------------------------------------------------------------------------------
+# Compile the MSI File
+#---------------------------------------------------------------------------------------
+
+INSTALLER_OUTPUT_FILENAME   = $(programName)
+INSTALLER_OUTPUT_FILEDIR    = $(installDir)
+INSTALLER_FILE_BASE         = $(BuildContextDelivery)
+INSTALLER_SOURCE_LIST       = $(baseDir)NativeMergeModule.wxs
+INSTALLER_OBJECT_LIST       = $(o)NativeMergeModule.wixobj
+INSTALLER_MAKE_MERGEMODULE  = 1
+INSTALLER_PRODUCT_VERSION   = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+INSTALLER_COMPILER_OPT      + -sw1086 -sw1088
+%include $(SharedMki)wix.mki
+
+
+
+
