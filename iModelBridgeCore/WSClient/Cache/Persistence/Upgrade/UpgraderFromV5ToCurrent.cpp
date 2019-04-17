@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
  |
- |     $Source: Cache/Persistence/Upgrade/UpgraderFromV5ToCurrent.cpp $
- |
- |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+ |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
  |
  +--------------------------------------------------------------------------------------*/
 
