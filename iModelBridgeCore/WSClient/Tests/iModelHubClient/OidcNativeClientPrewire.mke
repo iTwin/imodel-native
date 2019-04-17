@@ -6,7 +6,7 @@
 %include mdl.mki
 
 baseDir = $(_MakeFilePath)
-oidcClientNugetDir = $(SrcRoot)nuget/Testing.OidcNativeClient.1.0.4/
+oidcClientNugetDir = $(SrcRoot)nuget/Testing.OidcNativeClient.1.0.5/
 
 $(BuildContext)PublicAPI/OidcNativeClient/OidcNative.h : $(oidcClientNugetDir)include/OidcNative.h
     $(LinkFirstDepToFirstTarget)
