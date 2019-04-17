@@ -430,3 +430,38 @@ DwgDbStatus     DwgFileEditor::GetModelspaceEntities (DwgDbObjectIdArrayR ids) c
 
     return  ids.size() > 0 ? DwgDbStatus::Success : DwgDbStatus::UnknownError;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgFileEditor::AddBinaryData (DwgDbHandleCR handle, DwgStringCR key)
+    {
+    // open the target object ID by handle
+    DwgDbObjectPtr  object(m_dwgdb->GetObjectId(handle), DwgDbOpenMode::ForWrite);
+    ASSERT_DWGDBSUCCESS (object.OpenStatus()) << "Failed to open a writable DWG object by entity handle!";
+
+    // use the version GUID to serve as our testing binary data
+    auto versionGuid = m_dwgdb->GetVersionGuid ();
+    CharCP binary = reinterpret_cast<CharCP> (versionGuid.AsBufferPtr());
+
+    // Set the binary data to the group object as an extended dictionary
+    auto status = object->SetBinaryData (key.c_str(), versionGuid.GetBufferSize(), binary);
+    ASSERT_DWGDBSUCCESS(status) << "Error setting binary data to a writable DWG object for a given key!";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgFileEditor::CheckBinaryData (DwgDbHandleCR handle, DwgStringCR key)
+    {
+    // open the target object ID by handle
+    DwgDbObjectPtr  object(m_dwgdb->GetObjectId(handle), DwgDbOpenMode::ForRead);
+    ASSERT_DWGDBSUCCESS (object.OpenStatus()) << "Failed to open a readable DWG object by entity handle!";
+
+    size_t  size = 0;
+    char*   data = nullptr;
+    auto status = object->GetBinaryData (key.c_str(), size, data);
+    ASSERT_DWGDBSUCCESS(status) << "Error extracting binary data matching the input key";
+    if (nullptr != data)
+        delete data;
+    }

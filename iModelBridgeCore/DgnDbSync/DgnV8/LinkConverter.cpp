@@ -214,7 +214,7 @@ BentleyStatus LinkConverter::RecordProcessedElement(DgnV8EhCR v8eh, DgnElementId
     CachedStatementPtr stmt;
     m_converter.GetDgnDb().GetCachedStatement(stmt, "INSERT INTO " TEMP_LINK_SOURCES_TABLE " (V8FileSyncInfoId, V8ElementId, V9ElementId) VALUES(?,?,?)");
 
-    RepositoryLinkId v8FileId = Converter::GetRepositoryLinkIdFromAppData(*v8eh.GetDgnFileP());
+    RepositoryLinkId v8FileId = m_converter.GetRepositoryLinkId(*v8eh.GetDgnFileP());
     stmt->BindId(1, v8FileId);
 
     DgnV8Api::ElementId v8ElementId = v8eh.GetElementId();
@@ -234,7 +234,7 @@ bool LinkConverter::WasElementProcessed(DgnV8EhCR v8eh) const
     CachedStatementPtr stmt;
     m_converter.GetDgnDb().GetCachedStatement(stmt, "SELECT V9ElementId FROM " TEMP_LINK_SOURCES_TABLE " WHERE V8FileSyncInfoId=? AND V8ElementId=?");
 
-    RepositoryLinkId v8FileId = Converter::GetRepositoryLinkIdFromAppData(*v8eh.GetDgnFileP());
+    RepositoryLinkId v8FileId = m_converter.GetRepositoryLinkId(*v8eh.GetDgnFileP());
     stmt->BindId(1, v8FileId);
 
     DgnV8Api::ElementId v8ElementId = v8eh.GetElementId();

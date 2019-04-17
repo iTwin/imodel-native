@@ -279,7 +279,12 @@
     DWGDB_EXPORT DwgString          GetDwgClassName () const;                           \
     DWGDB_EXPORT DwgResBufIterator  GetXData (DwgStringCR name=DwgString()) const;      \
     DWGDB_EXPORT DwgDbStatus        DxfOutFields (IDxfFilerR filer) const;              \
-    DWGDB_EXPORT DwgDbStatus        DxfOut (IDxfFilerR filer) const;
+    DWGDB_EXPORT DwgDbStatus        DxfOut (IDxfFilerR filer) const;                    \
+    DWGDB_EXPORT DwgDbStatus        CreateExtensionDictionary ();                       \
+    DWGDB_EXPORT DwgDbStatus        ReleaseExtensionDictionary ();                      \
+    DWGDB_EXPORT DwgDbObjectId      GetExtensionDictionary () const;                    \
+    DWGDB_EXPORT DwgDbStatus        SetBinaryData (DwgStringCR, size_t, const char*);   \
+    DWGDB_EXPORT DwgDbStatus        GetBinaryData (DwgStringCR, size_t&, char*&) const;
 
 // declare static method Create, which instantiates a super new DbObject for the purpose of saving to DWG
 #define DWGDB_OBJECT_DECLARE_CREATE(_classSuffix_)                                      \

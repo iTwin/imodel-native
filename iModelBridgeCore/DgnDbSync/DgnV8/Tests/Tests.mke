@@ -86,6 +86,8 @@ $(o)BasicGeometryTests.obj      : $(BEGTEST_INPUT)BasicGeometryTests.cpp        
 
 $(o)LevelTests.obj              : $(BEGTEST_INPUT)LevelTests.cpp                $(TestsHeaders) ${MultiCompileDepends}
 
+$(o)LightTests.obj              : $(BEGTEST_INPUT)LightTests.cpp                $(TestsHeaders) ${MultiCompileDepends}
+
 $(o)GeomTestHelper.obj          : $(BEGTEST_INPUT)GeomTestHelper.cpp            $(TestsHeaders) ${MultiCompileDepends}
 
 $(o)NamedGroupTests.obj         : $(BEGTEST_INPUT)NamedGroupTests.cpp           $(TestsHeaders) ${MultiCompileDepends}

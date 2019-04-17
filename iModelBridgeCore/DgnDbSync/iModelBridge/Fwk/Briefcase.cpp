@@ -242,7 +242,7 @@ BentleyStatus iModelBridgeFwk::IModelBankArgs::ParseCommandLine(bvector<WCharCP>
         if (argv[iArg] == wcsstr(argv[iArg], L"--imodel-bank-retries="))
             {
             int n = atoi(getArgValue(argv[iArg]).c_str());
-            if (n < 0 || 256 >= n)
+            if (n < 0 || 256 <= n)
                 {
                 fprintf(stderr, "%s - invalid retries value. Must be a value between 0 and 255\n", getArgValue(argv[iArg]).c_str());
                 return BSIERROR;

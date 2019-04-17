@@ -27,6 +27,7 @@
     </Part>
 
     <Part Name="DgnV8ConverterDLL" BentleyBuildMakeFile="DgnV8/Converter.mke" ApiNumber="M02"  OnlyPlatforms="x64" ExcludeLibType="Static">
+        <RequiredRepository>Bsitools-WinX86</RequiredRepository>
         <RequiredRepository>V8IModelExtraFiles</RequiredRepository>
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="VersionedV8_InternalSDK" />
