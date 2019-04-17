@@ -1,0 +1,24 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+#
+# This file is used as the SolutionPolicyMki for AutomaticGroundDetection.dll only.
+#
+
+#terrainModelCoreObj = $(terrainModelBuildDir_)TerrainModelCore/
+
+#MultiCompileIntermediatePdbFile=$(terrainModelCoreObj)$(CCompPDBName).pdb
+#IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+
+groundDetectSrcDir = $(SrcRoot)TerrainModel/AutomaticGroundDetection/src/
+groundDetectPublicApiDir = $(SrcRoot)TerrainModel/AutomaticGroundDetection/PublicAPI/
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+# If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
+# PreCompiledHeader.mki uses CCompPDBName
+appName     = AutomaticGroundDetection
+DLM_NAME    = $(appName)
+LIB_NAME    = $(appName)
+CCompPDBName = $(appName)

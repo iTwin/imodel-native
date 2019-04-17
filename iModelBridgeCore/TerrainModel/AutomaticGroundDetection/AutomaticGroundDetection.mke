@@ -1,0 +1,134 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------------------------
+baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
+SolutionPolicyMki=$(baseDir)AutomaticGroundDetection.mki
+
+%include  mdl.mki
+%include $(SrcRoot)TerrainModel/privmki/sourcedirs.mki
+%include $(SrcRoot)TerrainModel/privmki/outputdirs.mki
+%include $(SrcRoot)TerrainModel/AutomaticGroundDetection/AutomaticGroundDetection.mki
+
+##  Symlink all src PublicAPI folders into build output PublicAPI folder
+always:
+    ~linkdir "$(BuildPublicApi)TerrainModel/AutomaticGroundDetection=$(TerrainModelGroundDetectDir)PublicAPI"
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+o = $(OutputRootDir)Build/TerrainModel/$(appName)/
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Symlink APIs
+#----------------------------------------------------------------------
+always:
+   ~linkdir "$(BuildContext)PublicAPI/AutomaticGroundDetection=$(SrcRoot)TerrainModel\AutomaticGroundDetection\PublicAPI"
+  
+
+CCompOpts + -openmp -bigobj -GR -D__BENTLEY_GROUND_DETECT_BUILD__
+
+#Uncomment this to allow generating design meshes
+#CCompOpts + -DWIP_MESH_IMPORT
+
+#----------------------------------------------------------------------
+#       Inform user of compile options
+#----------------------------------------------------------------------
+always:
+        |  Compiler options: $(cDefs)$(cDefsPost) $(copt) $(cIncs) $(PublicApiIncludes) $(CCompOpts)
+        |  -------- --------
+
+#CCompOpts + $(PublicApiIncludes) 
+
+#----------------------------------------------------------------------
+#   Build precompiled header
+#----------------------------------------------------------------------
+PchCompiland = $(groundDetectSrcDir)AutomaticGroundDetection.cpp
+PchOutputDir = $(o)
+PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEY_GROUND_DETECT_BUILD__
+CompileOptionsMki =  $(SrcRoot)TerrainModel/AutomaticGroundDetection/AutomaticGroundDetection.mki
+#%include $(SharedMki)PreCompileHeader.mki
+
+# UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+
+PCHHeaderDepends=$(o)AutomaticGroundDetectionPch$(oext)
+MultiCompileDepends=$(_MakeFileSpec) 
+
+#----------------------------------------------------------------------
+#   Build 
+#----------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)BcDtmProvider$(oext) : $(groundDetectSrcDir)BcDtmProvider.cpp $(groundDetectSrcDir)BcDtmProvider.h  ${MultiCompileDepends}
+
+$(o)GroundDetectionGrid$(oext) : $(groundDetectSrcDir)GroundDetectionGrid.cpp $(groundDetectSrcDir)GroundDetectionGrid.h  ${MultiCompileDepends}
+
+$(o)GroundDetectionManagerDc$(oext) : $(groundDetectSrcDir)GroundDetectionManagerDc.cpp $(groundDetectSrcDir)GroundDetectionManagerDc.h  ${MultiCompileDepends}
+
+$(o)GroundDetectionParameters$(oext) : $(groundDetectSrcDir)GroundDetectionParameters.cpp $(groundDetectSrcDir)IDtmProvider.h  ${MultiCompileDepends}
+
+$(o)IDtmProvider$(oext) : $(groundDetectSrcDir)IDtmProvider.cpp $(groundDetectSrcDir)IDtmProvider.h  ${MultiCompileDepends}
+
+$(o)PCGroundTIN$(oext) : $(groundDetectSrcDir)PCGroundTIN.cpp $(groundDetectSrcDir)PCGroundTIN.h  ${MultiCompileDepends}
+
+$(o)IPointsProvider$(oext) : $(groundDetectSrcDir)IPointsProvider.cpp $(groundDetectPublicApiDir)IPointsProvider.h  ${MultiCompileDepends}
+
+$(o)IPointsAccumulator$(oext) : $(groundDetectSrcDir)IPointsAccumulator.cpp $(groundDetectPublicApiDir)IPointsAccumulator.h  ${MultiCompileDepends}
+
+$(o)DiscreetHistogram$(oext) : $(groundDetectSrcDir)DiscreetHistogram.cpp $(groundDetectSrcDir)DiscreetHistogram.h  ${MultiCompileDepends}
+
+$(o)GroundDetectionManager$(oext) : $(groundDetectSrcDir)GroundDetectionManager.cpp ${MultiCompileDepends}
+
+$(o)PCThreadUtilities$(oext) : $(groundDetectSrcDir)PCThreadUtilities.cpp $(groundDetectSrcDir)PCThreadUtilities.h  ${MultiCompileDepends}
+
+#$(o)TriangleSearcher$(oext) : $(groundDetectSrcDir)TriangleSearcher.cpp $(groundDetectSrcDir)TriangleSearcher.h  ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+
+cppObjects =% $(MultiCompileObjectList)
+
+#----------------------------------------------------------------------
+#   dependencies of the subsystem.
+#----------------------------------------------------------------------
+#DLM_OBJECT_PCH      = $(o)AutomaticGroundDetectionPch$(oext)
+DLM_OBJECT_FILES    = $(cppObjects)
+
+# dlmlink.mki common options.
+DLM_DEST                    = $(o)
+DLM_SYMB_DEST               = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_OBJECT_DEST             = $(o)
+DLM_NO_INITIALIZE_FUNCTION  = 1
+DLM_NO_DEF                  = 1
+DLM_NOMSBUILTINS            = 1
+DLM_NO_DLS                  = 1
+DLM_NOENTRY                 = 1
+DLM_NO_IMPLIB               = 1
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
+DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
+
+LINKER_LIBRARIES_DELAYLOADED  = \
+    $(ContextSubpartsLibs)BaseGeoCoord.lib \
+    $(ContextSubpartsLibs)Bentley.lib \
+    $(ContextSubpartsLibs)BentleyGeom.lib \
+    ws2_32.lib \
+    $(ContextSubpartsLibs)TerrainModelCore.lib \
+    $(ContextSubpartsLibs)TerrainModelFormats.lib
+
+    #$(ContextSubpartsLibs)CGAL.lib \
+    #D:\BSI\DgnDb06Dev\src\libsrc\boost_1.57.0_lib\stage\lib\libboost_system-vc140-mt-1_57.lib \
+    #D:\BSI\DgnDb06Dev\src\libsrc\boost_1.57.0_lib\stage\lib\libboost_thread-vc140-mt-1_57.lib    
+    # \$(ContextSubpartsLibs)$(TerrainModelFormatsLib)
+
+#LINKER_LIBRARIES            = 
+
+%include $(sharedMki)LinkLibrary.mki
+
