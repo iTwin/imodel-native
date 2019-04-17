@@ -11,7 +11,7 @@
 //===========================================================================================
 
 
-#include <ClassificationSystems/ClassificationSystemsApi.h>
+#include "PublicApi/GeneratedInsertsApi.h"
 #include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
 
@@ -19,7 +19,7 @@ namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
-void ClassificationSystemsDomain::InsertOmniClass13_2010Definitions(Dgn::DgnDbR db) const
+void GeneratedInserts::InsertOmniClass13_2010Definitions(Dgn::DgnDbR db) const
     {
     ClassificationSystemCPtr omniClassSystem = TryAndGetSystem(db, "OmniClass", "2010-06-24");
     ClassificationTableCPtr omniClassTable = TryAndGetTable(*omniClassSystem , "Table 13 - Spaces by Function");

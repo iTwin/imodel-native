@@ -66,6 +66,12 @@
 #define CLASSIFICATIONSYSTEMSHANDLERS_EXPORT IMPORT_ATTRIBUTE
 #endif
 
+#if defined (__CLASSIFICATIONSYSTEMSGENERATEDINSERTS_BUILD__)
+#define CLASSIFICATIONSYSTEMSGENERATEDINSERTS_EXPORT EXPORT_ATTRIBUTE
+#else
+#define CLASSIFICATIONSYSTEMSGENERATEDINSERTS_EXPORT IMPORT_ATTRIBUTE
+#endif
+
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with CLASSIFICATIONSYSTEMS_ECCHEMA_NAME macro for use in ECSql)
 //-----------------------------------------------------------------------------------------

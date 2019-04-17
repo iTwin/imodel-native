@@ -11,7 +11,7 @@
 //===========================================================================================
 
 
-#include <ClassificationSystems/ClassificationSystemsApi.h>
+#include "PublicApi/GeneratedInsertsApi.h"
 #include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
 
@@ -19,7 +19,7 @@ namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
-void ClassificationSystemsDomain::InsertUniFormatDefinitions(Dgn::DgnDbR db) const
+void GeneratedInserts::InsertUniFormatDefinitions(Dgn::DgnDbR db) const
     {
     ClassificationSystemCPtr uniFormatSystem = TryAndGetSystem(db, "UniFormat", "2010");
     ClassificationTableCPtr uniFormatTable = TryAndGetTable(*uniFormatSystem , "2010 Edition UniFormat - Levels One through Three");

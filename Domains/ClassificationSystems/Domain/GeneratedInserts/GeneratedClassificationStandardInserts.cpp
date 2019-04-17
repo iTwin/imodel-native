@@ -11,7 +11,7 @@
 //===========================================================================================
 
 
-#include <ClassificationSystems/ClassificationSystemsApi.h>
+#include "PublicApi/GeneratedInsertsApi.h"
 #include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h> 
 
 
@@ -19,7 +19,7 @@ namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
-void ClassificationSystemsDomain::InsertStandardDefinitionSystems(Dgn::DgnDbR db) const
+void GeneratedInserts::InsertStandardDefinitionSystems(Dgn::DgnDbR db) const
     {
     ClassificationSystemPtr system;
     ClassificationTablePtr table;
