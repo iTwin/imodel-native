@@ -47,7 +47,7 @@ struct ProfilesLog
 
         Utf8String errorString = "Failed to copy from DgnElement instance (id: %s) to a " + Utf8String (pProfileClassName) + " instance (id: %s)"
                                  ", because DgnElement class is incompatible (failed cast).";
-        PROFILES_LOG.errorv (errorString.c_str(), profileIdBuffer, sourceElementIdBuffer);
+        PROFILES_LOG.errorv (errorString.c_str(), sourceElementIdBuffer, profileIdBuffer);
         }
 
     /*---------------------------------------------------------------------------------**//**
