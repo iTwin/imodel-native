@@ -180,7 +180,7 @@ def main():
         os.mkdir(logsPath)
 
     print ("\n Getting source file list from git repository... \n")
-    sfLog = os.path.join(logsPath, 'sfNames.txt')
+    sfLog = os.path.join(logsPath, comp + '_sfNames.txt')
     if os.path.exists(sfLog):
         os.remove(sfLog)
     src_branch = 'origin/' + os.path.basename(os.getenv('SourceBranch'))
