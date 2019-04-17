@@ -1,0 +1,60 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+
+%include mdl.mki
+%include $(SrcRoot)Building/ConceptBuilding/privmki/ConceptBuilding.mki
+
+# The same value must be used across several variables; set AppName and reference it.
+AppName = Grids
+CCompPDBName = $(AppName)
+
+o = $(OutputRootDir)build/ConceptBuilding/grids/
+
+nameToDefine = __CONSTRAINTMODEL_BUILD__
+%include cdefapnd.mki
+
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)ConstraintModelDomain$(oext) : $(_MakeFilePath)src\ConstraintModelDomain.cpp ${MultiCompileDepends}
+
+$(o)ElementConstrainsElementHandler$(oext) : $(_MakeFilePath)src/ElementConstrainsElementHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ElementConstrainsElementHandler.h 
+
+$(o)DimensionHandler$(oext) : $(_MakeFilePath)src/DimensionHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/DimensionHandler.h $(_MakeFilePath)PublicApi/ElementConstrainsElementHandler.h 
+
+$(o)CoincidenceHandler$(oext) : $(_MakeFilePath)src/CoincidenceHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CoincidenceHandler.h $(_MakeFilePath)PublicApi/ElementConstrainsElementHandler.h 
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnClientFx$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+
+%include $(sharedMki)linkLibrary.mki
+
