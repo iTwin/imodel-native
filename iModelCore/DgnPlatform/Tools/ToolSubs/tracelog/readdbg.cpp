@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tools/ToolSubs/tracelog/readdbg.cpp $
-|
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 // These are probably all wrong, but we really want to get rid of this stuff anyway.

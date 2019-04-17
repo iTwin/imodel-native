@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+       22
 |
-|  $Source: Tests/DgnProject/NonPublished/DgnFonts_Test.cpp $
-|
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: docs/samplecode/RefCounted.sample.cpp $
-|
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_EXTRACT_START__ RefCounted_Basics.sampleCode
