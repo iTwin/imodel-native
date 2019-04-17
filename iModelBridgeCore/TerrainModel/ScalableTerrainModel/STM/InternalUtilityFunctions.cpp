@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/STM/InternalUtilityFunctions.cpp $
 |    $RCSfile: InternalUtilityFunctions.cpp,v $
 |   $Revision: 1.19 $
 |       $Date: 2012/08/20 16:31:58 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

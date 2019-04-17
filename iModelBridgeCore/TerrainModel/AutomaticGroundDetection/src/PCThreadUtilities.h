@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: AutomaticGroundDetection/src/PCThreadUtilities.h $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 | Notice: This file is an adaptation of <DgnPlatform\RealityDataCache.h> which I was not sure we can use directly.
 |         see original file as a reference...

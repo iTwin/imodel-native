@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/STM/MrDTMTilingOptions.cpp $
 |    $RCSfile: MrDTMTilingOptions.cpp,v $
 |   $Revision: 1.4 $
 |       $Date: 2009/11/30 09:59:18 $
 |     $Author: Rob.Cormack $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 
