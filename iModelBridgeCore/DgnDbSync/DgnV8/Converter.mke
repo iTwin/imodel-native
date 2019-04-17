@@ -8,18 +8,6 @@ ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors Vancouver's header files; hope
 
 %include mdl.mki
 
-# Ensure Parasolid versions match.
-ourVersionCmd = python $(SrcRoot)bsitools/winX86/GetDllVersion.py $(SrcRoot)thirdparty/psolid_31_0_249_x64/lib/pskernel.dll
-ourVersion = $[@readstdout $(ourVersionCmd)]
-ppVersionCmd = python $(SrcRoot)bsitools/winX86/GetDllVersion.py $(BuildContext)SubParts/DgnPlatformV8Sdk/Dlls/PSKernel.dll
-ppVersion = $[@readstdout $(ppVersionCmd)]
-%if $(ourVersion) != $(ppVersion)
-    %error Parasolid version mismatch. Our version = $(ourVersion). PP's version = $(ppVersion).
-%else
-    always:
-        |Parasolid versions match! $(ourVersion)
-%endif
-
 appName             = DgnV8Converter
 baseDir             = $(_MakeFilePath)
 
