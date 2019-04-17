@@ -1,0 +1,47 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/mki/AssertPolicy.mki
+%include mdl.mki
+
+DeliveryDir=$(BuildContext)Delivery/
+
+SubPartsDir = $(BuildContext)SubParts/
+VendorAPIDir = $(BuildContext)VendorAPI/
+
+%if defined(BUILD_USING_VS2012)
+	toolset = _VC11
+%elif defined(BUILD_USING_VS2005)
+	toolset = _VC8
+%else
+	toolset = 
+%endif
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"	
+	arch = 32
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"	
+	arch = 64
+%else
+	arch =
+%endif
+
+#---------------------------------------------------------------------------------------------------------
+# Symlink examples
+#---------------------------------------------------------------------------------------------------------
+
+always:
+    @CreateSymLinks.py   -m"$(DeliveryDir)ExamplesDependencies/include/GL"="$(VendorAPIDir)glui/GL/*"
+    @CreateSymLinks.py   -m"$(DeliveryDir)ExamplesDependencies/include/GL"="$(VendorAPIDir)glew/GL/*"
+    @CreateSymLinks.py   -m"$(DeliveryDir)ExamplesDependencies/include/GL"="$(VendorAPIDir)OpenGLExt/GL/*"
+    @CreateSymLinks.py   -m"$(DeliveryDir)ExamplesDependencies/include/GL"="$(VendorAPIDir)freeglut/GL/*"
+    @CreateSymLinks.py   -m"$(DeliveryDir)ExamplesDependencies/include/GL"="$(VendorAPIDir)VendorAPI/GL/*"
+
+	
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/bin/freeglut.dll"="$(SubPartsDir)Assemblies/freeglut.dll"
+    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/lib/freeglut.lib"="$(SubPartsDir)Libs/freeglut.lib"
+    @CreateSymLinks.py   -f"$(DeliveryDir)ExamplesDependencies/lib/glui$(arch).lib"="$(SubPartsDir)StaticLibs/glui$(toolset).lib"
+	
