@@ -1,10 +1,8 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshEdit.h $
 |       $Date: 2016/08/23 10:33:32 $
 |     $Author:Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

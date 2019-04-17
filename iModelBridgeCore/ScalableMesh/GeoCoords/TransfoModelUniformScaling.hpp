@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: GeoCoords/TransfoModelUniformScaling.hpp $
 |    $RCSfile: TransfoModelUniformScaling.hpp,v $
 |   $Revision: 1.2 $
 |       $Date: 2011/11/07 14:26:50 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
