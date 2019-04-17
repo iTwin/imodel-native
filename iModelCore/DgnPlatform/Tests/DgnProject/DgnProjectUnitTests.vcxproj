@@ -1,0 +1,192 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ignore_list.txt" />
+    <None Include="Published\DgnScriptTest.ts" />
+    <None Include="Published\TSG_Checker.ts" />
+    <None Include="Published\TSG_GeometryA.ts" />
+    <None Include="Published\TSG_GeometryB.ts" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BackDoor\BackDoor.cpp" />
+    <ClCompile Include="BackDoor\DgnDbUtilities.cpp" />
+    <ClCompile Include="BackDoor\DgnElementHelpers.cpp" />
+    <ClCompile Include="BackDoor\DgnPlatformTestDomain.cpp" />
+    <ClCompile Include="DgnDbTestUtils\DgnDbTestUtils.cpp" />
+    <ClCompile Include="DgnDbTestUtils\RepositoryManagerUtil.cpp" />
+    <ClCompile Include="NonPublished\BackwardCompatibility_Tests.cpp" />
+    <ClCompile Include="NonPublished\Category_Test.cpp" />
+    <ClCompile Include="NonPublished\ConfigurationManager_Test.cpp" />
+    <ClCompile Include="NonPublished\CsvFile_Test.cpp" />
+    <ClCompile Include="NonPublished\DgnAuthority_Test.cpp" />
+    <ClCompile Include="NonPublished\DgnColors_Test.cpp" />
+    <ClCompile Include="NonPublished\DgnFonts_Test.cpp" />
+    <ClCompile Include="NonPublished\DgnLight_Test.cpp" />
+    <ClCompile Include="NonPublished\DgnMaterial_Test.cpp" />
+    <ClCompile Include="NonPublished\DgnProject_Test.cpp" />
+    <ClCompile Include="NonPublished\DgnSqlTest.cpp" />
+    <ClCompile Include="NonPublished\DgnSqlTestDomain.cpp" />
+    <ClCompile Include="NonPublished\DgnStyles_Test.cpp" />
+    <ClCompile Include="NonPublished\DgnTexture_Test.cpp" />
+    <ClCompile Include="NonPublished\DgnViews_Test.cpp" />
+    <ClCompile Include="NonPublished\ECDbInstances_Test.cpp" />
+    <ClCompile Include="NonPublished\ECExpressionTests.cpp" />
+    <ClCompile Include="NonPublished\ECInstanceSelect_Tests.cpp" />
+    <ClCompile Include="NonPublished\ElementAspect_Test.cpp" />
+    <ClCompile Include="NonPublished\ElementDependencyGraph.cpp" />
+    <ClCompile Include="NonPublished\ElementGeometryBuilder_Tests.cpp" />
+    <ClCompile Include="NonPublished\ElementGeomPart_Tests.cpp" />
+    <ClCompile Include="NonPublished\ElementMaterial_tests.cpp" />
+    <ClCompile Include="NonPublished\ElementProperties.cpp" />
+    <ClCompile Include="NonPublished\GeomStream_Test.cpp" />
+    <ClCompile Include="NonPublished\MissingHandler_Test.cpp" />
+    <ClCompile Include="NonPublished\Polyface_Test.cpp" />
+    <ClCompile Include="NonPublished\Raster_Test.cpp" />
+    <ClCompile Include="NonPublished\TransactionManager_Test.cpp" />
+    <ClCompile Include="NonPublished\ValidatePublishing_Test.cpp" />
+    <ClCompile Include="Performance\ComponentModel_PerfTest.cpp" />
+    <ClCompile Include="Performance\DgnECPerformanceTests.cpp" />
+    <ClCompile Include="Performance\ElementAspectPerformance.cpp" />
+    <ClCompile Include="Performance\ElementDependencyGraphPerformance.cpp" />
+    <ClCompile Include="Performance\ElementInsertPerformance.cpp" />
+    <ClCompile Include="Performance\PerformanceBriefcaseManagerTests.cpp" />
+    <ClCompile Include="Performance\PerformanceECInstanceDeleteTests.cpp" />
+    <ClCompile Include="Performance\PerformanceElementsCRUDTests.cpp" />
+    <ClCompile Include="Performance\PerformanceTestFixture.cpp" />
+    <ClCompile Include="Performance\TestSchemaHelper.cpp" />
+    <ClCompile Include="Published\AnnotationFrameStyle_Test.cpp" />
+    <ClCompile Include="Published\AnnotationFrame_Test.cpp" />
+    <ClCompile Include="Published\AnnotationLayout_Test.cpp" />
+    <ClCompile Include="Published\AnnotationLeaderStyle_Test.cpp" />
+    <ClCompile Include="Published\AnnotationLeader_Test.cpp" />
+    <ClCompile Include="Published\AnnotationParagraph_Test.cpp" />
+    <ClCompile Include="Published\AnnotationTable_Test.cpp" />
+    <ClCompile Include="Published\AnnotationTestFixture.cpp" />
+    <ClCompile Include="Published\AnnotationTextBlock_Test.cpp" />
+    <ClCompile Include="Published\AnnotationTextStyle_Test.cpp" />
+    <ClCompile Include="Published\BRepUtil_Tests.cpp" />
+    <ClCompile Include="Published\BriefcaseManager_Test.cpp" />
+    <ClCompile Include="Published\ChangeSummary_Test.cpp" />
+    <ClCompile Include="Published\ChangeTestFixture.cpp" />
+    <ClCompile Include="Published\Compatibility_Test.cpp" />
+    <ClCompile Include="Published\ComponentModelBasicTest.cpp" />
+    <ClCompile Include="Published\ComponentModelTest.cpp" />
+    <ClCompile Include="Published\CreateFromInstance_Test.cpp" />
+    <ClCompile Include="Published\DateTimeformat_test.cpp" />
+    <ClCompile Include="Published\DgnBaseDomainSchema_Test.cpp" />
+    <ClCompile Include="Published\DgnChangeSummary_Test.cpp" />
+    <ClCompile Include="Published\DgnECNavigator_Test.cpp" />
+    <ClCompile Include="Published\DgnElement_Test.cpp" />
+    <ClCompile Include="Published\DgnImportContext_Test.cpp" />
+    <ClCompile Include="Published\DgnModel_Test.cpp" />
+    <ClCompile Include="Published\DgnScriptContext_Test.cpp" />
+    <ClCompile Include="Published\ElementGeometry_Tests.cpp" />
+    <ClCompile Include="Published\ElementGroup_Tests.cpp" />
+    <ClCompile Include="Published\ExampleTestGroup.cpp" />
+    <ClCompile Include="Published\Ecutils_Tests.cpp" />
+    <ClCompile Include="Published\FullTextSearch_Test.cpp" />
+    <ClCompile Include="Published\ImageUtilities_Test.cpp" />
+    <ClCompile Include="Published\LinearDimension_Test.cpp" />
+    <ClCompile Include="Published\LinkElement_Test.cpp" />
+    <ClCompile Include="Published\MarkupProject_Test.cpp" />
+    <ClCompile Include="Published\MemoryManager_Test.cpp" />
+    <ClCompile Include="Published\NotificationManager_Test.cpp" />
+    <ClCompile Include="Published\Revision_Test.cpp" />
+    <ClCompile Include="Published\SchemaValidation_Test.cpp" />
+    <ClCompile Include="Published\SchemaVersion_Test.cpp" />
+    <ClCompile Include="Published\Tag_Test.cpp" />
+    <ClCompile Include="Published\TextAnnotationElement_Test.cpp" />
+    <ClCompile Include="Published\TextAnnotationSeed_Test.cpp" />
+    <ClCompile Include="Published\TextString_Test.cpp" />
+    <ClCompile Include="Published\UnitDefinition_Test.cpp" />
+    <ClCompile Include="Published\UnitManager_Test.cpp" />
+    <ClCompile Include="Published\valueformat_test.cpp" />
+    <ClCompile Include="Published\ValueParse_Test.cpp" />
+    <ClCompile Include="Published\ViewAttachment_Test.cpp" />
+    <ClCompile Include="Published\VolumeElement_Test.cpp" />
+    <ClCompile Include="TestFixture\DgnDbTestFixtures.cpp" />
+    <ClCompile Include="TestFixture\DgnPlatformSeedManager.cpp" />
+    <ClCompile Include="TestFixture\GenericDgnModelTestFixture.cpp" />
+    <ClCompile Include="TestFixture\GeomHelper.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\PublicAPI\DgnPlatform\UnitTests\DgnDbTestUtils.h" />
+    <ClInclude Include="..\..\PublicAPI\DgnPlatform\UnitTests\RepositoryManagerUtil.h" />
+    <ClInclude Include="..\..\PublicAPI\DgnPlatform\UnitTests\ScopedDgnHost.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\BackDoor.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnDbUtilities.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnElementHelpers.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnPlatformTestDomain.h" />
+    <ClInclude Include="NonPublished\DgnHandlersTests.h" />
+    <ClInclude Include="NonPublished\DgnSqlTestDomain.h" />
+    <ClInclude Include="Performance\DgnECPerformanceTests.h" />
+    <ClInclude Include="Performance\PerformanceElementsCRUDTests.h" />
+    <ClInclude Include="Performance\PerformanceTestFixture.h" />
+    <ClInclude Include="Performance\TestSchemaHelper.h" />
+    <ClInclude Include="Published\AnnotationTestFixture.h" />
+    <ClInclude Include="Published\ChangeTestFixture.h" />
+    <ClInclude Include="Published\DgnHandlersTests.h" />
+    <ClInclude Include="TestFixture\BlankDgnDbTestFixture.h" />
+    <ClInclude Include="TestFixture\DgnDbTestFixtures.h" />
+    <ClInclude Include="TestFixture\DgnPlatformSeedManager.h" />
+    <ClInclude Include="TestFixture\GenericDgnModelTestFixture.h" />
+    <ClInclude Include="TestFixture\GeomHelper.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\..\DgnPlatform.PartFile.xml" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7782F16A-217A-417A-BF3B-B7B8A137BE16}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <OutDir>$(OutRoot)Winx64\Build\DgnPlatformTest\</OutDir>
+    <IntDir>$(OutRoot)Winx64\Build\DgnPlatformTest\</IntDir>
+    <IntermediateOutputPath>$(OutRoot)Winx64\Build\DgnPlatformTest\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\DgnPlatformTest\</BaseIntermediateOutputPath>
+    <NMakeOutput>$(OutRoot)Winx64\Product\DgnPlatform-Gtest\DgnPlatformTest.exe</NMakeOutput>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(SrcRoot)DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\Delivery\</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <IncludePath>$(IncludePath);$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\;$(SrcRoot)DgnPlatform\DgnCore\ECDb\</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

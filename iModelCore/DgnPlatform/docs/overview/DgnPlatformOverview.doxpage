@@ -1,0 +1,69 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
+BEGIN_BENTLEY_DGN_NAMESPACE
+
+/** @page PAGE_DgnPlatform DgnPlatform Overview
+
+The DgnPlatform library is a key part of the %DgnDb technology stack from <a href="http://www.bentley.com/">Bentley</a>. 
+The DgnPlatform library contains the data access API for the %DgnDb file format.
+It also provides the run-time services necessary for writing applications focused on advancing infrastructure (buildings, bridges, transit, utilities, energy, water, etc.).
+The technology stack is designed to leverage whatever system resources are available without strictly requiring them.
+This allows applications to run on everything from mobile devices to high-powered desktop environments.
+<p>
+Key requirements addressed by the DgnPlatform library include:
+
+@li Rich, first class support for geometry, graphics, and relational business data
+@li Scalable for large scale infrastructure projects
+@li Connected and disconnected operations
+@li Cross platform
+@li Standards based
+
+The %DgnDb technology stack starts with the %DgnDb file format which is based on SQLite.  %Bentley has extended SQLite to support 
+geometric queries in addition to the standard SQL relational database queries.  %Bentley has also added a way to store complex geometry
+and graphics within the %DgnDb file.  The %DgnDb file format provides the foundation for persisting infrastructure data.
+<p>
+There are three primary layers to a %DgnDb application:
+
+@li The platform layer
+@li The domain layer
+@li The app layer
+
+The %DgnDb run-time comprises the platform layer and includes all of the services built into the DgnPlatform library.
+<p>
+A domain is an ECSchema (data model) and a C++ data-access library that is typically focused on an infrastructure discipline and/or lifecycle phases.  
+Domain examples include:
+
+@li Building Design
+@li Civil Conceptual Design
+@li Plant Operations
+@li Construction
+@li Planning
+
+Domains are separate from the platform in a software architecture sense, but may (or may not) be part of the platform SDK delivery.  
+The goal of a domain is to capture the data model and file I/O services required for a specific discipline or lifecycle phase.  
+Domains are meant to be used across applications and to raise the level of information sharing.
+Domains are written in C++ and do not include user interface or tools.
+
+@ref GROUP_DgnDomain
+
+<p>
+The objects of a domain are modeled using subclassed of DgnElement.  Elements are the center of the %DgnDb universe and are described in more detail here:
+
+@li @subpage PAGE_ElementOverview
+
+<hr>
+
+The DgnPlatform library also adds other key concepts required by infrastructure applications.  These concepts include:
+
+@li @subpage PAGE_ModelOverview
+@li @subpage PAGE_CategoryOverview
+@li @subpage PAGE_ViewOverview
+
+*/
+
+END_BENTLEY_DGN_NAMESPACE
