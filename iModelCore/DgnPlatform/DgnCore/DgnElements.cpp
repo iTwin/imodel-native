@@ -239,7 +239,8 @@ void dgn_TxnTable::Element::_OnAppliedAdd(BeSQLite::Changes::Change const& chang
     // We need to load this element, since filled models need to register it
     DgnElementCPtr el = m_txnMgr.GetDgnDb().Elements().GetElement(elementId);
     BeAssert(el.IsValid());
-    el->_OnAppliedAdd();
+    if (el.IsValid())
+        el->_OnAppliedAdd();
     }
 
 /*---------------------------------------------------------------------------------**//**
