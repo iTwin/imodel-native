@@ -121,11 +121,11 @@ always:
 			always:
 				%if defined (GTEST_PRODUCT)
 					>$(LogDir)run.bat
-					python $(SrcRoot)imodel02\TestingScripts\Coverage\CoverageOpenCPP.py --component=$(GTEST_PRODUCT) --localReport > $(ResultsCapture)
-					$(exeName) $(GTEST_EXTRA_ARGS) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
+					python $(SrcRoot)imodel02\TestingScripts\Coverage\CoverageOpenCPP.py --component=$(GTEST_PRODUCT) --localReport | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
 					exit
 					<
 					-$(RunPrefix) $(LogDir)run.bat
+					# Special Case for Bentley is just to create an XML report as needed by summary argument of vsts task to publish coverage results 
 					%if $(GTEST_PRODUCT) == $(xml_comp)
 						start "CodeCoverage $(GTEST_PRODUCT)" \/WAIT python $(SrcRoot)imodel02\TestingScripts\Coverage\CoverageOpenCPP.py --component=$(GTEST_PRODUCT)
 					%endif
