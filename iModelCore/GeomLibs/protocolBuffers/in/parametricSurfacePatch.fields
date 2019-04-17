@@ -1,0 +1,13 @@
+PRIMITIVE ParametricSurfacePatch
+<def name=SUMMARY>A Patch with boundary loops in the parameter space of a surface.
+
+</def>
+<def name=Interface_BaseList>IGeometry, ISurface</def>
+
+
+<def name=MEMBERS><child ItemType=IParametricSurface ItemTagName=Surface ItemSemanticName=Surface ItemParamName=surface ItemMemberName=mSurface ItemDescription="Parametric surface" ScaleMode=Container/>
+<list ItemType=ICurveChain ItemTagName=CurveChain ItemSemanticName=CurveChain ItemParamName=loop ListName=mLoops ItemDescription="Boundary loop" ScaleMode=Parametric/>
+<value ItemType=LoopType ItemTagName=LoopType ItemSemanticName=LoopType ItemParamName=loopType ItemMemberName=mLoopType ItemDescription="Loop interpretation" ScaleMode=None/>
+</def>
+
+END_PRIMITIVE
