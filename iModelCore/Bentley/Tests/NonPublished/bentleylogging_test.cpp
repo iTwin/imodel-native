@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/NonPublished/bentleylogging_test.cpp $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (_MSC_VER)

@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
  |
- |     $Source: Tasks/WorkerThread.cpp $
- |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
  |
  +--------------------------------------------------------------------------------------*/
 #include <Bentley/Tasks/WorkerThread.h>

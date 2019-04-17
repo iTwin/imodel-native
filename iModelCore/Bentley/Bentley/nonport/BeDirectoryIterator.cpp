@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Bentley/nonport/BeDirectoryIterator.cpp $
-|
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)

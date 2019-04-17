@@ -5,7 +5,7 @@ Bentley and the "B" Bentley logo are registered or non-registered trademarks of 
 Systems, Incorporated. All other marks are the property of their respective owners.
 
 COPYRIGHT NOTICE
-$Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 Including software, file formats, and audiovisual displays; may only be used pursuant to 
 applicable software license agreement; contains confidential and proprietary information 
 of Bentley Systems, Incorporated and/or third parties which is protected by copyright and 
