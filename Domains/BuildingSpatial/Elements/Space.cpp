@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include <BuildingSpatial/Domain/BuildingSpatialMacros.h>
 #include <BuildingSpatial/Elements/Space.h>
 
