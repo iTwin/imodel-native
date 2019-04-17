@@ -1,0 +1,595 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Includes">
+      <UniqueIdentifier>{215ce148-ddac-4fa3-a4a5-05c9794a6c13}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{381d4875-2cb6-4838-83b3-fe783a1fa163}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{28d56bcd-00c1-4f38-96ca-73de74ef011c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI">
+      <UniqueIdentifier>{4245fa35-4e44-4b19-aeec-d0e9d0c602e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Foundations">
+      <UniqueIdentifier>{fcddf41e-5e1b-4917-9587-d5c10f1cf856}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\GeoCoords">
+      <UniqueIdentifier>{61b4a017-7326-4913-aca9-dbf12b6b8431}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Import">
+      <UniqueIdentifier>{cb5839fc-6872-4bda-aa08-20b9f04d40a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Memory">
+      <UniqueIdentifier>{cede7a6c-d623-44bd-8c29-65800923e4f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Plugin">
+      <UniqueIdentifier>{e2c6f2df-757e-48a2-beab-33e50cd354ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Type">
+      <UniqueIdentifier>{fdea4969-6fb8-43a4-9b7c-b4149d210c75}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Import\Command">
+      <UniqueIdentifier>{0825ad60-6e6f-4ea0-9029-3dcff319faee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Import\Config">
+      <UniqueIdentifier>{f091bfc1-258b-478b-a258-51becb9dd846}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Import\Error">
+      <UniqueIdentifier>{1e7190a4-567d-4e0e-96fd-c834438454ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Import\Plugin">
+      <UniqueIdentifier>{fba82328-c918-4e8d-b3c1-d1dabd9164e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Import\Config\Content">
+      <UniqueIdentifier>{4785ce83-4eda-4a3f-ac2c-66224b2a2833}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\AutomaticGroundDetection">
+      <UniqueIdentifier>{34f95208-240e-4d3b-8929-c7cb0f9f807e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\AutomaticGroundDetection">
+      <UniqueIdentifier>{9581b70e-b4c0-443e-bc8c-1b01d79aa816}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\AutomaticGroundDetection">
+      <UniqueIdentifier>{98578e10-52e6-433d-aa33-b702f537f45a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\Core">
+      <UniqueIdentifier>{9b2a811a-b4ee-4901-b972-87ccbb2b5026}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\Core\ImportPlugins">
+      <UniqueIdentifier>{68f55aa3-3048-4165-a42b-fe222faae387}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core">
+      <UniqueIdentifier>{0926c720-2be9-42e1-aca5-aae5790286c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\ImportPlugins">
+      <UniqueIdentifier>{1f0083ca-77f4-4ede-ad85-e956550f413a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Core\Stores">
+      <UniqueIdentifier>{4243dc6a-04f8-43e9-b977-f6880f807ad4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\Core\Stores">
+      <UniqueIdentifier>{9ee8e891-acea-4955-95c9-73b290c34bc6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMesh.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshCreator.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshDocumentEnv.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshMoniker.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshPolicy.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshQuery.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceCollection.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceCollection.hpp">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceDescription.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceImportConfig.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSources.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceVisitor.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshStream.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshStream.hpp">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshTime.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshURL.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshDefs.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshUtilityFunctions.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Algorithm.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Algorithm.hpp">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Definitions.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Error.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Exception.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Iterator.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Log.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Message.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Traits.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Foundations\Warning.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Definitions.h">
+      <Filter>Includes\PublicAPI\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\GCS.h">
+      <Filter>Includes\PublicAPI\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\LocalTransform.h">
+      <Filter>Includes\PublicAPI\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Reprojection.h">
+      <Filter>Includes\PublicAPI\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Transformation.h">
+      <Filter>Includes\PublicAPI\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Transformation.hpp">
+      <Filter>Includes\PublicAPI\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\Base.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\All.h">
+      <Filter>Includes\PublicAPI\Import\Config\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\Base.h">
+      <Filter>Includes\PublicAPI\Import\Config\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\GCS.h">
+      <Filter>Includes\PublicAPI\Import\Config\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\Layer.h">
+      <Filter>Includes\PublicAPI\Import\Config\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\Type.h">
+      <Filter>Includes\PublicAPI\Import\Config\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Error\Source.h">
+      <Filter>Includes\PublicAPI\Import\Error</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\CustomFilterFactoryV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\DataTypeFamilyV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\DataTypeRegistry.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\DataTypeV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\ExtractorRegistry.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\FilterV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\InputExtractorV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\PacketBinderV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\RegistryTools.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\ReprojectionFilterRegistry.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\ReprojectionFilterV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\SourceReferenceV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\SourceRegistry.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\SourceV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\TypeConversionFilterRegistry.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Plugin\TypeConversionFilterV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Memory\Allocation.h">
+      <Filter>Includes\PublicAPI\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Memory\Definitions.h">
+      <Filter>Includes\PublicAPI\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Memory\Exceptions.h">
+      <Filter>Includes\PublicAPI\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Memory\Packet.h">
+      <Filter>Includes\PublicAPI\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Memory\PacketAccess.h">
+      <Filter>Includes\PublicAPI\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Memory\PacketAccess.hpp">
+      <Filter>Includes\PublicAPI\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Type\IScalableMeshLinear.h">
+      <Filter>Includes\PublicAPI\Type</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Type\IScalableMeshMesh.h">
+      <Filter>Includes\PublicAPI\Type</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Type\IScalableMeshPoint.h">
+      <Filter>Includes\PublicAPI\Type</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Type\IScalableMeshTIN.h">
+      <Filter>Includes\PublicAPI\Type</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Plugin\IScalableMeshCivilDTMSource.h">
+      <Filter>Includes\PublicAPI\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Plugin\IScalableMeshFileUtilities.h">
+      <Filter>Includes\PublicAPI\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Plugin\IScalableMeshFileUtilities.hpp">
+      <Filter>Includes\PublicAPI\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Plugin\IScalableMeshPolicy.h">
+      <Filter>Includes\PublicAPI\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Plugin\IScalableMeshSTMSource.h">
+      <Filter>Includes\PublicAPI\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ImportPlugins\CivilDTMHelpers.h">
+      <Filter>Includes\Core\ImportPlugins</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshFeature.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshClipContainer.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceImporter.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\DGNModelGeoref.h">
+      <Filter>Includes\PublicAPI\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ImportPlugins\ElemSourceRef.h">
+      <Filter>Includes\Core\ImportPlugins</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ImportPlugins\ElementType.h">
+      <Filter>Includes\Core\ImportPlugins</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ImportPlugins\PluginUtils.h">
+      <Filter>Includes\Core\ImportPlugins</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ImportPlugins\XYZAsciiFormat.h">
+      <Filter>Includes\Core\ImportPlugins</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ImportPlugins\XYZAsciiFormat.hpp">
+      <Filter>Includes\Core\ImportPlugins</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshLib.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshAdmin.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMeshTime.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceCreator.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshNodeCreator.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="stm\ComputeMemoryUseTraits.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentConfig.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentConfigVisitor.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentDescriptor.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ContentDescriptor.hpp">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\CustomFilterFactory.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\DataSQLite.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\DataType.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\DataTypeDescription.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\DataTypeFamily.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\DefaultTargetScalableMeshConfig.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Definitions.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Exceptions.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ExtractionConfig.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Filter.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\FilterFactory.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\FilteringConfig.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportConfig.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportConfigVisitor.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Importer.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportPolicy.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportSequence.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ImportSequenceVisitor.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshProgressiveQuery.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Metadata.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\ScalableMeshConfig.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\ScalableMeshData.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMeshFeature.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMeshFileMoniker.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Source.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\SourceReference.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\SourceReferenceVisitor.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\Import\Warnings.h">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshGroundExtractor.h">
+      <Filter>Includes\PublicAPI\AutomaticGroundDetection</Filter>
+    </ClInclude>
+    <ClInclude Include="AutomaticGroundDetection\ScalableMeshGroundExtractor.h">
+      <Filter>Includes\AutomaticGroundDetection</Filter>
+    </ClInclude>
+    <ClInclude Include="AutomaticGroundDetection\ScalableMeshPointsProvider.h">
+      <Filter>Includes\AutomaticGroundDetection</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshTextureGenerator.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\ITextureProvider.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshFrom3MX.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshAnalysis.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMeshMesher.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMeshSourceCreator.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMeshSourceCreatorWorker.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMeshNodeCreator.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMeshQuadTreeBCLIBFilters.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMeshQuadTreeBCLIBFilters.hpp">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\Tracer.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\Stores\SMCesiumPublisher.h">
+      <Filter>Includes\Core\Stores</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\Stores\SMPublisher.h">
+      <Filter>Includes\Core\Stores</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceCreatorWorker.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="STM\ImportPlugins\CivilDTMFileImporter.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\CivilDTMHelpers.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\IDTMFileImporter.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\LandXMLFileImporter.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\XYZAsciiFileImporter.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\XYZFileImporter.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\GDALFileImporter.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\PODImporter.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\DGNModelUtilities.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\DGNLevelImporter.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\ElemSourceRef.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\ElementType.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\DEMRasterImporter.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\CivilElemSource.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\STMSource.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\XYZAsciiSource.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\CGALEdgeCollapse.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\DataSQLite.cpp">
+      <Filter>Includes\PublicAPI\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="AutomaticGroundDetection\ScalableMeshGroundExtractor.cpp">
+      <Filter>Source\AutomaticGroundDetection</Filter>
+    </ClCompile>
+    <ClCompile Include="AutomaticGroundDetection\ScalableMeshPointsProvider.cpp">
+      <Filter>Source\AutomaticGroundDetection</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\TextureImporter.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshMesher.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshSourceCreator.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshSourceCreatorWorker.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshNodeCreator.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshFeature.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshQuadTreeBCLIBFilters.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\Tracer.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshFrom3MX.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\Stores\SMCesiumPublisher.cpp">
+      <Filter>Source\Core\Stores</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\Stores\SMPublisher.cpp">
+      <Filter>Source\Core\Stores</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshSaveAs.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshDetectGround.cpp">
+      <Filter>Source\AutomaticGroundDetection</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ScalableMeshCreator.mke" />
+    <None Include="ScalableMeshCreator.mki" />
+  </ItemGroup>
+</Project>

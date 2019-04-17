@@ -1,0 +1,13 @@
+# escape=`
+FROM microsoft/windowsservercore
+VOLUME C:\mount2
+RUN powershell.exe Invoke-WebRequest -OutFile c:\rtools_setup_x64.exe -Uri http://download.microsoft.com/download/1/2/2/1225c23d-3599-48c9-a314-f7d631f43241/rtools_setup_x64.exe;
+RUN rtools_setup_x64.exe /install /quiet
+COPY vc_redist.x64.exe vc_redist.x64.exe
+COPY vc_redist.x86.exe vc_redist.x86.exe
+RUN vc_redist.x64.exe /quiet /install
+RUN vc_redist.x86.exe /quiet /install
+EXPOSE 4020 4021
+RUN setx path "%path%;c:\mount2\WorkerDependencies"
+WORKDIR .\mount2
+CMD cmd
