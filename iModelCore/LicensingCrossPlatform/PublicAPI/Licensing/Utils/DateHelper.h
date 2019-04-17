@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/Licensing/Utils/DateHelper.h $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,7 +9,7 @@
 
 #include <Licensing/Licensing.h>
 #include <Bentley/DateTime.h>
-#if defined(__APPLE__) || defined(ANDROID)
+#if defined(__APPLE__) || defined(ANDROID) || defined(BENTLEYCONFIG_OS_LINUX)
 #import <math.h>
 #endif
 

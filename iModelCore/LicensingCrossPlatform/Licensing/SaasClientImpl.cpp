@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/SaasClientImpl.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "SaasClientImpl.h"
@@ -33,9 +31,6 @@ SaasClientImpl::SaasClientImpl
     m_productId = productId;
     m_featureString = featureString;
     m_ulasProvider = ulasProvider;
-    m_correlationId = BeSQLite::BeGuid(true).ToString();
-    m_timeRetriever = TimeRetriever::Get();
-    m_delayedExecutor = DelayedExecutor::Get();
     }
 
 

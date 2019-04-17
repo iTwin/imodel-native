@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/AccessKeyClientTests.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -168,7 +166,7 @@ void AccessKeyClientTests::SetUpTestCase()
     EXPECT_EQ(SUCCESS, L10N::Initialize(BeSQLite::L10N::SqlangFiles(path)));
     }
 
-TEST_F(AccessKeyClientTests, DISABLED_JsonExample)
+TEST_F(AccessKeyClientTests, JsonExample)
     {
     BeFileName testJson;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);

@@ -1,8 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: CopyTestingL10nDb.mke $
-#
-#   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 
@@ -18,4 +16,4 @@
 %endif
 
 always:
-    CreateSymLinks.py -f $(OutRoot)$(arch)\Product\Licensing-UnitTests\Assets\sqlang\DgnClientFx_en.sqlang.db3=$(SrcRoot)licensingcrossplatform\Tests\UnitTests\Assets\DgnClientFx_en.sqlang.db3
+    CreateSymLinks.py -f $(OutRoot)$(arch)/Product/Licensing-UnitTests/Assets/sqlang/DgnClientFx_en.sqlang.db3=$(SrcRoot)licensingcrossplatform/Tests/UnitTests/Assets/DgnClientFx_en.sqlang.db3

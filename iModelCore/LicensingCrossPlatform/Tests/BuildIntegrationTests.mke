@@ -1,8 +1,6 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: Tests/BuildIntegrationTests.mke $
-#
-#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #----------------------------------------------------------------------------------------
 # ***
@@ -43,4 +41,4 @@ $(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
 %endif
 
 always:
-    CreateSymLinks.py -d $(OutRoot)$(arch)\Product\Licensing-IntegrationTests\Assets\TestAssets=$(SrcRoot)licensingcrossplatform\Tests\IntegrationTests\Assets
+    CreateSymLinks.py -d $(OutRoot)$(arch)/Product/Licensing-IntegrationTests/Assets/TestAssets=$(SrcRoot)licensingcrossplatform/Tests/IntegrationTests/Assets

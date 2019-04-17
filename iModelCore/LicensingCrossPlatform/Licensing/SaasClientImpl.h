@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/SaasClientImpl.h $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,10 +30,7 @@ struct SaasClientImpl : ISaasClient
 protected:
     Utf8String m_deviceId;
     int m_productId;
-    ITimeRetrieverPtr m_timeRetriever;
-    IDelayedExecutorPtr m_delayedExecutor;
     Utf8String m_featureString;
-    Utf8String m_correlationId;
     IUlasProviderPtr m_ulasProvider;
 
 public:

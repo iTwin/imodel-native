@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Licensing/Utils/DelayedExecutor.cpp $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <Licensing/Utils/DelayedExecutor.h>
@@ -64,6 +62,9 @@ void DelayedExecutor::ProcessQueue()
         if (m_queue.empty())
             m_hasWorkCV.wait(lk, [this]
                 {
+                if (m_stop)
+                    return true;
+
                 return !m_queue.empty();
                 });
         else
@@ -71,6 +72,9 @@ void DelayedExecutor::ProcessQueue()
             auto sleepFor = m_queue.top()->executionTime - currentTime;
             m_hasWorkCV.wait_for(lk, std::chrono::milliseconds(sleepFor), [this, &currentTime, &sleepFor]
                 {
+                if (m_stop)
+                    return true;
+
                 auto newCurrentTime = GetCurrentUnixMilliseconds();
                 auto timeElapsed = newCurrentTime - currentTime;
                 currentTime = newCurrentTime;
@@ -126,4 +130,13 @@ folly::Future<folly::Unit> DelayedExecutor::AddCallback(uint64_t delay)
 folly::Future<folly::Unit> DelayedExecutor::Delayed(uint64_t ms)
     {
     return AddCallback(ms);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                        Jason.Wichert 4/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DelayedExecutor::~DelayedExecutor()
+    {
+    m_stop = true;
+    m_hasWorkCV.notify_all();
     }

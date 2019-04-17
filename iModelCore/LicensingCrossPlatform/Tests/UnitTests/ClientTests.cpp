@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/ClientTests.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -167,7 +165,7 @@ ClientImplPtr ClientTests::CreateTestClient(ConnectSignInManager::UserInfo userI
         );
     }
 
-TEST_F(ClientTests, DISABLED_JsonExample)
+TEST_F(ClientTests, JsonExample)
 {
 	BeFileName testJson;
 	BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);
