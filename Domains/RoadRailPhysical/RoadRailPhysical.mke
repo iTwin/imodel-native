@@ -1,0 +1,96 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+%include $(SrcRoot)DgnDomains/RoadRailPhysical/RoadRailPhysical.mki
+
+#--------------------------------------------------------------------------------------
+#   Macros
+#--------------------------------------------------------------------------------------
+appSrc              = $(_MakeFilePath)
+appPublicApi        = $(appSrc)PublicAPI/$(appName)/
+MultiCompileDepends = $(_MakeFileSpec) $(appSrc)RoadRailPhysicalInternal.h $(appPublicApi)RoadRailPhysicalApi.h
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Pre-compiled header
+#----------------------------------------------------------------------
+PchCompiland        = $(appSrc)RoadRailPhysicalInternal.cpp
+PchOutputDir        = $(o)
+PchExtraOptions     = -Zm160
+PchExplicitDepends  = $(MultiCompileDepends)
+
+%if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
+    # Avoid internal compiler error in GCC using windows ndk toolchain
+    GCC_NO_PRE_COMPILED_HEADER = 1
+%endif
+
+CompileOptionsMki =$(SrcRoot)DgnDomains/RoadRailPhysical/RoadRailPhysical.mki
+%include $(CompileOptionsMki)
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)ElementAspects$(oext) : $(_MakeFilePath)ElementAspects.cpp ${MultiCompileDepends} $(appPublicApi)ElementAspects.h
+
+$(o)Pathway$(oext) : $(_MakeFilePath)Pathway.cpp ${MultiCompileDepends} $(appPublicApi)Pathway.h
+
+$(o)RoadClass$(oext) : $(_MakeFilePath)RoadClass.cpp ${MultiCompileDepends} $(appPublicApi)RoadClass.h
+
+$(o)RoadDesignSpeed$(oext) : $(_MakeFilePath)RoadDesignSpeed.cpp ${MultiCompileDepends} $(appPublicApi)RoadDesignSpeed.h
+
+$(o)RoadRailCategory$(oext) : $(_MakeFilePath)RoadRailCategory.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailCategory.h
+
+$(o)RoadRailPhysicalDomain$(oext) : $(_MakeFilePath)RoadRailPhysicalDomain.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailPhysicalDomain.h
+
+$(o)RoadSegment$(oext) : $(_MakeFilePath)RoadSegment.cpp ${MultiCompileDepends} $(appPublicApi)RoadSegment.h
+
+$(o)TravelwaySegment$(oext) : $(_MakeFilePath)TravelwaySegment.cpp ${MultiCompileDepends} $(appPublicApi)TravelwaySegment.h
+
+$(o)TravelwaySideSegment$(oext) : $(_MakeFilePath)TravelwaySideSegment.cpp ${MultiCompileDepends} $(appPublicApi)TravelwaySideSegment.h
+
+$(o)TravelwayStructureSegment$(oext) : $(_MakeFilePath)TravelwayStructureSegment.cpp ${MultiCompileDepends} $(appPublicApi)TravelwayStructureSegment.h
+
+$(o)TypicalSection$(oext) : $(_MakeFilePath)TypicalSection.cpp ${MultiCompileDepends} $(appPublicApi)TypicalSection.h
+
+$(o)TypicalSectionPoint$(oext) : $(_MakeFilePath)TypicalSectionPoint.cpp ${MultiCompileDepends} $(appPublicApi)TypicalSectionPoint.h
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_PCH              = $(o)RoadRailPhysicalInternal$(oext) 
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)LinearReferencing$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailAlignment$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)Units$(libext)
+
+%include $(sharedMki)linkLibrary.mki
+
