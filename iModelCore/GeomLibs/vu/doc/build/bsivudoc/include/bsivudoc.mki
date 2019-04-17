@@ -1,3 +1,8 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
 #
 # Makefile directives to put bsivu fdf files together into a single top-level file
 # appropriate for mdldoc.
