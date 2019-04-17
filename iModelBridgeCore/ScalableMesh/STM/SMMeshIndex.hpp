@@ -2794,8 +2794,14 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
     else
         nOfNodesTouched++;
 
+// NEEDS_WORK_SM : The following define is deactivated until we find a more robust algorithm
+// to apply clips "on demand" using the query system.
+//#define ACTIVATE_NODE_LIMIT
+#ifdef ACTIVATE_NODE_LIMIT
     if (nOfNodesTouched >= 5000 && action != ClipAction::ACTION_DELETE)
         return;
+#endif
+
     if (this->m_pSubNodeNoSplit != NULL && !this->m_pSubNodeNoSplit->IsVirtualNode())
         {
         uint64_t childTs = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->LastClippingStateUpdateTimestamp();
