@@ -5,12 +5,10 @@
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <BuildingSpatial/Domain/BuildingSpatialMacros.h>
 #include <BuildingSpatial/Domain/BuildingSpatialDomain.h>
-#include <BuildingSpatial/Elements/Space.h>
 #include <BuildingSpatial/Handlers/SpaceHandler.h>
-#include <BuildingSpatial/Elements/Building.h>
 #include <BuildingSpatial/Handlers/BuildingHandler.h>
+#include <BuildingSpatial/Handlers/ElevationStoryHandler.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 
@@ -26,8 +24,9 @@ DOMAIN_DEFINE_MEMBERS(BuildingSpatialDomain)
 //---------------------------------------------------------------------------------------
 BuildingSpatialDomain::BuildingSpatialDomain () : DgnDomain(BUILDINGSPATIAL_SCHEMA_NAME, "BuildingBuildingSpatial Domain", 1)
     {
-    RegisterHandler(SpaceHandler::GetHandler ());
-    RegisterHandler(BuildingHandler::GetHandler ());
+    RegisterHandler(SpaceHandler::GetHandler());
+    RegisterHandler(BuildingHandler::GetHandler());
+    RegisterHandler(ElevationStoryHandler::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------
@@ -37,6 +36,7 @@ void BuildingSpatialDomain::InsertDomainAuthorities (DgnDbR db) const
     {
     InsertCodeSpec (db, BUILDINGSPATIAL_AUTHORITY_Building);
     InsertCodeSpec (db, BUILDINGSPATIAL_AUTHORITY_Space);
+    InsertCodeSpec (db, BUILDINGSPATIAL_AUTHORITY_ElevationStory);
     }
 
 //---------------------------------------------------------------------------------------
@@ -71,6 +71,12 @@ void BuildingSpatialDomain::_OnSchemaImported(DgnDbR db) const
     spaceLevelAppearance.SetWeight(1);
     Dgn::SpatialCategory dgnSpaceCat(db.GetDictionaryModel (), BUILDINGSPATIAL_CATEGORY_CODE_Space, Dgn::DgnCategory::Rank::Domain);
     dgnSpaceCat.Insert(spaceLevelAppearance);
+
+    Dgn::DgnSubCategory::Appearance elevationStoryAppearance;
+    elevationStoryAppearance.SetColor(tmpColorDef);
+    elevationStoryAppearance.SetWeight(1);
+    Dgn::SpatialCategory elevationStoryCategory(db.GetDictionaryModel(), BUILDINGSPATIAL_CATEGORY_CODE_ElevationStory, Dgn::DgnCategory::Rank::Domain);
+    elevationStoryCategory.Insert(elevationStoryAppearance);
     }
 
 END_BUILDINGSPATIAL_NAMESPACE

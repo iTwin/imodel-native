@@ -29,6 +29,7 @@ $(o)BuildingHandler$(oext) : $(_MakeFilePath)BuildingHandler.cpp ${MultiCompileD
 
 $(o)SpaceHandler$(oext) : $(_MakeFilePath)SpaceHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SpaceHandler.h   
 
+$(o)ElevationStoryHandler$(oext) : $(_MakeFilePath)ElevationStoryHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ElevationStoryHandler.h 
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
@@ -53,7 +54,6 @@ LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUnits$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUtils$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingDgnUtils$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)SpatialCompositionElements$(libext)
-
 
 %include $(sharedMki)linkLibrary.mki
 
