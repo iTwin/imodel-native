@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/PublicAPI/ScalableTerrainModel/Import/Config/Attachments.h $
 |    $RCSfile: Attachments.h,v $
 |   $Revision: 1.5 $
 |       $Date: 2011/11/22 21:57:46 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

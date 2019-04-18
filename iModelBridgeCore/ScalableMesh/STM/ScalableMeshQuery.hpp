@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshQuery.hpp $
 |    $RCSfile: ScalableMeshPointQuery.hpp,v $
 |   $Revision: 1.23 $
 |       $Date: 2012/11/29 17:30:45 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

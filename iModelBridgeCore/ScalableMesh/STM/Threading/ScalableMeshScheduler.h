@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/Threading/ScalableMeshScheduler.h $
 |    $RCSfile: ScalableMeshScheduler.h,v $
 |   $Revision: 1.0 $
 |       $Date: 2015/09/10 15:38:13 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

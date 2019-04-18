@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LoggingSDK/src/native/interface/bsilog.cpp $
-|
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "bsilogprivate.h"

@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: docs/samplecode/TxnManager.sample.cpp $
-|
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_EXTRACT_START__ TxnManager_TxnMonitor_ElementsByClass_Includes.sampleCode

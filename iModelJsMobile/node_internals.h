@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #ifndef SRC_NODE_INTERNALS_H_
 #define SRC_NODE_INTERNALS_H_
 

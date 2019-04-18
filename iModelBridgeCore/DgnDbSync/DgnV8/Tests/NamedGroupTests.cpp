@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnV8/Tests/NamedGroupTests.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "GeomTestHelper.h"
@@ -617,25 +615,32 @@ TEST_F(NamedGroupTests, NamedGroupInReferenceModel)
         BentleyApi::BeFileName refV8File;
         CreateAndAddV8Attachment(refV8File, 1);  // Create a copy of Test3d.dgn and attach it. Note that it will have the same level table.
 
-        V8FileEditor v8editor;
-        v8editor.Open(m_v8FileName);
+        
+        //Process all references
         V8FileEditor v8editor_ref;
         v8editor_ref.Open(refV8File);
-    
-        DgnV8Api::ElementId eid1;
-        v8editor.AddLine(&eid1);
-        DgnV8Api::ElementId eid2;
-        v8editor.AddLine(&eid2);
         DgnV8Api::ElementId eid3;
         v8editor_ref.AddLine(&eid3);
         DgnV8Api::ElementId eid4;
         v8editor_ref.AddLine(&eid4);
+        v8editor_ref.Save();
+        
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+
+        DgnV8Api::ElementId eid1;
+        v8editor.AddLine(&eid1);
+        DgnV8Api::ElementId eid2;
+        v8editor.AddLine(&eid2);
+        
     
         //Create a named group.
         DgnV8Api::NamedGroupFlags ngFlags;
+        ngFlags.m_allowFarReferences = 1;
         DgnV8Api::NamedGroupPtr nGroup1, nGroup2;
+        DgnAttachmentP attachment = v8editor.m_defaultModel->GetDgnAttachmentByIndex(0);
         EXPECT_EQ(DgnV8Api::NG_Success, DgnV8Api::NamedGroup::Create(nGroup1, L"Test Named Group 1", L"Test Description 1", ngFlags, v8editor.m_defaultModel));
-        EXPECT_EQ(DgnV8Api::NG_Success, DgnV8Api::NamedGroup::Create(nGroup2, L"Test Named Group 2", L"Test Description 2", ngFlags, v8editor_ref.m_defaultModel));
+        EXPECT_EQ(DgnV8Api::NG_Success, DgnV8Api::NamedGroup::Create(nGroup2, L"Test Named Group 2", L"Test Description 2", ngFlags, v8editor.m_defaultModel));
 
         DgnV8Api::NamedGroupMemberFlags memberFlags;
         EXPECT_EQ(DgnV8Api::NG_Success, nGroup1->AddMember(eid1, v8editor.m_defaultModel, memberFlags));
@@ -643,10 +648,10 @@ TEST_F(NamedGroupTests, NamedGroupInReferenceModel)
         EXPECT_EQ(DgnV8Api::NG_Success, nGroup1->WriteToFile(true));
         v8editor.Save();
 
-        EXPECT_EQ(DgnV8Api::NG_Success, nGroup2->AddMember(eid3, v8editor_ref.m_defaultModel, memberFlags));
-        EXPECT_EQ(DgnV8Api::NG_Success, nGroup2->AddMember(eid4, v8editor_ref.m_defaultModel, memberFlags));
+        EXPECT_EQ(DgnV8Api::NG_Success, nGroup2->AddMember(eid3, attachment, memberFlags));
+        EXPECT_EQ(DgnV8Api::NG_Success, nGroup2->AddMember(eid4, attachment, memberFlags));
         EXPECT_EQ(DgnV8Api::NG_Success, nGroup2->WriteToFile(true));
-        v8editor_ref.Save();
+        
 
         ng1id = nGroup1->GetElementRef()->GetElementId();
         ng2id = nGroup2->GetElementRef()->GetElementId();
@@ -684,29 +689,28 @@ TEST_F(NamedGroupTests, NamedGroupAcrossReference)
         BentleyApi::BeFileName refV8File;
         CreateAndAddV8Attachment(refV8File, 1);  // Create a copy of Test3d.dgn and attach it. Note that it will have the same level table.
 
-        V8FileEditor v8editor;
-        v8editor.Open(m_v8FileName);
         V8FileEditor v8editor_ref;
         v8editor_ref.Open(refV8File);
-
-
-        DgnV8Api::ElementId eid1;
-        v8editor.AddLine(&eid1);
         DgnV8Api::ElementId eid2;
         v8editor_ref.AddLine(&eid2);
         DgnV8Api::ElementId eid3;
         v8editor_ref.AddLine(&eid3);
         v8editor_ref.Save();
-    
+
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        DgnV8Api::ElementId eid1;
+        v8editor.AddLine(&eid1);
+        
         //Create a named group.
         DgnV8Api::NamedGroupFlags ngFlags;
         ngFlags.m_allowFarReferences = true;
         DgnV8Api::NamedGroupPtr nGroup1;
         EXPECT_EQ(DgnV8Api::NG_Success, DgnV8Api::NamedGroup::Create(nGroup1, L"Test Named Group 1", L"Test Description 1", ngFlags, v8editor.m_defaultModel));
-
+        DgnAttachmentP attachment = v8editor.m_defaultModel->GetDgnAttachmentByIndex(0);
         DgnV8Api::NamedGroupMemberFlags memberFlags;
         EXPECT_EQ(DgnV8Api::NG_Success, nGroup1->AddMember(eid1, v8editor.m_defaultModel, memberFlags));
-        EXPECT_EQ(DgnV8Api::NG_Success, nGroup1->AddMember(eid2, v8editor.m_defaultModel, memberFlags));
+        EXPECT_EQ(DgnV8Api::NG_Success, nGroup1->AddMember(eid2, attachment, memberFlags));
         EXPECT_EQ(DgnV8Api::NG_Success, nGroup1->WriteToFile(true));
         v8editor.Save();
 

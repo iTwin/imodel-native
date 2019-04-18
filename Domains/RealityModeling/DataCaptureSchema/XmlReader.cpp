@@ -1,11 +1,9 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DataCaptureSchema/XmlReader.cpp $
-|
 |  Notice that most of the code here cames from or is an adaptation of "src\MstnPlatform\mstn\mdlapps\rmutil\RMUtilImage.cpp"  
 |  on vancouver source stream
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "DataCaptureSchemaInternal.h"

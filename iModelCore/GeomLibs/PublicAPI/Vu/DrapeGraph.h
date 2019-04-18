@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: PublicAPI/Vu/DrapeGraph.h $
 |    $RCSfile: DrapeGraph.h,v $
 |   $Revision: 1.10 $
 |       $Date: 2010/11/17 22:01:47 $
 |     $Author: Earlin.Lutz $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

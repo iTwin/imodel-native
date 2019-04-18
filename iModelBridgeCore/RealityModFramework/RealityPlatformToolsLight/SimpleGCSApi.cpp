@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include "../RealityPlatformTools/SimpleGCSApi.cpp"
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM

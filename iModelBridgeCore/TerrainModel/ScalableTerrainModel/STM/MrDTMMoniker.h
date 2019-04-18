@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/STM/MrDTMMoniker.h $
 |    $RCSfile: MrDTMMoniker.h,v $
 |   $Revision: 1.3 $
 |       $Date: 2011/06/08 20:42:33 $
 |     $Author: Daryl.Holmwood $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

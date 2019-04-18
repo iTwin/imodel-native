@@ -1,12 +1,10 @@
 #------------------------------------------------------------------------------------
-#
-#     $Source: Formats/InroadsTM/InroadsTMDgnDb.mke $
 #    $RCSfile: cppwrappers.mke,v $
 #   $Revision: 1.123.2.1 $
 #       $Date: 2012/11/15 20:19:18 $
 #     $Author: Daryl.Holmwood $
 #
-#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 %include  mdl.mki

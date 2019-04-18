@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/GeoCoords/TransformationUtils.h $
 |    $RCSfile: TransformationUtils.h,v $
 |   $Revision: 1.5 $
 |       $Date: 2011/11/07 14:26:44 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

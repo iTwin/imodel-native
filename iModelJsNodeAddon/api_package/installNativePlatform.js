@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------------------------+
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 +--------------------------------------------------------------------------------------*/
 const exec = require("child_process").exec;
 const path = require("path");

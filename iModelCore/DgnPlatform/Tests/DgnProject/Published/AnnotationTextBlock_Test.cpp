@@ -1,9 +1,9 @@
 ﻿//-------------------------------------------------------------------------------------- 
-//     $Source: Tests/DgnProject/Published/AnnotationTextBlock_Test.cpp $
-//  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //-------------------------------------------------------------------------------------- 
 
 #include "AnnotationTestFixture.h"
+// #include <DgnPlatform/Annotations/TextAnnotationElement.h>
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     05/2014
@@ -415,3 +415,36 @@ TEST_F(AnnotationTextBlockTest, ToString)
     EXPECT_TRUE(0 == strcmp(expectedString.c_str(), textStr.c_str()));
     
     }
+
+// TEST_F(AnnotationTextBlockTest, WrapTest)
+//     {
+//     DgnDbR db = *GetDgnDb();
+//     printf("%s\n", db.GetDbFileName());
+
+//     DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(db, "AnnotationTextBlockTestWrapTest Category");
+//     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(db, "AnnotationTextBlockTestWrapTest Model");
+    
+//     AnnotationTextStylePtr style = AnnotationTextStyle::Create(db);
+//     style->SetFontId(db.Fonts().AcquireId(DgnFontManager::GetLastResortTrueTypeFont()));
+//     style->SetHeight(0.03);
+//     style->SetName("style");
+    
+//     style->Insert();
+
+//     static const Utf8CP CONTENTS = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sed consectetur felis, vitae bibendum odio.";
+//     AnnotationTextBlockPtr text = AnnotationTextBlock::Create(db, style->GetElementId(), CONTENTS);
+//     text->SetDocumentWidth(style->GetHeight() * 20.0);
+
+//     TextAnnotation annotation(db);
+//     annotation.SetText(text.get());
+
+//     TextAnnotation3dPtr annotationElement = new TextAnnotation3d(TextAnnotation3d::CreateParams(db, model->GetModelId(), TextAnnotation3d::QueryDgnClassId(db), categoryId));
+//     annotationElement->SetAnnotation(&annotation);
+
+//     annotationElement->Insert();
+
+//     auto range = annotationElement->CalculateRange3d();
+//     DgnDbTestUtils::InsertCameraView(*model, "AnnotationTextBlockTestWrapTest View", &range, StandardView::Top, Render::RenderMode::Wireframe);
+
+//     db.SaveChanges();
+//     }

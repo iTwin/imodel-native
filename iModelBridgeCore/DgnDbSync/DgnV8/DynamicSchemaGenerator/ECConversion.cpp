@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnV8/DynamicSchemaGenerator/ECConversion.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -2981,7 +2979,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                             return BSISUCCESS;
                         }
                     // If the existing entry we found was actually for this file, then do nothing.
-                    else if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName, Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP())))
+                    else if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName, m_converter.GetRepositoryLinkId(*v8Model.GetDgnFileP())))
                         return BSISUCCESS;
                     }
                 }
@@ -2990,7 +2988,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
 
     ECN::ECSchemaId schemaId;
 
-    DgnElementPtr repositoryLink = GetDgnDb().Elements().GetForEdit<RepositoryLink>(Converter::GetRepositoryLinkIdFromAppData(*v8Model.GetDgnFileP()));
+    DgnElementPtr repositoryLink = GetDgnDb().Elements().GetForEdit<RepositoryLink>(m_converter.GetRepositoryLinkId(*v8Model.GetDgnFileP()));
     if (BeSQLite::DbResult::BE_SQLITE_OK != GetSyncInfo().InsertSchema(schemaId, repositoryLink->GetElementId(),
                                                      schemaName.c_str(),
                                                      schemaKey.GetVersionMajor(),
@@ -3163,7 +3161,7 @@ void DynamicSchemaGenerator::CheckNoECSchemaChanges(bvector<DgnV8ModelP> const& 
     for (auto& v8Model : uniqueModels)
         {
         bmap<Utf8String, uint32_t> syncInfoChecksums;
-        RepositoryLinkId v8FileId = Converter::GetRepositoryLinkIdFromAppData(*v8Model->GetDgnFileP());
+        RepositoryLinkId v8FileId = m_converter.GetRepositoryLinkId(*v8Model->GetDgnFileP());
         GetSyncInfo().RetrieveECSchemaChecksums(syncInfoChecksums, v8FileId);
         CheckECSchemasForModel(*v8Model, syncInfoChecksums);
         }

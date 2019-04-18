@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshSourceCreator.h $
 |    $RCSfile: ScalableMeshSourceCreator.h,v $
 |   $Revision: 1.45 $
 |       $Date: 2015/07/15 11:02:24 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

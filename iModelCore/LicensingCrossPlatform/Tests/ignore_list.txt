@@ -1,13 +1,14 @@
 
-GenerateSIDTests.GetUserSID_Success
+# ---- Example tests ----
+ClientTests.JsonExample
+AccessKeyClientTests.JsonExample
+SaasClientTests.JsonExample
+
 PolicyProviderTests.GetPolicy_Success
 PolicyProviderTests.GetPolicy_GetPolicyFailure
 PolicyProviderTests.GetPolicy_GetCertificateFailure
 PolicyProviderTests.GetPolicyWithKey_Success
 LogFileHelperTests.GetLogFiles_Success
-ClientTests.JsonExample
-AccessKeyClientTests.JsonExample
-SaasClientTests.JsonExample
 SaasClientTests.CreateSaasClientFromFactory_Success
 
 # The following are disabled because they pass, but cause the gtest executable to never exit

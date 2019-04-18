@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: vu/src/DrapeGraph/DrapeGraph.cpp $
 |    $RCSfile: DrapeGraph.cpp,v $
 |   $Revision: 1.13 $
 |       $Date: 2010/11/17 22:01:47 $
 |     $Author: Earlin.Lutz $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>

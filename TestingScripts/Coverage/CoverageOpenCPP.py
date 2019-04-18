@@ -1,8 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: CodeCoverage/CoverageOpenCPP.py $
-#
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 import xml.etree.ElementTree as ET

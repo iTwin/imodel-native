@@ -1,8 +1,7 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: all/gra/hrf/src/HRFIntergraphCOT29File.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphCot29File

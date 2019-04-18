@@ -1,3 +1,8 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
 import argparse, json, os, re, subprocess, sys
 
 DEFAULT_VERSION = '99.99.99.99'

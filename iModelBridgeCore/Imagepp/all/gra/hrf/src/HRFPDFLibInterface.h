@@ -1,8 +1,7 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: all/gra/hrf/src/HRFPDFLibInterface.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.

@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: PrivateAPI/STMInternal/GeoCoords/WKTUtils.h $
 |    $RCSfile: WKTUtils.h,v $
 |   $Revision: 1.3 $
 |       $Date: 2011/12/20 16:24:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

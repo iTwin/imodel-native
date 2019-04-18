@@ -1,12 +1,11 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: ScalableTerrainModel/STM/MrDTMQuadTreeQueries.hpp $
 //:>    $RCSfile: MrDTMQuadTreeQueries.hpp,v $
 //:>   $Revision: 1.20 $
 //:>       $Date: 2012/11/29 17:30:34 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 

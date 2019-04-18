@@ -1,12 +1,10 @@
 #*--------------------------------------------------------------------------------------+
-#
-#     $Source: mki/AssertScalableMeshCreatorPolicy.mki $
 #    $RCSfile: AssertDTMPolicy.mki,v $
 #   $Revision: 1.23 $
 #       $Date: 2012/11/13 14:02:19 $
 #     $Author: Daryl.Holmwood $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------*/
 IncludeCompileLinkMki=1

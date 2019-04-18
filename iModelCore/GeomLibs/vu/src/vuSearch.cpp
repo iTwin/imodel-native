@@ -1,7 +1,6 @@
 /*--------------------------------------------------------------------------------------+
-|     $Source: vu/src/vuSearch.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include <Geom/cluster.h>

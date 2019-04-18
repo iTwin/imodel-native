@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/STM/ImportPlugins/IDTMFileImporter.cpp $
 |    $RCSfile: IDTMFileImporter.cpp,v $
 |   $Revision: 1.44 $
 |       $Date: 2012/01/27 16:45:33 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

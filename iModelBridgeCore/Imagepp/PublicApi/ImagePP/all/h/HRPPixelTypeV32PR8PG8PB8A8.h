@@ -1,8 +1,7 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeV32PR8PG8PB8A8.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPPixelTypeV32PR8PG8PB8A8

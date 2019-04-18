@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/PublicAPI/ScalableTerrainModel/Import/Command/ImportLayerTypeToType.h $
 |    $RCSfile: ImportLayerTypeToType.h,v $
 |   $Revision: 1.4 $
 |       $Date: 2011/11/22 21:58:22 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/STM/MrDTMFeature.cpp $
 |    $RCSfile: MrDTMFeature.cpp,v $
 |   $Revision: 1.3 $
 |       $Date: 2013/10/04 17:16:07 $
 |     $Author: Richard.Bois $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

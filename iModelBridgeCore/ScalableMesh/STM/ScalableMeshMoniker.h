@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshMoniker.h $
 |    $RCSfile: ScalableMeshMoniker.h,v $
 |   $Revision: 1.3 $
 |       $Date: 2011/06/08 20:42:33 $
 |     $Author: Daryl.Holmwood $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

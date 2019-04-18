@@ -1,8 +1,7 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: all/gra/hrp/src/HRPPixelTypeV16B5G5R5.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPPixelTypeV16B5G5R5

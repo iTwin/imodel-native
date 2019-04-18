@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshSourceImportConfig.cpp $
 |    $RCSfile: ScalableMeshSourceImportConfig.cpp,v $
 |   $Revision: 1.21 $
 |       $Date: 2012/01/30 17:24:44 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>

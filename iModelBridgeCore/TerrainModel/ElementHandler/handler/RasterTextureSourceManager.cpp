@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ElementHandler/handler/RasterTextureSourceManager.cpp $
 |    $RCSfile: HIEMultiResolutionGridMaterialManager.cpp,v $
 |   $Revision: 1.6 $
 |       $Date: 2011/11/15 17:54:58 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------+

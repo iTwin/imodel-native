@@ -1,8 +1,7 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: all/gra/hve/src/HVE2DOrientedRectangle.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

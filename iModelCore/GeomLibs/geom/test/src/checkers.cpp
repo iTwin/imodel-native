@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include "checkers.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <Bentley/BeTest.h>

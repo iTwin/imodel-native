@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include <Bentley\BeTest.h>
 #include <Grids/GridsApi.h>
 #include "GridsTestFixtureBase.h"

@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/PublicAPI/ScalableTerrainModel/Memory/Definitions.h $
 |    $RCSfile: Definitions.h,v $
 |   $Revision: 1.2 $
 |       $Date: 2011/08/19 13:51:11 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

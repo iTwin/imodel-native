@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/STM/MrDTMSourcePersistance.h $
 |    $RCSfile: MrDTMSourcePersistance.h,v $
 |   $Revision: 1.5 $
 |       $Date: 2011/11/18 15:50:46 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

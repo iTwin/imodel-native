@@ -1,6 +1,5 @@
 //-------------------------------------------------------------------------------------- 
-//     $Source: Tests/DgnProject/Published/AnnotationTestFixture.cpp $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //-------------------------------------------------------------------------------------- 
 
 #include "AnnotationTestFixture.h"

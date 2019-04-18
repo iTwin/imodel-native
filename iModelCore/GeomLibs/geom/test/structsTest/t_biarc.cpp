@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include <Bentley/BeNumerical.h>
 void testBiarc (DPoint3dCR pointA, DPoint3dCR pointB, Angle tangentAToChord, Angle tangentBToChord)

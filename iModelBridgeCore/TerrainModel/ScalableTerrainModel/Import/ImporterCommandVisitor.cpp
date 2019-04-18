@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/Import/ImporterCommandVisitor.cpp $
 |    $RCSfile: ImporterCommandVisitor.cpp,v $
 |   $Revision: 1.4 $
 |       $Date: 2011/08/26 18:46:52 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>

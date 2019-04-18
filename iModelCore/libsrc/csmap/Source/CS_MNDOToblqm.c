@@ -1,12 +1,6 @@
 /*-------------------------------------------------------------------------------------+
 |
-|     $Source: Source/CS_MNDOToblqm.c $
-|    $RCSfile: CS_MNDOToblqm.c,v $
-|   $Revision: 1.1 $
-|       $Date: 2011/06/06 16:12:25 $
-|     $Author: Alain.Robert $
-|
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

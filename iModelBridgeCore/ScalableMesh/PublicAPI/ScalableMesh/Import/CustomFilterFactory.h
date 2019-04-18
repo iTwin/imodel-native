@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: PublicAPI/ScalableMesh/Import/CustomFilterFactory.h $
 |    $RCSfile: CustomFilterFactory.h,v $
 |   $Revision: 1.5 $
 |       $Date: 2011/09/01 14:07:13 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

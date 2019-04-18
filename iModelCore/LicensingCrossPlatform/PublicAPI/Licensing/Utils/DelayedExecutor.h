@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/Licensing/Utils/DelayedExecutor.h $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -54,6 +52,8 @@ private:
 
     CallbackContainerQueue m_queue;
 
+    bool m_stop = false;
+
 private:
     void RunThread();
 
@@ -70,7 +70,7 @@ public:
     //! Future will be completed after specified time. Time can be slightly bigger due to system lags.
     LICENSING_EXPORT virtual folly::Future<folly::Unit> Delayed(uint64_t ms) override;
 
-    virtual ~DelayedExecutor() {};
+    virtual ~DelayedExecutor();
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

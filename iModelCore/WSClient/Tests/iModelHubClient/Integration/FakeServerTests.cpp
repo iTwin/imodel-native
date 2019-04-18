@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include <BeXml/BeXml.h>

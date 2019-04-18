@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 
    *** THIS FILE IS NOT TO BE COMPILED ***
    *** COPY CODE FROM HERE INTO jsc/node_api.cc ***

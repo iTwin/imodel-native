@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshImportSequencePersistance.cpp $
 |    $RCSfile: ScalableMeshImportSequencePersistance.cpp,v $
 |   $Revision: 1.10 $
 |       $Date: 2012/02/16 22:19:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>

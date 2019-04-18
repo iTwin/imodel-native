@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Mocks/UlasProviderMock.h $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,11 +28,11 @@ private:
     int m_getAccessKeyInfoCalls = 0;
 
 public:
-    BentleyStatus PostUsageLogs(ClientInfoPtr clientInfo, BeFileNameCR dbPath, ILicensingDb& licensingDb, std::shared_ptr<Policy> policy) override;
-    BentleyStatus PostFeatureLogs(ClientInfoPtr clientInfo, BeFileNameCR dbPath, ILicensingDb& licensingDb, std::shared_ptr<Policy> policy) override;
+    BentleyStatus PostUsageLogs(WebServices::ClientInfoPtr clientInfo, BeFileNameCR dbPath, ILicensingDb& licensingDb, std::shared_ptr<Policy> policy) override;
+    BentleyStatus PostFeatureLogs(WebServices::ClientInfoPtr clientInfo, BeFileNameCR dbPath, ILicensingDb& licensingDb, std::shared_ptr<Policy> policy) override;
     folly::Future<BentleyStatus> RealtimeTrackUsage(Utf8StringCR accessToken, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, BeVersionCR version, Utf8StringCR projectId) override;
     folly::Future<BentleyStatus> RealtimeMarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, int productId, Utf8StringCR featureString, Utf8StringCR deviceId) override;
-    folly::Future<Json::Value> GetAccessKeyInfo(ClientInfoPtr clientInfo, Utf8StringCR accessKey) override;
+    folly::Future<Json::Value> GetAccessKeyInfo(WebServices::ClientInfoPtr clientInfo, Utf8StringCR accessKey) override;
 
     void MockPostUsageLogs(BentleyStatus mocked) { m_mockedPostUsageLogs = mocked; }
     void MockPostFeatureLogs(BentleyStatus mocked) { m_mockedPostFeatureLogs = mocked; }

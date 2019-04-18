@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnV8/Tests/ConverterTests.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -119,174 +117,6 @@ TEST_F(ConverterTests, ColorMap)
     Bentley::DgnColorMapP colorMap = DgnV8Api::DgnColorMap::GetForFile(editor.m_file.get());
     EXPECT_TRUE(nullptr != colorMap);
     DoConvert(m_dgnDbFileName, m_v8FileName);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                   Carole.MacDonald            01/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-struct LightTests : public ConverterTestBaseFixture
-    {
-    DEFINE_T_SUPER(ConverterTestBaseFixture);
-    void SetUp();
-    };
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            01/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-void LightTests::SetUp()
-    {
-    T_Super::SetUp();
-    //if (false == DgnV8Api::ConfigurationManager::IsVariableDefined(L"_USTN_DGNLIBLIST_SYSTEM"))
-        {
-        BentleyApi::BeFileName inFile = GetInputFileName(L"SystemCells.dgnlib");
-        WString directory = inFile.GetDirectoryName();
-        DgnV8Api::ConfigurationManager::DefineVariable(L"_USTN_DGNLIBLIST_SYSTEM", directory.c_str(), DgnV8Api::ConfigurationVariableLevel::User);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     04/10
-//---------------------------------------------------------------------------------------
-static DgnV8Api::LightElementPtr createLightElement1(bool setTypeOnly)
-    {
-    DgnV8Api::PointLightPtr result = DgnV8Api::PointLight::Create();
-    if (setTypeOnly)
-        return result.get();
-
-    result->SetIntensity(1.0);
-    result->GetColorR().red = result->GetColorR().green = result->GetColorR().blue = 1.0;
-    result->SetIsEnabled(true);
-    result->SetBrightness(2650);
-
-    result->SetUseVolumetrics(false);
-    result->SetVolumeSampleCount(40);
-    result->SetVolumeScattering(50.0);
-    result->SetVolumeDensity(50.0);
-    result->SetVolumeAttenuation(10.0);
-    result->SetVolumeShift(0.0);
-    result->SetVolumeHeightInMeters(2.0);
-    result->SetVolumeRadiusBaseInMeters(1.0);
-    result->GetScatterColorR().red = result->GetScatterColorR().green = result->GetScatterColorR().blue = 0.5;
-
-    result->SetShadowType(DgnV8Api::AdvancedLight::SHADOWTYPE_RayTrace);
-    result->SetDeepShadowSamples(1024);
-    result->SetVolumeAffectDiffuse(100.0);
-    result->SetVolumeAffectSpecular(100.0);
-    result->SetVolumeAffectCaustics(100.0);
-    result->SetCastsShadows(true);
-    result->SetShadowQuality(DgnV8Api::LightElement::SHADOWQUALITY_Sharp);
-    result->GetShadowColorR().red = result->GetShadowColorR().green = result->GetShadowColorR().blue = 0.0;
-
-    result->SetName(L"Point Light (1)");
-    result->SetPresetName(L"[Select]");
-    result->SetUsesIesData(false);
-    result->SetIesFileName(L"");
-    result->GetIesReferenceR().Init(0.0, 0.0, 1.0);
-    result->SetIesRotation(0.0);
-
-    result->SetBulbSizeInUors(0.0);
-    result->SetBulbCount(1);
-    result->SetTemperatureInKelvin(0);
-
-    result->GetMapsR().AddMap(DgnV8Api::LightMap::MAPTYPE_Color)->SetIsEnabled(false);
-    result->GetMapsR().AddMap(DgnV8Api::LightMap::MAPTYPE_VolumetricDensity)->SetIsEnabled(false);
-    result->GetMapsR().AddMap(DgnV8Api::LightMap::MAPTYPE_VolumetricScatterColor)->SetIsEnabled(false);
-    result->GetMapsR().AddMap(DgnV8Api::LightMap::MAPTYPE_DiffuseAmount)->SetIsEnabled(false);
-    result->GetMapsR().AddMap(DgnV8Api::LightMap::MAPTYPE_SpecularAmount)->SetIsEnabled(false);
-    result->GetMapsR().AddMap(DgnV8Api::LightMap::MAPTYPE_ShadowColor)->SetIsEnabled(false);
-
-    return result.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Umar.Hayat                          05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(LightTests, LightSetup)
-    {
-    LineUpFiles(L"ProjectProperties.bim", L"Test3d.dgn", false);
-
-    if (true)
-        {
-        V8FileEditor editor;
-        editor.Open(m_v8FileName);
-        // Create Light
-        DgnV8Api::LightElementPtr light = createLightElement1(false);
-        light->SetModelRef(editor.m_defaultModel);
-        light->Save();
-
-        Bentley::LightManagerR lightManager = DgnV8Api::LightManager::GetManagerR();
-        Bentley::LightSetupCP activeSetup = lightManager.GetActiveLightSetupForModel(true, *editor.m_defaultModel);
-        EXPECT_TRUE(nullptr != activeSetup);
-        }
-    DoConvert(m_dgnDbFileName, m_v8FileName);
-
-    // Update light
-    // Do update
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            01/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(LightTests, CreatePointLightWithECInstance)
-    {
-    LineUpFiles(L"PointLight.bim", L"Test3d.dgn", false);
-    DgnV8Api::ElementId eidWithInst;
-
-    V8FileEditor v8editor;
-    v8editor.Open(m_v8FileName);
-    if (true)
-        {
-        // Create Light
-        DgnV8Api::LightElementPtr light = createLightElement1(false);
-        light->SetModelRef(v8editor.m_defaultModel);
-        light->Save();
-        DgnV8Api::ElementHandle eh(light->GetElementRef());
-        eidWithInst = eh.GetElementId();
-        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Foo" isDomainClass="True">
-                <ECProperty propertyName="Goo" typeName="string" />
-            </ECClass>
-        </ECSchema>)xml";
-
-        ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
-        ECObjectsV8::ECSchemaPtr schema;
-        EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
-        EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
-
-        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
-        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"Foo"));
-        Bentley::ECN::ECValue v;
-        v.SetUtf8CP("PointLightHandler");
-        createdDgnECInstance->SetValue(L"Goo", v);
-        createdDgnECInstance->WriteChanges();
-        v8editor.Save();
-        }
-
-    DoConvert(m_dgnDbFileName, m_v8FileName);
-
-    if (true)
-        {
-        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        SyncInfoReader syncInfo(m_params, db);
-        RepositoryLinkId editV8FileSyncInfoId;
-        syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
-        DgnModelId editModelId;
-        syncInfo.MustFindModelByV8ModelId(editModelId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
-        DgnElementId dgnDbElementId;
-        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editModelId, eidWithInst);
-
-        auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);
-        ASSERT_TRUE(dgnDbElement.IsValid());
-
-        Utf8String selEcSql;
-        selEcSql.append("SELECT [Goo] FROM TestSchema.FooElementAspect WHERE [Element].[Id]=?");
-        EC::ECSqlStatement stmt;
-        stmt.Prepare(*db, selEcSql.c_str());
-        stmt.BindId(1, dgnDbElementId);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_TRUE(0 == strcmp("PointLightHandler", stmt.GetValueText(0)));
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -714,7 +544,7 @@ TEST_F(ConverterTests, GCSMultiFilesReprojectImport)
     ASSERT_TRUE (db->IsDbOpen());
 
     ValidateModelRange (*db.get(), "2D Site Data", 775473.879, 82772.289, -0.0005, 776530.835, 83720.500, 0.0005);
-    ValidateModelRange(*db.get(), "Building 1", 775953.178, 83335.970, -0.0005, 776088.567, 83467.103, 0.0005);
+    ValidateModelRange(*db.get(), "Building 1", 775953.178862, 83335.970702, -0.0005, 776088.567471, 83467.103977, 0.0005);
     ValidateModelRange (*db.get(), "TPB Building", 775885.795, 83307.686, -0.0005, 775960.121, 83398.667, 0.0005);
     }
 

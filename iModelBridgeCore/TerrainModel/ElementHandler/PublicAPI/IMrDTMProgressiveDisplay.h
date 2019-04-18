@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ElementHandler/PublicAPI/IMrDTMProgressiveDisplay.h $
 |    $RCSfile: IMrDTMProgressiveDisplay.h,v $
 |   $Revision: 1.4 $
 |       $Date: 2012/02/08 18:22:46 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__

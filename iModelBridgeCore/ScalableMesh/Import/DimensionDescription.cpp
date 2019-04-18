@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: Import/DimensionDescription.cpp $
 |    $RCSfile: DimensionDescription.cpp,v $
 |   $Revision: 1.4 $
 |       $Date: 2011/08/26 18:47:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>

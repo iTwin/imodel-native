@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: PointCloudChannel.h $
 |    $RCSfile: PointCloudChannel.h,v $
 |   $Revision: 1.1 $
 |       $Date: 2010/08/18 15:57:40 $
 |     $Author: Simon.Normand $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

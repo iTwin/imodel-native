@@ -1,3 +1,8 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
 import datetime, os, shutil, time
 
 pruneList = [

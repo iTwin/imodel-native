@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 
 void exerciseBspline1d (bvector<double> &yValues, bool noisy = false)

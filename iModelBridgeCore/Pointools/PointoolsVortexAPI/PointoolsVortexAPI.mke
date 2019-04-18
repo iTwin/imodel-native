@@ -1,8 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: PointoolsVortexAPI.mke $
-#
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 BUILD_NO_STACK_CHECK=1

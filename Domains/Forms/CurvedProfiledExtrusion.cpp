@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include "FormsDomain\CurvedProfiledExtrusion.h"
 #include <Bentley/BeAssert.h>
 

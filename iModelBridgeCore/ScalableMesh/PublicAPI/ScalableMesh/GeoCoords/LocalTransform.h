@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: PublicAPI/ScalableMesh/GeoCoords/LocalTransform.h $
 |    $RCSfile: LocalTransform.h,v $
 |   $Revision: 1.8 $
 |       $Date: 2011/12/01 18:51:34 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

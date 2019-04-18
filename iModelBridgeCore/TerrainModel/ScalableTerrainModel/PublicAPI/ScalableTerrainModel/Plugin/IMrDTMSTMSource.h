@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/PublicAPI/ScalableTerrainModel/Plugin/IMrDTMSTMSource.h $
 |    $RCSfile: IMrDTMSTMSource.h,v $
 |   $Revision: 1.5 $
 |       $Date: 2011/11/18 15:51:39 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #import "../BeTestiOSTests/BeTestiOSTests.h"
 #import <Bentley/BeAssert.h>
 #import <Bentley/BeFileName.h>

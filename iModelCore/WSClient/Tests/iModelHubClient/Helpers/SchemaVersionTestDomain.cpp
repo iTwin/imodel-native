@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include "SchemaVersionTestDomain.h"
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TestElement)

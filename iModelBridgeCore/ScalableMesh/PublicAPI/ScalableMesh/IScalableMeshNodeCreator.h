@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: PublicAPI/ScalableMesh/IScalableMeshNodeCreator.h $
 |    $RCSfile: IScalableMeshNodeCreator.h,v $
 |   $Revision: 1.39 $
 |       $Date: 2015/07/15 10:30:02 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

@@ -1,8 +1,6 @@
 ﻿/*-------------------------------------------------------------------------------------
 |
-|     $Source: S3MXECPlugin/Source/S3MXECPlugin.cs $
-|
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +-------------------------------------------------------------------------------------*/
 

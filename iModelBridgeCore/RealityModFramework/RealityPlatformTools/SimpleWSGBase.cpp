@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include <RealityPlatformTools/SimpleWSGBase.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM

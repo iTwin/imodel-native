@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Dwg/DwgDb/DwgDbInternal.h $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -368,6 +366,52 @@ END_DWGDB_NAMESPACE
             return  DwgDbStatus::Success;                                               \
             }
 
+#define DWGDB_DEFINE_GETBINARYDATA_MEMBER(_classSuffix_)                                \
+        DwgDbStatus DwgDb##_classSuffix_##::GetBinaryData(DwgStringCR key, size_t& size, char*& bytes) const \
+            {                                                                           \
+            size = 0; bytes = nullptr;                                                  \
+            try {                                                                       \
+                auto o = T_Super::extensionDictionary().openObject(OdDb::kForRead);     \
+                if (o.isNull()) return DwgDbStatus::ObjectNotOpenYet;                   \
+                auto dict = OdDbDictionary::cast(o.get());                              \
+                if (nullptr == dict) return DwgDbStatus::InvalidInput;                  \
+                if ((o = dict->getAt(key).openObject(OdDb::kForRead)).isNull()) return DwgDbStatus::ObjectNotOpenYet; \
+                auto xrec = OdDbXrecord::cast(o.get());                                 \
+                if (nullptr == xrec) return DwgDbStatus::InvalidInput;                  \
+                auto rb = xrec->rbChain();                                              \
+                if (rb.isNull()) return DwgDbStatus::InvalidInput;                      \
+                for (; nullptr != rb; rb = rb->next())                                  \
+                    if (OdDxfCode::_getType(rb->restype()) == OdDxfCode::BinaryChunk) { \
+                        auto arr = rb->getBinaryChunk();                                \
+                        size = arr.length();                                            \
+                        if (size == 0) return DwgDbStatus::UnknownError;                \
+                        bytes = new char[size];                                         \
+                        if (nullptr == bytes) return DwgDbStatus::MemoryError;          \
+                        ::memcpy (bytes, arr.asArrayPtr(), size); }                     \
+                } /* try */                                                             \
+            catch (OdError& e) { return ToDwgDbStatus(e.code()); }                      \
+            return  size > 0 ? DwgDbStatus::Success : DwgDbStatus::UnknownError;        \
+            }
+
+#define DWGDB_DEFINE_SETBINARYDATA_MEMBER(_classSuffix_)                                \
+        DwgDbStatus DwgDb##_classSuffix_##::SetBinaryData(DwgStringCR key, size_t size, const char* bytes) \
+            {                                                                           \
+            try {                                                                       \
+                auto xrec = T_Super::createXrecord (key);                               \
+                if (xrec.isNull()) return DwgDbStatus::MemoryError;                     \
+                auto rb = OdResBuf::newRb(OdResBuf::kDxfBinaryChunk);                   \
+                if (rb.isNull()) return DwgDbStatus::MemoryError;                       \
+                OdBinaryData arr;                                                       \
+                arr.setPhysicalLength(static_cast<unsigned int>(size));                 \
+                for (size_t i = 0; i < size; i++) arr.append(bytes[i]);                 \
+                rb->setBinaryChunk (arr);                                               \
+                auto rs = xrec->setFromRbChain(rb.get(), T_Super::database());          \
+                if (OdResult::eOk != rs) return ToDwgDbStatus(rs);                      \
+                } /* try */                                                             \
+            catch (OdError& e) { return ToDwgDbStatus(e.code()); }                      \
+            return  size > 0 ? DwgDbStatus::Success : DwgDbStatus::UnknownError;        \
+            }
+
 #define DWGDB_ENTITY_DEFINE_GETGRIPPOINTS(_classSuffix_)                                \
         DwgDbStatus DwgDb##_classSuffix_##::GetGripPoints(DPoint3dArrayR points, DwgDbIntArrayP snapModes, DwgDbIntArrayP geomIds) const    \
             {                                                                           \
@@ -482,6 +526,20 @@ END_DWGDB_NAMESPACE
             DwgDbDxfFiler       realdwgFiler(filer);                                        \
             Acad::ErrorStatus   es = T_Super::dxfOut(&realdwgFiler, Adesk::kTrue, nullptr); \
             return static_cast<DwgDbStatus>(es);                                            \
+            }
+
+#define DWGDB_DEFINE_GETBINARYDATA_MEMBER(_classSuffix_)                                    \
+        DwgDbStatus DwgDb##_classSuffix_##::GetBinaryData(DwgStringCR key, size_t& size, char*& data) const \
+            {                                                                               \
+            auto es = T_Super::getBinaryData(key.c_str(), (Adesk::Int32&)size, data);       \
+            return  ToDwgDbStatus(es);                                                      \
+            }
+
+#define DWGDB_DEFINE_SETBINARYDATA_MEMBER(_classSuffix_)                                    \
+        DwgDbStatus DwgDb##_classSuffix_##::SetBinaryData(DwgStringCR key, size_t size, const char* data) \
+            {                                                                               \
+            auto es = T_Super::setBinaryData(key.c_str(), (Adesk::Int32)size, data);        \
+            return  ToDwgDbStatus(es);                                                      \
             }
 
 #define DWGDB_ENTITY_DEFINE_GETGRIPPOINTS(_classSuffix_)                                    \
@@ -601,9 +659,14 @@ END_DWGDB_NAMESPACE
     DwgDbStatus        DwgDb##_classSuffix_##::Erase () { DWGDB_CALLSDKMETHOD(T_Super::release(); return DwgDbStatus::Success;, return ToDwgDbStatus(T_Super::erase());) }      \
     DwgString          DwgDb##_classSuffix_##::GetDxfName () const { return isA()->dxfName(); }                                                                                 \
     DwgString          DwgDb##_classSuffix_##::GetDwgClassName () const { return isA()->name(); }                                                                               \
+    DwgDbObjectId      DwgDb##_classSuffix_##::GetExtensionDictionary () const { return T_Super::extensionDictionary(); }                                                       \
+    DwgDbStatus        DwgDb##_classSuffix_##::CreateExtensionDictionary () { DWGDB_CALLSDKMETHOD(T_Super::createExtensionDictionary(); return DwgDbStatus::Success;, return ToDwgDbStatus(T_Super::createExtensionDictionary());) }    \
+    DwgDbStatus        DwgDb##_classSuffix_##::ReleaseExtensionDictionary () { DWGDB_CALLSDKMETHOD(T_Super::releaseExtensionDictionary(); return DwgDbStatus::Success;, return ToDwgDbStatus(T_Super::releaseExtensionDictionary());) } \
     DWGDB_DEFINE_DXFOUTFIELDS_MEMBER(##_classSuffix_##)                                                                                                                         \
     DWGDB_DEFINE_DXFOUT_MEMBER(##_classSuffix_##)                                                                                                                               \
     DWGDB_DEFINE_GETXDATA_MEMBER(##_classSuffix_##)                                                                                                                             \
+    DWGDB_DEFINE_GETBINARYDATA_MEMBER(##_classSuffix_##)                                                                                                                        \
+    DWGDB_DEFINE_SETBINARYDATA_MEMBER(##_classSuffix_##)                                                                                                                        \
     DWGRX_DEFINE_RX_MEMBER(Db##_classSuffix_##)
 
 // define common methods for DbObject derivitives requiring psuedo-database (e.g. DwgGi objects)

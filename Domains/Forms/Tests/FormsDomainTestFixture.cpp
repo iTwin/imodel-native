@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include "FormsDomainTestFixture.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>

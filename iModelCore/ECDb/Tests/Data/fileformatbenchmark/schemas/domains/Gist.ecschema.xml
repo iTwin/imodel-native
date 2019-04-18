@@ -1,9 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <!-- =====================================================================================
 |
-|     $Source: Tests/Data/fileformatbenchmark/schemas/domains/Gist.ecschema.xml $
-|
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 ======================================================================================= -->
 <ECSchema schemaName="Gist" alias="gst" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">

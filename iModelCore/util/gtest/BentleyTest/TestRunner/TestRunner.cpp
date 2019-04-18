@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: BentleyTest/TestRunner/TestRunner.cpp $
-|
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #define _CRTDBG_MAP_ALLOC

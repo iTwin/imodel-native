@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/ECSqlExecutionFrameworkTests.cpp $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"

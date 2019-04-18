@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: PublicAPI/ScalableMesh/Import/Config/Content/ScalableMeshConfig.h $
 |    $RCSfile: ScalableMeshConfig.h,v $
 |   $Revision: 1.7 $
 |       $Date: 2011/11/22 21:58:02 $
 |     $Author: Thomas.Butzbach $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

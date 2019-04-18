@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Performance/PerformanceECInstanceECSqlSelectAdapterTests.cpp $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceCRUDTestsHelper.h"

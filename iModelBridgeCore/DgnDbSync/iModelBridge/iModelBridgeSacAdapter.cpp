@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelBridge/iModelBridgeSacAdapter.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #if defined(_WIN32)
@@ -272,7 +270,7 @@ struct ClearDocumentPropertiesAccessor
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const& saparams)
     {
-    saparams.Initialize();
+    //saparams.Initialize();
 
     bridge._GetParams().SetDocumentPropertiesAccessor(const_cast<Params&>(saparams));
     ClearDocumentPropertiesAccessor clearDocumentPropertiesAccessorOnReturn(bridge);

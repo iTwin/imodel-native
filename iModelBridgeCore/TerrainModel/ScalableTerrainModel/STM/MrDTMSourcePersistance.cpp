@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/STM/MrDTMSourcePersistance.cpp $
 |    $RCSfile: MrDTMSourcePersistance.cpp,v $
 |   $Revision: 1.12 $
 |       $Date: 2012/02/16 22:19:19 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>

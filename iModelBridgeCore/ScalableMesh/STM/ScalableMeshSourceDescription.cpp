@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshSourceDescription.cpp $
 |    $RCSfile: ScalableMeshSourceDescription.cpp,v $
 |   $Revision: 1.20 $
 |       $Date: 2012/01/06 16:30:11 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>

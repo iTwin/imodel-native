@@ -1,4 +1,9 @@
-﻿using Bentley.EC.Persistence;
+﻿/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+using Bentley.EC.Persistence;
 using Bentley.EC.PluginBuilder;
 
 namespace S3MXECPlugin.Source

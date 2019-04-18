@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshProgress.cpp $
 |    $RCSfile: ScalableMeshProgress.cpp,v $
 |   $Revision: 1.0 $
 |       $Date: 2012/01/27 16:45:29 $
 |     $Author: Richard.Bois $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

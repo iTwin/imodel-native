@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/managed/log4net/log4net.cs $
-|
-|     $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|     Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 using System.Collections.Specialized;
