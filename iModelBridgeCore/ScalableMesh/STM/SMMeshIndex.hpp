@@ -2681,6 +2681,33 @@ template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncW
         if (ModifyClip(clipId, false, hasSkirts[i], tr))
             hasSynced = true;
     }
+
+    /*MUST HANDLE THE CASE WHERE A CLIP DOESN'T INTERSECT A TILE AFTER BEING MODIFY
+    if (clipIds.size() == 0)
+        {
+        RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
+
+        if (diffSetPtr.IsValid())
+            {
+            for (auto it = diffSetPtr->begin(); it != diffSetPtr->end(); ++it)
+                {                    
+                if (it->clientID > 0)
+                    {
+                    diffSetPtr->clear();
+                    m_nbClips = 0;
+                    ISDiffSetDataStorePtr nodeDiffsetStore;
+                    bool result = this->m_SMIndex->GetDataStore()->GetSisterNodeDataStore(nodeDiffsetStore, &this->m_nodeHeader, false);
+                    BeAssert(result == true);
+                    if (nodeDiffsetStore.IsValid()) 
+                        nodeDiffsetStore->DestroyBlock(this->GetBlockID());                
+                    hasSynced = true;
+                    break;
+                    }
+                }       
+            }
+        }
+		*/
+
     expected = true;
     while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
     return hasSynced;
@@ -2722,8 +2749,11 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
     else
         nOfNodesTouched++;
 
-    if (nOfNodesTouched >= 5000 && action != ClipAction::ACTION_DELETE)
+    //#TFS 629427 - Deactivate until all cases are handle, including a breathfirst propagation to handle not unified 3SM produced by ContextCapture.
+    /*
+    if (nOfNodesTouched >= 5 && action != ClipAction::ACTION_DELETE)
         return;
+        */
     if (this->m_pSubNodeNoSplit != NULL && !this->m_pSubNodeNoSplit->IsVirtualNode())
         {
         uint64_t childTs = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->LastClippingStateUpdateTimestamp();
@@ -4574,6 +4604,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
 
     bset<uint64_t> collectedClips;
     uint64_t maxUpdateTimeStamp = this->LastClippingStateUpdateTimestamp();
+    bool needSync = false;
         
     while (parentNodePtr != nullptr)
         {        
@@ -4581,12 +4612,14 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
             {
             maxUpdateTimeStamp = parentNodePtr->LastClippingStateUpdateTimestamp();
             parentNodePtr->CollectClipIds(collectedClips);
+            needSync = true;
             }   
 
         parentNodePtr = dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(parentNodePtr->GetParentNode().GetPtr());
         }
 
-    this->SyncWithClipSets(collectedClips);
+    if (needSync)
+        this->SyncWithClipSets(collectedClips);
     }
 
 //=======================================================================================
