@@ -66,7 +66,8 @@ Components = {'BeHttp':                 {'dll': 'BeHttpM02.dll', 'exe': 'BeHttpT
                                          'repo': ['imodel02', 'Bridges', 'Dwg']},
               'buildingdomaintests\\assemblies\\':    {'dll': 'BuildingDomainM02.dll', 'exe': 'BuildingDomainTests',
                                          'repo': ['imodel02', 'Domains', 'Building']},
-              
+              'structuraldomainstested\\':    {'dll': 'StructuralDomainM02.dll', 'exe': 'StructuralDomainTests',
+                                         'repo': ['imodel02', 'Domains', 'Structural']},              
             }
 
 Architectures = { 'Winx64': {'log':'RunGTest'},
@@ -136,6 +137,8 @@ def LogPathForComp(compToFind):
         logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', exeName, exeName, 'run', 'logs', 'test.log')
     elif compToFind.lower() == 'buildingdomaintests\\assemblies\\':
         logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', exeName, 'Assemblies',exeName, 'run', 'logs', 'test.log')
+    elif compToFind.lower() == 'structuraldomainstested\\':
+        logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', compToFind.lower() + exeName, 'run', 'logs', 'test.log')
     elif compToFind.lower() == 'licensing': # it has different naming convention
         logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', compToFind+'-GTestUnit', exeName, 'run', 'logs', 'test.log')
     else:
@@ -152,6 +155,8 @@ def ExePathForComp(compToFind):
         exePath = os.path.join('%OutRoot%Winx64', 'Product', exeName, exeName+'.exe')
     elif compToFind.lower() == 'buildingdomaintests\\assemblies\\':
         exePath = os.path.join('%OutRoot%Winx64', 'Product', exeName, 'Assemblies',exeName+'.exe')
+    elif compToFind.lower() == 'structuraldomainstested\\':
+        exePath = os.path.join('%OutRoot%Winx64', 'Product', compToFind.lower()+ exeName+'.exe')
     elif compToFind.lower() == 'licensing':
         exePath = os.path.join('%OutRoot%Winx64', 'Product', compToFind+'-GTestUnit', exeName+'.exe')
     else:
