@@ -2805,6 +2805,8 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
     bvector<DPoint3d> clipPolyData;
     m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipPolyData);
+    if (clipPolyData.empty())
+        return true;
 
     DRange3d extent = DRange3d::From(&clipPolyData[0], (int)clipPolyData.size());
 
