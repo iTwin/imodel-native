@@ -205,6 +205,8 @@ class CoverageOpenCPP:
                     logPath = str(cmp.RepoPathForComp(comp))
                     cov.set_SourcePath(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Mstn','iModelBridgeCore')) #Mstn is using iModelBridgeCore
                     cov.set_SourcePath2(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Mstn','iModelCore')) #Mstn is also using iModelCore
+                elif 'Bridges\\Dwg' in str(cmp.RepoPathForComp(comp)):
+                    cov.set_SourcePath(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Dwg','iModelBridgeCore')) #Mstn is using iModelBridgeCore
                 else:
                     cov.set_SourcePath(cmp.RepoPathForComp(comp))
                     logPath = str(cmp.RepoPathForComp(comp))
@@ -223,6 +225,9 @@ class CoverageOpenCPP:
                     if 'Bridges\\Mstn' in str(cmp.RepoPathForComp(comp)):
                         cov.set_SourcePath(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Mstn','iModelBridgeCore')) #Mstn is using iModelBridgeCore
                         cov.set_SourcePath2(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Mstn','iModelCore')) #Mstn is also using iModelCore
+                        logPath = str(cmp.RepoPathForComp(comp))
+                    elif 'Bridges\\Dwg' in str(cmp.RepoPathForComp(comp)):
+                        cov.set_SourcePath(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Dwg','iModelBridgeCore')) #Mstn is using iModelBridgeCore
                         logPath = str(cmp.RepoPathForComp(comp))
                     else:
                         cov.set_SourcePath(cmp.RepoPathForComp(comp))
