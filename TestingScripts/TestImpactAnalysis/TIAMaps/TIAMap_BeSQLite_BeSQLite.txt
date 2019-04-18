@@ -1,23 +1,23 @@
 
 [imodel02\imodelcore\besqlite\sqlite\closure.c]
-%OutRoot%Winx64\Product\besqlite-GTest\BeSQLiteTest.exe --gtest_filter=MultiFileCommit.*:BeSQLiteEmbeddedFileTests.*:BeSQliteTestFixture.*:BeSQLiteDb.AssignBriefcaseId:BeSQLiteDb.AssignBriefcaseIdInReadonlyMode:FTS5Test.*:StatementTests.*:BeSQLiteDbOpenTest.*:CompressionTests.LzmaFile:BeSQLiteDbTests.*:
+%OutRoot%Winx64\Product\BeSQLite-GTest\BeSQLiteTest.exe --gtest_filter=MultiFileCommit.*:BeSQLiteDb.AssignBriefcaseId:BeSQLiteDb.AssignBriefcaseIdInReadonlyMode:BeSQliteTestFixture.*:BeSQLiteEmbeddedFileTests.*:FTS5Test.*:StatementTests.*:BeSQLiteDbOpenTest.*:CompressionTests.LzmaFile:BeSQLiteDbTests.*:
 [imodel02\imodelcore\besqlite\changeset.cpp]
-%OutRoot%Winx64\Product\besqlite-GTest\BeSQLiteTest.exe --gtest_filter=BeSQliteTestFixture.sqlite_stat1:BeSQLiteDbTests.ApplyChangeSetAfterSchemaChanges:BeSQLiteDbTests.CreateChangeSetWithSchemaAndDataChanges:BeSQLiteDbTests.InsertMismatchedColumns:BeSQLiteDbTests.RealUpdateTest:
+%OutRoot%Winx64\Product\BeSQLite-GTest\BeSQLiteTest.exe --gtest_filter=BeSQliteTestFixture.sqlite_stat1:BeSQLiteDbTests.ApplyChangeSetAfterSchemaChanges:BeSQLiteDbTests.CreateChangeSetWithSchemaAndDataChanges:BeSQLiteDbTests.InsertMismatchedColumns:BeSQLiteDbTests.RealUpdateTest:
 [imodel02\imodelcore\besqlite\besqlite.cpp]
-%OutRoot%Winx64\Product\besqlite-GTest\BeSQLiteTest.exe --gtest_filter=MultiFileCommit.*:BeIdSetTests.*:BeSQLiteDb.AssignBriefcaseId:BeSQLiteDb.AssignBriefcaseIdInReadonlyMode:BeSQLiteDb.CheckProfileVersion:BeSQliteTestFixture.*:BeSQLiteEmbeddedFileTests.*:FTS5Test.*:StatementTests.*:BeSQLiteDbOpenTest.*:CompressionTests.LzmaFile:SnappyToBlobTests.*:BeSQLiteDbTests.*:
+%OutRoot%Winx64\Product\BeSQLite-GTest\BeSQLiteTest.exe --gtest_filter=MultiFileCommit.*:BeSQLiteEmbeddedFileTests.*:BeSQliteTestFixture.*:BeSQLiteDb.AssignBriefcaseId:BeSQLiteDb.AssignBriefcaseIdInReadonlyMode:BeSQLiteDb.CheckProfileVersion:FTS5Test.*:StatementTests.*:BeSQLiteDbTests.*:BeSQLiteDbOpenTest.*:CompressionTests.LzmaFile:SnappyToBlobTests.*:BeIdSetTests.*:
 [imodel02\imodelcore\besqlite\sqlite\sqlite3.c]
-%OutRoot%Winx64\Product\besqlite-GTest\BeSQLiteTest.exe --gtest_filter=MultiFileCommit.*:BeSQLiteEmbeddedFileTests.*:BeSQliteTestFixture.*:BeSQLiteDb.AssignBriefcaseId:BeSQLiteDb.AssignBriefcaseIdInReadonlyMode:FTS5Test.*:StatementTests.*:BeSQLiteDbOpenTest.*:CompressionTests.LzmaFile:BeSQLiteDbTests.*:
+%OutRoot%Winx64\Product\BeSQLite-GTest\BeSQLiteTest.exe --gtest_filter=MultiFileCommit.*:BeSQLiteDb.AssignBriefcaseId:BeSQLiteDb.AssignBriefcaseIdInReadonlyMode:BeSQliteTestFixture.*:BeSQLiteEmbeddedFileTests.*:FTS5Test.*:StatementTests.*:BeSQLiteDbOpenTest.*:CompressionTests.LzmaFile:BeSQLiteDbTests.*:
 [imodel02\imodelcore\besqlite\belzma.cpp]
-%OutRoot%Winx64\Product\besqlite-GTest\BeSQLiteTest.exe --gtest_filter=CompressionTests.LzmaFile:BeSQLiteEmbeddedFileTests.*:
+%OutRoot%Winx64\Product\BeSQLite-GTest\BeSQLiteTest.exe --gtest_filter=CompressionTests.LzmaFile:BeSQLiteEmbeddedFileTests.*:
 [imodel02\imodelcore\besqlite\sqlite\see-aes128-ofb.c]
-%OutRoot%Winx64\Product\besqlite-GTest\BeSQLiteTest.exe --gtest_filter=MultiFileCommit.*:BeSQLiteEmbeddedFileTests.*:BeSQliteTestFixture.*:BeSQLiteDb.AssignBriefcaseId:BeSQLiteDb.AssignBriefcaseIdInReadonlyMode:FTS5Test.*:StatementTests.*:BeSQLiteDbOpenTest.*:CompressionTests.LzmaFile:BeSQLiteDbTests.*:
+%OutRoot%Winx64\Product\BeSQLite-GTest\BeSQLiteTest.exe --gtest_filter=MultiFileCommit.*:BeSQLiteDb.AssignBriefcaseId:BeSQLiteDb.AssignBriefcaseIdInReadonlyMode:BeSQliteTestFixture.*:BeSQLiteEmbeddedFileTests.*:FTS5Test.*:StatementTests.*:BeSQLiteDbOpenTest.*:CompressionTests.LzmaFile:BeSQLiteDbTests.*:
 [imodel02\imodelcore\besqlite\besqliteprofilemanager.h]
-%OutRoot%Winx64\Product\besqlite-GTest\BeSQLiteTest.exe --gtest_filter=MultiFileCommit.*:BeSQLiteEmbeddedFileTests.*:BeSQliteTestFixture.*:BeSQLiteDb.AssignBriefcaseId:BeSQLiteDb.AssignBriefcaseIdInReadonlyMode:FTS5Test.*:StatementTests.*:BeSQLiteDbOpenTest.*:CompressionTests.LzmaFile:BeSQLiteDbTests.*:
+%OutRoot%Winx64\Product\BeSQLite-GTest\BeSQLiteTest.exe --gtest_filter=MultiFileCommit.*:BeSQLiteDb.AssignBriefcaseId:BeSQLiteDb.AssignBriefcaseIdInReadonlyMode:BeSQliteTestFixture.*:BeSQLiteEmbeddedFileTests.*:FTS5Test.*:StatementTests.*:BeSQLiteDbOpenTest.*:CompressionTests.LzmaFile:BeSQLiteDbTests.*:
 [imodel02\imodelcore\besqlite\besqliteprofilemanager.cpp]
-%OutRoot%Winx64\Product\besqlite-GTest\BeSQLiteTest.exe --gtest_filter=MultiFileCommit.*:BeSQLiteEmbeddedFileTests.*:BeSQliteTestFixture.*:BeSQLiteDb.AssignBriefcaseId:BeSQLiteDb.AssignBriefcaseIdInReadonlyMode:FTS5Test.*:StatementTests.*:BeSQLiteDbOpenTest.*:CompressionTests.LzmaFile:BeSQLiteDbTests.*:
+%OutRoot%Winx64\Product\BeSQLite-GTest\BeSQLiteTest.exe --gtest_filter=MultiFileCommit.*:BeSQLiteDb.AssignBriefcaseId:BeSQLiteDb.AssignBriefcaseIdInReadonlyMode:BeSQliteTestFixture.*:BeSQLiteEmbeddedFileTests.*:FTS5Test.*:StatementTests.*:BeSQLiteDbOpenTest.*:CompressionTests.LzmaFile:BeSQLiteDbTests.*:
 [imodel02\imodelcore\besqlite\sqlite\encrypteddbvfs.cpp]
-%OutRoot%Winx64\Product\besqlite-GTest\BeSQLiteTest.exe --gtest_filter=BeSQLiteDbTests.CreateEncryptedDb:BeSQLiteDbTests.EncryptDb:BeSQLiteDbTests.EncryptDbWithExtra:BeSQLiteDbTests.PasswordProtectDb:
+%OutRoot%Winx64\Product\BeSQLite-GTest\BeSQLiteTest.exe --gtest_filter=BeSQLiteDbTests.CreateEncryptedDb:BeSQLiteDbTests.EncryptDb:BeSQLiteDbTests.EncryptDbWithExtra:BeSQLiteDbTests.PasswordProtectDb:
 [imodel02\imodelcore\besqlite\l10n.cpp]
-%OutRoot%Winx64\Product\besqlite-GTest\BeSQLiteTest.exe --gtest_filter=MultiFileCommit.*:BeIdSetTests.*:BeSQLiteDb.AssignBriefcaseId:BeSQLiteDb.AssignBriefcaseIdInReadonlyMode:BeSQLiteDb.BeBriefcaseBasedIdTest:BeSQLiteDb.CheckProfileVersion:BeSQliteTestFixture.*:BeSQLiteEmbeddedFileTests.*:FTS5Test.*:StatementTests.*:BeSQLiteDbOpenTest.*:CompressionTests.*:SnappyToBlobTests.*:BeSQLiteDbTests.*:
+%OutRoot%Winx64\Product\BeSQLite-GTest\BeSQLiteTest.exe --gtest_filter=MultiFileCommit.*:BeSQLiteEmbeddedFileTests.*:BeSQliteTestFixture.*:BeSQLiteDb.AssignBriefcaseId:BeSQLiteDb.AssignBriefcaseIdInReadonlyMode:BeSQLiteDb.BeBriefcaseBasedIdTest:BeSQLiteDb.CheckProfileVersion:FTS5Test.*:StatementTests.*:BeSQLiteDbTests.*:BeSQLiteDbOpenTest.*:CompressionTests.*:SnappyToBlobTests.*:BeIdSetTests.*:
 [imodel02\imodelcore\besqlite\sqlite\bentley-sqlite.c]
-%OutRoot%Winx64\Product\besqlite-GTest\BeSQLiteTest.exe --gtest_filter=BeSQLiteDbTests.Concurrency_UsingSavepoints:
+%OutRoot%Winx64\Product\BeSQLite-GTest\BeSQLiteTest.exe --gtest_filter=BeSQLiteDbTests.Concurrency_UsingSavepoints:

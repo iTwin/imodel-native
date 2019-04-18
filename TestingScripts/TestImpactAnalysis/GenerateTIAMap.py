@@ -171,7 +171,9 @@ def writeMapToFile(fileName, tiaMap, comp):
             testLog = os.path.join(os.path.pardir(fileName), comp, 'test.log')
         tr = TestResults(testLog)
         for testCase in tiaMap[name]:
-            if len(tiaMap[name][testCase]) == tr.getFixtureTestCount(testCase):
+            len1 = len(tiaMap[name][testCase])
+            len2 = tr.getFixtureTestCount(testCase)
+            if len1 >= len2 or float(len1 / len2) > 75.0:
                 mapFile.write(testCase + '.*:')
             else:
                 for test in tiaMap[name][testCase]:
@@ -219,7 +221,7 @@ def adjustMapFiles(map_dir):
                 for line in lines[last:]:
                     f3.write(line)
             f1.close()
-            os.remove(full_path)
+            #os.remove(full_path)
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Majd.Uddin    02/2019
