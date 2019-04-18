@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelBridge/Fwk/iModelBridgeFwkDmsOptions.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #if defined(_WIN32)
@@ -204,7 +202,7 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseCommandLine(bvector<WCharCP>&
         if (argv[iArg] == wcsstr(argv[iArg], L"--dms-retries="))
             {
             int n = atoi(getArgValue(argv[iArg]).c_str());
-            if (n < 0 || 256 >= n)
+            if (n < 0 || 256 <= n)
                 {
                 fprintf(stderr, "%s - invalid retries value. Must be a value between 0 and 255\n", getArgValue(argv[iArg]).c_str());
                 return BSIERROR;

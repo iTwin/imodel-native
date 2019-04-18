@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Performance/PerformanceECSqlVsSqliteTests.cpp $
-|
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceCRUDTestsHelper.h"

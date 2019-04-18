@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshClipContainer.h $
 |    $RCSfile: ScalableMeshClipContainer.h,v $
 |   $Revision: 1.4 $
 |       $Date: 2013/07/22 13:57:39 $
 |     $Author: Richard.Bois $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

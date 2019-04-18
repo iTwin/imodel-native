@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: Import/InternalContentDescriptor.h $
 |    $RCSfile: InternalContentDescriptor.h,v $
 |   $Revision: 1.4 $
 |       $Date: 2011/08/05 00:12:39 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

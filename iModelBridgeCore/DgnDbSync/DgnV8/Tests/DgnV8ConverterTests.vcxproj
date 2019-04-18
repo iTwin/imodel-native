@@ -75,6 +75,7 @@
     <ClCompile Include="ImportConfigTests.cpp" />
     <ClCompile Include="ItemTypeTests.cpp" />
     <ClCompile Include="LevelTests.cpp" />
+    <ClCompile Include="LightTests.cpp" />
     <ClCompile Include="ModelTests.cpp" />
     <ClCompile Include="NamedGroupTests.cpp" />
     <ClCompile Include="ProgressMeterTests.cpp" />

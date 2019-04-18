@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/managed/interface/bsilog.cs $
-|
-|     $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|     Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

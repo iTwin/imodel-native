@@ -20,3 +20,4 @@ BasicGeometryTests.Cell
 BasicGeometryTests.NestedCell
 SheetCompositionTests.SheetSizeTest
 RulesetEmbedderTests.RulesetIsEmbeddedAndLocatedFromPresentationManager
+GeomPartTests.NormalCells # Broke with switch to PP U12 V8 SDK

@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: geom/src/structs/cpp/refmethods/refFPoint3d.h $
-|
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 // refFPoint3d.h is #include'd into refDPoint3d.cpp (for template sharing) -- do NOT include PCH.

@@ -1,8 +1,6 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: DgnV8/Tests/Tests.mke $
-#
-#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #----------------------------------------------------------------------------------------
 programName = DgnV8ConverterTests
@@ -87,6 +85,8 @@ $(o)DgnMaterial_Tests.obj       : $(BEGTEST_INPUT)DgnMaterial_Tests.cpp         
 $(o)BasicGeometryTests.obj      : $(BEGTEST_INPUT)BasicGeometryTests.cpp        $(TestsHeaders) ${MultiCompileDepends}
 
 $(o)LevelTests.obj              : $(BEGTEST_INPUT)LevelTests.cpp                $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)LightTests.obj              : $(BEGTEST_INPUT)LightTests.cpp                $(TestsHeaders) ${MultiCompileDepends}
 
 $(o)GeomTestHelper.obj          : $(BEGTEST_INPUT)GeomTestHelper.cpp            $(TestsHeaders) ${MultiCompileDepends}
 

@@ -94,9 +94,7 @@ void  test_cppNew_delete
 
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tools/ToolSubs/nonport/winnt/test_pagalloc.cpp $
-|
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------------**//**

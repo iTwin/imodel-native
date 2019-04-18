@@ -1,8 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: geom/build/bsibasegeom/test/tDCone3dBezier/tDCone3dBezier.mke $
-#
-#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 TESTAPP_NAME=tDCone3dBezier

@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/PublicAPI/ScalableTerrainModel/MrDTMUtilityFunctions.h $
 |    $RCSfile: MrDTMUtilityFunctions.h,v $
 |   $Revision: 1.15 $
 |       $Date: 2013/03/27 15:53:36 $
 |     $Author: Jean-Francois.Cote $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

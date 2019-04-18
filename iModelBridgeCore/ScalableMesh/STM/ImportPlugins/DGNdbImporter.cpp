@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ImportPlugins/DGNdbImporter.cpp $
 |    $RCSfile: DGNdbImporter.cpp,v $
 |   $Revision: 1.0 $
 |       $Date: 2016/06/29 12:15:00 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

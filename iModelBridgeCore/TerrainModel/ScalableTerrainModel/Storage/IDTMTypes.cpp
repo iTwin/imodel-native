@@ -1,12 +1,11 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: ScalableTerrainModel/Storage/IDTMTypes.cpp $
 //:>    $RCSfile: IDTMTypes.cpp,v $
 //:>   $Revision: 1.5 $
 //:>       $Date: 2011/01/10 15:26:51 $
 //:>     $Author: Raymond.Gauthier $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 

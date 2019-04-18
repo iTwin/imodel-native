@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelBridge/iModelBridgeSyncInfoFile.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridgeSyncInfoFile.h>
@@ -548,6 +546,12 @@ void iModelExternalSourceAspect::SetProperties(rapidjson::Document const& json)
 rapidjson::Document iModelExternalSourceAspect::GetProperties() const
     {
     rapidjson::Document json(rapidjson::kObjectType);
+    if (m_instance.IsNull())
+        {
+        LOG.errorv("iModelExternalSourceAspect::GetProperties() called with null instance");
+        return json;
+        }
+
     ECN::ECValue props;
     BeAssert(m_instance.IsValid());
     if (m_instance.IsNull())

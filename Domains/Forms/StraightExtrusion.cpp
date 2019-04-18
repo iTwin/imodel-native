@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include "FormsDomain\StraightExtrusion.h"
 #include <DgnPlatform/DgnPlatformErrors.h>
 #include <Bentley/BeAssert.h>

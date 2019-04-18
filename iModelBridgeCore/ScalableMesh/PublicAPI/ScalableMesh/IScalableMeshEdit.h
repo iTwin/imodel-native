@@ -1,10 +1,8 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: PublicAPI/ScalableMesh/IScalableMeshEdit.h $
 |       $Date: 2016/08/23 10:24:32 $
 |     $Author:Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

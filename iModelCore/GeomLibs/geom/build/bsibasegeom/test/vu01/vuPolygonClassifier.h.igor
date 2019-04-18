@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: geom/build/bsibasegeom/test/vu01/vuPolygonClassifier.h.igor $
 |    $RCSfile: vuPolygonClassifier.h,v $
 |   $Revision: 1.16.4.1 $
 |       $Date: 2009/06/12 15:34:40 $
 |     $Author: Igor.Sokolov $
 |
-|  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

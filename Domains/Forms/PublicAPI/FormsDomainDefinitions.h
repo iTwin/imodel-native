@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #pragma once
 #ifndef _formsdomaindefinitions_included_
 #define _formsdomaindefinitions_included_

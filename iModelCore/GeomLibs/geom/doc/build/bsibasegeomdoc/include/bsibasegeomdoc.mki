@@ -1,3 +1,8 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
 # THIS IS WIP!!!  Eventually all fdfs below need to be included.
 #
 # Makefile directives to put bsigeom fdf files together into a single top-level file

@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/STM/Plugins/MrDTMClipMaskFilterFactory.h $
 |    $RCSfile: MrDTMClipMaskFilterFactory.h,v $
 |   $Revision: 1.4 $
 |       $Date: 2011/09/01 14:07:05 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

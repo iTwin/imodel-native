@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/CGAL_MTGGraphGraphTraits.h $
 |    $RCSfile: MTGGraphGraphTraits.h,v $
 |   $Revision: 1.0 $
 |       $Date: 2015/11/30 15:09:23 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 // This file contains glue code to use CGAL algorithms on BentleyGeometry types. It follows the traits pattern; see following external links for additional information.

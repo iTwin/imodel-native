@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/Plugins/ScalableMeshTINTypes.cpp $
 |    $RCSfile: ScalableMeshTINTypes.cpp,v $
 |   $Revision: 1.3 $
 |       $Date: 2011/08/10 15:10:20 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>

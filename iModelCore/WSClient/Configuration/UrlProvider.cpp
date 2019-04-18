@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Configuration/UrlProvider.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -446,7 +444,10 @@ Utf8String UrlProvider::GetUrl(Utf8StringCR urlName, const Utf8String* defaultUr
         cachedUrl = CacheBuddiUrl(urlName)->GetResult();
 
     if (cachedUrl.empty())
+        {
         cachedUrl = defaultUrls[s_env];
+        LOG.warningv("URL '%s' not received, falling back to '%s'", urlName.c_str(), cachedUrl.c_str());
+        }
 
     return cachedUrl;
     }
@@ -462,9 +463,10 @@ AsyncTaskPtr<Utf8String> UrlProvider::CacheBuddiUrl(Utf8StringCR urlName)
         Utf8String url = result.GetValue();
         if (!result.IsSuccess() || url.empty())
             {
-            LOG.errorv("URL '%s' is not configured on buddi service for region '%d'. Will use fallback URL.", urlName.c_str(), region);
+            LOG.errorv("Failed to receive URL '%s' from BUDDI service, region %d. Error: '%s'", urlName.c_str(), region, result.GetError().GetMessage().c_str());
             return url;
             }
+
         Json::Value record;
         record[RECORD_TimeCached] = BeJsonUtilities::StringValueFromInt64(BeTimeUtilities::GetCurrentTimeAsUnixMillis());
         record[RECORD_Url] = url;

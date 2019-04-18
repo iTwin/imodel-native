@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Dwg/Tests/DwgFileEditor.h $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,6 +33,8 @@ public:
     void    SaveFile ();
     void    AddCircleInDefaultModel ();
     void    AddEntitiesInDefaultModel (T_EntityHandles& handles);
+    void    AddBinaryData (DwgDbHandleCR handle, DwgStringCR key);
+    void    CheckBinaryData (DwgDbHandleCR handle, DwgStringCR key);
     void    DeleteEntity (DwgDbHandleCR entityHandle);
     void    TransformEntitiesBy (T_EntityHandles const& handles, TransformCR transform);
     void    AppendEntity (DwgDbEntityP entity, DwgDbBlockTableRecordP block, bool closeEntity = true);

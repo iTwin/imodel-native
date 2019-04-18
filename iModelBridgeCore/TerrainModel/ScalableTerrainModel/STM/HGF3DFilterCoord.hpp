@@ -1,12 +1,11 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: ScalableTerrainModel/STM/HGF3DFilterCoord.hpp $
 //:>    $RCSfile: HGF3DFilterCoord.hpp,v $
 //:>   $Revision: 1.2 $
 //:>       $Date: 2010/05/18 17:25:48 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HGF3DCoord

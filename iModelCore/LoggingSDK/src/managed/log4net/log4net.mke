@@ -1,8 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: src/managed/log4net/log4net.mke $
-#
-#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 ASSEMBLY_WARN_AS_ERROR=2

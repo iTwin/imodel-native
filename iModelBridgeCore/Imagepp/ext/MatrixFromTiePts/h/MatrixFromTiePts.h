@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ext/MatrixFromTiePts/h/MatrixFromTiePts.h $
 |    $RCSfile: readImage.cpp,v $
 |   $Revision: 1.1.2.16 $
 |       $Date: 2010/02/19 14:13:19 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

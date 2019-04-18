@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: vu/src/DrapeGraph/VuDebug.cpp $
 |    $RCSfile: vudebug.cpp,v $
 |   $Revision: 1.2 $
 |       $Date: 2010/10/28 14:03:49 $
 |     $Author: Earlin.Lutz $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>

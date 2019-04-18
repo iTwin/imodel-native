@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: vu/src/vuRefineSurface.cpp $
 |    $RCSfile: vusmooth.cpp,v $
 |   $Revision: 1.1 $
 |       $Date: 2009/12/21 15:31:01 $
 |     $Author: Earlin.Lutz $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>

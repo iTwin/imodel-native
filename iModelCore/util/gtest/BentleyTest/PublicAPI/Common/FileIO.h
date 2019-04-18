@@ -1,9 +1,7 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: BentleyTest/PublicAPI/Common/FileIO.h $
-|
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

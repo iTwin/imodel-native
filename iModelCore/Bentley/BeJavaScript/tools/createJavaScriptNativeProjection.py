@@ -1,9 +1,7 @@
 ﻿#!Python
 #--------------------------------------------------------------------------------------
 #
-#     $Source: BeJavaScript/tools/createJavaScriptNativeProjection.py $
-#
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 import getopt, sys, os, codecs, re, tempfile, subprocess, shlex

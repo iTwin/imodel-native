@@ -1,6 +1,5 @@
 #----------------------------------------------------------------------
-#     $Source: Elements/SpatialCompositionElements.mke $
-#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #----------------------------------------------------------------------
 AppName = SpatialCompositionElements
 CCompPDBName = $(AppName)

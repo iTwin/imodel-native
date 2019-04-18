@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tools/ToolSubs/bitmask/BitMask.cpp $
-|
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>

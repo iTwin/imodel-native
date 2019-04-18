@@ -1,12 +1,11 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: STM/ScalableMeshMesher.hpp $
 //:>    $RCSfile: ScalableMeshQuadTreeBCLIBFilters.hpp,v $
 //:>   $Revision: 1.28 $
 //:>       $Date: 2011/04/27 17:17:56 $
 //:>     $Author: Alain.Robert $
 //:>
-//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 

@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnV8/Converter.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -191,7 +189,7 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
         if (hashNew.GetHashString().Equals(hashOld.GetHashString()))
             {
             // If the link hasn't changed, then don't request locks or write to the BIM.
-            SetRepositoryLinkInAppData(file, RepositoryLinkId(rlink->GetElementId().GetValue()));
+            _OnFileDiscovered(file);
             return RepositoryLinkId(rlink->GetElementId().GetValue());
             }
         }
@@ -218,7 +216,7 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
         return RepositoryLinkId();
         }
 
-    SetRepositoryLinkInAppData(file, RepositoryLinkId(rlinkPost->GetElementId().GetValue()));
+    _OnFileDiscovered(file);
 
 #ifndef NDEBUG
     {
@@ -260,29 +258,16 @@ void Converter::SetRepositoryLinkInAppData(DgnV8FileCR file, RepositoryLinkId rl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryLinkId Converter::GetRepositoryLinkIdFromAppData(DgnV8FileCR file)
-    {
-    auto appdata = (V8FileSyncInfoIdAppData*) const_cast<DgnV8FileR>(file).FindAppData(V8FileSyncInfoIdAppData::GetKey());
-    return (nullptr == appdata) ? RepositoryLinkId() : appdata->m_repositoryLinkId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryLinkId Converter::GetRepositoryLinkId(DgnV8FileCR file) const
     {
-    auto appdata = (V8FileSyncInfoIdAppData*) const_cast<DgnV8FileR>(file).FindAppData(V8FileSyncInfoIdAppData::GetKey());
-    if (nullptr != appdata)
-        return appdata->m_repositoryLinkId;
-        
     SyncInfo::V8FileInfo finfo = const_cast<Converter*>(this)->GetSyncInfo().ComputeFileInfo(file);
     auto aspect = SyncInfo::RepositoryLinkExternalSourceAspect::FindAspectByIdentifier(GetDgnDb(), finfo.m_uniqueName);
     if (aspect.IsValid())
         {
-        SetRepositoryLinkInAppData(file, aspect.GetRepositoryLinkId());
+        _OnFileDiscovered(file);
         return aspect.GetRepositoryLinkId();
         }
-
+    LOG.tracev("Writing syncinfo %s as %s", finfo.m_v8Name.c_str(), finfo.m_uniqueName.c_str());
     return const_cast<Converter*>(this)->WriteRepositoryLink(const_cast<DgnV8FileR>(file));
     }
 
@@ -2291,7 +2276,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
         if (!isNewElement)
             GetChangeDetector()._IsElementChanged(changeInfo, *this, v8eh, v8mm);
 
-        if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(&changeInfo.m_v8ElementAspect, results, ecContent.m_secondaryV8Instances))
+        if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(&changeInfo.m_v8ElementAspect, results, ecContent.m_secondaryV8Instances, isNewElement))
             return BSIERROR;
         }
 
@@ -2354,7 +2339,7 @@ void Converter::OnNamedGroupConverted(DgnV8EhCR v8eh, DgnClassId elementClassId)
     BECN::ECClassCP elementClass = GetDgnDb().Schemas().GetClass(ECN::ECClassId(elementClassId.GetValue()));
     bool namedGroupHasOwnershipFlag = DetermineNamedGroupOwnershipFlag(*elementClass);
     if (namedGroupHasOwnershipFlag)
-        V8NamedGroupInfo::AddNamedGroupWithOwnershipHint(v8eh);
+        V8NamedGroupInfo::AddNamedGroupWithOwnershipHint(v8eh, *this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3281,7 +3266,10 @@ ResolvedModelMapping RootModelConverter::_GetResolvedModelMapping(DgnV8ModelRefC
     m_monitor->_OnModelInserted(v8mm);
 
     if (LOG_MODEL_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
+        {
         LOG_MODEL.tracev("+ %s -> %s", IssueReporter::FmtModel(v8Model).c_str(), IssueReporter::FmtModel(*model).c_str());
+        LOG_MODEL.trace(modelAspect.FormatForDump(*m_dgndb, true, true).c_str());
+        }
 
     return v8mm;
     }

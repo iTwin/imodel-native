@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ElementHandler/PublicAPI/IRasterTextureSourceManager.h $
 |    $RCSfile: IRasterTextureSourceManager.h,v $
 |   $Revision: 1.5 $
 |       $Date: 2011/06/01 15:23:56 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/

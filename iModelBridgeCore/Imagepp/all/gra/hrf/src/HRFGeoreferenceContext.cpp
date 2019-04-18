@@ -1,12 +1,11 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: all/gra/hrf/src/HRFGeoreferenceContext.cpp $
 //:>    $RCSfile: HRFGeoreferenceContext.cpp,v $
 //:>   $Revision: 1.1 $
 //:>       $Date: 2011/12/22 14:03:58 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFGeoreferenceContext

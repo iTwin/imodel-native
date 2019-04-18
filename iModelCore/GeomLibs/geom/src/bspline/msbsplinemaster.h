@@ -3,11 +3,10 @@
 // WE CANNOT EXPORT bsp AND mdlBspline names from here -- wrong memory coupling.
 
 #define GEOMDLL_BSPLINEIMPEXP
-|     $Source: geom/src/bspline/msbsplinemaster.h $
 |       $Date$
 |     $Author$
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

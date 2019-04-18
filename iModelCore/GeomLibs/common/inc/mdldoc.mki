@@ -1,10 +1,8 @@
 #--------------------------------------------------------------------------------------
-#
-#     $Source: common/inc/mdldoc.mki $
 #       $Date$
 #     $Author$
 #
-#  $Copyright: (c) 2009 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #
 #       Make Include File to define rules for documentation extraction

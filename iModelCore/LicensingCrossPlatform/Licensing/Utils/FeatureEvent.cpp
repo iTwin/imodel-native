@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include <Licensing/Licensing.h>
 #include <Licensing/Utils/DateHelper.h>
 #include <BeSQLite/BeSQLite.h>

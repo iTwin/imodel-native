@@ -1,6 +1,5 @@
 /*--------------------------------------------------------------------------------------+
-|     $Source: BeRapidJson/PublicAPI/BeRapidJson/BeRapidJson.h $
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
 #pragma once

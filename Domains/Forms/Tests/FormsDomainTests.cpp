@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include "FormsDomainTestFixture.h"
 #include "FormsDomain\FormsDomainUtilities.h"
 #include <BeJsonCpp/BeJsonUtilities.h>

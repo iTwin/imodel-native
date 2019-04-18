@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnV8/Converters/ConverterApp.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -633,6 +631,7 @@ BentleyStatus ConverterApp::Run(int argc, WCharCP argv[])
         saparams.SetLoggingConfigFile(_GetLoggingConfigurationFilename(argv[0]));
 
     iModelBridgeSacAdapter::InitializeHost(*this, "DgnV8Converter");
+    saparams.Initialize();
 
     if (BSISUCCESS != _Initialize(argc, argv))
         {

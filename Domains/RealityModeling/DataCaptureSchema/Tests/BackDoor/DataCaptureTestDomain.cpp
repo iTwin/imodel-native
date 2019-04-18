@@ -1,8 +1,6 @@
     /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DataCaptureSchema/Tests/BackDoor/DataCaptureTestDomain.cpp $
-|
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #if 0  //NOT NOW

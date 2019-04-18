@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnV8/GeometryConversion.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -968,7 +966,7 @@ bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParam
         {
         Utf8String nameStr;
         nameStr.Assign(patternV8.cellName);
-        Utf8PrintfString partTag("PatternV8-%lld-%s-%lld", Converter::GetRepositoryLinkIdFromAppData(*context.GetCurrentModel()->GetDgnFileP()).GetValue(), nameStr.c_str(), patternV8.cellId);
+        Utf8PrintfString partTag("PatternV8-%lld-%s-%lld", GetRepositoryLinkId(*context.GetCurrentModel()->GetDgnFileP()).GetValue(), nameStr.c_str(), patternV8.cellId);
         DgnGeometryPartId partId = QueryGeometryPartId(partTag.c_str());
 
         if (!partId.IsValid())
@@ -1686,6 +1684,7 @@ Render::GeometryParams  m_geomParams;
 Transform               m_geomToLocal;
 DRange3d                m_localRange;
 bool                    m_isLevelByCell;
+bool                    m_isLevelValid;
 
 };
 
@@ -2507,16 +2506,16 @@ Bentley::ElementRefP GetOutermostSCDef(DgnV8Api::DisplayPath const& path)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String GetPartTag(Bentley::ElementRefP instanceElRef, Utf8CP prefix, uint32_t sequenceNo, double partScale)
+Utf8String GetPartTag(Converter& converter, Bentley::ElementRefP instanceElRef, Utf8CP prefix, uint32_t sequenceNo, double partScale)
     {
     BeAssert(sequenceNo > 0); // First entry starts at 1...
 
     if (sequenceNo > 1)
         { // Note: partScale < 0.0 implies "mirrored" which means a different codeValue must be generated
-        return Utf8PrintfString(partScale < 0.0 ? "%s-%lld-M%lld-%d" : "%s-%lld-%lld-%d", prefix, Converter::GetRepositoryLinkIdFromAppData(*instanceElRef->GetDgnModelP()->GetDgnFileP()).GetValue(), instanceElRef->GetElementId(), sequenceNo-1);
+        return Utf8PrintfString(partScale < 0.0 ? "%s-%lld-M%lld-%d" : "%s-%lld-%lld-%d", prefix, converter.GetRepositoryLinkId(*instanceElRef->GetDgnModelP()->GetDgnFileP()).GetValue(), instanceElRef->GetElementId(), sequenceNo-1);
         }
 
-    return Utf8PrintfString(partScale < 0.0 ? "%s-%lld-M%lld" : "%s-%lld-%lld", prefix, Converter::GetRepositoryLinkIdFromAppData(*instanceElRef->GetDgnModelP()->GetDgnFileP()).GetValue(), instanceElRef->GetElementId());
+    return Utf8PrintfString(partScale < 0.0 ? "%s-%lld-M%lld" : "%s-%lld-%lld", prefix, converter.GetRepositoryLinkId(*instanceElRef->GetDgnModelP()->GetDgnFileP()).GetValue(), instanceElRef->GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2621,7 +2620,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
                 m_converter.ReportProgress();
 
             Transform         geomToLocal = Transform::FromProduct(invBasisTrans, pathEntry.m_geomToWorld);
-            Utf8String        partTag = GetPartTag(instanceElRef, nullptr == scDefElRef ? "XGSymbV8" : "SCDefV8", sequenceNo, pathEntry.m_partScale);
+            Utf8String        partTag = GetPartTag(m_converter, instanceElRef, nullptr == scDefElRef ? "XGSymbV8" : "SCDefV8", sequenceNo, pathEntry.m_partScale);
             DgnGeometryPartId partId = m_converter.QueryGeometryPartId(partTag);
             DRange3d          localRange = DRange3d::NullRange();
 
@@ -2665,6 +2664,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
             partRef.m_geomToLocal = geomToLocal;
             partRef.m_localRange = localRange;
             partRef.m_isLevelByCell = DgnV8Api::LEVEL_BYCELL == pathGeom.m_path->GetCursorElem()->GetUnstableMSElementCP()->ehdr.level;
+            partRef.m_isLevelValid = pathGeom.m_path->GetCursorElem()->GetUnstableMSElementCP()->ehdr.isGraphics;
 
             geomParts.push_back(partRef);
 
@@ -2755,7 +2755,7 @@ void PostInstanceGeometry(Dgn::GeometryBuilderR builder, GeometricPrimitiveR geo
 
     if (!partId.IsValid())
         {
-        Utf8String         partTag = GetPartTag(instanceElRef, "CvtV8", sequenceNo, 1.0);
+        Utf8String         partTag = GetPartTag(m_converter, instanceElRef, "CvtV8", sequenceNo, 1.0);
         DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()));
         GeometryBuilderPtr partBuilder = GeometryBuilder::CreateGeometryPart(m_model.GetDgnDb(), true);
 
@@ -3160,13 +3160,18 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
                 geomToLocal.ScaleMatrixColumns(geomToLocal, partScale, partScale, partScale);
                 }
 
-            ApplySharedCellInstanceOverrides(v8eh, geomParams); // Apply SCOverride now for a shared cell that was deemed ok for a GeometryPart...
+            // Apply SCOverride now for a shared cell that was deemed ok for a GeometryPart..
+            ApplySharedCellInstanceOverrides(v8eh, geomParams);
 
-            if (!partRef.m_isLevelByCell)
+            if (partRef.m_isLevelValid && !partRef.m_isLevelByCell)
                 lastCategoryId = geomParams.GetCategoryId();
 
             if (!targetCategoryValid && targetCategoryId == lastCategoryId)
-                targetCategoryValid = true;    
+                targetCategoryValid = true;
+
+            // Need to ignore cached category for an XGraphic symbol, 107 elements don't have a valid level and inherit from parent 106, which means it can change...
+            if (!partRef.m_isLevelValid && targetCategoryId != geomParams.GetCategoryId())
+                geomParams.SetCategoryId(targetCategoryId, false); // Preserve appearance overrides...
 
             // If category changes, need to create a new element/assembly...
             if (builder.IsValid() && builder->GetGeometryParams().GetCategoryId() != lastCategoryId)
@@ -4543,6 +4548,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
                     partRef.m_geomToLocal = geomToLocal;
                     partRef.m_localRange = localRange;
                     partRef.m_isLevelByCell = DgnV8Api::LEVEL_BYCELL == pathGeom.m_path->GetCursorElem()->GetUnstableMSElementCP()->ehdr.level;
+                    partRef.m_isLevelValid = true;
 
                     geomParts.push_back(partRef);
 

@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/PrivateAPI/STMInternal/Foundations/FoundationsPrivateTools.h $
 |    $RCSfile: FoundationsPrivateTools.h,v $
 |   $Revision: 1.4 $
 |       $Date: 2012/02/23 18:20:14 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

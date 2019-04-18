@@ -60,7 +60,7 @@
         <Directories DirectoryListName="CollectionProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
-    <Part Name="GtestIntegration" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingIntegrationTest -dTEST_COLLECTION_PRODUCT=Licensing-IntegrationTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="GtestIntegration" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingIntegrationTest -dTEST_COLLECTION_PRODUCT=Licensing-IntegrationTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="Licensing-IntegrationTests"/>
         <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
 
@@ -70,7 +70,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="GtestUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingUnitTest -dTEST_COLLECTION_PRODUCT=Licensing-UnitTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="GtestUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingUnitTest -dTEST_COLLECTION_PRODUCT=Licensing-UnitTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="Licensing-UnitTests"/>
         <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
 

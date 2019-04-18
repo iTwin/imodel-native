@@ -1,7 +1,5 @@
 #------------------------------------------------------------------------------------
-#
-#     $Source: Formats/formatsDgnDb_DgnDb06.mke $
-#   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 #NEEDSWORK_VS2015: WIP, remove these warning suppress

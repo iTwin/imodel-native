@@ -1,4 +1,9 @@
-﻿using Bentley.ECSystem.Logging;
+﻿/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+using Bentley.ECSystem.Logging;
 using Bentley.Logging;
 
 namespace S3MXECPlugin.Source
