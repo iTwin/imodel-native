@@ -2834,15 +2834,15 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
     bool isActive;
     m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(clipID, clipVectorData, geom, type, isActive);
 
-    if (!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
-    {
-        Transform trans;
-        trans.InverseOf(m_reprojectionTransform);
-        clipVectorData->TransformInPlace(trans);
-    }
-
     if(clipVectorData.IsValid() && !clipVectorData->empty())
         {
+        if(!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
+            {
+            Transform trans;
+            trans.InverseOf(m_reprojectionTransform);
+            clipVectorData->TransformInPlace(trans);
+            }
+
         DRange3d clipVectorRange;
         clipVectorData->GetRange(clipVectorRange, nullptr);
         extent.Extend(clipVectorRange);
