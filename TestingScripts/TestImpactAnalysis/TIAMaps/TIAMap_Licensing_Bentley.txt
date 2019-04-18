@@ -1,0 +1,59 @@
+
+[imodel02\imodelcore\bentley\bentley\nonport\betest.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:
+[imodel02\imodelcore\bentley\bentley\datetimeconverter.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=PolicyTests.GetACLsQualifierOverrideWithSecureDataQualifierOverride_TimeToKeepUnSentLogs_Success:PolicyTests.GetACLsQualifierOverride_HeartbeatInterval_Success:PolicyTests.GetSecureDataQualifierOverride_PolicyInterval_Success:ClientTests.GetCertificate_Success:ClientTests.SendFeatureLogs_Success:ClientTests.SendUsageLogs_Success:UsageDbTests.CleanUpUsages_Success:UsageDbTests.OpenOrCreate_DifferentDb_OpensNewDb:UsageDbTests.OpenOrCreate_OpenAndUpdateExistingDatabase_Success:UsageDbTests.OpenOrCreate_OpenExistingDb_ContainsInsertedRows:UsageDbTests.WriteFeatureToCSVFile_MultipleRecords_CreatesCorrectFile:UsageDbTests.WriteUsageToCSVFile_MultipleRecords_CreatesCorrectFile:
+[imodel02\imodelcore\bentley\bentley\datetime.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=PolicyTests.GetACLsQualifierOverrideWithSecureDataQualifierOverride_TimeToKeepUnSentLogs_Success:PolicyTests.GetACLsQualifierOverride_HeartbeatInterval_Success:PolicyTests.GetSecureDataQualifierOverride_PolicyInterval_Success:ClientTests.GetCertificate_Success:ClientTests.SendFeatureLogs_Success:ClientTests.SendUsageLogs_Success:UsageDbTests.CleanUpUsages_Success:UsageDbTests.OpenOrCreate_DifferentDb_OpensNewDb:UsageDbTests.OpenOrCreate_OpenAndUpdateExistingDatabase_Success:UsageDbTests.OpenOrCreate_OpenExistingDb_ContainsInsertedRows:UsageDbTests.WriteFeatureToCSVFile_MultipleRecords_CreatesCorrectFile:UsageDbTests.WriteUsageToCSVFile_MultipleRecords_CreatesCorrectFile:
+[imodel02\imodelcore\bentley\tasks\asynctask.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:
+[imodel02\imodelcore\bentley\loggingsdk\src\native\interface\loggercache.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:
+[imodel02\imodelcore\bentley\tasks\workerthread.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
+[imodel02\imodelcore\bentley\bentley\wstring.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:
+[imodel02\imodelcore\bentley\tasks\taskscheduler.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
+[imodel02\imodelcore\bentley\tasks\asynctaskrunner.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
+[imodel02\imodelcore\bentley\bentley\directoryobserver.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
+[imodel02\imodelcore\bentley\bentley\nonport\bedirectoryiterator.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:
+[imodel02\imodelcore\bentley\bentley\nonport\befile.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=LogFileHelperTests.*:ClientTests.SendFeatureLogs_Success:ClientTests.SendUsageLogs_Success:UsageDbTests.OpenOrCreate_OpenAndUpdateExistingDatabase_Success:UsageDbTests.OpenOrCreate_OpenExistingDb_ContainsInsertedRows:UsageDbTests.WriteFeatureToCSVFile_MultipleRecords_CreatesCorrectFile:UsageDbTests.WriteUsageToCSVFile_MultipleRecords_CreatesCorrectFile:SCVWritterTests.WriteToFile_MultipleRows_WritesEverything:
+[imodel02\imodelcore\bentley\bentley\nonport\betimeutilities.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:
+[imodel02\imodelcore\bentley\bentley\refcounted.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:
+[imodel02\imodelcore\bentley\bentley\nonport\base64utilities.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:
+[imodel02\imodelcore\bentley\tasks\workerthreadpool.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
+[imodel02\imodelcore\bentley\tasks\asyncerror.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.SendFeatureLogs_Success:
+[imodel02\imodelcore\bentley\tasks\asynctaskrunnerpool.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
+[imodel02\imodelcore\bentley\bentley\datetimeconverter.h]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=PolicyTests.GetACLsQualifierOverrideWithSecureDataQualifierOverride_TimeToKeepUnSentLogs_Success:PolicyTests.GetACLsQualifierOverride_HeartbeatInterval_Success:PolicyTests.GetSecureDataQualifierOverride_PolicyInterval_Success:ClientTests.GetCertificate_Success:ClientTests.SendFeatureLogs_Success:ClientTests.SendUsageLogs_Success:UsageDbTests.CleanUpUsages_Success:UsageDbTests.OpenOrCreate_DifferentDb_OpensNewDb:UsageDbTests.OpenOrCreate_OpenAndUpdateExistingDatabase_Success:UsageDbTests.OpenOrCreate_OpenExistingDb_ContainsInsertedRows:UsageDbTests.WriteFeatureToCSVFile_MultipleRecords_CreatesCorrectFile:UsageDbTests.WriteUsageToCSVFile_MultipleRecords_CreatesCorrectFile:
+[imodel02\imodelcore\bentley\loggingsdk\src\native\interface\providerproxy.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:
+[imodel02\imodelcore\bentley\bentley\cancellationtoken.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:
+[imodel02\imodelcore\bentley\loggingsdk\src\native\interface\bsilogprivate.h]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:
+[imodel02\imodelcore\bentley\tasks\asynctasksmanager.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:
+[imodel02\imodelcore\bentley\loggingsdk\src\native\interface\loggingconfig.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:
+[imodel02\imodelcore\bentley\bentley\nonport\befilename.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:
+[imodel02\imodelcore\bentley\bentley\nonport\bestringutilities.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:
+[imodel02\imodelcore\bentley\loggingsdk\src\native\interface\loggingmanager.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:
+[imodel02\imodelcore\bentley\loggingsdk\src\native\interface\bsilog.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:
+[imodel02\imodelcore\bentley\bentley\nonport\bethread.cpp]
+%OutRoot%Winx64\Product\Licensing-GTest\LicensingTest.exe --gtest_filter=ClientTests.*:UsageDbTests.*:LogFileHelperTests.*:UrlSafeBase64UtilitiesTests.*:GenerateSIDTests.*:JWTokenTests.*:FeatureUserDataMapTests.*:PolicyTests.*:SCVWritterTests.*:

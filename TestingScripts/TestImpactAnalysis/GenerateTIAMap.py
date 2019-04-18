@@ -173,7 +173,11 @@ def writeMapToFile(fileName, tiaMap, comp):
         for testCase in tiaMap[name]:
             len1 = len(tiaMap[name][testCase])
             len2 = tr.getFixtureTestCount(testCase)
-            if len1 >= len2 or float(len1 / len2) > 75.0:
+            if len2 > 0:
+                percent = (float(len1) / float(len2))
+            else:
+                percent = 0.0
+            if len1 >= len2 or percent > 0.75:
                 mapFile.write(testCase + '.*:')
             else:
                 for test in tiaMap[name][testCase]:
