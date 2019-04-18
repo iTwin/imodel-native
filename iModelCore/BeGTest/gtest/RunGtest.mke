@@ -125,7 +125,9 @@ always:
 					exit
 					<
 					-$(RunPrefix) $(LogDir)run.bat
-					# Special Case for Bentley is just to create an XML report as needed by summary argument of vsts task to publish coverage results 
+					%message --------------------------------------------------------------------------------------
+					%message *** Special Case for Bentley is just to create an XML report as needed by summary argument of vsts task to publish coverage results ***
+					%message -------------------------------------------------------------------------------------- 
 					%if $(GTEST_PRODUCT) == $(xml_comp)
 						start "CodeCoverage $(GTEST_PRODUCT)" \/WAIT python $(SrcRoot)imodel02\TestingScripts\Coverage\CoverageOpenCPP.py --component=$(GTEST_PRODUCT)
 					%endif
