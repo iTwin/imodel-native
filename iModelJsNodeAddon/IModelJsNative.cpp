@@ -4474,7 +4474,9 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
     NativeECPresentationManager(Napi::CallbackInfo const& info)
         : Napi::ObjectWrap<NativeECPresentationManager>(info)
         {
-        m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(m_connections, T_HOST.GetIKnownLocationsAdmin()));
+        OPTIONAL_ARGUMENT_STRING(0, id, );
+        m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(m_connections, 
+            T_HOST.GetIKnownLocationsAdmin(), id));
         m_ruleSetLocater = SimpleRuleSetLocater::Create();
         AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         m_presentationManager->GetLocaters().RegisterLocater(*m_ruleSetLocater);

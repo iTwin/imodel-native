@@ -64,7 +64,7 @@ public:
 //=======================================================================================
 struct ECPresentationUtils
 {
-    static RulesDrivenECPresentationManager* CreatePresentationManager(IConnectionManagerR, Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin&);
+    static RulesDrivenECPresentationManager* CreatePresentationManager(IConnectionManagerR, Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin&, Utf8StringCR);
 
     static ECPresentationResult SetupRulesetDirectories(RulesDrivenECPresentationManager&, bvector<Utf8String> const&);
     static ECPresentationResult SetupLocaleDirectories(RulesDrivenECPresentationManager& manager, bvector<Utf8String> const&);

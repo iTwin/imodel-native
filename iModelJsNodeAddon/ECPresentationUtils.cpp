@@ -1164,13 +1164,20 @@ static IModelJsECPresentationStaticSetupHelper s_staticSetup;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager(IConnectionManagerR connections, Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin& locations)
+RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager(IConnectionManagerR connections, 
+    Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin& locations, Utf8StringCR id)
     {
     BeFileName assetsDir = locations.GetDgnPlatformAssetsDirectory();
     BeFileName tempDir = locations.GetLocalTempDirectoryBaseName();
     tempDir.AppendToPath(L"ecpresentation");
     if (!tempDir.DoesPathExist())
         BeFileName::CreateNewDirectory(tempDir.c_str());
+    if (!id.empty())
+        {
+        tempDir.AppendToPath(WString(id.c_str(), true).c_str());
+        if (!tempDir.DoesPathExist())
+            BeFileName::CreateNewDirectory(tempDir.c_str());
+        }
 
     RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
     RulesDrivenECPresentationManager::Params params(connections, paths);
