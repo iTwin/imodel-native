@@ -192,6 +192,8 @@ struct TestIModel final : TestDb
         TestIModel(TestFile const& testFile, DgnDb::OpenParams const& openParams = DgnDb::OpenParams(DgnDb::OpenMode::Readonly)) : TestDb(testFile), m_openParams(openParams) {}
         ~TestIModel() { _Close(); }
 
+        SchemaUpgradeOptions const& GetSchemaUpgradeOptions() { return m_openParams.GetSchemaUpgradeOptions(); }
+
         DgnDbR GetDgnDb() const { BeAssert(m_dgndb != nullptr); return *m_dgndb; }
         static Iterable GetPermutationsFor(TestFile const&);
 
