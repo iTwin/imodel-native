@@ -164,6 +164,9 @@ def main():
     comp = cmp.CompForExe(args.gtestName)
     if comp is None: # we don't have this component in our list
         exit()
+    special_comps = ['DgnV8ConverterTests', 'MstnBridgeTests', 'dwgimportertests', 'buildingdomaintests\\assemblies\\', 'structuraldomainstested\\']
+    if comp in special_comps: # we don't have Maps for these components
+        exit()
     dll = comp
     repoPath = cmp.RepoPathForComp(comp)
 
