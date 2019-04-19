@@ -1819,7 +1819,11 @@ bool    DwgHelper::GetTransformForSharedParts (TransformP out, double* uniformSc
 
             isValid = skew.IsRigidSignedScale (rigid, scale);
             if (isValid && nullptr != uniformScale)
-                *uniformScale = scale;
+                {
+                // round the scale value to the nearest 0.000001
+                *uniformScale = ::round (scale * 1.0e6);
+                *uniformScale *= 1.0e-6;
+                }
             }
         }
     else

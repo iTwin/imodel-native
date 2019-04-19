@@ -2537,6 +2537,9 @@ BentleyStatus   ElementFactory::CreateSharedParts ()
     BentleyStatus status = BSIERROR;
     if (nullptr == m_geometryMap || !m_sourceBlockId.IsValid())
         return  status;
+    auto sourceInsert = DwgDbBlockReference::Cast(m_inputs.GetEntityP());
+    if (nullptr == sourceInsert)
+        return  status;
 
     size_t  partIndex = 0;
     DwgImporter::T_SharedPartList parts;
@@ -2559,7 +2562,7 @@ BentleyStatus   ElementFactory::CreateSharedParts ()
 
     // cache the parts created for this block
     auto& blockPartsMap = m_importer.GetBlockPartsR ();
-    DwgImporter::SharedPartKey  key(m_sourceBlockId, m_sourceLayerId, m_basePartScale);
+    DwgImporter::SharedPartKey  key(*sourceInsert, m_basePartScale);
     blockPartsMap.insert (DwgImporter::T_BlockPartsEntry(key, parts));
 
     // create part elements from the part cache:
