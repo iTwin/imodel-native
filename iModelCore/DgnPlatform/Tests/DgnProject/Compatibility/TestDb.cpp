@@ -966,7 +966,15 @@ DbResult TestIModel::_Open()
 
     const int compareVersions = m_dgndb->GetProfileVersion().CompareTo(ProfileVersion(DgnDbProfileValues::DGNDB_CURRENT_VERSION_Major, DgnDbProfileValues::DGNDB_CURRENT_VERSION_Minor, DgnDbProfileValues::DGNDB_CURRENT_VERSION_Sub1, DgnDbProfileValues::DGNDB_CURRENT_VERSION_Sub2));
     if (compareVersions == 0)
-        m_age = ProfileState::Age::UpToDate;
+        {
+        const int compareECDbVersions = m_dgndb->GetECDbProfileVersion().CompareTo(ECDb::CurrentECDbProfileVersion());
+        if (compareECDbVersions == 0)
+            m_age = ProfileState::Age::UpToDate;
+        else if (compareECDbVersions < 0)
+            m_age = ProfileState::Age::Older;
+        else
+            m_age = ProfileState::Age::Newer;
+        }
     else if (compareVersions < 0)
         m_age = ProfileState::Age::Older;
     else
@@ -1007,14 +1015,13 @@ void TestIModel::AssertProfileVersion() const
             case ProfileState::Age::UpToDate:
                 EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsUpToDate()) << GetDescription();
                 EXPECT_EQ(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
+                EXPECT_EQ(ECDb::CurrentECDbProfileVersion(), m_dgndb->GetECDbProfileVersion()) << GetDescription();
                 break;
             case ProfileState::Age::Newer:
                 EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsNewer()) << GetDescription();
-                EXPECT_LT(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
                 break;
             case ProfileState::Age::Older:
                 EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsOlder()) << GetDescription();
-                EXPECT_GT(DgnDbProfile::Get().GetExpectedVersion(), m_dgndb->GetProfileVersion()) << GetDescription();
                 break;
             default:
                 FAIL() << "Unhandled ProfileState::Age enum value";

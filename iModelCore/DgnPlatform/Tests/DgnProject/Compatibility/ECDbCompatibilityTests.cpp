@@ -119,7 +119,7 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
                     EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), testDb.GetSchemaItemCounts("ECDbFileInfo")) << testDb.GetDescription();
                     
                     EXPECT_EQ(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
                     EXPECT_EQ(JsonValue(R"js({"classcount":9})js"), testDb.GetSchemaItemCounts("ECDbMap")) << testDb.GetDescription();
                     
                     EXPECT_EQ(SchemaVersion(4, 0, 1), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
@@ -145,7 +145,7 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
                     EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
                     
                     EXPECT_LE(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
-                    EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
+                    EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
                     
                     EXPECT_LE(SchemaVersion(4, 0, 1), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
                     EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
@@ -1164,7 +1164,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImportWithReadContextVariations)
                     ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
                     EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();
                     EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << scenario << " | " << testDb.GetDescription();
                     EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
                     EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
                     break;

@@ -93,13 +93,14 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                     EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
 
                     //iModel built-in schema versions
-                    EXPECT_EQ(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("BisCore")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("BisCore")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":164, "enumcount": 2})js"), testDb.GetSchemaItemCounts("BisCore")) << testDb.GetDescription();
+                    if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
+                        {
+                        EXPECT_LE(SchemaVersion(1, 0, 4), testDb.GetSchemaVersion("BisCore")) << testDb.GetDescription();
+                        EXPECT_LE(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("Generic")) << testDb.GetDescription();
+                        }
 
-                    EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("Generic")) << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("BisCore")) << testDb.GetDescription();
                     EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("Generic")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":17})js"), testDb.GetSchemaItemCounts("Generic")) << testDb.GetDescription();
 
                     //ECDb built-in schema versions
                     EXPECT_EQ(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
@@ -132,11 +133,11 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                     EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
                     //iModel built-in schema versions
                     // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
-                    EXPECT_EQ(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("BisCore")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":164, "enumcount": 2})js"), testDb.GetSchemaItemCounts("BisCore")) << testDb.GetDescription();
-
-                    EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("Generic")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":17})js"), testDb.GetSchemaItemCounts("Generic")) << testDb.GetDescription();
+                    if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
+                        {
+                        EXPECT_LE(SchemaVersion(1, 0, 4), testDb.GetSchemaVersion("BisCore")) << testDb.GetDescription();
+                        EXPECT_LE(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("Generic")) << testDb.GetDescription();
+                        }
 
                     //ECDb built-in schema versions
                     EXPECT_EQ(SchemaVersion(2, 0, 1), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
@@ -144,7 +145,7 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                     EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), testDb.GetSchemaItemCounts("ECDbFileInfo")) << testDb.GetDescription();
                     
                     EXPECT_EQ(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
                     EXPECT_EQ(JsonValue(R"js({"classcount":9})js"), testDb.GetSchemaItemCounts("ECDbMap")) << testDb.GetDescription();
                     
                     EXPECT_EQ(SchemaVersion(4, 0, 1), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
@@ -170,8 +171,7 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
 
                     //iModel built-in schema versions
                     // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
-                    EXPECT_LE(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("BisCore")) << testDb.GetDescription();
-
+                    EXPECT_LE(SchemaVersion(1, 0, 4), testDb.GetSchemaVersion("BisCore")) << testDb.GetDescription();
                     EXPECT_LE(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("Generic")) << testDb.GetDescription();
 
                     //ECDb built-in schema versions
@@ -179,7 +179,7 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                     EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
 
                     EXPECT_LE(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
-                    EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
+                    EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
 
                     EXPECT_LE(SchemaVersion(4, 0, 1), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
                     EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
@@ -1826,7 +1826,7 @@ TEST_F(IModelCompatibilityTestFixture, AddDomain)
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
             EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema("Functional")) << testDb.GetDescription();
-            EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("Functional")) << testDb.GetDescription();
+            EXPECT_EQ(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("Functional")) << testDb.GetDescription();
             }
         }
     }
