@@ -1,0 +1,312 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="DebugProduct|Win32">
+      <Configuration>DebugProduct</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugProduct|x64">
+      <Configuration>DebugProduct</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseProduct|Win32">
+      <Configuration>ReleaseProduct</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseProduct|x64">
+      <Configuration>ReleaseProduct</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseVS|Win32">
+      <Configuration>ReleaseVS</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseVS|x64">
+      <Configuration>ReleaseVS</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>PCLWrapper</ProjectName>
+    <ProjectGuid>{567F7DC8-D5CC-40A4-9CD0-7E4CCE71DF5D}</ProjectGuid>
+    <RootNamespace>PointCloudHandlerPCLUtil</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseVS|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseVS|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='DebugProduct|Win32'">
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugProduct|x64'" Label="Configuration">
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseVS|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseVS|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>11.0.60610.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p PCLWrapper -f TerrainModel -r TerrainModel re PCLWrapper -x64 </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p PCLWrapper -f TerrainModel -r TerrainModel re PCLWrapper -x64 -c
+python.exe $(SrcBsiCommon)build\BentleyBuild.py -p PCLWrapper -f TerrainModel -r TerrainModel re PCLWrapper -x64 </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p PCLWrapper -f TerrainModel -r TerrainModel re PCLWrapper -x64 -c</NMakeCleanCommandLine>
+    <NMakeOutput>PCLWrapper.dll</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;BC_NOMDLENV;PCLUtil_EXPORTS;BCGEOM_EXPORTS;_USE_32BIT_TIME_T;target_is_dlm;winNT;_X86=1;i386=1;_VISCXX;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(SrcCivil)bclib\sources\unmanaged\Include\;$(SrcCivil)bclib\sources\unmanaged\dll\base\include\;$(SrcCivil)bclib\sources\unmanaged\dll\geometry\include\;$(SrcCivil)bclib\sources\unmanaged\dll\dtm\include\;$(SrcCivil)bclib\sources\unmanaged\dll\dtm\mrdtm\;$(SrcUtil)sharedinc\;$(SrcCivil)bclib\sources\unmanaged\dll\dtm\mrdtm\Importer\;$(SrcCivil)bclib\sources\unmanaged\dll\dtm\mrdtm\ImporterPlugins\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p PCLWrapper -f TerrainModel -r TerrainModel re PCLWrapper -x64 </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p PCLWrapper -f TerrainModel -r TerrainModel re PCLWrapper -x64 -c
+python.exe $(SrcBsiCommon)build\BentleyBuild.py -p PCLWrapper -f TerrainModel -r TerrainModel re PCLWrapper -x64 </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p PCLWrapper -f TerrainModel -r TerrainModel re PCLWrapper -x64 -c</NMakeCleanCommandLine>
+    <NMakeOutput>PCLWrapper.dll</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;BC_NOMDLENV;PCLUtil_EXPORTS;BCGEOM_EXPORTS;_USE_32BIT_TIME_T;target_is_dlm;winNT;_X86=1;i386=1;_VISCXX;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(SrcCivil)bclib\sources\unmanaged\Include\;$(SrcCivil)bclib\sources\unmanaged\dll\base\include\;$(SrcCivil)bclib\sources\unmanaged\dll\geometry\include\;$(SrcCivil)bclib\sources\unmanaged\dll\dtm\include\;$(SrcCivil)bclib\sources\unmanaged\dll\dtm\mrdtm\;$(SrcUtil)sharedinc\;$(SrcCivil)bclib\sources\unmanaged\dll\dtm\mrdtm\Importer\;$(SrcCivil)bclib\sources\unmanaged\dll\dtm\mrdtm\ImporterPlugins\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p PCLWrapper -f TerrainModel -r TerrainModel re PCLWrapper -x64 </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p PCLWrapper -f TerrainModel -r TerrainModel re PCLWrapper -x64 -c
+python.exe $(SrcBsiCommon)build\BentleyBuild.py -p PCLWrapper -f TerrainModel -r TerrainModel re PCLWrapper -x64 </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p PCLWrapper -f TerrainModel -r TerrainModel re PCLWrapper -x64 -c</NMakeCleanCommandLine>
+    <NMakeOutput>PCLWrapper.dll</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;BC_NOMDLENV;PCLUtil_EXPORTS;BCGEOM_EXPORTS;O2;_USE_32BIT_TIME_T;target_is_dlm;winNT;_X86=1;i386=1;_VISCXX;BC_PROJWISE;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(SrcCivil)bclib\sources\unmanaged\Include;$(SrcCivil)bclib\sources\unmanaged\dll\base\include;$(SrcCivil)bclib\sources\unmanaged\dll\geometry\include;$(SrcCivil)bclib\sources\unmanaged\dll\dtm\include;$(SrcCivil)bclib\sources\unmanaged\dll\dtm\mrdtm;$(SrcUtil)sharedinc\;$(SrcBsiBin)boost\1.33\inc\boost\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p PCLWrapper -f TerrainModel -r TerrainModel re PCLWrapper -x64 </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p PCLWrapper -f TerrainModel -r TerrainModel re PCLWrapper -x64 -c
+python.exe $(SrcBsiCommon)build\BentleyBuild.py -p PCLWrapper -f TerrainModel -r TerrainModel re PCLWrapper -x64 </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p PCLWrapper -f TerrainModel -r TerrainModel re PCLWrapper -x64 -c</NMakeCleanCommandLine>
+    <NMakeOutput>PCLWrapper.dll</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;BC_NOMDLENV;PCLUtil_EXPORTS;BCGEOM_EXPORTS;O2;_USE_32BIT_TIME_T;target_is_dlm;winNT;_X86=1;i386=1;_VISCXX;BC_PROJWISE;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(SrcCivil)bclib\sources\unmanaged\Include;$(SrcCivil)bclib\sources\unmanaged\dll\base\include;$(SrcCivil)bclib\sources\unmanaged\dll\geometry\include;$(SrcCivil)bclib\sources\unmanaged\dll\dtm\include;$(SrcCivil)bclib\sources\unmanaged\dll\dtm\mrdtm;$(SrcUtil)sharedinc\;$(SrcBsiBin)boost\1.33\inc\boost\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|Win32'">
+    <OutDir>$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>SET DEBUG=
+SET VS2005=
+bmake  PCLWrapper.mke</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>SET DEBUG=
+SET VS2005=
+bmake +a  PCLWrapper.mke</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>SET DEBUG=
+SET VS2005=
+bmake +D  PCLWrapper.mke</NMakeCleanCommandLine>
+    <NMakeOutput>PCLWrapper.dll</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;BC_NOMDLENV;PCLUtil_EXPORTS;BCGEOM_EXPORTS;O2;_USE_32BIT_TIME_T;target_is_dlm;winNT;_X86=1;i386=1;_VISCXX;BC_PROJWISE;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(SrcCivil)bclib\sources\unmanaged\Include;$(SrcCivil)bclib\sources\unmanaged\dll\base\include;$(SrcCivil)bclib\sources\unmanaged\dll\geometry\include;$(SrcCivil)bclib\sources\unmanaged\dll\dtm\include;$(SrcCivil)bclib\sources\unmanaged\dll\dtm\mrdtm;$(SrcUtil)sharedinc\;$(SrcBsiBin)boost\1.33\inc\boost\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|x64'">
+    <NMakeBuildCommandLine>SET DEBUG=
+SET VS2005=
+bmake  PCLWrapper.mke</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>SET DEBUG=
+SET VS2005=
+bmake +a  PCLWrapper.mke</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>SET DEBUG=
+SET VS2005=
+bmake +D  PCLWrapper.mke</NMakeCleanCommandLine>
+    <NMakeOutput>PCLWrapper.dll</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;BC_NOMDLENV;PCLUtil_EXPORTS;BCGEOM_EXPORTS;O2;_USE_32BIT_TIME_T;target_is_dlm;winNT;_X86=1;i386=1;_VISCXX;BC_PROJWISE;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(SrcCivil)bclib\sources\unmanaged\Include;$(SrcCivil)bclib\sources\unmanaged\dll\base\include;$(SrcCivil)bclib\sources\unmanaged\dll\geometry\include;$(SrcCivil)bclib\sources\unmanaged\dll\dtm\include;$(SrcCivil)bclib\sources\unmanaged\dll\dtm\mrdtm;$(SrcUtil)sharedinc\;$(SrcBsiBin)boost\1.33\inc\boost\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseVS|Win32'">
+    <OutDir>$(OutCivil)Desktop/\</OutDir>
+    <IntDir>$(OutCivil)BuildTemp/$(projectName)/\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseVS|x64'" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <BuildLog>
+      <Path>\BuildTemp\$(TargetName)\BuildLog.htm</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>\BuildTemp\$(TargetName)\BuildLog.htm</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <BuildLog>
+      <Path>$(OutCivil)\BuildTemp\$(TargetName)\BuildLog.htm</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <BuildLog>
+      <Path>$(OutCivil)\BuildTemp\$(TargetName)\BuildLog.htm</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|Win32'">
+    <BuildLog>
+      <Path>$(OutCivil)\BuildTemp\$(TargetName)\BuildLog.htm</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|x64'">
+    <BuildLog>
+      <Path>$(OutCivil)\BuildTemp\$(TargetName)\BuildLog.htm</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseVS|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/EHc /GS- /GdF /Oy- %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Full</Optimization>
+      <OmitFramePointers>false</OmitFramePointers>
+      <AdditionalIncludeDirectories>$(SrcCivilPlatform)\sources\unmanaged\include;$(SrcCivilPlatform)\sources\unmanaged\dll\base\include;$(SrcCivilPlatform)\sources\unmanaged\dll\geometry\include;$(SrcCivilPlatform)\sources\unmanaged\dll\dtm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;BC_NOMDLENV;PointCloudHandlerPCLUtil_EXPORTS;BCGEOM_EXPORTS;_USE_32BIT_TIME_T;target_is_dlm;winNT;WIN32;_X86=1;i386=1;_VISCXX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessKeepComments>false</PreprocessKeepComments>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <WarningLevel>Level3</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(OutCivil)Library\BCivilBase.lib;$(OutCivil)Library\BCivilGeometry.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ManifestFile>$(IntDir)$(TargetFileName).manifest</ManifestFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(OutCivil)Symbols\$(TargetName).pdb</ProgramDatabaseFile>
+      <GenerateMapFile>true</GenerateMapFile>
+      <MapFileName>$(OutDir)$(ProjectName).map</MapFileName>
+      <LargeAddressAware />
+      <ImportLibrary>$(OutCivil)Library\$(TargetName).lib</ImportLibrary>
+      <FixedBaseAddress>true</FixedBaseAddress>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseVS|x64'">
+    <ClCompile>
+      <AdditionalOptions>/EHc /GS- /GdF /Oy- %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Full</Optimization>
+      <OmitFramePointers>false</OmitFramePointers>
+      <AdditionalIncludeDirectories>$(SrcCivilPlatform)\sources\unmanaged\include;$(SrcCivilPlatform)\sources\unmanaged\dll\base\include;$(SrcCivilPlatform)\sources\unmanaged\dll\geometry\include;$(SrcCivilPlatform)\sources\unmanaged\dll\dtm\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;BC_NOMDLENV;PointCloudHandlerPCLUtil_EXPORTS;BCGEOM_EXPORTS;_USE_32BIT_TIME_T;target_is_dlm;winNT;WIN32;_X86=1;i386=1;_VISCXX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessKeepComments>false</PreprocessKeepComments>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <WarningLevel>Level3</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(OutCivil)Library\BCivilBase.lib;$(OutCivil)Library\BCivilGeometry.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ManifestFile>$(IntDir)$(TargetFileName).manifest</ManifestFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(OutCivil)Symbols\$(TargetName).pdb</ProgramDatabaseFile>
+      <GenerateMapFile>true</GenerateMapFile>
+      <MapFileName>$(OutDir)$(ProjectName).map</MapFileName>
+      <LargeAddressAware>
+      </LargeAddressAware>
+      <ImportLibrary>$(OutCivil)Library\$(TargetName).lib</ImportLibrary>
+      <FixedBaseAddress>true</FixedBaseAddress>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="GeometricPropertyEstimators.h" />
+    <ClInclude Include="GeometricPropertyEstimators.hpp" />
+    <ClInclude Include="NormalCalculator.h" />
+    <ClInclude Include="PCLWrapperPch.h" />
+    <ClInclude Include="Includes\UtilityFunctions\GeometricPropertyEstimators.h" />
+    <ClInclude Include="Includes\UtilityFunctions\GeometricPropertyEstimators.hpp" />
+    <ClInclude Include="Includes\UtilityFunctions\GeometryFunctions.h" />
+    <ClInclude Include="Includes\UtilityFunctions\GeometryFunctions.hpp" />
+    <ClInclude Include="Includes\UtilityFunctions\SampleConsensusEstimators.h" />
+    <ClInclude Include="Includes\UtilityFunctions\SampleConsensusEstimators.hpp" />
+    <ClInclude Include="PublicAPI\IDefines.h" />
+    <ClInclude Include="PublicAPI\INormalCalculator.h" />
+    <ClInclude Include="PublicAPI\IStatus.h" />
+    <ClInclude Include="Status.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="NormalCalculator.cpp" />
+    <ClCompile Include="PCLWrapperPch.cpp" />
+    <ClCompile Include="Status.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PCLWrapper.mke" />
+    <None Include="PCLWrapper.mki" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
