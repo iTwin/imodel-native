@@ -1,0 +1,48 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+	/**
+    @page FormatsOverview Formats Overview
+
+    Formats are members of a schema that can be used to control the output format of values. They contain a NumericFormatSpec and optionally a CompositeValueSpec. They are closely associated with both @ref UnitsOverview "Units" and @ref KindOfQuantityOverview "KindOfQuantity"
+
+    This code creates a new ECFormat with a name, display label and description. It does not have a composite and uses a default numeric spec.
+
+	The Numeric spec controls the formatting of numbers (precision, fractional output, spacing, separators, etc.) while the Composite spec allows numbers to be outputted in multiple units. 
+
+	For example:
+		1.234 km could be represented as 1km 234m
+
+	This effect would be achieved by using a composite spec with two units, (KM and M)
+
+	__PUBLISH_INSERT_FILE__ Overview_Formats_CreateFormat.sampleCode
+
+	By default the Numeric spec has these properties:
+
+	RoundingFactor: 0.0
+	PresentationType: Decimal
+	SignOption: OnlyNegative
+	DecimalPrecision: 6
+	UnitOfMeasureSeparator: " "
+	StationSeparator: "+"
+	MinWidth: 0
+	DecimalSeparator: Locale Default
+	ThousandsSeparator: Locale Default
+
+	There are also 10 format traits which can be set using the FormatTraits enum like this:
+	__PUBLISH_INSERT_FILE__ Overview_Formats_TraitsEnum.sampleCode
+
+	Or by calling the individual set methods on Format:
+	__PUBLISH_INSERT_FILE__ Overview_Formats_TraitsApi.sampleCode
+
+	There are also overloads that can take string representations of the enum or Json.
+
+	To actually use these formats to format something one needs to first create a Quantity which is a numeric value paired with a Unit
+
+
+    @see @ref KindOfQuantityOverview for usage within the context of a KindOfQuantity
+    */
