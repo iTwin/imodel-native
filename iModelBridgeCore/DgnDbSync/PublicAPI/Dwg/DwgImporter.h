@@ -742,23 +742,13 @@ public:
     struct SharedPartKey
         {
     private:
-        DwgDbObjectId               m_blockId;
-        DwgDbObjectId               m_layerId;
-        double                      m_basePartScale;
         MD5::HashVal                m_keyValue;
     public:
-        //! A unique key value consists of blockId, layerId and scale
-        DWG_EXPORT SharedPartKey (DwgDbObjectIdCR block, DwgDbObjectIdCR layer, double scale);
+        //! A unique key value consists of blockId, layerId, ByBlock symbology and scale
+        DWG_EXPORT SharedPartKey (DwgDbBlockReferenceCR insert, double scale);
         DWG_EXPORT SharedPartKey ();
 
         MD5::HashVal const& GetKeyValue () const { return m_keyValue; }
-        DwgDbObjectIdCR GetBlockId () const { return m_blockId; }
-        void    SetBlockId (DwgDbObjectIdCR id) { m_blockId = id; }
-        DwgDbObjectIdCR GetLayerId () const { return m_layerId; }
-        void    SetLayerId (DwgDbObjectIdCR id) { m_layerId = id; }
-        double  GetBasePartScale () const { return m_basePartScale; }
-        void    SetBasePartScale (double scale) { m_basePartScale = scale; }
-        bool    IsMirrored () const { return m_basePartScale < -1.0e-5; }
         DWG_EXPORT bool IsValid () const;
         //! The left-hand operand of the key
         DWG_EXPORT bool operator < (SharedPartKey const& rho) const;
