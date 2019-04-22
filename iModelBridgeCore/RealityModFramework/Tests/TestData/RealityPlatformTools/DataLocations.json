@@ -1,0 +1,24 @@
+{
+    "instances": [
+        {
+            "instanceId": "55d9ec89-9472-47be-a65f-6e99d1c596be",
+            "schemaName": "S3MX",
+            "className": "DataLocations",
+            "properties": {
+                "Provider": "Microsoft",
+                "Location": "Australia East"
+            },
+            "eTag": "\"XzP5SbfmN/NSUEbept0RdCmRcBs=\""
+        },
+        {
+            "instanceId": "7c5f035c-9a36-4118-8eaf-8562b446c93c",
+            "schemaName": "S3MX",
+            "className": "DataLocations",
+            "properties": {
+                "Provider": "Microsoft",
+                "Location": "Southeast Asia"
+            },
+            "eTag": "\"0YNk+WW1glA8z5DPRSyvhje/LsI=\""
+        }
+	]
+}
