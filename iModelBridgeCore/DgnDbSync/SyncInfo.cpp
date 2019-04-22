@@ -724,12 +724,32 @@ DgnV8Api::ModelId SyncInfo::V8ModelExternalSourceAspect::GetV8ModelId() const
     return atoi(GetIdentifier().c_str());
     }
 
+//=======================================================================================
+// @bsiclass                                                    Carole.MacDonald   04/19
+//=======================================================================================
+struct V8FileInfoAppData : DgnV8Api::DgnFileAppData
+    {
+    SyncInfo::V8FileInfo m_fileInfo;
+
+    V8FileInfoAppData(SyncInfo::V8FileInfo fileInfo)
+        : m_fileInfo(fileInfo)
+        {
+        }
+
+    static DgnV8Api::DgnFileAppData::Key const& GetKey() { static DgnFileAppData::Key s_key; return s_key; }
+    virtual void _OnCleanup(DgnFileR host) override { delete this; }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::V8FileInfo SyncInfo::ComputeFileInfo(DgnV8FileCR file)
     {
     V8FileInfo info;
+
+    auto appdata = (V8FileInfoAppData*) const_cast<DgnV8FileR>(file).FindAppData(V8FileInfoAppData::GetKey());
+    if (nullptr != appdata)
+        return appdata->m_fileInfo;
 
     if (!file.IsEmbeddedFile())
         {
@@ -740,6 +760,10 @@ SyncInfo::V8FileInfo SyncInfo::ComputeFileInfo(DgnV8FileCR file)
     WString fullFileName(file.GetFileName().c_str());
     info.m_v8Name = Utf8String(fullFileName);
     info.m_uniqueName = GetUniqueNameForFile(file);
+
+    appdata = new V8FileInfoAppData(info);
+    const_cast<DgnV8FileR>(file).AddAppData(V8FileInfoAppData::GetKey(), appdata);
+
     return info;
     }
 
