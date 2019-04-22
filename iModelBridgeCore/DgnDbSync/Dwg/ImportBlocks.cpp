@@ -14,16 +14,22 @@ DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgBlockReferenceExt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgImporter::SharedPartKey::SharedPartKey (DwgDbObjectIdCR block, DwgDbObjectIdCR layer, double scale) 
-    : m_blockId(block), m_layerId(layer), m_basePartScale(scale)
+DwgImporter::SharedPartKey::SharedPartKey (DwgDbBlockReferenceCR insert, double scale) 
     {
-    // build a SharedPartKey value by hashing blockId, layerId, and basePartScale
+    // build a SharedPartKey value by hashing blockId, layerId, ByBlock symbology and basePartScale
     MD5 hasher;
-    auto v = m_blockId.ToUInt64 ();
+    auto v = insert.GetBlockTableRecordId().ToUInt64 ();
     hasher.Add (&v, sizeof(v));
-    v = m_layerId.ToUInt64 ();
+    v = insert.GetLayerId().ToUInt64 ();
+    hasher.Add (&v, sizeof(v));
+    v = insert.GetLinetypeId().ToUInt64 ();
+    hasher.Add (&v, sizeof(v));
+    v = insert.GetEntityColor().GetMRGB ();
+    hasher.Add (&v, sizeof(v));
+    v = static_cast<uint64_t>(insert.GetLineweight());
     hasher.Add (&v, sizeof(v));
     hasher.Add (&scale, sizeof(scale));
+
     m_keyValue = hasher.GetHashVal ();
     }
 
@@ -32,9 +38,6 @@ DwgImporter::SharedPartKey::SharedPartKey (DwgDbObjectIdCR block, DwgDbObjectIdC
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgImporter::SharedPartKey::SharedPartKey ()
     {
-    m_blockId.SetNull (); 
-    m_layerId.SetNull ();
-    m_basePartScale = 0.0;
     ::memset (m_keyValue.m_buffer, 0, MD5::HashBytes);
     }
 
@@ -101,7 +104,7 @@ BentleyStatus   DwgImporter::_ImportBlockReference (ElementImportResults& result
     if (canShareParts)
         {
         // user wants shared parts, and block transform is valid for shared parts, now search the parts cache:
-        SharedPartKey key(insert->GetBlockTableRecordId(), insert->GetLayerId(), partScale);
+        SharedPartKey key(*insert, partScale);
         found = m_blockPartsMap.find (key);
         }
 

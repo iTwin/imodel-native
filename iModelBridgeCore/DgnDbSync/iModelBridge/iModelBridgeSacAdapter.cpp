@@ -270,7 +270,7 @@ struct ClearDocumentPropertiesAccessor
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const& saparams)
     {
-    saparams.Initialize();
+    //saparams.Initialize();
 
     bridge._GetParams().SetDocumentPropertiesAccessor(const_cast<Params&>(saparams));
     ClearDocumentPropertiesAccessor clearDocumentPropertiesAccessorOnReturn(bridge);
