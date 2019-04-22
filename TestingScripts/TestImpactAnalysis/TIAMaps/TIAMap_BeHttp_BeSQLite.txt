@@ -1,11 +1,11 @@
 
 [imodel02\imodelcore\besqlite\sqlite\closure.c]
 %OutRoot%Winx64\Product\BeHttp-GTest\BeHttpTest.exe --gtest_filter=HttpErrorTests.*:
-[imodel02\imodelcore\besqlite\sqlite\sqlite3.c]
-%OutRoot%Winx64\Product\BeHttp-GTest\BeHttpTest.exe --gtest_filter=HttpFileBodyTests.*:HttpErrorTests.*:
+[imodel02\imodelcore\besqlite\l10n.cpp]
+%OutRoot%Winx64\Product\BeHttp-GTest\BeHttpTest.exe --gtest_filter=BeUriTests.*:HttpMultipartBodyTests.*:HttpRangeBodyTests.*:AuthenticationHandlerTests.*:HttpClientTests.*:HttpRequestTests.*:HttpCompressedBodyTests.*:AuthenticationChallengeValueTests.*:HttpHeadersTests.*:HttpErrorTests.*:HttpBinaryBodyTests.*:HttpStringBodyTests.*:HttpProxyTests.*:HttpFileBodyTests.*:HttpResponseTests.*:HttpDummyBodyTests.*:ProxyHttpHandlerTests.*:
 [imodel02\imodelcore\besqlite\besqlite.cpp]
 %OutRoot%Winx64\Product\BeHttp-GTest\BeHttpTest.exe --gtest_filter=HttpFileBodyTests.*:HttpErrorTests.*:
 [imodel02\imodelcore\besqlite\sqlite\see-aes128-ofb.c]
 %OutRoot%Winx64\Product\BeHttp-GTest\BeHttpTest.exe --gtest_filter=HttpErrorTests.*:
-[imodel02\imodelcore\besqlite\l10n.cpp]
-%OutRoot%Winx64\Product\BeHttp-GTest\BeHttpTest.exe --gtest_filter=BeUriTests.*:HttpMultipartBodyTests.*:HttpRangeBodyTests.*:AuthenticationHandlerTests.*:HttpClientTests.*:HttpResponseTests.*:HttpRequestTests.*:HttpFileBodyTests.*:HttpHeadersTests.*:HttpErrorTests.*:HttpBinaryBodyTests.*:HttpStringBodyTests.*:HttpProxyTests.*:AuthenticationChallengeValueTests.*:HttpCompressedBodyTests.*:HttpDummyBodyTests.*:ProxyHttpHandlerTests.*:
+[imodel02\imodelcore\besqlite\sqlite\sqlite3.c]
+%OutRoot%Winx64\Product\BeHttp-GTest\BeHttpTest.exe --gtest_filter=HttpFileBodyTests.*:HttpErrorTests.*:

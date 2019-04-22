@@ -17,8 +17,10 @@ def main():
         lines = f.readlines()
         for line in lines:
             filter = filter + line
-    command = command + ' ' + filter + ' | ' + sys.argv[4] + ' ' + sys.argv[5]
-
+    if len(filter) > 24000: # potential overflow, hence skip filter
+        command = command + ' | ' + sys.argv[4] + ' ' + sys.argv[5]
+    else:
+        command = command + ' ' + filter + ' | ' + sys.argv[4] + ' ' + sys.argv[5]
     logsDir = os.path.dirname(sys.argv[5])
     batFile = os.path.join(logsDir, 'run.bat')
     print 'writing to file: ' + batFile

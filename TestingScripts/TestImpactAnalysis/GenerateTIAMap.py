@@ -175,7 +175,7 @@ def writeMapToFile(fileName, tiaMap, comp):
                 percent = (float(len1) / float(len2))
             else:
                 percent = 0.0
-            if len1 >= len2 or percent > 0.75:
+            if len1 >= len2 or percent > 0.5:
                 mapFile.write(testCase + '.*:')
             else:
                 for test in tiaMap[name][testCase]:
