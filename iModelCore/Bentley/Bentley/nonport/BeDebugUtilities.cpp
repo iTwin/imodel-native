@@ -157,7 +157,7 @@ std::vector<BeDebugUtilities::StackFrameInfo> BeDebugUtilities::GetStackFrameInf
 
     std::vector<StackFrameInfo> infos;
 
-    for (USHORT i = 0; i < frames; i++)
+    for (USHORT i = 0; i < frames && i < frameCount; i++)
         {
         StackFrameInfo info;
 
