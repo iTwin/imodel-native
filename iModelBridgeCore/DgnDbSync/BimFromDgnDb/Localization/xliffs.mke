@@ -1,0 +1,18 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+
+%include mdl.mki
+
+appName     = BimFromDgnDb
+baseDir     = $(_MakeFilePath)
+
+o = $(OutputRootDir)Build/BimFromDgnDb/$(appName)/
+
+SQLANG_CHeader      = $(baseDir)BimFromDgnDb.xliff.h
+SQLANG_Xliff        = $(o)xliffs/$(appName)_en.xliff
+
+%include $(sharedMki)CHeaderToXliff.mki
+

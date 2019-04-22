@@ -1,0 +1,165 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+// __PUBLISH_SECTION_START__
+/**
+@mainpage iModelBridge
+
+Welcome to the iModelBridge API from <a href="http://www.bentley.com/">Bentley</a>. 
+
+<p>This SDK is used for writing iModel bridges. 
+<p>An iModel bridge keeps an iModel in iModelHub synchronized with one or more data files that are managed by ProjectWise. 
+<p>See @ref GROUP_iModelBridgeFwk for an introduction to bridges in the context of the bridge execution framework.
+
+The main classes are:
+- @ref BentleyApi::Dgn::iModelBridge
+- @ref ANCHOR_BridgeCheckList "iModelBridge implementation checklist"
+*/
+
+/**
+@defgroup GROUP_iModelBridge iModelBridge
+@defgroup GROUP_iModelBridgeFwk The iModelBridge Framework
+@defgroup GROUP_syncinfo SyncInfo and Change-Detection
+*/
+
+/**
+@addtogroup GROUP_iModelBridgeFwk 
+
+The iModelBridge Framework loads and runs a specified BentleyApi::Dgn::iModelBridge to convert data from a given data source and 
+write the results to a briefcase that is synchronized with a project in iModelHub.
+
+<h2>Overviews</h2>
+
+See @ref ANCHOR_iModelBridgeJobOverview "iModelBridge Job Overview" for a high-level overview of how bridges are run in the context of "jobs".
+
+See @ref GROUP_iModelBridge "the iModelBridge overview" for a detailed description of how the framework runs a bridge in an job run.
+
+See @ref ANCHOR_TypicalBridgeConversionLogic "iModelBridge conversion logic pattern" for details on how to write bridge conversion logic.
+
+See @ref BentleyApi::Dgn::iModelBridgeSacAdapter "standalone converter" for details on writing a stand-alone converter that calls 
+a bridge to do one-off publishing or to serve as a test harness for the bridge's conversion logic.
+
+See @ref ANCHOR_iModelUnitsAndGCS "Units and GCS" for converting source data into the coordinate system of the iModel.
+
+See @ref ANCHOR_TrackingDocuments "Tracking Documents" for information on how a bridge must track documents.
+
+See @ref ANCHOR_Provenance "Provenance" for the provenance that bridges must created and maintain.
+
+@anchor iModelBridge_getInstance
+@anchor ANCHOR_BridgeLoading
+<h2>Supplying and Loading a Bridge</h2>
+A bridge must be implemented in a shared library. 
+
+The shared library must define and export a function called <code>iModelBridge_getInstance</code>. This function must return an instance of the specified bridge. That function must conform to @ref T_iModelBridge_getInstance.
+
+The framework will load the bridge library and call <code>iModelBridge_getInstance</code> when a document that is assigned to the bridge is to be converted.
+
+A bridge library could actually implement multiple bridges. The framework passes the @ref ANCHOR_BridgeRegistration "subkey" of the required bridge to iModelBridge_getInstance.
+
+@anchor ANCHOR_BridgeRegistration
+<h2>Bridge Registration</h2>
+A bridge library must be added as a subkey to the following key in the registry: <code>HKLM\\Software\\Bentley\\iModelBridges</code>.
+
+The name of the bridge's subkey must be unique among all bridges. This subkey must be returned by the @ref iModelBridge_getAffinity function. The properties of the sub key must be:
+<table>
+<tr><th>Value<th>Type<th>Description
+<tr><td>BridgeLibraryPath<td>String<td>Optional. The full path to the bridge DLL, that is, the DLL that implements @ref iModelBridge_getInstance.
+<tr><td>BridgeAssetsDir<td>String<td>Optional. The full path to the directory that contains the bridge's assets. If not specified, the framework looks for a subdirectory named "assets" either in the bridge's library directory or two levels above.
+<tr><td>AffinityLibraryPath<td>String<td>Optional. The full path to a DLL that implements @ref iModelBridge_getAffinity, if that function is not implemented by the bridge.
+<tr><td>iModelFrameWorkExe<td>String<td>Optional. For standalone bridges only. The full path to the iModelBridgeFwk.exe program.
+
+</table>
+
+The bridge libray may implement both iModelBridge_getInstance and iModelBridge_getAffinity. Or, the bridge subkey may identify only an affinity library.
+
+@anchor iModelBridge_getAffinity
+<h2>Bridge Affinity</h2>
+The framework decides which bridge should be applied to a given input file by searching the registry for the bridge with the greatest affinity to that file.
+
+To report its affinity for files, a bridge or affinity library must define and export a function called <code>iModelBridge_getAffinity</code>. That function must conform to @ref T_iModelBridge_getAffinity.
+
+The framework will load a bridge or affinity library and call <code>iModelBridge_getAffinity</code> when searching for the best bridge to convert source files.
+
+An affinity library could actually support multiple bridges. iModelBridge_getAffinity returns the @ref ANCHOR_BridgeRegistration "subkey" of the bridge that should be used.
+
+@anchor ANCHOR_BridgeConfig
+<h2>Bridge-Specific Configuration</h2>
+Configuration parameters that are specific to a bridge must be stored in a well-known file in the project, and the bridge must read from that file. Bridge-specific parameters cannot be passed on the command line.
+
+@anchor ANCHOR_iModelBridgeJobOverview
+<h2>iModelBridge Job Overview</h2>
+All documents to be converted are in ProjectWise. 
+All files that contain spatial root models have been marked by the PW project manager using PW metadata.
+ 
+A "job" is a named unit of work that is executed by BAS, the Bentley Automation Service. A job has a set of input files from ProjectWise and a "plugin" to process those files. Users define and schedule jobs to run on a timer. Before a job is started (even for the first time), BAS ensures that all of the files assigned to that job are copied out, including all master files and reference files. BAS knows which files that have changed since the job last ran. We have defined an iModelBridge BAS plugin. 
+ 
+"The iModelBridge BAS plugin" is a managed 32-bit assembly that implements the iModelBridge BAS job. This plugin is installed on the server, alongside the BAS framework itself. When called by BAS, the plugin calls iModelBridgeFwk, either directly in the form of a standalone exe program to run standalone converters, or indirectly by queuing requests to BAS to run PP engines, directing them to host and call iModelBridgeFwk as a DLL. 
+ 
+iModelBridgeFwk is a C++ class that knows how to use a specified iModelBridge to generate a changeset for a specified iModel in iModelHub. iModelBridgeFwk plays the role of an iModel client application. It works with a local briefcase copy of an iModel. It calls on a specified iModelBridge to write changes to this briefcase. iModelBridgeFwk acquires all necessary locks and codes entailed by such changes. iModelBridgeFwk synchronizes with the iModel and pushes the changes generated by a bridge as a changeset. iModelBridgeFwk can also create a new iModel in iModelHub. Note that iModelBridgeFwk can work with many different iModelBridges and iModels, but it works with 1 at a time. That is, when called, iModelBridge runs one specified bridge, taking 1 input fileset, and writing to 1 briefcase. If the plugin decides that multiple bridges are needed to process a set of files, it must invoke iModelBridgeFwk multiple times, each time specifying the bridge that should be run.
+ 
+An iModelBridge is a C++ class that is developed independently of the framework and that is installed by users independently. Each bridge's installer registers the bridge on the server in such a way that the framework can discover it at run time and can query it for the files that is best suited to handle. An iModelBridge is called to process a single root model and all spatial models referenced by it, plus all drawings and sheets in a specified set of files. iModelBridgeFwk will package all changes made in a bridge run as a single changeset.
+
+<h3>Discovering Bridges and Assigning Bridges to files</h3>
+iModelBridgeAssign.exe builds a database of bridge->files assignments by iterating all files in all subdirectories of the job's work directory, loading bridge or affinity dlls, and calling their affinity-calculation functions. The assignments are stored in a db in the job's work directory.
+ 
+iModelBridgeAssign captures bridge affinities to both files that contain spatial data and files that contain sheets.
+ 
+A bridge is assigned to a file when that file first appears in the job. For now, we do not contemplate re-assigning files to different bridges.
+
+<h3>Updates using Multiple Bridges and Multiple Root Files</h3>
+The plugin starts by computing the list of bridges that must be run. The plugin then computes the list of root files to be processed. The plugin then asks iModelBridgeFwk to run each bridge on each root file. That is, each bridge will see each root file. 
+
+As noted above, an iModelBridge is called to process @em one root file, plus all sheets and drawings related to it. If there are multiple root files in the job, the bridge will be called more than once, each time on a different root file. Each call will be made in a new and clean execution environment.
+
+
+Here is a diagram of how the framework and bridges are run by Bentley Automation Services (BAS):
+@image html iModelBridge.jpg
+
+@anchor ANCHOR_BridgeIssuesAndLogging
+<h2>Reporting Issues and Logging Diagnostic Data</h2>
+The bridge can write messages to a specially named "issues" file in the staging directory. See BentleyApi::Dgn::iModelBridge::Params::GetReportFileName.
+The content of the issues file are displayed to the user at the end of the job run. See BentleyApi::Dgn::iModelBridge::ReportIssue for a convenience function to write to the issues file.
+
+The bridge should use Bentley logging to log detailed information in order to help with the diagnosis of failures. 
+Logging is different from issue reporting. Logging messages are for specialists to read when looking for clues in order to diagnose obscure problems.
+The framework initializes Bentley logging before running the bridge.
+
+@anchor ANCHOR_BridgeJobSubject
+<h2>Bridge Job Subject</h2>
+A bridge is required to create a uniquely named Subject element in the iModel. The job subject element should be a child of the root subject and must have a unique code. See @ref BentleyApi::Dgn::iModelBridge::_InitializeJob. The job subject's code value should incorporate the bridge's @ref ANCHOR_BridgeRegistration "subkey" and the @ref ANCHOR_BridgeJobSubject "GUID of input document", at a minimum.
+
+A bridge is required to scope all of the subjects and definitions and their models under its job subject element. That is, 
+- Subjects and partitions that a bridge creates should be children of the job subject element, 
+- The models and other elements that the bridge creates should be children of those subjects and partitions or in those models.
+
+@anchor ANCHOR_iModelBridgeLocksAndCodes
+<h2>Locks and Codes</h2>
+
+The framework takes care of acquiring locks and codes. It sets up the briefcase manager to run in 
+"bulk insert" mode before calling BentleyApi::iModelBridge::_ConvertToBim. After _ConvertToBim finishes, 
+it then goes to iModelHub to acquire all needed locks and to request all codes used before committing 
+the local txn. The entire conversion will fail and be rolled back if this step fails. Note that this 
+is why it is so important that a bridge must not call SaveChanges directly.
+
+Models that are created by a bridge are exclusively locked by the job (that is, the job's briefcase). 
+These locks are never released. Likewise, elements created by a bridge are exclusively locked by the job forever.
+
+As long as the bridge writes elements only to models that it creates, then the framework will never fail to get the necessary 
+access to the models and elements that a bridge creates or updates.
+
+A bridge is required to scope all of the subjects and definitions and their models under a job-specific @ref ANCHOR_BridgeJobSubject "subject element" in the iModel. The only time a bridge should write to a common model, such as the dictionary model, is when it creates its own job subject.
+
+By following the job-subject scoping rule, many bridges can write data to a single iModel without conflicts or confusion. 
+
+Job-subject scoping also prevents problems with locks and codes. The framework should always be able to reserve codes 
+for the elements created by a bridge, and there should be no risk of conflicts. The only reasons why 
+reserving codes might fail are: 
+- On the initial conversion, the job subject itself did not use a unique name. This is a bug in the bridge.
+- The bridge created elements with codes in models or scopes that it does not own. This is a bug in the bridge.
+- Temporary communications or server-side problems. The job can be retried later.
+
+@see BentleyApi::Dgn::iModelBridge
+@see @ref GROUP_iModelBridge
+*/
