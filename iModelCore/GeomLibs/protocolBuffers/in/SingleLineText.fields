@@ -1,0 +1,21 @@
+PRIMITIVE SingleLineText
+<def name=SUMMARY>Single line text primitive.
+Justification codes are
+<list>
+<item>0,1,2 -- left with top, center and bottom</item>
+<item>6,7,8 -- center with center top, center, and bottom</item>
+<item>12,13,14 -- right top, center, bottom</item>
+</list>
+</def>
+<def name=Interface_BaseList>IGeometry, ISinglePoint</def>
+
+
+<def name=MEMBERS><field ItemType=IPlacement ItemParamName=placement ItemMemberName=mPlacement ItemDescription="Center and orientation" ScaleMode=Length/>
+<field ItemType=String ItemParamName=textString ItemMemberName=mTextString ItemDescription="text string." ScaleMode=None/>
+<field ItemType=String ItemParamName=fontName ItemMemberName=mFontName ItemDescription="Font Name" ScaleMode=None/>
+<field ItemType=double ItemParamName=characterXSize ItemMemberName=mCharacterXSize ItemDescription="character width." ScaleMode=Length/>
+<field ItemType=double ItemParamName=characterYSize ItemMemberName=mCharacterYSize ItemDescription="character height." ScaleMode=Length/>
+<field ItemType=int ItemParamName=justification ItemMemberName=mJustificatioin ItemDescription="Justification code.." ScaleMode=None/>
+</def>
+
+END_PRIMITIVE

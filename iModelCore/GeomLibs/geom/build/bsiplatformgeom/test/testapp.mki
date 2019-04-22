@@ -1,0 +1,87 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include    $(srcGeomLibs)common/inc/geomlibsdev.mki
+%include    mdl.mki
+
+%ifndef TESTAPP_NAME
+%error testapp.mki -- parameter TESTAPP_NAME must be defined by includer.
+%endif
+
+MYOBJ      = $(geomObj)$(TESTAPP_NAME)/
+MYSRC      = $(_MakeFilePath)
+
+dirToSearch = $(utilSharedInc)
+%include cincapnd.mki
+
+dirToSearch = $(commonTest)
+%include cincapnd.mki
+
+dirToSearch = $(baseGeom_include)
+%include cincapnd.mki
+
+#----------------------------------------------------------------------
+#
+#       Make output directories
+#
+#----------------------------------------------------------------------
+$(MYOBJ)$(tstdir)           :       $(MYOBJ)$(tstdir)
+
+#----------------------------------------------------------------------
+#
+#       Build C files
+#
+#----------------------------------------------------------------------
+dependencies = $(commonTest)printfuncs.h
+
+$(MYOBJ)printfuncs$(oext)   :  $(commonTest)printfuncs.cpp $(dependencies)
+
+$(MYOBJ)$(TESTAPP_NAME)$(oext)        :  $(MYSRC)$(TESTAPP_NAME).cpp $(dependencies)
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+EXE_DEST     = $(MYOBJ)
+EXE_NAME     = bsigeom$(TESTAPP_NAME)
+EXE_OBJS     = $(MYOBJ)$(TESTAPP_NAME)$(oext) $(MYOBJ)printfuncs$(oext)
+EXE_LIBS     = $(basegeom_lib)bsibasegeom$(libext) $(basegeom_lib)bsiplatformgeom$(libext)
+EXE_TMP_DIR  = $(temp)/
+EXE_USES_CXX = 1
+EXE_STD_MANIFEST = 1
+
+%include $(SrcRoot)bsicommon/sharedmki/linktool.mki
+
+#----------------------------------------------------------------------
+#   run the program
+#----------------------------------------------------------------------
+%if defined (RUN_TEST)
+
+%if defined (PRG)
+always:
+    $(MYOBJ)bsigeom$(TESTAPP_NAME)$(exeext) > $(MYOBJ)$(TESTAPP_NAME).out
+%else
+always:
+    $(MYOBJ)bsigeom$(TESTAPP_NAME)$(exeext)
+%endif
+
+%endif
+
+always:
+    | $(MYOBJ)bsigeom$(TESTAPP_NAME)$(exeext)
+
+%if defined (UPDATE_OUT)
+
+always:
+    attrib -r $(TESTAPP_NAME).out
+    $(MYOBJ)bsigeom$(TESTAPP_NAME)$(exeext) > $(TESTAPP_NAME).out
+
+%endif
+
+%if defined (devenv)
+always:
+    start devenv $(MYOBJ)bsigeom$(TESTAPP_NAME)$(exeext)
+
+%endif
+
