@@ -1,0 +1,14 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+thisDir = $(_makeFilePath)
+
+$(ContextDeliveryDir)UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+    
+#$(ContextDeliveryDir)UnitTests/logging.config.xml: $(baseDir)logging.config.xml
+#    $(LinkFirstDepToFirstTarget)
