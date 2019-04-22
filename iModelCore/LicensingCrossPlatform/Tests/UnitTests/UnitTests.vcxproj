@@ -37,7 +37,6 @@
     <ClCompile Include="Published\Utils\MockHttpHandler.cpp" />
     <ClCompile Include="Published\Utils\SCVWritterTests.cpp" />
     <ClCompile Include="Published\Utils\UrlSafeBase64UtilitiesTests.cpp" />
-    <ClCompile Include="Utils\DelayedExecutorTests.cpp" />
     <ClCompile Include="Utils\FeatureUserDataMapTests.cpp" />
     <ClCompile Include="Utils\JWTokenTests.cpp" />
     <ClCompile Include="Utils\LogFileHelperTests.cpp" />

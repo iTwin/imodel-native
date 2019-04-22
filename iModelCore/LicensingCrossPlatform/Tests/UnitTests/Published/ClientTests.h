@@ -41,7 +41,7 @@ class ClientTests : public ::testing::Test
         LicensingDbMock&                         GetLicensingDbMock() const { return *m_licensingDbMock; }
         std::shared_ptr<LicensingDbMock>         GetLicensingDbMockPtr() const { return m_licensingDbMock; }
 
-        Licensing::ClientImplPtr                 CreateTestClient(WebServices::ConnectSignInManager::UserInfo userInfo, Utf8StringCR productId = TEST_PRODUCT_ID) const;
+        Licensing::ClientImplPtr                 CreateTestClient(WebServices::ConnectSignInManager::UserInfo userInfo, Utf8StringCR productId = TEST_PRODUCT_ID, WebServices::ClientInfoPtr clientInfo = nullptr) const;
 
         void TearDown();
     };

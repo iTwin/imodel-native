@@ -16,7 +16,7 @@ Json::Value ReadJsonFile(BeFileNameCR filename)
 			if (status == BeFileStatus::Success)
 			{
 				Utf8String jsonString((Utf8CP)stream.GetData(), stream.GetSize());
-				return Json::Value(jsonString);
+                return Json::Value(jsonString);
 			}
 		}
 	}

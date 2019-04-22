@@ -443,12 +443,12 @@ TEST_F(UlasProviderTests, GetAccessKeyInfo_Failure)
     Utf8String accessKey = "TestAccessKey";
     Utf8String mockUrl("https://ulasaccesskeymockurl.bentley.com");
 
-    BeFileName testJsonFile;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJsonFile);
-    testJsonFile.AppendToPath(L"TestAssets/test.json");
+    //BeFileName testJsonFile;
+    //BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJsonFile);
+    //testJsonFile.AppendToPath(L"TestAssets/test.json");
 
-    Json::Value testJson = ReadJsonFile(testJsonFile);
-    Utf8String testJsonString = testJson.asString();
+    //Json::Value testJson = ReadJsonFile(testJsonFile);
+    //Utf8String testJsonString = testJson.asString();
 
     GetMockBuddi().MockUlasAccessKeyBaseUrl(mockUrl);
     Utf8String expectedUrl = mockUrl + "/info";

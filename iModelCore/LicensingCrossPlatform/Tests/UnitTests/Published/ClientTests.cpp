@@ -146,9 +146,12 @@ void ClientTests::SetUpTestCase()
     EXPECT_EQ(SUCCESS, L10N::Initialize(BeSQLite::L10N::SqlangFiles(path)));
     }
 
-ClientImplPtr ClientTests::CreateTestClient(ConnectSignInManager::UserInfo userInfo, Utf8StringCR productId) const
+ClientImplPtr ClientTests::CreateTestClient(ConnectSignInManager::UserInfo userInfo, Utf8StringCR productId, ClientInfoPtr clientInfo) const
     {
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+    if (clientInfo == nullptr)
+        {
+        clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+        }
 
     BeFileName dbPath = GetLicensingDbPath();
 
@@ -352,6 +355,110 @@ TEST_F(ClientTests, GetLicenseStatusValid_Test)
     validPolicyList.push_back(jsonPolicyValid);
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, validPolicyList);
+    GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
+
+    // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok));
+    EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
+    EXPECT_EQ(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
+    }
+
+// AccessDenied "backup" ACL, valid Evaluation ACL
+TEST_F(ClientTests, GetLicenseStatusEvalValid_Test)
+    {
+    Utf8String userId = "be7b9f4f-5b1e-4af8-bb05-6e060a6a48db";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(12, 0), "TestAppGUID", "TestDeviceId", "TestSystem", "1052");
+
+    auto client = CreateTestClient(userInfo, "1052", clientInfo);
+
+    BeFileName testJson;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);
+    testJson.AppendToPath(L"TestAssets/EvalPolicy.json");
+
+    Json::Value jsonPolicyEval = ReadJsonFile(testJson);
+    Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
+    std::list<Json::Value> validEvalPolicyList;
+    validEvalPolicyList.push_back(jsonPolicyEvalObject);
+
+    GetLicensingDbMock().MockUserPolicyFiles(userId, validEvalPolicyList);
+    GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
+
+    // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok));
+    EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
+    EXPECT_EQ(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
+    }
+
+// AccessDenied "backup" ACL, expired Evaluation ACL
+TEST_F(ClientTests, GetLicenseStatusEvalExpired_Test)
+    {
+    Utf8String userId = "be7b9f4f-5b1e-4af8-bb05-6e060a6a48db";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(12, 0), "TestAppGUID", "TestDeviceId", "TestSystem", "1052");
+
+    auto client = CreateTestClient(userInfo, "1052", clientInfo);
+
+    BeFileName testJson;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);
+    testJson.AppendToPath(L"TestAssets/EvalPolicyExpired.json");
+
+    Json::Value jsonPolicyEval = ReadJsonFile(testJson);
+    Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
+    std::list<Json::Value> expiredEvalPolicyList;
+    expiredEvalPolicyList.push_back(jsonPolicyEvalObject);
+
+    GetLicensingDbMock().MockUserPolicyFiles(userId, expiredEvalPolicyList);
+
+    // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::AccessDenied));
+    EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
+    }
+
+// AccessDenied "backup" ACL, wrong version Evaluation ACL
+TEST_F(ClientTests, GetLicenseStatusEvalBadVersion_Test)
+    {
+    Utf8String userId = "be7b9f4f-5b1e-4af8-bb05-6e060a6a48db";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", "1052");
+
+    auto client = CreateTestClient(userInfo, "1052", clientInfo);
+
+    BeFileName testJson;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);
+    testJson.AppendToPath(L"TestAssets/EvalPolicy.json");
+
+    Json::Value jsonPolicyEval = ReadJsonFile(testJson);
+    Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
+    std::list<Json::Value> expiredEvalPolicyList;
+    expiredEvalPolicyList.push_back(jsonPolicyEvalObject);
+
+    GetLicensingDbMock().MockUserPolicyFiles(userId, expiredEvalPolicyList);
+
+    // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::AccessDenied));
+    EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
+    }
+
+// valid "backup" ACL, wrong version Evaluation ACL
+TEST_F(ClientTests, GetLicenseStatusEvalBackupAcl_Test)
+    {
+    Utf8String userId = "be7b9f4f-5b1e-4af8-bb05-6e060a6a48db";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", "1052");
+
+    auto client = CreateTestClient(userInfo, "1052", clientInfo);
+
+    BeFileName testJson;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);
+    testJson.AppendToPath(L"TestAssets/EvalPolicyWithBackup.json");
+
+    Json::Value jsonPolicyEval = ReadJsonFile(testJson);
+    Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
+    std::list<Json::Value> expiredEvalPolicyList;
+    expiredEvalPolicyList.push_back(jsonPolicyEvalObject);
+
+    GetLicensingDbMock().MockUserPolicyFiles(userId, expiredEvalPolicyList);
     GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
 
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)

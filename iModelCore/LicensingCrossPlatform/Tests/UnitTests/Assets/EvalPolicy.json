@@ -1,0 +1,191 @@
+{
+    "PolicyId": "2a2554f7-dea0-484d-abc0-1bda4c9e72bd",
+    "PolicyVersion": 1,
+    "PolicyCreatedOn": "2019-04-18T15:37:22.1521152Z",
+    "PolicyExpiresOn": "2019-04-26T00:00:00",
+    "RequestData": {
+        "MachineSID": null,
+        "AccessKey": null,
+        "UserId": "be7b9f4f-5b1e-4af8-bb05-6e060a6a48db",
+        "CheckedOutDate": null,
+        "RequestedSecurables": [{
+            "ProductId": 1052,
+            "FeatureString": "",
+            "Version": "12.0.0.0"
+        }],
+        "MachineName": "aasdf",
+        "ClientDateTime": "2019-04-18T15:29:31.465Z",
+        "Locale": "EN",
+        "AppliesTo": "https://qa-entitlement-search.bentley.com/"
+    },
+    "MachineSignature": "LNyHLmcyRdODInhrL//c6F7VyA8=",
+    "AppliesToUserId": "be7b9f4f-5b1e-4af8-bb05-6e060a6a48db",
+    "AppliesToSecurableIds": [
+        "fca6ee94-7598-4d43-9b89-1ec859e274b8",
+        "fca6ee94-7598-4d43-9b89-1ec859e274b8"
+    ],
+    "ACLs": [{
+            "PrincipalId": "810304c3-241a-4119-b67c-ccbb29e2ece8",
+            "SecurableId": "fca6ee94-7598-4d43-9b89-1ec859e274b8",
+            "AccessKind": 3,
+            "ExpiresOn": "2019-04-25T15:37:22.1521152Z",
+            "QualifierOverrides": [{
+                "MessageId": 101,
+                "Name": "UseAlertingService",
+                "Value": "ALERT",
+                "Type": "enum",
+                "Prompt": "You have reached a license threshold defined by your organization's administrator. Continuing may result in additional application usage charges.\r\nTo proceed, you must \"Acknowledge\"."
+            }]
+        },
+        {
+            "PrincipalId": "be7b9f4f-5b1e-4af8-bb05-6e060a6a48db",
+            "SecurableId": "fca6ee94-7598-4d43-9b89-1ec859e274b8",
+            "AccessKind": 1,
+            "ExpiresOn": "2020-04-26T00:00:00",
+            "QualifierOverrides": [{
+                    "MessageId": 0,
+                    "Name": "UsageType",
+                    "Value": "Evaluation",
+                    "Type": "string",
+                    "Prompt": "Evaluation Entitlement"
+                },
+                {
+                    "MessageId": 0,
+                    "Name": "Version",
+                    "Value": "12.0.0.0",
+                    "Type": "string",
+                    "Prompt": "Evaluation Generation"
+                }
+            ]
+        }
+    ],
+    "SecurableData": [{
+            "SecurableId": "fca6ee94-7598-4d43-9b89-1ec859e274b8",
+            "ProductId": 1052,
+            "ProductName": "AutoPIPE",
+            "FeatureString": "",
+            "Version": "",
+            "QualifierOverrides": null
+        },
+        {
+            "SecurableId": "fca6ee94-7598-4d43-9b89-1ec859e274b8",
+            "ProductId": 1052,
+            "ProductName": "AutoPIPE",
+            "FeatureString": "",
+            "Version": "12.0.0.0",
+            "QualifierOverrides": null
+        }
+    ],
+    "UserData": {
+        "UserId": "be7b9f4f-5b1e-4af8-bb05-6e060a6a48db",
+        "OrganizationId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+        "UsageCountryISO": "US",
+        "UltimateSAPId": "1001389117",
+        "UltimateId": "72adad30-c07c-465d-a1fe-2f2dfac950a4",
+        "UltimateCountryId": "810304c3-241a-4119-b67c-ccbb29e2ece8",
+        "EntitlementGroupId": "00000000-0000-0000-0000-000000000000"
+    },
+    "MetaData": {
+        "SiteName": "Bentley Systems Inc",
+        "LicensingMode": "SELECT"
+    },
+    "DefaultQualifiers": [{
+            "MessageId": 0,
+            "Name": "FrequencyToSend",
+            "Value": "24",
+            "Type": "int",
+            "Prompt": null
+        },
+        {
+            "MessageId": 0,
+            "Name": "UseAlertingService",
+            "Value": "Disabled",
+            "Type": "enum",
+            "Prompt": "You have reached a license threshold defined by your organization's administrator. Continuing may result in additional application usage charges.\r\nTo proceed, you must \"Acknowledge\"."
+        },
+        {
+            "MessageId": 0,
+            "Name": "IsCheckedOut",
+            "Value": "false",
+            "Type": "bool",
+            "Prompt": null
+        },
+        {
+            "MessageId": 0,
+            "Name": "AllowOfflineUsage",
+            "Value": "TRUE",
+            "Type": "bool",
+            "Prompt": "You must Sign In to use this application."
+        },
+        {
+            "MessageId": 0,
+            "Name": "HotpathRetryAttempts",
+            "Value": "4",
+            "Type": "int",
+            "Prompt": null
+        },
+        {
+            "MessageId": 0,
+            "Name": "MaxLogFileDurationInMinutes",
+            "Value": "360",
+            "Type": "int",
+            "Prompt": null
+        },
+        {
+            "MessageId": 0,
+            "Name": "OfflineDuration",
+            "Value": "7",
+            "Type": "int",
+            "Prompt": null
+        },
+        {
+            "MessageId": 0,
+            "Name": "TimeToKeepUnSentLogs",
+            "Value": "60",
+            "Type": "int",
+            "Prompt": null
+        },
+        {
+            "MessageId": 0,
+            "Name": "UsageType",
+            "Value": "Production",
+            "Type": "string",
+            "Prompt": null
+        },
+        {
+            "MessageId": 0,
+            "Name": "LogRecordsToSendFT2",
+            "Value": "75000",
+            "Type": "int",
+            "Prompt": null
+        },
+        {
+            "MessageId": 0,
+            "Name": "PolicyInterval",
+            "Value": "240",
+            "Type": "int",
+            "Prompt": null
+        },
+        {
+            "MessageId": 0,
+            "Name": "LoginGracePeriod",
+            "Value": "7",
+            "Type": "int",
+            "Prompt": null
+        },
+        {
+            "MessageId": 0,
+            "Name": "HeartbeatInterval",
+            "Value": "1",
+            "Type": "int",
+            "Prompt": null
+        },
+        {
+            "MessageId": 0,
+            "Name": "Version",
+            "Value": "0.0.0.0",
+            "Type": "string",
+            "Prompt": null
+        }
+    ]
+}

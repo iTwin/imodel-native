@@ -6,7 +6,6 @@
     <ClCompile Include="Mocks\LicensingDbMock.cpp" />
     <ClCompile Include="Mocks\PolicyProviderMock.cpp" />
     <ClCompile Include="Mocks\UlasProviderMock.cpp" />
-    <ClCompile Include="Utils\DelayedExecutorTests.cpp" />
     <ClCompile Include="Utils\FeatureUserDataMapTests.cpp" />
     <ClCompile Include="Utils\JWTokenTests.cpp" />
     <ClCompile Include="Utils\LogFileHelperTests.cpp" />
