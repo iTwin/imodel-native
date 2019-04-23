@@ -47,3 +47,28 @@ TEST_F(BuildingTestFixture, BuildingIsInserted)
     ASSERT_TRUE(building->Insert().IsValid());
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
     }
+
+TEST_F(BuildingTestFixture, SetFootprintShape)
+{
+    DgnDbR db = GetDgnDb();
+    db.BriefcaseManager().StartBulkOperation();
+
+    BuildingPtr building = BuildingSpatial::Building::Create(*m_model);
+    ASSERT_TRUE(building->Insert().IsValid());
+
+    double area = building->GetFootprintArea();
+    ASSERT_EQ(0, area);
+
+    CurveVectorPtr rectCurve = CurveVector::CreateRectangle(0, 0, 10, 10, 0);
+
+    DPoint3d curveCentroid;
+    double curveArea;
+    rectCurve->CentroidAreaXY(curveCentroid, curveArea);
+
+    building->SetFootprintShape(rectCurve);
+
+    area = building->GetFootprintArea();
+    ASSERT_EQ(curveArea, area);
+
+    ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
+}

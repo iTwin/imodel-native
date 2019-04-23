@@ -54,6 +54,32 @@ void BuildingSpatialDomain::InsertCodeSpec (DgnDbR db, Utf8CP name)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Nerijus.Jakeliunas                 10/2016
+//---------------------------------------------------------------------------------------
+Dgn::DgnSubCategoryId insertSubCategory(Dgn::DgnDbR db, Dgn::DgnCategoryId categoryId, Dgn::ColorDefR color, Utf8CP name, bool isSnappable = false)
+    {
+    Dgn::DgnSubCategory::Appearance appearance;
+    appearance.SetColor(color);
+    appearance.SetInvisible(false);
+    appearance.SetDontSnap(!isSnappable);
+
+
+    Dgn::DgnSubCategoryPtr newSubCategory = new Dgn::DgnSubCategory(Dgn::DgnSubCategory::CreateParams(db, categoryId, name, appearance));
+    if (!newSubCategory.IsValid())
+        {
+        return Dgn::DgnSubCategoryId();
+        }
+
+    Dgn::DgnSubCategoryCPtr insertedSubCategory = newSubCategory->Insert();
+    if (!insertedSubCategory.IsValid())
+        {
+        return Dgn::DgnSubCategoryId();
+        }
+
+    return insertedSubCategory->GetSubCategoryId();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Joana.Smitaite                   02/2019
 //---------------------------------------------------------------------------------------
 void BuildingSpatialDomain::_OnSchemaImported(DgnDbR db) const
@@ -71,12 +97,17 @@ void BuildingSpatialDomain::_OnSchemaImported(DgnDbR db) const
     spaceLevelAppearance.SetWeight(1);
     Dgn::SpatialCategory dgnSpaceCat(db.GetDictionaryModel (), BUILDINGSPATIAL_CATEGORY_CODE_Space, Dgn::DgnCategory::Rank::Domain);
     dgnSpaceCat.Insert(spaceLevelAppearance);
+    tmpColorDef = Dgn::ColorDef::Black();
+    insertSubCategory(db, Dgn::SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDINGSPATIAL_CATEGORY_CODE_Space), tmpColorDef, BUILDINGSPATIAL_SUBCATEGORY_CODE_SpatialElementLabels);
 
+    tmpColorDef = Dgn::ColorDef::White();
     Dgn::DgnSubCategory::Appearance elevationStoryAppearance;
     elevationStoryAppearance.SetColor(tmpColorDef);
     elevationStoryAppearance.SetWeight(1);
     Dgn::SpatialCategory elevationStoryCategory(db.GetDictionaryModel(), BUILDINGSPATIAL_CATEGORY_CODE_ElevationStory, Dgn::DgnCategory::Rank::Domain);
     elevationStoryCategory.Insert(elevationStoryAppearance);
+    
+    insertSubCategory(db, Dgn::SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDINGSPATIAL_CATEGORY_CODE_ElevationStory), tmpColorDef, BUILDINGSPATIAL_SUBCATEGORY_CODE_SpatialElementLabels);
     }
 
 END_BUILDINGSPATIAL_NAMESPACE

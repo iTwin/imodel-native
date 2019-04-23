@@ -24,7 +24,7 @@ struct Building : SPATIALCOMPOSITION_NAMESPACE_NAME::CompositeVolume
     protected:
         explicit Building(CreateParams const& params) : T_Super(params) {}
     
-        virtual BUILDINGSPATIAL_EXPORT Dgn::Render::GeometryParams _CreateGeometryParameters();
+        virtual BUILDINGSPATIAL_EXPORT Dgn::Render::GeometryParams _CreateGeometryParameters() override;
     public:
         static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db);
         

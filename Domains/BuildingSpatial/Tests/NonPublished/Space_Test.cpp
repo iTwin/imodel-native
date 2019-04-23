@@ -43,7 +43,37 @@ TEST_F(SpaceTestFixture, SpaceIsInserted)
     {
     DgnDbR db = GetDgnDb();
     db.BriefcaseManager().StartBulkOperation();
-    SpacePtr building = BuildingSpatial::Space::Create(*m_model);
-    ASSERT_TRUE(building->Insert().IsValid());
+    SpacePtr space = BuildingSpatial::Space::Create(*m_model);
+    ASSERT_TRUE(space->Insert().IsValid());
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
     }
+
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SpaceTestFixture, SetFootprintShape)
+{
+    DgnDbR db = GetDgnDb();
+    db.BriefcaseManager().StartBulkOperation();
+
+    SpacePtr space = BuildingSpatial::Space::Create(*m_model);
+    ASSERT_TRUE(space->Insert().IsValid());
+
+    double area = space->GetFootprintArea();
+    ASSERT_EQ(0, area);
+
+    CurveVectorPtr rectCurve = CurveVector::CreateRectangle(0, 0, 10, 10, 0);
+
+    DPoint3d curveCentroid;
+    double curveArea;
+    rectCurve->CentroidAreaXY(curveCentroid, curveArea);
+
+    space->SetFootprintShape(rectCurve);
+
+    area = space->GetFootprintArea();
+
+    ASSERT_EQ(curveArea, area);
+
+    ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
+}
