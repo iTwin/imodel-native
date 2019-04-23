@@ -19,5 +19,5 @@ ConnectSignInManager::UserInfo DummyUserInfoHelper::CreateUserInfo(Utf8StringCR 
     infoJson["userId"] = userId;
     infoJson["orgId"] = orgId;
 
-    return ConnectSignInManager::UserInfo::UserInfo(Json::FastWriter().write(infoJson));
+    return ConnectSignInManager::UserInfo(Json::FastWriter().write(infoJson));
     }
