@@ -42,9 +42,10 @@
 
 #define BUILDINGSPATIAL_CODESPEC_CODE(categoryName)          BUILDINGSPATIAL_SCHEMA_NAME "::" categoryName
 
-#define BUILDINGSPATIAL_CATEGORY_CODE_Building               "Building"
-#define BUILDINGSPATIAL_CATEGORY_CODE_Space                  "Space"
-#define BUILDINGSPATIAL_CATEGORY_CODE_ElevationStory         "ElevationStory"
+#define BUILDINGSPATIAL_CATEGORY_CODE_Building                  "Building"
+#define BUILDINGSPATIAL_CATEGORY_CODE_Space                     "Space"
+#define BUILDINGSPATIAL_CATEGORY_CODE_ElevationStory            "ElevationStory"
+#define BUILDINGSPATIAL_SUBCATEGORY_CODE_SpatialElementLabels   "Labels"
 
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types
