@@ -6,66 +6,89 @@
 import os
 import FindStream
 
-Components = {'BeHttp':                 {'dll': 'BeHttpM02.dll', 'exe': 'BeHttpTest',
-                                         'ignore':['BeHttp','Tests','UnitTests'],
-                                         'owner': 'Vincas Razma'},
-              'Bentley':                {'dll': 'BentleyM02.dll', 'exe': 'BentleyTest',
-                                         'ignore':['Bentley','Tests'],
-                                         'pdb': ['Bentley', 'BentleyDll']},
-              'BeSecurity':             {'dll': 'BeSecurityM02.dll', 'exe': 'BeSecurityTest',
-                                         'ignore':['BeSecurity','Tests'],
-                                         'pdb': ['BeSecurity', 'BeSecurityLibrary'],
-                                         'owner': 'Vincas Razma',
-                                         'owner': 'Ramanujam Raman'},
-              'BeSQLite':               {'dll': 'BeSQLiteM02.dll', 'exe': 'BeSQLiteTest',
-                                        'ignore':['BeSQLite','Tests'],
-                                         'pdb': ['BeSQLite', 'BeSQLite'],
-                                         'owner': 'Krischan Eberle'},
-              'DgnPlatform':            {'dll': 'DgnPlatformM02.dll', 'exe': 'DgnPlatformTest',
-                                         'ignore':['DgnPlatform','Tests','DgnProject'],
-                                         'pdb': ['DgnPlatform', 'DgnPlatformDll', 'DgnPlatform'],
-                                         'owner': 'Ramanujam Raman'},
-              'ECDb':                   {'dll': 'BeSQLiteECM02.dll', 'exe': 'ECDbTest',
-                                         'ignore':['ECDb','Tests'],
-                                         'owner': 'Krischan Eberle'},
-              'ECObjects':              {'dll': 'ECObjectsM02.dll', 'exe': 'ECObjectsTest',
-                                         'ignore':['ECObjects','test'],
-                                         'pdb': ['ECObjects', 'ECObjects'],
-                                         'owner': 'Colin Kerr'},
-              'ECPresentation':         {'dll': 'ECPresentationM02.dll', 'exe': 'ECPresentationTest',
-                                        'ignore':['ECPresentation','Tests'],
-                                        'pdb': ['ECPresentation', 'lib'],
-                                         'owner': 'Grigas Petraitis'},
-              'GeomLibs':               {'dll': 'BentleyGeomM02.dll', 'exe': 'GeomLibsTest',
-                                         'ignore':['GeomLibs','geom','test'],
-                                         'pdb': ['GeomLibs', 'delivery', 'basegeom','symbols'],
-                                         'owner': 'Earlin Lutz'},                   
-              'Units':                  {'dll': 'UnitsM02.dll', 'exe': 'UnitsTest',
-                                         'ignore':['Units','Tests'],
-                                         'owner': 'Colin Kerr'},
-              'Licensing':               {'dll': 'LicensingM02.dll', 'exe': 'LicensingUnitTest',
-                                         'ignore':['LicensingCrossPlatform','Tests','UnitTests'],
-                                         'pdb': ['Licensing'],
-                                         'owner': 'Jeff Marker',
-                                          'repo': ['imodel02', 'imodelCore', 'LicensingCrossPlatform']},
-              'WSClient':               {'dll': 'WebServicesClientM02.dll', 'exe': 'WSClientTest',
-                                         'ignore':['WSClient','Tests','UnitTests'],
-                                         'pdb': ['WSClient', 'Client'],
-                                         'owner': 'Vincas Razma'},
-              'DgnV8ConverterTests':    {'dll': 'DgnV8ConverterM02.dll', 'exe': 'DgnV8ConverterTests',
-                                         'pdb': ['DgnDbSync', 'DgnV8ConverterTests'],
-                                         'owner': 'Carole MacDonald',
-                                         'repo': ['imodel02', 'iModelBridgeCore', 'DgnDbSync']},
-              'MstnBridgeTests':        {'dll': 'iModelBridgeM02.dll', 'exe': 'MstnBridgeTests',
-                                         'pdb': ['MstnBridge', 'MstnBridgeTests'],
-                                         'owner': 'Abeesh Basheer',
-                                         'repo': ['imodel02', 'Bridges', 'Mstn']},
-              'dwgimportertests':        {'dll': 'DwgBridge.dll', 'exe': 'DwgImporterTests',
-                                         'repo': ['imodel02', 'Bridges', 'Dwg']},
-              'buildingdomaintests\\assemblies\\':    {'dll': 'BuildingDomainM02.dll', 'exe': 'BuildingDomainTests',
-                                         'repo': ['imodel02', 'Domains', 'Building']},
-              'structuraldomainstested\\':    {'dll': 'StructuralDomainM02.dll', 'exe': 'StructuralDomainTests',
-                                         'repo': ['imodel02', 'Domains', 'Structural']},              
+Components = {'BeHttp':             {'dll': 'BeHttpM02.dll', 'exe': 'BeHttpTest',
+                                     'ignore':['BeHttp','Tests','UnitTests'],
+                                     'owner': 'Vincas Razma',
+                                     'product': 'BeHttp-Gtest'},
+              'Bentley':            {'dll': 'BentleyM02.dll', 'exe': 'BentleyTest',
+                                     'ignore':['Bentley','Tests'],
+                                     'pdb': ['Bentley', 'BentleyDll'],
+                                     'product': 'Bentley-Gtest'},
+              'BeSecurity':         {'dll': 'BeSecurityM02.dll', 'exe': 'BeSecurityTest',
+                                     'ignore':['BeSecurity','Tests'],
+                                     'pdb': ['BeSecurity', 'BeSecurityLibrary'],
+                                     'owner': 'Vincas Razma',
+                                     'owner': 'Ramanujam Raman',
+                                     'product': 'BeSecurity-Gtest'},
+              'BeSQLite':           {'dll': 'BeSQLiteM02.dll', 'exe': 'BeSQLiteTest',
+                                     'ignore':['BeSQLite','Tests'],
+                                     'pdb': ['BeSQLite', 'BeSQLite'],
+                                     'owner': 'Krischan Eberle',
+                                     'product': 'BeSQLite-Gtest'},
+              'DgnPlatform':        {'dll': 'DgnPlatformM02.dll', 'exe': 'DgnPlatformTest',
+                                     'ignore':['DgnPlatform','Tests','DgnProject'],
+                                     'pdb': ['DgnPlatform', 'DgnPlatformDll', 'DgnPlatform'],
+                                     'owner': 'Ramanujam Raman',
+                                     'product': 'DgnPlatform-Gtest'},
+              'ECDb':               {'dll': 'BeSQLiteECM02.dll', 'exe': 'ECDbTest',
+                                     'ignore':['ECDb','Tests'],
+                                     'owner': 'Krischan Eberle',
+                                     'product': 'ECDb-Gtest'},
+              'ECObjects':          {'dll': 'ECObjectsM02.dll', 'exe': 'ECObjectsTest',
+                                     'ignore':['ECObjects','test'],
+                                     'pdb': ['ECObjects', 'ECObjects'],
+                                     'owner': 'Colin Kerr',
+                                     'product': 'ECObjects-Gtest'},
+              'ECPresentation':     {'dll': 'ECPresentationM02.dll', 'exe': 'ECPresentationTest',
+                                     'ignore':['ECPresentation','Tests'],
+                                     'pdb': ['ECPresentation', 'lib'],
+                                     'owner': 'Grigas Petraitis',
+                                     'product': 'ECPresentation-Gtest'},
+              'GeomLibs':           {'dll': 'BentleyGeomM02.dll', 'exe': 'GeomLibsTest',
+                                     'ignore':['GeomLibs','geom','test'],
+                                     'pdb': ['GeomLibs', 'delivery', 'basegeom','symbols'],
+                                     'owner': 'Earlin Lutz',
+                                     'product': 'GeomLibs-Gtest'},                   
+              'Units':              {'dll': 'UnitsM02.dll', 'exe': 'UnitsTest',
+                                     'ignore':['Units','Tests'],
+                                     'owner': 'Colin Kerr',
+                                     'product': 'Units-Gtest'},
+              'Licensing':          {'dll': 'LicensingM02.dll', 'exe': 'LicensingUnitTest',
+                                     'ignore':['LicensingCrossPlatform','Tests','UnitTests'],
+                                     'pdb': ['Licensing'],
+                                     'owner': 'Jeff Marker',
+                                     'product': 'Licensing-Gtestunit',
+                                     'repo': ['imodel02', 'imodelCore', 'LicensingCrossPlatform'],
+                                     'special_path': ['Licensing-GTestUnit']},
+              'WSClient':           {'dll': 'WebServicesClientM02.dll', 'exe': 'WSClientTest',
+                                     'ignore':['WSClient','Tests','UnitTests'],
+                                     'pdb': ['WSClient', 'Client'],
+                                     'owner': 'Vincas Razma',
+                                     'product': 'WSClient-Gtest'},
+              'DgnV8Converter':     {'dll': 'DgnV8ConverterM02.dll', 'exe': 'DgnV8ConverterTests',
+                                     'pdb': ['DgnDbSync', 'DgnV8ConverterTests'],
+                                     'owner': 'Carole MacDonald',
+                                     'product': 'DgnV8ConverterTests',
+                                     'repo': ['imodel02', 'iModelBridgeCore', 'DgnDbSync'],
+                                     'special_path': ['DgnV8ConverterTests']},
+              'MstnBridge':         {'dll': 'iModelBridgeM02.dll', 'exe': 'MstnBridgeTests',
+                                     'pdb': ['MstnBridge', 'MstnBridgeTests'],
+                                     'owner': 'Abeesh Basheer',
+                                     'product': 'MstnBridgeTests',
+                                     'repo': ['imodel02', 'Bridges', 'Mstn'],
+                                     'special_path': ['MstnBridgeTests']},
+              'DwgImporter':        {'dll': 'DwgBridge.dll', 'exe': 'DwgImporterTests',
+                                     'product': 'DwgImporterTests',
+                                     'repo': ['imodel02', 'Bridges', 'Dwg'],
+                                     'special_path': ['DwgImporterTests']},
+              'BuildingDomain':     {'dll': 'BuildingDomainM02.dll', 'exe': 'BuildingDomainTests',
+                                     'product': 'buildingdomaintests\\assemblies\\',
+                                     'repo': ['imodel02', 'Domains', 'Building'],
+                                     'special_path': ['BuildingDomainTests', 'Assemblies']},
+              'StructuralDomains':  {'dll': 'StructuralDomainM02.dll', 'exe': 'StructuralDomainTests',
+                                     'product': 'structuraldomainstested\\',
+                                     'repo': ['imodel02', 'Domains', 'Structural'],
+                                     'special_path': ['StructuralDomainsTested']}, 
             }
 
 Architectures = { 'Winx64': {'log':'RunGTest'},
@@ -113,7 +136,7 @@ def PdbForComp(compToFind):
 
 def RepoForComp(compToFind):
     for comp in Components:
-        if comp.lower() == compToFind.lower():
+        if compToFind.lower() in Components[comp]['product'].lower():
             if 'repo' in Components[comp].keys():
                 repo = Components[comp]['repo']
                 repoPath = os.getenv('SrcRoot')
@@ -125,41 +148,36 @@ def RepoForComp(compToFind):
                 return repoPath
     
 def LogPathForComp(compToFind):
-    exeName = ExeForComp(compToFind)
-    if exeName is None:
-        return None
-    outRoot = os.getenv('OutRoot')
-    if compToFind.lower() == 'dgnv8converter': # it has different naming convention
-        logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', exeName, exeName, 'run', 'logs', 'test.log')
-    elif compToFind.lower() == 'dgnv8convertertests' or compToFind.lower() == 'mstnbridgetests' or compToFind.lower() == 'dwgimportertests': # it has different naming convention
-        logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', exeName, exeName, 'run', 'logs', 'test.log')
-    elif compToFind.lower() == 'buildingdomaintests\\assemblies\\':
-        logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', exeName, 'Assemblies',exeName, 'run', 'logs', 'test.log')
-    elif compToFind.lower() == 'structuraldomainstested\\':
-        logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', compToFind.lower() + exeName, 'run', 'logs', 'test.log')
-    elif compToFind.lower() == 'licensing': # it has different naming convention
-        logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', compToFind+'-GTestUnit', exeName, 'run', 'logs', 'test.log')
-    else:
-        logPath = os.path.join(outRoot, 'Winx64', 'build', 'RunGTest', compToFind+'-GTest', exeName, 'run', 'logs', 'test.log')
-    return logPath
+    for comp in Components:
+        if comp.lower() == compToFind.lower():
+            exeName = ExeForComp(comp)
+            if exeName is None:
+                return None
+            base_path = os.path.join('%OutRoot%Winx64', 'build', 'RunGTest')
+            log_path = base_path
+            if 'special_path' in Components[comp].keys():
+                for path in Components[comp]['special_path']:
+                    log_path = os.path.join(log_path, path)
+            else:
+                log_path = os.path.join(log_path, comp+'-GTest')
+            log_path = os.path.join(log_path, exeName, 'run', 'logs', 'test.log')
+            return log_path
 
 def ExePathForComp(compToFind):
-    exeName = ExeForComp(compToFind)
-    if exeName is None:
-        return None
-    if compToFind.lower() == 'dgnv8converter': # it has different naming convention
-        exePath = os.path.join('%OutRoot%Winx64', 'Product', exeName, exeName+'.exe')
-    elif compToFind.lower() == 'dgnv8convertertests' or compToFind.lower() == 'mstnbridgetests' or compToFind.lower() == 'dwgimportertests': # it has different naming convention
-        exePath = os.path.join('%OutRoot%Winx64', 'Product', exeName, exeName+'.exe')
-    elif compToFind.lower() == 'buildingdomaintests\\assemblies\\':
-        exePath = os.path.join('%OutRoot%Winx64', 'Product', exeName, 'Assemblies',exeName+'.exe')
-    elif compToFind.lower() == 'structuraldomainstested\\':
-        exePath = os.path.join('%OutRoot%Winx64', 'Product', compToFind.lower()+ exeName+'.exe')
-    elif compToFind.lower() == 'licensing':
-        exePath = os.path.join('%OutRoot%Winx64', 'Product', compToFind+'-GTestUnit', exeName+'.exe')
-    else:
-        exePath = os.path.join('%OutRoot%Winx64', 'Product', compToFind+'-GTest', exeName+'.exe')
-    return exePath
+    for comp in Components:
+        if compToFind.lower() in Components[comp]['product'].lower():
+            exeName = ExeForComp(comp)
+            if exeName is None:
+                return None
+            base_path = os.path.join('%OutRoot%Winx64', 'Product')
+            exe_path = base_path
+            if 'special_path' in Components[comp].keys():
+                for path in Components[comp]['special_path']:
+                    exe_path = os.path.join(exe_path, path)
+            else:
+                exe_path = os.path.join(exe_path, comp+'-GTest')
+            exe_path = os.path.join(exe_path, exeName+'.exe')
+            return exe_path
 
 def IgnorePathForComp(compToFind):
     ignore = IgnoreForComp(compToFind)

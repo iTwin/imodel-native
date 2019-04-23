@@ -194,16 +194,18 @@ class CoverageOpenCPP:
             if reportType: #local report, always generate it
                 cov = CodeCoverage()
                 cov.set_ReportPath(self.repoPath)
+                
                 # Calling filter for Dll's
                 if comp.lower() == 'mstnbridgetests':
                     moduleFilter = '*M02*'  #"*Bridge*M02.dll"
                     cov.editModules(moduleFilter)
-
+                    
                 if 'Bridges\\Mstn' in str(cmp.RepoPathForComp(comp)):
                     logPath = str(cmp.RepoPathForComp(comp))
                     cov.set_SourcePath(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Mstn','iModelBridgeCore')) #Mstn is using iModelBridgeCore
                     cov.set_SourcePath2(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Mstn','iModelCore')) #Mstn is also using iModelCore
                 elif 'Bridges\\Dwg' in str(cmp.RepoPathForComp(comp)):
+                    logPath = str(cmp.RepoPathForComp(comp))
                     cov.set_SourcePath(str(cmp.RepoPathForComp(comp)).replace('Bridges\\Dwg','iModelBridgeCore')) #Mstn is using iModelBridgeCore
                 else:
                     cov.set_SourcePath(cmp.RepoPathForComp(comp))

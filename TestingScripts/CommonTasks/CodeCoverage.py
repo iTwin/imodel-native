@@ -95,4 +95,9 @@ class CodeCoverage:
         self.modules = ' --modules=' + moduleFilter
 
     def deleteLogs(self, source):
-        os.remove(source +  "\LastCoverageResults.log")    
+        logPath = os.path.join(source, 'LastCoverageResults.log')
+        isFile = os.path.isfile(logPath)
+        if isFile:
+            os.remove(logPath)
+        else:
+            print "*** LastCoverageResults.log not found at: " + str(logPath)
