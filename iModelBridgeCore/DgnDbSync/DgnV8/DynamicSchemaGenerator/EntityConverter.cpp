@@ -958,7 +958,13 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
         for (ECClassCP toRemove : constraintsToRemove)
             constraint.RemoveClass(*toRemove->GetEntityClassCP());
         for (ECClassCP toAdd : constraintsToAdd)
-            constraint.AddClass(*toAdd->GetEntityClassCP());
+            {
+            if (ECObjectsStatus::RelationshipConstraintsNotCompatible == constraint.AddClass(*toAdd->GetEntityClassCP()))
+                {
+                constraint.RemoveAbstractConstraint();
+                constraint.AddClass(*toAdd->GetEntityClassCP());
+                }
+            }
         }
 
     if (0 == constraint.GetConstraintClasses().size())
