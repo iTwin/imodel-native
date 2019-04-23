@@ -2136,8 +2136,12 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
 
     //if element doesn't have any ECInstances and is a non-graphical element, just skip the element
     if (!hasPrimaryInstance && !hasSecondaryInstances && (ignoreElementWithoutECInstance || ecContent.m_v8ElementType == V8ElementType::NonGraphical))
+        {
+        LOG.tracev("Skipping element %s %s as it is either non-graphical or has no EC content", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
         return BentleyApi::SUCCESS;
+        }
 
+    LOG.tracev("Converting element %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
     ConvertToDgnDbElementExtension* upx = ConvertToDgnDbElementExtension::Cast(v8eh.GetHandler());
     if (nullptr != upx)
         {
@@ -2186,6 +2190,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
         if (!elementClassId.IsValid())
             {
             BeAssert(false);
+            LOG.errorv("Failed to compute element class for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
             return BSIERROR;
             }
         }
@@ -2196,7 +2201,10 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
     if (ecContent.m_v8ElementType == V8ElementType::Graphical)
         {
         if (BentleyApi::SUCCESS != _CreateElementAndGeom(results, v8mm, elementClassId, hasPrimaryInstance, categoryId, elementCode, v8eh))
+            {
+            LOG.errorv("Failed to create element and geom for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
             return BSIERROR;
+            }
         if (wouldBe3dMismatch(results, v8mm))
             {
             ReportIssue(IssueSeverity::Error, IssueCategory::Unsupported(), Issue::UnsupportedPrimaryInstance(), IssueReporter::FmtElement(v8eh).c_str());
@@ -2209,7 +2217,10 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
             auto res = _CreateElementAndGeom(results, v8mm, elementClassId, hasPrimaryInstance, categoryId, elementCode, v8eh);
             m_skipECContent = was;
             if (BentleyApi::SUCCESS != res)
+                {
+                LOG.errorv("Failed to create element and geom after 3d mismatch for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
                 return BSIERROR;
+                }
             }
         }
     else
@@ -2219,6 +2230,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
         if (nullptr == elementHandler)
             {
             BeAssert(false);
+            LOG.errorv("Failed to find element handler for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
             return BSIERROR;
             }
 
@@ -2228,7 +2240,10 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
 
         results.m_element = elementHandler->Create(DgnElement::CreateParams(GetDgnDb(), targetModelId, elementClassId, elementCode));
         if (!results.m_element.IsValid())
+            {
+            LOG.errorv("Failed to create element from element handler for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
             return BSIERROR;
+            }
 
         // Apparently we convert non-graphical V8 elements into physical DgnDb elements (with no geometry).
         // This occurs when an ECClass is attached to both graphical and non-graphical elems in v8.
@@ -2278,7 +2293,10 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
             GetChangeDetector()._IsElementChanged(changeInfo, *this, v8eh, v8mm);
 
         if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(&changeInfo.m_v8ElementAspect, results, ecContent.m_secondaryV8Instances, isNewElement))
+            {
+            LOG.errorv("Failed to create elementaspect for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
             return BSIERROR;
+            }
         }
 
     return BentleyApi::SUCCESS;
