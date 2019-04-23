@@ -162,16 +162,6 @@ def main():
     args = parser.parse_args()
 
     comp = cmp.CompForExe(args.gtestName)
-    if comp is None: # we don't have this component in our list
-        exit()
-    special_comps = ['DgnV8ConverterTests', 'MstnBridgeTests', 'dwgimportertests', 'buildingdomaintests\\assemblies\\', 'structuraldomainstested\\']
-    if comp in special_comps: # we don't have Maps for these components
-        exit()
-    dll = comp
-    repoPath = cmp.RepoPathForComp(comp)
-
-    repos = []
-    repos.append(repoPath)
 
     logsDir = os.path.join(os.getenv('OutRoot'), 'winx64', 'LogFiles')
     if not os.path.exists(logsDir):
@@ -179,6 +169,21 @@ def main():
     logsPath = os.path.join(logsDir, 'RunRequiredTests')
     if not os.path.exists(logsPath):
         os.mkdir(logsPath)
+
+    comps_tracked = ['BeHttp', 'Bentley', 'BeSecurity', 'BeSQLite', 'DgnPlatform', 'ECDb', 'ECObjects', 'ECPresentation', 'GeomLibs', 'Units', 'Licensing', 'WSClient']
+    if comp not in comps_tracked: # we don't have Maps for these components
+        testExeName = cmp.ExeForComp(comp)
+        nnFile = os.path.join(logsPath, testExeName + '_NotNeeded.txt')
+        if os.path.exists(nnFile):
+            os.remove(nnFile)
+        with open(nnFile, 'w') as f:
+            f.write('Component out of scope')        
+        exit()
+    dll = comp
+    repoPath = cmp.RepoPathForComp(comp)
+
+    repos = []
+    repos.append(repoPath)
 
     print ("\n Getting source file list from git repository... \n")
     sfLog = os.path.join(logsPath, comp + '_sfNames.txt')
