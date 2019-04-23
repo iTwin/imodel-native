@@ -795,50 +795,28 @@ LicenseStatus ClientImpl::GetLicenseStatus()
 		return LicenseStatus::DisabledByPolicy;
 		}
 
-	const auto productStatus = policy->GetProductStatus(productId, m_featureString);
+	const auto productStatus = policy->GetProductStatus(productId, m_featureString, m_clientInfo->GetApplicationVersion());
 
-    if (productStatus == Policy::ProductStatus::TrialExpired)
-		{
-		return LicenseStatus::Expired;
-		}
-
-    if (productStatus == Policy::ProductStatus::Denied)
-		{
-		return LicenseStatus::AccessDenied;
-		}
-
-    if (productStatus == Policy::ProductStatus::NoLicense)
-		{
-		return LicenseStatus::NotEntitled;
-		}
-
-    if (productStatus == Policy::ProductStatus::Allowed)
-		{
-
-        if (policy->IsTrial(productId, m_featureString))
-			{
-			return LicenseStatus::Trial;
-			}
-
+    if (productStatus == LicenseStatus::Ok)
+        {
         if (HasOfflineGracePeriodStarted())
-			{
-
+            {
             if (!policy->IsAllowedOfflineUsage(productId, m_featureString))
-				{
-				return LicenseStatus::DisabledByPolicy;
-				}
+                {
+                return LicenseStatus::DisabledByPolicy;
+                }
 
             if (GetDaysLeftInOfflineGracePeriod(policy, productId, m_featureString) > 0)
-				{
-				return LicenseStatus::Offline;
-				}
-			
+                {
+                return LicenseStatus::Offline;
+                }
+
             // else offline grace period has expired, return LicenseStatus::Expired
-			return LicenseStatus::Expired;
-			}
+            return LicenseStatus::Expired;
+            }
 
-		return LicenseStatus::Ok;
-		}
+        return LicenseStatus::Ok;
+        }
 
-    return LicenseStatus::DisabledByPolicy;
-	}
+    return productStatus;
+    }
