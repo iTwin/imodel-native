@@ -413,11 +413,19 @@ DbResult Db::EncryptDb(BeFileNameCR originalFileName, EncryptionParams const& pa
 
     Db db;
     DbResult rc;
-    Db::OpenParams openParams(Db::OpenMode::ReadWrite);
+    Db::OpenParams openParams(Db::OpenMode::ReadWrite, DefaultTxn::No);
+    openParams.SetRawSQLite();
     rc = db.OpenBeSQLiteDb(encryptedFileName, openParams);
     if (BE_SQLITE_OK == rc)
-        rc = (DbResult) sqlite3_rekey(db.GetSqlDb(), params.GetKey(), params.GetKeySize());
+        {
+        rc = (DbResult) sqlite3_key(db.GetSqlDb(), nullptr, 0);
+        if (BE_SQLITE_OK != rc)
+            return rc;
 
+        rc = (DbResult) sqlite3_rekey(db.GetSqlDb(), params.GetKey(), params.GetKeySize());
+        if (BE_SQLITE_OK != rc)
+            return rc;
+        }
     db.CloseDb();
     if (BE_SQLITE_OK != rc)
         {

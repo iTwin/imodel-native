@@ -39,7 +39,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 #define REQUIRE_DB_TO_BE_OPEN if (!IsOpen()) return CreateBentleyReturnErrorObject(DgnDbStatus::NotOpen);
 
-#define THROW_JS_TYPE_ERROR(str) Napi::TypeError::New(Env(), str).ThrowAsJavaScriptException();
+#define THROW_JS_TYPE_ERROR(str) Napi::TypeError::New(info.Env(), str).ThrowAsJavaScriptException();
 
 #define THROW_TYPE_EXCEPTION_AND_RETURN(str,retval) {THROW_JS_TYPE_ERROR(str) return retval;}
 
@@ -2080,6 +2080,13 @@ public:
         return Napi::Number::New(Env(), next);
         }
 
+    static Napi::Value Vacuum(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, dbName, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
+        OPTIONAL_ARGUMENT_INTEGER(1, pageSize, 0, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
+        DbResult status = Db::Vacuum(dbName.c_str(), pageSize);
+        return Napi::Number::New(info.Env(), (int)status);
+        }        
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -2196,6 +2203,7 @@ public:
             InstanceMethod("updateModel", &NativeDgnDb::UpdateModel),
             InstanceMethod("updateProjectExtents", &NativeDgnDb::UpdateProjectExtents),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
+            StaticMethod("vacuum", &NativeDgnDb::Vacuum),
         });
 
         exports.Set("DgnDb", t);

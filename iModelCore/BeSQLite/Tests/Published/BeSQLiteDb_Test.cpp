@@ -8,7 +8,7 @@
 #include <vector>
 #include <limits>
 #include <string>
-
+#include <initializer_list>
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing Db
 * @bsimethod                                    Majd.Uddin                   06/12
@@ -232,6 +232,48 @@ TEST_F(BeSQLiteDbTests, PasswordProtectDb)
     ASSERT_EQ(BE_SQLITE_OK, result) << "Expect OpenBeSQLiteDb to succeed because password was properly provided";
     ASSERT_TRUE(db.IsDbOpen());
     db.CloseDb();
+    }
+
+int GetPageSize(BeFileName dbFile)
+    {
+    Db db;
+    Db::OpenParams openParams(Db::OpenMode::Readonly);
+    DbResult result = db.OpenBeSQLiteDb(dbFile, openParams);
+    EXPECT_EQ(BE_SQLITE_OK, result);
+    Statement stmt;
+    EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "pragma page_size"));
+    stmt.Step();
+    return stmt.GetValueInt(0);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                    01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, VacuumWithPageSize)
+    {
+    // Create an unencrypted database
+    Db db;
+    WCharCP dbName = L"smalldb.db";
+    SetupDb(db, dbName);
+    ASSERT_TRUE(db.IsDbOpen());
+    BeFileName dbFileName(db.GetDbFileName(), BentleyCharEncoding::Utf8);       
+    db.CloseDb();
+
+    ASSERT_EQ((int)Db::PageSize::PAGESIZE_4K, GetPageSize(dbFileName));
+    auto pageSizes = std::vector<int>{
+        (int)Db::PageSize::PAGESIZE_512,
+        (int)Db::PageSize::PAGESIZE_1K,
+        (int)Db::PageSize::PAGESIZE_2K,
+        (int)Db::PageSize::PAGESIZE_4K,
+        (int)Db::PageSize::PAGESIZE_8K,
+        (int)Db::PageSize::PAGESIZE_16K,
+        (int)Db::PageSize::PAGESIZE_32K,
+        (int)Db::PageSize::PAGESIZE_64K};
+
+    for (const int ps : pageSizes)
+        {
+        ASSERT_EQ((int)BE_SQLITE_OK, (int)Db::Vacuum(dbFileName.GetNameUtf8().c_str(), ps));
+        ASSERT_EQ(ps, GetPageSize(dbFileName));
+        }
     }
 
 //=======================================================================================

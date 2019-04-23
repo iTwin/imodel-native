@@ -430,7 +430,19 @@ BeGuid DbValue::GetValueGuid() const
     memcpy(&guid, GetValueBlob(), sizeof(guid)); 
     return guid;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                       4/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void Db::OpenParams::SetQueryParam(Utf8CP key, Utf8CP value) const
+    { 
+    if (Utf8String::IsNullOrEmpty(key))
+        return;
 
+    if (Utf8String::IsNullOrEmpty(value)) 
+        m_queryParams.erase(key);
+    else
+        m_queryParams[key] = value; 
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1664,10 +1676,13 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
     if (BE_SQLITE_OK != rc)
         return  rc;
         
-    rc = (DbResult) sqlite3_key(sqlDb, params.GetEncryptionParams().GetKey(), params.GetEncryptionParams().GetKeySize());
-    if (BE_SQLITE_OK != rc)
-        return  rc;
-
+     if (params.GetEncryptionParams().HasKey())
+        {
+        rc = (DbResult) sqlite3_key(sqlDb, params.GetEncryptionParams().GetKey(), params.GetEncryptionParams().GetKeySize());
+        if (BE_SQLITE_OK != rc)
+            return  rc;
+        }
+        
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn);
 
@@ -2464,13 +2479,35 @@ DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
         return  rc;
 
     SqlDbP sqlDb;
-    rc = (DbResult) sqlite3_open_v2(dbName, &sqlDb, (int) params.m_openMode, vfs);
+    if (!params.GetQueryParams().empty())
+        {
+        Utf8String tmp = BeFileName(dbName).GetUri();
+        tmp.append("?");
+        bool first = true;
+        for(const auto& param : params.GetQueryParams())
+            {
+            if (!first)
+                tmp.append("&");
+            else
+                first = false;
+
+            tmp.append(param.first).append("=").append(param.second);
+            }
+
+        rc = (DbResult)sqlite3_open_v2(tmp.c_str(), &sqlDb, (int)params.m_openMode, vfs);
+        }
+    else
+        rc = (DbResult) sqlite3_open_v2(dbName, &sqlDb, (int) params.m_openMode, vfs);
+
     if (BE_SQLITE_OK != rc)
         return  rc;
 
-    rc = (DbResult) sqlite3_key(sqlDb, params.GetEncryptionParams().GetKey(), params.GetEncryptionParams().GetKeySize());
-    if (BE_SQLITE_OK != rc)
-        return  rc;
+    if (params.GetEncryptionParams().HasKey())
+        {
+        rc = (DbResult) sqlite3_key(sqlDb, params.GetEncryptionParams().GetKey(), params.GetEncryptionParams().GetKeySize());
+        if (BE_SQLITE_OK != rc)
+            return  rc;
+        }
 
     #ifdef TRACE_ALL_SQLITE_STATEMENTS
     sqlite3_config(SQLITE_CONFIG_LOG, printLog, nullptr);
@@ -2487,6 +2524,7 @@ DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
         BeAssert(rc == BE_SQLITE_OK);
         }
 
+
     rc = m_dbFile->m_defaultTxn.Begin();
     if (BE_SQLITE_OK != rc)
         return  rc;
@@ -2501,9 +2539,10 @@ DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
 
         rc = _OnDbOpening();
         }
-
+        
     if (params.m_startDefaultTxn == DefaultTxn::No)
         m_dbFile->m_defaultTxn.Commit(nullptr);
+
 
     return  rc;
     }
@@ -5674,4 +5713,28 @@ DbResult Db::CheckDbIntegrity(BeFileNameCR dbFileName)
         return BE_SQLITE_CORRUPT;
 
     return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2018
+//---------------------------------------------------------------------------------------
+DbResult Db::Vacuum(Utf8CP dbFileName, int newPageSizeInBytes)
+    {
+    Db db;
+    Db::OpenParams param(Db::OpenMode::ReadWrite, DefaultTxn::No);
+    DbResult status = db.OpenBeSQLiteDb(dbFileName, param);
+    if (status != BE_SQLITE_OK)
+        return status;
+
+    if (newPageSizeInBytes > 0)
+        {
+        if (newPageSizeInBytes % 2 != 0 && newPageSizeInBytes<512 && newPageSizeInBytes > 64*1024)
+            return BE_SQLITE_ERROR;
+        status = db.TryExecuteSql(SqlPrintfString("pragma page_size=%" PRId32, newPageSizeInBytes));
+        if (status != BE_SQLITE_OK)
+            return status;
+        }
+
+    status = db.TryExecuteSql("vacuum");
+    return status;
     }

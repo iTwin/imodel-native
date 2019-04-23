@@ -2238,6 +2238,7 @@ public:
         bool m_rawSQLite = false;
         BusyRetry* m_busyRetry = nullptr;
         EncryptionParams m_encryption;
+        mutable bmap<Utf8String,Utf8String> m_queryParams;
 
         //! @param[in] openMode The mode for opening the database
         //! @param[in] startDefaultTxn Whether to start a default transaction on the database.
@@ -2290,6 +2291,11 @@ public:
         EncryptionParams const& GetEncryptionParams() const {return m_encryption;}
         //! Get a writable reference to the encryption parameters
         EncryptionParams& GetEncryptionParamsR() {return m_encryption;}
+
+        //! Pass aditional parameter down to sqlite as URI query params. If queryParams are not empty then path is converted to file:///<path>?queryParams
+        bmap<Utf8String, Utf8String> const& GetQueryParams() const { return m_queryParams; }
+        //! Set a query parameter for open/create call
+        BE_SQLITE_EXPORT void SetQueryParam(Utf8CP key, Utf8CP value) const;
     };
 
 
@@ -2973,6 +2979,12 @@ public:
     //! DO NOT call this under normal circumstances. It is for obscure cases where you are opening an untrusted file (i.e. NOT from the hub).
     //! Opens the specified database, performs a sqlite integrity check, and closes it. Returns BE_SQLITE_OK if the check was successful, otherwise BE_SQLITE_CORRUPT or other chained errors if there was a failure.
     BE_SQLITE_EXPORT static DbResult CheckDbIntegrity(BeFileNameCR dbFileName);
+
+    //! Vacuum a file and optionally change page_size.
+    //! @param dbFileName path to db.
+    //! @param newPageSizeInBytes Must be size in bytes for a page as described by sqlite.  
+    //! @return BE_SQLITE_OK if successful
+    BE_SQLITE_EXPORT static DbResult Vacuum(Utf8CP dbFileName, int newPageSizeInBytes = 0);
 };
 
 //=======================================================================================
