@@ -29,9 +29,8 @@ struct ProfilesLog
         referencedProfileId.ToString (referencedIdBuffer, BeInt64Id::UseHex::Yes);
         referencingProfileId.ToString (referencingIdBuffer, BeInt64Id::UseHex::Yes);
 
-        Utf8String errorString = "Failed to delete " + Utf8String (pReferenecedProfileName) + " instance (id: %s), because it is being referenced by " +
-                                 Utf8String (pReferencingProfileName) + " instance (id: %s).";
-        PROFILES_LOG.errorv (errorString.c_str(), referencedIdBuffer, referencingIdBuffer);
+        Utf8CP pErrorString = "Failed to delete %s instance (id: %s), because it is being referenced by %s instance (id: %s).";
+        PROFILES_LOG.errorv (pErrorString, pReferenecedProfileName, referencedIdBuffer, pReferencingProfileName, referencingIdBuffer);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -45,9 +44,9 @@ struct ProfilesLog
         profileId.ToString (profileIdBuffer, BeInt64Id::UseHex::Yes);
         sourceElementId.ToString (sourceElementIdBuffer, BeInt64Id::UseHex::Yes);
 
-        Utf8String errorString = "Failed to copy from DgnElement instance (id: %s) to a " + Utf8String (pProfileClassName) + " instance (id: %s)"
+        Utf8CP pErrorString = "Failed to copy from DgnElement instance (id: %s) to a %s instance (id: %s)"
                                  ", because DgnElement class is incompatible (failed cast).";
-        PROFILES_LOG.errorv (errorString.c_str(), sourceElementIdBuffer, profileIdBuffer);
+        PROFILES_LOG.errorv (pErrorString, sourceElementIdBuffer, pProfileClassName, profileIdBuffer);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -55,8 +54,8 @@ struct ProfilesLog
     +---------------+---------------+---------------+---------------+---------------+------*/
     static void FailedValidate_InvalidGeometry (Utf8CP pProfileClassName)
         {
-        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile geometry is invalid.";
-        PROFILES_LOG.errorv (errorString.c_str());
+        Utf8CP pErrorString = "Failed to validate profile %s, because profile geometry is invalid.";
+        PROFILES_LOG.errorv (pErrorString, pProfileClassName);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -64,8 +63,8 @@ struct ProfilesLog
     +---------------+---------------+---------------+---------------+---------------+------*/
     static void FailedValidate_InvalidRange_Not2d (Utf8CP pProfileClassName)
         {
-        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile is not 2D.";
-        PROFILES_LOG.errorv (errorString.c_str());
+        Utf8CP pErrorString = "Failed to validate profile %s, because profile is not 2D.";
+        PROFILES_LOG.errorv (pErrorString, pProfileClassName);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -73,8 +72,8 @@ struct ProfilesLog
     +---------------+---------------+---------------+---------------+---------------+------*/
     static void FailedValidate_InvalidRange_ZNon0 (Utf8CP pProfileClassName)
         {
-        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile is elevated above XY plane.";
-        PROFILES_LOG.errorv (errorString.c_str());
+        Utf8CP pErrorString = "Failed to validate profile %s, because profile is elevated above XY plane.";
+        PROFILES_LOG.errorv (pErrorString, pProfileClassName);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -82,8 +81,8 @@ struct ProfilesLog
     +---------------+---------------+---------------+---------------+---------------+------*/
     static void FailedValidate_InvalidArea (Utf8CP pProfileClassName)
         {
-        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile has no area.";
-        PROFILES_LOG.errorv (errorString.c_str());
+        Utf8CP pErrorString = "Failed to validate profile %s, because profile has no area.";
+        PROFILES_LOG.errorv (pErrorString, pProfileClassName);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -91,8 +90,8 @@ struct ProfilesLog
     +---------------+---------------+---------------+---------------+---------------+------*/
     static void FailedValidate_NotClosed (Utf8CP pProfileClassName)
         {
-        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile is not closed.";
-        PROFILES_LOG.errorv (errorString.c_str());
+        Utf8CP pErrorString = "Failed to validate profile %s, because profile is not closed.";
+        PROFILES_LOG.errorv (pErrorString, pProfileClassName);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -100,8 +99,8 @@ struct ProfilesLog
     +---------------+---------------+---------------+---------------+---------------+------*/
     static void FailedValidate_NotContinious (Utf8CP pProfileClassName)
         {
-        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile is not of continious perimeter.";
-        PROFILES_LOG.errorv (errorString.c_str());
+        Utf8CP pErrorString = "Failed to validate profile %s, because profile is not of continious perimeter.";
+        PROFILES_LOG.errorv (pErrorString, pProfileClassName);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -109,8 +108,8 @@ struct ProfilesLog
     +---------------+---------------+---------------+---------------+---------------+------*/
     static void FailedValidate_NotSinglePerimeter (Utf8CP pProfileClassName)
         {
-        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile is not of single perimeter.";
-        PROFILES_LOG.errorv (errorString.c_str());
+        Utf8CP pErrorString = "Failed to validate profile %s, because profile is not of single perimeter.";
+        PROFILES_LOG.errorv (pErrorString, pProfileClassName);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -118,8 +117,8 @@ struct ProfilesLog
     +---------------+---------------+---------------+---------------+---------------+------*/
     static void FailedValidate_UnhandledShape (Utf8CP pProfileClassName)
         {
-        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile's shape is not supported.";
-        PROFILES_LOG.errorv (errorString.c_str());
+        Utf8CP pErrorString = "Failed to validate profile %s, because profile's shape is not supported.";
+        PROFILES_LOG.errorv (pErrorString, pProfileClassName);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -127,8 +126,8 @@ struct ProfilesLog
     +---------------+---------------+---------------+---------------+---------------+------*/
     static void FailedValidate_ShapeIsNotRegion (Utf8CP pProfileClassName)
         {
-        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile's shape is not a region type.";
-        PROFILES_LOG.errorv (errorString.c_str());
+        Utf8CP pErrorString = "Failed to validate profile %s, because profile's shape is not a region type.";
+        PROFILES_LOG.errorv (pErrorString, pProfileClassName);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -136,7 +135,7 @@ struct ProfilesLog
     +---------------+---------------+---------------+---------------+---------------+------*/
     static void FailedValidate_SelfIntersecting (Utf8CP pProfileClassName)
         {
-        Utf8String errorString = "Failed to validate profile " + Utf8String (pProfileClassName) + ", because profile's shape is self intersecting.";
-        PROFILES_LOG.errorv (errorString.c_str());
+        Utf8CP pErrorString = "Failed to validate profile %s, because profile's shape is self intersecting.";
+        PROFILES_LOG.errorv (pErrorString, pProfileClassName);
         }
     };
