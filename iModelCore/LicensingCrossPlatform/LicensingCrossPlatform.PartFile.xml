@@ -111,7 +111,7 @@
         <SubProduct ProductName="Licensing-UnitTests"/>
         <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/Licensing/Project" />
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/LicensingUnitTest/Project" />
         </Bindings>
     </Part>
 
