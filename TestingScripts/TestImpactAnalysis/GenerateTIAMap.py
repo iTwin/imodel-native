@@ -164,9 +164,8 @@ def writeMapToFile(fileName, tiaMap, comp):
         testExe = cmp.ExePathForComp(comp)
         testLog = cmp.LogPathForComp(comp)
         mapFile.write(testExe + ' --gtest_filter=')
-        
         if not os.path.exists(testLog):
-            testLog = os.path.join(os.path.pardir(fileName), comp, 'test.log')
+            testLog = os.path.join(os.path.dirname(os.path.dirname(fileName)), 'test.log')
         tr = TestResults(testLog)
         for testCase in tiaMap[name]:
             len1 = len(tiaMap[name][testCase])
@@ -322,7 +321,7 @@ def main():
             tiaMap = getTiaMapAll(covRoot, component, dll)
             writeMapToFiles(mapDir, tiaMap, component)
             adjustMapFiles(mapDir)
-            copyMapFiles(mapDir, comps)
+            #copyMapFiles(mapDir, comps)
     if args.pushChanges:
         status = pushMapFiles()
         if not status:

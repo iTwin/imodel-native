@@ -73,20 +73,24 @@ def getTests(reportPath, comp):
         tr = TestResults(testLog)
         testList = tr.getAllTests()
     else:
-        print printColored('Test log not found. Running the tests first', 'cyan', True)
         reportDir = os.path.join(reportPath, comp)
         if not os.path.exists(reportDir):
             os.mkdir(reportDir)
         testLogNew = os.path.join(reportDir, 'test.log')
-        cmdForTests = testExe + ' > ' + testLogNew
-        print cmdForTests
-        result = os.system(cmdForTests)
-        if result != 0 : # Test run failed
-            print printColored('Test execution failed for: ' + testExe, 'red', True)
-            exit(-1)
-        else:
+        if os.path.exists(testLogNew):
             tr = TestResults(testLogNew)
             testList = tr.getAllTests()
+        else:
+            print printColored('Test log not found. Running the tests first', 'cyan', True)
+            cmdForTests = testExe + ' > ' + testLogNew
+            print cmdForTests
+            result = os.system(cmdForTests)
+            if result != 0 : # Test run failed
+                print printColored('Test execution failed for: ' + testExe, 'red', True)
+                exit(-1)
+            else:
+                tr = TestResults(testLogNew)
+                testList = tr.getAllTests()
     return testList
 
 #-------------------------------------------------------------------------------------------
