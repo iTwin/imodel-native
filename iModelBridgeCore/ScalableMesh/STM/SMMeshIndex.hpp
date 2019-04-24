@@ -1903,7 +1903,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFe
         POINT pointToInsert = PointOp<POINT>::Create(pt.x, pt.y, pt.z);
         this->GetPointsPtr()->push_back(pointToInsert);
         indexes.push_back((int32_t)this->GetPointsPtr()->size() - 1);
-        }
+        }    
 
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = GetLinearFeaturesPtr();
     linearFeaturesPtr->push_back((int)indexes.size()+1); //include type flag
@@ -2612,6 +2612,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
 
 template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bset<uint64_t>& clips, Transform tr)
 {
+    return true;
+#if 0 
     bvector<uint64_t> clipList;
     bvector<DRange3d> clipRanges;
     bvector<bool> withSkirts;
@@ -2629,6 +2631,7 @@ template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncW
     }
 
     return this->SyncWithClipSets(clipList, withSkirts, clipRanges, tr);
+#endif
 }
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 10/18
@@ -2659,6 +2662,9 @@ template<class POINT, class EXTENT>  void  SMMeshIndexNode<POINT, EXTENT>::Colle
 //=======================================================================================
 template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bvector<uint64_t>& clipIds, const bvector<bool>& hasSkirts, const bvector<DRange3d>& clipExtents, Transform tr)
 {
+    assert(!"Currently deactivated");
+
+
     if (!this->IsLoaded()) this->Load();
 
     bool expected = false;
@@ -2730,9 +2736,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
     if (this->m_SMIndex->IsFromCesium()) //there we consider all three dimensions due to not being able to rely on XY orientation
         {
         if (!extent.IntersectsWith(nodeRange)) return;
-        }
+        } 
     bool clipApplied = true;
-    uint64_t myTs = LastClippingStateUpdateTimestamp();
+    /*TFS# 1021172 - SyncWithClipSets can trigger a delete on the child clips, that can lead to great children node to be update during modified (clipApplied will return false for the child node).
+    uint64_t myTs = LastClippingStateUpdateTimestamp();*/
     switch (action)
         {
         case ClipAction::ACTION_ADD:
@@ -2754,8 +2761,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
     if (nOfNodesTouched >= 5 && action != ClipAction::ACTION_DELETE)
         return;
         */
+
     if (this->m_pSubNodeNoSplit != NULL && !this->m_pSubNodeNoSplit->IsVirtualNode())
-        {
+        {        
+        /*TFS# 1021172 - SyncWithClipSets can trigger a delete on the child clips, that can lead to great children node to be update during modified (clipApplied will return false for the child node).
         uint64_t childTs = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->LastClippingStateUpdateTimestamp();
         if (childTs < myTs)
         {
@@ -2763,6 +2772,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
             CollectClipIds(collectedClips);
             dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->SyncWithClipSets(collectedClips, tr);
         }
+        */
         dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->ClipActionRecursive(action, clipId, extent, nOfNodesTouched, setToggledWhenIdIsOn, tr);
         }
     else if (this->m_nodeHeader.m_numberOfSubNodesOnSplit > 1 && this->m_apSubNodes[0] != nullptr)
@@ -2771,6 +2781,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
             {
             if (this->m_apSubNodes[indexNodes] != nullptr)
                 {
+                /*TFS# 1021172 - SyncWithClipSets can trigger a delete on the child clips, that can lead to great children node to be update during modified (clipApplied will return false for the child node).
                 uint64_t childTs = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->LastClippingStateUpdateTimestamp();
                 if (childTs < myTs)
                 {
@@ -2778,6 +2789,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
                     CollectClipIds(collectedClips);
                     dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->SyncWithClipSets(collectedClips, tr);
                 }
+                */
                 dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->ClipActionRecursive(action, clipId, extent, nOfNodesTouched, setToggledWhenIdIsOn, tr);
                 }
              }
