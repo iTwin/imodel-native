@@ -106,7 +106,6 @@ void ConnectedRealityDataLocation::Clone(const RealityDataLocation& location)
     m_identifier       = location.GetIdentifier();
     m_provider         = location.GetProvider();
     m_location         = location.GetLocation();
-    m_dataLocationGuid = location.GetDataLocationGuid();
     }
 
 //-------------------------------------------------------------------------------------
@@ -151,6 +150,91 @@ ConnectedResponse ConnectedRealityDataLocation::RetrieveAllDataLocations(bvector
 
     return response;
     }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                04/2019
+//-------------------------------------------------------------------------------------
+ConnectedRealityDataPublicKey::ConnectedRealityDataPublicKey(Utf8String guid)
+    {
+    m_identifier = guid;
+    GetPublicKey();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                04/2019
+//-------------------------------------------------------------------------------------
+ConnectedRealityDataPublicKey::ConnectedRealityDataPublicKey(const ConnectedRealityDataPublicKey& object)
+: RealityDataPublicKey(object)
+    {
+    }
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                04/2019
+//-------------------------------------------------------------------------------------
+ConnectedRealityDataPublicKey::ConnectedRealityDataPublicKey(const RealityDataPublicKey& object)
+: RealityDataPublicKey(object)
+    {
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                04/2019
+//-------------------------------------------------------------------------------------
+void ConnectedRealityDataPublicKey::Clone(const RealityDataPublicKey& publicKey)
+    {
+    m_identifier = publicKey.GetIdentifier();
+    m_realityDataId = publicKey.GetRealityDataId();
+    m_userId = publicKey.GetUserId();
+    m_description = publicKey.GetDescription();
+    m_ultimateId = publicKey.GetUltimateId();
+    m_creationDateTime = publicKey.GetCreationDateTime();
+    m_modifiedDateTime = publicKey.GetModifiedDateTime();
+    m_authorizedUserIds = publicKey.GetAuthorizedUserIds();
+    m_validUntilDate = publicKey.GetValidUntilDate();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                04/2019
+//-------------------------------------------------------------------------------------
+ConnectedResponse ConnectedRealityDataPublicKey::GetPublicKey()
+    {
+    ConnectedResponse response = ConnectedResponse();
+    RealityDataPublicKeyRequest ptt(m_identifier);
+
+    RawServerResponse rawResponse;
+    RealityDataPublicKey publicKey;
+    RealityDataService::Request(ptt, publicKey, rawResponse);
+    Clone(publicKey);
+
+    response.Clone(rawResponse);
+
+    return response;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                04/2019
+//-------------------------------------------------------------------------------------
+ConnectedResponse ConnectedRealityDataPublicKey::RetrieveAllPublicKeys(bvector<ConnectedRealityDataPublicKey>& publicKeys)
+    {
+    ConnectedResponse response;
+
+    AllRealityDataPublicKeysRequest publicKeysRequest;
+
+    RawServerResponse ultimateResponse;
+    ultimateResponse.status = RequestStatus::OK;
+    bvector<RealityDataPublicKey> tempPublicKeys;
+
+    tempPublicKeys = RealityDataService::Request(publicKeysRequest, ultimateResponse);
+    for (RealityDataPublicKey currentPublicKey : tempPublicKeys)
+        {
+        ConnectedRealityDataPublicKey temp(currentPublicKey);
+        publicKeys.push_back(temp);
+        }
+
+    response.Clone(ultimateResponse);
+
+    return response;
+    }
+
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017

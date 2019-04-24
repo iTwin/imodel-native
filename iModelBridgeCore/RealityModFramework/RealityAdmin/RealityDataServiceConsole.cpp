@@ -70,6 +70,8 @@ void RealityDataConsole::InterpretCommand(bool emptyDisplayMessage)
         m_lastCommand = Command::Help;
     else if (args[0].EqualsI("datalocations"))
         m_lastCommand = Command::DataLocations;
+    else if (args[0].EqualsI("publickeys"))
+        m_lastCommand = Command::PublicKeys;
     else if (args[0].EqualsI("stat"))
         m_lastCommand = Command::Stat;
     else if (args[0].EqualsI("allstats"))
@@ -161,6 +163,7 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::ListAll, &RealityDataConsole::ListAll);
     m_functionMap.Insert(Command::ChangeDir, &RealityDataConsole::ChangeDir);
     m_functionMap.Insert(Command::DataLocations, &RealityDataConsole::DataLocations);
+    m_functionMap.Insert(Command::PublicKeys, &RealityDataConsole::PublicKeys);
     m_functionMap.Insert(Command::Stat, &RealityDataConsole::EnterpriseStat);
     m_functionMap.Insert(Command::AllStats, &RealityDataConsole::AllEnterpriseStats);
     m_functionMap.Insert(Command::AllStatsJson, &RealityDataConsole::AllEnterpriseStatsJson);
@@ -392,6 +395,7 @@ void RealityDataConsole::Usage()
     DisplayInfo("  ListAll             List every file beneath the current location (paged)\n");
     DisplayInfo("  Details             show the details for the location\n");
     DisplayInfo("  DataLocations       show available data locations for new reality data\n");
+    DisplayInfo("  PublicKeys          show all public keys created by current user.\n");
     DisplayInfo("  Stat                show enterprise statistics\n");
     DisplayInfo("  AllStats            show statistics for all enterprises , for a given date (requires priviledge access)\n");
     DisplayInfo("  AllStatsJson        show statistics for all enterprises in raw JSON format , for a given date (requires priviledge access)\n");
@@ -996,13 +1000,31 @@ void RealityDataConsole::DisplayDataLocations(const bvector<RealityDataLocation>
     DisplayInfo("======================================================\n");
     for (auto currentLocation : locations)
         {
-        DisplayInfo(Utf8PrintfString("   Provider: %s\n", currentLocation.GetProvider().c_str()));
-        DisplayInfo(Utf8PrintfString("   Location: %s\n", currentLocation.GetLocation().c_str()));
-        DisplayInfo(Utf8PrintfString("   Parent  : %s\n", currentLocation.GetDataLocationGuid().c_str()));
+        DisplayInfo(Utf8PrintfString("   Identifier: %s\n", currentLocation.GetIdentifier().c_str()));
+        DisplayInfo(Utf8PrintfString("   Provider  : %s\n", currentLocation.GetProvider().c_str()));
+        DisplayInfo(Utf8PrintfString("   Location  : %s\n", currentLocation.GetLocation().c_str()));
         DisplayInfo("======================================================\n");
         }
     }
 
+void RealityDataConsole::DisplayPublicKeys(const bvector<RealityDataPublicKey>& publicKeys)
+    {
+    DisplayInfo(Utf8PrintfString("Public Keys \n"));
+    DisplayInfo("======================================================\n");
+    for (auto currentKey : publicKeys)
+        {
+        DisplayInfo(Utf8PrintfString("   Identifier          : %s\n", currentKey.GetIdentifier().c_str()));
+        DisplayInfo(Utf8PrintfString("   Reality Data Id     : %s\n", currentKey.GetRealityDataId().c_str()));
+        DisplayInfo(Utf8PrintfString("   Ultimate Id         : %s\n", currentKey.GetUltimateId().c_str()));
+        DisplayInfo(Utf8PrintfString("   User Id             : %s\n", currentKey.GetUserId().c_str()));
+        DisplayInfo(Utf8PrintfString("   Description         : %s\n", currentKey.GetDescription().c_str()));
+        DisplayInfo(Utf8PrintfString("   Created timestamp   : %s\n", currentKey.GetCreationDateTime().ToString().c_str()));
+        DisplayInfo(Utf8PrintfString("   Modified timestamp  : %s\n", currentKey.GetModifiedDateTime().ToString().c_str()));
+        DisplayInfo(Utf8PrintfString("   Authorized User Ids : %s\n", currentKey.GetAuthorizedUserIds().c_str()));
+        DisplayInfo(Utf8PrintfString("   Valid Until Date    : %s\n", currentKey.GetValidUntilDate().ToString().c_str()));
+        DisplayInfo("======================================================\n");
+        }
+    }
 
 void RealityDataConsole::DataLocations()
     {
@@ -1017,6 +1039,18 @@ void RealityDataConsole::DataLocations()
 
     }
 
+void RealityDataConsole::PublicKeys()
+    {
+
+
+    RawServerResponse rawResponse;
+    AllRealityDataPublicKeysRequest ptt;
+
+    bvector<RealityDataPublicKey> publicKeys;
+    publicKeys = RealityDataService::Request(ptt, rawResponse);
+    DisplayPublicKeys(publicKeys);
+
+    }
 
 void RealityDataConsole::EnterpriseStat()
     {
@@ -1112,7 +1146,7 @@ void RealityDataConsole::AllEnterpriseStatsGen(bool displayAsJson)
         
         if (SUCCESS != startDate.ToJulianDay(julianStartDate) || SUCCESS != endDate.ToJulianDay(julianEndDate))
             {
-            DisplayInfo("Unexpected error occured while converting dates to Julian\n", DisplayOption::Error);
+            DisplayInfo("Unexpected error occurred while converting dates to Julian\n", DisplayOption::Error);
             return;
             }
 
@@ -1128,7 +1162,7 @@ void RealityDataConsole::AllEnterpriseStatsGen(bool displayAsJson)
             DateTime::Info theInfo = DateTime::Info::CreateForDate();
             if (SUCCESS != DateTime::FromJulianDay(currentDate, currentJulianDay, theInfo))
                 {
-                DisplayInfo("Unexpected error occured while converting from Julian Day\n", DisplayOption::Error);
+                DisplayInfo("Unexpected error occurred while converting from Julian Day\n", DisplayOption::Error);
                 return;
                 }
 

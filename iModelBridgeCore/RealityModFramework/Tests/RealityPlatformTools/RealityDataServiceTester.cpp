@@ -584,6 +584,26 @@ TEST_F(RealityDataServiceFixture, RealityDataLocationRequestBadRequest)
     }
 
 //=====================================================================================
+//! @bsimethod                                   Alain.Robert              04/2019
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataPublicKeyRequestBadRequest)
+    {
+    EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataPublicKeyRequest failed with response"), _)).Times(1);
+    ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        response.status = ::BADREQ;
+        }));
+
+    RealityDataPublicKeyRequest requestUT("BadID");
+    RawServerResponse rawResponse{};
+
+    RealityDataPublicKey publicKey;
+    s_realityDataService->Request(requestUT, publicKey, rawResponse);
+    EXPECT_EQ(rawResponse.status, ::BADREQ);
+    }
+
+
+//=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
 TEST_F(RealityDataServiceFixture, RealityDataEnterpriseStatRequestBadRequest)
@@ -954,7 +974,7 @@ TEST_F(RealityDataServiceFixture, RealityDataLocationRequestGoodRequest)
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataLocationRequest failed with response"), _)).Times(0);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
         {
-        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/DataLocations/c07c%2D465d%2Da1fe%2D2f2dfac950a4");
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/DataLocation/c07c%2D465d%2Da1fe%2D2f2dfac950a4");
         response.status = ::OK;
         response.responseCode = 200;
         response.toolCode = CURLE_OK;
@@ -972,6 +992,36 @@ TEST_F(RealityDataServiceFixture, RealityDataLocationRequestGoodRequest)
     s_realityDataService->Request(requestUT, location, rawResponse);
     EXPECT_EQ(rawResponse.status, RequestStatus::OK);
     EXPECT_EQ(location.GetLocation(), "Japan East");
+    
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              04/2019
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataPublicKeyRequestGoodRequest)
+    {
+    EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataPublicKeyRequest failed with response"), _)).Times(0);
+    ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/PublicKey/PK%2D73b0aac1%2Dc7f4%2D4539%2D9213%2D2be9232bc989");
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\PublicKey.json");
+        }));
+
+
+    RealityDataPublicKeyRequest requestUT("PK-73b0aac1-c7f4-4539-9213-2be9232bc989");
+
+    EXPECT_STREQ(requestUT.GetId().c_str(), "PK-73b0aac1-c7f4-4539-9213-2be9232bc989");
+
+    RawServerResponse rawResponse{};
+    RealityDataPublicKey publicKey;
+
+    s_realityDataService->Request(requestUT, publicKey, rawResponse);
+    EXPECT_EQ(rawResponse.status, RequestStatus::OK);
+    EXPECT_EQ(publicKey.GetAuthorizedUserIds(), "49fe0af1-4a9c-47fb-a435-87ddee242178");
+    EXPECT_EQ(publicKey.GetUserId(), "2f24c107-cc97-44a8-80f3-9a5f63e1c738");
     
     }
 

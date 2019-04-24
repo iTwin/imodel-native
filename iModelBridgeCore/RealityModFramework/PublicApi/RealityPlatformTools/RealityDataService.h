@@ -69,13 +69,13 @@ private:
 
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert         05/2018
-//! AllDataLocationsRequest
+//! AllRealityDataLocationsRequest
 //! Request for all available data locations
 //=====================================================================================
 struct AllRealityDataLocationsRequest : public RealityDataUrl
     {
 public:
-    // Only identifier is required to retreive RealityData
+    // Only identifier is required to retrieve RealityData
     REALITYDATAPLATFORM_EXPORT AllRealityDataLocationsRequest() { m_validRequestString = false; }
 
 protected:
@@ -84,7 +84,39 @@ protected:
 private:
     };
 
+//=====================================================================================
+//! @bsiclass                                         Alain.Robert         05/2018
+//! RealityDataLocationRequest
+//! This class returns the description of specified data location
+//=====================================================================================
+struct RealityDataPublicKeyRequest : public RealityDataUrl
+    {
+public:
+    // Only identifier is required to retreive RealityData
+    REALITYDATAPLATFORM_EXPORT RealityDataPublicKeyRequest(Utf8StringCR publicKeyId) { m_validRequestString = false; m_id = publicKeyId;}
 
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    RealityDataPublicKeyRequest() {}
+    };
+
+//=====================================================================================
+//! @bsiclass                                         Alain.Robert         04/2019
+//! AllRealityDataPublicKeysRequest
+//! Request for all available data locations
+//=====================================================================================
+struct AllRealityDataPublicKeysRequest : public RealityDataUrl
+    {
+public:
+    REALITYDATAPLATFORM_EXPORT AllRealityDataPublicKeysRequest() { m_validRequestString = false; }
+
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    };
 
 //=====================================================================================
 //! @bsiclass                                         Donald.Morissette         03/2017
@@ -1218,6 +1250,12 @@ public:
 
     //! Returns the available Data Locations for the enterprise of the user.
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataLocation>  Request(AllRealityDataLocationsRequest const& request,  RawServerResponse& rawResponse);
+
+    //! Returns the specified Public Key.
+    REALITYDATAPLATFORM_EXPORT static void Request(RealityDataPublicKeyRequest const& request, RealityDataPublicKey& publicKeyObject, RawServerResponse& rawResponse);
+
+    //! Returns the available public keys for the user.
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataPublicKey>  Request(AllRealityDataPublicKeysRequest const& request,  RawServerResponse& rawResponse);
 
     //! Returns the size in KB for the specify Enterprise, or the default one.
     REALITYDATAPLATFORM_EXPORT static void Request(RealityDataEnterpriseStatRequest const& request, RealityDataEnterpriseStat& statObject, RawServerResponse& rawResponse);
