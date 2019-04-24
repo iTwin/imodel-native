@@ -700,6 +700,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_STREQ(myRealityData->GetDataset().c_str(), "");
     EXPECT_STREQ(myRealityData->GetThumbnailDocument().c_str(), "");
     EXPECT_TRUE(myRealityData->GetTotalSize() == 0);
+    EXPECT_TRUE(myRealityData->IsSizeUpToDate());
     EXPECT_TRUE(!myRealityData->GetCreationDateTime().IsValid()); // Time not set should be invalid
     EXPECT_TRUE(myRealityData->GetFootprint().size() == 0);
     EXPECT_TRUE(!myRealityData->HasApproximateFootprint());
@@ -759,6 +760,8 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_STREQ(myRealityData->GetThumbnailDocument().c_str(), "thumbnail.jpg");
     myRealityData->SetTotalSize(123765473);
     EXPECT_TRUE(myRealityData->GetTotalSize() == 123765473);
+    myRealityData->SetSizeUpToDate(false);
+    EXPECT_TRUE(!myRealityData->IsSizeUpToDate());
     myRealityData->SetCreationDateTime(DateTime(2017,02,27));
     EXPECT_TRUE(myRealityData->GetCreationDateTime().IsValid());
     EXPECT_TRUE(myRealityData->GetCreationDateTime() == DateTime(2017,02,27));

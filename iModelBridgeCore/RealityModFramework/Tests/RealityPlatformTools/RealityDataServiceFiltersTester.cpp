@@ -230,6 +230,7 @@ struct RealityMap
         realityDataFieldVector.emplace_back(RealityDataField::Description, "Description");
         realityDataFieldVector.emplace_back(RealityDataField::RootDocument, "RootDocument");
         realityDataFieldVector.emplace_back(RealityDataField::Size, "Size");
+        realityDataFieldVector.emplace_back(RealityDataField::SizeUpToDate, "SizeUpToDate");
         realityDataFieldVector.emplace_back(RealityDataField::Classification, "Classification");
         realityDataFieldVector.emplace_back(RealityDataField::Type, "Type");
         realityDataFieldVector.emplace_back(RealityDataField::Streamed, "Streamed");

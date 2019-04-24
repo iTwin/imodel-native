@@ -975,6 +975,7 @@ static bmap<RealityDataField, Utf8String> CreatePropertyMap()
     m.Insert(RealityDataField::Description, "Description");
     m.Insert(RealityDataField::RootDocument, "RootDocument");
     m.Insert(RealityDataField::Size, "Size");
+    m.Insert(RealityDataField::SizeUpToDate, "SizeUpToDate");
     m.Insert(RealityDataField::Classification, "Classification");
     m.Insert(RealityDataField::Type, "Type");
     m.Insert(RealityDataField::Streamed, "Streamed");

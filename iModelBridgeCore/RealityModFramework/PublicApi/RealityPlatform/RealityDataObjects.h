@@ -369,6 +369,7 @@ enum class RealityDataField
     Description,
     RootDocument,
     Size,
+    SizeUpToDate,
     Classification,
     Type,
     Streamed,
@@ -429,6 +430,10 @@ public:
     //! based on the file size of the first data source. Informative field only.
     REALITYDATAPLATFORM_EXPORT uint64_t GetTotalSize() const; // in bytes.
     REALITYDATAPLATFORM_EXPORT void SetTotalSize(uint64_t size); // in bytes.
+
+    //! Indicates if the Total Size is up to date with the last modifications of the reality data.
+    REALITYDATAPLATFORM_EXPORT bool IsSizeUpToDate() const;
+    REALITYDATAPLATFORM_EXPORT void SetSizeUpToDate(bool upToDate);
 
     //! Get/Set
     //! The date of the production of the data or an invalid date if it is unknown.
@@ -543,6 +548,7 @@ protected:
     Utf8String  m_creatorId;
     Utf8String  m_group;
     uint64_t    m_totalSize;
+    bool        m_sizeUpToDate;
 
     bool        m_hidden;
     bool        m_delegatePermissions;

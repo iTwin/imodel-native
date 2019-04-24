@@ -853,6 +853,7 @@ void ConnectedRealityData::Clone(RealityDataPtr rd)
     m_creatorId = rd->GetCreatorId();
     m_group = rd->GetGroup();
     m_totalSize = rd->GetTotalSize();
+    m_sizeUpToDate = rd->IsSizeUpToDate();
     }
 
 //-------------------------------------------------------------------------------------

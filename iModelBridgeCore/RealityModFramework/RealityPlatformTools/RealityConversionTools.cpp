@@ -736,6 +736,9 @@ void RealityConversionTools::JsonToRealityData(RealityDataPtr realityData, Json:
     else if (properties.isMember("Size") && !properties["Size"].isNull())
         realityData->SetTotalSize(properties["Size"].asInt());
 
+    if (properties.isMember("SizeUpToDate") && !properties["SizeUpToDate"].isNull())
+        realityData->SetSizeUpToDate(properties["SizeUpToDate"].asBool());
+
     // Resolution
     if (properties.isMember("ResolutionInMeters") && !properties["ResolutionInMeters"].isNull())
         realityData->SetResolution(Utf8CP(properties["ResolutionInMeters"].asString().c_str()));
@@ -803,6 +806,9 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
 
     if (includeROProps && (includeUnsetProps || (realityData.GetTotalSize() > 0)))
         properties.push_back(RealityDataField::Size);
+
+    if (includeROProps && (includeUnsetProps || !realityData.IsSizeUpToDate())) // Default (true) is considered unset
+        properties.push_back(RealityDataField::SizeUpToDate);
 
     if (includeUnsetProps || (realityData.GetClassification() != RealityDataBase::Classification::UNDEFINED_CLASSIF))
         properties.push_back(RealityDataField::Classification);
@@ -933,6 +939,10 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
             propertyString.append("\"Size\" : \"");
             propertyString += Utf8PrintfString("%lu", realityData.GetTotalSize());
             propertyString.append("\"");
+            break;
+        case RealityDataField::SizeUpToDate:
+            propertyString.append("\"SizeUpToDate\" : ");
+            propertyString.append(realityData.IsSizeUpToDate() ? "true" : "false");
             break;
         case RealityDataField::Classification:
             propertyString.append("\"Classification\" : \"");

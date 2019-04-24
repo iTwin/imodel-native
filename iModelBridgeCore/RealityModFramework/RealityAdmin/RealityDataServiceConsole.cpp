@@ -211,6 +211,7 @@ RealityDataConsole::RealityDataConsole() :
     m_realityDataProperties.push_back("Description");
     m_realityDataProperties.push_back("RootDocument");
     //m_realityDataProperties.push_back("Size");
+    //m_realityDataProperties.push_back("SizeUpToDate");
     m_realityDataProperties.push_back("Classification");
     m_realityDataProperties.push_back("Type");
     m_realityDataProperties.push_back("Streamed");
@@ -1786,6 +1787,7 @@ void RealityDataConsole::Details()
         DisplayInfo(Utf8PrintfString(" Description         : %s\n", entity->GetDescription().c_str()));
         DisplayInfo(Utf8PrintfString(" Root document       : %s\n", entity->GetRootDocument().c_str()));
         DisplayInfo(Utf8PrintfString(" Size (kb)           : %lu\n", entity->GetTotalSize()));
+        DisplayInfo(Utf8PrintfString(" Size Up To Date     : %s\n", entity->IsSizeUpToDate() ? "true" : "false"));
         DisplayInfo(Utf8PrintfString(" Classification      : %s\n", entity->GetClassificationTag().c_str()));
         DisplayInfo(Utf8PrintfString(" Type                : %s\n", entity->GetRealityDataType().c_str()));
         DisplayInfo(Utf8PrintfString(" Streamed            : %s\n", entity->IsStreamed() ? "true" : "false"));
