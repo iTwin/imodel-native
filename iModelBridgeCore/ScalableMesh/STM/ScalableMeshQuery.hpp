@@ -3330,12 +3330,12 @@ template <class POINT> SMNodeViewStatus ScalableMeshNode<POINT>::_IsCorrectForVi
     return SMNodeViewStatus::NotVisible;    
     }
 
-template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph)
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph, bool arePoints3D)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(this->m_node->GetPointsPtr());    
     pointsPtr->clear();
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(this->m_node);
-    m_meshNode->m_nodeHeader.m_arePoints3d = true;
+    m_meshNode->m_nodeHeader.m_arePoints3d = arePoints3D;
     vector<POINT> nodePts(nVertices);
     vector<size_t> sorted(nVertices);
     std::iota(sorted.begin(), sorted.end(), 0);
@@ -3388,13 +3388,13 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d*
     return BSISUCCESS;
     }
 
-template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph)
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph, bool arePoints3D)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(this->m_node->GetPointsPtr());
     pointsPtr->clear();
 
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(this->m_node);
-    //m_meshNode->m_nodeHeader.m_arePoints3d = true;
+    m_meshNode->m_nodeHeader.m_arePoints3d = arePoints3D;
     m_meshNode->m_nodeHeader.m_isTextured = true;
 
     if (texID != -1)
@@ -3454,13 +3454,13 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
     return BSISUCCESS;
     }
 
-template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph)
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph, bool arePoints3D)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(this->m_node->GetPointsPtr());    
     pointsPtr->clear();
     
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(this->m_node);
-    m_meshNode->m_nodeHeader.m_arePoints3d = true;    
+    m_meshNode->m_nodeHeader.m_arePoints3d = arePoints3D;
     m_meshNode->m_nodeHeader.m_isTextured = true;
 
     if (texID != -1)

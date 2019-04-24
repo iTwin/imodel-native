@@ -2832,6 +2832,8 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
     if (meshes.isNull()) return;
     assert(meshes.size() == 1); // should contain only one mesh
     auto meshName = meshes[0].asString();
+    auto& nodeTransform = cesiumBatchTableHeader["nodes"][nodeName]["matrix"];
+    bool hasNodeTransform = !nodeTransform.isNull();
     auto& primitives = cesiumBatchTableHeader["meshes"][meshName]["primitives"];
     assert(primitives.size() == 1); // should contain only one primitive
     auto indiceAccName = primitives[0]["indices"].asString();
@@ -3026,6 +3028,14 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             {
             auto transformAxes = Transform::FromRowValues(1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0);
             transform = Transform::FromProduct(transform, transformAxes);
+            }
+        if (hasNodeTransform)
+            {
+            // node transform matrix is stored as column major
+            auto nodeMatrix = Transform::FromRowValues(nodeTransform[0].asDouble(), nodeTransform[4].asDouble(), nodeTransform[8].asDouble(), nodeTransform[12].asDouble(),
+                                                       nodeTransform[1].asDouble(), nodeTransform[5].asDouble(), nodeTransform[9].asDouble(), nodeTransform[13].asDouble(),
+                                                       nodeTransform[2].asDouble(), nodeTransform[6].asDouble(), nodeTransform[10].asDouble(), nodeTransform[14].asDouble());
+            transform = Transform::FromProduct(transform, nodeMatrix);
             }
         isTransformIdentity = transform.IsIdentity();
 
