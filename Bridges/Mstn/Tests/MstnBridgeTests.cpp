@@ -202,6 +202,8 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
         bridge_a_briefcaseName = fwk.GetBriefcaseName();
         });
 
+    // (Note: bridge a should be blocked and not making progress, because we have not yet created the "let_a_run" file.)
+
     // -------------------------------------------------------
     // Bridge B
     // -------------------------------------------------------
@@ -235,13 +237,11 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
         bridge_b_briefcaseName.append(L".bim");
         }
     
-    createFile(a_can_run);      // then a runs
+    createFile(a_can_run);      // now let a run
 
     bridge_a.join();
 
-    // TODO: Verify that B ran first and that A ran second and ran successfully
-
-    runningServer.Stop(10*1000);    // must wait long enough for imodel-bank server to shut down. The time required can vary unpredictably but seems to increase when a second process has been running.
+    runningServer.Stop(10*1000); // NEEDS WORK: must wait long enough for imodel-bank server to shut down. The time required can vary unpredictably but seems to increase when a second process has been running.
     }
     }
 
@@ -249,9 +249,10 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
     // ASSERT_EQ(0, ProcessRunner::FindProcessId("iModelBridgeFwk.exe"));
     ASSERT_TRUE(bridge_a_sawRetryMsg);
 
+    // Verify that B ran first and A ran second
     if (true)
         {
-        // Since bridge A ran second, must have had to pull bridge B's changesets before it could push.
+        // If bridge A ran second, it must have had to pull bridge B's changesets before it could push.
         // Therefore, A's briefcase should contain the RepositoryLink for B's input file as well as its own. 
         DbFileInfo info(bridge_a_briefcaseName);
         auto aSourceFileId = info.GetRepositoryLinkByFileNameLike("%test3d_a.dgn");
@@ -262,7 +263,7 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
 
     if (true)
         {
-        // Since bridge B ran first and finished before A could run, B's briefcase should not have a record of A's input file.
+        // If bridge B ran first and finished before A could run, B's briefcase should not have a record of A's input file.
         DbFileInfo info(bridge_b_briefcaseName);
         auto aSourceFileId = info.GetRepositoryLinkByFileNameLike("%test3d_a.dgn");
         auto bSourceFileId = info.GetRepositoryLinkByFileNameLike("%test3d_b.dgn");
@@ -762,7 +763,94 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
     }
 
 //Sandwich test ?
-//Test for locks and codes ?
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, CodeReservation)
+    {
+    if (nullptr == GetIModelBankServerJs())
+        {
+        fprintf(stderr, "Lock tests are supported only when using imodel-bank as the server\n.");
+        return;
+        }
+
+    auto testDir = CreateTestDir();
+
+    BeFileName noCodesAllowed(testDir);
+    noCodesAllowed.AppendToPath(L"noCodesAllowed.txt");
+    
+#ifdef COMMENT_OUT // WIP - must wait for change to IMB
+    Utf8PrintfString rules(
+        R"(   [                                 
+                  {                            
+                      "user": "user1",             
+                      "rules": [                   
+                          {                        
+                              "request": "Code/Create",
+                              "rule": { "verb": "ifnofile", "object": "%s" }                        
+                          }                        
+                      ]                            
+                  }                
+              ]                               
+          )", Utf8String(noCodesAllowed).c_str());
+    rules.ReplaceAll("\\", "/");
+
+    SetRulesFileInEnv setRulesFileVar(WriteRulesFile(L"testCodeReservation.json", rules.c_str()));
+
+#endif
+
+    BentleyApi::BeFileName inputFile;
+    MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
+
+    SetupClient(ComputeAccessToken("user1"));
+    CreateRepository();
+    {
+    auto runningServer = StartServer();
+
+
+    FwkArgvMaker argvMaker;
+    argvMaker.SetUpBridgeProcessingArgs(testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, GetDgnv8BridgeDllName(), DEFAULT_IMODEL_NAME, true, L"imodel-bank.rsp");
+    argvMaker.ReplaceArgValue(L"--imodel-bank-access-token", ComputeAccessTokenW("user1").c_str());
+
+    argvMaker.SetInputFileArg(inputFile);
+    argvMaker.SetSkipAssignmentCheck();
+
+    BeFileName bcName;
+    if (true)
+        {
+        // Must allow Code reservations during the initial conversion. That is where the bridge creates the Subject 
+        // elements in the repository model, and each Subject has a Code that must be reserved (because they must
+        // be unique across bridges). So, do not create the "noCodesAllowed" file yet.
+        
+        iModelBridgeFwk fwk;
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
+        ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
+        bcName = fwk.GetBriefcaseName();
+        }
+
+    // TODO: Verify that Subjects such as mastermodel and bridge "job" Subjects have codes and that those codes are marked by iModelBank as being in use.
+    
+    int prevCount = DbFileInfo(bcName).GetElementCount();
+
+    AddLine(inputFile);
+    
+    if (true)
+        {
+        // Run an update. WE DO NOT EXPECT ANY CODE RESERVATIONS. So, create the noCodesAllowed file to assert this restriction.
+        createFile(noCodesAllowed);
+
+        RegisterCodeAssignerXDomain();
+
+        iModelBridgeFwk fwk;
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
+        ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
+        }
+
+    EXPECT_EQ(1 + prevCount, DbFileInfo(bcName).GetElementCount());
+
+    } // ~runningServer => stop Server
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2018

@@ -1258,3 +1258,15 @@ void SynchInfoTests::ValidateElementSynchInfo (BentleyApi::BeFileName& dbFile, i
     id = estmt.GetValueId<int64_t> (1);
     ASSERT_TRUE (id == srcId);
 }
+
+static CodeAssignerXDomain s_cax;
+
+void MstnBridgeTestsFixture::RegisterCodeAssignerXDomain()
+    {
+    XDomain::Register(s_cax);
+    }
+
+void MstnBridgeTestsFixture::UnRegisterCodeAssignerXDomain()
+    {
+    XDomain::UnRegister(s_cax);
+    }

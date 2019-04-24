@@ -175,6 +175,9 @@ struct MstnBridgeTestsFixture : ::testing::Test
 
     int64_t AddLine(BentleyApi::BeFileName& inputFile, int count = 1);
 
+    static void RegisterCodeAssignerXDomain();
+    static void UnRegisterCodeAssignerXDomain();
+
     struct DbFileInfo
         {
         BentleyApi::Dgn::DgnDbPtr m_db;

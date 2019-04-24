@@ -31,3 +31,24 @@ struct V8FileEditor
     void AddView (DgnV8Api::ElementId& elementId, Bentley::WStringCR viewName);
     void AddLevel (DgnV8Api::LevelId& levelid, Bentley::WStringCR levelName);
     };
+
+//=======================================================================================
+// @bsistruct                              
+//=======================================================================================
+struct CodeAssignerXDomain : XDomain
+    {
+    int m_lineCount {};
+
+    void _DetermineElementParams(DgnClassId&, DgnCode& code, DgnCategoryId&, DgnV8Api::ElementHandle const& v8eh, Converter& cvt, Bentley::ECN::IECInstance const* primaryV8Instance, ResolvedModelMapping const&) override
+        {
+        if (DgnV8Api::LINE_ELM != v8eh.GetElementType())
+            return;
+
+        Utf8PrintfString codeValue("TestXDomain-%d", m_lineCount);
+        code = cvt.CreateCode(codeValue.c_str());
+        ++m_lineCount;
+        }
+
+    void _OnBeginConversion(Converter&, DgnV8ModelR rootModel) override {;}
+    void _OnFinishConversion(Converter&) override {;}
+    };
