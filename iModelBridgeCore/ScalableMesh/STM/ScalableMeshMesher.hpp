@@ -6,7 +6,7 @@
 //:>       $Date: 2011/04/27 17:17:56 $
 //:>     $Author: Alain.Robert $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -2139,6 +2139,8 @@ if (stitchedPoints.size() != 0 &&!isColinear)// return false; //nothing to stitc
 //            for (auto& def : node->m_featureDefinitions) if (!def.Discarded()) def.Discard();
             for (auto& polyline : features)
                 {
+                if (polyline.size() == 0) continue;
+
                 DRange3d extent = DRange3d::From(polyline);
 #if 0 
                     {
