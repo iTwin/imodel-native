@@ -769,41 +769,44 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MstnBridgeTests, CodeReservation)
     {
-    if (nullptr == GetIModelBankServerJs())
-        {
-        fprintf(stderr, "Lock tests are supported only when using imodel-bank as the server\n.");
-        return;
-        }
-
     auto testDir = CreateTestDir();
 
     BeFileName noCodesAllowed(testDir);
     noCodesAllowed.AppendToPath(L"noCodesAllowed.txt");
     
 #ifdef COMMENT_OUT // WIP - must wait for change to IMB
-    Utf8PrintfString rules(
-        R"(   [                                 
-                  {                            
-                      "user": "user1",             
-                      "rules": [                   
-                          {                        
-                              "request": "Code/Create",
-                              "rule": { "verb": "ifnofile", "object": "%s" }                        
-                          }                        
-                      ]                            
-                  }                
-              ]                               
-          )", Utf8String(noCodesAllowed).c_str());
-    rules.ReplaceAll("\\", "/");
+    if (GetIModelBankServerJs())
+        {
+        Utf8PrintfString rules(
+            R"(   [                                 
+                      {                            
+                          "user": "user1",             
+                          "rules": [                   
+                              {                        
+                                  "request": "Code/Create",
+                                  "rule": { "verb": "ifnofile", "object": "%s" }                        
+                              }                        
+                          ]                            
+                      }                
+                  ]                               
+              )", Utf8String(noCodesAllowed).c_str());
+        rules.ReplaceAll("\\", "/");
 
-    SetRulesFileInEnv setRulesFileVar(WriteRulesFile(L"testCodeReservation.json", rules.c_str()));
-
+        SetRulesFileInEnv setRulesFileVar(WriteRulesFile(L"testCodeReservation.json", rules.c_str()));
+        }
 #endif
 
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
 
     SetupClient(ComputeAccessToken("user1"));
+
+    if (GetClientAsMock())
+        {
+        fprintf(stderr, "Lock tests are supported only when using real servers\n.");
+        return;
+        }
+
     CreateRepository();
     {
     auto runningServer = StartServer();
@@ -829,25 +832,68 @@ TEST_F(MstnBridgeTests, CodeReservation)
         bcName = fwk.GetBriefcaseName();
         }
 
-    // TODO: Verify that Subjects such as mastermodel and bridge "job" Subjects have codes and that those codes are marked by iModelBank as being in use.
-    
-    int prevCount = DbFileInfo(bcName).GetElementCount();
+    // Get information about the jobsubject and the spatial model that we will be using.
+    int prevCount = 0;
+    DgnElementId jobSubjectId;
+    DgnModelId spatialModelId;
+    RepositoryLinkId repositoryLinkId;
+    if (true)
+        {
+        DbFileInfo bcInfo(bcName);
+        prevCount = bcInfo.GetElementCount();
+        auto jSubj = bcInfo.GetFirstJobSubject();
+        ASSERT_TRUE(jSubj.IsValid());
+        jobSubjectId = jSubj->GetElementId();
+        bcInfo.MustFindFileByName(repositoryLinkId, inputFile, 1);
+        bcInfo.MustFindModelByV8ModelId(spatialModelId, repositoryLinkId, GetDefaultV8ModelId(inputFile), 1);
 
-    AddLine(inputFile);
+        // Verify that this spatial model is exclusively locked by this bridge
+        auto spatialModel = bcInfo.m_db->Models().GetModel(spatialModelId);
+        ASSERT_EQ(BentleyApi::Dgn::LockLevel::Exclusive, bcInfo.QueryLockLevel(*spatialModel, GetClient()));
+
+        // Verify that the server has registered Subject elements that are in the RepositoryModel.
+        auto repositoryLink = bcInfo.m_db->Elements().GetElement(repositoryLinkId);
+        ASSERT_TRUE(repositoryLink.IsValid());
+        DgnCodeInfo codeInfo;
+        EXPECT_EQ(BentleyApi::BSISUCCESS, bcInfo.GetCodeInfo(codeInfo, repositoryLink->GetCode(), GetClient()));
+        EXPECT_TRUE(codeInfo.IsUsed());
+        }
+
+    // Add a line ...
+    int64_t srcId = AddLine(inputFile);
     
     if (true)
         {
-        // Run an update. WE DO NOT EXPECT ANY CODE RESERVATIONS. So, create the noCodesAllowed file to assert this restriction.
+        // ... and convert it, using MODEL-SCOPED CODES, where the model is one that is exclusively owned by the bridge.
+        // So, we do not expect any code reservations. 
+
+        // IMB only: Create the noCodesAllowed file to assert this restriction.
         createFile(noCodesAllowed);
 
-        RegisterCodeAssignerXDomain();
+        ScopedCodeAssignerXDomain assignCodes(spatialModelId, "ModelScope");
 
         iModelBridgeFwk fwk;
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
         ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
         }
 
-    EXPECT_EQ(1 + prevCount, DbFileInfo(bcName).GetElementCount());
+    if (true)
+        {
+        // Verify that the line has the expected code
+        DbFileInfo bcInfo(bcName);
+        EXPECT_EQ(1 + prevCount, bcInfo.GetElementCount());
+
+        DgnElementId eid;
+        ASSERT_EQ(BSISUCCESS, bcInfo.GetiModelElementByDgnElementId(eid, srcId));
+        auto el = bcInfo.m_db->Elements().GetElement(eid);
+        ASSERT_TRUE(el.IsValid());
+        ASSERT_TRUE(el->GetCode().IsValid());
+        ASSERT_TRUE(!el->GetCode().GetValueUtf8().empty());
+
+        // Verify that the server has NOT registered the line's code.
+        DgnCodeInfo codeInfo;
+        ASSERT_NE(BentleyApi::BSISUCCESS, bcInfo.GetCodeInfo(codeInfo, el->GetCode(), GetClient()));
+        }
 
     } // ~runningServer => stop Server
     }

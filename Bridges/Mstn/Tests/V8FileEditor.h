@@ -38,17 +38,19 @@ struct V8FileEditor
 struct CodeAssignerXDomain : XDomain
     {
     int m_lineCount {};
+    BentleyApi::Dgn::CodeSpecId m_codeSpecId;
+    BentleyApi::Dgn::DgnElementId m_scopeId;
+    bool m_useModelScope {};
+    Utf8String m_prefix;
 
-    void _DetermineElementParams(DgnClassId&, DgnCode& code, DgnCategoryId&, DgnV8Api::ElementHandle const& v8eh, Converter& cvt, Bentley::ECN::IECInstance const* primaryV8Instance, ResolvedModelMapping const&) override
-        {
-        if (DgnV8Api::LINE_ELM != v8eh.GetElementType())
-            return;
+    CodeAssignerXDomain(BentleyApi::Dgn::DgnElementId scopeId, Utf8CP prefix, bool useModelScope) : m_scopeId(scopeId), m_useModelScope(useModelScope), m_prefix(prefix) {}
 
-        Utf8PrintfString codeValue("TestXDomain-%d", m_lineCount);
-        code = cvt.CreateCode(codeValue.c_str());
-        ++m_lineCount;
-        }
+    void InitCodeSpec(BentleyApi::Dgn::DgnDbR);
+    BentleyApi::Dgn::DgnCode GenerateCode(BentleyApi::Dgn::DgnDbR);
+
+    void _DetermineElementParams(DgnClassId&, DgnCode&, DgnCategoryId&, DgnV8Api::ElementHandle const&, Converter&, Bentley::ECN::IECInstance const*, ResolvedModelMapping const&) override;
 
     void _OnBeginConversion(Converter&, DgnV8ModelR rootModel) override {;}
     void _OnFinishConversion(Converter&) override {;}
     };
+
