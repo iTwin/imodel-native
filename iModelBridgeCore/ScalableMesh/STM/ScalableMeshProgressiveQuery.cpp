@@ -854,8 +854,8 @@ threadId);
                         for (auto& node : (*queryItr)->m_newOverviews[threadIter])
                         {
                             for (auto& nodeOld : staleOverviews)
-                            {
-                                if (dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>(nodeOld.get())->GetNodePtr().GetPtr() == dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>(nodeOld.get())->GetNodePtr().GetPtr())
+                            {                                
+                                if (dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>(nodeOld.get())->GetNodePtr()->GetBlockID().m_integerID == dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>(node.get())->GetNodePtr()->GetBlockID().m_integerID)
                                     nodeOld = dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>(node.get());
                             }
                         }
@@ -882,7 +882,7 @@ void IScalableMeshProgressiveQueryEngine::CancelAllQueries()
 static double s_updateOverviewsDelay = (double)1 / 10 * CLOCKS_PER_SEC;
 
 //controls whether preload of overviews is subject to delay
-static bool s_shouldDelayPreloadOverviews = true;
+static bool s_shouldDelayPreloadOverviews = false;
 
 void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
     {    
