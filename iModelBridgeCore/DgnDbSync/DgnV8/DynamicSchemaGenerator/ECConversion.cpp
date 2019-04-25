@@ -2385,10 +2385,6 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
         if (skipped != m_skippedSchemas.end())
             continue;
 
-        // We fabricate the DgnV8 Tag Set Definition schema at runtime during conversion; never allow instances of that schema to be considered primary.
-        if (isPrimary && ecClass.m_schemaName.Equals(Converter::GetV8TagSetDefinitionSchemaName()))
-            isPrimary = false;
-        
         ECClassName v8ClassName(v8SchemaName.c_str(), Utf8String(ecClass.m_className.c_str()).c_str());
         ECN::SchemaKey conversionKey(Utf8String(v8ClassName.GetSchemaName()).append("_DgnDbSync").c_str(), 1, 0);
         ECN::ECSchemaPtr conversionSchema = m_syncReadContext->LocateSchema(conversionKey, ECN::SchemaMatchType::Latest);
@@ -3325,7 +3321,10 @@ void DynamicSchemaGenerator::BisifyV8Schemas(bvector<DgnV8FileP> const& uniqueFi
 
     ConverterLogging::LogPerformance(timer, "Convert Schemas> Analyze V8 EC content");
 
-    if (!m_hasECContent)
+    ECN::ECSchemaPtr tagSetSchema = CreateDgnV8TagSetDefinitionSchema(m_converter.GetTagSetClassMap(), uniqueFiles, uniqueModels);
+    ConverterLogging::LogPerformance(timer, "Convert Dgn V8Tags");
+
+    if (!m_hasECContent && !tagSetSchema.IsValid())
         {
         scope.SetSucceeded();
         return;
@@ -3339,6 +3338,8 @@ void DynamicSchemaGenerator::BisifyV8Schemas(bvector<DgnV8FileP> const& uniqueFi
 
     ReportProgress();
     ConverterLogging::LogPerformance(timer, "Convert Schemas> Upgrade V8 ECSchemas");
+    if (tagSetSchema.IsValid())
+        m_schemaReadContext->GetCache().AddSchema(*tagSetSchema);
 
     timer.Start();
 
@@ -3426,15 +3427,6 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
         }
     else
         {
-        // V8TagSets - This is tricky. We convert V8 tagset defs into V8 ECClasses, and we add ECInstances to the tagged V8 elements. That way, the normal
-        //              schema conversion (below) will import the classes, and the normal element conversion will import the instances.
-        if (true)
-            {
-            StopWatch timer(true);
-            _ConvertDgnV8Tags(filesInOrder, modelsInOrder);
-            ConverterLogging::LogPerformance(timer, "Convert Dgn V8Tags");
-            }
-
         if (WasAborted())
             return BSIERROR;
 

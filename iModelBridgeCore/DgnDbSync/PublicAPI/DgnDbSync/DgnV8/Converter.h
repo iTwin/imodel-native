@@ -52,6 +52,9 @@ struct ElementAspectConverter;
 struct ModelTypeAppData;
 
 typedef RefCountedPtr<LineStyleConverter> LineStyleConverterPtr;
+typedef bmap<DgnV8Api::ElementId, Utf8String> T_TagSetDefToClassNameMap;
+typedef bmap<DgnV8Api::ElementId, bmap<uint16_t, Utf8String>> T_TagSetPropNameMap;
+
 
 //=======================================================================================
 //! Identifies an ECClass in an ECSchema from a v8 repository
@@ -1010,6 +1013,8 @@ protected:
     bset<DgnModelId>    m_unchangedModels;
     bmap<DgnModelId, bpair<Utf8String, RepositoryLinkId>>    m_modelsRequiringRealityTiles;
     bool                m_haveCreatedThumbnails = false;
+    T_TagSetDefToClassNameMap m_tagSetDefToClassMap;
+    T_TagSetPropNameMap m_tagSetPropNameMap;
 
     void CheckForAndSaveChanges();
     DGNDBSYNC_EXPORT Converter(Params const&);
@@ -1071,6 +1076,11 @@ public:
             _GetParams().GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFilename); 
         }
 
+    //! Need to create a map of tag set to ECClass name during the schema creation that is later used during element conversion
+    T_TagSetDefToClassNameMap& GetTagSetClassMap() { return m_tagSetDefToClassMap; }
+
+    //! Need to create a map of property names to the tag set id during schema creation that is later used during element conversion
+    T_TagSetPropNameMap& GetTagSetPropNameMap() { return m_tagSetPropNameMap; }
 
     //! @name Graphics Conversion Utilties
     //! @{
@@ -1911,8 +1921,7 @@ public:
 
     //! @name  Tags
     //! @{
-    DGNDBSYNC_EXPORT virtual void _ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files, bvector<DgnV8ModelP> const& uniqueModels);
-    static WCharCP GetV8TagSetDefinitionSchemaName() {return L"V8TagSetDefinitions";}
+    static Utf8CP GetV8TagSetDefinitionSchemaName() {return "V8TagSetDefinitions";}
     //! @}
 
     //! @name Codes
@@ -2933,7 +2942,7 @@ struct ConvertV8TextToDgnDbExtension : ConvertToDgnDbElementExtension
 struct ConvertV8TagToDgnDbExtension : ConvertToDgnDbElementExtension
 {
     static void Register();
-    virtual Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override {return Result::SkipElement;}
+    Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override;
 };
 
 //=======================================================================================

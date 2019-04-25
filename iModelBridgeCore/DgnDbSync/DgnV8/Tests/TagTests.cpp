@@ -138,7 +138,7 @@ TEST_F(TagTests, Basic)
     DgnElementCPtr lineElem2 = FindV8ElementInDgnDb(*db, eid2);
     ASSERT_TRUE(lineElem2.IsValid());
     ECSqlStatement stmt;
-    ECSqlStatus ecStatus = stmt.Prepare(*db, "SELECT Element.Id,Tag1 FROM v8tag.TagSetElementAspect");
+    ECSqlStatus ecStatus = stmt.Prepare(*db, "SELECT Element.Id,Tag1 FROM v8tag.TagSet");
     ASSERT_TRUE(ECSqlStatus::Success == ecStatus);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -176,7 +176,7 @@ TEST_F(TagTests, TagVisibility)
     DgnElementCPtr lineElem = FindV8ElementInDgnDb(*db, eid);
     ASSERT_TRUE(lineElem.IsValid());
     ECSqlStatement stmt;
-    ECSqlStatus ecStatus = stmt.Prepare(*db, "SELECT Element.Id,Tag1 FROM v8tag.TagSetElementAspect");
+    ECSqlStatus ecStatus = stmt.Prepare(*db, "SELECT Element.Id,Tag1 FROM v8tag.TagSet");
     ASSERT_TRUE(ECSqlStatus::Success == ecStatus);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -213,7 +213,7 @@ TEST_F(TagTests, Empty)
     DgnElementCPtr lineElem = FindV8ElementInDgnDb(*db, eid);
     ASSERT_TRUE(lineElem.IsValid());
     ECSqlStatement stmt;
-    ECSqlStatus ecStatus = stmt.Prepare(*db, "SELECT Element.Id,Tag1 FROM v8tag.TagSetElementAspect");
+    ECSqlStatus ecStatus = stmt.Prepare(*db, "SELECT Element.Id,Tag1 FROM v8tag.TagSet");
     ASSERT_TRUE(ECSqlStatus::Success == ecStatus);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
