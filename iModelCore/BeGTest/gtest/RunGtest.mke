@@ -99,7 +99,10 @@ always:
 		$(exeName)
 		<
 		%ifdef GTEST_FILTER
-			python $(SrcRoot)imodel02/TestingScripts/TestImpactAnalysis/CreateBatch.py $(exeName) "$(GTEST_EXTRA_ARGS)" "$(GTEST_FILTER_FILE)" $(SrcRoot)imodel02/iModelCore/BeGTest/gtest/TeeGtest.py $(ResultsCapture)
+			>$(LogDir)run.bat
+			$(exeName) $(GTEST_EXTRA_ARGS) --gtest_flagfile=$(GTEST_FILTER_FILE) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)		
+			exit
+			<
 		%else			
 			>$(LogDir)run.bat
 			$(exeName) $(GTEST_EXTRA_ARGS) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)		
