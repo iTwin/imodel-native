@@ -52,9 +52,6 @@ struct ElementAspectConverter;
 struct ModelTypeAppData;
 
 typedef RefCountedPtr<LineStyleConverter> LineStyleConverterPtr;
-typedef bmap<DgnV8Api::ElementId, Utf8String> T_TagSetDefToClassNameMap;
-typedef bmap<DgnV8Api::ElementId, bmap<uint16_t, Utf8String>> T_TagSetPropNameMap;
-
 
 //=======================================================================================
 //! Identifies an ECClass in an ECSchema from a v8 repository
@@ -1013,8 +1010,6 @@ protected:
     bset<DgnModelId>    m_unchangedModels;
     bmap<DgnModelId, bpair<Utf8String, RepositoryLinkId>>    m_modelsRequiringRealityTiles;
     bool                m_haveCreatedThumbnails = false;
-    T_TagSetDefToClassNameMap m_tagSetDefToClassMap;
-    T_TagSetPropNameMap m_tagSetPropNameMap;
 
     void CheckForAndSaveChanges();
     DGNDBSYNC_EXPORT Converter(Params const&);
@@ -1075,12 +1070,6 @@ public:
         if (nullptr != _GetParams().GetDocumentPropertiesAccessor())
             _GetParams().GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFilename); 
         }
-
-    //! Need to create a map of tag set to ECClass name during the schema creation that is later used during element conversion
-    T_TagSetDefToClassNameMap& GetTagSetClassMap() { return m_tagSetDefToClassMap; }
-
-    //! Need to create a map of property names to the tag set id during schema creation that is later used during element conversion
-    T_TagSetPropNameMap& GetTagSetPropNameMap() { return m_tagSetPropNameMap; }
 
     //! @name Graphics Conversion Utilties
     //! @{
@@ -2941,6 +2930,11 @@ struct ConvertV8TextToDgnDbExtension : ConvertToDgnDbElementExtension
 //=======================================================================================
 struct ConvertV8TagToDgnDbExtension : ConvertToDgnDbElementExtension
 {
+private:
+    bool TryFindClassNameForTagSet(Converter& converter, DgnV8Api::ElementId tagSetId, Utf8StringR className);
+    bool TryFindPropNamesForTagSet(Converter& converter, DgnV8Api::ElementId tagSetId, Json::Value& propNames);
+
+public:
     static void Register();
     Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override;
 };

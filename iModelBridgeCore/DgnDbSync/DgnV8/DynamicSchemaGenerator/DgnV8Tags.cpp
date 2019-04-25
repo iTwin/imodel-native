@@ -8,6 +8,9 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
 namespace V8ECN = Bentley::ECN;
 
+typedef bmap<DgnV8Api::ElementId, Utf8String> T_TagSetDefToClassNameMap;
+typedef bmap<DgnV8Api::ElementId, bmap<uint16_t, Utf8String>> T_TagSetPropNameMap;
+
 //---------------------------------------------------------------------------------------
 // Mostly identical to Sam's implementation in Graphite0505.
 // @bsimethod                                                   Jeff.Marker     06/2016
@@ -192,7 +195,7 @@ struct CompareIUtf8Ascii
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2016
 //---------------------------------------------------------------------------------------
-ECN::ECSchemaPtr DynamicSchemaGenerator::CreateDgnV8TagSetDefinitionSchema(T_TagSetDefToClassNameMap& tagSetDefToClassMap, bvector<DgnV8FileP> const& v8Files, bvector<DgnV8ModelP> const& uniqueModels)
+ECN::ECSchemaPtr DynamicSchemaGenerator::CreateDgnV8TagSetDefinitionSchema(bvector<DgnV8FileP> const& v8Files, bvector<DgnV8ModelP> const& uniqueModels)
     {
     DgnV8Api::DgnECManager& v8ECManager = DgnV8Api::DgnECManager::GetManager();
     //...............................................................................................................................................
@@ -226,6 +229,8 @@ ECN::ECSchemaPtr DynamicSchemaGenerator::CreateDgnV8TagSetDefinitionSchema(T_Tag
     // N.B. Due to namespace collisions inside btree, the easiest way is to use V8's bset...
     typedef BentleyApi::bset<Utf8String, CompareIUtf8Ascii> T_ExistingClassNameSet;
     T_ExistingClassNameSet existingClassNames;
+    T_TagSetDefToClassNameMap tagSetDefToClassMap;
+    T_TagSetPropNameMap tagSetPropNameMap;
 
     ECN::ECClassCP elementAspectBaseClass = m_converter.GetDgnDb().Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementUniqueAspect);
     ECN::ECClassP nonConstBase = const_cast<ECN::ECClassP>(elementAspectBaseClass);
@@ -273,7 +278,7 @@ ECN::ECSchemaPtr DynamicSchemaGenerator::CreateDgnV8TagSetDefinitionSchema(T_Tag
 
             // Create the class
             ECN::ECEntityClassP ecclass;
-            if (SUCCESS != convertTagSetToECClass(ecclass, *tagSetDefSchema, tagsetDefClassName, displayLabel, tagDefs, m_converter.GetTagSetPropNameMap()[v8tagsetdefelementid]))
+            if (SUCCESS != convertTagSetToECClass(ecclass, *tagSetDefSchema, tagsetDefClassName, displayLabel, tagDefs, tagSetPropNameMap[v8tagsetdefelementid]))
                 continue;
 
             // Optionally merge different versions of tagset defs w/ same name
@@ -381,6 +386,27 @@ ECN::ECSchemaPtr DynamicSchemaGenerator::CreateDgnV8TagSetDefinitionSchema(T_Tag
             tagSetDefSchema->DeleteClass(*dupClass);
             }
         }
+
+    for (auto const& pair : tagSetDefToClassMap)
+        {
+        BeSQLite::DbResult result;
+        if (BeSQLite::DbResult::BE_SQLITE_OK != (result = m_converter.GetDgnDb().SavePropertyString(DgnV8Info::V8TagSet(pair.second.c_str()), nullptr, pair.first)))
+            return nullptr;
+        }
+
+    for (auto const& pair : tagSetPropNameMap)
+        {
+        Utf8PrintfString elementId("%" PRIu64, pair.first);
+        Json::Value mapping;
+        for (auto const& mapEntry : pair.second)
+            {
+            Utf8PrintfString tagId("%" PRIu16, mapEntry.first);
+            mapping[tagId] = mapEntry.second;
+            }
+        BeSQLite::DbResult result;
+        if (BeSQLite::DbResult::BE_SQLITE_OK != (result = m_converter.GetDgnDb().SavePropertyString(DgnV8Info::V8TagDefinition(elementId.c_str()), mapping.ToString())))
+            return nullptr;
+        }
     return tagSetDefSchema;
     }
 
@@ -391,6 +417,56 @@ void ConvertV8TagToDgnDbExtension::Register()
     {
     ConvertV8TagToDgnDbExtension* instance = new ConvertV8TagToDgnDbExtension();
     RegisterExtension(DgnV8Api::TagElementHandler::GetInstance(), *instance);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ConvertV8TagToDgnDbExtension::TryFindClassNameForTagSet(Converter& converter, DgnV8Api::ElementId tagSetId, Utf8StringR className)
+    {
+    CachedStatementPtr stmt = nullptr;
+    Utf8String sql("SELECT Name FROM " BEDB_TABLE_Property " WHERE Id=? AND NameSpace='dgn_V8TagSet'");
+
+    auto stat = converter.GetDgnDb().GetCachedStatement(stmt, sql.c_str());
+    if (stat != BE_SQLITE_OK)
+        {
+        BeAssert(false && "Could not retrieve cached statement.");
+        return false;
+        }
+
+    stmt->BindUInt64(1, tagSetId);
+    if (BE_SQLITE_ROW != stmt->Step())
+        return false;
+
+    className = stmt->GetValueText(0);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ConvertV8TagToDgnDbExtension::TryFindPropNamesForTagSet(Converter& converter, DgnV8Api::ElementId tagSetId, Json::Value& propNames)
+    {
+    CachedStatementPtr stmt = nullptr;
+    Utf8String sql("SELECT StrData FROM " BEDB_TABLE_Property " WHERE Name=? AND NameSpace='dgn_V8TagDef'");
+
+    auto stat = converter.GetDgnDb().GetCachedStatement(stmt, sql.c_str());
+    if (stat != BE_SQLITE_OK)
+        {
+        BeAssert(false && "Could not retrieve cached statement.");
+        return false;
+        }
+
+    Utf8PrintfString elementId("%" PRIu64, tagSetId);
+
+    stmt->BindText(1, elementId, BeSQLite::Statement::MakeCopy::No);
+    if (BE_SQLITE_ROW != stmt->Step())
+        return false;
+
+    if (!Json::Reader::Parse(stmt->GetValueText(0), propNames))
+        return false;
+
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -421,15 +497,14 @@ ConvertToDgnDbElementExtension::Result ConvertV8TagToDgnDbExtension::_PreConvert
         return Result::SkipElement;
 
     DgnV8Api::ElementId v8TagSetDefId = DgnV8Api::TagElementHandler::GetSetDefinitionID(v8el);
-
-    T_TagSetDefToClassNameMap::const_iterator foundTagClassName = converter.GetTagSetClassMap().find(v8TagSetDefId);
-    if (converter.GetTagSetClassMap().end() == foundTagClassName)
+    Utf8String foundTagClassName;
+    if (!TryFindClassNameForTagSet(converter, v8TagSetDefId, foundTagClassName))
         {
         BeAssert(false); 
         return Result::SkipElement;
         }
 
-    ECN::ECClassCP tagClass = tagSetDefSchema->GetClassCP(foundTagClassName->second.c_str());
+    ECN::ECClassCP tagClass = tagSetDefSchema->GetClassCP(foundTagClassName.c_str());
     if (nullptr == tagClass)
         {
         return Result::SkipElement;
@@ -472,18 +547,19 @@ ConvertToDgnDbElementExtension::Result ConvertV8TagToDgnDbExtension::_PreConvert
             return Result::SkipElement;
         }
 
-    T_TagSetPropNameMap::const_iterator foundPropNameMap = converter.GetTagSetPropNameMap().find(v8TagSetDefId);
-    if (converter.GetTagSetPropNameMap().end() == foundPropNameMap)
+    Json::Value propNames;
+    if (!TryFindPropNamesForTagSet(converter, v8TagSetDefId, propNames))
         { BeAssert(false); return Result::SkipElement; }
             
-    bmap<uint16_t, Utf8String>::const_iterator foundPropName = foundPropNameMap->second.find(def.id);
-    if (foundPropNameMap->second.end() == foundPropName)
+    Utf8PrintfString tagId("%" PRIu16, def.id);
+
+    if (!propNames.isMember(tagId.c_str()))
         { 
         /* Can be expected if using an unsupported value type. */ 
         return Result::SkipElement;
         }
 
-    aspect->SetPropertyValue(foundPropName->second.c_str(), convertedValue);
+    aspect->SetPropertyValue(propNames[tagId.c_str()].asCString(), convertedValue);
     targetElement->Update();
 
     return Result::SkipElement;

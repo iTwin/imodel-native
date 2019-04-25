@@ -142,7 +142,7 @@ struct DynamicSchemaGenerator
     void BisifyV8Schemas(bvector<DgnV8FileP> const&, bvector<DgnV8ModelP> const&);
     void RemoveDgnV8CustomAttributes(ECN::IECCustomAttributeContainerR container);
 
-    ECN::ECSchemaPtr CreateDgnV8TagSetDefinitionSchema(T_TagSetDefToClassNameMap& tagSetDefToClassMap, bvector<DgnV8FileP> const& uniqueFiles, bvector<DgnV8ModelP> const& uniqueModels);
+    ECN::ECSchemaPtr CreateDgnV8TagSetDefinitionSchema(bvector<DgnV8FileP> const& uniqueFiles, bvector<DgnV8ModelP> const& uniqueModels);
 
     public:
 

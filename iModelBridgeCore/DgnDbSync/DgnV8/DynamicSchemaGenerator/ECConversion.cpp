@@ -3321,7 +3321,7 @@ void DynamicSchemaGenerator::BisifyV8Schemas(bvector<DgnV8FileP> const& uniqueFi
 
     ConverterLogging::LogPerformance(timer, "Convert Schemas> Analyze V8 EC content");
 
-    ECN::ECSchemaPtr tagSetSchema = CreateDgnV8TagSetDefinitionSchema(m_converter.GetTagSetClassMap(), uniqueFiles, uniqueModels);
+    ECN::ECSchemaPtr tagSetSchema = CreateDgnV8TagSetDefinitionSchema(uniqueFiles, uniqueModels);
     ConverterLogging::LogPerformance(timer, "Convert Dgn V8Tags");
 
     if (!m_hasECContent && !tagSetSchema.IsValid())
