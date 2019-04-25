@@ -45,7 +45,7 @@ public:
     GeometryClipper(ClipVectorCP clip) : m_clip(clip) { }
 
     DGNPLATFORM_EXPORT void DoClipPoints(bvector<DPoint3d>& pointsOut, const bvector<DPoint3d>& pointsIn);
-    DGNPLATFORM_EXPORT void DoClipStrokes(StrokesList& strokesOut, StrokesCR strokesIn);
+    DGNPLATFORM_EXPORT void DoClipStrokes(StrokesList& strokesOut, Strokes&& strokesIn);
     DGNPLATFORM_EXPORT void DoClipPolyface(PolyfaceList& polyfacesOut, PolyfaceCR polyfaceIn);
 }; // GeometryClipper
 

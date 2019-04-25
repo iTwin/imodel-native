@@ -10,7 +10,9 @@
 #include <DgnPlatform/RangeIndex.h>
 #include <GeomJsonWireFormat/JsonUtils.h>
 #include <numeric>
+#include <algorithm>
 #include <set>
+#include <map>
 #include <inttypes.h>
 #if defined (BENTLEYCONFIG_PARASOLID)
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
@@ -75,6 +77,9 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(TileContext);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshGenerator);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ElementMeshGenerator);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(SharedMeshGenerator);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(InstanceableGeom);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(InstanceableGeomBucket);
+DEFINE_REF_COUNTED_PTR(InstanceableGeom);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(SubRanges);
 
 //=======================================================================================
@@ -631,7 +636,7 @@ protected:
 
     TileBuilder(TileContext& context, DRange3dCR range);
 
-    void ReInitialize(DRange3dCR range);
+    void ReInitialize(DRange3dCR range, TransformCR geomToOrigin);
 public:
     TileBuilder(TileContext& context, DgnElementId elemId, double rangeDiagonalSquared, CreateParams const& params);
 
@@ -805,6 +810,8 @@ public:
 
     PartGeoms const& Parts() const { return m_geomParts; }
     SolidPrimitives const& GetSolidPrimitives() const { return m_solidPrimitives; }
+
+    void AddSharedGeometry(GeometryList& geometryList, ElementMeshGeneratorR meshGenerator, SubRanges& subRanges) const;
 };
 
 /*=================================================================================**//**
@@ -823,11 +830,11 @@ struct GlyphAtlas;
 struct DeferredGlyph
 {
     Polyface m_polyface;
-    GeometryPtr m_geom;
+    DgnElementId m_elemId;
     double m_rangePixels;
     bool m_isContained;
 
-    DeferredGlyph(Polyface& polyface, Geometry& geom, double rangePixels, bool isContained) : m_polyface(polyface), m_geom(&geom), m_rangePixels(rangePixels), m_isContained(isContained) {}
+    DeferredGlyph(Polyface& polyface, DgnElementId elemId, double rangePixels, bool isContained) : m_polyface(polyface), m_elemId(elemId), m_rangePixels(rangePixels), m_isContained(isContained) {}
     void* GetKey();
 };
 
@@ -898,6 +905,22 @@ public:
     GlyphAtlas& GetAtlasAndLocationForGlyph(DeferredGlyph& glyph, GlyphLocation &loc);
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static PolyfaceHeaderPtr tryDecimate(Polyface& tilePolyface)
+    {
+    static constexpr size_t minPointCount = 100; // Only decimate meshes with at least this many points.
+    PolyfaceHeaderPtr pf = tilePolyface.m_polyface;
+    BeAssert(pf.IsValid() && 0 < pf->GetPointIndexCount()); // callers check this
+    if (!tilePolyface.CanDecimate() || pf->GetPointCount() <= minPointCount)
+        return nullptr;
+
+    static constexpr double minRatio = 0.25; // Decimation must reduce point count by at least this percentage.
+    BeAssert(0 == pf->GetEdgeChainCount()); // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
+    return pf->ClusteredVertexDecimate(tilePolyface.m_decimationTolerance, minRatio);
+    }
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
@@ -909,23 +932,13 @@ protected:
     MeshBuilderMap      m_builderMap;
     DRange3d            m_contentRange = DRange3d::NullRange();
     bool                m_didDecimate = false;
-
-    // ###TODO Revisit decimation...lots of small polyfaces can produce excessive vetices.
-    static constexpr size_t GetDecimatePolyfacePointCount() { return 100; } // Only decimate meshes with at least this many points.
-    static constexpr double GetDecimatePolyfaceMinRatio() { return 0.25; } // Decimation must reduce point count by at least this percentage.
     
-    bool GetOmitEdges() const { return m_loader.GetTree().GetOmitEdges(); }
-
     MeshBuilderR GetMeshBuilder(MeshBuilderMap::Key const& key);
-    DgnElementId GetElementId(GeometryR geom) const { return geom.GetEntityId(); }
 
-    void AddPolyfaces(GeometryR geom, double rangePixels, bool isContained);
-    void AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained);
-    void AddPolyface(Polyface& polyface, GeometryR, double rangePixels, bool isContained, bool doDefer=true);
+    void AddPolyfaces(PolyfaceList& polyfaces, DgnElementId, double rangePixels, bool isContained);
     void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar);
 
-    void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained);
-    void AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained);
+    void AddStrokes(StrokesList& strokes, DgnElementId, double rangePixels, bool isContained);
 
     SystemP _GetRenderSystem() const final { return &m_loader.GetRenderSystem(); }
     GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const&) final { BeAssert(false); return nullptr; }
@@ -949,6 +962,8 @@ protected:
     MeshGenerator(GeometryLoaderCR loader, double tolerance, GeometryOptionsCR options, DRange3dCR range);
 public:
     bool DidDecimation() const { return m_didDecimate; }
+    void MarkDecimated() { m_didDecimate = true; }
+    bool GetOmitEdges() const { return m_loader.GetTree().GetOmitEdges(); }
 
     // Add meshes to the MeshBuilder map
     void AddMeshes(GeometryList const& geometries, bool doRangeTest);
@@ -961,10 +976,20 @@ public:
 
     virtual FeatureTableR GetFeatureTable() = 0;
     virtual double GetTolerance() const = 0;
-    virtual void AddDeferredPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained) = 0;
+    virtual void AddDeferredPolyface(Polyface& tilePolyface, DgnElementId, double rangePixels, bool isContained) = 0;
     virtual void ClipAndAddPolyface(PolyfaceHeaderR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions const& edgeOptions, bool isPlanar) = 0;
-    void ExtendContentRange(bvector<DPoint3d> const& points) { m_contentRange.Extend(points); }
     virtual void ClipStrokes(StrokesR) const = 0;
+
+    void ExtendContentRange(bvector<DPoint3d> const& points) { m_contentRange.Extend(points); }
+    void ExtendContentRange(DRange3dR range) { m_contentRange.Extend(range); }
+
+    MeshBuilderPtr FindMeshBuilder(MeshBuilderMap::Key const& key) const
+        {
+        return m_builderMap.Find(key);
+        }
+
+    void AddPolyface(Polyface& polyface, DgnElementId, double rangePixels, bool isContained, bool doDefer=true);
+    void AddStrokes(StrokesR strokes, DgnElementId, double rangePixels, bool isContained);
 };
 
 //=======================================================================================
@@ -990,13 +1015,13 @@ public:
     FeatureTableR GetFeatureTable() final { return m_featureTable; }
     double GetTolerance() const final { return m_loader.GetTolerance(); }
     DRange3dCR GetContentRange() const { return m_contentRange; }
-    void AddDeferredPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained) final;
+    void AddDeferredPolyface(Polyface& tilePolyface, DgnElementId, double rangePixels, bool isContained) final;
     void ClipAndAddPolyface(PolyfaceHeaderR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions const& edgeOptions, bool isPlanar) final;
     void ClipStrokes(StrokesR strokes) const final;
 
     MeshList GetMeshes();
-    void AddSharedGeom(SharedGeomR geom, SubRangesR);
     void AddDeferredGlyphMeshes(Render::System& renderSystem);
+    void AddSharedMesh(MeshR mesh) { m_sharedMeshes.push_back(&mesh); }
 };
 
 //=======================================================================================
@@ -1016,7 +1041,7 @@ public:
 
     FeatureTableR GetFeatureTable() final { return m_gen.GetFeatureTable(); }
     double GetTolerance() const final { return m_geom.GetTolerance(m_gen.GetTolerance()); }
-    void AddDeferredPolyface(Polyface&, GeometryR, double, bool) final { BeAssert(false); }
+    void AddDeferredPolyface(Polyface&, DgnElementId, double, bool) final { BeAssert(false); }
     void ClipAndAddPolyface(PolyfaceHeaderR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions const&, bool) final { BeAssert(false); }
     void ClipStrokes(StrokesR) const final { }
 
@@ -1024,111 +1049,323 @@ public:
     DRange3d ComputeContentRange(SubRangesR) const;
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElementMeshGenerator::AddSharedGeom(SharedGeomR geom, SubRangesR subRanges)
-    {
-    // Only bother trying to instance if minimum number of instances exist...
-    if (geom.IsWorthInstancing())
-        {
-        // ###TODO_INSTANCING: After facetting, decide whether it's truly worth instancing based on how many facets * how many instances.
-        // (Overly-aggressive instancing can result in excessive number of draw calls - not worth it for simple geometry).
-        // Additional options:
-        //  - Look for compatible MeshBuilder in uninstanced geometry's MeshBuilderMap to help decide between batching and instancing
-        //  - Compare ratio of instanced facets to uninstanced facets
-        //  - Look for compatible display params amongst other instanceable geometry
-        SharedMeshGenerator sharedGen(*this, geom);
-        sharedGen.AddMeshes(m_sharedMeshes);
-        if (sharedGen.DidDecimation())
-            m_didDecimate = true;
+//=======================================================================================
+//! A single instanceable Polyface or Strokes.
+// @bsistruct                                                   Paul.Connelly   04/19
+//=======================================================================================
+struct InstanceableGeom : RefCountedBase
+{
+private:
+    SharedGeomCPtr  m_sharedGeom;
+protected:
+    explicit InstanceableGeom(SharedGeomCR shared) : m_sharedGeom(&shared) { }
 
-        m_contentRange.Extend(sharedGen.ComputeContentRange(subRanges));
+    virtual void AddInstanced(MeshGeneratorR, MeshBuilderR, DRange3dR contentRange) const = 0;
+    virtual void AddBatched(ElementMeshGeneratorR meshGen, TransformCR transform, DisplayParamsCR displayParams, DgnElementId elemId) = 0;
+public:
+    size_t GetVertexCount() const { return GetSharedGeom().GetInstanceCount() * GetSharedVertexCount(); }
+    SharedGeomCR GetSharedGeom() const { return *m_sharedGeom; }
+
+    virtual size_t GetSharedVertexCount() const = 0;
+    virtual DisplayParamsCR GetDisplayParams() const = 0;
+    virtual MeshBuilderMap::Key GetMeshBuilderMapKey() const = 0;
+    virtual DRange3d ComputeRange() const = 0;
+
+    bool operator<(InstanceableGeomCR rhs) const { return GetVertexCount() < rhs.GetVertexCount(); }
+    static bool ComparePtrs(InstanceableGeomPtr const& lhs, InstanceableGeomPtr const& rhs) { return *lhs < *rhs; }
+
+    void AddInstanced(ElementMeshGeneratorR meshGen, SubRangesR subRanges);
+    void AddBatched(ElementMeshGeneratorR meshGen, SubRangesR subRanges);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/19
+//=======================================================================================
+struct InstanceablePolyface : InstanceableGeom
+{
+private:
+    Polyface    m_polyface;
+    bool        m_decimated;
+
+    InstanceablePolyface(PolyfaceCR polyface, SharedGeomCR shared, bool decimated) : InstanceableGeom(shared), m_polyface(polyface), m_decimated(decimated) { }
+
+    void AddInstanced(MeshGeneratorR, MeshBuilderR, DRange3dR contentRange) const final;
+    void AddBatched(ElementMeshGeneratorR meshGen, TransformCR transform, DisplayParamsCR displayParams, DgnElementId elemId) final;
+public:
+    static InstanceableGeomPtr Create(PolyfaceR polyface, SharedGeomCR shared)
+        {
+        PolyfaceHeaderPtr decimated = tryDecimate(polyface);
+
+        // Prevent trying to re-decimate
+        // (Note even if tryDecimate() returned null we may subsequently try and fail again if decimation tolerance is non-zero.
+        polyface.m_decimationTolerance = 0.0;
+        if (decimated.IsValid())
+            polyface.m_polyface = decimated;
+
+        return new InstanceablePolyface(polyface, shared, decimated.IsValid());
         }
-    else
+
+    size_t GetSharedVertexCount() const final { return m_polyface.m_polyface->GetPointCount(); }
+
+    // NB: Face-attached materials produce multiple polyfaces with different materials...
+    DisplayParamsCR GetDisplayParams() const final { return *m_polyface.m_displayParams; }
+    DRange3d ComputeRange() const final { return m_polyface.m_polyface->PointRange(); }
+
+    MeshBuilderMap::Key GetMeshBuilderMapKey() const final
         {
-        DRange3d range;
-        for (auto const& instance : geom.GetInstances())
+        return MeshBuilderMap::Key(GetDisplayParams(), nullptr != m_polyface.m_polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, m_polyface.m_isPlanar);
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/19
+//=======================================================================================
+struct InstanceableStrokes : InstanceableGeom
+{
+private:
+    Strokes m_strokes;
+    size_t  m_numVertices = 0;
+
+    InstanceableStrokes(Strokes&& strokes, SharedGeomCR shared) : InstanceableGeom(shared), m_strokes(std::move(strokes))
+        {
+        for (auto const& pointList : m_strokes.m_strokes)
+            m_numVertices += pointList.m_points.size();
+        }
+
+    void AddInstanced(MeshGeneratorR, MeshBuilderR, DRange3dR contentRange) const final;
+    void AddBatched(ElementMeshGeneratorR meshGen, TransformCR transform, DisplayParamsCR displayParams, DgnElementId elemId) final;
+public:
+    static InstanceableGeomPtr Create(Strokes&& strokes, SharedGeomCR shared) { return new InstanceableStrokes(std::move(strokes), shared); }
+
+    size_t GetSharedVertexCount() const final { return m_numVertices; }
+    DisplayParamsCR GetDisplayParams() const final { return *m_strokes.m_displayParams; }
+    DRange3d ComputeRange() const final
+        {
+        DRange3d range = DRange3d::NullRange();
+        for (auto const& pointList : m_strokes.m_strokes)
+            range.Extend(pointList.m_points);
+
+        return range;
+        }
+
+    MeshBuilderMap::Key GetMeshBuilderMapKey() const final
+        {
+        return MeshBuilderMap::Key(GetDisplayParams(), false, m_strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, m_strokes.m_isPlanar);
+        }
+};
+
+//=======================================================================================
+// A max-heap of InstanceableGeom whose DisplayParams are compatible for batching.
+// All the geometry in this collection *could* be batched into a single mesh.
+// Geometry is sorted by number of total vertices so that the geometry with the highest
+// vertex count is popped first.
+// @bsistruct                                                   Paul.Connelly   04/19
+//=======================================================================================
+struct InstanceableGeomBucket
+{
+private:
+    // Mutable members because we put these into a set - which only exposes const iterators because changing members might change the sort order
+    // But our sort order depends solely on m_displayParams so yeah.
+    mutable bvector<InstanceableGeomPtr> m_geom;
+    mutable size_t m_numInstanceableVertices = 0;
+    DisplayParamsCPtr m_displayParams;
+    mutable MeshBuilderPtr m_compatibleMeshBuilder; // Contains uninstanced Mesh with compatible DisplayParams
+public:
+    explicit InstanceableGeomBucket(DisplayParamsCR displayParams) : m_displayParams(&displayParams) { }
+
+    InstanceableGeomBucket(InstanceableGeomBucket&& src) : m_geom(std::move(src.m_geom)), m_numInstanceableVertices(src.m_numInstanceableVertices),
+        m_displayParams(src.m_displayParams), m_compatibleMeshBuilder(src.m_compatibleMeshBuilder) {}
+
+    InstanceableGeomBucket& operator=(InstanceableGeomBucket&& src)
+        {
+        if (this != & src)
             {
-            if (IsCanceled())
-                return; // Rely on caller to check...
+            m_geom = std::move(src.m_geom);
+            m_numInstanceableVertices = src.m_numInstanceableVertices;
+            m_compatibleMeshBuilder = src.m_compatibleMeshBuilder;
+            m_displayParams = src.m_displayParams;
+            }
 
-            instance.GetTransform().Multiply(range, geom.GetRange());
-            subRanges.Add(range);
+        return *this;
+        }
 
-            auto instanceGeom = Geometry::Create(geom, instance.GetTransform(), range, instance.GetElementId(), instance.GetDisplayParams(), GetDgnDb());
-            AddMeshes(*instanceGeom, false); // doRangeTest=false - we know it's fully contained.
+    void Push(InstanceableGeomR geom) const
+        {
+        BeAssert(GetDisplayParams().IsEqualTo(geom.GetDisplayParams(), ComparePurpose::Merge));
+
+        m_geom.push_back(&geom);
+        std::push_heap(m_geom.begin(), m_geom.end(), InstanceableGeom::ComparePtrs);
+        m_numInstanceableVertices += geom.GetVertexCount();
+        }
+
+    InstanceableGeomPtr Pop() const
+        {
+        if (m_geom.empty())
+            return nullptr;
+
+        std::pop_heap(m_geom.begin(), m_geom.end(), InstanceableGeom::ComparePtrs);
+        InstanceableGeomPtr back = m_geom.back();
+        m_geom.pop_back();
+
+        BeAssert(m_numInstanceableVertices >= back->GetVertexCount());
+        m_numInstanceableVertices -= back->GetVertexCount();
+
+        return back;
+        }
+
+    bool empty() const { return m_geom.empty(); }
+    size_t size() const { return m_geom.size(); }
+
+    size_t GetTotalVertexCount() const { return GetInstanceableVertexCount() + GetUninstanceableVertexCount(); }
+    size_t GetInstanceableVertexCount() const { return m_numInstanceableVertices; }
+    size_t GetUninstanceableVertexCount() const
+        {
+        auto mesh = m_compatibleMeshBuilder.IsValid() ? m_compatibleMeshBuilder->GetMesh() : nullptr;
+        return nullptr != mesh ? mesh->Points().size() : 0;
+        }
+
+    DisplayParamsCR GetDisplayParams() const { return *m_displayParams; }
+    void SetCompatibleMeshBuilder(MeshBuilderP builder) const { m_compatibleMeshBuilder = builder; }
+    MeshBuilderP GetCompatibleMeshBuilder() const { return m_compatibleMeshBuilder.get(); }
+
+    struct Comparator
+    {
+        bool operator()(InstanceableGeomBucket const& lhs, InstanceableGeomBucket const& rhs) const { return operator()(lhs.GetDisplayParams(), rhs.GetDisplayParams()); }
+        bool operator()(InstanceableGeomBucket const& lhs, DisplayParamsCR rhs) const { return operator()(lhs.GetDisplayParams(), rhs); }
+        bool operator()(DisplayParamsCR lhs, InstanceableGeomBucket const& rhs) const { return operator()(lhs, rhs.GetDisplayParams()); }
+        bool operator()(DisplayParamsCR lhs, DisplayParamsCR rhs) const { return lhs.IsLessThan(rhs, ComparePurpose::Merge); }
+    };
+};
+
+//=======================================================================================
+// A collection of buckets of instanceable geometry. The buckets are grouped according
+// to the compatibility of their DisplayParams - all geometry within a single bucket
+// could be batched into a single Mesh.
+// @bsistruct                                                   Paul.Connelly   04/19
+//=======================================================================================
+struct InstanceableGeomBuckets
+{
+private:
+    using Buckets = std::set<InstanceableGeomBucket, InstanceableGeomBucket::Comparator>;
+
+    Buckets m_buckets;
+    ElementMeshGeneratorR m_meshGenerator;
+    SubRangesR m_subRanges;
+
+    void AddPolyfaces(PolyfaceList& polyfaces, SharedGeomCR geom)
+        {
+        for (auto& polyface : polyfaces)
+            {
+            PolyfaceHeaderPtr pf = polyface.m_polyface;
+            if (pf.IsNull() || 0 == pf->GetPointIndexCount())
+                continue;
+
+            Add(*InstanceablePolyface::Create(polyface, geom));
             }
         }
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-MeshList ElementMeshGenerator::GetMeshes()
-    {
-    MeshList meshes;
-    for (auto& builder : m_builderMap)
+    void AddStrokes(StrokesList&& strokes, SharedGeomCR geom)
         {
-        MeshP mesh = builder.second->GetMesh();
-        if (!mesh->IsEmpty())
-            meshes.push_back(mesh);
+        for (auto& stroke : strokes)
+            if (!stroke.m_strokes.empty())
+                Add(*InstanceableStrokes::Create(std::move(stroke), geom));
         }
 
-    // Do not allow vertices outside of this tile's range to expand its content range
-    clipContentRangeToTileRange(m_contentRange, GetTileRange());
-
-    if (m_loader.GetLoader().CompressMeshQuantization())
-        for (auto& mesh : meshes)
-            mesh->CompressVertexQuantization();
-
-    meshes.insert(meshes.end(), m_sharedMeshes.begin(), m_sharedMeshes.end());
-
-    meshes.m_features = std::move(m_featureTable);
-    if (meshes.m_features.size() == 0 && meshes.size() != 0)
-        BeAssert(false && "GetMeshes: empty feature table");
-
-    return meshes;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d SharedMeshGenerator::ComputeContentRange(SubRangesR subRanges) const
-    {
-    auto contentRange = DRange3d::NullRange();
-    for (auto const& instance : m_geom.GetInstances())
+    // geom has been removed from the bucket. Determine if geom should be instanced.
+    static bool IsWorthInstancing(InstanceableGeomCR geom, InstanceableGeomBucketCR bucket)
         {
-        DRange3d range;
-        instance.GetTransform().Multiply(range, m_contentRange);
-        contentRange.Extend(range);
+        // A bucket consists of:
+        //  - The number of uninstanceable facets with which this geometry *could* be batched; and
+        //  - The number of instanceable facets with which this geometry *could* be batched.
+        // Instancing this geometry will reduce the number of facets in the tile (i.e., reduce memory and bandwidth usage on client), but
+        // introduce an extra draw call when rendering it.
+        // We need to decide if the savings is worth the cost.
 
-        // Ensure feature index allocated for instance
-        m_gen.GetFeatureTable().GetIndex(instance.GetFeature());
-
-        // Ensure sub-ranges containing instanced geometry are marked non-empty
-        subRanges.Add(range);
-        }
-
-    return contentRange;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SharedMeshGenerator::AddMeshes(bvector<MeshPtr>& meshes)
-    {
-    MeshGenerator::AddMeshes(m_geom.GetGeometries(), false);
-    for (auto& builder : m_builderMap)
-        {
-        MeshP mesh = builder.second->GetMesh();
-        if (!mesh->IsEmpty())
+        // How many facets would result from batching the rest of the contents of the bucket (sans this geom)?
+        double nBatchedFacets = static_cast<double>(bucket.GetTotalVertexCount());
+        if (0.0 == nBatchedFacets)
             {
-            mesh->SetSharedGeom(m_geom);
-            meshes.push_back(mesh);
+            // Nothing to batch with - might as well instance - either way is an extra draw call, but instancing saves some memory/bandwidth
+            return true;
+            }
+
+        // If this geometry's facets represent a significant fraction of the total compatible facets, we consider it worth instancing.
+        // Note the ratio cannot exceed 1 because we include this geometry's own facet count in the denominator.
+        static double s_minFacetRatio = 0.25;
+        double nThisFacets = static_cast<double>(geom.GetVertexCount());
+        double ratio = nThisFacets / (nBatchedFacets + nThisFacets);
+        return ratio >= s_minFacetRatio;
+        }
+public:
+    InstanceableGeomBuckets(ElementMeshGeneratorR gen, SubRangesR subRanges) : m_meshGenerator(gen), m_subRanges(subRanges) { }
+
+    using const_iterator = Buckets::const_iterator;
+    size_t size() const { return m_buckets.size(); }
+    bool empty() const { return m_buckets.empty(); }
+    const_iterator begin() const { return m_buckets.begin(); }
+    const_iterator end() const { return m_buckets.end(); }
+
+    void Add(InstanceableGeomR geom)
+        {
+        if (!geom.GetSharedGeom().IsWorthInstancing())
+            {
+            geom.AddBatched(m_meshGenerator, m_subRanges);
+            return;
+            }
+
+        auto inserted = m_buckets.insert(InstanceableGeomBucket(geom.GetDisplayParams()));
+        inserted.first->Push(geom);
+        if (inserted.second)
+            {
+            // We just created+inserted this bucket - find a compatible MeshBuilder for uninstanced geometry
+            inserted.first->SetCompatibleMeshBuilder(m_meshGenerator.FindMeshBuilder(geom.GetMeshBuilderMapKey()).get());
             }
         }
-    }
+
+    void Add(SharedGeomR sharedGeom)
+        {
+        auto const& loader = m_meshGenerator.GetLoader();
+        SharedMeshGenerator sharedGen(m_meshGenerator, sharedGeom);
+        for (auto const& geometry : sharedGeom.GetGeometries())
+            {
+            if (loader.IsCanceled())
+                return;
+
+            // ###TODO_INSTANCING: Consolidate code taken from MeshGenerator::AddMeshes()...
+            DRange3dCR geomRange = geometry->GetTileRange();
+            double rangePixels = (loader.Is3d() ? geomRange.DiagonalDistance() : geomRange.DiagonalDistanceXY()) / sharedGen.GetTolerance();
+            if (rangePixels < s_minRangeBoxSize && 0.0 < geomRange.DiagonalDistance())
+                return;
+
+            auto polyfaces = geometry->GetPolyfaces(sharedGen.GetTolerance(), sharedGen.GetOptions().m_normalMode, sharedGen);
+            auto strokes = geometry->GetStrokes(sharedGen.GetTolerance(), sharedGen);
+            loader.GetLoader().Preprocess(polyfaces, strokes);
+
+            AddPolyfaces(polyfaces, sharedGeom);
+            AddStrokes(std::move(strokes), sharedGeom);
+            }
+        }
+
+    void ProduceMeshes()
+        {
+        for (auto const& bucket : *this)
+            {
+            // The geometry in the bucket is sorted in descending order by number of vertices, and the "worth instancing" heuristic
+            // is based on number of vertices - so once we decide a particular geometry is not worth instancing, we know all subsequent geometries
+            // are also not worth instancing.
+            bool shouldInstance = true;
+            while (!bucket.empty() && !m_meshGenerator.GetLoader().IsCanceled())
+                {
+                InstanceableGeomPtr geom = bucket.Pop();
+                shouldInstance = shouldInstance && IsWorthInstancing(*geom, bucket);
+                if (shouldInstance)
+                    geom->AddInstanced(m_meshGenerator, m_subRanges);
+                else
+                    geom->AddBatched(m_meshGenerator, m_subRanges);
+                }
+            }
+        }
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
@@ -2500,30 +2737,9 @@ bool GeometryLoader::GenerateGeometry()
     if (IsCanceled())
         return false;
 
-    // Returns false if tile load canceled.
-    auto addSharedGeom = [&](SharedGeomR shared)
-        {
-        if (!shared.IsComplete())
-            geometryList.MarkIncomplete();
-
-        if (shared.IsCurved())
-            geometryList.MarkCurved();
-
-        meshGenerator.AddSharedGeom(shared, subRanges);
-
-        return !IsCanceled();
-        };
-
-    for (auto const& part : tileContext.Parts())
-        if (!addSharedGeom(*part))
-            return false;
-
-    for (auto const& primitive : tileContext.GetSolidPrimitives())
-        if (!addSharedGeom(*primitive))
-            return false;
-
-    if (meshGenerator.DidDecimation())
-        geometryList.MarkIncomplete();
+    tileContext.AddSharedGeometry(geometryList, meshGenerator, subRanges);
+    if (IsCanceled())
+        return false;
 
     // Facet all geometry
     m_geometry.Meshes() = meshGenerator.GetMeshes();
@@ -2809,7 +3025,7 @@ void ElementMeshGenerator::AddDeferredGlyphMeshes(Render::System& renderSystem)
             param.x = param.x < 0.5 ? uvs[0].y : uvs[1].y;
             }
 
-        AddPolyface(deferredGlyph.m_polyface, *deferredGlyph.m_geom, deferredGlyph.m_rangePixels, deferredGlyph.m_isContained, false);
+        AddPolyface(deferredGlyph.m_polyface, deferredGlyph.m_elemId, deferredGlyph.m_rangePixels, deferredGlyph.m_isContained, false);
         }
     }
 
@@ -2843,25 +3059,25 @@ void MeshGenerator::AddMeshes(GeometryR geom, bool doRangeTest)
     auto strokes = geom.GetStrokes(GetTolerance(), *this);
     m_loader.GetLoader().Preprocess(polyfaces, strokes);
 
-    AddStrokes(strokes, geom, rangePixels, isContained);
-    AddPolyfaces(polyfaces, geom, rangePixels, isContained);
+    AddStrokes(strokes, geom.GetEntityId(), rangePixels, isContained);
+    AddPolyfaces(polyfaces, geom.GetEntityId(), rangePixels, isContained);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained)
+void MeshGenerator::AddPolyfaces(PolyfaceList& polyfaces, DgnElementId elemId, double rangePixels, bool isContained)
     {
     for (auto& polyface : polyfaces)
-        AddPolyface(polyface, geom, rangePixels, isContained);
+        AddPolyface(polyface, elemId, rangePixels, isContained);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementMeshGenerator::AddDeferredPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained)
+void ElementMeshGenerator::AddDeferredPolyface(Polyface& tilePolyface, DgnElementId elemId, double rangePixels, bool isContained)
     {
-    m_deferredGlyphs.push_back(DeferredGlyph(tilePolyface, geom, rangePixels, isContained)); // defer processing these until we are finished so we can make texture atlas of glyphs
+    m_deferredGlyphs.push_back(DeferredGlyph(tilePolyface, elemId, rangePixels, isContained)); // defer processing these until we are finished so we can make texture atlas of glyphs
     void* key = m_deferredGlyphs.back().GetKey();
     if (m_uniqueGlyphKeys.find(key) == m_uniqueGlyphKeys.end())
         m_uniqueGlyphKeys.insert(key);
@@ -2870,11 +3086,11 @@ void ElementMeshGenerator::AddDeferredPolyface(Polyface& tilePolyface, GeometryR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained, bool doDefer)
+void MeshGenerator::AddPolyface(Polyface& tilePolyface, DgnElementId elemId, double rangePixels, bool isContained, bool doDefer)
     {
     if (nullptr != tilePolyface.m_glyphImage && doDefer)
         {
-        AddDeferredPolyface(tilePolyface, geom, rangePixels, isContained);
+        AddDeferredPolyface(tilePolyface, elemId, rangePixels, isContained);
         return;
         }
 
@@ -2883,21 +3099,15 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     if (polyface.IsNull() || 0 == polyface->GetPointIndexCount())
         return;
 
-    bool doDecimate = tilePolyface.CanDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
-    if (doDecimate)
+    PolyfaceHeaderPtr decimated = tryDecimate(tilePolyface);
+    if (decimated.IsValid())
         {
-        BeAssert(0 == polyface->GetEdgeChainCount()); // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
-        PolyfaceHeaderPtr decimated = polyface->ClusteredVertexDecimate(tilePolyface.m_decimationTolerance, GetDecimatePolyfaceMinRatio());
-        if (decimated.IsValid())
-            {
-            polyface = decimated.get();
-            m_didDecimate = true;
-            }
+        MarkDecimated();
+        polyface = decimated;
         }
 
     auto edgeOptions = (!GetOmitEdges() && tilePolyface.m_displayEdges) ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
 
-    DgnElementId            elemId = GetElementId(geom);
     MeshEdgeCreationOptions edges(edgeOptions);
     bool                    isPlanar = tilePolyface.m_isPlanar;
     DisplayParamsCPtr       displayParams = &tilePolyface.GetDisplayParams();
@@ -2920,25 +3130,23 @@ void ElementMeshGenerator::ClipAndAddPolyface(PolyfaceHeaderR polyface, DgnEleme
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/17
+* @bsimethod                                                    Paul.Connelly   04/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar)
+template<typename T> static void addClippedPolyface(MeshBuilderR builder, PolyfaceQueryCR polyface, MeshEdgeCreationOptions edgeOptions, FeatureCR feature, DisplayParamsCR displayParams, DgnDbR db, T extendContentRange)
     {
-    bool                hasTexture = displayParams.IsTextured();
-    bool                anyContributed = false;
-    uint32_t            fillColor = displayParams.GetFillColor();
-    DgnDbR              db = m_loader.GetDgnDb();
-    uint64_t            keyElementId = m_loader.GetLoader().GetNodeId(elemId); // Create separate primitives per element if classifying.
-    MeshBuilderMap::Key key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar, keyElementId);
-    MeshBuilderR        builder = GetMeshBuilder(key);
+    bool anyContributed = false;
+    uint32_t fillColor = displayParams.GetFillColor();
+    bool hasNormals = nullptr != polyface.GetNormalCP();
+    bool hasTexture = displayParams.IsTextured();
+    TextureMappingCR texture = displayParams.GetSurfaceMaterial().GetTextureMapping();
 
     builder.BeginPolyface(polyface, edgeOptions);
 
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
         {
         anyContributed = true;
-        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetSurfaceMaterial().GetTextureMapping(), db, featureFromParams(elemId, displayParams), hasTexture, fillColor, nullptr != polyface.GetNormalCP());
-        ExtendContentRange(visitor->Point());
+        builder.AddFromPolyfaceVisitor(*visitor, texture, db, feature, hasTexture, fillColor, hasNormals);
+        extendContentRange(visitor->Point());
         }
 
     builder.EndPolyface();
@@ -2952,6 +3160,20 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
         // we will use the fill color of the (only) mesh which contributed.
         builder.SetDisplayParams(displayParams);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar)
+    {
+    DgnDbR              db = m_loader.GetDgnDb();
+    uint64_t            keyElementId = m_loader.GetLoader().GetNodeId(elemId); // Create separate primitives per element if classifying.
+    MeshBuilderMap::Key key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar, keyElementId);
+    MeshBuilderR        builder = GetMeshBuilder(key);
+
+    auto extendRange = [&](bvector<DPoint3d> const& points) { ExtendContentRange(points); };
+    addClippedPolyface(builder, polyface, edgeOptions, featureFromParams(elemId, displayParams), displayParams, db, extendRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3047,16 +3269,32 @@ void ElementMeshGenerator::ClipPoints(StrokesR strokes) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained)
+void MeshGenerator::AddStrokes(StrokesList& strokes, DgnElementId elemId, double rangePixels, bool isContained)
     {
     for (auto& stroke : strokes)
-        AddStrokes(stroke, geom, rangePixels, isContained);
+        AddStrokes(stroke, elemId, rangePixels, isContained);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> void addClippedStrokes(MeshBuilderR builder, StrokesCR strokes, FeatureCR feature, uint32_t color, T extendContentRange)
+    {
+    auto minPoints = strokes.m_disjoint ? 0 : 1;
+    for (auto& stroke : strokes.m_strokes)
+        {
+        if (stroke.m_points.size() > minPoints)
+            {
+            extendContentRange(stroke.m_points);
+            builder.AddPolyline(stroke.m_points, feature, color, stroke.m_startDistance);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained)
+void MeshGenerator::AddStrokes(StrokesR strokes, DgnElementId elemId, double rangePixels, bool isContained)
     {
     if (m_loader.IsCanceled())
         return;
@@ -3072,15 +3310,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
     MeshBuilderR builder = GetMeshBuilder(key);
 
     uint32_t fillColor = displayParams.GetLineColor();
-    DgnElementId elemId = GetElementId(geom);
-    for (auto& stroke : strokes.m_strokes)
-        {
-        if (stroke.m_points.size() > (strokes.m_disjoint ?  0 : 1))
-            {
-            ExtendContentRange(stroke.m_points);
-            builder.AddPolyline(stroke.m_points, featureFromParams(elemId, displayParams), fillColor, stroke.m_startDistance);
-            }
-        }
+    addClippedStrokes(builder, strokes, featureFromParams(elemId, displayParams), fillColor, [&](bvector<DPoint3d> const& pts) { ExtendContentRange(pts); });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3115,9 +3345,9 @@ void TileBuilder::ReInitialize(DgnElementId elemId, double rangeDiagonalSquared,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileBuilder::ReInitialize(DRange3dCR range)
+void TileBuilder::ReInitialize(DRange3dCR range, TransformCR geomToOrigin)
     {
-    GeometryListBuilder::ReInitialize(Transform::FromIdentity());
+    GeometryListBuilder::ReInitialize(Transform::FromIdentity(), geomToOrigin);
     m_rangeDiagonalSquared = m_context.Is3d() ? range.low.DistanceSquared(range.high) : range.low.DistanceSquaredXY(range.high);
     }
 
@@ -3225,7 +3455,13 @@ TileSubGraphic::TileSubGraphic(TileContext& context, DgnGeometryPartCP part, boo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileSubGraphic::ReInitialize(DgnGeometryPartCR part, bool hasPartSymb, PartGeom::KeyCR key)
     {
-    TileBuilder::ReInitialize(part.GetBoundingBox());
+    DRange3d range = part.GetBoundingBox();
+    DPoint3d centroid = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
+    centroid.Negate();
+    Transform geomToOrigin = Transform::From(centroid);
+    geomToOrigin.Multiply(range, range);
+
+    TileBuilder::ReInitialize(range, geomToOrigin);
     m_input = &part;
     m_key = key;
     m_hasSymbologyChanges = hasPartSymb;
@@ -3321,7 +3557,9 @@ void TileContext::AddPartGeom(Render::GraphicBuilderR graphic, DgnGeometryPartId
         return;
 
     DRange3d range;
-    Transform partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
+    Transform originToPart = Transform::From(tilePartGeom->GetTranslation());
+    Transform partToSub = Transform::FromProduct(subToGraphic, originToPart);
+    Transform partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), partToSub);
     Transform tf = Transform::FromProduct(GetTransformFromDgn(), partToWorld);
     tf.Multiply(range, tilePartGeom->GetRange());
 
@@ -3348,9 +3586,7 @@ void TileContext::AddPartGeom(Render::GraphicBuilderR graphic, DgnGeometryPartId
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileContext::AddSolidPrimitiveGeom(ISolidPrimitiveR primitive, TransformCR localToWorld, DisplayParamsCR displayParams)
     {
-    // ###TODO_INSTANCING: We instance far too aggressively, producing far too many draw calls and killing performance.
-    // Need a better heuristic to decide between instancing and batching.
-    static bool s_instanceSolidPrimitives = false;
+    static bool s_instanceSolidPrimitives = true;
     if (!s_instanceSolidPrimitives || !AllowInstancing())
         return false;
 
@@ -3412,8 +3648,15 @@ GraphicPtr TileContext::FinishSubGraphic(GeometryAccumulatorR accum, TileSubGrap
     {
     DgnGeometryPartCR input = subGf.GetInput();
 
+    TransformCR tf = accum.GetTransform();
+    DRange3d range = input.GetBoundingBox();
+    tf.Multiply(range, range);
+
+    DPoint3d translation = tf.Origin();
+    translation.Negate();
+
     // Create the PartGeom even if accum.GetGeometries().empty(), so that we can cache it to avoid reprocessing same part repeatedly
-    subGf.SetOutput(*PartGeom::Create(subGf.GetPartKey(), input.GetBoundingBox(), accum.GetGeometries(), subGf.HasSymbologyChanges()));
+    subGf.SetOutput(*PartGeom::Create(subGf.GetPartKey(), range, accum.GetGeometries(), subGf.HasSymbologyChanges(), translation));
 
     return m_finishedGraphic;
     }
@@ -3519,5 +3762,218 @@ Render::GraphicPtr TileContext::_StrokeGeometry(GeometrySourceCR source, double 
     {
     Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
     return WasAborted() ? nullptr : graphic;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileContext::AddSharedGeometry(GeometryList& geometryList, ElementMeshGeneratorR meshGenerator, SubRanges& subRanges) const
+    {
+    InstanceableGeomBuckets buckets(meshGenerator, subRanges);
+
+    auto process = [&](SharedGeomR shared)
+        {
+        if (!shared.IsComplete())
+            geometryList.MarkIncomplete();
+
+        if (shared.IsCurved())
+            geometryList.MarkCurved();
+
+        // NB: If !shared.IsWorthInstancing() - i.e., only 1 instance exists - this immediately adds as batched.
+        buckets.Add(shared);
+
+        return !meshGenerator.GetLoader().IsCanceled();
+        };
+
+    for (auto const& part : Parts())
+        if (!process(*part))
+            return;
+
+    for (auto const& primitive : GetSolidPrimitives())
+        if (!process(*primitive))
+            return;
+
+    buckets.ProduceMeshes();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceableGeom::AddBatched(ElementMeshGeneratorR meshGen, SubRangesR subRanges)
+    {
+    // Reverts the previous instance's transform when applying next instance's transform - eliminates the need
+    // to clone+transform polyface/strokes for each instance.
+    Transform invTransform = Transform::FromIdentity();
+    DRange3d geomRange = ComputeRange();
+    auto const& sharedGeom = GetSharedGeom();
+
+    // For face-attached materials these may differ from SharedGeom's DisplayParams.
+    // Either way, we need to apply any instance-specific overrides below.
+    DisplayParamsCPtr baseDisplayParams = &GetDisplayParams();
+    for (auto const& instance : sharedGeom.GetInstances())
+        {
+        Transform instanceTransform = Transform::FromProduct(instance.GetTransform(), invTransform);
+        invTransform.InverseOf(instance.GetTransform());
+
+        DRange3d instanceRange;
+        instance.GetTransform().Multiply(instanceRange, geomRange);
+        subRanges.Add(instanceRange);
+
+        DisplayParamsCPtr displayParams = sharedGeom.CloneDisplayParamsForInstance(*baseDisplayParams, instance.GetDisplayParams());
+        AddBatched(meshGen, instanceTransform, *displayParams, instance.GetElementId());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceablePolyface::AddBatched(ElementMeshGeneratorR meshGen, TransformCR transform, DisplayParamsCR displayParams, DgnElementId elemId)
+    {
+    m_polyface.Transform(transform);
+    m_polyface.m_displayParams = &displayParams;
+    meshGen.AddPolyface(m_polyface, elemId, 0.0, true, false);
+
+    if (m_decimated)
+        meshGen.MarkDecimated();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceablePolyface::AddInstanced(MeshGeneratorR meshGen, MeshBuilderR builder, DRange3dR contentRange) const
+    {
+    auto extendRange = [&contentRange](bvector<DPoint3d> const& points) { contentRange.Extend(points); };
+    auto edgeOptions = !meshGen.GetOmitEdges() && m_polyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
+    DgnDbR db = meshGen.GetLoader().GetDgnDb();
+    addClippedPolyface(builder, *m_polyface.m_polyface, edgeOptions, Feature(), GetDisplayParams(), db, extendRange);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceableStrokes::AddBatched(ElementMeshGeneratorR meshGen, TransformCR transform, DisplayParamsCR displayParams, DgnElementId elemId)
+    {
+    m_strokes.Transform(transform);
+    m_strokes.m_displayParams = &displayParams;
+    meshGen.AddStrokes(m_strokes, elemId, 0.0, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceableStrokes::AddInstanced(MeshGeneratorR meshGen, MeshBuilderR builder, DRange3dR contentRange) const
+    {
+    auto extendRange = [&contentRange](bvector<DPoint3d> const& points) { contentRange.Extend(points); };
+    addClippedStrokes(builder, m_strokes, Feature(), GetDisplayParams().GetLineColor(), extendRange);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceableGeom::AddInstanced(ElementMeshGeneratorR meshGen, SubRangesR subRanges)
+    {
+    auto key = GetMeshBuilderMapKey();
+    SharedGeomCR geom = GetSharedGeom();
+    auto tolerance = geom.GetTolerance(meshGen.GetTolerance());
+    auto vertTol = tolerance * ToleranceRatio::Vertex();
+    auto areaTol = tolerance * ToleranceRatio::FacetArea(); // ###TODO AFAICT this is vestigial and ratio is same as vertex anyway...
+
+    MeshBuilderPtr builder = MeshBuilder::Create(key.GetDisplayParams(), vertTol, areaTol, nullptr, key.GetPrimitiveType(), geom.GetRange(), meshGen.GetLoader().Is2d(), key.IsPlanar(), key.GetNodeIndex());
+
+    DRange3d contentRange = DRange3d::NullRange();
+    AddInstanced(meshGen, *builder, contentRange);
+
+    MeshP mesh = builder->GetMesh();
+    if (nullptr == mesh)
+        return;
+
+    // When writing the Mesh to binary, will pull instances from SharedGeom.
+    mesh->SetSharedGeom(geom);
+    meshGen.AddSharedMesh(*mesh);
+
+    DRange3d instancesContentRange = DRange3d::NullRange();
+    for (auto const& instance : geom.GetInstances())
+        {
+        DRange3d range;
+        instance.GetTransform().Multiply(range, contentRange);
+        instancesContentRange.Extend(range);
+
+        // Mark sub-ranges containing instanced geometry as non-empty
+        subRanges.Add(range);
+
+        // Ensure feature index allocated for instance
+        meshGen.GetFeatureTable().GetIndex(instance.GetFeature());
+        }
+
+    // Ensure tile content range includes content range of each instance
+    meshGen.ExtendContentRange(instancesContentRange);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshList ElementMeshGenerator::GetMeshes()
+    {
+    MeshList meshes;
+    for (auto& builder : m_builderMap)
+        {
+        MeshP mesh = builder.second->GetMesh();
+        if (!mesh->IsEmpty())
+            meshes.push_back(mesh);
+        }
+
+    // Do not allow vertices outside of this tile's range to expand its content range
+    clipContentRangeToTileRange(m_contentRange, GetTileRange());
+
+    if (m_loader.GetLoader().CompressMeshQuantization())
+        for (auto& mesh : meshes)
+            mesh->CompressVertexQuantization();
+
+    meshes.insert(meshes.end(), m_sharedMeshes.begin(), m_sharedMeshes.end());
+
+    meshes.m_features = std::move(m_featureTable);
+    if (meshes.m_features.size() == 0 && meshes.size() != 0)
+        BeAssert(false && "GetMeshes: empty feature table");
+
+    return meshes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DRange3d SharedMeshGenerator::ComputeContentRange(SubRangesR subRanges) const
+    {
+    auto contentRange = DRange3d::NullRange();
+    for (auto const& instance : m_geom.GetInstances())
+        {
+        DRange3d range;
+        instance.GetTransform().Multiply(range, m_contentRange);
+        contentRange.Extend(range);
+
+        // Ensure feature index allocated for instance
+        m_gen.GetFeatureTable().GetIndex(instance.GetFeature());
+
+        // Ensure sub-ranges containing instanced geometry are marked non-empty
+        subRanges.Add(range);
+        }
+
+    return contentRange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SharedMeshGenerator::AddMeshes(bvector<MeshPtr>& meshes)
+    {
+    MeshGenerator::AddMeshes(m_geom.GetGeometries(), false);
+    for (auto& builder : m_builderMap)
+        {
+        MeshP mesh = builder.second->GetMesh();
+        if (!mesh->IsEmpty())
+            {
+            mesh->SetSharedGeom(m_geom);
+            meshes.push_back(mesh);
+            }
+        }
     }
 

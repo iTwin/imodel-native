@@ -210,6 +210,7 @@ public:
     DisplayParamsCPtr CloneForRasterText(TextureCR raster) const;
     DisplayParamsCPtr CloneWithTextureOverride(TextureMappingCR textureMapping) const;
     DisplayParamsCPtr CloneForMeshedLineString() const;
+    DisplayParamsCPtr Clone(ColorDef fillColor, ColorDef lineColor, uint32_t lineWidth, LinePixels linePixels) const;
 
     DGNPLATFORM_EXPORT Utf8String ToDebugString() const; //!< @private
 
@@ -529,6 +530,11 @@ struct MeshBuilderMap
 
         void SetOrder(uint16_t order) { m_order = order; }
 
+        DisplayParamsCR GetDisplayParams() const { return *m_params; }
+        Mesh::PrimitiveType GetPrimitiveType() const { return m_type; }
+        bool IsPlanar() const { return m_isPlanar; }
+        uint64_t GetNodeIndex() const { return m_nodeIndex; }
+
         bool operator<(Key const& rhs) const
             {
             // NB: This *must* be tested first.
@@ -566,6 +572,7 @@ public:
     MeshBuilderMap() : MeshBuilderMap(0.0, nullptr, DRange3d::NullRange(), false) { }
 
     DGNPLATFORM_EXPORT MeshBuilderR operator[](Key const& key);
+    MeshBuilderPtr Find(Key const& key) const;
 
     using const_iterator = Map::const_iterator;
 
@@ -731,14 +738,14 @@ struct Polyface
 struct Strokes
 {
     struct  PointList
-        {
+    {
         double              m_startDistance;
         bvector<DPoint3d>   m_points;
 
         explicit PointList(double startDistance) : m_startDistance(startDistance) { }
         PointList() : m_startDistance(0.0) { }
         explicit PointList(bvector<DPoint3d>&& points) : m_startDistance(0.0), m_points(std::move(points)) { }
-        };
+    };
 
     typedef bvector<PointList> PointLists;
 
@@ -751,6 +758,19 @@ struct Strokes
 
     Strokes(DisplayParamsCR displayParams, PointLists&& strokes, bool disjoint, bool isPlanar) : m_displayParams(&displayParams), m_strokes(std::move(strokes)), m_disjoint(disjoint), m_isPlanar(isPlanar) { }
     Strokes(DisplayParamsCR displayParams, bool disjoint, bool isPlanar) : m_displayParams(&displayParams), m_disjoint(disjoint), m_isPlanar(isPlanar) { }
+    Strokes(Strokes&& src) : m_displayParams(src.m_displayParams), m_strokes(std::move(src.m_strokes)), m_disjoint(src.m_disjoint), m_isPlanar(src.m_isPlanar) { }
+    Strokes& operator=(Strokes&& src)
+        {
+        if (this != &src)
+            {
+            m_displayParams = src.m_displayParams;
+            m_strokes = std::move(src.m_strokes);
+            m_disjoint = src.m_disjoint;
+            m_isPlanar = src.m_isPlanar;
+            }
+
+        return *this;
+        }
 
     void Transform(TransformCR transform);
     DisplayParamsCR     GetDisplayParams() const { return *m_displayParams; }
@@ -894,6 +914,7 @@ public:
 protected:
     GeometryList        m_geometries;
 private:
+    DPoint3d            m_translation;
     DRange3d            m_range;
     InstanceList        m_instances;
     SymbologyOverrides  m_symbology = SymbologyOverrides::None;
@@ -903,14 +924,18 @@ private:
 
 protected:
     virtual DisplayParamsCR GetInstanceDisplayParams(GeometryCP instance, DisplayParamsCR geomParams) const;
-    virtual size_t GetMinInstanceCount() const = 0;
 
-    SharedGeom(DRange3dCR range, GeometryList const& geometries);
-    SharedGeom(DRange3dCR range, GeometryR geom);
+    SharedGeom(DRange3dCR range, GeometryList const& geometries, DPoint3dCR translation);
+    SharedGeom(DRange3dCR range, GeometryR geom, DPoint3dCR translation);
 public:
     GeometryList const& GetGeometries() const { return m_geometries; }
     DRange3d GetRange() const { return m_range; };
     SymbologyOverrides GetSymbologyOverrides() const { return m_symbology; }
+
+    // Some DgnGeometryParts define their geometry in wacky coordinate systems hundreds of kilometers from the origin.
+    // To fix precision issues in display system, we translate it to the origin.
+    // This returns the translation back to the part's coordinate system.
+    DPoint3dCR GetTranslation() const { return m_translation; }
 
     InstanceList const& GetInstances() const { return m_instances; }
     size_t GetInstanceCount() const { return GetInstances().size(); }
@@ -925,8 +950,10 @@ public:
 
     virtual DisplayParamsCR GetDisplayParams() const = 0;
     virtual double GetTolerance(double baseTolerance) const { return baseTolerance; }
-    bool IsWorthInstancing() const { return GetInstanceCount() >= GetMinInstanceCount(); }
+    bool IsWorthInstancing() const;
     virtual bool IsInstanceable() const { return m_instanceable; }
+
+    DisplayParamsCPtr CloneDisplayParamsForInstance(DisplayParamsCR baseParams, DisplayParamsCR instanceParams) const;
 };
 
 ENUM_IS_FLAGS(SharedGeom::SymbologyOverrides);
@@ -958,14 +985,13 @@ private:
     bool                m_hasSymbologyChanges;
 
 protected:
-    PartGeom(KeyCR key, DRange3dCR range, GeometryList const& geometry, bool hasSymbologyChanges);
+    PartGeom(KeyCR key, DRange3dCR range, GeometryList const& geometry, bool hasSymbologyChanges, DPoint3dCR translation);
 
     static double ComputeTolerance(GeometryCP instance, double tolerance);
 
     DisplayParamsCR GetInstanceDisplayParams(GeometryCP, DisplayParamsCR) const override;
-    size_t GetMinInstanceCount() const override;
 public:
-    static PartGeomPtr Create(KeyCR key, DRange3dCR range, GeometryList const& geometry, bool hasSymbologyChanges) { return new PartGeom(key, range, geometry, hasSymbologyChanges); }
+    static PartGeomPtr Create(KeyCR key, DRange3dCR range, GeometryList const& geometry, bool hasSymbologyChanges, DPoint3dCR translation) { return new PartGeom(key, range, geometry, hasSymbologyChanges, translation); }
 
     bool IsInstanceable() const override { return !m_hasSymbologyChanges && T_Super::IsInstanceable(); }
     DisplayParamsCR GetDisplayParams() const override { return *m_key.m_displayParams; }
@@ -1016,8 +1042,7 @@ struct SolidPrimitiveGeom : SharedGeom
 private:
     Key m_key;
 
-    SolidPrimitiveGeom(KeyCR key, DRange3dCR range, GeometryR geom) : SharedGeom(range, geom), m_key(key) { }
-    size_t GetMinInstanceCount() const override;
+    SolidPrimitiveGeom(KeyCR key, DRange3dCR range, GeometryR geom, DPoint3dCR translation) : SharedGeom(range, geom, translation), m_key(key) { }
 public:
     DisplayParamsCR GetDisplayParams() const override { return *m_key.m_displayParams; }
     KeyCR GetKey() const { return m_key; }

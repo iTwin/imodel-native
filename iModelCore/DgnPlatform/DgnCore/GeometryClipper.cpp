@@ -143,7 +143,7 @@ void GeometryClipper::DoClipPoints(bvector<DPoint3d>& pointsOut, const bvector<D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryClipper::DoClipStrokes(StrokesList& strokesOut, StrokesCR strokesIn)
+void GeometryClipper::DoClipStrokes(StrokesList& strokesOut, Strokes&& strokesIn)
     {
     if (nullptr != m_clip)
         {
@@ -169,7 +169,7 @@ void GeometryClipper::DoClipStrokes(StrokesList& strokesOut, StrokesCR strokesIn
                 }
             if (!newStrokePts.empty())
                 {
-                strokesOut.push_back(Strokes(*displayParams, std::move(newStrokePts), isDisjoint, isPlanar));
+                strokesOut.emplace_back(Strokes(*displayParams, std::move(newStrokePts), isDisjoint, isPlanar));
                 }
             }
         else // clip as line strings
@@ -181,13 +181,13 @@ void GeometryClipper::DoClipStrokes(StrokesList& strokesOut, StrokesCR strokesIn
 
             if (!newStrokePts.empty())
                 {
-                strokesOut.push_back(Strokes(*displayParams, std::move(newStrokePts), isDisjoint, isPlanar));
+                strokesOut.emplace_back(Strokes(*displayParams, std::move(newStrokePts), isDisjoint, isPlanar));
                 }
             }
         }
     else
         {
-        strokesOut.push_back(strokesIn);
+        strokesOut.emplace_back(std::move(strokesIn));
         }
     }
 

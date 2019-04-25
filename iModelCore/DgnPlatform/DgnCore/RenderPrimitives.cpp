@@ -82,7 +82,7 @@ static void collectCurveStrokes (Strokes::PointLists& strokes, CurveVectorCR cur
             if (nullptr != transform)
                 transform->Multiply(loopStrokes, loopStrokes);
 
-            strokes.push_back(Strokes::PointList(std::move(loopStrokes)));
+            strokes.emplace_back(std::move(loopStrokes));
             }
         }
     }
@@ -679,6 +679,20 @@ DisplayParamsCPtr DisplayParams::CloneForMeshedLineString() const
     auto clone = new DisplayParams(*this);
     clone->m_type = Type::Mesh;
     clone->m_fillFlags = FillFlags::Always;
+
+    return clone;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParamsCPtr DisplayParams::Clone(ColorDef fillColor, ColorDef lineColor, uint32_t lineWidth, LinePixels linePixels) const
+    {
+    auto clone = new DisplayParams(*this);
+    clone->m_fillColor = fillColor;
+    clone->m_lineColor = lineColor;
+    clone->m_width = lineWidth;
+    clone->m_linePixels = linePixels;
 
     return clone;
     }
@@ -1494,8 +1508,8 @@ bool PartGeom::Key::IsLessThan(PartGeom::KeyCR rhs, bool ignoreTolerance) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PartGeom::PartGeom(PartGeom::KeyCR key, DRange3dCR range, GeometryList const& geometries, bool hasSymbologyChanges)
-    : SharedGeom(range, geometries), m_key(key), m_hasSymbologyChanges(hasSymbologyChanges)
+PartGeom::PartGeom(PartGeom::KeyCR key, DRange3dCR range, GeometryList const& geometries, bool hasSymbologyChanges, DPoint3dCR translation)
+    : SharedGeom(range, geometries, translation), m_key(key), m_hasSymbologyChanges(hasSymbologyChanges)
     {
     //
     }
@@ -1503,7 +1517,7 @@ PartGeom::PartGeom(PartGeom::KeyCR key, DRange3dCR range, GeometryList const& ge
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-SharedGeom::SharedGeom(DRange3dCR range, GeometryList const& geometries) : m_range(range), m_geometries(geometries)
+SharedGeom::SharedGeom(DRange3dCR range, GeometryList const& geometries, DPoint3dCR translation) : m_translation(translation), m_range(range), m_geometries(geometries)
     {
     for (auto const& geom : geometries)
         {
@@ -1518,7 +1532,7 @@ SharedGeom::SharedGeom(DRange3dCR range, GeometryList const& geometries) : m_ran
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-SharedGeom::SharedGeom(DRange3dCR range, GeometryR geom) : m_range(range), m_geometries(geom)
+SharedGeom::SharedGeom(DRange3dCR range, GeometryR geom, DPoint3dCR translation) : m_translation(translation), m_range(range), m_geometries(geom)
     {
     // We know it's a solid primitive, which is always instanceable.
     BeAssert(geom.IsInstanceable());
@@ -1531,14 +1545,6 @@ bool SharedGeom::IsCurved() const
     {
     // ###TODO: Take into account polyfaces which should be decimated...
     return m_geometries.ContainsCurves();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t PartGeom::GetMinInstanceCount() const
-    {
-    return 2;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1582,6 +1588,31 @@ DisplayParamsCR PartGeom::GetInstanceDisplayParams(GeometryCP instance, DisplayP
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParamsCPtr SharedGeom::CloneDisplayParamsForInstance(DisplayParamsCR baseParams, DisplayParamsCR instanceParams) const
+    {
+    auto ovrs = GetSymbologyOverrides();
+
+    // NB: We must test IsEqualTo() in order to catch differences caused by face-attached materials.
+    if (SymbologyOverrides::None == ovrs && baseParams.IsEqualTo(instanceParams, ComparePurpose::Merge))
+        return &instanceParams;
+
+    bool ovrRgb = SymbologyOverrides::None != (ovrs & SymbologyOverrides::Rgb);
+    ColorDef fillColor = ovrRgb ? instanceParams.GetFillColorDef() : baseParams.GetFillColorDef();
+    ColorDef lineColor = ovrRgb ? instanceParams.GetLineColorDef() : baseParams.GetLineColorDef();
+
+    bool ovrAlpha = SymbologyOverrides::None != (ovrs & SymbologyOverrides::Alpha);
+    fillColor.SetAlpha(ovrAlpha ? instanceParams.GetFillColorDef().GetAlpha() : baseParams.GetFillColorDef().GetAlpha());
+    lineColor.SetAlpha(ovrAlpha ? instanceParams.GetLineColorDef().GetAlpha() : baseParams.GetLineColorDef().GetAlpha());
+
+    uint32_t width = (SymbologyOverrides::None != (ovrs & SymbologyOverrides::LineWidth)) ? instanceParams.GetLineWidth() : baseParams.GetLineWidth();
+    LinePixels pixels = (SymbologyOverrides::None != (ovrs & SymbologyOverrides::LinePixels)) ? instanceParams.GetLinePixels() : baseParams.GetLinePixels();
+
+    return baseParams.Clone(fillColor, lineColor, width, pixels);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 SolidPrimitiveGeom::Key::Key(ISolidPrimitiveR primitive, DisplayParamsCR displayParams, DRange3dCR range)
@@ -1617,36 +1648,15 @@ bool SolidPrimitiveGeom::Key::IsEquivalent(Key const& rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t SolidPrimitiveGeom::GetMinInstanceCount() const
-    {
-    // Below this minimum, we won't bother trying to instance this solid primitive.
-    // Otherwise, we will facet/stroke it, and decide whether or not to actually instance based on the number of facets/strokes produced.
-    // ###TODO_INSTANCING currently our caller will NOT do anything more intelligent to avoid producing too many instances - so bump up these values
-    static constexpr size_t s_minUncurved = 16; // 8;
-    static constexpr size_t s_minCurved = 5; // 2;
-    switch (GetKey().m_primitive->GetSolidPrimitiveType())
-        {
-        case SolidPrimitiveType_DgnBox:
-            return s_minUncurved * 2;
-        case SolidPrimitiveType_DgnTorusPipe:
-        case SolidPrimitiveType_DgnCone:
-        case SolidPrimitiveType_DgnSphere:
-        case SolidPrimitiveType_DgnRotationalSweep:
-            return s_minCurved;
-        default:
-            return IsCurved() ? s_minCurved : s_minUncurved;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/19
-+---------------+---------------+---------------+---------------+---------------+------*/
 SolidPrimitiveGeomPtr SolidPrimitiveGeom::Create(KeyCR key, DRange3dCR range, DgnDbR db)
     {
+    // ###TODO_INSTANCING: So far it appears solid primitives are sensibly defined at the origin.
+    // If we discover cases in which they are not, we will need to add a translation.
+    DPoint3d translation = DPoint3d::FromZero();
     bool isCurved = key.m_primitive->HasCurvedFaceOrEdge();
     IGeometryPtr igeom = IGeometry::Create(key.m_primitive);
     auto geom = Geometry::Create(*igeom, Transform::FromIdentity(), range, DgnElementId(), *key.m_displayParams, isCurved, db, false);
-    return new SolidPrimitiveGeom(key, range, *geom);
+    return new SolidPrimitiveGeom(key, range, *geom, translation);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1698,9 +1708,8 @@ StrokesList SharedGeom::GetStrokes(double chordTolerance, GeometryCP instance, V
     for (auto& geometry : m_geometries)
         {
         StrokesList   thisStrokes = geometry->GetStrokes(chordTolerance, context);
-
-        if (!thisStrokes.empty())
-            strokes.insert (strokes.end(), thisStrokes.begin(), thisStrokes.end());
+        for (auto& thisStroke : thisStrokes)
+            strokes.emplace_back(std::move(thisStroke));
         }
 
     if (nullptr != instance)
@@ -1737,6 +1746,15 @@ void SharedGeom::AddInstance(TransformCR tf, DisplayParamsCR params, DgnElementI
 
     if (myParams.GetLinePixels() != params.GetLinePixels())
         m_symbology |= SymbologyOverrides::LinePixels;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SharedGeom::IsWorthInstancing() const
+    {
+    // Unless we've only got a single instance, we need to compare the relative impact of batching vs instancing. We can't do that here.
+    return GetInstanceCount() > 1;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1845,9 +1863,7 @@ StrokesList Geometry::GetStrokes (double chordTolerance, ViewContextR context)
 
     StrokesList clippedStrokes;
     for (auto& stroke : strokes)
-        {
-        geomClipper.DoClipStrokes(clippedStrokes, stroke);
-        }
+        geomClipper.DoClipStrokes(clippedStrokes, std::move(stroke));
 
     return clippedStrokes;
     }
@@ -2008,7 +2024,7 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewCon
             {
             bool isPlanar = curveVector->IsAnyRegionType();
             BeAssert(isPlanar == GetDisplayParams().WantRegionOutline());
-            tileStrokes.push_back(Strokes(GetDisplayParams(), std::move(strokePoints), m_disjoint, isPlanar));
+            tileStrokes.emplace_back(Strokes(GetDisplayParams(), std::move(strokePoints), m_disjoint, isPlanar));
             }
         }
 
@@ -2643,7 +2659,7 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
                 for (auto& loop : points)
                     glyphTransform.Multiply(loop.m_points, loop.m_points);
 
-                strokes->push_back(Strokes(geom.GetDisplayParams(), std::move(points), false, true));
+                strokes->emplace_back(Strokes(geom.GetDisplayParams(), std::move(points), false, true));
                 }
             }
         else
@@ -3658,6 +3674,15 @@ ColorDef DisplayParams::AdjustTransparency(ColorDef color)
         color.SetAlpha(0);
 
     return color;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshBuilderPtr MeshBuilderMap::Find(Key const& key) const
+    {
+    auto found = m_map.find(key);
+    return m_map.end() != found ? found->second : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
