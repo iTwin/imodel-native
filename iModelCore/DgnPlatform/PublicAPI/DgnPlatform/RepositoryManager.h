@@ -184,6 +184,7 @@ protected:
     // Codes
     virtual RepositoryStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) = 0;
     DGNPLATFORM_EXPORT virtual RepositoryStatus _ReserveCode(DgnCodeCR code);
+    virtual bool _IsCodeInLockedScope(DgnCodeCR) const = 0;
 
     // Locks
     virtual RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId lockId) = 0;
@@ -410,6 +411,12 @@ public:
     //! @return The response, including the result status and any additional information as specified by the options
     //! @remarks The DgnCodeSet may be modified
     DGNPLATFORM_EXPORT Response ReserveCodes(DgnCodeSet& codes, ResponseOptions options=ResponseOptions::None);
+
+    bool IsCodeInLockedScope(DgnCodeCR code) const {return _IsCodeInLockedScope(code);}
+
+    DGNPLATFORM_EXPORT bool MustReserveCode(DgnCodeCR code) const;
+    DGNPLATFORM_EXPORT bool ShouldReportCode(DgnCodeCR code) const;
+
     //@}
 
     //! @name Local State Management
