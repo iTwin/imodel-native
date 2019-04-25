@@ -620,7 +620,7 @@ void RDSUser::ValidateDeleteRelationship(int activeUsers)
 CURL* RDSUser::DeleteRealityData()
     {
     BeAssert(!m_linked);
-    RealityDataDelete realityDataReq = RealityDataDelete(m_id);
+    RealityDataDeleteRequest realityDataReq = RealityDataDeleteRequest(m_id);
     m_correspondance.response.clear();
     m_correspondance.req.url = realityDataReq.GetHttpRequestString();
     m_correspondance.req.headers = realityDataReq.GetRequestHeaders();

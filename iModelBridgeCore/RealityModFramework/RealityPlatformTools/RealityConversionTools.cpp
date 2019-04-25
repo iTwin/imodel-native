@@ -1070,6 +1070,146 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
     return propertyString;
     }
 
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Alain.Robert                            04/2019
++-----------------+------------------+-------------------+-----------------+------------*/
+Utf8String RealityConversionTools::RealityDataPublicKeyToJson(RealityDataPublicKeyCR realityDataPublicKey, bool includeUnsetProps, bool includeROProps)
+    {
+
+    Utf8String propertyString;
+
+    propertyString = "";
+    bool fieldAdded = false;
+
+    if (includeUnsetProps || (realityDataPublicKey.GetIdentifier().size() != 0))
+        {
+        propertyString.append("\"Id\" : \"");
+        propertyString.append(realityDataPublicKey.GetIdentifier());
+        propertyString.append("\"");
+        fieldAdded = true;
+        }
+
+
+
+    if (includeUnsetProps || (realityDataPublicKey.GetRealityDataId().size() != 0))
+        {
+        if (fieldAdded)
+            {
+            propertyString.append(",");
+            fieldAdded = false;
+            }
+        propertyString.append("\"RealityDataId\" : \"");
+        propertyString.append(realityDataPublicKey.GetRealityDataId());
+        propertyString.append("\"");
+        fieldAdded = true;
+        }
+
+
+    if (includeUnsetProps || (realityDataPublicKey.GetDescription().size() != 0))
+        {
+        if (fieldAdded)
+            {
+            propertyString.append(",");
+            fieldAdded = false;
+            }
+
+        propertyString.append("\"Description\" : \"");
+        propertyString.append(realityDataPublicKey.GetDescription());
+        propertyString.append("\"");
+        fieldAdded = true;
+        }
+
+
+
+
+    if (includeUnsetProps || (realityDataPublicKey.GetUserId().size() != 0))
+        {
+        if (fieldAdded)
+            {
+            propertyString.append(",");
+            fieldAdded = false;
+            }
+
+        propertyString.append("\"UserId\" : \"");
+        propertyString.append(realityDataPublicKey.GetUserId());
+        propertyString.append("\"");
+        fieldAdded = true;
+        }
+
+
+
+
+    if (includeROProps && (includeUnsetProps || realityDataPublicKey.GetModifiedDateTime().IsValid()))
+        {
+        if (fieldAdded)
+            {
+            propertyString.append(",");
+            fieldAdded = false;
+            }
+
+        propertyString.append("\"ModifiedTimestamp\" : \"");
+        propertyString.append(realityDataPublicKey.GetModifiedDateTime().ToString());
+        propertyString.append("\"");
+        fieldAdded = true;
+        }
+
+
+    if (includeROProps && (includeUnsetProps || realityDataPublicKey.GetCreationDateTime().IsValid()))
+        {
+        if (fieldAdded)
+            {
+            propertyString.append(",");
+            fieldAdded = false;
+            }
+        propertyString.append("\"CreatedTimestamp\" : \"");
+        propertyString.append(realityDataPublicKey.GetCreationDateTime().ToString());
+        propertyString.append("\"");
+        fieldAdded = true;
+        }
+
+
+    if (includeROProps && (includeUnsetProps || (realityDataPublicKey.GetUltimateId().size() != 0)))
+        {
+        if (fieldAdded)
+            {
+            propertyString.append(",");
+            fieldAdded = false;
+            }
+        propertyString.append("\"UltimateReferenceId\" : \"");
+        propertyString.append(realityDataPublicKey.GetUltimateId());
+        propertyString.append("\"");
+        fieldAdded = true;
+        }
+
+
+
+    if (includeUnsetProps || (realityDataPublicKey.GetAuthorizedUserIds().size() != 0))
+        {
+        if (fieldAdded)
+            {
+            propertyString.append(",");
+            fieldAdded = false;
+            }
+        propertyString.append("\"AuthorizedUserIds\" : \"");
+        propertyString.append(realityDataPublicKey.GetAuthorizedUserIds());
+        propertyString.append("\"");
+        fieldAdded = true;
+        }
+
+    if (includeUnsetProps || realityDataPublicKey.GetValidUntilDate().IsValid())
+        {
+        if (fieldAdded)
+            {
+            propertyString.append(",");
+            fieldAdded = false;
+            }
+        propertyString.append("\"ValidUntilDate\" : \"");
+        propertyString.append(realityDataPublicKey.GetValidUntilDate().ToString());
+        propertyString.append("\"");
+        }
+
+    return propertyString;
+    }
 
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            11/2016
