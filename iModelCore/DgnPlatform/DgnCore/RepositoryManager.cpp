@@ -6,6 +6,9 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnChangeSummary.h>
 
+bool IBriefcaseManager::s_mustReportCodesInLockedScopes = true;
+bool IBriefcaseManager::s_exclusiveLockOnScopeIsPermanent = false; // TODO: Get rid of this when we get real "Permanent" lock level
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -160,7 +163,6 @@ protected:
     RepositoryStatus PromoteDependentElements(LockRequestCR usedLocks, bvector<DgnModelId> const& models);
     void Cull(DgnLockSet& locks);
     void CullElementsInExclusiveModels(DgnLockSet& locks);
-    void CullCodeReservationsInExclusiveModels(DgnCodeSet&);
     RepositoryStatus AcquireLocks(LockRequestR locks, bool cull);
     Response DoFastQuery(Request const&);
     RepositoryStatus FastQueryLocks(Response& response, LockRequest const& locks, ResponseOptions options);
@@ -204,6 +206,9 @@ protected:
      +---------------+---------------+---------------+---------------+---------------+------*/
     bool _IsCodeInLockedScope(DgnCodeCR code) const override
         {
+        if (!IsExclusiveLockOnScopePermanent()) // *** TEMPORARY, until we get real "Permanent" lock level
+            return false;
+
         if (!code.IsValid() || code.GetScopeString().empty())
             return false;
 
@@ -236,7 +241,7 @@ protected:
         if (m_exclusivelyLockedModels.find(scopeEl->GetModelId()) != m_exclusivelyLockedModels.end())
             return true;
 
-        return const_cast<BriefcaseManagerBase*>(this)->QueryLockLevel(*scopeEl) == LockLevel::Exclusive;   // TODO: When we get the LockLevel of Permanent, then check for that.
+        return const_cast<BriefcaseManagerBase*>(this)->QueryLockLevel(*scopeEl) == LockLevel::Exclusive;   // TODO: When we get the LockLevel of "Permanent", then check for that.
         }
 
     BeFileName GetLocalDbFileName() const
@@ -454,8 +459,7 @@ bool IBriefcaseManager::LocksRequired() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IBriefcaseManager::ShouldReportCode(DgnCodeCR code) const
     {
-    // For now, don't report codes in permanently locked scopes. In the future, we might make this an option that the app can set.
-    return !IsCodeInLockedScope(code);
+    return MustReportCodesInLockedScopes() || !IsCodeInLockedScope(code);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -466,6 +470,11 @@ bool IBriefcaseManager::MustReserveCode(DgnCodeCR code) const
     // There is no need to reserve Codes that are in a locked scope.
     return !IsCodeInLockedScope(code);
     }
+
+void IBriefcaseManager::SetExclusiveLockOnScopeIsPermanent(bool b) {s_exclusiveLockOnScopeIsPermanent = b;}
+bool IBriefcaseManager::IsExclusiveLockOnScopePermanent() {return s_exclusiveLockOnScopeIsPermanent;}
+void IBriefcaseManager::SetMustReportCodesInLockedScopes(bool b) {s_mustReportCodesInLockedScopes = b;}
+bool IBriefcaseManager::MustReportCodesInLockedScopes() {return s_mustReportCodesInLockedScopes;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
@@ -753,23 +762,9 @@ void BriefcaseManagerBase::Cull(DgnCodeSet& codes)
         stmt->Reset();
         }
 
-    CullCodeReservationsInExclusiveModels(codes);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      04/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BriefcaseManagerBase::CullCodeReservationsInExclusiveModels(DgnCodeSet& codes)
-    {
-    DgnCodeSet toDelete;
-    for (auto const& code : codes)
-        {
-        if (!MustReserveCode(code))
-            toDelete.insert(code);
-        }
-
-    for (auto const& code : toDelete)
-        codes.erase(code);
+    // The purpose of this Cull function is purely to check the local locks and codes db.
+    // The local db records only code reservations.
+    // NB: Do not filter by calling (!MustReserveCode) on the codes!
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1515,6 +1510,24 @@ bool BriefcaseManagerBase::_AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& code
 
         allHeld = false;
         }
+
+    // Be careful! The above logic is an inference.
+
+    // In the case of Codes, "held" means "reserved".
+    // Only reserved Codes are stored in the local db.
+    // Further, this function assumes that all reservations made by this briefcase are stored in the local db.
+    // Now, Cull removes all items from codes that are found in the local db.
+    // Therefore, the inference is that, if a Code is *not* in the local db, then it has not been reserved.
+    
+    // NB: Do not filter out codes that don't have to be reserved. That would do the reverse of what Cull is intended to do.
+    // We could run a loop on all codes to see if they are all codes that don't have to be reserved and return false
+    // in that case. But that would be expensive. And, we can get the same answer (probably more quickly) by querying
+    // the (probably sparse) local locks and codes db.
+
+    // In the case of Locks, "held" means the briefcase has acquired and still holds the lock at or above the requested LockLevel.
+    // This function assumes that the local db records all locks held by this briefcase, along with the LockLevel at which each is held.
+    // Cull removes all items from locks that are recorded in the local db with at least the LockLevel specified in the input.
+    // Therefore, the inference is that items left in locks are *not* held at the specified level.
 
     if (nullptr != control)
         control->_OnQueriedHeld(locks, codes, *this);
