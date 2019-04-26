@@ -44,26 +44,26 @@
       </Bindings>
     </Part>
     
-    <Part Name="GridElements" BentleyBuildMakeFile="Grids/Elements/GridElements.mke">
+    <Part Name="GridElements" BentleyBuildMakeFile="Grids/Elements/GridElements.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="GridsApi"/>
         <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
         <Bindings>
             <Libs>Delivery/$(libprefix)GridElements$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)GridElements$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)GridElements$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="GridHandlers" BentleyBuildMakeFile="Grids/Handlers/GridHandlers.mke">
+    <Part Name="GridHandlers" BentleyBuildMakeFile="Grids/Handlers/GridHandlers.mke" ApiNumber="B02">
       <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
       <SubPart PartName="GridElements"/>
       <Bindings>
         <Libs>Delivery/$(libprefix)GridHandlers$(libext)</Libs>
-        <Assemblies>Delivery/$(shlibprefix)GridHandlers$(shlibext)</Assemblies>
+        <Assemblies>Delivery/$(shlibprefix)GridHandlers$(ApiNumber)$(shlibext)</Assemblies>
       </Bindings>
     </Part>
 
-    <Part Name="GridStrategies" BentleyBuildMakeFile="Grids/Strategies/GridStrategies.mke">
+    <Part Name="GridStrategies" BentleyBuildMakeFile="Grids/Strategies/GridStrategies.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="BuildingUtils" Repository="BuildingShared" PartFile="BuildingShared" />
         <SubPart PartName="GeometryManipulationStrategies" Repository="BuildingShared" PartFile="BuildingShared" />
@@ -73,11 +73,11 @@
         <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
         <Bindings>
         <Libs>Delivery/$(libprefix)GridStrategies$(libext)</Libs>
-        <Assemblies>Delivery/$(shlibprefix)GridStrategies$(shlibext)</Assemblies>
+        <Assemblies>Delivery/$(shlibprefix)GridStrategies$(ApiNumber)$(shlibext)</Assemblies>
       </Bindings>
     </Part>
     
-    <Part Name="GridManipulatorExtensions" BentleyBuildMakeFile="Grids/ManipulatorExtensions/GridManipulatorExtensions.mke">
+    <Part Name="GridManipulatorExtensions" BentleyBuildMakeFile="Grids/ManipulatorExtensions/GridManipulatorExtensions.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform" />
         <SubPart PartName="DgnView" Repository="DgnDisplay" PartFile="DgnDisplay" />
         <SubPart PartName="GridsApi" />
@@ -87,7 +87,7 @@
         <SubPart PartName="StrategyPlatform" Repository="BuildingShared" PartFile="BuildingShared" />
         <Bindings>
             <Libs>Delivery/$(libprefix)GridManipulatorExtensions$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)GridManipulatorExtensions$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)GridManipulatorExtensions$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
         
@@ -160,13 +160,13 @@
       </Bindings>
     </Part>
   
-    <Part Name="GridsDomain" BentleyBuildMakeFile="Grids/Domain/GridsDomain.mke">
+    <Part Name="GridsDomain" BentleyBuildMakeFile="Grids/Domain/GridsDomain.mke" ApiNumber="B02">
       <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
       <SubPart PartName="GridHandlers"/>
       <SubPart PartName="BeJsonCpp" Repository="libsrc-jsoncpp" PartFile="BeJsonCpp"/>
       <Bindings>
         <Libs>Delivery/$(libprefix)GridsDomain$(libext)</Libs>
-        <Assemblies>Delivery/$(shlibprefix)GridsDomain$(shlibext)</Assemblies>
+        <Assemblies>Delivery/$(shlibprefix)GridsDomain$(ApiNumber)$(shlibext)</Assemblies>
       </Bindings>
     </Part>
     

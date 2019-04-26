@@ -1,6 +1,5 @@
 #----------------------------------------------------------------------
-#     $Source: Grids/Elements/GridElements.mke $
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #----------------------------------------------------------------------
 AppName = GridElements
 CCompPDBName = $(AppName)
