@@ -13,7 +13,6 @@
 #include <BuildingShared\DgnUtils\BuildingUtils.h>
 
 USING_NAMESPACE_BENTLEY_DGN
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_GRIDS
 USING_NAMESPACE_BUILDING_SHARED
@@ -345,6 +344,7 @@ GeometryTests::GeometryTests()
 GeometryTests::~GeometryTests()
     {
     m_dbPtr->CloseDb();
+    TestHost::Instance().Terminate (false);
     }
 
 /*---------------------------------------------------------------------------------**//**

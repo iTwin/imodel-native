@@ -20,8 +20,6 @@ GridCurve::GridCurve
 CreateParams const& params
 ) : T_Super(params) 
     {
-    SetBubbleAtStart (false);
-    SetBubbleAtEnd (false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -34,8 +32,6 @@ ICurvePrimitivePtr  curve
 ) : T_Super(params) 
     {
     InitGeometry (curve);
-    SetBubbleAtStart (false);
-    SetBubbleAtEnd (false);
     }
 
 
@@ -49,8 +45,6 @@ CurveVectorPtr  curve
 ) : T_Super(params) 
     {
     InitGeometry (curve);
-    SetBubbleAtStart (false);
-    SetBubbleAtEnd (false);
     }
 
 /*---------------------------------------------------------------------------------**//**

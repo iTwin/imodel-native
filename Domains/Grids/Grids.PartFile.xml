@@ -96,6 +96,7 @@
       <SubPart PartName="GridElements"/>
       <SubPart PartName="GridHandlers"/>
       <SubPart PartName="GridsSchema"/>
+      <SubPart PartName="GridStrategies"/>
     </Part>
 
 
