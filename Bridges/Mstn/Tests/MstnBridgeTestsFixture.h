@@ -12,6 +12,7 @@
 #include <iModelBridge/TestIModelHubClientForBridges.h>
 #include <WebServices/iModelHub/Client/Client.h>
 #include "MstnBridgeTestsLogProvider.h"
+#include "CodeScope.h"
 
 struct RevisionStats
     {
@@ -231,9 +232,8 @@ struct MstnBridgeTestsFixture : ::testing::Test
 
 struct ScopedCodeAssignerXDomain
     {
-    ScopedCodeAssignerXDomain(BentleyApi::Dgn::DgnElementId scopeElementId, Utf8CP prefix, bool useModelScope);
-    ScopedCodeAssignerXDomain(BentleyApi::Dgn::DgnElementId scopeParentId, Utf8CP prefix) : ScopedCodeAssignerXDomain(scopeParentId, prefix, false) {}
-    ScopedCodeAssignerXDomain(BentleyApi::Dgn::DgnModelId scopeModelId, Utf8CP prefix) : ScopedCodeAssignerXDomain(BentleyApi::Dgn::DgnElementId(scopeModelId.GetValue()), prefix, true) {}
+    ScopedCodeAssignerXDomain(BentleyApi::Dgn::DgnElementId, Utf8CP prefix, CodeScope);
+    ScopedCodeAssignerXDomain(BentleyApi::Dgn::DgnModelId mid, Utf8CP prefix) : ScopedCodeAssignerXDomain(BentleyApi::Dgn::DgnElementId(mid.GetValue()), prefix, CodeScope::Model) {}
     ~ScopedCodeAssignerXDomain();
     };
 

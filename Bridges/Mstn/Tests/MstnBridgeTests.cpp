@@ -21,6 +21,7 @@ struct MstnBridgeTests : public MstnBridgeTestsFixture
     {
     void SetupTwoRefs(bvector<WString>& args, BentleyApi::BeFileName& masterFile, BentleyApi::BeFileName& refFile1, 
                       BentleyApi::BeFileName& refFile2, BentleyApi::BeFileName const& testDir, FakeRegistry& testRegistry);
+    void VerifyLineHasCode(int prevCount, BeFileNameCR bcName, int64_t srcId, Utf8CP codeValuePrefix, bool codeShouldBeRecorded);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -767,6 +768,37 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+void MstnBridgeTests::VerifyLineHasCode(int prevCount, BeFileNameCR bcName, int64_t srcId, Utf8CP codeValuePrefix, bool codeShouldBeRecorded)
+    {
+    // Verify that the line has the expected code
+    DbFileInfo bcInfo(bcName);
+    EXPECT_EQ(1 + prevCount, bcInfo.GetElementCount());
+
+    DgnElementId eid;
+    ASSERT_EQ(BSISUCCESS, bcInfo.GetiModelElementByDgnElementId(eid, srcId));
+    auto el = bcInfo.m_db->Elements().GetElement(eid);
+    ASSERT_TRUE(el.IsValid());
+    ASSERT_TRUE(el->GetCode().IsValid());
+    ASSERT_TRUE(el->GetCode().GetValueUtf8().StartsWith(codeValuePrefix));
+
+    // Verify that the server has or has not registered the line's code as expected.
+    DgnCodeInfo codeInfo;
+    auto status = bcInfo.GetCodeInfo(codeInfo, el->GetCode(), GetClient());
+    if (codeShouldBeRecorded)
+        {
+        ASSERT_EQ(BentleyApi::BSISUCCESS, status);
+        ASSERT_TRUE(codeInfo.IsUsed());
+        ASSERT_TRUE(codeInfo.GetCode().GetValueUtf8().StartsWith(codeValuePrefix));
+        }
+    else
+        {
+        ASSERT_NE(BentleyApi::BSISUCCESS, status);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MstnBridgeTests, CodeReservation)
     {
     auto testDir = CreateTestDir();
@@ -774,8 +806,9 @@ TEST_F(MstnBridgeTests, CodeReservation)
     BeFileName noCodesAllowed(testDir);
     noCodesAllowed.AppendToPath(L"noCodesAllowed.txt");
     
-#ifdef COMMENT_OUT // WIP - must wait for change to IMB
-    if (GetIModelBankServerJs())
+    bool usingIModelBank = (GetIModelBankServerJs() != nullptr);
+
+    if (usingIModelBank)
         {
         Utf8PrintfString rules(
             R"(   [                                 
@@ -794,7 +827,6 @@ TEST_F(MstnBridgeTests, CodeReservation)
 
         SetRulesFileInEnv setRulesFileVar(WriteRulesFile(L"testCodeReservation.json", rules.c_str()));
         }
-#endif
 
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
@@ -803,7 +835,7 @@ TEST_F(MstnBridgeTests, CodeReservation)
 
     if (GetClientAsMock())
         {
-        fprintf(stderr, "Lock tests are supported only when using real servers\n.");
+        fprintf(stderr, "CodeReservation tests are supported only when using real servers\n.");
         return;
         }
 
@@ -834,6 +866,7 @@ TEST_F(MstnBridgeTests, CodeReservation)
 
     // Get information about the jobsubject and the spatial model that we will be using.
     int prevCount = 0;
+    DgnElementId rootSubjectId;
     DgnElementId jobSubjectId;
     DgnModelId spatialModelId;
     RepositoryLinkId repositoryLinkId;
@@ -847,8 +880,12 @@ TEST_F(MstnBridgeTests, CodeReservation)
         bcInfo.MustFindFileByName(repositoryLinkId, inputFile, 1);
         bcInfo.MustFindModelByV8ModelId(spatialModelId, repositoryLinkId, GetDefaultV8ModelId(inputFile), 1);
 
-        // Verify that this spatial model is exclusively locked by this bridge
+        // Verify that the root subject is NOT locked by this bridge
+        ASSERT_EQ(BentleyApi::Dgn::LockLevel::None, bcInfo.QueryLockLevel(*bcInfo.m_db->Elements().GetRootSubject(), GetClient()));
+
+        // Verify that the jobSubject and this spatial model is exclusively locked by this bridge
         auto spatialModel = bcInfo.m_db->Models().GetModel(spatialModelId);
+        ASSERT_EQ(BentleyApi::Dgn::LockLevel::Exclusive, bcInfo.QueryLockLevel(*jSubj, GetClient()));
         ASSERT_EQ(BentleyApi::Dgn::LockLevel::Exclusive, bcInfo.QueryLockLevel(*spatialModel, GetClient()));
 
         // Verify that the server has registered Subject elements that are in the RepositoryModel.
@@ -857,43 +894,75 @@ TEST_F(MstnBridgeTests, CodeReservation)
         DgnCodeInfo codeInfo;
         EXPECT_EQ(BentleyApi::BSISUCCESS, bcInfo.GetCodeInfo(codeInfo, repositoryLink->GetCode(), GetClient()));
         EXPECT_TRUE(codeInfo.IsUsed());
+
+        rootSubjectId = bcInfo.m_db->Elements().GetRootSubjectId();
         }
 
-    // Add a line ...
+    // Add a line using MODEL-SCOPED CODES, where the model is one that is exclusively owned by the bridge.
+    Utf8CP prefix = nullptr;
     int64_t srcId = AddLine(inputFile);
-    
-    if (true)
         {
-        // ... and convert it, using MODEL-SCOPED CODES, where the model is one that is exclusively owned by the bridge.
-        // So, we do not expect any code reservations. 
+        if (usingIModelBank)
+            createFile(noCodesAllowed);
 
-        // IMB only: Create the noCodesAllowed file to assert this restriction.
-        createFile(noCodesAllowed);
-
-        ScopedCodeAssignerXDomain assignCodes(spatialModelId, "ModelScope");
+        ScopedCodeAssignerXDomain assignCodes(spatialModelId, prefix="Model");
 
         iModelBridgeFwk fwk;
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
         ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
         }
 
-    if (true)
+    VerifyLineHasCode(prevCount, bcName, srcId, prefix, false);
+    ++prevCount;
+
+    // Add a line using RELATED-ELEMENT-SCOPED CODES, where the related element is exclusively owned by the bridge.
+    srcId = AddLine(inputFile);
         {
-        // Verify that the line has the expected code
-        DbFileInfo bcInfo(bcName);
-        EXPECT_EQ(1 + prevCount, bcInfo.GetElementCount());
+        if (usingIModelBank)
+            createFile(noCodesAllowed);
 
-        DgnElementId eid;
-        ASSERT_EQ(BSISUCCESS, bcInfo.GetiModelElementByDgnElementId(eid, srcId));
-        auto el = bcInfo.m_db->Elements().GetElement(eid);
-        ASSERT_TRUE(el.IsValid());
-        ASSERT_TRUE(el->GetCode().IsValid());
-        ASSERT_TRUE(!el->GetCode().GetValueUtf8().empty());
+        ScopedCodeAssignerXDomain assignCodes(jobSubjectId, prefix="Related", CodeScope::Related);
 
-        // Verify that the server has NOT registered the line's code.
-        DgnCodeInfo codeInfo;
-        ASSERT_NE(BentleyApi::BSISUCCESS, bcInfo.GetCodeInfo(codeInfo, el->GetCode(), GetClient()));
+        iModelBridgeFwk fwk;
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
+        ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
         }
+
+    VerifyLineHasCode(prevCount, bcName, srcId, prefix, false);
+    ++prevCount;
+
+    // Add a line using RELATED-ELEMENT-SCOPED CODES, where the related is NOT exclusively owned by the bridge.
+    srcId = AddLine(inputFile);
+        {
+        if (usingIModelBank)
+            BeFileName::BeDeleteFile(noCodesAllowed.c_str());
+
+        ScopedCodeAssignerXDomain assignCodes(rootSubjectId, prefix="RelatedNotLocked", CodeScope::Related);
+
+        iModelBridgeFwk fwk;
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
+        ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
+        }
+    
+    VerifyLineHasCode(prevCount, bcName, srcId, prefix, true);
+    ++prevCount;
+
+    // Add a line using REPOSITORY-SCOPED CODES
+    srcId = AddLine(inputFile);
+        {
+        if (usingIModelBank)
+            BeFileName::BeDeleteFile(noCodesAllowed.c_str());
+
+        ScopedCodeAssignerXDomain assignCodes(rootSubjectId, prefix="Repository", CodeScope::Repository);
+
+        iModelBridgeFwk fwk;
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
+        ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
+        }
+
+    VerifyLineHasCode(prevCount, bcName, srcId, prefix, true);
+    ++prevCount;
+
 
     } // ~runningServer => stop Server
     }

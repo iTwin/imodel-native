@@ -6,6 +6,7 @@
 #pragma once
 #include "ConverterInternal.h"
 #include <Bentley/BeTest.h>
+#include "CodeScope.h"
 
 //=======================================================================================
 // @bsiclass                                    Sam.Wilson                      04/15
@@ -37,13 +38,15 @@ struct V8FileEditor
 //=======================================================================================
 struct CodeAssignerXDomain : XDomain
     {
+    enum class Scope {Model, Related, Repository};
+
     int m_lineCount {};
     BentleyApi::Dgn::CodeSpecId m_codeSpecId;
     BentleyApi::Dgn::DgnElementId m_scopeId;
-    bool m_useModelScope {};
+    CodeScope m_scope;
     Utf8String m_prefix;
 
-    CodeAssignerXDomain(BentleyApi::Dgn::DgnElementId scopeId, Utf8CP prefix, bool useModelScope) : m_scopeId(scopeId), m_useModelScope(useModelScope), m_prefix(prefix) {}
+    CodeAssignerXDomain(BentleyApi::Dgn::DgnElementId scopeId, Utf8CP prefix, CodeScope s) : m_scopeId(scopeId), m_scope(s), m_prefix(prefix) {}
 
     void InitCodeSpec(BentleyApi::Dgn::DgnDbR);
     BentleyApi::Dgn::DgnCode GenerateCode(BentleyApi::Dgn::DgnDbR);

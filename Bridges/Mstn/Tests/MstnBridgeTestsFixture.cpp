@@ -1,3 +1,4 @@
+
 /*--------------------------------------------------------------------------------------+
 |
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
@@ -1357,11 +1358,14 @@ void SynchInfoTests::ValidateElementSynchInfo (BentleyApi::BeFileName& dbFile, i
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CodeAssignerXDomain::InitCodeSpec(BentleyApi::Dgn::DgnDbR db)
     {
-    m_codeSpecId = db.CodeSpecs().QueryCodeSpecId("CodeAssignerXDomain");
+    Utf8PrintfString specName("CodeAssignerXDomain%d", (int)m_scope);
+    m_codeSpecId = db.CodeSpecs().QueryCodeSpecId(specName.c_str());
     if (!m_codeSpecId.IsValid())
         {
-        auto scope = m_useModelScope? CodeScopeSpec::CreateModelScope(): CodeScopeSpec::CreateParentElementScope();
-        auto codeSpec = CodeSpec::Create(db, "CodeAssignerXDomain", scope);
+        auto scope = (CodeScope::Model == m_scope)? CodeScopeSpec::CreateModelScope(): 
+                     (CodeScope::Related == m_scope)? CodeScopeSpec::CreateRelatedElementScope(): 
+                                                        CodeScopeSpec::CreateRepositoryScope();
+        auto codeSpec = CodeSpec::Create(db, specName.c_str(), scope);
         BeAssert(codeSpec.IsValid());
         if (codeSpec.IsValid())
             {
@@ -1434,9 +1438,9 @@ static CodeAssignerXDomain* s_assignCodes;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScopedCodeAssignerXDomain::ScopedCodeAssignerXDomain(BentleyApi::Dgn::DgnElementId scopeElementId, Utf8CP prefix, bool useModelScope)
+ScopedCodeAssignerXDomain::ScopedCodeAssignerXDomain(BentleyApi::Dgn::DgnElementId scopeElementId, Utf8CP prefix, CodeScope s)
     {
-    s_assignCodes = new CodeAssignerXDomain(scopeElementId, prefix, useModelScope);
+    s_assignCodes = new CodeAssignerXDomain(scopeElementId, prefix, s);
     XDomain::Register(*s_assignCodes);
     }
 
