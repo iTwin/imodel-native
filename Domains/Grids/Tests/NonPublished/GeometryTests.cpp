@@ -17,6 +17,8 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_GRIDS
 USING_NAMESPACE_BUILDING_SHARED
 
+#define BUBBLE_RADIUS 1.5
+
 #pragma region TestHost
 
 /*---------------------------------------------------------------------------------**//**
@@ -208,6 +210,7 @@ struct GeometryTests : testing::Test
         PhysicalModel& GetPhysicalModel() { return *m_physicalModelPtr; }
         DgnCategoryId GetCategoryId();
         Render::GeometryParams& GetGeometryParams();
+        bool AppendGridBubbleGraphics (GeometryBuilderR builder, GridCurveCR curve) const;
 
         ElevationGridPtr InsertElevationGrid (DPoint3d origin, double length, double width,  double elevationIncrement, int count, Utf8CP gridName);
         OrthogonalGridPtr InsertOrthogonalGrid (DPoint3d origin, double incrementX, double incrementY, double minExtentX, double maxExtentX,
@@ -401,6 +404,7 @@ void GeometryTests::InsertPhysicalCurveElement (GridCurvePtr curvePtr)
         GeometricPrimitivePtr geometricPrimitivePtr = itGeometricPrimitive.GetGeometryPtr();
         ASSERT_TRUE (geometricPrimitivePtr.IsValid());
         builder->Append (*geometricPrimitivePtr);
+        ASSERT_TRUE(AppendGridBubbleGraphics (*builder, *curvePtr));
         }
     
     builder->Finish (*pGeometrySource);
@@ -408,6 +412,131 @@ void GeometryTests::InsertPhysicalCurveElement (GridCurvePtr curvePtr)
     DgnDbStatus insertStatus;
     physicalElementPtr->Insert (&insertStatus);
     ASSERT_TRUE (insertStatus == DgnDbStatus::Success);
+    }
+
+
+#pragma region Bubble Graphics
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static DVec3d getDirectionAtEndPoint (ICurvePrimitiveCR primitive, bool atStart)
+    {
+    // FractionToPointAndUnitTangent doesn't work on child curve vector, so extract very first leaf curve primitive
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == primitive.GetCurvePrimitiveType())
+        {
+        CurveVectorCPtr curve = primitive.GetChildCurveVectorCP();
+        if (curve->empty() || curve->at (0).IsNull())
+            return DVec3d::FromZero();
+
+        return getDirectionAtEndPoint (*curve->at (0), atStart);
+        }
+
+    ValidatedDRay3d pointAndTangent = primitive.FractionToPointAndUnitTangent (atStart ? 0.0 : 1.0);
+    DVec3d direction = pointAndTangent.IsValid() ? pointAndTangent.Value().direction : DVec3d::FromZero();
+
+    if (!atStart)
+        direction.Negate();
+
+    return direction;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool getBubbleOrigin (DPoint3dR origin, ICurvePrimitiveCR curve, double bubbleRadius, bool atStart)
+    {
+    // Put bubble so that it touches the curve start point
+    // And its center-to-curveStart direction is in the same as beginning of the curve.
+    DPoint3d start, end;
+    if (!curve.GetStartEnd (start, end))
+        return false;
+
+    DPoint3d point = atStart ? start : end;
+    DVec3d direction = getDirectionAtEndPoint (curve, atStart);
+    if (direction.IsZero())
+        return false;
+
+    direction.ScaleToLength (bubbleRadius);
+    point.Subtract (direction);
+    origin = point;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool addBubble (GeometryBuilderR builder, TextString labelGeometry, ICurvePrimitiveCR bubbleGeometry, ICurvePrimitiveCR curve, TransformCR toWorld, bool atStart)
+    {
+    DPoint3d origin;
+    if (!getBubbleOrigin (origin, curve, bubbleGeometry.GetArcCP()->vector0.Magnitude(), atStart))
+        return false;
+
+    // Bubble position is at world coordinates 
+    // and geometry stream is at local coordinates 
+    // so bubble and label geometry needs to be adjusted.
+    Transform toLocal;
+    if (!toLocal.InverseOf (toWorld))
+        return false;
+
+    toLocal.Multiply (origin);
+    ICurvePrimitivePtr bubbleGeometryCopy = bubbleGeometry.Clone();
+    bubbleGeometryCopy->TransformInPlace (Transform::From (origin));
+    labelGeometry.SetOriginFromJustificationOrigin (origin, TextString::HorizontalJustification::Center, TextString::VerticalJustification::Middle);
+
+    builder.SetAppendAsSubGraphics();
+    return builder.Append (labelGeometry) && builder.Append (*bubbleGeometryCopy);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static void setUpBubbleAndLabelGeometry (TextStringPtr& labelGeometry, ICurvePrimitivePtr& bubbleGeometry, Utf8CP text)
+    {
+    TextStringStylePtr labelTextStyle = TextStringStyle::Create();
+    labelTextStyle->SetWidth (BUBBLE_RADIUS / 2);
+    labelTextStyle->SetHeight (BUBBLE_RADIUS / 2);
+
+    labelGeometry = TextString::Create();
+    labelGeometry->SetText (text);
+    labelGeometry->SetStyle (*labelTextStyle);
+
+    bubbleGeometry = ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (DPoint3d::FromZero(), BUBBLE_RADIUS));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool addBubbles (GeometryBuilderR builder, ICurvePrimitiveCR geometry, TransformCR toWorld, Utf8CP label, bool addAtStart, bool addAtEnd)
+    {
+    TextStringPtr labelGeometry;
+    ICurvePrimitivePtr bubbleGeometry;
+    setUpBubbleAndLabelGeometry (labelGeometry, bubbleGeometry, label);
+
+    if (addAtStart && !addBubble (builder, *labelGeometry, *bubbleGeometry, geometry, toWorld, true))
+        return false;
+
+    if (addAtEnd && !addBubble (builder, *labelGeometry, *bubbleGeometry, geometry, toWorld, false))
+        return false;
+
+    return true;
+    }
+
+#pragma endregion Bubble Graphics
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryTests::AppendGridBubbleGraphics(GeometryBuilderR builder, GridCurveCR curve) const
+    {
+    DPoint3d originPoint;
+    curve.GetCurve()->GetStartPoint (originPoint);
+
+    Placement3d newPlacement (originPoint, curve.GetPlacement().GetAngles());
+
+    Utf8CP label = curve.GetUserLabel();
+    return Utf8String::IsNullOrEmpty (label) || addBubbles (builder, *curve.GetCurve(), newPlacement.GetTransform(), label, curve.GetBubbleAtStart(), curve.GetBubbleAtEnd());
     }
 
 /*---------------------------------------------------------------------------------**//**
