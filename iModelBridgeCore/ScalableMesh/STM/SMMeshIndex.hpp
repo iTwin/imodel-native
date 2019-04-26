@@ -5063,6 +5063,9 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
 
     }
 
+    if (polyPts.empty())
+        return false;
+
     DRange3d polyRange = DRange3d::From(polyPts.front());
     size_t n = 0;
     bool noIntersect = true;
