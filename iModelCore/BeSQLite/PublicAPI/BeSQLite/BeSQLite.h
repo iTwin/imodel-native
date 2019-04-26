@@ -2468,7 +2468,6 @@ protected:
     virtual DbResult _OnDbDetached(Utf8CP dbAlias) const { return BE_SQLITE_OK; }
     virtual int _OnAddFunction(DbFunction& func) const {return 0;}
     virtual void _OnRemoveFunction(DbFunction& func) const {}
-    virtual DbResult _OnAfterChangesetApplied(bool hasSchemaChanges) const { return BE_SQLITE_OK; }
     friend struct Statement;
     friend struct Savepoint;
     friend struct BeSQLiteProfileManager;

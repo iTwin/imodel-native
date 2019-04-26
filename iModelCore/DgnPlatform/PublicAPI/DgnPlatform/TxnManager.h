@@ -285,6 +285,7 @@ private:
     bool m_initTableHandlers;
     bool m_enableNotifyTxnMonitors;
     bool m_enableRebasers;
+    bool m_isInteractive = false;
 
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
     void _OnCommitted(bool isCommit, Utf8CP operation) override;
@@ -330,6 +331,8 @@ private:
 public:
     void CallJsMonitors(Utf8CP eventName, int* arg = nullptr);
     void CallJsTxnManager(Utf8CP methodName) {DgnDb::CallJsFunction(m_dgndb.GetJsTxns(), methodName, {}); };
+    void SetInteractive() {m_isInteractive = true;}
+
     DgnDbStatus DeleteFromStartTo(TxnId lastId); //!< @private
     DgnDbStatus DeleteRebases(int64_t lastRebaseId); //!< @private
     void DeleteReversedTxns(); //!< @private

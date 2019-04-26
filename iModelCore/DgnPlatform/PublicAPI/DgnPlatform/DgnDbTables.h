@@ -404,6 +404,8 @@ private:
     ~DgnModels() {}
 
 public:
+    void ClearCache() { m_models.clear(); }
+
     //! Create a new, non-persistent model from the supplied ECInstance.
     //! The supplied instance must contain the model's Code.
     //! @param stat     Optional. If not null, an error status is returned here if the model cannot be created.

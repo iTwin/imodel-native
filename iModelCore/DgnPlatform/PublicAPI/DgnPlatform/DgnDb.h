@@ -222,7 +222,6 @@ protected:
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBeforeSetAsBriefcase(BeSQLite::BeBriefcaseId newBriefcaseId) override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnAfterSetAsBriefcase(BeSQLite::BeBriefcaseId newBriefcaseId) override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnAfterChangesetApplied(bool hasSchemaChanges) const override;
     DGNPLATFORM_EXPORT void DestroyBriefcaseManager();
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
@@ -256,7 +255,6 @@ public:
     virtual ~DgnDb();
 
     //! @private
-    BeSQLite::DbResult OnAfterChangesetApplied(bool hasSchemaChanges) const { return _OnAfterChangesetApplied(hasSchemaChanges); }
     //! Get the BeFileName for this DgnDb.
     //! @note The superclass method BeSQLite::Db::GetDbFileName may also be used to get the same value, as a Utf8CP.
     BeFileName GetFileName() const {return BeFileName(m_fileName);}

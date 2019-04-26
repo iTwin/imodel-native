@@ -42,7 +42,7 @@ struct TransactionManagerTests : public DgnDbTestFixture
 {
     DEFINE_T_SUPER(DgnDbTestFixture);
 public:
-    TransactionManagerTests() { }
+    TransactionManagerTests() {}
     ~TransactionManagerTests();
     void TwiddleTime(DgnElementCPtr);
 };
@@ -252,6 +252,8 @@ static void testModelUndoRedo(DgnDbR db)
     db.SaveChanges("added model");
 
     auto& txns = db.Txns();
+    txns.SetInteractive();
+
     auto stat = txns.ReverseSingleTxn();
     ASSERT_TRUE(DgnDbStatus::Success == stat);
     ASSERT_TRUE(!el1->IsPersistent());
@@ -388,11 +390,12 @@ TEST_F(TransactionManagerTests, UndoRedo)
     BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite;
     DgnDbTestFixture::GetSeedDbCopy(outFileName,L"Test.bim");
     OpenDb(m_db, outFileName, mode);
-
+    
     TestDataManager::MustBeBriefcase(m_db, mode);
     ASSERT_TRUE(m_db->IsBriefcase());
 
     auto& txns = m_db->Txns();
+    txns.SetInteractive();
     m_db->SaveChanges();
 
     SpatialModelPtr defaultModel = m_db->Models().Get<SpatialModel>(m_defaultModelId);
@@ -526,6 +529,7 @@ TEST_F(TransactionManagerTests, ModelInsertReverse)
     {
     SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
     auto& txns = m_db->Txns();
+    txns.SetInteractive();
 
     ModelTxnMonitor monitor;
 
@@ -535,7 +539,7 @@ TEST_F(TransactionManagerTests, ModelInsertReverse)
     EXPECT_TRUE(monitor.WasAdded(model1Id));
     monitor.Clear();
 
-    //Reverse insertion.Model 1 should'nt be in the Db now.
+    //Reverse insertion.Model 1 shouldn't be in the Db now.
     auto stat = txns.ReverseTxns(1);
     EXPECT_EQ(DgnDbStatus::Success, stat);
     EXPECT_FALSE(m_db->Models().GetModel(model1Id).IsValid());
@@ -574,7 +578,7 @@ TEST_F(TransactionManagerTests, ModelDeleteReverse)
     EXPECT_EQ(DgnDbStatus::Success, stat);
     EXPECT_TRUE(m_db->Models().GetModel(model1Id).IsValid());
 
-    //Reinstate Transaction.Model should'nt be there anymore.
+    //Reinstate Transaction.Model shouldn't be there anymore.
     stat = txns.ReinstateTxn();
     EXPECT_EQ(DgnDbStatus::Success, stat);
     m_db->SaveChanges("changeSet3");
@@ -671,7 +675,7 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
 
     EXPECT_FALSE(m_db->Elements().GetElement(e1id).IsValid());
 
-    //Both the elements and the model should'nt be in the database.
+    //Both the elements and the model shouldn't be in the database.
     txns.ReverseAll(true);
     EXPECT_FALSE(m_db->Models().GetModel(m1id).IsValid());
     }
@@ -690,7 +694,7 @@ TEST_F (TransactionManagerTests, ReverseToPos)
     DgnModelId m1id = model1->GetModelId();
     m_db->SaveChanges("changeSet1");
 
-    //Reverse insertion.Model 1 should'nt be in the Db now.
+    //Reverse insertion.Model 1 shouldn't be in the Db now.
     DgnDbStatus stat = txns.ReverseTo(txn_id);
     EXPECT_EQ((DgnDbStatus)SUCCESS, stat);
     EXPECT_FALSE(m_db->Models().GetModel(m1id).IsValid());
@@ -758,7 +762,7 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
     status = txns.ReinstateTxn();
     EXPECT_EQ ((DgnDbStatus)SUCCESS, status);
 
-    //Model2 and Model3 shoud be back in the db.
+    //Model2 and Model3 should be back in the db.
     EXPECT_TRUE (m_db->Models().GetModel(model2->GetModelId()).IsValid());
     EXPECT_TRUE (m_db->Models().GetModel(model3->GetModelId()).IsValid());
     }

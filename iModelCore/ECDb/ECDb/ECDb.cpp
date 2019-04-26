@@ -68,7 +68,7 @@ DbResult ECDb::_OnDbCreated(CreateParams const& params)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                    07/2018
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_OnAfterChangesetApplied(bool hasSchemaChanges) const
+DbResult ECDb::_AfterSchemaChangeApplied() const
     {
     Schemas().RepopulateCacheTables();
     Schemas().UpgradeECInstances();

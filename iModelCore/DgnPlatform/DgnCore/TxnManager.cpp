@@ -1106,8 +1106,12 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
     BeAssert(action != TxnAction::None);
     m_action = action;
 
-    // Note: Keeping existing behavior of not calling begin-end notifications when changes
-    // are abandoned.
+    // if we're not in interactive mode, we won't keep these caches up to date, just clear them
+    if (!m_isInteractive) { 
+        m_dgndb.Elements().ClearCache();
+        m_dgndb.Models().ClearCache();
+    }
+
     if (!IsInAbandon())
         OnBeginApplyChanges();
 
@@ -1116,6 +1120,7 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
     if (result != BE_SQLITE_OK)
         m_dgndb.AbandonChanges();
     EnableTracking(wasTracking);
+    BeAssert(result == BE_SQLITE_OK);
 
     if (containsSchemaChanges)
         {
@@ -1125,21 +1130,20 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
          * DgnDb is opened, and the Element caches haven't had a chance to get initialized.
          */
         m_dgndb.ClearECDbCache();
-        m_dgndb.OnAfterChangesetApplied(true);
+        m_dgndb.AfterSchemaChangeApplied();
         m_dgndb.Domains().SyncWithSchemas();
         }
-    else
-        m_dgndb.OnAfterChangesetApplied(false);
 
-    BeAssert(result == BE_SQLITE_OK);
     if (result == BE_SQLITE_OK)
         {
-        OnChangesApplied(changeset, invert);
+        if (m_isInteractive)
+            OnChangesApplied(changeset, invert);
+
         if (!IsInAbandon())
             T_HOST.GetTxnAdmin()._OnAppliedChanges(*this);
         }
 
-    if (!IsInAbandon())
+    if (m_isInteractive && !IsInAbandon())
         OnEndApplyChanges();
 
     m_action = TxnAction::None;

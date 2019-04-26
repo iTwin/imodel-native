@@ -2206,7 +2206,7 @@ static DgnRevisionPtr createRevision(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RevisionTestFixture, OptimisiticConcurrencyConflict)
+TEST_F(RevisionTestFixture, OptimisticConcurrencyConflict)
     {
     // Get any profile upgrades out of the way. We don't want any of that to appear in the revision history for the purposes of this test.
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"upgraded.bim");

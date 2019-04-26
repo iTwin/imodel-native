@@ -138,15 +138,6 @@ DgnDb::~DgnDb()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Affan.Khan                      07/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnDb::_OnAfterChangesetApplied(bool hasSchemaChanges) const
-    { 
-    return T_Super::_OnAfterChangesetApplied(hasSchemaChanges); 
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::_OnDbClose() 
