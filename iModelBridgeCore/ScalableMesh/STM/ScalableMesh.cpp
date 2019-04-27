@@ -2173,9 +2173,40 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
             }
         }
 	MergePolygonSets(bounds);
-	current = bounds[0];
+	
+    if (bounds.size() > 0)
+        {
+        //TFS# 1023914 - If multiple bounds try to obtain a boundary from a DTM created withh all points of all bounds.
+        if (bounds.size() > 1)
+            {
+            BcDTMPtr bcDtm(BcDTM::Create());
 
+            for (auto& bound : bounds)
+                {
+                bcDtm->AddPoints(bound);
+                }    
 
+            DTMStatusInt status = bcDtm->Triangulate ();
+
+            if (status == SUCCESS)
+                {        
+                BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray pointArray;
+                status = bcDtm->GetBoundary(pointArray);
+
+                if (status == SUCCESS)
+                    {        
+                    current.clear();
+                    current = pointArray;
+                    }                
+                }        
+            }
+
+        if (current.size() == 0)
+            {
+            current = bounds[0];
+            }
+        }
+        
 	//polyface->Compress();
 	//size_t numOpen = 0, numClosed = 0;
 /*	PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface);
