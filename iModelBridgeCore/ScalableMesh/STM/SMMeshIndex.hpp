@@ -5154,6 +5154,28 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
     DRange3d polyRange;
     size_t n = 0;
     bool noIntersect = true;
+
+#if 1 
+    for (auto&pt : polyPts)
+        {
+        if (extRange.IsContainedXY(pt)) ++n;
+        pt.z = 0;
+        polyRange.Extend(pt);
+        if (noIntersect && &pt - &polyPts[0] != 0)
+            {
+            DRange3d edgeRange = DRange3d::From(pt, polyPts[&pt - &polyPts[0] - 1]);
+            if (extRange.IntersectsWith(edgeRange))
+                {
+                noIntersect = false;
+                }
+            }
+        }
+
+    if (n >2) return true;
+
+    ICurvePrimitivePtr curvePtr(ICurvePrimitive::CreateLineString(polyPts));
+
+#else //Optimization for Defect 989564:Performance profiling needed on load test data. Deactivate for current ConceptStation release as it is not robust enough.
     bvector<int> indices;
     bool useX = extRange.XLength() > extRange.YLength();
     DRange1d ext1d = useX ? DRange1d::From(extRange.low.x, extRange.high.x) : DRange1d::From(extRange.low.y, extRange.high.y);
@@ -5218,6 +5240,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
             }
         }
     }
+#endif
     CurveVectorPtr curveVectorPtr(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr));
 
     extRange.low.z = extRange.high.z = 0;
