@@ -1203,8 +1203,8 @@ size_t threadId, IScalableMeshPtr* scalableMeshPtr, IScalableMeshDisplayCacheMan
                     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd], scalableMeshPtr->get()));
                     bvector<IScalableMeshCachedDisplayNodePtr> ovr;
                     DRange3d nodeExtent(meshNodePtr->GetNodeExtent());
-                    FindOverview(ovr, collectedClips, nodeExtent, m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
-                    if (dynamic_cast<SMMeshIndexNode<DPoint3d, DRange3d>*>(&*m_nodesToSearch->GetNodes()[nodeInd])->SyncWithClipSets(collectedClips, &*(*scalableMeshPtr)))
+                    //FindOverview(ovr, collectedClips, nodeExtent, m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
+                    if (false && dynamic_cast<SMMeshIndexNode<DPoint3d, DRange3d>*>(&*m_nodesToSearch->GetNodes()[nodeInd])->SyncWithClipSets(collectedClips, &*(*scalableMeshPtr)))
                     {
                         meshNodePtr->RemoveDisplayDataFromCache();
                         m_lowerResOverviewNodes[threadId].insert(m_lowerResOverviewNodes[threadId].end(), ovr.begin(), ovr.end());
@@ -1248,7 +1248,7 @@ size_t threadId, IScalableMeshPtr* scalableMeshPtr, IScalableMeshDisplayCacheMan
 
                     bvector<IScalableMeshCachedDisplayNodePtr> ovr;
                     DRange3d range3d = meshNodePtr->GetNodeExtent();
-                        
+                    /*
                     FindOverview(ovr, collectedClips, range3d, m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
                     if (dynamic_cast<SMMeshIndexNode<DPoint3d, DRange3d>*>(&*m_foundNodes->GetNodes()[nodeInd])->SyncWithClipSets(collectedClips, &*(*scalableMeshPtr)))
                     {
@@ -1256,7 +1256,7 @@ size_t threadId, IScalableMeshPtr* scalableMeshPtr, IScalableMeshDisplayCacheMan
                         m_lowerResOverviewNodes[threadId].insert(m_lowerResOverviewNodes[threadId].end(), ovr.begin(), ovr.end());
                         m_toLoadNodes[threadId].push_back(m_foundNodes->GetNodes()[nodeInd]);
                     }
-                    else
+                    else*/
                     {
                         m_lowerResOverviewNodes[threadId].push_back(meshNodePtr);
 
