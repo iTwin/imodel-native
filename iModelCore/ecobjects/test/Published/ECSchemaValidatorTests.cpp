@@ -2771,6 +2771,39 @@ TEST_F(SchemaValidatorTests, DuplicatePresentationFormatsKoQ)
     ASSERT_TRUE(schema.IsValid());
     EXPECT_FALSE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
     }
+    {
+    // AecUnits 1.0.0 exception
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="AecUnits" alias="AECU" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="LENGTH_SHORT" displayLabel="Short Length" persistenceUnit="M(DefaultReal)" presentationUnits="MM(real2u);CM(real4u);FT(fi8);IN(fi8);IN(fi16);IN(real4u)"                                   relativeError="0.01"/>
+        </ECSchema>)xml";
+
+    InitContextWithSchemaXml(schemaXml);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "The AecUnits, 1.0.0 and 1.0.1, were both released prior to the rule being implemented and should pass validation.";
+    }
+    {
+    // AecUnits 1.0.1 exception
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="AecUnits" alias="AECU" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="LENGTH_SHORT" displayLabel="Short Length" persistenceUnit="M(DefaultReal)" presentationUnits="MM(real2u);CM(real4u);FT(fi8);IN(fi8);IN(fi16);IN(real4u)"                                   relativeError="0.01"/>
+        </ECSchema>)xml";
+
+    InitContextWithSchemaXml(schemaXml);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "The AecUnits, 1.0.0 and 1.0.1, were both released prior to the rule being implemented and should pass validation.";
+    }
+    {
+    // AecUnits 1.0.2 is not an exception
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="AecUnits" alias="AECU" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="LENGTH_SHORT" displayLabel="Short Length" persistenceUnit="M(DefaultReal)" presentationUnits="MM(real2u);CM(real4u);FT(fi8);IN(fi8);IN(fi16);IN(real4u)"                                   relativeError="0.01"/>
+        </ECSchema>)xml";
+
+    InitContextWithSchemaXml(schemaXml);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_FALSE(validator.Validate(*schema)) << "The AecUnits, 1.0.0 and 1.0.1, were both released prior to the rule being implemented and should pass validation but a newer version should fail.";
+    }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

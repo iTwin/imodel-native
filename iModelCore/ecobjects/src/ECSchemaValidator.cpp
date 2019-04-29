@@ -841,6 +841,14 @@ ECObjectsStatus ECSchemaValidator::KindOfQuantityValidator(KindOfQuantityCR koq)
         return ECObjectsStatus::Error;
         }
 
+    // Add an exception for the already released versions of the AecUnits schema.
+    // Since presentation formats can be changed without a write or read version bump, this exception will only apply to versions,
+    // 1.0.0 and 1.0.1.
+    static SchemaKey maxAllowedVersion("AecUnits", 1, 0, 2);
+    bool isException = koq.GetFullName().Equals("AecUnits:LENGTH_SHORT") && koq.GetSchema().GetSchemaKey().LessThan(maxAllowedVersion, SchemaMatchType::Exact);
+
+    ECObjectsStatus validationStatus = ECObjectsStatus::Success;
+
     // RULE: KindOfQuantity must not have duplicate presentation formats
     ECSchemaCR schema = koq.GetSchema();
     bset<Utf8String> uniqueFormats;
@@ -849,14 +857,19 @@ ECObjectsStatus ECSchemaValidator::KindOfQuantityValidator(KindOfQuantityCR koq)
         {
         auto formatQualifiedName = format.GetQualifiedFormatString(schema);
         auto resultInsertion = uniqueFormats.insert(formatQualifiedName);
-        if (!resultInsertion.second)
-            LOG.errorv("KindOfQuantity %s has a duplicate presentation format %s which is not allowed", koq.GetName().c_str(), formatQualifiedName.c_str());
+        if (resultInsertion.second)
+            continue;
+
+        if (isException)
+            LOG.warningv("KindOfQuantity '%s' has a duplicate presentation format '%s' which is not allowed but was released before the error was caught.", koq.GetFullName().c_str(), formatQualifiedName.c_str());
+        else
+            {
+            LOG.errorv("KindOfQuantity '%s' has a duplicate presentation format %s which is not allowed.", koq.GetFullName().c_str(), formatQualifiedName.c_str());
+            validationStatus = ECObjectsStatus::Error;
+            }
         }
 
-    if (static_cast<size_t>(uniqueFormats.size()) < presentFormats.size()) 
-        return ECObjectsStatus::Error;
-
-    return ECObjectsStatus::Success;
+    return validationStatus;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
