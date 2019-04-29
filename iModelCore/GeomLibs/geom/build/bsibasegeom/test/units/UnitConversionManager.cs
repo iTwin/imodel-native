@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 // UnitConversionManager.cs
 // Copyright 2001-2004 Haestad Methods, Inc. All Rights Reserved.
 

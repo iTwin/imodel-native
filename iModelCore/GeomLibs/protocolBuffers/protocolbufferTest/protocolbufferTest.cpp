@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include <testHarness.h>
 #include <Geom/GeomApi.h>
 #include <BSIBaseGeomExaminerGtestHelper.h>

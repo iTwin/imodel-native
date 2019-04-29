@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: geom/src/SolidPrimitive/sp_CurvePrimitiveIntersection.h $
-|
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 // This h file is to be included in only one c file (sp_curveIntersection.cpp)

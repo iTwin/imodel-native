@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: PublicAPI/Geom/bsp/bsp_curvature.fdf $
 |    $RCSfile: copyright.txt,v $
 |   $Revision: 1.1 $
 |       $Date: 2006/08/02 18:07:13 $
 |     $Author: DavidAssaf $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

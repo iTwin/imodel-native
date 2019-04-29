@@ -1,8 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: geom/build/bsiplatformgeom/test/ptest01/ptest01.mke $
-#
-#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 TESTAPP_NAME=ptest01

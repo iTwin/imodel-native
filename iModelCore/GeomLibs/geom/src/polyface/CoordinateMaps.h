@@ -1,8 +1,6 @@
 /*----------------------------------------------------------------------+
 |
-|     $Source: geom/src/polyface/CoordinateMaps.h $
-|
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +----------------------------------------------------------------------*/
 #include <map>

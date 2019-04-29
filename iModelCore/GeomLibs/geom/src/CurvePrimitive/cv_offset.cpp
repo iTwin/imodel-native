@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: geom/src/CurvePrimitive/cv_offset.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

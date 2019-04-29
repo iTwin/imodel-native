@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: common/test/printfuncs.h $
 |    $RCSfile: printfuncs.h,v $
 |   $Revision: 1.8 $
 |       $Date: 2008/07/22 12:31:46 $
 |     $Author: Earlin.Lutz $
 |
-|  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

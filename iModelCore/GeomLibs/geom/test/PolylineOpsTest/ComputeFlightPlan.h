@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 // Single point for flight path, annotated with properties of the FOLLOWING edge
 struct FlightPoint
     {

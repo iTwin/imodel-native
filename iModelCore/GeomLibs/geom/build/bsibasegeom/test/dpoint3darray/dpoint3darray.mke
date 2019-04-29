@@ -1,8 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: geom/build/bsibasegeom/test/dpoint3darray/dpoint3darray.mke $
-#
-#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 TESTAPP_NAME=dpoint3darray

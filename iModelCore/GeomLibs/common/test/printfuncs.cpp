@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include <stdio.h>
 #include <Geom/GeomApi.h>
 #include <printfuncs.h>
