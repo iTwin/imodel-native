@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresentationRuleSet
+  RuleSetId="DgnGlobalSelection"
+  VersionMajor="1"
+  VersionMinor="0"
+  IsSupplemental="true"
+  SupplementationPurpose="TM_GlobalSelection"
+  SupportedSchemas="TerrainModel7,BaseElementSchema"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="C:\sources\cp\ecf\ecplugins\RuleDrivenPresentationECPlugin\Resources\PresentationRuleSetSchema.xsd">
+
+  <!-- ================================================================================================== -->
+  <!-- CheckBox rules                                                                                     -->
+  <!-- ================================================================================================== -->
+  <CheckBoxRule Condition='ThisNode.IsInstanceNode AND ThisNode.ECInstance.IsOfClass ("DTMSubElementDisplay", "TerrainModel")' PropertyName='Display' DefaultValue='true' />
+
+  <!-- TerrainModel -->
+  <ChildNodeRule Condition='ParentNode.IsInstanceNode AND ParentNode.ECInstance.IsOfClass("DTMElement", "TerrainModel")' TargetTree='Both'  OnlyIfNotHandled='false' >
+    <RelatedInstances RelationshipClassNames="TerrainModel:TerrainModelChildrenRelationship" RelatedClassNames="TerrainModel:DTMCalculatedProperties,DTMSourceProperties" GroupByClass="false" GroupByLabel="false" AlwaysReturnsChildren="true"/>
+  </ChildNodeRule>
+
+  <ChildNodeRule Condition='ParentNode.IsInstanceNode AND ParentNode.ClassName = "DTMCalculatedProperties"' TargetTree='Both'>
+    <RelatedInstances RelationshipClassNames="TerrainModel:TerrainModelChildrenRelationship" RelatedClassNames="TerrainModel:DTMTriangles,DTMFlowArrows,DTMHighPoints,DTMLowPoints,DTMSpots,DTMRasterDraping," GroupByClass="false" GroupByLabel="false" AlwaysReturnsChildren="true"/>
+    <RelatedInstances RelationshipClassNames="TerrainModel:TerrainModelChildrenRelationship" RelatedClassNames="TerrainModel:DTMRegions" GroupByClass="true" GroupByLabel="false" />
+    <RelatedInstances RelationshipClassNames="TerrainModel:TerrainModelChildrenRelationship" RelatedClassNames="TerrainModel:DTMGeneralContours" GroupByClass="false" GroupByLabel="false" AlwaysReturnsChildren="true"/>
+  </ChildNodeRule>
+
+  <ChildNodeRule Condition='ParentNode.IsInstanceNode AND ParentNode.ClassName = "DTMSourceProperties"' TargetTree='Both'>
+    <RelatedInstances RelationshipClassNames="TerrainModel:TerrainModelChildrenRelationship" RelatedClassNames="TerrainModel:DTMFeatureSpots,DTMFeature" GroupByClass="false" GroupByLabel="false" AlwaysReturnsChildren="true"/>
+  </ChildNodeRule>
+
+  <ChildNodeRule Condition='ParentNode.IsInstanceNode AND ParentNode.ClassName = "DTMGeneralContours"' TargetTree='Both'>
+    <RelatedInstances RelationshipClassNames="TerrainModel:TerrainModelChildrenRelationship" RelatedClassNames="TerrainModel:DTMContours" GroupByClass="false" GroupByLabel="false" AlwaysReturnsChildren="true"/>
+  </ChildNodeRule>
+
+
+</PresentationRuleSet>
