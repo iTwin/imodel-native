@@ -349,6 +349,10 @@ ENUM_IS_FLAGS(DgnTile::Flags);
 //  Major version 2:
 //      2.0: Introduction of major version 2
 //      2.1: Fixed SurfaceMaterial::isLessThan() incorrectly returning true resulting in failure to batch meshes having materials.
+//  Major version 3:
+//      3.0: Introduction of major version 3:
+//          Improved instancing heuristic.
+//          Decimation of polylines.
 // @bsistruct                                                   Paul.Connelly   09/18
 //=======================================================================================
 struct IModelTile
@@ -372,7 +376,8 @@ struct IModelTile
         static constexpr Version Invalid() { return Version(0, 0); }
         static constexpr Version V1() { return Version(1, 4); }
         static constexpr Version V2() { return Version(2, 1); }
-        static constexpr Version Current() { return V2(); }
+        static constexpr Version V3() { return Version(3, 0); }
+        static constexpr Version Current() { return V3(); }
 
         static Version FromMajorVersion(uint16_t major);
 

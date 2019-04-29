@@ -921,6 +921,42 @@ static PolyfaceHeaderPtr tryDecimate(Polyface& tilePolyface)
     return pf->ClusteredVertexDecimate(tilePolyface.m_decimationTolerance, minRatio);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool tryDecimate(StrokesR out, StrokesCR in)
+    {
+    if (!in.CanDecimate())
+        return false;
+
+    auto inPointCount = in.ComputePointCount();
+    static constexpr size_t minPointCount = 10;
+    if (inPointCount <= minPointCount)
+        return false;
+
+    bvector<DPoint3d> compressedPoints;
+    for (auto const& strokeIn : in.m_strokes)
+        {
+        compressedPoints.clear();
+        if (!strokeIn.m_canDecimate)
+            compressedPoints = strokeIn.m_points;
+        else
+            DPoint3dOps::CompressByChordError(compressedPoints, strokeIn.m_points, in.m_decimationTolerance);
+
+        out.m_strokes.emplace_back(Strokes::PointList(std::move(compressedPoints), false));
+        }
+
+    auto outPointCount = out.ComputePointCount();
+    auto decimationRatio = static_cast<double>(outPointCount) / static_cast<double>(inPointCount);
+
+    // Prevent further attempts to decimate the output
+    out.m_decimationTolerance = 0.0;
+
+    // If at least this percentage of points remain after decimation, consider it not worthwhile
+    static constexpr double maxRatio = 0.80;
+    return decimationRatio <= maxRatio;
+    }
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
@@ -932,6 +968,8 @@ protected:
     MeshBuilderMap      m_builderMap;
     DRange3d            m_contentRange = DRange3d::NullRange();
     bool                m_didDecimate = false;
+
+    static double DecimateStrokes(StrokesR strokesOut, StrokesR strokesIn);
     
     MeshBuilderR GetMeshBuilder(MeshBuilderMap::Key const& key);
 
@@ -1057,14 +1095,16 @@ struct InstanceableGeom : RefCountedBase
 {
 private:
     SharedGeomCPtr  m_sharedGeom;
+    bool            m_decimated;
 protected:
-    explicit InstanceableGeom(SharedGeomCR shared) : m_sharedGeom(&shared) { }
+    InstanceableGeom(SharedGeomCR shared, bool decimated) : m_sharedGeom(&shared), m_decimated(decimated) { }
 
     virtual void AddInstanced(MeshGeneratorR, MeshBuilderR, DRange3dR contentRange) const = 0;
     virtual void AddBatched(ElementMeshGeneratorR meshGen, TransformCR transform, DisplayParamsCR displayParams, DgnElementId elemId) = 0;
 public:
     size_t GetVertexCount() const { return GetSharedGeom().GetInstanceCount() * GetSharedVertexCount(); }
     SharedGeomCR GetSharedGeom() const { return *m_sharedGeom; }
+    bool IsDecimated() const { return m_decimated; }
 
     virtual size_t GetSharedVertexCount() const = 0;
     virtual DisplayParamsCR GetDisplayParams() const = 0;
@@ -1085,9 +1125,8 @@ struct InstanceablePolyface : InstanceableGeom
 {
 private:
     Polyface    m_polyface;
-    bool        m_decimated;
 
-    InstanceablePolyface(PolyfaceCR polyface, SharedGeomCR shared, bool decimated) : InstanceableGeom(shared), m_polyface(polyface), m_decimated(decimated) { }
+    InstanceablePolyface(PolyfaceCR polyface, SharedGeomCR shared, bool decimated) : InstanceableGeom(shared, decimated), m_polyface(polyface) { }
 
     void AddInstanced(MeshGeneratorR, MeshBuilderR, DRange3dR contentRange) const final;
     void AddBatched(ElementMeshGeneratorR meshGen, TransformCR transform, DisplayParamsCR displayParams, DgnElementId elemId) final;
@@ -1126,7 +1165,7 @@ private:
     Strokes m_strokes;
     size_t  m_numVertices = 0;
 
-    InstanceableStrokes(Strokes&& strokes, SharedGeomCR shared) : InstanceableGeom(shared), m_strokes(std::move(strokes))
+    InstanceableStrokes(Strokes&& strokes, SharedGeomCR shared, bool decimated) : InstanceableGeom(shared, decimated), m_strokes(std::move(strokes))
         {
         for (auto const& pointList : m_strokes.m_strokes)
             m_numVertices += pointList.m_points.size();
@@ -1135,7 +1174,22 @@ private:
     void AddInstanced(MeshGeneratorR, MeshBuilderR, DRange3dR contentRange) const final;
     void AddBatched(ElementMeshGeneratorR meshGen, TransformCR transform, DisplayParamsCR displayParams, DgnElementId elemId) final;
 public:
-    static InstanceableGeomPtr Create(Strokes&& strokes, SharedGeomCR shared) { return new InstanceableStrokes(std::move(strokes), shared); }
+    static InstanceableGeomPtr Create(Strokes&& strokes, SharedGeomCR shared)
+        {
+        bool didDecimate = false;
+        if (strokes.CanDecimate())
+            {
+            Strokes decimated(*strokes.m_displayParams, strokes.m_disjoint, strokes.m_isPlanar, strokes.m_decimationTolerance);
+            if (tryDecimate(decimated, strokes))
+                {
+                strokes = std::move(decimated);
+                strokes.m_decimationTolerance = 0.0;
+                didDecimate = true;
+                }
+            }
+
+        return new InstanceableStrokes(std::move(strokes), shared, didDecimate);
+        }
 
     size_t GetSharedVertexCount() const final { return m_numVertices; }
     DisplayParamsCR GetDisplayParams() const final { return *m_strokes.m_displayParams; }
@@ -2958,6 +3012,7 @@ GlyphAtlasManager::GlyphAtlasManager(uint32_t numGlyphs) : m_numGlyphs(numGlyphs
     uint32_t i = 0;
     for (; i < m_numAtlases - 1; i++)
         m_atlases.emplace_back(i, maxGlyphsInAtlas);
+
     m_atlases.emplace_back(i, m_numGlyphs - maxGlyphsInAtlas * (m_numAtlases - 1));
     m_curAtlasNdx = 0;
     }
@@ -3194,7 +3249,7 @@ Strokes ElementMeshGenerator::ClipSegments(StrokesCR input) const
     {
     BeAssert(!input.m_disjoint);
 
-    Strokes output(*input.m_displayParams, false, input.m_isPlanar);
+    Strokes output(*input.m_displayParams, false, input.m_isPlanar, input.m_decimationTolerance);
     output.m_strokes.reserve(input.m_strokes.size());
 
     for (auto const& inputStroke : input.m_strokes)
@@ -3207,7 +3262,7 @@ Strokes ElementMeshGenerator::ClipSegments(StrokesCR input) const
         bool prevOutside = !GetTileRange().IsContained(prevPt);
         if (!prevOutside)
             {
-            output.m_strokes.push_back(Strokes::PointList(inputStroke.m_startDistance));
+            output.m_strokes.push_back(Strokes::PointList(inputStroke.m_startDistance, inputStroke.m_canDecimate));
             output.m_strokes.back().m_points.push_back(prevPt);
             }
 
@@ -3234,7 +3289,7 @@ Strokes ElementMeshGenerator::ClipSegments(StrokesCR input) const
 
             if (prevOutside)
                 {
-                output.m_strokes.push_back(Strokes::PointList(length));
+                output.m_strokes.push_back(Strokes::PointList(length, inputStroke.m_canDecimate));
                 output.m_strokes.back().m_points.push_back(startPt);
                 }
 
@@ -3276,6 +3331,31 @@ void MeshGenerator::AddStrokes(StrokesList& strokes, DgnElementId elemId, double
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+double MeshGenerator::DecimateStrokes(StrokesR strokesOut, StrokesR strokesIn) // returns percentage of total point reduction
+    {
+    size_t totalPointsIn = 0;
+    size_t totalPointsOut = 0;
+    for (auto& strokeIn : strokesIn.m_strokes)
+        {
+        bool doDecimate = strokeIn.m_canDecimate; // only decimate linestrings
+        if (doDecimate)
+            {
+            bvector<DPoint3d> compressedPoints;
+            DPoint3dOps::CompressByChordError(compressedPoints, strokeIn.m_points, strokesIn.m_decimationTolerance);
+
+            totalPointsIn += strokeIn.m_points.size();
+            totalPointsOut += compressedPoints.size();
+
+            strokesOut.m_strokes.emplace_back(Strokes::PointList(std::move(compressedPoints), false));
+            }
+        }
+
+    return 1.0 - static_cast<double>(totalPointsOut) / static_cast<double>(totalPointsIn);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> void addClippedStrokes(MeshBuilderR builder, StrokesCR strokes, FeatureCR feature, uint32_t color, T extendContentRange)
@@ -3299,6 +3379,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, DgnElementId elemId, double ran
     if (m_loader.IsCanceled())
         return;
 
+    // Clip before attempting decimation (probably cheaper)
     if (!isContained)
         ClipStrokes(strokes);
 
@@ -3309,8 +3390,17 @@ void MeshGenerator::AddStrokes(StrokesR strokes, DgnElementId elemId, double ran
     MeshBuilderMap::Key key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, strokes.m_isPlanar);
     MeshBuilderR builder = GetMeshBuilder(key);
 
+    // Decimate if possible
+    Strokes* strokesToAdd = &strokes;
+    Strokes decimatedStrokes(*strokes.m_displayParams, strokes.m_disjoint, strokes.m_isPlanar, strokes.m_decimationTolerance);
+    if (tryDecimate(decimatedStrokes, strokes))
+        {
+        strokesToAdd = &decimatedStrokes;
+        m_didDecimate = true;
+        }
+
     uint32_t fillColor = displayParams.GetLineColor();
-    addClippedStrokes(builder, strokes, featureFromParams(elemId, displayParams), fillColor, [&](bvector<DPoint3d> const& pts) { ExtendContentRange(pts); });
+    addClippedStrokes(builder, *strokesToAdd, featureFromParams(elemId, displayParams), fillColor, [&](bvector<DPoint3d> const& pts) { ExtendContentRange(pts); });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3821,6 +3911,8 @@ void InstanceableGeom::AddBatched(ElementMeshGeneratorR meshGen, SubRangesR subR
 
         DisplayParamsCPtr displayParams = sharedGeom.CloneDisplayParamsForInstance(*baseDisplayParams, instance.GetDisplayParams());
         AddBatched(meshGen, instanceTransform, *displayParams, instance.GetElementId());
+        if (IsDecimated())
+            meshGen.MarkDecimated();
         }
     }
 
@@ -3832,9 +3924,6 @@ void InstanceablePolyface::AddBatched(ElementMeshGeneratorR meshGen, TransformCR
     m_polyface.Transform(transform);
     m_polyface.m_displayParams = &displayParams;
     meshGen.AddPolyface(m_polyface, elemId, 0.0, true, false);
-
-    if (m_decimated)
-        meshGen.MarkDecimated();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3907,6 +3996,9 @@ void InstanceableGeom::AddInstanced(ElementMeshGeneratorR meshGen, SubRangesR su
 
     // Ensure tile content range includes content range of each instance
     meshGen.ExtendContentRange(instancesContentRange);
+
+    if (IsDecimated())
+        meshGen.MarkDecimated();
     }
 
 /*---------------------------------------------------------------------------------**//**

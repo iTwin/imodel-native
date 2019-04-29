@@ -66,31 +66,175 @@ static FPoint2d toFPoint2d(DPoint2dCR dpoint)
     return fpoint;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void collectCurveStrokes (Strokes::PointLists& strokes, CurveVectorCR curve, IFacetOptionsR facetOptions, TransformCP transform)
+//=======================================================================================
+// Largely lifted from GeomLibs/CurveVector.cpp.  Modified to track whether a resulting
+// list of points is from a linestring.  If so, an output flag is set which signifies it
+// is able to decimated at a later time.
+// @bsistruct                                                   Mark.Schlosser  04/2019
+//=======================================================================================
+struct LinearGeometryCollectorForDecimation
+{
+size_t errors;
+IFacetOptionsR m_facetOptions;
+
+LinearGeometryCollectorForDecimation(IFacetOptionsR options)
+    : m_facetOptions(options)
     {
-    bvector <bvector<bvector<DPoint3d>>> strokesArray;
+    errors = 0;
+    }
 
-    curve.CollectLinearGeometry (strokesArray, &facetOptions);
+size_t NumErrors() {return errors;}
 
-    for (auto& loop : strokesArray)
+// Return false if anything other than Line or LineString
+bool CollectPointsFromSinglePrimitive
+(
+ICurvePrimitiveCR prim,
+bvector<DPoint3d> &path
+)
+    {
+    size_t initialCount = path.size();
+    prim.AddStrokes(path, m_facetOptions, true);
+    PolylineOps::PackAlmostEqualAfter(path, initialCount);
+    return true;
+    }
+
+// Return false if anything other than Line or LineString
+bool CollectPointsFromSinglePrimitive
+(
+ICurvePrimitiveCR prim,
+bvector<bvector<DPoint3d>> &paths,
+bvector<bool> &canDecimateFlags
+)
+    {
+    paths.push_back(bvector<DPoint3d>());
+    canDecimateFlags.push_back(prim.GetCurvePrimitiveType() == ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_LineString); 
+    return CollectPointsFromSinglePrimitive(prim, paths.back());
+    }
+
+// Return false if anything other than Line or LineString
+bool CollectPointsFromSinglePrimitive
+(
+ICurvePrimitiveCR prim,
+bvector<bvector<bvector<DPoint3d>>> &paths,
+bvector<bvector<bool>> &canDecimateFlags
+)
+    {
+    paths.push_back(bvector<bvector<DPoint3d>>());
+    canDecimateFlags.push_back(bvector<bool>());
+    return CollectPointsFromSinglePrimitive(prim, paths.back(), canDecimateFlags.back());
+    }
+
+void CollectPointsFromLinearPrimitives
+(
+CurveVectorCR curves,
+bvector<bvector<bvector<DPoint3d>>> &paths,
+bvector<bvector<bool>> &canDecimateFlags
+)
+    {
+    if (curves.IsUnionRegion())
         {
-        for (auto& loopStrokes : loop)
+        // Each child will become a new top level region
+        for (auto &prim : curves)
             {
-            if (nullptr != transform)
-                transform->Multiply(loopStrokes, loopStrokes);
-
-            strokes.emplace_back(std::move(loopStrokes));
+            CollectPointsFromLinearPrimitives(*prim->GetChildCurveVectorP(), paths, canDecimateFlags);
             }
         }
+    else if (curves.IsOpenPath() || curves.IsClosedPath())
+        {
+        paths.push_back(bvector<bvector<DPoint3d>>());
+        auto &parityLoops = paths.back();
+        parityLoops.push_back(bvector<DPoint3d>());
+        auto &loop = parityLoops.back();
+        canDecimateFlags.push_back(bvector<bool>());
+        auto &decFlags = canDecimateFlags.back();
+        bool canDecimate = true;
+        for (auto &prim : curves)
+            {
+            // We're producing a single line string (path or loop) from multiple curve primitives.
+            // The result is eligible for decimation if it contains no curved geometry.
+            switch (prim->GetCurvePrimitiveType())
+                {
+                // Only line strings are worth decimating. However a path containing more than one Line primitive is in effect a line string.
+                case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_LineString:
+                case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Line:
+                    break;
+                // Anything else is curved, therefore not eligible for decimation (already stroked to desired tolerance).
+                default:
+                    canDecimate = false;
+                    break;
+                }
+
+            if (!CollectPointsFromSinglePrimitive(*prim, loop))
+                errors++;
+            }
+
+        decFlags.push_back(canDecimate);
+
+        if (curves.IsClosedPath())
+            PolylineOps::EnforceClosure(loop);
+        }
+    else if (curves.GetBoundaryType() == CurveVector::BOUNDARY_TYPE_None)
+        {
+        // Anything (single prim, open, closed, parity, union) is possible . ..
+        for (auto &prim : curves)
+            {
+            auto child = prim->GetChildCurveVectorCP();
+            if (nullptr != child)
+                CollectPointsFromLinearPrimitives(*child, paths, canDecimateFlags);
+            else
+                CollectPointsFromSinglePrimitive(*prim, paths, canDecimateFlags);
+            }
+        }
+    else
+        errors++;
+    }
+};
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mark.Schlosser   04/2019
++--------------------------------------------------------------------------------------*/
+static bool collectLinearGeometry(CurveVectorCR curve, bvector<bvector<bvector<DPoint3d>>> &regionPoints, bvector<bvector<bool>> &canDecimateFlags, IFacetOptionsR strokeOptions)
+    {
+    LinearGeometryCollectorForDecimation collector(strokeOptions);
+    regionPoints.clear ();
+    collector.CollectPointsFromLinearPrimitives(curve, regionPoints, canDecimateFlags);
+    return collector.NumErrors () == 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void collectCurveStrokes (Strokes::PointLists& strokes, CurveVectorCR curve, IFacetOptionsR facetOptions, TransformCR transform)
+static bool collectCurveStrokes (Strokes::PointLists& strokes, CurveVectorCR curve, IFacetOptionsR facetOptions, TransformCP transform) // returns true if any can be decimated
+    {
+    bvector<bvector<bvector<DPoint3d>>> strokesArray;
+    bvector<bvector<bool>> canDecimateArray;
+
+    collectLinearGeometry(curve, strokesArray, canDecimateArray, facetOptions);
+
+    bool canDecimateSomething = false;
+    int i = 0;
+    for (auto& loop : strokesArray)
+        {
+        int j = 0;
+        auto& decFlags = canDecimateArray[i++];
+        for (auto& loopStrokes : loop)
+            {
+            if (nullptr != transform)
+                transform->Multiply(loopStrokes, loopStrokes);
+
+            bool canDecimate = decFlags[j++];
+            strokes.emplace_back(std::move(loopStrokes), canDecimate);
+            canDecimateSomething = canDecimateSomething || canDecimate;
+            }
+        }
+
+    return canDecimateSomething;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool collectCurveStrokes (Strokes::PointLists& strokes, CurveVectorCR curve, IFacetOptionsR facetOptions, TransformCR transform) // returns true if any can be decimated
     {
     return collectCurveStrokes(strokes, curve, facetOptions, &transform);
     }
@@ -256,7 +400,18 @@ private:
     public:
         Geom() = default;
 
-        Strokes::PointLists GetStrokes() const { return m_strokes; }
+        Strokes::PointLists GetStrokes() const
+            {
+            Strokes::PointLists clone;
+            for (auto const& pointList : m_strokes)
+                {
+                clone.emplace_back(pointList.m_startDistance, pointList.m_canDecimate);
+                clone.back().m_points = pointList.m_points;
+                }
+
+            return clone;
+            }
+
         PolyfaceHeaderPtr GetPolyface() const { return m_polyface.IsValid() ? m_polyface->Clone() : nullptr; }
         PolyfaceHeaderPtr GetRasterPolyface() const { return m_rasterPolyface.IsValid() ? m_rasterPolyface->Clone() : nullptr; }
         bool IsValid() const { return m_polyface.IsValid() || !m_strokes.empty(); }
@@ -453,6 +608,18 @@ double GlyphCache::s_tolerances[GlyphCache::kTolerance_COUNT] =
     };
 
 END_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t Strokes::ComputePointCount() const
+    {
+    size_t sz = 0;
+    for (auto const& stroke : m_strokes)
+        sz += stroke.m_points.size();
+
+    return static_cast<uint32_t>(sz);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/19
@@ -2018,13 +2185,14 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewCon
     if (!curveVector->IsAnyRegionType() || GetDisplayParams().WantRegionOutline())
         {
         strokePoints.clear();
-        collectCurveStrokes(strokePoints, *curveVector, facetOptions, GetTransform());
+        bool canDecimateSomething = collectCurveStrokes(strokePoints, *curveVector, facetOptions, GetTransform());
 
         if (!strokePoints.empty())
             {
             bool isPlanar = curveVector->IsAnyRegionType();
             BeAssert(isPlanar == GetDisplayParams().WantRegionOutline());
-            tileStrokes.emplace_back(Strokes(GetDisplayParams(), std::move(strokePoints), m_disjoint, isPlanar));
+            auto decimationTolerance = canDecimateSomething ? facetOptions.GetChordTolerance() : 0.0;
+            tileStrokes.emplace_back(Strokes(GetDisplayParams(), std::move(strokePoints), m_disjoint, isPlanar, decimationTolerance));
             }
         }
 
@@ -2659,7 +2827,7 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
                 for (auto& loop : points)
                     glyphTransform.Multiply(loop.m_points, loop.m_points);
 
-                strokes->emplace_back(Strokes(geom.GetDisplayParams(), std::move(points), false, true));
+                strokes->emplace_back(Strokes(geom.GetDisplayParams(), std::move(points), false, true, 0.0));
                 }
             }
         else

@@ -741,10 +741,24 @@ struct Strokes
     {
         double              m_startDistance;
         bvector<DPoint3d>   m_points;
+        bool                m_canDecimate;
 
-        explicit PointList(double startDistance) : m_startDistance(startDistance) { }
         PointList() : m_startDistance(0.0) { }
-        explicit PointList(bvector<DPoint3d>&& points) : m_startDistance(0.0), m_points(std::move(points)) { }
+        PointList(double startDistance, bool canDecimate) : m_startDistance(startDistance), m_canDecimate(canDecimate) { }
+        PointList(bvector<DPoint3d>&& points, bool canDecimate) : m_startDistance(0.0), m_points(std::move(points)), m_canDecimate(canDecimate) { }
+        PointList(PointList&& src) : m_startDistance(src.m_startDistance), m_points(std::move(src.m_points)), m_canDecimate(src.m_canDecimate) {} 
+
+        PointList& operator=(PointList&& src)
+            {
+            if (&src != this)
+                {
+                m_startDistance = src.m_startDistance;
+                m_points = std::move(src.m_points);
+                m_canDecimate = src.m_canDecimate;
+                }
+
+            return *this;
+            }
     };
 
     typedef bvector<PointList> PointLists;
@@ -753,12 +767,16 @@ struct Strokes
 
     DisplayParamsCPtr   m_displayParams;
     PointLists          m_strokes;
+    double              m_decimationTolerance;
     bool                m_disjoint;
     bool                m_isPlanar;
 
-    Strokes(DisplayParamsCR displayParams, PointLists&& strokes, bool disjoint, bool isPlanar) : m_displayParams(&displayParams), m_strokes(std::move(strokes)), m_disjoint(disjoint), m_isPlanar(isPlanar) { }
-    Strokes(DisplayParamsCR displayParams, bool disjoint, bool isPlanar) : m_displayParams(&displayParams), m_disjoint(disjoint), m_isPlanar(isPlanar) { }
-    Strokes(Strokes&& src) : m_displayParams(src.m_displayParams), m_strokes(std::move(src.m_strokes)), m_disjoint(src.m_disjoint), m_isPlanar(src.m_isPlanar) { }
+    Strokes(DisplayParamsCR displayParams, PointLists&& strokes, bool disjoint, bool isPlanar, double decimationTolerance)
+        : m_displayParams(&displayParams), m_strokes(std::move(strokes)), m_disjoint(disjoint), m_isPlanar(isPlanar), m_decimationTolerance(decimationTolerance) { }
+    Strokes(DisplayParamsCR displayParams, bool disjoint, bool isPlanar, double decimationTolerance)
+        : m_displayParams(&displayParams), m_disjoint(disjoint), m_isPlanar(isPlanar), m_decimationTolerance(decimationTolerance) { }
+    Strokes(Strokes&& src)
+        : m_displayParams(src.m_displayParams), m_strokes(std::move(src.m_strokes)), m_disjoint(src.m_disjoint), m_isPlanar(src.m_isPlanar), m_decimationTolerance(src.m_decimationTolerance) { }
     Strokes& operator=(Strokes&& src)
         {
         if (this != &src)
@@ -767,14 +785,16 @@ struct Strokes
             m_strokes = std::move(src.m_strokes);
             m_disjoint = src.m_disjoint;
             m_isPlanar = src.m_isPlanar;
+            m_decimationTolerance = src.m_decimationTolerance;
             }
 
         return *this;
         }
 
     void Transform(TransformCR transform);
-    DisplayParamsCR     GetDisplayParams() const { return *m_displayParams; }
-
+    DisplayParamsCR GetDisplayParams() const { return *m_displayParams; }
+    uint32_t ComputePointCount() const;
+    bool CanDecimate() const { return !m_disjoint && m_decimationTolerance > 0.0; }
 };
 
 //=======================================================================================

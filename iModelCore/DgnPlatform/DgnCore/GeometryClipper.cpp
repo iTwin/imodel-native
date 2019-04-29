@@ -92,6 +92,7 @@ void GeometryClipper::ProcessLine(Strokes::PointLists& pointListsOut, const Stro
         }
 
     bvector<DPoint3d> clipPts;
+    bool canDecimate = pointListIn.m_canDecimate;
     for (auto seg : clipSegsFinal)
         {
         if (clipPts.empty())
@@ -102,7 +103,7 @@ void GeometryClipper::ProcessLine(Strokes::PointLists& pointListsOut, const Stro
             {
             if (!clipPts.back().AlmostEqual(seg.point[0]))
                 { // submit previous pointList because points mismatch (will begin new pointList)
-                pointListsOut.push_back(Strokes::PointList(std::move(clipPts)));
+                pointListsOut.push_back(Strokes::PointList(std::move(clipPts), canDecimate));
                 clipPts.push_back(seg.point[0]); // add first point to new pointList
                 }
             // else AlmostEqual() and will skip outputting seg.point[0] in order to continue previous line string
@@ -110,9 +111,10 @@ void GeometryClipper::ProcessLine(Strokes::PointLists& pointListsOut, const Stro
 
         clipPts.push_back(seg.point[1]);
         }
+
     if (!clipPts.empty())
         { // submit final pointList, if available
-        pointListsOut.push_back(Strokes::PointList(std::move(clipPts)));
+        pointListsOut.push_back(Strokes::PointList(std::move(clipPts), canDecimate));
         }
     }
 
@@ -152,6 +154,7 @@ void GeometryClipper::DoClipStrokes(StrokesList& strokesOut, Strokes&& strokesIn
         DisplayParamsCPtr displayParams = strokesIn.m_displayParams;
         bool isDisjoint = strokesIn.m_disjoint;
         bool isPlanar = strokesIn.m_isPlanar;
+        double decimationTolerance = strokesIn.m_decimationTolerance;
 
         if (isDisjoint) // clip as individual points
             {
@@ -163,14 +166,13 @@ void GeometryClipper::DoClipStrokes(StrokesList& strokesOut, Strokes&& strokesIn
 
                 if (!newPts.empty())
                     {
-                    newStrokePts.push_back(Strokes::PointList(std::move(newPts)));
+                    newStrokePts.emplace_back(Strokes::PointList(std::move(newPts), false));
                     newPts.clear();
                     }
                 }
+
             if (!newStrokePts.empty())
-                {
-                strokesOut.emplace_back(Strokes(*displayParams, std::move(newStrokePts), isDisjoint, isPlanar));
-                }
+                strokesOut.emplace_back(Strokes(*displayParams, std::move(newStrokePts), isDisjoint, isPlanar, decimationTolerance));
             }
         else // clip as line strings
             {
@@ -180,9 +182,7 @@ void GeometryClipper::DoClipStrokes(StrokesList& strokesOut, Strokes&& strokesIn
                 }
 
             if (!newStrokePts.empty())
-                {
-                strokesOut.emplace_back(Strokes(*displayParams, std::move(newStrokePts), isDisjoint, isPlanar));
-                }
+                strokesOut.emplace_back(Strokes(*displayParams, std::move(newStrokePts), isDisjoint, isPlanar, decimationTolerance));
             }
         }
     else
