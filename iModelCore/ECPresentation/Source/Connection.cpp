@@ -41,7 +41,7 @@ private:
         {
         ECDbClosedNotifier::Register(*this, m_ecdb, true);
         m_isOpen = m_ecdb.IsDbOpen();
-        LOG_CONNECTIONS.infov("%p PrimaryConnection[%s] created", this, m_id.c_str());
+        LOG_CONNECTIONS.infov("%p PrimaryConnection[%s] created on thread %d", this, m_id.c_str(), (int)BeThreadUtilities::GetCurrentThreadId());
         }
 
 protected:
@@ -212,7 +212,7 @@ void PrimaryConnection::_OnConnectionClosed(ECDbCR db)
     BeAssert(&db == &m_ecdb);
     if (m_isOpen)
         {
-        LOG_CONNECTIONS.infov("%p PrimaryConnection[%s] closed", this, m_id.c_str());
+        LOG_CONNECTIONS.infov("%p PrimaryConnection[%s] closed on thread %d", this, m_id.c_str(), (int)BeThreadUtilities::GetCurrentThreadId());
         m_isOpen = false;
         m_manager.NotifyConnectionClosed(m_id);
         }
@@ -226,7 +226,7 @@ void PrimaryConnection::_OnConnectionReloaded(ECDbCR db)
     BeAssert(&db == &m_ecdb);
     if (m_isOpen)
         {
-        LOG_CONNECTIONS.infov("%p PrimaryConnection[%s] reloaded", this, m_id.c_str());
+        LOG_CONNECTIONS.infov("%p PrimaryConnection[%s] reloaded on thread %d", this, m_id.c_str(), (int)BeThreadUtilities::GetCurrentThreadId());
         IConnectionPtr ref = this; // keep refcount of this instance so it doesnt get destroyed after NotifyConnectionClosed call
         m_manager.NotifyConnectionClosed(m_id);
         if (m_isPrimary)

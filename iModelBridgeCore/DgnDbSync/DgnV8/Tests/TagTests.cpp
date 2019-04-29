@@ -104,7 +104,7 @@ BentleyStatus TagTests::AddTagElement(V8FileEditor& v8editor, DgnV8Api::ITagCrea
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TagTests, Basic)
     {
-    LineUpFiles(L"TagTests_Basic.bim", L"Test3d.dgn", false);
+    LineUpFiles(L"Basic.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -132,18 +132,43 @@ TEST_F(TagTests, Basic)
     DoConvert(m_dgnDbFileName, m_v8FileName);
     m_wantCleanUp = false;
 
-    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    DgnElementCPtr lineElem1 = FindV8ElementInDgnDb(*db, eid1);
-    ASSERT_TRUE(lineElem1.IsValid());
-    DgnElementCPtr lineElem2 = FindV8ElementInDgnDb(*db, eid2);
-    ASSERT_TRUE(lineElem2.IsValid());
-    ECSqlStatement stmt;
-    ECSqlStatus ecStatus = stmt.Prepare(*db, "SELECT Element.Id,Tag1 FROM v8tag.TagSetElementAspect");
-    ASSERT_TRUE(ECSqlStatus::Success == ecStatus);
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        DgnElementCPtr lineElem1 = FindV8ElementInDgnDb(*db, eid1);
+        ASSERT_TRUE(lineElem1.IsValid());
+        DgnElementCPtr lineElem2 = FindV8ElementInDgnDb(*db, eid2);
+        ASSERT_TRUE(lineElem2.IsValid());
+        ECSqlStatement stmt;
+        ECSqlStatus ecStatus = stmt.Prepare(*db, "SELECT Element.Id,Tag1 FROM v8tag.TagSet");
+        ASSERT_TRUE(ECSqlStatus::Success == ecStatus);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    ASSERT_EQ(lineElem1->GetElementId().GetValue(), stmt.GetValueInt(0));
-    ASSERT_STREQ("DgnTagValue 1", stmt.GetValueText(1));
+        ASSERT_EQ(lineElem1->GetElementId().GetValue(), stmt.GetValueInt(0));
+        ASSERT_STREQ("DgnTagValue 1", stmt.GetValueText(1));
+        }
+
+    DgnV8Api::ElementId eid3;
+        {
+        v8editor.AddLine(&eid3);
+        PersistentElementRefP lineElement3 = v8editor.m_defaultModel->FindElementByID(eid3);
+        ASSERT_TRUE(lineElement3 != nullptr);
+        ASSERT_TRUE(SUCCESS == AddTagElement(v8editor, tagData, lineElement3));
+        v8editor.Save();
+        }
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        DgnElementCPtr lineElem3 = FindV8ElementInDgnDb(*db, eid3);
+        ASSERT_TRUE(lineElem3.IsValid());
+        ECSqlStatement stmt;
+        ECSqlStatus ecStatus = stmt.Prepare(*db, "SELECT Tag1 FROM v8tag.TagSet WHERE Element.Id = ?");
+        ASSERT_TRUE(ECSqlStatus::Success == ecStatus);
+        stmt.BindId(1, lineElem3->GetElementId());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+        ASSERT_STREQ("DgnTagValue 1", stmt.GetValueText(0));
+    }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -151,7 +176,7 @@ TEST_F(TagTests, Basic)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TagTests, TagVisibility)
     {
-    LineUpFiles(L"TagTests_Basic.bim", L"Test3d.dgn", false);
+    LineUpFiles(L"Visibility.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -176,7 +201,7 @@ TEST_F(TagTests, TagVisibility)
     DgnElementCPtr lineElem = FindV8ElementInDgnDb(*db, eid);
     ASSERT_TRUE(lineElem.IsValid());
     ECSqlStatement stmt;
-    ECSqlStatus ecStatus = stmt.Prepare(*db, "SELECT Element.Id,Tag1 FROM v8tag.TagSetElementAspect");
+    ECSqlStatus ecStatus = stmt.Prepare(*db, "SELECT Element.Id,Tag1 FROM v8tag.TagSet");
     ASSERT_TRUE(ECSqlStatus::Success == ecStatus);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -189,7 +214,7 @@ TEST_F(TagTests, TagVisibility)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TagTests, Empty)
     {
-    LineUpFiles(L"TagTests_Basic.bim", L"Test3d.dgn", false);
+    LineUpFiles(L"Empty.bim", L"Test3d.dgn", false);
 
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
@@ -213,7 +238,7 @@ TEST_F(TagTests, Empty)
     DgnElementCPtr lineElem = FindV8ElementInDgnDb(*db, eid);
     ASSERT_TRUE(lineElem.IsValid());
     ECSqlStatement stmt;
-    ECSqlStatus ecStatus = stmt.Prepare(*db, "SELECT Element.Id,Tag1 FROM v8tag.TagSetElementAspect");
+    ECSqlStatus ecStatus = stmt.Prepare(*db, "SELECT Element.Id,Tag1 FROM v8tag.TagSet");
     ASSERT_TRUE(ECSqlStatus::Success == ecStatus);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 

@@ -73,12 +73,14 @@ struct DgnV8Info
     {
     struct Spec : BeSQLite::PropertySpec
         {
-        Spec(BentleyApi::Utf8CP nameSpace, BentleyApi::Utf8CP name) : BeSQLite::PropertySpec(name, nameSpace, Mode::Normal, Compress::No) {}
+        Spec(BentleyApi::Utf8CP nameSpace, BentleyApi::Utf8CP name, bool saveIfNull = false) : BeSQLite::PropertySpec(name, nameSpace, Mode::Normal, Compress::No, saveIfNull) {}
         };
 
     static Spec V8Class(BentleyApi::Utf8CP ecClass) { return Spec("dgn_V8Class", ecClass); }
     static Spec V8Schema(BentleyApi::Utf8CP ecSchema) { return Spec("dgn_V8Schema", ecSchema); }
     static Spec V8Expression(BentleyApi::Utf8CP fullClassName) { return Spec("dgn_V8Expression", fullClassName); }
+    static Spec V8TagSet(BentleyApi::Utf8CP tagSetName) { return Spec("dgn_V8TagSet", tagSetName, true); }
+    static Spec V8TagDefinition(BentleyApi::Utf8CP tagSetId) { return Spec("dgn_V8TagDef", tagSetId); }
     };
 
 //=======================================================================================

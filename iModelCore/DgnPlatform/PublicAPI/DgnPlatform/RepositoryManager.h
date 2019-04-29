@@ -166,6 +166,8 @@ public:
     };
 private:
     DgnDbR  m_db;
+    static bool s_mustReportCodesInLockedScopes; // defaults to true. Bridges should set this to true.
+    static bool s_exclusiveLockOnScopeIsPermanent; // @deprecated - defaults to false - Bridges should set this to true
 
     void ReformulateLockRequest(LockRequestR, Response const&) const;
     void ReformulateCodeRequest(DgnCodeSet&, Response const&) const;
@@ -184,6 +186,7 @@ protected:
     // Codes
     virtual RepositoryStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) = 0;
     DGNPLATFORM_EXPORT virtual RepositoryStatus _ReserveCode(DgnCodeCR code);
+    virtual bool _IsCodeInLockedScope(DgnCodeCR) const = 0;
 
     // Locks
     virtual RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId lockId) = 0;
@@ -410,6 +413,31 @@ public:
     //! @return The response, including the result status and any additional information as specified by the options
     //! @remarks The DgnCodeSet may be modified
     DGNPLATFORM_EXPORT Response ReserveCodes(DgnCodeSet& codes, ResponseOptions options=ResponseOptions::None);
+
+    //! Query if the scope of the specifed code is in a "locked" scope. If so, individual codes in that scope do not require reservations before use.
+    bool IsCodeInLockedScope(DgnCodeCR code) const {return _IsCodeInLockedScope(code);}
+    //! @private
+    //! @deprecated
+    DGNPLATFORM_EXPORT static void SetExclusiveLockOnScopeIsPermanent(bool);
+    //! @private
+    //! @deprecated
+    DGNPLATFORM_EXPORT static bool IsExclusiveLockOnScopePermanent();
+    //! Specify if Codes that are in a locked scope be reported to the Code service. The default is false.
+    //! @private
+    DGNPLATFORM_EXPORT static void SetMustReportCodesInLockedScopes(bool);
+    //! Must Codes that are in a locked scope be reported to the Code service? The default is false.
+    //! @private
+    DGNPLATFORM_EXPORT static bool MustReportCodesInLockedScopes();
+
+    //! Query if the specified code must be reserved before it may be assigned to an element.
+    //! Returns false for all Codes in locked scopes; true otherwise.
+    //! @see IsCodeInLockedScope
+    DGNPLATFORM_EXPORT bool MustReserveCode(DgnCodeCR code) const;
+    //! Query if the specified code should be reported to and recorded by the Code service when it is found to be in use in a committed changed.
+    //! Returns true if the code is not in a locked scope or if MustReportCodesInLockedScopes returns true.
+    //! @see MustReportCodesInLockedScopes, IsCodeInLockedScope
+    DGNPLATFORM_EXPORT bool ShouldReportCode(DgnCodeCR code) const;
+
     //@}
 
     //! @name Local State Management

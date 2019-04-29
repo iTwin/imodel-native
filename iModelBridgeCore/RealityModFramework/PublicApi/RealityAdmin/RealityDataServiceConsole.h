@@ -45,6 +45,7 @@ enum class Command
     Details,
     ChangeDir,
     DataLocations,
+    PublicKeys,
     Stat,
     AllStats,
     AllStatsJson,
@@ -102,6 +103,7 @@ private:
     void UserStat();
     void ServiceStat();
     void DataLocations();
+    void PublicKeys();
     void AllEnterpriseStats();
     void AllEnterpriseStatsGen(bool displayAsJson);
     void AllEnterpriseStatsJson();
@@ -132,6 +134,7 @@ private:
     Utf8String MakeBuddiCall(int region = 0);
 
     void DisplayDataLocations(const bvector<RealityDataLocation>& locations);
+    void DisplayPublicKeys(const bvector<RealityDataPublicKey>& publicKeys);
     void DisplayEnterpriseStats(const bvector<RealityDataEnterpriseStat>& stats, const DateTime& curInfoDate);
     void DisplayServiceStats(const bvector<RealityDataServiceStat>& stats, const DateTime& curInfoDate);
     void DisplayUserStats(const bvector<RealityDataUserStat>& stats, const DateTime& curInfoDate);

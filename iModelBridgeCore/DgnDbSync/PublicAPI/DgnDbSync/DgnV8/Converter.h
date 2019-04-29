@@ -1071,7 +1071,6 @@ public:
             _GetParams().GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFilename); 
         }
 
-
     //! @name Graphics Conversion Utilties
     //! @{
     DGNDBSYNC_EXPORT static void ConvertLineStyleParams(Render::LineStyleParams& lsParams, DgnV8Api::LineStyleParams const* v8lsParams, double uorPerMeter, double componentScale, double modelLsScale);
@@ -1911,8 +1910,7 @@ public:
 
     //! @name  Tags
     //! @{
-    DGNDBSYNC_EXPORT virtual void _ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files, bvector<DgnV8ModelP> const& uniqueModels);
-    static WCharCP GetV8TagSetDefinitionSchemaName() {return L"V8TagSetDefinitions";}
+    static Utf8CP GetV8TagSetDefinitionSchemaName() {return "V8TagSetDefinitions";}
     //! @}
 
     //! @name Codes
@@ -2932,8 +2930,13 @@ struct ConvertV8TextToDgnDbExtension : ConvertToDgnDbElementExtension
 //=======================================================================================
 struct ConvertV8TagToDgnDbExtension : ConvertToDgnDbElementExtension
 {
+private:
+    bool TryFindClassNameForTagSet(Converter& converter, DgnV8Api::ElementId tagSetId, Utf8StringR className);
+    bool TryFindPropNamesForTagSet(Converter& converter, DgnV8Api::ElementId tagSetId, Json::Value& propNames);
+
+public:
     static void Register();
-    virtual Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override {return Result::SkipElement;}
+    Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override;
 };
 
 //=======================================================================================

@@ -22,7 +22,7 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //! The main class is RealityData that represents a data that is geocoordinated. This class
 //! does not contain the data proper but rather represents the informative portion of the
 //! data. The class contains names, description, data provider, spatial footprint (2D),
-//! and so on and makes reference to additional information but a potention link to a 
+//! and so on and makes reference to additional information but a potential link to a 
 //! RealityDataMetadata instance. 
 //!
 //! Along with Reality Data are provided classes to represent documents and folder.
@@ -32,14 +32,14 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //!    owner, enterprise, and so on. This data is descriptive and serves as an access
 //!    point to the data proper located in a dedicated Azure Blob Container.
 //!  - Each Reality Data is provided with a specific Azure Blob Container in which, 
-//!    documents are stored in a tree-like file struture like for any disc drive.
+//!    documents are stored in a tree-like file structure like for any disc drive.
 //!  - Offers Bentley CONNECT integrated permission access to create, access, manage,
 //!    update or delete reality data according to rules defined within the CONNECT
 //!    environment by individual enterprise administrator according to the usual roles 
 //!    and permission system of Bentley CONNECT as well a to project related permission
 //!    using common project permissions defined through the role base access control (RBAC)
 //!    CONNECT sub-system
-//!  - Although Reality Data is managed as Enterprise Asset than can optionnally used
+//!  - Although Reality Data is managed as Enterprise Asset than can optionally used
 //!    for CONNECT projects, the service offers a service maintaining a list of 
 //!    project/reality data relationship. This registry is required for project related
 //!    permissions and to ease the maintenance of the Enterprise Reality Data pool
@@ -202,9 +202,9 @@ struct RealityDataBase : public RefCountedBase
 {
 public:
 
-    // This enum is intentionaly not a en enum class to enable conversion to int and oring values
+    // This enum is intentionally not a en enum class to enable conversion to int and oring values
     // The classifications represent the main classification of the data. Most reality data will be model
-    // classified except for specialised data such as imagery and terrain.
+    // classified except for specialized data such as imagery and terrain.
     enum Classification
         {
         UNDEFINED_CLASSIF = 0x00,
@@ -214,7 +214,7 @@ public:
         PINNED = 0x8,
         };
 
-    // This enum is intentionaly not a en enum class to enable conversion to int and oring values.
+    // This enum is intentionally not a en enum class to enable conversion to int and oring values.
     enum Visibility
         {
         UNDEFINED_VISIBILITY = 0x00,
@@ -253,7 +253,7 @@ public:
     //! Returns the mean squared of x and y accuracy in the field
     REALITYDATAPLATFORM_EXPORT double GetAccuracyValue() const; // in meters.
 
-    //! The main classificatin of the spatial entity. See Classification for details.
+    //! The main classification of the spatial entity. See Classification for details.
     REALITYDATAPLATFORM_EXPORT Classification GetClassification() const;
     REALITYDATAPLATFORM_EXPORT void SetClassification(Classification classification);
 
@@ -274,10 +274,10 @@ public:
     // REALITYDATAPLATFORM_EXPORT void SetSubClassification(Utf8CP subClassification);
 
 
-    //! Code indicating the visibility of the data. The recognised keywords are:
-    //! PUBLIC_VISIBILITY - Usualy indicates data is public thus useable by anyone
+    //! Code indicating the visibility of the data. The recognized keywords are:
+    //! PUBLIC_VISIBILITY - Usually indicates data is public thus usable by anyone
     //! ENTERPRISE - Usually indicates data can be used by any member of the owning enterprise regardless of access rights
-    //! PERMISSION - Usually indicates that data can be used by someone having the appropriate access rigths. This is the default value.
+    //! PERMISSION - Usually indicates that data can be used by someone having the appropriate access rights. This is the default value.
     //! PRIVATE - Usually indicates only the owner of the data can use it.
     REALITYDATAPLATFORM_EXPORT Visibility GetVisibility() const;
     REALITYDATAPLATFORM_EXPORT void SetVisibility(Visibility visibility);
@@ -301,8 +301,8 @@ public:
 
     //! Get/Set
     //! The footprint of the spatial entity. A list of points in longitude/latitude pairs that define the boundary of the data.
-    //! The path defined by the given polygon must not autocross, contains segments that overlap.
-    //! The final clossing point is mandatory.
+    //! The path defined by the given polygon must not auto-cross, contains segments that overlap.
+    //! The final closing point is mandatory.
     REALITYDATAPLATFORM_EXPORT const bvector<GeoPoint2d>& GetFootprint() const;
     REALITYDATAPLATFORM_EXPORT virtual void SetFootprint(bvector<GeoPoint2d> const& footprint, Utf8String coordSys = "4326");
     REALITYDATAPLATFORM_EXPORT virtual Utf8String GetFootprintString() const;
@@ -444,7 +444,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetModifiedDateTime(DateTime modifiedDate);
 
     //! Get/Set
-    //! The id of the organisation the data belongs to
+    //! The id of the organization the data belongs to
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetOrganizationId() const;
     REALITYDATAPLATFORM_EXPORT void SetOrganizationId(Utf8CP organizationId);
 
@@ -479,7 +479,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetCreatorId(Utf8CP creatorId);
 
     //! Get/Set
-    //! A reference to a metadata object. This object can be used by many spatial entities.
+    //! A reference to a meta-data object. This object can be used by many spatial entities.
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetMetadataUrl() const;
     REALITYDATAPLATFORM_EXPORT void SetMetadataUrl(Utf8CP metadataUrl);
 
@@ -589,13 +589,14 @@ public:
     //! Create invalid data.
     REALITYDATAPLATFORM_EXPORT RealityDataLocation();
 
-    //! Copy constructor and assignement operator.
+    //! Copy constructor and assignment operator.
     REALITYDATAPLATFORM_EXPORT RealityDataLocation(const RealityDataLocation& object);
     REALITYDATAPLATFORM_EXPORT RealityDataLocation& operator=(const RealityDataLocation& object);
 
-    //! Provider: The name of the provider (ex: Microsoft, Amazon,...)
-    //! Currently known key is Microsoft that implies the data location is located
-    //! in the Azure cloud blob storage.
+    //! Identifier: This identifier to the CONNECT Data Locations registry identifier.
+    //! This is the GUID of the data location in the data location registry that 
+    //! uniquely identifies a data center. This id enables to extract the original information from which
+    //! Provider and Location were extracted. 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetIdentifier() const;
     REALITYDATAPLATFORM_EXPORT void SetIdentifier(Utf8CP identifier);
 
@@ -605,23 +606,15 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProvider() const;
     REALITYDATAPLATFORM_EXPORT void SetProvider(Utf8CP provider);
 
-    //! Location: Geograpical Location of Data Location (ex: East Japan)
+    //! Location: Geographical Location of Data Location (ex: East Japan)
     //! This is a human readable text that may be used as a seed for translation
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetLocation() const;
     REALITYDATAPLATFORM_EXPORT void SetLocation(Utf8CP location);
-
-    //! Parent/DataLocationGuid: This identifier to the CONNECT Data Locations registry.
-    //! This is the GUID of the data location in the data location registry that 
-    //! uniquely identifies a data center. This id enables to extract the original infoarmation from which
-    //! Provider and Location were extracted. 
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDataLocationGuid() const;
-    REALITYDATAPLATFORM_EXPORT void SetDataLocationGuid(Utf8CP dataLocationGuid);
 
 protected:
     Utf8String m_identifier;
     Utf8String m_provider;
     Utf8String m_location;
-    Utf8String m_dataLocationGuid;
     };
 
 struct RealityDataEnterpriseStat
@@ -630,15 +623,15 @@ public:
     //! Create invalid data.
     REALITYDATAPLATFORM_EXPORT RealityDataEnterpriseStat();
 
-    //! Copy constructor and assignement operator.
+    //! Copy constructor and assignment operator.
     REALITYDATAPLATFORM_EXPORT RealityDataEnterpriseStat(const RealityDataEnterpriseStat& object);
     REALITYDATAPLATFORM_EXPORT RealityDataEnterpriseStat& operator=(const RealityDataEnterpriseStat& object);
 
-    //! number of entries belonging to the organisation
+    //! number of entries belonging to the organization
     REALITYDATAPLATFORM_EXPORT uint64_t GetNbRealityData() const;
     REALITYDATAPLATFORM_EXPORT void SetNbRealityData(uint64_t nbRealityData);
 
-    //! total size of the organisations data (at time of last calculation)
+    //! total size of the organizations data (at time of last calculation)
     REALITYDATAPLATFORM_EXPORT uint64_t GetTotalSizeKB() const;
     REALITYDATAPLATFORM_EXPORT void SetTotalSizeKB(uint64_t totalSizeKB);
     REALITYDATAPLATFORM_EXPORT void SetTotalSizeKB(double totalSizeKB);
@@ -673,15 +666,15 @@ public:
     //! Create invalid data.
     REALITYDATAPLATFORM_EXPORT RealityDataServiceStat();
 
-    //! Copy constructor and assignement operator.
+    //! Copy constructor and assignment operator.
     REALITYDATAPLATFORM_EXPORT RealityDataServiceStat(const RealityDataServiceStat& object);
     REALITYDATAPLATFORM_EXPORT RealityDataServiceStat& operator=(const RealityDataServiceStat& object);
 
-    //! number of entries belonging to the organisation
+    //! number of entries belonging to the organization
     REALITYDATAPLATFORM_EXPORT uint64_t GetNbRealityData() const;
     REALITYDATAPLATFORM_EXPORT void SetNbRealityData(uint64_t nbRealityData);
 
-    //! total size of the organisations data (at time of last calculation)
+    //! total size of the organizations data (at time of last calculation)
     REALITYDATAPLATFORM_EXPORT uint64_t GetTotalSizeKB() const;
     REALITYDATAPLATFORM_EXPORT void SetTotalSizeKB(uint64_t totalSizeKB);
     REALITYDATAPLATFORM_EXPORT void SetTotalSizeKB(double totalSizeKB);
@@ -713,15 +706,15 @@ public:
     //! Create invalid data.
     REALITYDATAPLATFORM_EXPORT RealityDataUserStat();
 
-    //! Copy constructor and assignement operator.
+    //! Copy constructor and assignment operator.
     REALITYDATAPLATFORM_EXPORT RealityDataUserStat(const RealityDataUserStat& object);
     REALITYDATAPLATFORM_EXPORT RealityDataUserStat& operator=(const RealityDataUserStat& object);
 
-    //! number of entries belonging to the organisation
+    //! number of entries belonging to the organization
     REALITYDATAPLATFORM_EXPORT uint64_t GetNbRealityData() const;
     REALITYDATAPLATFORM_EXPORT void SetNbRealityData(uint64_t nbRealityData);
 
-    //! total size of the organisations data (at time of last calculation)
+    //! total size of the organizations data (at time of last calculation)
     REALITYDATAPLATFORM_EXPORT uint64_t GetTotalSizeKB() const;
     REALITYDATAPLATFORM_EXPORT void SetTotalSizeKB(uint64_t totalSizeKB);
     REALITYDATAPLATFORM_EXPORT void SetTotalSizeKB(double totalSizeKB);
@@ -761,4 +754,67 @@ protected:
     DateTime   m_date;
     };   
 
+struct RealityDataPublicKey
+    {
+public:
+    //! Create invalid public Key.
+    REALITYDATAPLATFORM_EXPORT RealityDataPublicKey();
+
+    //! Copy constructor and assignment operator.
+    REALITYDATAPLATFORM_EXPORT RealityDataPublicKey(const RealityDataPublicKey& object);
+    REALITYDATAPLATFORM_EXPORT RealityDataPublicKey& operator=(const RealityDataPublicKey& object);
+
+    //! Identifier of the public key. This identifier is of the format 'PK-' followed
+    //! by a GUID. This identifier refers to a public key stored in the server and defining
+    //! the reality data and access rights and limitations.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetIdentifier() const;
+    REALITYDATAPLATFORM_EXPORT void SetIdentifier(Utf8CP identifier);
+
+    //! The reality data referenced by the public key.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRealityDataId() const;
+    REALITYDATAPLATFORM_EXPORT void SetRealityDataId(Utf8StringCR realityDataId);
+
+    //! Description: This description enables to describe to users the intent of the key
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDescription() const;
+    REALITYDATAPLATFORM_EXPORT void SetDescription(Utf8CP description);
+	
+    //! User Id. The identifier of the owner of the public key.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUserId() const;
+    REALITYDATAPLATFORM_EXPORT void SetUserId(Utf8CP userId);
+	
+    //! UltimateId of the enterprise owning the reality data referenced.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUltimateId() const;
+    REALITYDATAPLATFORM_EXPORT void SetUltimateId(Utf8CP ultimateId);
+
+    //! Get/Set
+    //! The date of the creation of the public key.
+    REALITYDATAPLATFORM_EXPORT DateTimeCR GetCreationDateTime() const;
+    REALITYDATAPLATFORM_EXPORT void SetCreationDateTime(DateTimeCR creationDateTime);
+
+    //! The last modified time
+    REALITYDATAPLATFORM_EXPORT DateTime GetModifiedDateTime() const;
+    REALITYDATAPLATFORM_EXPORT void SetModifiedDateTime(DateTime modifiedDate);
+
+    //! Authorized User Ids: The collection of authorized user Ids (GUIDs) for 
+    //! read only access, separated by semicolon (;). If empty, all users allowed.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetAuthorizedUserIds() const;
+    REALITYDATAPLATFORM_EXPORT void SetAuthorizedUserIds(Utf8CP authorizedUserIds);
+
+    //! Valid Until Date. The date after which the public key is no longer valid. 
+    //! This validity date cannot be further than 3 months from current date
+    REALITYDATAPLATFORM_EXPORT DateTimeCR GetValidUntilDate() const;
+    REALITYDATAPLATFORM_EXPORT void SetValidUntilDate(DateTimeCR validUntilDate);
+
+
+protected:
+    Utf8String m_identifier;
+    Utf8String m_realityDataId;
+    Utf8String m_userId;
+    Utf8String m_description;
+    Utf8String m_ultimateId;
+    DateTime   m_creationDateTime;
+    DateTime   m_modifiedDateTime;
+    Utf8String m_authorizedUserIds;
+    DateTime   m_validUntilDate;
+    };   
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

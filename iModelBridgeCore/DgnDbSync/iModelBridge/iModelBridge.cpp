@@ -856,9 +856,12 @@ bool iModelBridge::AreTransformsEqual(Transform const& t1, Transform const& t2)
     t2.GetTranslation(x2);
 
     double maxCoord = std::max<double>(x1.MaxAbs(), x2.MaxAbs());
+    double empericalTolernace = 100 * DoubleOps::SmallCoordinateRelTol();
 
-    auto xlatTolerance = std::max<double>(1.0e-15, BentleyApi::BeNumerical::NextafterDelta(maxCoord));
-
+    if (fabs(x1.MaxDiff(x2)) > DoubleOps::SmallCoordinateRelTol())
+        LOG.tracev("Existing distance  %f x 1e-10 is greater than SmallCoordinateRelTol for model duplicate detection", x1.MaxDiff(x2) * 1.0e10);
+    auto xlatTolerance = std::max<double>(empericalTolernace, BentleyApi::BeNumerical::NextafterDelta(maxCoord));
+    
     return t1.IsEqual(t2, matrixTolerance, xlatTolerance);
     }
 
@@ -1042,7 +1045,7 @@ iModelBridge::IBriefcaseManager::PushStatus iModelBridge::PushChanges(DgnDbR db,
         auto response = db.BriefcaseManager().EndBulkOperation();
         if (RepositoryStatus::Success != response.Result())
             {
-            LOG.infov("Failed to acquire locks and/or codes with error %x", response.Result());
+            LOG.errorv("Failed to acquire locks and/or codes with error %x", response.Result());
             return iModelBridge::IBriefcaseManager::PushStatus::UnknownError;
             }
         auto status = bcMgr->_Push(commitComment.c_str());

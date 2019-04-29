@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DgnV8\ConverterInternal.h" />
+    <ClInclude Include="DgnV8\ECSchemaMappings.h" />
     <ClInclude Include="DgnV8\LinkConverter.h" />
     <ClInclude Include="DgnV8\RulesetEmbedder.h" />
     <ClInclude Include="DgnV8\SheetAttachmentViewHelper.h" />
