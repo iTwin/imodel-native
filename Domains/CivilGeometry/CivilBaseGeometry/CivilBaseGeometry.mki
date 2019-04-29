@@ -1,0 +1,20 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+%include CivilBaseGeometry.Analyzer.mki
+%include mdl.mki
+
+ContextDeliveryDir = $(BuildContext)Delivery/
+
+#--------------------------------------------------------------------------------------
+# Define commonly used locations
+#--------------------------------------------------------------------------------------
+appName         = CivilBaseGeometry
+appSrc          = $(SrcRoot)Civil/Geometry/CivilBaseGeometry/Native/
+appPublicApi    = $(appSrc)PublicAPI/$(appName)/
+o               = $(OutBuildDir)/$(appName)/
+
+always:
+    !~@mkdir $(o)
