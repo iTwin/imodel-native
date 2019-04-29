@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
+    >
+
+    <ProductDirectoryList ListName="BuildingSharedDirectories">
+      <ProductDirectory Name="Assemblies" Path=""/>
+      <ProductDirectory Name="Assets" Path="Assets"/>
+      <ProductDirectory Name="Assets" LibType="static" Path="Assets"/>
+      <ProductDirectory Name="VendorNotices" Path="Notices"/>
+      <ProductDirectory Name="VendorNotices" Path="Notices" LibType="static" />
+      <ProductDirectory Name="TestsBackdoorIncludes" Path="TestsBackdoor" />
+      <ProductDirectory Name="BuildingSharedIncludes" Path="BuildingShared" />
+      <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="" />
+      <ProductDirectory Name="BentleyDesktopClientApi" Path="" />
+      <ProductDirectory Name="BentleyClientSharedAssemblies" Path="" />
+    </ProductDirectoryList>
+
+    <ProductDirectoryList ListName="BuildingSharedGTestDirectories">
+      <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+      <ProductDirectory Name="Gtest-NativeAssemblies" Path="" LibType="Static"/>
+      <ProductDirectory Name="Assemblies" Path=""/>
+      <ProductDirectory Name="Assemblies" Path="" LibType="Static"/>
+      <ProductDirectory Name="Assets" Path="Assets-g"/>
+      <ProductDirectory Name="Assets" Path="Assets-g" LibType="static"/>
+      <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
+      <ProductDirectory Name="Gtest-Assets" Path="Assets" LibType="Static"/>
+      <ProductDirectory Name="VendorNotices" Deliver="false" />
+      <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+      <ProductDirectory Name="UnitTests-Objects" Path="unittests" />
+    </ProductDirectoryList>
+    
+    <Part Name="BuildingSharedApi" BentleyBuildMakeFile="BuildingSharedApi.prewire.mke">
+        <Bindings>
+            <Directory SourceName="PublicApi/BuildingShared" ProductDirectoryName="BuildingSharedIncludes" />
+            <PublicAPI Domain="BuildingShared"/>
+        </Bindings>
+    </Part>
+    
+    <Part Name="BuildingUtils" BentleyBuildMakeFile="Utils/BuildingUtils.mke" ApiNumber="B02">
+        <SubPart PartName="BuildingSharedApi"/>
+        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingUtils$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingUtils$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="BuildingDgnUtils" BentleyBuildMakeFile="DgnUtils/BuildingDgnUtils.mke" ApiNumber="B02">
+        <SubPart PartName="BuildingSharedApi" />
+        <SubPart PartName="RoadRailPhysical"   PartFile="RoadRailPhysical"  Repository="DgnDomains-RoadRailPhysical" />
+        <SubPart PartName="BuildingUnits" />
+        <SubPart PartName="BuildingUtils" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingDgnUtils$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingDgnUtils$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="BuildingDgnViewUtils" BentleyBuildMakeFile="DgnViewUtils/BuildingDgnViewUtils.mke" ApiNumber="B02">
+        <SubPart PartName="BuildingSharedApi" />
+        <SubPart PartName="DgnClientFxPublicApi" Repository="DgnClientFx" PartFile="DgnClientFx" />
+        <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx" />
+        <SubPart PartName="RoadRailPhysical"   PartFile="RoadRailPhysical"  Repository="DgnDomains-RoadRailPhysical" />
+        <SubPart PartName="BuildingUnits" />
+        <SubPart PartName="BuildingUtils" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingDgnViewUtils$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingDgnViewUtils$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="BuildingUnits" BentleyBuildMakeFile="Units/BuildingUnits.mke" ApiNumber="B02">
+        <SubPart PartName="BuildingSharedApi"/>
+        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <Bindings>
+          <Libs>Delivery/$(libprefix)BuildingUnits$(libext)</Libs>
+          <Assemblies>Delivery/$(shlibprefix)BuildingUnits$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="BuildingSharedBundle">
+        <SubPart PartName="BuildingUtils"/>
+        <SubPart PartName="BuildingDgnUtils" />
+        <SubPart PartName="BuildingDgnViewUtils" />
+        <SubPart PartName="GeometryManipulationStrategies"/>
+        <SubPart PartName="DgnElementManipulationStrategies"/>
+    </Part>
+
+    <Part Name="GeometryManipulationStrategies" BentleyBuildMakeFile="GeometryManipulationStrategies/GeometryManipulationStrategies.mke" ApiNumber="B02">
+        <SubPart PartName="BuildingUtils"/>
+        <SubPart PartName="BuildingUnits"/>
+        <SubPart PartName="BuildingSharedApi"/>
+        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)GeometryManipulationStrategies$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)GeometryManipulationStrategies$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="DgnElementManipulationStrategies" BentleyBuildMakeFile="DgnElementManipulationStrategies/DgnElementManipulationStrategies.mke" ApiNumber="B02">
+        <SubPart PartName="GeometryManipulationStrategies"/>
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="UnitsNative" PartFile="Units" Repository="Units" />
+        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)DgnElementManipulationStrategies$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)DgnElementManipulationStrategies$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="StrategyPlatform" BentleyBuildMakeFile="StrategyPlatform/StrategyPlatform.mke" ApiNumber="B02">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform" />
+        <SubPart PartName="BeSQLite" Repository="BeSQLite" PartFile="BeSQLite" />
+        <SubPart PartName="DgnView" Repository="DgnDisplay" PartFile="DgnDisplay" />
+        <SubPart PartName="GeometryManipulationStrategies" />
+        <SubPart PartName="DgnElementManipulationStrategies" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)StrategyPlatform$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)StrategyPlatform$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+  <Part Name="BuildingShared-Tested">
+    <SubPart PartName="BuildingSharedBundle"/>
+    <SubPart PartName="Gtest-RunAggregator"/>
+  </Part>
+
+  <Part Name="Gtest-RunAggregator" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+    <SubPart PartName="RunGtest"/>
+  </Part>
+
+  <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests/RunTests.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/BuildingShared-GtestProduct/BuildingSharedTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <SubProduct ProductName="BuildingShared-GtestProduct" />
+    <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    <Bindings>
+      <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BuildingSharedTest.log</Files>
+    </Bindings>
+  </Part>
+
+  <Product Name="BuildingShared-GtestProduct" >
+    <SubPart PartName="BuildingShared-Gtest"/>
+    <Directories DirectoryListName="BuildingSharedDirectories"/>
+    <Directories DirectoryListName="BuildingSharedGTestDirectories"/>
+  </Product>
+
+  <Part Name="BuildingShared-Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke"
+    BentleyBuildMakeOptions="-dTEST_NAME=BuildingSharedTest -dTEST_COLLECTION_PRODUCT=BuildingShared-TestsProduct -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <SubProduct ProductName="BuildingShared-TestsProduct"/>
+    <SubPart PartName="DgnClientSdk-TestHelpers" Repository="DgnClientFx" PartFile="DgnClientFx"/>
+    <Bindings>
+      <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/BuildingSharedTest/Assemblies/*</Files>
+      <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/BuildingSharedTest/Assets" />
+    </Bindings>
+  </Part>
+
+  <Product Name="BuildingShared-TestsProduct">
+    <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+    <SubPart PartName="BuildingShared-Tests"/>
+    <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+    <Directories DirectoryListName="BuildingSharedDirectories"/>
+    <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+  </Product>
+
+
+  <Part Name="BuildingShared-Tests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+    <SubPart PartName="DgnDbTestUtils" PartFile="DgnPlatform" Repository="DgnPlatform" />
+    <SubPart PartName="PrewireForUnitTests"/>
+    <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
+    <SubPart PartName="BuildingSharedBundle"/>
+      <SubPart PartName="DgnElementManipulationStrategies"/>
+    <Bindings>
+      <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="BuildingShared/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+    </Bindings>
+  </Part>
+
+  <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+    <Bindings>
+      <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="BuildingShared">
+        Delivery/UnitTests/ignore_list.txt
+      </Files>
+    </Bindings>
+  </Part>
+
+    <!-- DgnV8 parts -->
+    <Part Name="BuildingSharedApi_DgnV8" BentleyBuildMakeFile="BuildingSharedApi.prewire.mke" BentleyBuildMakeOptions="-dDGNV8_BUILD">
+        <Bindings>
+            <Directory SourceName="PublicApi/BuildingShared" ProductDirectoryName="BuildingSharedIncludes" />
+            <PublicAPI Domain="BuildingShared"/>
+        </Bindings>
+    </Part>
+    
+    <Part Name="BuildingUtils_DgnV8" BentleyBuildMakeFile="Utils/BuildingUtils.mke" BentleyBuildMakeOptions="-dDGNV8_BUILD">
+        <SubPart PartName="BuildingSharedApi_DgnV8"/>
+        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingUtils$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingUtils$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="BuildingUnits_DgnV8" BentleyBuildMakeFile="Units/BuildingUnits.mke" BentleyBuildMakeOptions="-dDGNV8_BUILD">
+        <SubPart PartName="BuildingSharedApi_DgnV8"/>
+        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingUnits$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingUnits$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="GeometryManipulationStrategies_DgnV8" BentleyBuildMakeFile="GeometryManipulationStrategies/GeometryManipulationStrategies.mke" BentleyBuildMakeOptions="-dDGNV8_BUILD">
+        <SubPart PartName="BuildingUtils_DgnV8"/>
+        <SubPart PartName="BuildingUnits_DgnV8"/>
+        <SubPart PartName="BuildingSharedApi_DgnV8"/>
+        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)GeometryManipulationStrategies$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)GeometryManipulationStrategies$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+	
+    <Part Name="CodeGenerators" BentleyBuildMakeFile="CodeGenerators/CodeGenerators.mke" BentleyBuildMakeOptions="-dout=$(SrcRoot)DgnDomains\ClassificationSystems\Domain\GeneratedInserts\ -din=$(_MakeFilePath)Xmls\"/>
+
+    <Part Name="BuildSharedTestUtils" BentleyBuildMakeFile="TestUtils/TestUtils.mke" BentleyBuildMakeOptions="-dTestDir=SharedRepositoryManagerTest">
+        <SubPart PartName="DgnDbTestUtils" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"  ProductSubDirectory="BuildingShared/SharedRepositoryManagerTest" SourceName="Delivery/UnitTests/Objects/SharedRepositoryManagerTest"/>
+        </Bindings>
+    </Part>
+    
+</BuildContext>
