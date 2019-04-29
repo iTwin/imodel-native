@@ -1,0 +1,114 @@
+#----------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#----------------------------------------------------------------------
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/BeJsonCpp : $(headersOutputBaseDir)VersionedDgnV8Api/BeJsonCpp
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/Bentley : $(headersOutputBaseDir)VersionedDgnV8Api/Bentley
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/BentleyManagedUtil : $(headersOutputBaseDir)VersionedDgnV8Api/BentleyManagedUtil
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/BeSQLite : $(headersOutputBaseDir)VersionedDgnV8Api/BeSQLite
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/BeXml : $(headersOutputBaseDir)VersionedDgnV8Api/BeXml
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/bsiexcept : $(headersOutputBaseDir)VersionedDgnV8Api/bsiexcept
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/butil : $(headersOutputBaseDir)VersionedDgnV8Api/butil
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/DgnGeoCoord : $(headersOutputBaseDir)VersionedDgnV8Api/DgnGeoCoord
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/DgnPlatform : $(headersOutputBaseDir)VersionedDgnV8Api/DgnPlatform
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/DgnView : $(headersOutputBaseDir)VersionedDgnV8Api/DgnView
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/ECObjects : $(headersOutputBaseDir)VersionedDgnV8Api/ECObjects
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/ECPresentation : $(headersOutputBaseDir)VersionedDgnV8Api/ECPresentation
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/ECPresentationRules : $(headersOutputBaseDir)VersionedDgnV8Api/ECPresentationRules
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/ECUnits : $(headersOutputBaseDir)VersionedDgnV8Api/ECUnits
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/GeoCoord : $(headersOutputBaseDir)VersionedDgnV8Api/GeoCoord
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/Geom : $(headersOutputBaseDir)VersionedDgnV8Api/Geom
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/GeomSerialization : $(headersOutputBaseDir)VersionedDgnV8Api/GeomSerialization
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/ImagePP : $(headersOutputBaseDir)VersionedDgnV8Api/ImagePP
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/Logging : $(headersOutputBaseDir)VersionedDgnV8Api/Logging
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/Mtg : $(headersOutputBaseDir)VersionedDgnV8Api/Mtg
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/PSolid : $(headersOutputBaseDir)VersionedDgnV8Api/PSolid
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/PSolidAcisInterop : $(headersOutputBaseDir)VersionedDgnV8Api/PSolidAcisInterop
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/Regions : $(headersOutputBaseDir)VersionedDgnV8Api/Regions
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/RmgrTools : $(headersOutputBaseDir)VersionedDgnV8Api/RmgrTools
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/Vu : $(headersOutputBaseDir)VersionedDgnV8Api/Vu
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/RasterCore : $(headersOutputBaseDir)VersionedDgnV8Api/RasterCore
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/VisEdgesLib : $(headersOutputBaseDir)VersionedDgnV8Api/VisEdgesLib
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/MRMeshLib : $(headersOutputBaseDir)VersionedDgnV8Api/MRMeshLib
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/ScalableMesh : $(headersOutputBaseDir)VersionedDgnV8Api/ScalableMesh
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/ScalableMeshElement : $(headersOutputBaseDir)VersionedDgnV8Api/ScalableMeshElement
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/TerrainModel : $(headersOutputBaseDir)VersionedDgnV8Api/TerrainModel
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/Mstn/RealDWG/DwgPlatformHost.h : $(headersOutputBaseDir)VersionedDgnV8Api/Mstn/RealDWG/DwgPlatformHost.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/Mstn/RealDWG/rDwgApi.h : $(headersOutputBaseDir)VersionedDgnV8Api/Mstn/RealDWG/rDwgApi.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/Mstn/RealDWG/rDwgSettings.h : $(headersOutputBaseDir)VersionedDgnV8Api/Mstn/RealDWG/rDwgSettings.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/Mstn/RealDWG/rDwgEnums.r.h : $(headersOutputBaseDir)VersionedDgnV8Api/Mstn/RealDWG/rDwgEnums.r.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/json : $(headersOutputBaseDir)VersionedDgnV8Api/json
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/realdwg : $(DgnV8Sdk)VendorAPI/realdwg
+    $(LinkFirstDepToFirstTargetAsDirectory)

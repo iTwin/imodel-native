@@ -1,0 +1,42 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+# This mke file generates the set of .h files that we will ship as part of the DgnClientSdk product.
+%include mdl.mki
+
+o = $(OutputRootDir)build/DgnDbSync/DgnV8/
+always:
+    !~@mkdir $(o)
+
+publishOutputDir = $(o)PublishedAPI/
+always:
+    !~mkdir ${publishOutputDir}
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    cleanopt = --clean
+%else
+    cleanopt =
+%endif
+
+%if defined (VERBOSE)
+    PUBLISH_VERBOSE = -v6
+%else
+    PUBLISH_VERBOSE = -v3   # INFO_LEVEL_VeryInteresting
+%endif
+
+stampFileName = $(publishOutputDir).stamp
+
+always:
+    PublishAPI.py $(PUBLISH_VERBOSE) -o${publishOutputDir} -d$(BuildContext)PublicAPI -s$(stampFileName) $(cleanopt) -x$(TARGET_PLATFORM)
+
+# deliver a subset of the VendorAPIs.
+always:
+    ~linkdir "$(publishOutputDir)libxml=$(BuildContext)VendorAPI/libxml"
+    ~linkdir "$(publishOutputDir)csmap=$(BuildContext)VendorAPI/csmap"
+    ~linkdir "$(publishOutputDir)zlib=$(BuildContext)VendorAPI/zlib"
+
+$(BuildContext)Delivery/PublishedApi : ${publishOutputDir}
+    $(LinkFirstDepToFirstTargetAsDirectory)
+

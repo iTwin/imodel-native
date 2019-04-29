@@ -1,0 +1,211 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="PublicAPI">
+      <UniqueIdentifier>{a5943160-709d-447f-a4bc-4b73a071e07a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PublicAPI\DgnV8">
+      <UniqueIdentifier>{28156837-c6ff-4372-9d6a-3db3067cc32b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DgnV8">
+      <UniqueIdentifier>{d2cad282-bb70-44fd-9da8-481e24859e94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DgnV8\ImportConfig">
+      <UniqueIdentifier>{3ada40c7-dcbe-405e-b13f-eb90abad8bd1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="mke">
+      <UniqueIdentifier>{b79fe9c3-f8d9-43b1-9bbc-e2efb9c75d30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DgnV8\DynamicSchemaGenerator">
+      <UniqueIdentifier>{134fb5e0-92af-4306-87b7-d04b2c30e33b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PublicAPI\DgnDbSync\DgnDbSync.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\DgnV8.h">
+      <Filter>PublicAPI\DgnV8</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\Converter.h">
+      <Filter>PublicAPI\DgnV8</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnV8\ConverterInternal.h">
+      <Filter>DgnV8</Filter>
+    </ClInclude>
+    <ClInclude Include="ImportConfig.h" />
+    <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\SyncInfo.h">
+      <Filter>PublicAPI\DgnV8</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\DgnV8Font.h">
+      <Filter>PublicAPI\DgnV8</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnV8\LinkConverter.h">
+      <Filter>DgnV8</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECConversion.cpp">
+      <Filter>DgnV8\DynamicSchemaGenerator</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\DgnV8Tags.cpp">
+      <Filter>DgnV8\DynamicSchemaGenerator</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECDiff.cpp">
+      <Filter>DgnV8\DynamicSchemaGenerator</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\EntityConverter.cpp">
+      <Filter>DgnV8\DynamicSchemaGenerator</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnV8\SheetAttachmentViewHelper.h">
+      <Filter>DgnV8</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\LightWeightConverter.h">
+      <Filter>PublicAPI\DgnV8</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnV8\RulesetEmbedder.h">
+      <Filter>DgnV8</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnV8\ECSchemaMappings.h">
+      <Filter>DgnV8\DynamicSchemaGenerator</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECConversion.h">
+      <Filter>DgnV8\DynamicSchemaGenerator</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECDiff.h">
+      <Filter>DgnV8\DynamicSchemaGenerator</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="DgnV8\Converter.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\ImportConfig\ImportConfig.cpp">
+      <Filter>DgnV8\ImportConfig</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\includesPublishedApi.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\Initialize.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\Issues.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\Levels.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\LineStyleConverter.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="SyncInfo.cpp" />
+    <ClCompile Include="DgnV8\DgnV8SyncInfo.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\Thumbnails.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\GeometryConversion.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\RootModelConverter.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\ConverterInternal.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\DgnV8GeoCoord.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\TiledFileConverter.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\ConvertView.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\DgnV8Font.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\Updater.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\DgnV8Text.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\MaterialConverter.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\ScalableMeshConversion.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\LinkConverter.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\ConvertLights.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\ConvertProxyGraphics.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\ConvertViewAttachments.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\DrawingConverter.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\ECElementConverter.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\PointCloudConversion.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\RasterConversion.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\SheetAttachmentViewHelper.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\SheetConverter.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\ThreeMxConversion.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\LightWeightConverter.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\ScalableMeshV8Utilities.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\RealityModelTilesets.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\RulesetEmbedder.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="DgnV8\ImportConfig\ImportConfig.xml">
+      <Filter>DgnV8\ImportConfig</Filter>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <Xsd Include="DgnV8\ImportConfig\ImportConfig.xsd">
+      <Filter>DgnV8\ImportConfig</Filter>
+    </Xsd>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DgnDbSync.prewire.mke">
+      <Filter>mke</Filter>
+    </None>
+    <None Include="DgnV8\Converter.mke">
+      <Filter>mke</Filter>
+    </None>
+    <None Include="DgnV8\DgnPlatformV8.Prewire.mke">
+      <Filter>mke</Filter>
+    </None>
+    <None Include="DgnV8\ConverterCompileOptions.mki">
+      <Filter>mke</Filter>
+    </None>
+  </ItemGroup>
+</Project>
