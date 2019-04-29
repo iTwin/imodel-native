@@ -1,0 +1,19 @@
+<BuildInstallSet
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="..\..\bsicommon\build\buildinstallset.wix.xsd"
+    >
+    
+    <Product>
+        <ProductName>iModel Bridge Service - MicroStation</ProductName>
+        <ProductShortName>iModelBridgeMstn</ProductShortName>
+		<ProductCode>${REL_V}.${MAJ_V}.${MIN_V}.${SUBMIN_V}.${PartName}.${Platform}.iModelBridgeMstn</ProductCode>
+        <UpgradeCode>${REL_V}.${MAJ_V}.${MIN_V}.${PartName}.${Platform}.iModelBridgeMstn</UpgradeCode>
+        <MkiBeforeCompile>MstnBridgeInstallerBeforeCompile.mki</MkiBeforeCompile>
+        <WxsElementRefs>UIRef=WixUI_NoCustomization</WxsElementRefs>
+        <WxsElementRefs>DirectoryRef=MstnBridgeRegistryEntriesDir</WxsElementRefs>
+    </Product>
+
+    <Bundle>
+    </Bundle>
+
+</BuildInstallSet>
