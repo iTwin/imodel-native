@@ -31,9 +31,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeOutput>$(OutRoot)Winx64\Product\BeHttp-IntegrationGtest\BeHttpIntegrationTests.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb -v4 -ax64 -r BeHttp -f BeHttp -p BeHttp-IntegrationGtest re IntegrationTests-Published BeHttp-IntegrationTests Integration-Gtest  </NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -v4 -ax64 -r BeHttp -f BeHttp -p BeHttp-IntegrationGtest b</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -v4 -ax64 -r BeHttp -f BeHttp -p BeHttp-IntegrationGtest re IntegrationTests-Published BeHttp-IntegrationTests Integration-Gtest -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -v4 -ax64 -s DgnClientSdk -r BeHttp -f BeHttp -p BeHttp-IntegrationGtest re IntegrationTests-Published BeHttp-IntegrationTests Integration-Gtest  </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -ax64 -s DgnClientSdk -r BeHttp -f BeHttp -p BeHttp-IntegrationGtest b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -ax64 -s DgnClientSdk -r BeHttp -f BeHttp -p BeHttp-IntegrationGtest re IntegrationTests-Published BeHttp-IntegrationTests Integration-Gtest -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)BeHttp\Tests\UnitTests\Published\Utils;$(OutRoot)Winx64\BuildContexts\BeHttp\VendorAPI;$(OutRoot)Winx64\BuildContexts\BeHttp\PublicAPI;$(OutRoot)Winx64\build\BeHttpIntegrationTests\gensrc\;$(IncludePath)</IncludePath>
     <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>

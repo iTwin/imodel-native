@@ -35,6 +35,10 @@ class RealityConversionTestFixture : public testing::Test
         static Utf8CP s_EntityDataSourceJSONString;
         static Utf8CP s_SpatialEntityServerJSONString;
         static Utf8CP s_SpatialEntityMetadataJSONString;
+        static Utf8CP s_DataLocationJSONString;
+        static Utf8CP s_ManyDataLocationsJSONString;
+        static Utf8CP s_PublicKeyJSONString;
+        static Utf8CP s_ManyPublicKeysJSONString;
 
     WCharCP GetDirectory()
     {
@@ -651,6 +655,210 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
     }
 
     )";
+
+Utf8CP RealityConversionTestFixture::s_DataLocationJSONString = R"(
+    {
+        "instances": [
+            {
+                "instanceId": "54494b32-149a-4177-a849-189877553854",
+                "schemaName": "S3MX",
+                "className": "DataLocations",
+                "properties": {
+                    "Provider": "Microsoft",
+                    "Location": "Japan East"
+                },
+                "eTag": "\"ZdAPThtMESrjosrQW6DxFXtBE70=\""
+            }
+        ]
+    }
+
+    )"; 
+
+Utf8CP RealityConversionTestFixture::s_ManyDataLocationsJSONString = R"(
+    {
+        "instances": [
+            {
+                "instanceId": "55d9ec89-9472-47be-a65f-6e99d1c596be",
+                "schemaName": "S3MX",
+                "className": "DataLocations",
+                "properties": {
+                    "Provider": "Microsoft",
+                    "Location": "Australia East"
+                },
+                "eTag": "\"XzP5SbfmN/NSUEbept0RdCmRcBs=\""
+            },
+            {
+                "instanceId": "7c5f035c-9a36-4118-8eaf-8562b446c93c",
+                "schemaName": "S3MX",
+                "className": "DataLocations",
+                "properties": {
+                    "Provider": "Microsoft",
+                    "Location": "Southeast Asia"
+                },
+                "eTag": "\"0YNk+WW1glA8z5DPRSyvhje/LsI=\""
+            }
+        ]
+    }
+
+    )"; 
+
+Utf8CP RealityConversionTestFixture::s_PublicKeyJSONString = R"(
+    {
+        "instances": [
+            {
+                "instanceId": "PK-73b0aac1-c7f4-4539-9213-2be9232bc989",
+                "schemaName": "S3MX",
+                "className": "PublicKey",
+                "properties": {
+                    "Id": "PK-73b0aac1-c7f4-4539-9213-2be9232bc989",
+                    "RealityDataId": "d629a312-1f8a-4c84-845f-87d0a27d6b9b",
+                    "Description": null,
+                    "UserId": "2f24c107-cc97-44a8-80f3-9a5f63e1c738",
+                    "CreatedTimestamp": "2019-04-17T19:59:51.7660775Z",
+                    "ModifiedTimestamp": "2019-04-17T19:59:51.7973622Z",
+                    "UltimateReferenceId": "72adad30-c07c-465d-a1fe-2f2dfac950a4",
+                    "AuthorizedUserIds": "49fe0af1-4a9c-47fb-a435-87ddee242178",
+                    "ValidUntilDate": "2019-07-17T19:59:51.7660775Z"
+                },
+                "eTag": "\"vX/xbbWMM0fCSQW5svjaeNK2Fbw=\""
+            }
+        ]
+    }
+
+    )"; 
+
+Utf8CP RealityConversionTestFixture::s_ManyPublicKeysJSONString = R"(
+    {
+        "instances": [
+            {
+                "instanceId": "PK-73b0aac1-c7f4-4539-9213-2be9232bc989",
+                "schemaName": "S3MX",
+                "className": "PublicKey",
+                "properties": {
+                    "Id": "PK-73b0aac1-c7f4-4539-9213-2be9232bc989",
+                    "RealityDataId": "d629a312-1f8a-4c84-845f-87d0a27d6b9b",
+                    "Description": null,
+                    "UserId": "2f24c107-cc97-44a8-80f3-9a5f63e1c738",
+                    "CreatedTimestamp": "2019-04-17T19:59:51.7660775Z",
+                    "ModifiedTimestamp": "2019-04-17T19:59:51.7973622Z",
+                    "UltimateReferenceId": "72adad30-c07c-465d-a1fe-2f2dfac950a4",
+                    "AuthorizedUserIds": "49fe0af1-4a9c-47fb-a435-87ddee242178",
+                    "ValidUntilDate": "2019-07-17T19:59:51.7660775Z"
+                },
+                "eTag": "\"vX/xbbWMM0fCSQW5svjaeNK2Fbw=\""
+            },
+            {
+                "instanceId": "PK-bc34a766-09fa-4b95-bc9c-9d0b85e70bcb",
+                "schemaName": "S3MX",
+                "className": "PublicKey",
+                "properties": {
+                    "Id": "PK-bc34a766-09fa-4b95-bc9c-9d0b85e70bcb",
+                    "RealityDataId": "d629a312-1f8a-4c84-845f-87d0a27d6b9b",
+                    "Description": null,
+                    "UserId": "2f24c107-cc97-44a8-80f3-9a5f63e1c738",
+                    "CreatedTimestamp": "2019-04-17T20:20:18.6820830Z",
+                    "ModifiedTimestamp": "2019-04-17T20:20:18.6977268Z",
+                    "UltimateReferenceId": "72adad30-c07c-465d-a1fe-2f2dfac950a4",
+                    "AuthorizedUserIds": "49fe0af1-4a9c-47fb-a435-87ddee242178",
+                    "ValidUntilDate": "2019-07-17T20:20:18.6820830Z"
+                },
+                "eTag": "\"GUKmh3nS6Hv26U+6IEUtqgRXVdY=\""
+            }
+        ]
+    }
+    )"; 
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            04/2019
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, JsonToDataLocation)
+    {
+    RealityDataLocation dataLocation;
+    StatusInt status = RealityConversionTools::JsonToDataLocation(s_DataLocationJSONString, dataLocation);
+    ASSERT_EQ(SUCCESS, status);
+    ASSERT_EQ(dataLocation.GetIdentifier(), "54494b32-149a-4177-a849-189877553854");
+    ASSERT_EQ(dataLocation.GetProvider(), "Microsoft");
+    ASSERT_EQ(dataLocation.GetLocation(), "Japan East");
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            04/2019
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, JsonToManyDataLocations)
+    {
+    bvector<RealityDataLocation> dataLocations;
+    StatusInt status = RealityConversionTools::JsonToDataLocations(s_ManyDataLocationsJSONString, dataLocations);
+
+    ASSERT_EQ(SUCCESS, status);
+    ASSERT_EQ(2, dataLocations.size());
+
+
+    ASSERT_EQ(dataLocations[0].GetIdentifier(), "55d9ec89-9472-47be-a65f-6e99d1c596be");
+    ASSERT_EQ(dataLocations[0].GetProvider(), "Microsoft");
+    ASSERT_EQ(dataLocations[0].GetLocation(), "Australia East");
+
+    ASSERT_EQ(dataLocations[1].GetIdentifier(), "7c5f035c-9a36-4118-8eaf-8562b446c93c");
+    ASSERT_EQ(dataLocations[1].GetProvider(), "Microsoft");
+    ASSERT_EQ(dataLocations[1].GetLocation(), "Southeast Asia");
+
+    }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            04/2019
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, JsonToPublicKey)
+    {
+    RealityDataPublicKey publicKey;
+    StatusInt status = RealityConversionTools::JsonToPublicKey(s_PublicKeyJSONString, publicKey);
+    ASSERT_EQ(SUCCESS, status);
+
+
+    ASSERT_EQ(publicKey.GetIdentifier(), "PK-73b0aac1-c7f4-4539-9213-2be9232bc989");
+    ASSERT_EQ(publicKey.GetRealityDataId(), "d629a312-1f8a-4c84-845f-87d0a27d6b9b");
+    ASSERT_EQ(publicKey.GetUltimateId(), "72adad30-c07c-465d-a1fe-2f2dfac950a4");
+    ASSERT_EQ(publicKey.GetUserId(), "2f24c107-cc97-44a8-80f3-9a5f63e1c738");
+    ASSERT_EQ(publicKey.GetDescription(), "");
+    ASSERT_STREQ(publicKey.GetCreationDateTime().ToString().c_str(), "2019-04-17T19:59:51.766Z");
+    ASSERT_STREQ(publicKey.GetModifiedDateTime().ToString().c_str(), "2019-04-17T19:59:51.797Z");
+    ASSERT_EQ(publicKey.GetAuthorizedUserIds(), "49fe0af1-4a9c-47fb-a435-87ddee242178");
+    ASSERT_STREQ(publicKey.GetValidUntilDate().ToString().c_str(), "2019-07-17T19:59:51.766Z");
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            04/2019
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, JsonToManyPublicKeys)
+    {
+    bvector<RealityDataPublicKey> publicKeys;
+    StatusInt status = RealityConversionTools::JsonToPublicKeys(s_ManyPublicKeysJSONString, publicKeys);
+
+    ASSERT_EQ(SUCCESS, status);
+    ASSERT_EQ(2, publicKeys.size());
+
+
+    ASSERT_EQ(publicKeys[0].GetIdentifier(), "PK-73b0aac1-c7f4-4539-9213-2be9232bc989");
+    ASSERT_EQ(publicKeys[0].GetRealityDataId(), "d629a312-1f8a-4c84-845f-87d0a27d6b9b");
+    ASSERT_EQ(publicKeys[0].GetUltimateId(), "72adad30-c07c-465d-a1fe-2f2dfac950a4");
+    ASSERT_EQ(publicKeys[0].GetUserId(), "2f24c107-cc97-44a8-80f3-9a5f63e1c738");
+    ASSERT_EQ(publicKeys[0].GetDescription(), "");
+    ASSERT_STREQ(publicKeys[0].GetCreationDateTime().ToString().c_str(), "2019-04-17T19:59:51.766Z");
+    ASSERT_STREQ(publicKeys[0].GetModifiedDateTime().ToString().c_str(), "2019-04-17T19:59:51.797Z");
+    ASSERT_EQ(publicKeys[0].GetAuthorizedUserIds(), "49fe0af1-4a9c-47fb-a435-87ddee242178");
+    ASSERT_STREQ(publicKeys[0].GetValidUntilDate().ToString().c_str(), "2019-07-17T19:59:51.766Z");
+    
+    ASSERT_EQ(publicKeys[1].GetIdentifier(), "PK-bc34a766-09fa-4b95-bc9c-9d0b85e70bcb");
+    ASSERT_EQ(publicKeys[1].GetRealityDataId(), "d629a312-1f8a-4c84-845f-87d0a27d6b9b");
+    ASSERT_EQ(publicKeys[1].GetUltimateId(), "72adad30-c07c-465d-a1fe-2f2dfac950a4");
+    ASSERT_EQ(publicKeys[1].GetUserId(), "2f24c107-cc97-44a8-80f3-9a5f63e1c738");
+    ASSERT_EQ(publicKeys[1].GetDescription(), "");
+    ASSERT_STREQ(publicKeys[1].GetCreationDateTime().ToString().c_str(), "2019-04-17T20:20:18.682Z");
+    ASSERT_STREQ(publicKeys[1].GetModifiedDateTime().ToString().c_str(), "2019-04-17T20:20:18.698Z");
+    ASSERT_EQ(publicKeys[1].GetAuthorizedUserIds(), "49fe0af1-4a9c-47fb-a435-87ddee242178");
+    ASSERT_STREQ(publicKeys[1].GetValidUntilDate().ToString().c_str(), "2019-07-17T20:20:18.682Z");
+
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            10/2016

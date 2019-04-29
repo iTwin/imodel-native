@@ -64,6 +64,34 @@ private:
 
     };
 
+
+//=====================================================================================
+//! @bsiclass                                   Alain.Robert              04/2019
+//! ConnectedRealityDataPublicKey
+//! Extends RealityDataPublicKey, directly integrating requests to get data 
+//! from the server
+//=====================================================================================
+struct ConnectedRealityDataPublicKey : public RealityDataPublicKey
+    {
+public:
+
+
+    //! Server request
+    //! Will retrieve all public keys entities for the current user
+    REALITYDATAPLATFORM_EXPORT static ConnectedResponse RetrieveAllPublicKeys(bvector<ConnectedRealityDataPublicKey>& publicKeys);
+
+
+    //! Gets public key
+    REALITYDATAPLATFORM_EXPORT ConnectedResponse GetPublicKey();
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataPublicKey(Utf8String guid);
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataPublicKey(const ConnectedRealityDataPublicKey& publicKey);
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataPublicKey(const RealityDataPublicKey& publicKey);
+private:
+    REALITYDATAPLATFORM_EXPORT void Clone(const RealityDataPublicKey& publicKey);
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataPublicKey() : RealityDataPublicKey(){}
+
+    };
+
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason              10/2017
 //! ConnectedRealityDataEnterpriseStat

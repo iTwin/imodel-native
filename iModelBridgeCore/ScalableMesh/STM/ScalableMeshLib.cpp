@@ -82,7 +82,7 @@ void InitializeScalableMeshLogging()
     // Priority: 1- App  2- Env. Variable  3- default SM logging config file  4- Console
     if(NativeLogging::LoggingConfig::IsProviderActive())
         return; // Provider already setup by app
-
+#ifdef SCALABLE_MESH_ATP
 #if _WIN32
     // Setup logging system
     BeFileName appDir;
@@ -109,6 +109,7 @@ void InitializeScalableMeshLogging()
         NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
 #if _WIN32
         }
+#endif
 #endif
     }
 

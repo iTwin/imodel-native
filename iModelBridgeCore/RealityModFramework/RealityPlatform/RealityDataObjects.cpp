@@ -872,7 +872,6 @@ RealityDataLocation::RealityDataLocation(const RealityDataLocation& object)
         m_identifier       = object.m_identifier;
         m_provider         = object.m_provider;
         m_location         = object.m_location;
-        m_dataLocationGuid = object.m_dataLocationGuid;
         }
     }
 
@@ -881,7 +880,6 @@ RealityDataLocation& RealityDataLocation::operator=(const RealityDataLocation& o
     m_identifier       = object.m_identifier;
     m_provider         = object.m_provider;
     m_location         = object.m_location;
-    m_dataLocationGuid = object.m_dataLocationGuid;
 
     return *this;
     }
@@ -893,9 +891,6 @@ void RealityDataLocation::SetProvider(Utf8CP provider) { m_provider = provider; 
 
 Utf8StringCR RealityDataLocation::GetLocation() const { return m_location; }
 void RealityDataLocation::SetLocation(Utf8CP location) { m_location = location; }
-
-Utf8StringCR RealityDataLocation::GetDataLocationGuid() const { return m_dataLocationGuid; }
-void RealityDataLocation::SetDataLocationGuid(Utf8CP dataLocationGuid) { m_dataLocationGuid = dataLocationGuid; }
 
 
 //-------------------------------------------------------------------------------------
@@ -1052,3 +1047,69 @@ void RealityDataUserStat::SetServiceId(Utf8CP serviceId) { m_serviceId = service
 
 DateTimeCR RealityDataUserStat::GetDate() const { return m_date; }
 void RealityDataUserStat::SetDate(DateTimeCR date) { m_date = date; }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                Alain.Robert         	         04/2019
+//-------------------------------------------------------------------------------------
+RealityDataPublicKey::RealityDataPublicKey(){}
+
+RealityDataPublicKey::RealityDataPublicKey(const RealityDataPublicKey& object)
+    {
+    if (this != &object)
+        {
+
+        m_identifier = object.m_identifier;
+        m_realityDataId = object.m_realityDataId;
+        m_userId = object.m_userId;
+        m_description = object.m_description;
+        m_ultimateId = object.m_ultimateId;
+        m_creationDateTime = object.m_creationDateTime;
+        m_modifiedDateTime = object.m_modifiedDateTime;
+        m_authorizedUserIds = object.m_authorizedUserIds;
+        m_validUntilDate = object.m_validUntilDate;
+
+        }
+    }
+
+RealityDataPublicKey& RealityDataPublicKey::operator=(const RealityDataPublicKey& object)
+    {
+        m_identifier = object.m_identifier;
+        m_realityDataId = object.m_realityDataId;
+        m_userId = object.m_userId;
+        m_description = object.m_description;
+        m_ultimateId = object.m_ultimateId;
+        m_creationDateTime = object.m_creationDateTime;
+        m_modifiedDateTime = object.m_modifiedDateTime;
+        m_authorizedUserIds = object.m_authorizedUserIds;
+        m_validUntilDate = object.m_validUntilDate;
+
+    return *this;
+    }
+
+Utf8StringCR RealityDataPublicKey::GetIdentifier() const {return m_identifier;}
+void RealityDataPublicKey::SetIdentifier(Utf8CP identifier) {m_identifier = identifier;}
+
+Utf8StringCR RealityDataPublicKey::GetRealityDataId() const {return m_realityDataId;}
+void RealityDataPublicKey::SetRealityDataId(Utf8StringCR realityDataId) {m_realityDataId = realityDataId;}
+
+Utf8StringCR RealityDataPublicKey::GetDescription() const {return m_description;}
+void RealityDataPublicKey::SetDescription(Utf8CP description) {m_description = description;}
+
+Utf8StringCR RealityDataPublicKey::GetUserId() const {return m_userId;}
+void RealityDataPublicKey::SetUserId(Utf8CP userId) {m_userId = userId;} 
+
+Utf8StringCR RealityDataPublicKey::GetUltimateId() const {return m_ultimateId;}
+void RealityDataPublicKey::SetUltimateId(Utf8CP ultimateId) {m_ultimateId = ultimateId;}
+
+DateTimeCR RealityDataPublicKey::GetCreationDateTime() const {return m_creationDateTime;}
+void RealityDataPublicKey::SetCreationDateTime(DateTimeCR creationDateTime) {m_creationDateTime = creationDateTime;}
+
+DateTime RealityDataPublicKey::GetModifiedDateTime() const {return m_modifiedDateTime;}
+void RealityDataPublicKey::SetModifiedDateTime(DateTime modifiedDate) {m_modifiedDateTime = modifiedDate;}
+
+Utf8StringCR RealityDataPublicKey::GetAuthorizedUserIds() const {return m_authorizedUserIds;} 
+void RealityDataPublicKey::SetAuthorizedUserIds(Utf8CP authorizedUserIds) {m_authorizedUserIds = authorizedUserIds;}
+
+DateTimeCR RealityDataPublicKey::GetValidUntilDate() const {return m_validUntilDate;}
+void RealityDataPublicKey::SetValidUntilDate(DateTimeCR validUntilDate) {m_validUntilDate = validUntilDate;}

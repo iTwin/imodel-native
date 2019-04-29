@@ -38,12 +38,15 @@ StatusInt RealityConversionTools::JsonToDataLocations(Utf8CP data, bvector<Reali
     // Loop through all data and get required informations.
     for (const auto& instance : root["instances"])
         {
+        RealityDataLocation location;
+
+        const Json::Value identifier = instance["instanceId"];
+        location.SetIdentifier(identifier.asString().c_str());
+
         if (!instance.isMember("properties"))
             break;
 
         const Json::Value properties = instance["properties"];
-
-        RealityDataLocation location;
         if (SUCCESS != JsonToDataLocation(properties, location))
             return ERROR;
 
@@ -62,9 +65,6 @@ StatusInt RealityConversionTools::JsonToDataLocation(Json::Value properties, Rea
 
     if (properties.isMember("Location") && !properties["Location"].isNull())
         locationObject.SetLocation(properties["Location"].asString().c_str());
-
-    if (properties.isMember("Parent") && !properties["Parent"].isNull())
-        locationObject.SetDataLocationGuid(properties["Parent"].asString().c_str());
 
     return SUCCESS;    
     }
@@ -90,6 +90,102 @@ StatusInt RealityConversionTools::JsonToDataLocation(Utf8CP data, RealityDataLoc
     const Json::Value properties = instance["properties"];
 
     return RealityConversionTools::JsonToDataLocation(properties, locationObject);
+    }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Alain.Robert                       04/2019
++-----------------+------------------+-------------------+-----------------+------------*/
+StatusInt RealityConversionTools::JsonToPublicKeys(Utf8CP data, bvector<RealityDataPublicKey>& outData)
+    {
+    Json::Value root(Json::objectValue);
+    if (JsonToObjectBase(data, root) == ERROR)
+        return ERROR;
+
+    // Loop through all data and get required informations.
+    for (const auto& instance : root["instances"])
+        {
+        if (!instance.isMember("properties"))
+            break;
+
+        const Json::Value properties = instance["properties"];
+
+        RealityDataPublicKey publicKey;
+        if (SUCCESS != JsonToPublicKey(properties, publicKey))
+            return ERROR;
+
+        outData.push_back(publicKey);
+        }
+    return SUCCESS;
+    }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Alain.Robert                       04/2019
++-----------------+------------------+-------------------+-----------------+------------*/
+StatusInt RealityConversionTools::JsonToPublicKey(Json::Value properties, RealityDataPublicKey& publicKeyObject)
+    {
+    DateTime date;
+
+    if (properties.isMember("Id") && !properties["Id"].isNull())
+        publicKeyObject.SetIdentifier(properties["Id"].asString().c_str());
+
+    if (properties.isMember("RealityDataId") && !properties["RealityDataId"].isNull())
+        publicKeyObject.SetRealityDataId(properties["RealityDataId"].asString().c_str());
+
+    if (properties.isMember("Description") && !properties["Description"].isNull())
+        publicKeyObject.SetDescription(properties["Description"].asString().c_str());
+
+    if (properties.isMember("UserId") && !properties["UserId"].isNull())
+        publicKeyObject.SetUserId(properties["UserId"].asString().c_str());
+
+    if (properties.isMember("CreatedTimestamp") && !properties["CreatedTimestamp"].isNull())
+        {
+        DateTime::FromString(date, properties["CreatedTimestamp"].asCString());
+        publicKeyObject.SetCreationDateTime(date);
+        }
+
+    if (properties.isMember("ModifiedTimestamp") && !properties["ModifiedTimestamp"].isNull())
+        {
+        DateTime::FromString(date, properties["ModifiedTimestamp"].asCString());
+        publicKeyObject.SetModifiedDateTime(date);
+        }
+
+    if (properties.isMember("UltimateReferenceId") && !properties["UltimateReferenceId"].isNull())
+        publicKeyObject.SetUltimateId(properties["UltimateReferenceId"].asString().c_str());
+
+    if (properties.isMember("AuthorizedUserIds") && !properties["AuthorizedUserIds"].isNull())
+        publicKeyObject.SetAuthorizedUserIds(properties["AuthorizedUserIds"].asString().c_str());
+
+    // Valid Date
+    if (properties.isMember("ValidUntilDate") && !properties["ValidUntilDate"].isNull())
+        {
+        DateTime::FromString(date, properties["ValidUntilDate"].asCString());
+        publicKeyObject.SetValidUntilDate(date);
+        }
+
+    return SUCCESS;
+    }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Alain.Robert                       05/2018
++-----------------+------------------+-------------------+-----------------+------------*/
+StatusInt RealityConversionTools::JsonToPublicKey(Utf8CP data, RealityDataPublicKey& publicKeyObject)
+    {
+    Json::Value root(Json::objectValue);
+    if(JsonToObjectBase(data, root) == ERROR)
+        return ERROR;
+
+    // Loop through all data and get required informations.
+    const Json::Value instance = root["instances"][0];
+
+    const Json::Value identifier = instance["instanceId"];
+    publicKeyObject.SetIdentifier(identifier.asString().c_str());
+
+    if (!instance.isMember("properties"))
+        return ERROR;
+
+    const Json::Value properties = instance["properties"];
+
+    return RealityConversionTools::JsonToPublicKey(properties, publicKeyObject);
     }
 
 /*----------------------------------------------------------------------------------**//**

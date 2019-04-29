@@ -11,7 +11,9 @@
 #include "Logging.h"
 #include <Licensing/Licensing.h>
 #include <Licensing/Utils/JWToken.h>
+#include <Licensing/LicenseStatus.h>
 #include <list>
+#include <Bentley/BeVersion.h>
 
 
 // AppliesTo Url
@@ -50,6 +52,13 @@ public:
         Expired = 1,
         NotFound = 2,
         Invalid = 3
+        };
+    // enumeration for GetEvalStatus return value
+    enum class EvaluationStatus
+        {
+        Valid,
+        Expired,
+        NoneFound
         };
 
     // START defining necessary structs for Policy
@@ -197,8 +206,9 @@ private:
     // helper functions
     bool IsTimeExpired(Utf8StringCR expirationTime);
     std::shared_ptr<Policy::Qualifier> GetFirstMatchingQualifier(std::list<std::shared_ptr<Policy::Qualifier>> qualifierList, Utf8StringCR qualifierName);
-    std::shared_ptr<Policy::ACL> GetFirstMatchingACL(std::list<std::shared_ptr<Policy::ACL>> aclList, Utf8StringCR securableId);
+    std::list<std::shared_ptr<Policy::ACL>> GetMatchingACLs(std::list<std::shared_ptr<Policy::ACL>> aclList, Utf8StringCR securableId);
     std::shared_ptr<Policy::SecurableData> GetFirstMatchingSecurableData(std::list<std::shared_ptr<Policy::SecurableData>> securableList, Utf8StringCR productId, Utf8StringCR featureString);
+    Policy::EvaluationStatus GetEvalStatus(Utf8StringCR productId, Utf8StringCR featureString, BeVersionCR applicationVersion, std::shared_ptr<Policy::ACL>& nonEvalAcl);
     std::list<Utf8String> CreateAppliesToSecurableIds(const Json::Value& json);
     std::list<std::shared_ptr<ACL>> CreateACLs(const Json::Value& json);
     std::list<std::shared_ptr<SecurableData>> CreateSecurableData(const Json::Value& json);
@@ -233,7 +243,7 @@ public:
     LICENSING_EXPORT bool IsAllowedOfflineUsage(Utf8StringCR productId, Utf8StringCR featureString);
     LICENSING_EXPORT int GetOfflineDuration(Utf8StringCR productId, Utf8StringCR featureString);
     LICENSING_EXPORT Utf8String GetUsageType();
-    LICENSING_EXPORT Policy::ProductStatus GetProductStatus(Utf8StringCR productId, Utf8StringCR featureString);
+    LICENSING_EXPORT Licensing::LicenseStatus GetProductStatus(Utf8StringCR productId, Utf8StringCR featureString, BeVersionCR version);
     LICENSING_EXPORT Policy::PolicyStatus GetPolicyStatus();
     LICENSING_EXPORT int GetHeartbeatInterval(Utf8StringCR productId, Utf8StringCR featureString);
     LICENSING_EXPORT int GetPolicyInterval(Utf8StringCR productId, Utf8StringCR featureString);

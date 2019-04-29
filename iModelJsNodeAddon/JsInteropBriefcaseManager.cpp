@@ -31,6 +31,7 @@ private:
     void _StartBulkOperation() override {}
     bool _IsBulkOperation() const override {return false;}
     Response _EndBulkOperation() override {return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::Success);}
+    bool _IsCodeInLockedScope(DgnCodeCR) const override {return true;}
 
     RepositoryStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& lockIds) override
         {
@@ -341,6 +342,8 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
         m_req.Codes().insert(req.Codes().begin(), req.Codes().end());
         m_req.Locks().GetLockSet().insert(req.Locks().GetLockSet().begin(), req.Locks().GetLockSet().end());
         }
+    
+    bool _IsCodeInLockedScope(DgnCodeCR) const override {return true;}
     };
 
 //=======================================================================================

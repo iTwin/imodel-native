@@ -1,22 +1,46 @@
-DelayedExecutorTests.*
-    # Seems to be random.
-    # https://bentleycs.visualstudio.com/iModelTechnologies/_build/results?buildId=49688
-    # For example:
-    # [ RUN      ] DelayedExecutorTests.Delayed_FromShortestToLongest_ExecuteCallbacksAtAppropriateTimes
-    # D:\vsts_a\13\bbsrc\iModel02\iModelCore\LicensingCrossPlatform\Tests\UnitTests\Published\Utils\DelayedExecutorTests.cpp(91): error: Value of: executed1
-    #   Actual: false
-    # Expected: true
-    # D:\vsts_a\13\bbsrc\iModel02\iModelCore\LicensingCrossPlatform\Tests\UnitTests\Published\Utils\DelayedExecutorTests.cpp(82): error: Value of: executed2
-    #   Actual: true
-    # Expected: false
 
-# notified Jedrzej
-ClientTests.StartApplication_StopApplication_Success
-ClientTests.StartApplication_StopApplication_Repeat_Success
-ClientTests.StartApplicationFromFactory_Success
+# ---- Example tests ----
+ClientTests.JsonExample
+AccessKeyClientTests.JsonExample
+SaasClientTests.JsonExample
+
+PolicyProviderTests.GetPolicy_Success
+PolicyProviderTests.GetPolicy_GetPolicyFailure
+PolicyProviderTests.GetPolicy_GetCertificateFailure
+PolicyProviderTests.GetPolicyWithKey_Success
+LogFileHelperTests.GetLogFiles_Success
+SaasClientTests.CreateSaasClientFromFactory_Success
+
+# The following are disabled because they pass, but cause the gtest executable to never exit
+
+ClientTests.StartApplication_Error
+ClientTests.StartApplicationNoHeartbeat_Success
+ClientTests.StartApplicationStopApplication_Success
 ClientTests.GetPolicy_Success
-ClientTests.GetProductStatus_Test
+ClientTests.GetCertificate_Success_HttpMock
+ClientTests.GetLicenseStatusEmpty_Test
+ClientTests.GetLicenseStatusValid_Test
+ClientTests.GetLicenseStatusValidTrial_Test
+ClientTests.GetLicenseStatusExpiredTrial_Test
+ClientTests.GetLicenseStatusExpired_Test
+ClientTests.GetLicenseStatusNoSecurables_Test
+ClientTests.GetLicenseStatusNoACLs_Test
+ClientTests.GetLicenseStatusNoUserData_Test
+ClientTests.GetLicenseStatusNoRequestData_Test
+ClientTests.GetLicenseStatusIdBad_Test
+ClientTests.GetLicenseStatusOfflineNotAllowed_Test
+ClientTests.GetLicenseStatusGracePeriodStartedOfflineNotAllowed_Test
+ClientTests.GetLicenseStatusGracePeriodStarted_Test
+ClientTests.GetLicenseStatusExpiredGracePeriod_Test
 ClientTests.CleanUpPolicies_Success
-# https://bentleycs.visualstudio.com/iModelTechnologies/_build/results?buildId=54883&_a=summary
-# ERROR [0x00003248] Bentley.LICENSING - ClientImpl::PerformGetPolicyRequest ERROR: Unable to perform policy request
-# unknown file: error: C++ exception with description "" thrown in the test body.
+ClientTests.DeleteAllOtherPoliciesByUser_Success
+ClientTests.MarkFeature_Success
+
+AccessKeyClientTests.WithKeyStartApplication_Error
+AccessKeyClientTests.WithKeyStartApplicationNullPolicy_Error
+AccessKeyClientTests.WithKeyStartApplicationInvalidKey_Success
+AccessKeyClientTests.WithKeyStartApplication_StopApplication_Success
+
+DelayedExecutorTests.GetExecutor_CalledMultipleTimes_AlwaysReturnsSameInstance
+DelayedExecutorTests.Delayed_FromLongestToShortest_ExecuteCallbacksAtAppropriateTimes
+DelayedExecutorTests.Delayed_FromShortestToLongest_ExecuteCallbacksAtAppropriateTimes
