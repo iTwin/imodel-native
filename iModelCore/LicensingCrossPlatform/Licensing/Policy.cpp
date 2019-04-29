@@ -342,18 +342,17 @@ std::shared_ptr<Policy::Qualifier> Policy::GetFirstMatchingQualifier(std::list<s
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<Policy::ACL> Policy::GetFirstMatchingACL(std::list<std::shared_ptr<Policy::ACL>> aclList, Utf8StringCR securableId)
+std::list<std::shared_ptr<Policy::ACL>> Policy::GetMatchingACLs(std::list<std::shared_ptr<Policy::ACL>> aclList, Utf8StringCR securableId)
     {
-    std::shared_ptr<Policy::ACL> matchingACL = nullptr;
+    std::list<std::shared_ptr<Policy::ACL>> matchingACLs;
     for (auto acl : aclList)
         {
         if (acl->GetSecurableId() == securableId)
             {
-            matchingACL = acl;
-            break;
+            matchingACLs.push_back(acl);
             }
         }
-    return matchingACL;
+    return matchingACLs;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -423,14 +422,18 @@ std::shared_ptr<Policy::Qualifier> Policy::GetQualifier(Utf8StringCR qualifierNa
     if (securableData != nullptr)
         {
         // try to find acl with SecurableId of securableData
-        std::shared_ptr<Policy::ACL> acl = nullptr;
         auto acls = GetACLs();
-        acl = GetFirstMatchingACL(acls, securableData->GetSecurableId());
+        auto matchingAcls = GetMatchingACLs(acls, securableData->GetSecurableId());
         // if acl exists, look for matching qualifier
-        if (acl != nullptr)
+        if (matchingAcls.size() > 0)
             {
             // try to find qualifier with name
-            matchingQualifier = GetFirstMatchingQualifier(acl->GetQualifierOverrides(), qualifierName);
+            for (auto acl : matchingAcls)
+                {
+                matchingQualifier = GetFirstMatchingQualifier(acl->GetQualifierOverrides(), qualifierName);
+                if (matchingQualifier != nullptr)
+                    break; // found a matching qualifier
+                }
             }
         // if matching qualifier not found yet, search for it in securableData
         if (matchingQualifier == nullptr)
@@ -459,6 +462,89 @@ bool Policy::IsTrial(Utf8StringCR productId, Utf8StringCR featureString)
         {
         result = qualifier->GetValue() == "Trial";
         }
+    return result;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Policy::EvaluationStatus Policy::GetEvalStatus(Utf8StringCR productId, Utf8StringCR featureString, BeVersionCR appVersion, std::shared_ptr<Policy::ACL>& nonEvalAcl)
+    {
+    nonEvalAcl = nullptr;
+    // NB: if we want to check for check for a policy's expiration date, we may need to return the expiration date as well as the status
+    Policy::EvaluationStatus result = EvaluationStatus::NoneFound;
+
+    auto securable = GetFirstMatchingSecurableData(GetSecurableData(), productId, featureString);
+    if (securable == nullptr)
+        return result;
+
+    auto matchingAcls = GetMatchingACLs(GetACLs(), securable->GetSecurableId());
+    if (matchingAcls.size() == 0)
+        return result;
+
+    bool isEval = false;
+    BeVersion evalVersion = BeVersion();
+    // at this point we can assume that there is a max of 2 matching ACLs
+    for (auto const& acl : matchingAcls)
+        {
+        auto qualifierOverrides = acl->GetQualifierOverrides();
+        for (auto const& qualifierOverride : qualifierOverrides)
+            {
+            // assuming that eval has at least: one QualifierOverride with Name:UsageType, Value:Evaluation and one with Name:Version
+            if (qualifierOverride->GetName() == "UsageType" && qualifierOverride->GetValue() == "Evaluation")
+                {
+                isEval = true;
+                }
+
+            else if (qualifierOverride->GetName() == "Version")
+                {
+                evalVersion = BeVersion(qualifierOverride->GetValue().c_str());
+                }
+            }
+
+        if (isEval)
+            {
+            // if the last two version numbers from the policy are zero, then we only care about the major and minor versions matching the application
+            if (evalVersion.GetSub1() == 0 && evalVersion.GetSub2() == 0)
+                {
+                if (appVersion.GetMajor() == evalVersion.GetMajor() && appVersion.GetMinor() == evalVersion.GetMinor())
+                    {
+                    // only call it exipred if we haven't found a valid eval, and the version is good
+                    if (IsTimeExpired(acl->GetExpiresOn()) && result != EvaluationStatus::Valid)
+                        {
+                        result = EvaluationStatus::Expired;
+                        }
+                    else
+                        {
+                        // valid eval found
+                        result = EvaluationStatus::Valid;
+                        }
+                    }
+                }
+            else
+                {
+                // if the last two verison numbers aren't zero, make sure the whole version matches the application
+                if (appVersion.CompareTo(evalVersion))
+                    {
+                    // only call it exipred if we haven't found a valid eval, and the version is good
+                    if (IsTimeExpired(acl->GetExpiresOn()) && result != EvaluationStatus::Valid)
+                        {
+                        result = EvaluationStatus::Expired;
+                        }
+                    else
+                        {
+                        // valid eval found
+                        result = EvaluationStatus::Valid;
+                        }
+                    }
+                }
+            }
+        else
+            {
+            nonEvalAcl = acl;
+            }
+        }
+
     return result;
     }
 
@@ -557,38 +643,51 @@ Utf8String Policy::GetUsageType()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Policy::ProductStatus Policy::GetProductStatus(Utf8StringCR productId, Utf8StringCR featureString)
+Licensing::LicenseStatus Policy::GetProductStatus(Utf8StringCR productId, Utf8StringCR featureString, BeVersionCR version)
     {
     if (GetJson().isNull())
         {
-        return Policy::ProductStatus::NoLicense;
+        return Licensing::LicenseStatus::NotEntitled;
         }
     auto securable = GetFirstMatchingSecurableData(GetSecurableData(), productId, featureString);
     if (securable == nullptr)
         {
-        return Policy::ProductStatus::NoLicense;
+        return Licensing::LicenseStatus::NotEntitled;
         }
-    auto acl = GetFirstMatchingACL(GetACLs(), securable->GetSecurableId());
-    if (acl == nullptr)
+
+    std::shared_ptr<Policy::ACL> nonEvalAcl;
+    // get the eval status, and if it's not eval, use the second ACL (as of now we can assume only two ACLs max -> eval and regular, with matching securable and principal)
+    auto evalStatus = GetEvalStatus(productId, featureString, version, nonEvalAcl);
+    if (evalStatus == Policy::EvaluationStatus::Valid)
         {
-        return Policy::ProductStatus::NoLicense;
+        // offline check?
+        // return OK and check offline in ClientImpl
+        return Licensing::LicenseStatus::Ok;
         }
-    if (acl->GetAccessKind() == Policy::ACL::AccessKind::Denied)
+
+    if (nonEvalAcl == nullptr)
         {
-        return Policy::ProductStatus::Denied;
+        return Licensing::LicenseStatus::NotEntitled;
         }
-    if (acl->GetAccessKind() == Policy::ACL::AccessKind::TrialExpired)
+    if (nonEvalAcl->GetAccessKind() == Policy::ACL::AccessKind::Denied)
         {
-        return Policy::ProductStatus::TrialExpired;
+        return Licensing::LicenseStatus::AccessDenied;
+        }
+    if (nonEvalAcl->GetAccessKind() == Policy::ACL::AccessKind::TrialExpired)
+        {
+        return Licensing::LicenseStatus::Expired;
         }
     if (IsTrial(productId, featureString))
         {
-        if (IsTimeExpired(acl->GetExpiresOn()))
+        if (IsTimeExpired(nonEvalAcl->GetExpiresOn()))
             {
-            return Policy::ProductStatus::TrialExpired;
+            return Licensing::LicenseStatus::Expired;
             }
+        return Licensing::LicenseStatus::Trial;
         }
-    return Policy::ProductStatus::Allowed;
+    // offline check?
+    // return OK and check offline in ClientImpl
+    return Licensing::LicenseStatus::Ok;
     }
 
 /*--------------------------------------------------------------------------------------+
