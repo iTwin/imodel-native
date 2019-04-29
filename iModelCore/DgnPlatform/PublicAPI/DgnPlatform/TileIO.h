@@ -377,6 +377,8 @@ struct IModelTile
         static constexpr Version V1() { return Version(1, 4); }
         static constexpr Version V2() { return Version(2, 1); }
         static constexpr Version V3() { return Version(3, 0); }
+
+        // !!! IMPORTANT !!! If you change the major version you must update IModelTile::Version::FromMajorVersion !!!
         static constexpr Version Current() { return V3(); }
 
         static Version FromMajorVersion(uint16_t major);
