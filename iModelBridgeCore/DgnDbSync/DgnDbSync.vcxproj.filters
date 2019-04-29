@@ -64,6 +64,9 @@
     <ClInclude Include="DgnV8\RulesetEmbedder.h">
       <Filter>DgnV8</Filter>
     </ClInclude>
+    <ClInclude Include="DgnV8\ECSchemaMappings.h">
+      <Filter>DgnV8\DynamicSchemaGenerator</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECConversion.h">
