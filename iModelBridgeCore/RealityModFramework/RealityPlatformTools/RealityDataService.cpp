@@ -493,7 +493,7 @@ void RealityDataUrl::_PrepareHttpRequestStringAndPayload() const
 void RealityDataLocationRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/DataLocations/");
+    m_httpRequestString.append("/DataLocation/");
     m_httpRequestString.append(m_encodedId.c_str());
     }
 
@@ -503,7 +503,26 @@ void RealityDataLocationRequest::_PrepareHttpRequestStringAndPayload() const
 void AllRealityDataLocationsRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/DataLocations/");
+    m_httpRequestString.append("/DataLocation/");
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              04/2019
+//=====================================================================================
+void RealityDataPublicKeyRequest::_PrepareHttpRequestStringAndPayload() const
+    {
+    RealityDataUrl::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/PublicKey/");
+    m_httpRequestString.append(m_encodedId.c_str());
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              04/2019
+//=====================================================================================
+void AllRealityDataPublicKeysRequest::_PrepareHttpRequestStringAndPayload() const
+    {
+    RealityDataUrl::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/PublicKey/");
     }
 
 //=====================================================================================
@@ -2361,6 +2380,50 @@ bvector<RealityDataLocation>  RealityDataService::Request(AllRealityDataLocation
     return entities;
     }
     
+
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              04/2019
+//=====================================================================================
+void RealityDataService::Request(RealityDataPublicKeyRequest const& request, RealityDataPublicKey& publicKeyObject, RawServerResponse& rawResponse)
+    {
+    if (!RealityDataService::AreParametersSet())
+        {
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
+        return;
+        }
+
+    rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request));
+
+    if (rawResponse.status != RequestStatus::OK)
+        s_errorCallback("RealityDataPublicKeyRequest failed with response", rawResponse);
+
+    RealityConversionTools::JsonToPublicKey(rawResponse.body.c_str(), publicKeyObject);
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+bvector<RealityDataPublicKey>  RealityDataService::Request(AllRealityDataPublicKeysRequest const& request, RawServerResponse& rawResponse)
+    {
+
+    bvector<RealityDataPublicKey> entities;
+    if(!RealityDataService::AreParametersSet())
+        {
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
+        return entities;
+        }
+
+    rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request));
+
+    if (rawResponse.status != RequestStatus::OK)
+        s_errorCallback("AllRealityDataPublicKeysRequest failed with response", rawResponse);
+    else
+        {
+        RealityConversionTools::JsonToPublicKeys(rawResponse.body.c_str(), entities);
+        }
+
+    return entities;
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017

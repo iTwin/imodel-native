@@ -209,15 +209,15 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataLocationCloneTest)
     {
     RealityDataLocation location;
 
+    location.SetIdentifier("Dad");
     location.SetProvider("MyProvider");
     location.SetLocation("Mordor");
-    location.SetDataLocationGuid("Dad");
 
     ConnectedRealityDataLocation cLocation(location);
 
+    EXPECT_EQ(location.GetIdentifier(), cLocation.GetIdentifier());
     EXPECT_EQ(location.GetProvider(), cLocation.GetProvider());
     EXPECT_EQ(location.GetLocation(), cLocation.GetLocation());
-    EXPECT_EQ(location.GetDataLocationGuid(), cLocation.GetDataLocationGuid());
     }
 //=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  10/2017
