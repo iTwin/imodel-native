@@ -6,6 +6,9 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnChangeSummary.h>
 
+bool IBriefcaseManager::s_mustReportCodesInLockedScopes = true;
+bool IBriefcaseManager::s_exclusiveLockOnScopeIsPermanent = false; // TODO: Get rid of this when we get real "Permanent" lock level
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -28,6 +31,7 @@ private:
     void _StartBulkOperation() override {}
     bool _IsBulkOperation() const override {return false;}
     Response _EndBulkOperation() override {return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::Success);}
+    bool _IsCodeInLockedScope(DgnCodeCR) const override {return true;}
 
     RepositoryStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& lockIds) override
         {
@@ -101,8 +105,11 @@ protected:
         {
         RepositoryStatus status = el.PopulateRequest(req, op);
 
-        if (!LockRequired(el))
+        if (!IsLockRequired(el))
             req.Locks().Remove(LockableId(el));
+
+        if (!MustReserveCode(el.GetCode()))
+            req.Codes().erase(el.GetCode());
 
         return status;
         }
@@ -165,7 +172,7 @@ protected:
      * Check if an element's model id is exclusively locked, if it is do not require a lock
      * @bsimethod                                                    Diego.Pinate    03/18
      +---------------+---------------+---------------+---------------+---------------+------*/
-    bool LockRequired(DgnModelId elementsModelId)
+    bool IsLockRequired(DgnModelId elementsModelId)
         {
         if (LocksRequired())
             return (m_exclusivelyLockedModels.find(elementsModelId) == m_exclusivelyLockedModels.end());
@@ -176,24 +183,66 @@ protected:
     /*---------------------------------------------------------------------------------**//**
      * @bsimethod                                                    Diego.Pinate    03/18
      +---------------+---------------+---------------+---------------+---------------+------*/
-    bool LockRequired(DgnElementId elementId)
+    bool IsLockRequired(DgnElementId elementId)
         {
         CachedStatementPtr stmt = GetDgnDb().GetCachedStatement(STMT_ModelIdFromElement);
         stmt->BindId(1, elementId);
         stmt->Step();
         DgnModelId modelId = stmt->GetValueId<DgnModelId>(0);
         stmt->Reset();
-        return modelId.IsValid() ? LockRequired(modelId) : LocksRequired();
+        return modelId.IsValid() ? IsLockRequired(modelId) : LocksRequired();
         }
 
     /*---------------------------------------------------------------------------------**//**
      * @bsimethod                                                    Diego.Pinate    03/18
      +---------------+---------------+---------------+---------------+---------------+------*/
-    bool LockRequired(DgnElementCR element)
+    bool IsLockRequired(DgnElementCR element)
         {
-        return LockRequired(element.GetModelId());
+        return IsLockRequired(element.GetModelId());
         }
 
+    /*---------------------------------------------------------------------------------**//**
+     * @bsimethod                                                    Sam.Wilson      04/2019
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    bool _IsCodeInLockedScope(DgnCodeCR code) const override
+        {
+        if (!IsExclusiveLockOnScopePermanent()) // *** TEMPORARY, until we get real "Permanent" lock level
+            return false;
+
+        if (!code.IsValid() || code.GetScopeString().empty())
+            return false;
+
+        auto codeSpec = GetDgnDb().CodeSpecs().GetCodeSpec(code.GetCodeSpecId());
+        if (!codeSpec.IsValid())
+            {
+            BeAssert(false);
+            return false;
+            }
+
+        auto scopeType = codeSpec->GetScope().GetType();
+
+        DgnElementId scopeElementId = code.GetScopeElementId(GetDgnDb());
+        if (!scopeElementId.IsValid())
+            return false;
+
+        if (scopeType == CodeScopeSpec::Type::Model)
+            {
+            auto scopeModelId = DgnModelId(scopeElementId.GetValue());
+            return (m_exclusivelyLockedModels.find(scopeModelId) != m_exclusivelyLockedModels.end());
+            }
+
+        auto scopeEl = GetDgnDb().Elements().GetElement(scopeElementId);
+        if (!scopeEl.IsValid())
+            {
+            BeDataAssert(false);
+            return false;
+            }
+
+        if (m_exclusivelyLockedModels.find(scopeEl->GetModelId()) != m_exclusivelyLockedModels.end())
+            return true;
+
+        return const_cast<BriefcaseManagerBase*>(this)->QueryLockLevel(*scopeEl) == LockLevel::Exclusive;   // TODO: When we get the LockLevel of "Permanent", then check for that.
+        }
 
     BeFileName GetLocalDbFileName() const
         {
@@ -404,6 +453,28 @@ bool IBriefcaseManager::LocksRequired() const
     // We don't acquire locks for indirect or dynamic changes.
     return (!GetDgnDb().Txns().InDynamicTxn() && TxnManager::Mode::Indirect != GetDgnDb().Txns().GetMode());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IBriefcaseManager::ShouldReportCode(DgnCodeCR code) const
+    {
+    return MustReportCodesInLockedScopes() || !IsCodeInLockedScope(code);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IBriefcaseManager::MustReserveCode(DgnCodeCR code) const
+    {
+    // There is no need to reserve Codes that are in a locked scope.
+    return !IsCodeInLockedScope(code);
+    }
+
+void IBriefcaseManager::SetExclusiveLockOnScopeIsPermanent(bool b) {s_exclusiveLockOnScopeIsPermanent = b;}
+bool IBriefcaseManager::IsExclusiveLockOnScopePermanent() {return s_exclusiveLockOnScopeIsPermanent;}
+void IBriefcaseManager::SetMustReportCodesInLockedScopes(bool b) {s_mustReportCodesInLockedScopes = b;}
+bool IBriefcaseManager::MustReportCodesInLockedScopes() {return s_mustReportCodesInLockedScopes;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
@@ -690,6 +761,10 @@ void BriefcaseManagerBase::Cull(DgnCodeSet& codes)
 
         stmt->Reset();
         }
+
+    // The purpose of this Cull function is purely to check the local locks and codes db.
+    // The local db records only code reservations.
+    // NB: Do not filter by calling (!MustReserveCode) on the codes!
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -733,6 +808,8 @@ void BriefcaseManagerBase::InsertLock(LockableId id, LockLevel level, TableType 
     // Maintain set of exclusively locked models
     if (id.GetType() == LockableType::Model)
         {
+        // TODO: When we get the LockLevel of Permanent, then check for that.
+
         // Not exclusively locked anymore
         if (m_exclusivelyLockedModels.find(id.GetId()) != m_exclusivelyLockedModels.end() && level != LockLevel::Exclusive)
             m_exclusivelyLockedModels.erase(id.GetId());
@@ -1038,7 +1115,7 @@ void BriefcaseManagerBase::CullElementsInExclusiveModels(DgnLockSet& locks)
         if (lock.GetType() != LockableType::Element)
             continue;
         DgnElementId elementId(lock.GetId().GetValue());
-        if (!LockRequired(elementId))
+        if (!IsLockRequired(elementId))
             toDelete.insert(lock);
         }
 
@@ -1434,6 +1511,24 @@ bool BriefcaseManagerBase::_AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& code
         allHeld = false;
         }
 
+    // Be careful! The above logic is an inference.
+
+    // In the case of Codes, "held" means "reserved".
+    // Only reserved Codes are stored in the local db.
+    // Further, this function assumes that all reservations made by this briefcase are stored in the local db.
+    // Now, Cull removes all items from codes that are found in the local db.
+    // Therefore, the inference is that, if a Code is *not* in the local db, then it has not been reserved.
+    
+    // NB: Do not filter out codes that don't have to be reserved. That would do the reverse of what Cull is intended to do.
+    // We could run a loop on all codes to see if they are all codes that don't have to be reserved and return false
+    // in that case. But that would be expensive. And, we can get the same answer (probably more quickly) by querying
+    // the (probably sparse) local locks and codes db.
+
+    // In the case of Locks, "held" means the briefcase has acquired and still holds the lock at or above the requested LockLevel.
+    // This function assumes that the local db records all locks held by this briefcase, along with the LockLevel at which each is held.
+    // Cull removes all items from locks that are recorded in the local db with at least the LockLevel specified in the input.
+    // Therefore, the inference is that items left in locks are *not* held at the specified level.
+
     if (nullptr != control)
         control->_OnQueriedHeld(locks, codes, *this);
 
@@ -1619,7 +1714,7 @@ RepositoryStatus BriefcaseManagerBase::_OnFinishRevision(DgnRevision const& rev)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BriefcaseManagerBase::_OnElementInserted(DgnElementId id)
     {
-    if (LockRequired(id) && Validate())
+    if (IsLockRequired(id) && Validate())
         InsertLock(LockableId(id), LockLevel::Exclusive, TableType::Owned);
     }
 
@@ -2654,8 +2749,11 @@ RepositoryStatus BulkUpdateBriefcaseManager::_PrepareForElementOperation(Request
     if (RepositoryStatus::Success != rstat)
         return rstat;
 
-    if (!LockRequired(el))
+    if (!IsLockRequired(el))
         reqOut.Locks().Remove(LockableId(el));
+
+    if (!MustReserveCode(el.GetCode()))
+        reqOut.Codes().erase(el.GetCode());
 
     AccumulateRequests(reqOut);
     return RepositoryStatus::Success;
@@ -2696,7 +2794,7 @@ void BulkUpdateBriefcaseManager::_OnElementInserted(DgnElementId id)
 #ifndef NDEBUG
     BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
 #endif
-    if (LockRequired(id)) // don't Validate
+    if (IsLockRequired(id)) // don't Validate
         m_req.Locks().GetLockSet().insert(DgnLock(LockableId(id), LockLevel::Exclusive));
     }
 
