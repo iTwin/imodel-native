@@ -68,7 +68,7 @@
 
     <Product Name="Licensing-GtestUnit" >
         <SubPart PartName="GtestUnit"/>
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
     <!--<Part Name="NativeClient.Docs" BMakeFile="Licensing/docs.mke" OnlyPlatforms="x64">
@@ -86,7 +86,7 @@
     <!-- ********************** -->
     <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingUnitTest -dTEST_COLLECTION_PRODUCT=Licensing-UnitTests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="Licensing-UnitTests"/>
-        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
         </Bindings>
@@ -94,7 +94,7 @@
 
     <Product Name="Licensing-AndroidJUnit" >
         <SubPart PartName="AndroidJUnit" LibType="Static"/>
-        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
     <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=Licensing-AndroidJUnit" OnlyPlatforms="Android*">
@@ -175,14 +175,14 @@
     </Part>
 
     <Product Name="Licensing-IntegrationTests">
-        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
         <SubPart PartName="IntegrationTests"/>
-        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
-    <Part Name="GtestIntegration" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingIntegrationTest -dTEST_COLLECTION_PRODUCT=Licensing-IntegrationTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="GtestIntegration" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}imodel02/iModelCore/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingIntegrationTest -dTEST_COLLECTION_PRODUCT=Licensing-IntegrationTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="Licensing-IntegrationTests"/>
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
 
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/LicensingIntegrationTest/Assemblies/*</Files>
@@ -190,9 +190,9 @@
         </Bindings>
     </Part>
 
-    <Part Name="RunGtestIntegration" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Licensing-GtestIntegration -dGTEST_NAME=LicensingIntegrationTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtestIntegration" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}imodel02/iModelCore/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Licensing-GtestIntegration -dGTEST_NAME=LicensingIntegrationTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Licensing-GtestIntegration" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
 
         <Bindings>
           <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/LicensingIntegrationTest.log</Files>
@@ -201,7 +201,7 @@
 
     <Product Name="Licensing-GtestIntegration" >
         <SubPart PartName="GtestIntegration"/>
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
     <Product Name="LicenseClientCrossPLatform" PrgOutputDir="LicenseClientCrossPlatform" SaveProduct="true" SaveTranskit="true">
