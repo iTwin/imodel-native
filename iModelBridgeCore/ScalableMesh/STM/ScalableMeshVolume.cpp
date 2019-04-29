@@ -14,7 +14,6 @@ static double s_absTol = 1.0e-8;
 static double s_relTol = 1.0e-12;
 
 
-    
 
 DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh)
     {
@@ -50,13 +49,32 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
     if (meshRange.IsEmpty()) return DTMStatusInt::DTM_SUCCESS;
     params->SetLevel(targetedMesh->GetTerrainDepth());
     meshQueryInterface->Query(returnedNodes, box, 4, params);
-    for (auto& node : returnedNodes)
-        {
-        if (hasRestrictions) if (!node->HasClip(m_restrictedId)) continue;
+    for (auto& node : returnedNodes)   
+        {                  
+        if (hasRestrictions) 
+            {
+            if (!node->HasClip(m_restrictedId)) 
+                {                
+                continue;
+                }
+            }
 
         IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(); 
-        if (hasRestrictions) node->RefreshMergedClip(targetedMesh->GetReprojectionTransform());
-        IScalableMeshMeshPtr scalableMesh = hasRestrictions? node->GetMeshUnderClip(flags, m_restrictedId): node->GetMesh(flags);
+        if (hasRestrictions) 
+            node->RefreshMergedClip(targetedMesh->GetReprojectionTransform());
+        
+        IScalableMeshMeshPtr scalableMesh;
+                                
+        //TFS# 1014935 - Even if restricted don't use possibly simplified clip here to avoid volume error.
+        if (hasRestrictions && (!s_simplifyOverviewClips || node->GetLevel() > SM_SIMPLIFY_OVERVIEW_CLIPS_MAX_LEVEL))
+            {
+            scalableMesh = node->GetMeshUnderClip(flags, m_restrictedId);
+            }
+        else
+            {
+            scalableMesh = node->GetMesh(flags);
+            }
+
         if (scalableMesh.get() == nullptr) continue;
         //ScalableMeshMeshWithGraphPtr scalableMeshWithGraph((ScalableMeshMeshWithGraph*)scalableMesh.get(), true);
         double tileCut, tileFill;
