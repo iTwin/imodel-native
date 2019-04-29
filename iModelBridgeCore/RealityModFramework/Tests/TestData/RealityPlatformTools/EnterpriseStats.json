@@ -1,0 +1,43 @@
+{
+    "instances": [
+        {
+            "instanceId": "",
+            "schemaName": "S3MX",
+            "className": "EnterpriseStat",
+            "properties": {
+                "TotalSize": 235892929,
+                "NumberOfRealityData": 1425,
+                "OrganizationId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                "UltimateId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                "UltimateSite": "e82a584b-9fae-409f-9581-fd154f7b9ef9"
+            },
+            "eTag": "ifZwDzBbgEqb8b0Z62MNmrQTysQ="
+        },
+        {
+            "instanceId": "",
+            "schemaName": "S3MX",
+            "className": "EnterpriseStat",
+            "properties": {
+                "TotalSize": 235892929,
+                "NumberOfRealityData": 1425,
+                "OrganizationId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                "UltimateId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                "UltimateSite": "e82a584b-9fae-409f-9581-fd154f7b9ef9"
+            },
+            "eTag": "ifZwDzBbgEqb8b0Z62MNmrQTysQ="
+        },
+        {
+            "instanceId": "",
+            "schemaName": "S3MX",
+            "className": "EnterpriseStat",
+            "properties": {
+                "TotalSize": 235892929,
+                "NumberOfRealityData": 1425,
+                "OrganizationId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                "UltimateId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                "UltimateSite": "e82a584b-9fae-409f-9581-fd154f7b9ef9"
+            },
+            "eTag": "ifZwDzBbgEqb8b0Z62MNmrQTysQ="
+        }
+    ]
+}

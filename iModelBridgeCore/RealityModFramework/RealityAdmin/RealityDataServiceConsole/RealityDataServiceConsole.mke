@@ -1,0 +1,40 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  
+#----------------------------------------------------------------------
+ 
+%include mdl.mki
+
+appName             = RealityDataServiceConsole
+baseDir             = $(_MakeFilePath)
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+#----------------------------------------------------------------------
+#   Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Build source files
+#----------------------------------------------------------------------
+$(o)RealityDataServiceConsole$(oext) : $(baseDir)RealityDataServiceConsole.cpp ${MultiCompileDepends}
+
+#----------------------------------------------------------------------
+#   DLL/LIB creation
+#----------------------------------------------------------------------
+EXE_DEST     = $(o)
+EXE_NAME     = $(appName)
+EXE_OBJS     = $(o)RealityDataServiceConsole$(oext)
+
+LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
+                       $(ContextDeliveryDir)RealityPlatform.lib \
+                       $(ContextDeliveryDir)RealityAdmin.lib \
+                       $(ContextDeliveryDir)RealityPlatformTools.lib 
+
+%include $(SharedMki)linktool.mki
+
