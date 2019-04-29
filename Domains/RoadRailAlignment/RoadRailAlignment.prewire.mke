@@ -1,0 +1,12 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+$(BuildContext)PublicAPI/RoadRailAlignment : $(_MakeFilePath)PublicAPI/RoadRailAlignment
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)ECSchemas/Domain/RoadRailAlignment.ecschema.xml : $(_MakeFilePath)RoadRailAlignment.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
