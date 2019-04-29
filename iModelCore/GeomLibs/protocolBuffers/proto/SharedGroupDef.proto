@@ -1,0 +1,6 @@
+message SharedGroupDef
+{
+required string Name = 1;
+required IGeometry Geometry = 2;
+}
+

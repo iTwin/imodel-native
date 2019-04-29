@@ -1,0 +1,46 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+#
+# Makefile directives to put bsivu fdf files together into a single top-level file
+# appropriate for mdldoc.
+#
+# Concatenate master header file vu.h with all public .fdf files into a new file
+#   called vu.h so that this header is the "Required Header" displayed for each function
+#
+# NOTE: Keep current with vu.h #include list.
+#
+VU_FILES=
+VU_FILES+$(vu_include)vu.h
+VU_FILES+$(vu_include)vu/vu.fdf
+VU_FILES+$(vu_include)vu/vucoord.fdf
+VU_FILES+$(vu_include)vu/vusubset.fdf
+VU_FILES+$(vu_include)vu/vuarray.fdf
+VU_FILES+$(vu_include)vu/vumod.fdf
+VU_FILES+$(vu_include)vu/vumod2.fdf
+VU_FILES+$(vu_include)vu/vuconvex.fdf
+VU_FILES+$(vu_include)vu/vuaddedges.fdf
+VU_FILES+$(vu_include)vu/vuunion.fdf
+VU_FILES+$(vu_include)vu/vumerge.fdf
+VU_FILES+$(vu_include)vu/vumerge2.fdf
+VU_FILES+$(vu_include)vu/vufilter.fdf
+VU_FILES+$(vu_include)vu/vutriang.fdf
+VU_FILES+$(vu_include)vu/vureg.fdf
+VU_FILES+$(vu_include)vu/vustack.fdf
+VU_FILES+$(vu_include)vu/vucluster.fdf
+VU_FILES+$(vu_include)vu/vuperiodicconnect.fdf
+VU_FILES+$(vu_include)vu/vugrid.fdf
+VU_FILES+$(vu_include)vu/vuprint.fdf
+VU_FILES+$(vu_include)vu/pbfvu.fdf
+VU_FILES+$(vu_include)vu/vumem.h
+VU_FILES+$(vu_include)vu/vumemfuncs.fdf
+VU_FILES+$(vu_include)vu/vuexcise.fdf
+VU_FILES+$(vu_include)vu/vudangler.fdf
+
+$(MDLDOC_GensrcDir)vu.h : $(VU_FILES)
+        type $(VU_FILES) >$@
+
+# undocumented internal functions
+#VU_FILES+$(vu_include)vu/vumem.fdf

@@ -1,0 +1,10 @@
+PRIMITIVE PointChain
+<def name=SUMMARY>Enumeration of isolated points.
+</def>
+<def name=Interface_BaseList>IGeometry, IPoint</def>
+
+
+<def name=MEMBERS><list ItemType=ISinglePoint ItemTagName=Point ItemSemanticName=Point ItemParamName=Point ListName=mPoint ItemDescription="Point of chain" ScaleMode=Container/>
+</def>
+
+END_PRIMITIVE

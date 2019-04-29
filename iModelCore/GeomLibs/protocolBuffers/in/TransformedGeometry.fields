@@ -1,0 +1,11 @@
+PRIMITIVE TransformedGeometry
+<def name=SUMMARY>A container to apply a transform to another piece of geoemtry.
+</def>
+<def name=Interface_BaseList>ISinglePoint</def>
+
+
+<def name=MEMBERS><value ItemType=DTransform3d ItemTagName=Transform ItemSemanticName=Transform ItemParamName=transform ItemMemberName=mTransform ItemDescription="Placement Transform" ScaleMode=Length/>
+<child ItemType=IGeometry ItemTagName=Geometry ItemSemanticName=Geometry ItemParamName=geometry ItemMemberName=mGeom ItemDescription="Geometry to be transformed" ScaleMode=Container/>
+</def>
+
+END_PRIMITIVE
