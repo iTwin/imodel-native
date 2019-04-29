@@ -6,7 +6,7 @@
 //:>       $Date: 2012/11/29 17:30:30 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -461,6 +461,8 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
         size_t        m_maxNumberOfPoints;
 
         bool m_invertClips;
+        bool m_hasLevelLimit;
+        size_t m_levelLimit;
                  
     protected: 
         ClipVectorPtr m_viewClipVector;
@@ -483,6 +485,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
             m_maxNumberOfPoints = maxNumberOfPoints;
             m_invertClips = invertClips;
             m_viewClipVector = viewClipVector;
+            m_hasLevelLimit = false;
             }
 
 
@@ -560,6 +563,8 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
             ret->SetMeanScreenPixelsPerPoint(this->GetMeanScreenPixelsPerPoint());
             return ret;
         }
+
+        virtual void ToggleLimitToLevel(bool shouldLimit, size_t maxLevel);
         
 };
 

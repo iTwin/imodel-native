@@ -2,7 +2,7 @@
 #
 #     $Source: CloudDataSource_Vancouver.mke $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
@@ -47,7 +47,7 @@ always:
 SrcDir=$(SrcRoot)ScalableMesh/CloudDataSource/
 
 always:
-    @CreateSymLinks.py -d"$(BuildContext)VendorAPI/CloudDataSource=$(includeDir)"
+    ~linkdir "$(BuildContext)VendorAPI/CloudDataSource=$(includeDir)"
 
 CCompOpts + -DUNICODE -D__CLOUD_DATA_SOURCE_BUILD__
 

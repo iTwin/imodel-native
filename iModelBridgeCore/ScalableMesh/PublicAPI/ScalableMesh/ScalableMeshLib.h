@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ScalableMesh/ScalableMeshLib.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,6 +14,10 @@
 #include <ScalableMesh/IScalableMesh.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
+// Define default ScalableMesh logging macros
+#define SM_LOGGER_NAME L"ScalableMesh"
+#define SM_LOG (*NativeLogging::LoggingManager::GetLogger(SM_LOGGER_NAME))
 
 /*=================================================================================**//**
 ScalableMeshLib defines interfaces that a "host" application must implement to enable use of ScalableTerrainModel library.

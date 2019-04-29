@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:45 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1332,7 +1332,9 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
 
             bool clipsLoaded = false;
             if (flags->ShouldLoadClips())
-            {
+            {			
+				m_meshNode->PropagateClipSetFromAncestors();
+				
                 if (flags->ShouldUseClipsToShow())
                 {
                     bset<uint64_t> clipsToShow;
@@ -1562,7 +1564,9 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
 
             bool mustAppendDefaultMesh = true;
             if (flags->ShouldLoadClips())
-                {
+                {			
+				m_meshNode->PropagateClipSetFromAncestors();
+				
                 const DifferenceSet* clipDiffSet = nullptr;
                 bool anythingToApply = false;
                 mustAppendDefaultMesh = false;
@@ -1632,27 +1636,28 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
             if (clips != nullptr /*&& range3D2.XLength() < 150 && range3D2.YLength() < 150*/)
                 {
                 bmap<size_t, uint64_t> idsForPrimitives;
-                for (size_t n = 0; n < clips->size(); n++) idsForPrimitives[n] = uint64_t (-1);
+                for (size_t n = 0; n < clips->size(); n++) idsForPrimitives[n] = n;
                 MeshClipper clipper;
                 PolyfaceHeaderPtr polyface;
                 clipper.SetClipGeometry(idsForPrimitives, clips.get());
                 clipper.SetSourceMesh(meshPtr->GetPolyfaceQuery());
                 clipper.ComputeClip();
-                clipper.GetInteriorRegion(polyface);
-
-                // Clear mesh
-                meshPtr = ScalableMeshMesh::Create();
-
-                // Reconstruct mesh with new polyface
-                if (polyface != nullptr)
+                MeshClipper::RegionResult clipResult = clipper.GetClippedMesh(polyface);
+                if(clipResult == MeshClipper::RegionResult::Success || clipResult == MeshClipper::RegionResult::NoData)
                     {
-                    meshPtr->AppendMesh(polyface->Point().size(), polyface->Point().data(),
-                                        polyface->PointIndex().size(), polyface->PointIndex().data(),
-                                        0, 0, 0,
-                                        polyface->Param().size(), polyface->Param().data(),
-                                        polyface->ParamIndex().data());
-                    }
+                    // Clear mesh
+                    meshPtr = ScalableMeshMesh::Create(); 
 
+                    // Reconstruct mesh with new polyface
+                    if(polyface != nullptr)
+                        {
+                        meshPtr->AppendMesh(polyface->Point().size(), polyface->Point().data(),
+                                            polyface->PointIndex().size(), polyface->PointIndex().data(),
+                                            0, 0, 0,
+                                            polyface->Param().size(), polyface->Param().data(),
+                                            polyface->ParamIndex().data());
+                        }
+                    }
                 }
 
             if ((meshPtr->GetNbFaces() == 0) && flags->ShouldLoadIndices())
@@ -2602,7 +2607,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                     for (auto& clipToShow : clipsToShow)
                         {
-                        if (meshNode->HasClip(clipToShow))
+                        if (meshNode->HasClip(clipToShow, false)) 
                             {
                             appliedClips.push_back(clipToShow);
                             }
@@ -3196,6 +3201,7 @@ template <class POINT> uint64_t ScalableMeshNode<POINT>::_LastClippingStateUpdat
 
 template <class POINT> void ScalableMeshNode<POINT>::_RefreshMergedClip(Transform tr) const
     {
+    dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(this->m_node.GetPtr())->PropagateClipSetFromAncestors();
     dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(this->m_node.GetPtr())->BuildSkirts();
     dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(this->m_node.GetPtr())->ComputeMergedClips(tr);
     }

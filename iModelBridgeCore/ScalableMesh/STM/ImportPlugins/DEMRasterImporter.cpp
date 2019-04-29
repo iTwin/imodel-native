@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/DEMRasterImporter.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,6 +19,12 @@
 
 #include "PluginUtils.h"
 
+
+#ifdef VANCOUVER_API
+#include <RasterCore/DgnRaster.h>
+#include <RasterCore/RasterDEMFilters.h>
+#include <RasterCore/msrastercore.h>
+#endif
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY

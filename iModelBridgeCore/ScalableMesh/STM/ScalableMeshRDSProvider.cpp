@@ -25,6 +25,10 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+#define DEFAULT_BUDDI_RDS_URL "http://buddi.bentley.com/discovery.asmx/GetUrl?urlName=RealityDataServices&region="
+#define SMRDSPROVIDER_LOGGER_NAME L"ScalableMesh::RDSProvider"
+#define SMRDSPROVIDER_LOG (*NativeLogging::LoggingManager::GetLogger(SMRDSPROVIDER_LOGGER_NAME))
+
 /*----------------------------------------------------------------------------+
 | IScalableMeshRDSProvider Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
@@ -72,9 +76,9 @@ Utf8String IScalableMeshRDSProvider::GetProjectID()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-IScalableMeshRDSProviderPtr IScalableMeshRDSProvider::Create(const Utf8String& projectGuid, const Utf8String& pwcsMeshGuid)
+IScalableMeshRDSProviderPtr IScalableMeshRDSProvider::Create(const Utf8String& serverUrl, const Utf8String& projectGuid, const Utf8String& pwcsMeshGuid)
     {
-    return new ScalableMeshRDSProvider(projectGuid, pwcsMeshGuid);
+    return new ScalableMeshRDSProvider(serverUrl, projectGuid, pwcsMeshGuid);
     }
 
 /*----------------------------------------------------------------------------+
@@ -84,9 +88,11 @@ IScalableMeshRDSProviderPtr IScalableMeshRDSProvider::Create(const Utf8String& p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScalableMeshRDSProvider::ScalableMeshRDSProvider(const Utf8String& projectGuid, const Utf8String& pwcsMeshGuid)
-    : m_ProjectGuid(projectGuid), m_PWCSMeshGuid(pwcsMeshGuid)
-    {}
+ScalableMeshRDSProvider::ScalableMeshRDSProvider(const Utf8String& serverUrl, const Utf8String& projectGuid, const Utf8String& pwcsMeshGuid)
+    : m_ServerUrl(serverUrl), m_ProjectGuid(projectGuid), m_PWCSMeshGuid(pwcsMeshGuid)
+    {
+    ScalableMeshRDSProvider::InitializeRealityDataService(this->m_ServerUrl, this->m_ProjectGuid);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                     09/2017
@@ -112,7 +118,8 @@ Utf8String ScalableMeshRDSProvider::_GetAzureURLAddress()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ScalableMeshRDSProvider::_GetRDSURLAddress()
     {
-    ScalableMeshRDSProvider::InitializeRealityDataService(this->m_ProjectGuid);
+    if(!RealityDataService::AreParametersSet())
+        ScalableMeshRDSProvider::InitializeRealityDataService(this->m_ServerUrl, this->m_ProjectGuid);
 
     bool serverStartsWithHTTPS = RealityDataService::GetServerName().StartsWith("https://");
 
@@ -155,11 +162,13 @@ Utf8String ScalableMeshRDSProvider::_GetProjectID()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ScalableMeshRDSProvider::InitializeRealityDataService(const Utf8String& projectID)
+void ScalableMeshRDSProvider::InitializeRealityDataService(const Utf8String& serverUrl, const Utf8String& projectID)
     {
-    //if (RealityDataService::AreParametersSet()) return SUCCESS;
+    auto buddiUrl = GetBuddiUrl();
+    if(!serverUrl.empty() && buddiUrl != serverUrl)
+        buddiUrl = serverUrl;
 
-    RealityDataService::SetServerComponents(GetBuddiUrl(), RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName(), RealityDataService::GetSchemaName());
+    RealityDataService::SetServerComponents(buddiUrl, RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName(), RealityDataService::GetSchemaName());
     RealityDataService::SetProjectId(projectID);
 
     ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
@@ -171,13 +180,15 @@ void ScalableMeshRDSProvider::InitializeRealityDataService(const Utf8String& pro
         proxyCreds.append(":");
         proxyCreds.append(proxyInfo.m_password);
 		
-        assert(!"RealityDataService::SetProxyInfo not supported on BIM02");
+        SMRDSPROVIDER_LOG.error("RealityDataService::SetProxyInfo not supported on BIM02");
+        BeAssert(!"RealityDataService::SetProxyInfo not supported on BIM02");
 #if 0 
         RealityDataService::SetProxyInfo(proxyInfo.m_serverUrl, proxyCreds);
 #endif		
 		
 #else 
-        assert(!"RealityDataService::SetProxyInfo not yet available");
+        SMRDSPROVIDER_LOG.error("RealityDataService::SetProxyInfo not yet implemented");
+        BeAssert(!"RealityDataService::SetProxyInfo not yet implemented");
 #endif
         }
 
@@ -187,7 +198,11 @@ void ScalableMeshRDSProvider::InitializeRealityDataService(const Utf8String& pro
     Utf8String token;
     if(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyAuthHeaderValue(token, Utf8String("")))
         {
-        BeAssert(token.empty()); // Previous call should not have fetched the token yet
+        if(!token.empty())
+            {
+            SMRDSPROVIDER_LOG.error("Requesting token callback returns non empty token value or passing non empty token value.");
+            BeAssert(false); //Previous call should not have fetched the token yet
+            }
 
         Utf8String authTypes[3] = { Utf8String("Authorization: Token "), Utf8String("Authorization: Bearer "), Utf8String("") };
 
@@ -195,7 +210,8 @@ void ScalableMeshRDSProvider::InitializeRealityDataService(const Utf8String& pro
 
         if(authorization == authTypes[1])
             {
-            BeAssert(false); // OIDC not yet supported
+            SMRDSPROVIDER_LOG.error("OIDC token not yet support by RealityDataService");
+            BeAssert(false);
             return;
             }
 
@@ -208,6 +224,13 @@ void ScalableMeshRDSProvider::InitializeRealityDataService(const Utf8String& pro
             });
         }
 #endif
+
+    // Set the error callback in RDS (will be called when errors occur)
+    RealityDataService::SetErrorCallback([](Utf8String basicMessage, const RawServerResponse& rawResponse)
+        {
+        SMRDSPROVIDER_LOG.errorv("%s", basicMessage.c_str());
+        SMRDSPROVIDER_LOG.errorv("RealityDataService request body: %s", rawResponse.body.c_str());
+        });
 
     }
 
@@ -227,7 +250,7 @@ bool ScalableMeshRDSProvider::IsTokenExpired()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshRDSProvider::UpdateToken()
     {
-    ScalableMeshRDSProvider::InitializeRealityDataService(this->m_ProjectGuid);
+    SMRDSPROVIDER_LOG.info("Updating RealityDataService token");
 
     // Make sure the server names matches
     if (nullptr != m_AzureConnection.m_handshake && !m_AzureConnection.m_handshake->GetServerName().Equals(RealityDataService::GetServerName()))
@@ -254,7 +277,10 @@ void ScalableMeshRDSProvider::UpdateToken()
         // Try again after 50 minutes...
         DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(m_AzureConnection.m_tokenTimer);
         m_AzureConnection.m_tokenTimer += 1000 * 60 * 50;
-        assert(!"Problem with the handshake");
+        SMRDSPROVIDER_LOG.errorv("UpdateToken() : Request URL: %s", m_AzureConnection.m_handshake->GetHttpRequestString().c_str());
+        SMRDSPROVIDER_LOG.errorv("UpdateToken() : RealityDataService failed with response code [%d]", rawResponse.responseCode);
+        SMRDSPROVIDER_LOG.errorv("UpdateToken() : RealityDataService body: %s", rawResponse.body.c_str());
+        BeAssert(!"ScalableMeshRDSProvider failed to update token");
         }
     }    
 
@@ -263,39 +289,22 @@ void ScalableMeshRDSProvider::UpdateToken()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
     {
-#ifdef DGNDB06_API
-    WString serverUrl;
-
-	try
-		{
-        CallStatus status = APIERR_SUCCESS;
-        WString buddiUrl;
-        UINT32 bufLen;
-
-        CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
-        wchar_t* buffer;
-        status = CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &bufLen);
-        bufLen++;
-        buffer = (wchar_t*)calloc(1, bufLen * sizeof(wchar_t));
-        status = CCApi_GetBuddiUrl(api, L"RealityDataServices", buffer, &bufLen);
-        serverUrl.assign(buffer);
-        CCApi_FreeApi(api);
-        }
-	catch (...)
-		{
-		}
-
-    return Utf8String(serverUrl.c_str());
-#else
     Utf8String serverUrl;
+
+#ifdef LINUX_SCALABLEMESH_BUILD
+    SMRDSPROVIDER_LOG.error("ScalableMeshRDSProvider::GetBuddiUrl() not implemented under linux yet");
+    BeAssert(!"ScalableMeshRDSProvider::GetBuddiUrl() not implemented under linux yet");
+    return serverUrl;
+#endif
+
+#ifndef DGNDB06_API
     uint32_t connectRegion = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyRegionID();
-    if(connectRegion > 0)
+    if(connectRegion != uint32_t(-1))
         {
-#define DEFAULT_BUDDI_RDS_URL "http://buddi.bentley.com/discovery.asmx/GetUrl?urlName=RealityDataServices&region="
         Utf8String buddiUrl((DEFAULT_BUDDI_RDS_URL + std::to_string(connectRegion)).c_str());
         BENTLEY_HTTP_NAMESPACE_NAME::HttpClient client;
         auto request = client.CreateRequest(buddiUrl.c_str(), "GET");
-        auto response = request.Perform().get();
+        auto response = request.PerformAsync()->GetResult();
         auto body = response.GetContent()->GetBody()->AsString();
         BeXmlStatus xmlStatus = BEXML_Success;
         BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString(xmlStatus, body.c_str(), body.size());
@@ -311,10 +320,12 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
         xmlResult = XML_READTO(reader, IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, &value);
         BeAssert(xmlResult == IBeXmlReader::ReadResult::READ_RESULT_Success);
         serverUrl = Utf8String(value.c_str());
-        }
+    }
+#endif
+
+#ifndef LINUX_SCALABLEMESH_BUILD
     if(serverUrl.empty())
         {
-#ifndef LINUX_SCALABLEMESH_BUILD
         // Unable to retrieve valid RDS url... fall back on CCApi (Windows only)
         CallStatus status = APIERR_SUCCESS;
         try
@@ -322,13 +333,15 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
             CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
             if(!api)
                 {
-                BeAssert(!"Couldn't initialize Connection client COM API");
+                SMRDSPROVIDER_LOG.error("GetBuddiUrl() : Failed to initialize CCApi");
+                BeAssert(!"Failed to initialize CCApi");
                 return "";
                 }
             bool installed;
             status = CCApi_IsInstalled(api, &installed);
             if(!installed)
                 {
+                SMRDSPROVIDER_LOG.error("GetBuddiUrl() : Connection client does not seem to be installed");
                 BeAssert(!"Connection client does not seem to be installed\n");
                 CCApi_FreeApi(api);
                 return "";
@@ -337,6 +350,7 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
             status = CCApi_IsRunning(api, &running);
             if(status != APIERR_SUCCESS || !running)
                 {
+                SMRDSPROVIDER_LOG.error("GetBuddiUrl() : Connection client does not seem to be running");
                 BeAssert(!"Connection client does not seem to be running\n");
                 CCApi_FreeApi(api);
                 return "";
@@ -345,6 +359,7 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
             status = CCApi_IsLoggedIn(api, &loggedIn);
             if(status != APIERR_SUCCESS || !loggedIn)
                 {
+                SMRDSPROVIDER_LOG.error("GetBuddiUrl() : Connection client does not seem to be logged in");
                 BeAssert(!"Connection client does not seem to be logged in\n");
                 CCApi_FreeApi(api);
                 return "";
@@ -353,6 +368,7 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
             status = CCApi_HasUserAcceptedEULA(api, &acceptedEula);
             if(status != APIERR_SUCCESS || !acceptedEula)
                 {
+                SMRDSPROVIDER_LOG.error("GetBuddiUrl() : Connection client user does not seem to have accepted EULA");
                 BeAssert(!"Connection client user does not seem to have accepted EULA\n");
                 CCApi_FreeApi(api);
                 return "";
@@ -361,6 +377,7 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
             status = CCApi_IsUserSessionActive(api, &sessionActive);
             if(status != APIERR_SUCCESS || !sessionActive)
                 {
+                SMRDSPROVIDER_LOG.error("GetBuddiUrl() : Connection client does not seem to have an active session");
                 BeAssert(!"Connection client does not seem to have an active session\n");
                 CCApi_FreeApi(api);
                 return "";
@@ -380,21 +397,26 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
             }
         catch(...)
             {
-            BeAssert(!"Error thrown while fetching RDS server url");
+            SMRDSPROVIDER_LOG.error("GetBuddiUrl() : Unknown error while fetching RDS server url");
+            BeAssert(!"Unknown error while fetching RDS server url");
             }
-#endif
         }
-    BeAssert(!serverUrl.empty()); // RDS server URL couldn't be found
-    return serverUrl;
 #endif
+    if(serverUrl.empty())
+        {
+        SMRDSPROVIDER_LOG.error("GetBuddiUrl() : RDS server URL couldn't be found");
+        BeAssert(!"RDS server URL couldn't be found");
+        }
+    return serverUrl;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ScalableMeshRDSProvider::IsHostedByRDS(const Utf8String& projectGuid, const Utf8String& meshGuid)
+bool ScalableMeshRDSProvider::IsHostedByRDS(const Utf8String& serverUrl, const Utf8String& projectGuid, const Utf8String& meshGuid)
     {
-    ScalableMeshRDSProvider::InitializeRealityDataService(projectGuid);
+    if(!RealityDataService::AreParametersSet())
+        ScalableMeshRDSProvider::InitializeRealityDataService(serverUrl, projectGuid);
 
     AzureHandshake handshake(meshGuid, false /*writeable*/);
 
@@ -407,8 +429,12 @@ Utf8String ScalableMeshRDSProvider::GetRootDocumentName()
     RealityDataByIdRequest idReq = RealityDataByIdRequest(m_PWCSMeshGuid);
     RealityDataPtr entity = RealityDataService::Request(idReq, rawResponse);
 
-    if (entity == nullptr || rawResponse.status == RequestStatus::BADREQ)
+    if(entity == nullptr || rawResponse.status == RequestStatus::BADREQ)
+        {
+        SMRDSPROVIDER_LOG.errorv("GetRootDocumentName() : RealityDataService failed with response code [%d]", rawResponse.responseCode);
+        SMRDSPROVIDER_LOG.errorv("GetRootDocumentName() : RealityDataService body: %s", rawResponse.body.c_str());
         return Utf8String();
+        }
 
     return entity->GetRootDocument();
     }

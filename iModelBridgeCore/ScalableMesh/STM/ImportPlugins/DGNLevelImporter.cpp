@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/DGNLevelImporter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -32,6 +32,12 @@
 #include "PluginUtils.h"
 #include "ElemSourceRef.h"
 #include "ElementType.h"
+
+#ifdef VANCOUVER_API
+#include <RasterCore/DgnRaster.h>
+#include <RasterCore/RasterDEMFilters.h>
+#include <RasterCore/msrastercore.h>
+#endif
 
 
 #define PointCloudMinorId_Handler 1

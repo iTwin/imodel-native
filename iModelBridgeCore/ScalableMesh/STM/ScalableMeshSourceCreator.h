@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 11:02:24 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -45,6 +45,7 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
         bvector<DPoint3d>                   m_filterPolygon;
         ScalableMeshCreationMethod          m_sourceCreationMethod = SCM_CREATION_METHOD_ONE_SPLIT;
         ScalableMeshCreationCompleteness    m_sourceCreationCompleteness = SCM_CREATION_COMPLETENESS_FULL;
+        uint32_t                            m_splitThreshold = SM_ONE_SPLIT_THRESHOLD;
 
         Time                                m_lastSourcesModificationTime;
         Time                                m_lastSourcesModificationCheckTime;
@@ -85,12 +86,9 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
 
 
         StatusInt                           ApplyEditsFromSources(HFCPtr<MeshIndexType>& pIndex);
-
-        StatusInt                           GetRasterSources(bvector<IDTMSource*>& filteredSources);
-
+        
         StatusInt                           GetLocalSourceTextureProvider(ITextureProviderPtr& textureProviderPtr, bvector<IDTMSource*>& filteredSources);
         
-        StatusInt                           GetTextureProvider(ITextureProviderPtr& textureProviderPtr);
 
         StatusInt                           ImportRasterSourcesTo(HFCPtr<MeshIndexType>& pIndex);
 
@@ -116,6 +114,12 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
 
     protected:
 
+        StatusInt                           GetRasterSources(bvector<IDTMSource*>& filteredSources);
+
+        StatusInt                           GetTextureProvider(ITextureProviderPtr& textureProviderPtr);
+
+        StatusInt                           GetTextureProvider(ITextureProviderPtr& textureProviderPtr, IScalableMeshPtr& smPtr, HFCPtr<MeshIndexType>& dataIndexPtr);
+
         virtual void ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher3d) override;
 
     public:
@@ -127,6 +131,8 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
         StatusInt                           LoadSources(SMSQLiteFilePtr& smSQLiteFile);
 
         virtual StatusInt                   CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate) override;
+
+        virtual void                        SetSplitThreshold(uint32_t splitThreshold);        
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

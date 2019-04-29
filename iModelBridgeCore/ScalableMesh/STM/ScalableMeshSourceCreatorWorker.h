@@ -19,8 +19,14 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+struct NodeTask;
+typedef RefCountedPtr<NodeTask> NodeTaskPtr;
+
 struct GenerationTask;
 typedef RefCountedPtr<GenerationTask> GenerationTaskPtr;
+
+struct TextureTask;
+typedef RefCountedPtr<TextureTask> TextureTaskPtr;
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -28,12 +34,18 @@ typedef RefCountedPtr<GenerationTask> GenerationTaskPtr;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreator::Impl
     {
+
+    friend struct IScalableMeshSourceCreatorWorker;
+
     private:
+
+        
 
         ScalableMeshDb* m_smDb;
         ScalableMeshDb* m_smSisterDb;
         SMSQLiteFilePtr m_mainFilePtr;
         SMSQLiteFilePtr m_sisterFilePtr;
+        FILE*           m_scalableMeshFileLock; 
 
 
         uint32_t m_nbWorkers;            
@@ -43,16 +55,27 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
 
         HFCPtr<MeshIndexType> GetDataIndex();
 
-        
-        void GetGenerationTasks(bvector<GenerationTaskPtr>& toExecuteTasks);
+        void FreeDataIndex();        
+
+        void GetScalableMeshFileLock(bool readOnly);
+
+        void ReleaseScalableMeshFileLock();
+                
+        void GetGenerationTasks(bvector<NodeTaskPtr>& toExecuteTasks, uint32_t maxGroupSize);
+
+        void GetTextureTasks(bvector<NodeTaskPtr>& toExecuteTasks, uint32_t maxGroupSize);
         
         void GetTaskPlanFileName(BeFileName& taskPlanFileName) const;
+
+        void CreateTaskPlanForTaskGrouping(uint32_t maxPriority, const WString& jobName, const BeFileName& smFileName);
 
         void GetSisterMainLockFileName(BeFileName& lockFileName) const;
 
         StatusInt CreateFilterTasks(uint32_t resolutionInd);
 
         StatusInt CreateStitchTasks(uint32_t resolutionInd);
+
+        StatusInt CopyNextPriorityTasks(uint32_t priority);
 
         uint32_t GetNbNodesPerTask(size_t nbNodes) const;
 
@@ -74,12 +97,14 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         virtual                             ~Impl();
 
         
-        StatusInt                    CreateGenerationTasks();
+        StatusInt                    CreateGenerationTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName);
+
+        StatusInt                    CreateTextureTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName, int basePriority = 0);
         
         StatusInt                    CreateMeshTasks();        
 
         StatusInt                    CreateTaskPlan();
-
+        
         StatusInt                    ExecuteNextTaskInTaskPlan();
 
         StatusInt                    ProcessMeshTask(BeXmlNodeP pXmlTaskNode);         
@@ -88,7 +113,9 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
 
         StatusInt                    ProcessFilterTask(BeXmlNodeP pXmlTaskNode);       
 
-        StatusInt                    ProcessGenerateTask(BeXmlNodeP pXmlTaskNode);         
+        StatusInt                    ProcessGenerateTask(BeXmlNodeP pXmlTaskNode);  
+
+        StatusInt                    ProcessTextureTask(BeXmlNodeP pXmlTaskNode);
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

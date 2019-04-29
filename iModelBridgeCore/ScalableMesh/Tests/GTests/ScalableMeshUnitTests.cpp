@@ -2391,16 +2391,16 @@ TEST_P(ScalableMeshTestWithParams, GetMeshUnderClip)
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
-    if (myScalableMesh->IsCesium3DTiles())
-        {
-        bool status;
-        SetReprojection(myScalableMesh, status);
-        if (status == false)
-            {
-            // Skip this dataset, it is not ECEF
-            return;
-            }
-        }
+    //if (myScalableMesh->IsCesium3DTiles())
+    //    {
+    //    bool status;
+    //    SetReprojection(myScalableMesh, status);
+    //    if (status == false)
+    //        {
+    //        // Skip this dataset, it is not ECEF
+    //        return;
+    //        }
+    //    }
 
     // Create clip from scalable mesh extent
     DRange3d range;

@@ -18,6 +18,28 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 BEGIN_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE    
 
+
+struct TaskProcessingStat
+    {
+    double m_durationInSeconds;
+    WorkerTaskType m_taskType;
+    };
+
+struct JobProcessingStat
+    {
+
+    JobProcessingStat()
+        {        
+        time(&m_startTime);
+        time(&m_stopTime);
+        }
+
+    time_t m_startTime;
+    time_t m_stopTime;
+
+    bvector<TaskProcessingStat> m_processedTasks;
+    };
+
 struct TaskScheduler
     {
 
@@ -25,16 +47,26 @@ struct TaskScheduler
     
         BeFileName m_taskFolderName;
         uint32_t   m_nbWorkers;
-        bool       m_useGroupingStrategy;
+        bool       m_useGroupingStrategy;        
+        uint32_t   m_groupingSize; 
+        bool       m_startAsService;
+        BeFileName m_resultFolderName;
 
+        bmap<WString, JobProcessingStat> m_jobProcessingStat;         
         IScalableMeshSourceCreatorWorkerPtr m_sourceCreatorWorkerPtr;
+        
+        JobProcessingStat& GetJobStat(const WString& jobName);
 
-        void GetScalableMeshFileName(BeFileName& smFileName) const;
+        void OutputJobStat();
 
-        IScalableMeshSourceCreatorWorkerPtr GetSourceCreatorWorker();
+        void GetScalableMeshFileName(BeFileName& smFileNameAbsolutePath, const BeFileName& smFileName) const;
+
+        IScalableMeshSourceCreatorWorkerPtr GetSourceCreatorWorker(const BeFileName& smFileName);
 
         bool ParseWorkerTaskType(BeXmlNodeP pXmlTaskNode, WorkerTaskType& t);
 
+        StatusInt ExecuteTaskPlanNextTask(const BeFileName& taskPlanFileName);
+                
         bool ProcessTask(FILE* file);
 
         void PerformCutTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
@@ -48,11 +80,15 @@ struct TaskScheduler
         void PerformStitchTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
 
         void PerformGenerateTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
+
+        void PerformTextureTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
+
+        void PerformCreateTextureTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
         
     
     public:
     
-        TaskScheduler(BeFileName& taskFolderName, uint32_t nbWorkers, bool useGroupingStrategy);
+        TaskScheduler(BeFileName& taskFolderName, uint32_t nbWorkers, bool useGroupingStrategy, uint32_t groupingSize, bool startAsService, const BeFileName& resultFolderName);
 
         virtual ~TaskScheduler();
 

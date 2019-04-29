@@ -6,7 +6,7 @@
 //:>       $Date: 2011/04/27 17:17:56 $
 //:>     $Author: Alain.Robert $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -60,13 +60,13 @@ template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXT
         //PrintGraph(LOG_PATH_STR, std::to_string(node->GetBlockID().m_integerID).c_str(), node->GetGraphPtr());
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> linearFeaturesPtr = node->GetLinearFeaturesPtr();        
 
-        bvector<bvector<int32_t>> featureDefs;
+ /*       bvector<bvector<int32_t>> featureDefs;
 
         if (linearFeaturesPtr->size() > 0) node->GetFeatureDefinitions(featureDefs, &*linearFeaturesPtr->begin(), linearFeaturesPtr->size());
         for (size_t i = 0; i < featureDefs.size(); ++i)
             {
             TagFeatureEdges(newGraph, (const DTMFeatureType)featureDefs[i][0], featureDefs[i].size() - 1, &featureDefs[i][1]);
-            }
+            }*/
         graphPtr->SetData(newGraph);
         graphPtr->SetDirty();
         }
@@ -1270,9 +1270,9 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
 ISMMTGGraphDataStorePtr graphStore(node->GetGraphStore());
     RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(
 #ifndef VANCOUVER_API
-        new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, graphStore, SMStoreDataType::Graph, (uint64_t)node->m_SMIndex)
+        new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, graphStore, SMStoreDataType::Graph, (uint64_t)node->m_SMIndex, false)
 #else
- SMStoredMemoryPoolGenericBlobItem<MTGGraph>::CreateItem(node->GetBlockID().m_integerID, graphStore, SMStoreDataType::Graph, (uint64_t)node->m_SMIndex)
+        SMStoredMemoryPoolGenericBlobItem<MTGGraph>::CreateItem(node->GetBlockID().m_integerID, graphStore, SMStoreDataType::Graph, (uint64_t)node->m_SMIndex, false)
 #endif
         );
     SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());

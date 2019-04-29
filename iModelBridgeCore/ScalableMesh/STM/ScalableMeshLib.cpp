@@ -43,6 +43,8 @@ USING_NAMESPACE_IMAGEPP
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+static wchar_t const* s_configFileName = L"ScalableMeshLogging.config.xml";
+
 #define BING_AUTHENTICATION_KEY "AnLjDxNA_guaYuWWJifrpWnqvlxWPl8lLHzT1ixQH3vXLwb3CTEolWX34nbn4HfS"
 
 struct SMImagePPHost : public ImageppLib::Host
@@ -75,9 +77,45 @@ STMAdmin& ScalableMeshLib::Host::_SupplySTMAdmin()
 #endif
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Mathieu.St-Pierre  05/2015
+* @bsimethod                                                    Richard.Bois  02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+void InitializeScalableMeshLogging()
+    {
+    // Priority: 1- App  2- Env. Variable  3- default SM logging config file  4- Console
+    if(NativeLogging::LoggingConfig::IsProviderActive())
+        return; // Provider already setup by app
+
+#if _WIN32
+    // Setup logging system
+    BeFileName appDir;
+    WChar smDllFile[MAX_PATH];
+    ::GetModuleFileNameW(NULL, smDllFile, _countof(smDllFile));
+    BeFileName dllDir(BeFileName::DevAndDir, smDllFile);
+    appDir.AssignOrClear(dllDir);
+    BeFileName loggingConfigFile(_wgetenv(L"SCALABLEMESH_LOGGING_CONFIG_FILE"));
+    if(!BeFileName::DoesPathExist(loggingConfigFile))
+        {
+        loggingConfigFile.AssignOrClear(appDir);
+        loggingConfigFile.AppendToPath(s_configFileName);
+        }
+
+    if(BeFileName::DoesPathExist(loggingConfigFile))
+        {
+        NativeLogging::LoggingConfig::SetMaxMessageSize(10000);
+        NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, loggingConfigFile.c_str());
+        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
+        }
+    else
+        {
+#endif
+        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
+#if _WIN32
+        }
+#endif
+    }
+
 #ifndef LINUX_SCALABLEMESH_BUILD
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -173,7 +211,7 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     Utf8String pemFileName;
 
-#ifdef VANCOUVER_API //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error.
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)  //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error.
     GetCertificateAutoritiesFileUrl(pemFileName);
     curl_easy_setopt(curl, CURLOPT_CAINFO, pemFileName.c_str());
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
@@ -480,7 +518,7 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
         if (!pemFileName.empty())
             {
 #ifdef VANCOUVER_API
-			pCertAutorityAuth->SetCertificateAuthFileUrl(WString(pemFileName.c_str(), true));
+            pCertAutorityAuth->SetCertificateAuthFileUrl(WString(pemFileName.c_str(), true));
 #else	
             //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error. 
             //pCertAutorityAuth->SetCertificateAuthFileUrl(pemFileName);
@@ -637,6 +675,8 @@ void ScalableMeshLib::Host::RegisterScalableMesh(const WString& path, IScalableM
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     {
+    InitializeScalableMeshLogging();
+
     if (!ImageppLib::IsInitialized())
         {
         t_ippLibHost = new SMImagePPHost();
@@ -645,6 +685,35 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     //BeAssert(NULL == t_scalableTerrainModelHost);  // It is ok to be called twice on the same thread
     if (NULL != t_scalableTerrainModelHost)
         return;
+
+
+    //register types
+
+    const WChar TIN_AS_LINEAR_HEADER_TYPE_NAME[] = L"TINAsLinearHeader";
+    static BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterTINAsLinearHeaderType(TIN_AS_LINEAR_HEADER_TYPE_NAME, sizeof(ISMStore::FeatureHeader));
+
+    const WChar TIN_AS_LINEAR_POINT_TYPE_NAME[] = L"TINAsLinearPoint";
+    static BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterTINAsLinearPointType(TIN_AS_LINEAR_POINT_TYPE_NAME, sizeof(DPoint3d));
+
+    const WChar MESH_AS_LINEAR_HEADER_TYPE_NAME[] = L"MeshAsLinearHeader";
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMesAsLinearPointType(MESH_AS_LINEAR_HEADER_TYPE_NAME, sizeof(ISMStore::FeatureHeader));
+
+    const WChar MESH_AS_LINEAR_POINT_TYPE_NAME[] = L"MeshAsLinearPoint";
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshAsLinearPointIdxType(MESH_AS_LINEAR_POINT_TYPE_NAME, sizeof(DPoint3d));
+    const WChar MESH_PTS_NAME[] = L"MeshPoints";
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshHeaderType(MESH_PTS_NAME, sizeof(DPoint3d));
+
+    const WChar MESH_INDEX_NAME[] = L"MeshIndex";
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshPointType(MESH_INDEX_NAME, sizeof(int32_t));
+
+    const WChar MESH_METADATA_NAME[] = L"MeshMetadata";
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshMetadataType(MESH_METADATA_NAME, sizeof(uint8_t));
+
+    const WChar MESH_TEX_NAME[] = L"MeshTex";
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshTexType(MESH_TEX_NAME, sizeof(uint8_t));
+
+    const WChar MESH_UV_NAME[] = L"MeshUv";
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshUvType(MESH_UV_NAME, sizeof(DPoint2d));
 
     // Register point converters:
     static RegisterIDTMPointConverter<DPoint3d, DPoint3d>                        s_ptTypeConv0;
@@ -678,6 +747,7 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     static RegisterTINAsIDTMLinearToIDTMLinearConverter                              s_tinToLinTypeConv0;
 
     static RegisterMeshConverter<DPoint3d, DPoint3d>                        s_ptMeshConv0;
+
 
 
     // Register Moniker

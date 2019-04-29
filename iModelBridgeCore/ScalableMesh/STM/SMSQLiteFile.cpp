@@ -507,6 +507,9 @@ DbResult SMSQLiteFile::CreateTables()
     DbResult result;
     result = m_database->CreateNewDb(filename);
 
+    if (result == BE_SQLITE_ERROR_FileExists)
+        return false;
+
     if (result == BE_SQLITE_ERROR_AlreadyOpen) 
         return true;
 
@@ -608,6 +611,7 @@ bool SMSQLiteFile::SetNodeHeader(const SQLiteNodeHeader& newNodeHeader)
 
 
     stmt->BindInt(15, newNodeHeader.m_isTextured ? 1 : 0); 
+    
     stmt->BindInt(16, (int)newNodeHeader.m_nodeCount);
     stmt->BindDouble(17, (double)newNodeHeader.m_geometricResolution);
     stmt->BindDouble(18, (double)newNodeHeader.m_textureResolution);
@@ -646,13 +650,20 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     {
     std::lock_guard<std::mutex> lock(dbLock);
     CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT ParentNodeId, Resolution, Filtered, Extent,"
+    
+    DbResult status = m_database->GetCachedStatement(stmt, "SELECT ParentNodeId, Resolution, Filtered, Extent,"
                                   "ContentExtent, TotalCount, ArePoints3d, NbFaceIndexes, "
                                   "NumberOfMeshComponents, AllComponent,SubNode, Neighbor, TexID, IsTextured, NodeCount, GeometryResolution, TextureResolution, length(SubNode), length(Neighbor) FROM SMNodeHeader WHERE NodeId=?");
+
+    if (status != BE_SQLITE_OK) 
+        {
+        assert(!"Cannot create cached SQL statement");
+        return false;
+        }
+
     stmt->BindInt64(1, nodeHeader.m_nodeID);
 
-
-    DbResult status = stmt->Step();
+    status = stmt->Step();
     assert(status == BE_SQLITE_DONE || status == BE_SQLITE_ROW);
     if (status == BE_SQLITE_DONE) 
         {

@@ -3,10 +3,94 @@
 #include "SMCesiumPublisher.h"
 #include "SMPublisher.h"
 #include "..\ScalableMeshProgress.h"
+#include "..\ScalableMeshQuery.h"
+#include <ScalableMesh/IScalableMeshPolicy.h>
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 	
 #pragma optimize("", off)
+
+inline const GCS& GetDefaultGCS()
+    {
+    static const GCS DEFAULT_GCS(GetGCSFactory().Create(GeoCoords::Unit::GetMeter()));
+    return DEFAULT_GCS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SaveAsNodeCreator::SaveAsNodeCreator(const WChar* scmFileName)
+    : IScalableMeshNodeCreator::Impl(scmFileName)
+    {
+    LoadFromFile();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SaveAsNodeCreator::~SaveAsNodeCreator()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt SaveAsNodeCreator::SetGCS(const GeoCoords::GCS& gcs)
+    {
+    if(0 != m_scmPtr.get())
+        return m_scmPtr->SetGCS(gcs);
+
+    // Do not permit setting null GCS. Use default when it happens.
+    m_gcs = (gcs.IsNull()) ? GetDefaultGCS() : gcs;
+    m_gcsDirty = true;
+
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois   01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+IScalableMeshNodeEditPtr SaveAsNodeCreator::FindParentNodeFor(IScalableMeshNodePtr sourceNode, StatusInt& status)
+    {
+    status = SUCCESS;
+    SMStatus smStatus = S_SUCCESS;
+    IScalableMeshNodePtr currentNode = sourceNode->GetParentNode();
+    auto foundNode = m_pDataIndex->FindLoadedNode(currentNode->GetNodeId());
+    struct ChildInfo {
+        int64_t id;
+        DRange3d extent;
+        };
+    bvector<ChildInfo> childToInsert;
+    while(!foundNode)
+        {
+        childToInsert.push_back({ currentNode->GetNodeId(), currentNode->GetNodeExtent() });
+        currentNode = currentNode->GetParentNode();
+        if(currentNode == nullptr) 
+            break; // we have reached root node
+        foundNode = m_pDataIndex->FindLoadedNode(currentNode->GetNodeId());
+        }
+
+    if(!foundNode)
+        {
+        BeAssert(false); // Parent node could not be found! This shouldn't happen, dangling nodes are not possible...
+        status = ERROR;
+        return nullptr;
+        }
+
+    // Dig down from found parent node and create (empty) intermediary nodes between this node and 
+    // the node we want to add. This is to ensure we keep original index structure in the new index.
+    IScalableMeshNodeEditPtr parentNode = new ScalableMeshNodeEdit<PointType>(foundNode);
+    for(bvector<ChildInfo>::reverse_iterator childInfoPtr = childToInsert.rbegin(); childInfoPtr != childToInsert.rend(); ++childInfoPtr)
+        {
+        parentNode = AddChildNode(parentNode, childInfoPtr->extent, smStatus, false, childInfoPtr->id);
+        if(smStatus != S_SUCCESS)
+            {
+            status = ERROR;
+            break;
+            }
+        }
+    return parentNode;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois   11/17
@@ -100,12 +184,14 @@ SM3SMPublisher::SMPublishThreadPoolPtr SM3SMPublisher::GetPublishThreadPool()
             BeAssert(info.m_publisher != nullptr && info.m_destParentFuture != nullptr && info.m_destNodePromise != nullptr);
             try
                 {
+                auto meshData = info.m_publisher->ExtractMeshData(info.m_source, info.m_transform);
+
                 // Wait for the parent node to be ready
                 auto parentDestNode = info.m_destParentFuture->second.get();
 
                 // Create new destination node
                 IScalableMeshNodeEditPtr newDestNode = nullptr;
-                auto ret = info.m_publisher->ProcessNode(info.m_source, parentDestNode, newDestNode, info.m_transform);
+                auto ret = info.m_publisher->ProcessNode(info.m_source, parentDestNode, newDestNode, meshData, info.m_transform);
                 BeAssert(SUCCESS == ret);
 
                 // Fulfill the promise with the newly created node
@@ -145,7 +231,7 @@ StatusInt SM3SMPublisher::_Publish(IScalableMeshPublishParamsPtr params)
     auto progress = m_params->GetProgress();
     if (progress != nullptr)
         {
-        progress->ProgressStep() = ScalableMesh::ScalableMeshStep::STEP_SAVEAS_3SM;
+        progress->ProgressStep() = ScalableMeshStep::STEP_SAVEAS_3SM;
         progress->ProgressStepIndex() = 1;
         progress->Progress() = 0.0f;
         }
@@ -159,24 +245,88 @@ StatusInt SM3SMPublisher::_Publish(IScalableMeshPublishParamsPtr params)
     
     auto transform = m_params->GetTransform();
 
+    struct NodeInfo
+        {
+        IScalableMeshNodePtr currentNode;
+        SMNodeEditPromisePtr currentDestNodePromise;
+        };
+
     SMNodeEditPromisePtr rootPromise = AddWorkItem(source->GetRootNode(), nullPromise, transform);
 
-    if (SUCCESS != PublishRecursive(source->GetRootNode(), rootPromise, transform))
-        return ERROR;
+    std::queue<NodeInfo> nodesToProcess;
+    nodesToProcess.push(NodeInfo{ source->GetRootNode(), rootPromise });
+    while(!nodesToProcess.empty())
+        {
+        if(progress != nullptr && progress->IsCanceled()) return SUCCESS;
+
+        NodeInfo sourceInfo = nodesToProcess.front();
+        IScalableMeshNodePtr sourceNode = sourceInfo.currentNode;
+
+        bmap<uint64_t, SMNodeEditPromisePtr> meshNodePromises;
+        uint64_t childID = 0;
+
+        // Traverse using breadth first to prevent threads from being blocked as much as when traversing depth first (because we are using a FIFO queue)
+        for(auto childNode : sourceNode->GetChildrenNodes())
+            {
+            meshNodePromises[childID++] = AddWorkItem(childNode, sourceInfo.currentDestNodePromise, transform);
+            }
+
+        childID = 0;
+        for(auto childNode : sourceNode->GetChildrenNodes())
+            {
+            nodesToProcess.push(NodeInfo{ childNode, meshNodePromises[childID++] });
+
+            //if(SUCCESS != PublishRecursive(childNode, meshNodePromises[childID++], transform))
+            //    return ERROR;
+            }
+
+        if(progress != nullptr)
+            {
+            // Report progress
+            static_cast<ScalableMeshProgress*>(progress.get())->SetCurrentIteration(m_numPublishedNodes);
+            progress->UpdateListeners();
+            }
+        nodesToProcess.pop();
+        }
+
+    //if (SUCCESS != PublishRecursive(source->GetRootNode(), rootPromise, transform))
+    //    return ERROR;
 
     if (progress != nullptr)
         {
         m_publishThreadPool->WaitUntilFinished([this, &progress]()
             {
             // Report progress
-            static_cast<ScalableMesh::ScalableMeshProgress*>(progress.get())->SetCurrentIteration(m_numPublishedNodes);
+            static_cast<ScalableMeshProgress*>(progress.get())->SetCurrentIteration(m_numPublishedNodes);
             progress->UpdateListeners();
             return progress->GetProgress() >= 1.f;
             });
         }
     else
         {
+        // Help loading data in memory
         m_publishThreadPool->WaitUntilFinished();
+        //bool finishedLoadingData = false;
+        //m_publishThreadPool->WaitUntilFinished([this, &finishedLoadingData] ()
+        //    {
+        //    if (!finishedLoadingData) 
+        //        {
+        //        std::unique_lock<std::mutex> lock(*m_publishThreadPool.GetPtr());
+        //        auto item = m_publishThreadPool->begin(), next = item;
+        //        for(; item != m_publishThreadPool->end(); item = next++)
+        //            {
+        //            auto distance = std::distance(item, m_publishThreadPool->end());
+        //            distance;
+        //            lock.unlock();
+        //            ExtractMeshData(item->m_source, item->m_transform);
+        //            if (item->m_source != nullptr) item->m_source->GetTextureCompressed();
+        //            lock.lock();
+        //            if(next->m_source == nullptr) next = m_publishThreadPool->begin();
+        //            }
+        //        }
+        //    finishedLoadingData = true;
+        //    return true;
+        //    });
         }
 
     if (progress != nullptr)
@@ -253,14 +403,15 @@ StatusInt SM3SMPublisher::SetNodeMeshData(IScalableMeshNodePtr sourceNode, IScal
                 {
                 contentExtent = DRange3d::From(points);
                 }
-            auto texture = sourceNode->GetTexture();
+            auto texture = sourceNode->GetTextureCompressed();
+            sourceNode->ClearCachedData();
             if (texture.IsValid() && texture->GetSize() > 0)
                 {
                 int64_t newTextureID = -1;
                 if (m_params->SaveTextures())
                     {
                     auto dimension = texture->GetDimension();
-                    newTextureID = m_params->GetDestination()->AddTexture(dimension.x, dimension.y, (int)texture->GetNOfChannels(), texture->GetData());
+                    newTextureID = m_params->GetDestination()->AddTextureCompressed(dimension.x, dimension.y, (int)texture->GetNOfChannels(), texture->GetData(), texture->GetSize());
                     }
                 if (SUCCESS != destNode->AddTexturedMesh(points, indices, uv, uvIndices, 1, newTextureID))
                     return ERROR;
@@ -276,37 +427,54 @@ StatusInt SM3SMPublisher::SetNodeMeshData(IScalableMeshNodePtr sourceNode, IScal
     if (SUCCESS != destNode->SetContentExtent(contentExtent))
         return ERROR;
 
+    destNode->ClearCachedData();
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois   12/18
++---------------+---------------+---------------+---------------+---------------+------*/
+IScalableMeshMeshPtr SM3SMPublisher::ExtractMeshData(IScalableMeshNodePtr sourceNode, const Transform& transform)
+    {
+    if(sourceNode == nullptr || sourceNode->GetPointCount() == 0)
+        return nullptr;
+
+    auto meshFlags = IScalableMeshMeshFlags::Create(true /*loadTexture*/, false /*loadGraph*/);
+    //meshFlags->SetSaveToCache(true);
+
+    IScalableMeshMeshPtr meshData = sourceNode->GetMeshUnderClip2(meshFlags, m_params->GetClips(), -1, false);
+
+    if(!transform.IsIdentity()) meshData->SetTransform(transform);
+
+    sourceNode->ClearCachedData();
+
+    return meshData;
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SM3SMPublisher::ProcessNode(IScalableMeshNodePtr sourceNode, IScalableMeshNodeEditPtr parentDestNode, IScalableMeshNodeEditPtr& destNode, const Transform& transform)
+StatusInt SM3SMPublisher::ProcessNode(IScalableMeshNodePtr sourceNode, IScalableMeshNodeEditPtr parentDestNode, IScalableMeshNodeEditPtr& destNode, IScalableMeshMeshPtr meshData, const Transform& transform)
     {
     // Update progress info to indicate a node has been processed from the queue
     ++m_numPublishedNodes;
 
     if (sourceNode != nullptr && (sourceNode->GetPointCount() > 0))
         {
-        auto meshFlags = IScalableMeshMeshFlags::Create(true /*loadTexture*/, false /*loadGraph*/);
-
-        IScalableMeshMeshPtr mesh = sourceNode->GetMeshUnderClip2(meshFlags, m_params->GetClips(), -1, false);
-        if (mesh.IsValid() && mesh != nullptr && mesh->GetPolyfaceQuery()->GetPointCount() > 0)
+        if (meshData.IsValid() && meshData != nullptr && meshData->GetPolyfaceQuery()->GetPointCount() > 0)
             {
             if (sourceNode->GetLevel() != 0 && parentDestNode == nullptr)
                 {
-                // NEEDS_WORK_SM : The parent node is clipped out but not this child node. Skip orphan nodes for now.
-                return ERROR;
+                // The parent node is clipped out but not this child node. Find suitable parent node from existing destination nodes.
+                StatusInt status = SUCCESS;
+                parentDestNode = m_params->GetDestination()->FindParentNodeFor(sourceNode, status);
+                if (parentDestNode == nullptr && status != SUCCESS)
+                    return ERROR; // Couldn't find a parent node
                 }
 
             if (SUCCESS != CreateAndAddNewNode(sourceNode, parentDestNode, destNode))
                 return ERROR;
 
-            if (!transform.IsIdentity())
-                mesh->SetTransform(transform);
-
-            if (SUCCESS != SetNodeMeshData(sourceNode, mesh, destNode, transform))
+            if (SUCCESS != SetNodeMeshData(sourceNode, meshData, destNode, transform))
                 return ERROR;
             }
         }
@@ -359,7 +527,7 @@ StatusInt SM3SMPublisher::PublishRecursive(IScalableMeshNodePtr sourceNode, SMNo
     if (progress != nullptr)
         {
         // Report progress
-        static_cast<ScalableMesh::ScalableMeshProgress*>(progress.get())->SetCurrentIteration(m_numPublishedNodes);
+        static_cast<ScalableMeshProgress*>(progress.get())->SetCurrentIteration(m_numPublishedNodes);
         progress->UpdateListeners();
         }
 
@@ -374,9 +542,10 @@ StatusInt SM3SMPublisher::CreateAndAddNewNode(IScalableMeshNodePtr sourceNode, I
     StatusInt status = SUCCESS;
     SMStatus smStatus = S_SUCCESS;
     auto extent = sourceNode->GetNodeExtent();
+    auto nodeId = sourceNode->GetNodeId();
     {
     std::lock_guard<std::mutex> lock(m_newNodeMtx);
-    newDestNode = m_params->GetDestination()->AddNode(parentDestNode, extent, smStatus);
+    newDestNode = m_params->GetDestination()->AddChildNode(parentDestNode, extent, smStatus, false, nodeId);
     }
     if (SUCCESS != status || newDestNode == nullptr || smStatus == S_ERROR)
         return ERROR;
@@ -410,9 +579,16 @@ SM3SMPublisher::SMNodeEditPromisePtr SM3SMPublisher::AddWorkItem(IScalableMeshNo
 
 bool SM3SMPublisher::IsNodeClippedOut(IScalableMeshNodePtr sourceNode)
     {
-		return false;
+    //auto range = sourceNode->GetContentExtent();
+    //DPoint3d center = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
+    //double radius = -range.DiagonalDistance() * 0.5;
+    //for(auto clip : *m_params->GetClips())
+    //    {
+    //    if(clip->IsMask() && clip->SphereInside(center, radius))
+    //        return true;
+    //    }
+    return false;
 #if 0 
-    auto sourceRange = sourceNode->GetNodeExtent();
     if (sourceRange.IsNull() || sourceRange.IsEmpty()) return true;
     for (auto const& clipRangeInfo : m_clipRanges)
         {

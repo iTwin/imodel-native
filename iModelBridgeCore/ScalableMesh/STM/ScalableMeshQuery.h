@@ -1688,17 +1688,17 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             bool GetOrLoadAllTextureData(IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr);
  
                 
-            static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
+            static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>> nodePtr)
                 {
                 return new ScalableMeshCachedDisplayNode<POINT>(nodePtr);
                 }
 
-            static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, Transform reprojectionTransform)
+            static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>> nodePtr, Transform reprojectionTransform)
                 {
                 return new ScalableMeshCachedDisplayNode<POINT>(nodePtr, reprojectionTransform);
                 }
 
-            static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, const IScalableMesh* scalableMeshP)
+            static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>> nodePtr, const IScalableMesh* scalableMeshP)
             {
                 return new ScalableMeshCachedDisplayNode<POINT>(nodePtr, scalableMeshP);
             }

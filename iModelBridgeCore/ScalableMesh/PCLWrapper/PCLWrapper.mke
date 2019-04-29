@@ -2,7 +2,7 @@
 #
 #     $Source: PCLWrapper/PCLWrapper.mke $
 #
-#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 # Lots of problems in a third-party library that we aren't going to fix. 
@@ -30,7 +30,7 @@ always:
 #   Symlink APIs
 #----------------------------------------------------------------------
 always:
-   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/PCLWrapper=$(publicApiDir)"
+   ~linkdir "$(BuildContext)PublicAPI/PCLWrapper=$(publicApiDir)"
 
 #----------------------------------------------------------------------
 #     Compile precompiled header

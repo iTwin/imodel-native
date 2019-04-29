@@ -322,6 +322,11 @@ bool IScalableMesh::IsShareable() const
     return _IsShareable();
     }
 
+bool IScalableMesh::LoadSources(IDTMSourceCollection& sources) const
+    {
+    return _LoadSources(sources);
+    }
+
 bool IScalableMesh::InSynchWithSources() const
     {
     return _InSynchWithSources();
@@ -523,9 +528,9 @@ BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageDat
     return _CreateCoverage(coverageData, id, coverageName);
     }
 
-SMStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr destinationGcs, bool limitResolution, bool reprojectElevation)
+SMStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr destinationGcs, bool limitResolution, bool reprojectElevation, const BeFileName& dataSourceDir)
     {
-    return _DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer, destinationGcs, limitResolution, reprojectElevation);
+    return _DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer, destinationGcs, limitResolution, reprojectElevation, dataSourceDir);
     }
 
 void IScalableMesh::GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData)
@@ -1232,6 +1237,11 @@ static bool s_checkHybridNodeState = false;
 template <class POINT> int ScalableMesh<POINT>::Open()
     {
 
+#if TRACE_ON
+    CachedDataEventTracer::GetInstance()->setLogDirectory("e:\\Elenie\\traceLogs\\");
+    CachedDataEventTracer::GetInstance()->start();
+#endif
+
     try 
         {
         bool isSingleFile = m_smSQLitePtr != nullptr ? m_smSQLitePtr->IsSingleFile() : false;
@@ -1249,7 +1259,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             if (!m_streamingSettings->IsValid())
                 return ERROR;
             if (m_streamingSettings->IsDataFromRDS())
-                m_smRDSProvider = IScalableMeshRDSProvider::Create(m_streamingSettings->GetUtf8ProjectID(), m_streamingSettings->GetUtf8GUID());
+                m_smRDSProvider = IScalableMeshRDSProvider::Create("https://" + m_streamingSettings->GetUtf8ServerID() + ".bentley.com/", m_streamingSettings->GetUtf8ProjectID(), m_streamingSettings->GetUtf8GUID());
             m_isCesium3DTiles = m_streamingSettings->IsCesium3DTiles();
             m_isFromStubFile = m_streamingSettings->IsStubFile();
 
@@ -1334,14 +1344,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                 return BSISUCCESS; // No sources were added to the STM
 
             IDTMSourceCollection sources;
-            DocumentEnv sourceEnv(L"");
-
-            SourcesDataSQLite sourcesData;
-            m_smSQLitePtr->LoadSources(sourcesData);
-
-            bool success = BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, sourcesData, sourceEnv);
-            assert(success == true);
-
+            this->LoadSources(sources);
 
             auto sourceIter(sources.Begin());
             auto sourceIterEnd(sources.End());
@@ -1400,6 +1403,10 @@ template <class POINT> int ScalableMesh<POINT>::Close
 (
 )
     {
+
+#ifdef TRACE_ON
+    CachedDataEventTracer::GetInstance()->analyze(-1);
+#endif
     WString path = m_path;
     if (this->IsCesium3DTiles() && !this->IsStubFile())
         {
@@ -1582,16 +1589,16 @@ BcDTMP ScalableMeshDTM::_GetBcDTM()
 
         bool hasFeatureSource = false;
 
-        StatusInt status;
-        auto creator = IScalableMeshSourceCreator::GetFor(m_scMesh, status);
-        for (IDTMSourceCollection::const_iterator it = creator->GetSources().Begin(); it != creator->GetSources().End(); it++)
+        IDTMSourceCollection sources;
+        m_scMesh->LoadSources(sources);
+        for (IDTMSourceCollection::const_iterator it = sources.Begin(); it != sources.End(); it++)
         {
-            BeFileName path = BeFileName(it->GetPath());
-            if (0 == path.GetExtension().CompareToI(L"dtm") ||
-                0 == path.GetExtension().CompareToI(L"tin") ||
-                0 == path.GetExtension().CompareToI(L"dgn") ||
-                0 == path.GetExtension().CompareToI(L"bcdtm") ||
-                0 == path.GetExtension().CompareToI(L"dat"))
+            BeFileName path = BeFileName(it->GetPath().c_str());
+            if (0 == BeFileName::GetExtension(path).CompareToI(L"dtm") ||
+                0 == BeFileName::GetExtension(path).CompareToI(L"tin") ||
+                0 == BeFileName::GetExtension(path).CompareToI(L"dgn") ||
+                0 == BeFileName::GetExtension(path).CompareToI(L"bcdtm") ||
+                0 == BeFileName::GetExtension(path).CompareToI(L"dat"))
             {
                 hasFeatureSource = true;
             }
@@ -2022,9 +2029,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableM
         m_smSQLitePtr->LoadSources(sourcesData);
         
         IDTMSourceCollection sources;
-        DocumentEnv sourceEnv(L"");
-        bool success = BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, sourcesData, sourceEnv);
-        assert(success == true);
+        this->LoadSources(sources);
                 
         for (IDTMSourceCollection::const_iterator sourceIt = sources.Begin(), sourcesEnd = sources.End(); sourceIt != sourcesEnd; ++sourceIt)
             {
@@ -2803,9 +2808,24 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
 template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
     {
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
-    bvector<DPoint3d> clipData;
-    m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipData);
-    DRange3d extent = DRange3d::From(&clipData[0], (int)clipData.size());
+    bvector<DPoint3d> clipPolyData;
+    m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipPolyData);
+
+    DRange3d extent = DRange3d::From(&clipPolyData[0], (int)clipPolyData.size());
+
+    ClipVectorPtr clipVectorData;
+    SMClipGeometryType geom;
+    SMNonDestructiveClipType type;
+    bool isActive;
+    m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(clipID, clipVectorData, geom, type, isActive);
+
+    if(clipVectorData.IsValid() && !clipVectorData->empty())
+        {
+        DRange3d clipVectorRange;
+        clipVectorData->GetRange(clipVectorRange, nullptr);
+        extent.Extend(clipVectorRange);
+        }
+
     if (extent.Volume() == 0)
         {
         if (extent.XLength() == 0)
@@ -3263,6 +3283,20 @@ template <class POINT> bool ScalableMesh<POINT>::_InSynchWithSources() const
     }
 
 /*----------------------------------------------------------------------------+
+|ScalableMesh::_LoadSources
++----------------------------------------------------------------------------*/
+template <class POINT> bool ScalableMesh<POINT>::_LoadSources(IDTMSourceCollection& sources) const
+    {
+    if(!m_smSQLitePtr.IsValid())
+        return false;
+
+    SourcesDataSQLite sourcesData;
+    m_smSQLitePtr->LoadSources(sourcesData);
+
+    return BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, sourcesData, DocumentEnv(L""));
+    }
+
+/*----------------------------------------------------------------------------+
 |ScalableMesh::_GetRangeInSpecificGCS
 +----------------------------------------------------------------------------*/
 template <class POINT> int ScalableMesh<POINT>::_GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const
@@ -3369,11 +3403,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SaveAs(const WString& des
             return ERROR;
 
         IDTMSourceCollection sources;
-
-        SourcesDataSQLite sourcesData;
-        m_smSQLitePtr->LoadSources(sourcesData);
-
-        if (!BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, sourcesData, DocumentEnv(L"")))
+        if (!this->LoadSources(sources))
             return ERROR;
 
         destMeshSourceEdit->EditSources() = sources;
@@ -3530,7 +3560,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
     return SUCCESS;
     }
 
-template <class POINT>  SMStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution, bool reprojectElevation)
+template <class POINT>  SMStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution, bool reprojectElevation, const BeFileName& dataSourceDir)
     {    
 
 #if NEED_SAVE_AS_IN_IMPORT_DLL
@@ -3562,11 +3592,14 @@ template <class POINT>  SMStatus                      ScalableMesh<POINT>::_Dete
         smGroundExtractor->SetDestinationGcs(newDestPtr);
         smGroundExtractor->SetExtractionArea(coverageData);
         smGroundExtractor->SetGroundPreviewer(groundPreviewer);
-		smGroundExtractor->SetLimitTextureResolution(limitResolution);
+        smGroundExtractor->SetLimitTextureResolution(limitResolution);
         smGroundExtractor->SetReprojectElevation(reprojectElevation);
 
-        
-                
+        if (!dataSourceDir.empty())
+            {
+            smGroundExtractor->SetDataSourceDir(dataSourceDir);
+            }
+                                
         StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);
 
 		if (status != SUCCESS)
@@ -3713,28 +3746,29 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
                                                            0, scaleUorPerMeters, 0, 0.0,
                                                            0, 0, scaleUorPerMeters, 0.0);
 
+    //auto coordInterp = this->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
     auto coordInterp = GeoCoordinates::GeoCoordInterpretation::Cartesian;
-       #ifndef LINUX_SCALABLEMESH_BUILD
+
     if (this->IsCesium3DTiles())
         {
         auto tileToDb = m_streamingSettings->GetTileToDbTransform();
         if (!tileToDb.IsIdentity())
             {
             computedTransform = Transform::FromProduct(computedTransform, tileToDb);
+            auto tileToECEF = m_streamingSettings->GetTileToECEFTransform();
+            if(!tileToECEF.IsIdentity())
+                {
+                Transform ecefToTile;
+                ecefToTile.InverseOf(tileToECEF);
+                computedTransform = Transform::FromProduct(computedTransform, ecefToTile);
+                }
             }
         else
             { // tile coordinates are not transformed, therefore they must be interpreted as XYZ coordinates
             coordInterp = GeoCoordinates::GeoCoordInterpretation::XYZ;
             }
-        auto tileToECEF = m_streamingSettings->GetTileToECEFTransform();
-        if (!tileToECEF.IsIdentity())
-            {
-            Transform ecefToTile;
-            ecefToTile.InverseOf(tileToECEF);
-            computedTransform = Transform::FromProduct(computedTransform, ecefToTile);
-            }
         }
-        #endif
+	
 
     if (targetCS == nullptr || !gcs.HasGeoRef())
         {
@@ -3824,17 +3858,17 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
         if (!tileToDb.IsIdentity())
             {
             computedTransform = Transform::FromProduct(computedTransform, tileToDb);
+            auto tileToECEF = m_streamingSettings->GetTileToECEFTransform();
+            if(!tileToECEF.IsIdentity())
+                {
+                Transform ecefToTile;
+                ecefToTile.InverseOf(tileToECEF);
+                computedTransform = Transform::FromProduct(computedTransform, ecefToTile);
+                }
             }
         else
             { // tile coordinates are not transformed, therefore they must be interpreted as XYZ coordinates
             coordInterp = Dgn::GeoCoordInterpretation::XYZ;
-            }
-        auto tileToECEF = m_streamingSettings->GetTileToECEFTransform();
-        if (!tileToECEF.IsIdentity())
-            {
-            Transform ecefToTile;
-            ecefToTile.InverseOf(tileToECEF);
-            computedTransform = Transform::FromProduct(computedTransform, ecefToTile);
             }
         }
 

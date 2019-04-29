@@ -6,7 +6,7 @@
 |       $Date: 2011/12/21 17:04:24 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -116,6 +116,8 @@ struct IScalableMeshCreator::Impl
         friend struct                       IScalableMeshSourceCreatorWorker::Impl;
         friend struct                       IScalableMeshSourceCreator::Impl;
         friend struct                       IScalableMeshNodeCreator::Impl;
+        friend struct                       SaveAsNodeCreator;
+
 
         GeoCoords::GCS                      m_gcs;
         ScalableMeshCompressionType         m_compressionType;
@@ -138,6 +140,8 @@ struct IScalableMeshCreator::Impl
         static DataSourceManager            s_dataSourceManager;
 
         BENTLEY_SM_EXPORT StatusInt                           GetStreamedTextureProvider(ITextureProviderPtr& textureStreamProviderPtr, const WString& url);
+
+        BENTLEY_SM_EXPORT StatusInt                           GetStreamedTextureProvider(ITextureProviderPtr& textureStreamProviderPtr, IScalableMeshPtr& smPtr, HFCPtr<MeshIndexType>& dataIndexPtr, const WString& url);
 
         BENTLEY_SM_EXPORT StatusInt                           CreateDataIndex(HFCPtr<MeshIndexType>& pDataIndex,
                                                                               bool                   needBalancing = false, 

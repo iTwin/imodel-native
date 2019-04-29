@@ -66,7 +66,7 @@ WString GetHeaderForTestType(TestType t)
             return L"File Name Original, File Name Streaming, AllTestPass, Point Count Pass, Node Count Pass, time load all node headers, time streaming load all node headers, points Node Pass\n";
             break;
         case TEST_SM_SAVEAS:
-            return L"File Name Original, Directory Name Output, Triangle Count Input, Triangle Count Output, AllTestPass, time save as\n";
+            return L"File Name Original, Directory Name Output, Triangle Count Input, Triangle Count Output, AllTestPass, time triangle count, time save as\n";
             break;
         case TEST_SM_TO_CLOUD:
             return L"File Name Original, Directory Name Cloud, AllTestPass, Point Count Pass, Node Count Pass, time load all node headers, time load all node headers, points Node Pass\n";

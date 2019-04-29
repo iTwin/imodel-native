@@ -66,7 +66,9 @@ struct IScalableMeshSourceCreatorWorker : public IScalableMeshSourceCreator
                                                                                    uint32_t                nbWorkers,
                                                                                    StatusInt&              status);
 
-        BENTLEY_SM_IMPORT_EXPORT StatusInt                    CreateGenerationTasks() const;
+        BENTLEY_SM_IMPORT_EXPORT StatusInt                    CreateGenerationTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName) const;
+
+        BENTLEY_SM_IMPORT_EXPORT StatusInt                    CreateTextureTasks(uint32_t maxGroupSize, const WString& jobName, const BeFileName& smFileName) const;
                 
         BENTLEY_SM_IMPORT_EXPORT StatusInt                    CreateTaskPlan() const;
 
@@ -81,6 +83,8 @@ struct IScalableMeshSourceCreatorWorker : public IScalableMeshSourceCreator
         BENTLEY_SM_IMPORT_EXPORT StatusInt                    ProcessFilterTask(BeXmlNodeP pXmlTaskNode) const;
 
         BENTLEY_SM_IMPORT_EXPORT StatusInt                    ProcessGenerateTask(BeXmlNodeP pXmlTaskNode) const;
+
+        BENTLEY_SM_IMPORT_EXPORT StatusInt                    ProcessTextureTask(BeXmlNodeP pXmlTaskNode) const;
                 
     };
 

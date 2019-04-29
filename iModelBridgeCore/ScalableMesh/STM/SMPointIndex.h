@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMPointIndex.h $
 //:>
-//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -115,6 +115,17 @@ template <class POINT, class EXTENT> class ProducedNodeContainer;
 
 template <class POINT, class EXTENT> class SMMeshIndex;    
 template <class POINT, class EXTENT> class SMMeshIndexNode;    
+
+
+struct SMNodeDataToLoad 
+    {
+    SMNodeDataToLoad();        
+
+    virtual ~SMNodeDataToLoad();
+
+    bool m_pts;
+    };
+
 
 template <class POINT, class EXTENT> class SMPointIndexNode : public HFCShareableObject<SMPointIndexNode<POINT, EXTENT>>
     {
@@ -576,6 +587,11 @@ public:
     virtual void Load() const; 
 
     /**----------------------------------------------------------------------------
+    Loads the data for a node
+    -----------------------------------------------------------------------------*/
+    virtual void LoadData(SMNodeDataToLoad* dataToLoad = nullptr); 
+
+    /**----------------------------------------------------------------------------
     Unloads the present tile if delay loaded.
     -----------------------------------------------------------------------------*/
     virtual void Unload();
@@ -885,8 +901,9 @@ public:
             // Either case the node is an unsplit sublevel which implies it must have a parent and this parent may node be a leaf and the subnode no split must
             // point to this node. OR the node is not an unsplit sublevel which implies that either it has no parent or the parent is not a leaf and does not
             // point to an unsplit node.
-            HASSERT((m_nodeHeader.m_IsUnSplitSubLevel && GetParentNodePtr() != NULL && !GetParentNodePtr()->m_nodeHeader.m_IsLeaf && (GetParentNodePtr()->m_pSubNodeNoSplit == this)) ||
-                    (!m_nodeHeader.m_IsUnSplitSubLevel && ((GetParentNodePtr() == NULL) || (!GetParentNodePtr()->m_nodeHeader.m_IsLeaf && (GetParentNodePtr()->m_pSubNodeNoSplit == NULL)))));
+            HASSERT((GetParentNodePtr() == NULL) || //If parent is not loaded (for example during multi-process generations) cannot check further this precondition.
+                    (m_nodeHeader.m_IsUnSplitSubLevel && !GetParentNodePtr()->m_nodeHeader.m_IsLeaf && (GetParentNodePtr()->m_pSubNodeNoSplit == this)) ||
+                    (!m_nodeHeader.m_IsUnSplitSubLevel && !GetParentNodePtr()->m_nodeHeader.m_IsLeaf && (GetParentNodePtr()->m_pSubNodeNoSplit == NULL)));
 
             // Balancing must be homogenous throughout the index
             //NEEDS_WORK_SM: During partial update, possibly not.
@@ -1263,6 +1280,9 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
 
         virtual void Load() const override
             {};
+        
+        virtual void LoadData(SMNodeDataToLoad* dataToLoad = nullptr) override
+            {};
 
         virtual bool Store() override
             {
@@ -1335,9 +1355,7 @@ public:
 
      @return Pointer to filter or NULL if none is set.
     -----------------------------------------------------------------------------*/
-    ISMPointIndexFilter<POINT, EXTENT>*
-    GetFilter() ;
-
+    BENTLEY_SM_EXPORT ISMPointIndexFilter<POINT, EXTENT>* GetFilter();
 
     /**----------------------------------------------------------------------------
      Push the data in leaf and balance the octree
@@ -1425,7 +1443,7 @@ public:
     uint64_t    m_nbInputPoints;
 #endif    
 
-    void SetNextID(const uint64_t& id);
+    BENTLEY_SM_EXPORT void SetNextID(const uint64_t& id);
     uint64_t GetNextID() const;
 
 
@@ -1641,7 +1659,7 @@ public:
 
     IScalableMeshProgressPtr m_progress = nullptr;
 
-    HFCPtr<SMPointIndexNode<POINT, EXTENT>> FindLoadedNode(uint64_t id) const;
+    BENTLEY_SM_EXPORT HFCPtr<SMPointIndexNode<POINT, EXTENT>> FindLoadedNode(uint64_t id) const;
 
     uint64_t                    m_smID;
 #ifndef NDEBUG
@@ -2067,6 +2085,10 @@ public:
     {
         return new ISMPointIndexQuery<POINT, EXTENT>();
     }
+
+    virtual void ToggleLimitToLevel(bool shouldLimit, size_t maxLevel)
+    {};
+
 
 #ifdef ACTIVATE_NODE_QUERY_TRACING
     /*======================================================================================================

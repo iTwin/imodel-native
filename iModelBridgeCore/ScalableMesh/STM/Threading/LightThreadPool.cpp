@@ -123,8 +123,8 @@ void WaitForThreadStop(IScalableMeshProgress* p)
     {
     bool notAllThreadsStopped = true;
     while (notAllThreadsStopped)
-        {
-          int n = 0;
+        {   
+          int n = 0;  
 //        std::thread* arrayT = LightThreadPool::GetInstance()->m_threads;
 //        volatile uint64_t ptr = (uint64_t)arrayT;
 //        ptr = ptr;

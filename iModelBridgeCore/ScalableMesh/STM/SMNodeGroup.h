@@ -38,7 +38,8 @@
 
 #define OPEN_OR_CREATE_FILE(beFile, pathStr, accessMode) BeFileStatus::Success == OPEN_FILE(beFile, pathStr, accessMode) || BeFileStatus::Success == beFile.Create(pathStr)
 
-#define LOG (*NativeLogging::LoggingManager::GetLogger(L"SMPublisher"))
+#define SMNODEGROUPLOGNAME L"ScalableMesh::SMNodeGroup"
+#define SMNODEGROUP_LOG (*NativeLogging::LoggingManager::GetLogger(SMNODEGROUPLOGNAME))
 
 //#ifndef NDEBUG
 //#define DEBUG_GROUPS
@@ -172,8 +173,8 @@ struct SMGroupNodeIds : bvector<uint64_t> {
     uint64_t m_sizeOfRawHeaders;
     };
 
-template <typename Type, typename Queue = std::queue<Type>>
-class SMNodeDistributor : public Queue, std::mutex, std::condition_variable, public HFCShareableObject<SMNodeDistributor<Type, Queue> > {
+template <typename Type, typename Queue = std::deque<Type>>
+class SMNodeDistributor : public Queue, public std::mutex, std::condition_variable, public HFCShareableObject<SMNodeDistributor<Type, Queue> > {
     typename Queue::size_type capacity;
     unsigned int m_concurrency;
     bool m_done = false;
@@ -275,17 +276,23 @@ SMNodeDistributor(Function function
         if (Queue::size() == capacity)
             {
             static std::atomic<uint64_t> lastNumberOfItems = {Queue::size()};
-            while (!wait_for(lock, 1000ms, [this]
+            while(Queue::size() < capacity / 2)
                 {
-                return Queue::size() < capacity / 2;
-                }))
+                lock.unlock();
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                lock.lock();
+                }
+            //while (!wait_for(lock, 1000ms, [this]
+            //    {
+            //    return Queue::size() < capacity / 2;
+            //    }))
                 {
                // std::lock_guard<mutex> clk(s_consoleMutex);
                // std::cout << "\r  Speed : " << lastNumberOfItems - Queue::size() << " items/second     Remaining : " << Queue::size() << "                         ";
                 lastNumberOfItems = Queue::size();
                 }
             }
-        Queue::push(std::forward<Type>(value));
+        Queue::push_back(std::forward<Type>(value));
         if (notify) notify_one();
         }
 
@@ -301,11 +308,19 @@ SMNodeDistributor(Function function
         {
         std::unique_lock<std::mutex> lock(*this);
         bool areThreadsFinished = false;
-        while (!wait_for(lock, 1000ms, function) || !areThreadsFinished)
+        size_t speed = Queue::size();
+        while (!areThreadsFinished)
             {
-			if (function()) //allow a yield after progress finishes, to leave time for all threads to return
-				wait_for(lock, 1000ms);
-            for (auto state : m_threadStates)
+            size_t size_before = Queue::size();
+            lock.unlock();
+            if(function())
+                { //allow a yield after progress finishes, to leave time for all threads to return
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
+            lock.lock();
+            speed = size_before - Queue::size();
+            SMNODEGROUP_LOG.infov("nodes/sec: %f, remaining: %f", speed, Queue::size());
+            for(auto state : m_threadStates)
                 {
                 if (!(areThreadsFinished = state.second == ThreadState::IDLE))
                     break;
@@ -319,6 +334,9 @@ SMNodeDistributor(Function function
         {
         std::unique_lock<std::mutex> lock(*this);
         bool areThreadsFinished = false;
+        auto startSize = Queue::size();
+        size_t speed = Queue::size();
+        auto startTime = clock();
         while (true)
             {
             for (auto state : m_threadStates)
@@ -328,8 +346,13 @@ SMNodeDistributor(Function function
                 }
             if (!Queue::empty() || !areThreadsFinished)
                 {
-                assert(lock.owns_lock());
-                wait_for(lock, 1000ms);
+                size_t size_before = Queue::size();
+                lock.unlock();
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                lock.lock();
+                speed = size_before - Queue::size();
+                auto elapsedTime = (float)((clock() - startTime) / CLOCKS_PER_SEC);
+                SMNODEGROUP_LOG.infov("nodes/sec: %f    avg: %f    remaining: %d", (float)speed, (float)(startSize - Queue::size()) / elapsedTime, Queue::size());
                 }
             else
                 {
@@ -359,8 +382,8 @@ private:
             if (!Queue::empty()) {
                 assert(lock.owns_lock());
                 Type item{ std::move(Queue::front()) };
-                Queue::pop();
-                notify_one();
+                Queue::pop_front();
+                //notify_one();
                 m_threadStates[std::this_thread::get_id()] = ThreadState::WORKING;
                 lock.unlock();
                 process(item);
@@ -403,8 +426,8 @@ private:
 			if (!Queue::empty()) {
 				assert(lock.owns_lock());
 				Type item{ std::move(Queue::front()) };
-				Queue::pop();
-				notify_one();
+				Queue::pop_front();
+				//notify_one();
 				m_threadStates[std::this_thread::get_id()] = ThreadState::WORKING;
 				lock.unlock();
 				if (is_process_ready(item))
@@ -415,7 +438,7 @@ private:
 				else
 				{
 					lock.lock();
-					Queue::push(std::move(item));
+					Queue::push_back(std::move(item));
 				}
 			}
 			else if (m_done) {
@@ -952,7 +975,7 @@ class SMGroupingStrategy
         GeoCoordinates::BaseGCSCPtr m_sourceGCS;
         GeoCoordinates::BaseGCSCPtr m_destinationGCS;
         Transform m_rootTransform;
-        Transform m_transform;
+        Transform m_transform = Transform::FromIdentity();
         bool m_isClipBoundary = false;
         uint64_t m_clipID = -1;
     };
@@ -1266,7 +1289,7 @@ size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>
         }
     this->m_transform.Multiply(pi_NodeHeader.m_nodeExtent, pi_NodeHeader.m_nodeExtent);
     TilePublisher::WriteBoundingVolume(nodeTile, pi_NodeHeader.m_nodeExtent);
-    if (pi_NodeHeader.m_nodeCount > 0 && pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
+    if (pi_NodeHeader.m_nodeCount > 0 && pi_NodeHeader.m_nbFaceIndexes > 0 && pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
         {
         if (this->m_sourceGCS != nullptr && this->m_sourceGCS != this->m_destinationGCS)
             {
@@ -1378,13 +1401,6 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
 #endif
 
-        SMMasterHeader["tileToDb"] = Json::Value(Json::arrayValue);
-        Transform tileToDb;
-        tileToDb.InverseOf(this->m_transform);
-        matrix = DMatrix4d::From(tileToDb);
-        for (size_t i = 0; i<4; i++)
-            for (size_t j = 0; j<4; j++)
-                SMMasterHeader["tileToDb"].append(matrix.coff[j][i]);
         }
 
     //std::cout << "#nodes in group(" << pi_Group->m_groupHeader->GetID() << ") = " << pi_Group->m_tileTreeMap.size() << std::endl;
@@ -1410,18 +1426,17 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         }
     if (BeFileStatus::FileNotFoundError != status)
         {
-        LOG.errorv("File still open after 10 retries (shouldn't exist) [BeFileStatus(%d)]: %ls", (uint32_t)status, group_filename.c_str());
+        SMNODEGROUP_LOG.errorv("File still open after 10 retries (shouldn't exist) [BeFileStatus(%d)]: %ls", (uint32_t)status, group_filename.c_str());
         }
     if (BeFileStatus::Success != status)
         {
-        //LOG.errorv("Failed to Open [BeFileStatus(%d)]... try to create it: %ls", (uint32_t)status, group_filename.c_str());
         status = file.Create(group_filename.c_str());
         }
     if (BeFileStatus::Success == status)
         file.Write(nullptr, utf8TileTree.c_str(), (uint32_t)utf8TileTree.size());
     else
         {
-        LOG.errorv("Failed to open or create json file [BeFileStatus(%d)]: %ls", (uint32_t)status, group_filename.c_str());
+        SMNODEGROUP_LOG.errorv("Failed to open or create json file [BeFileStatus(%d)]: %ls", (uint32_t)status, group_filename.c_str());
         }
 
     }
