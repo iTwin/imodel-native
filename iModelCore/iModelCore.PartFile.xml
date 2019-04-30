@@ -41,18 +41,27 @@
     <ProductDirectoryList ListName="iModelCoreNugetDirs">
         <ProductDirectory Name="Root" Path="native"/>
 
-        <ProductDirectory Name="Assemblies"     LibType="Static"    Deliver="false"/>
-        <ProductDirectory Name="Assemblies"                         RelativeTo="Root" Path="bin"/>
-        <ProductDirectory Name="Assets"         LibType="static"    RelativeTo="Root" Path="assets"/>
-        <ProductDirectory Name="Assets"                             RelativeTo="Root" Path="assets"/>
-        <ProductDirectory Name="Libs"           LibType="Static"    RelativeTo="Root" Path="lib"/>
-        <ProductDirectory Name="Libs"                               RelativeTo="Root" Path="lib"/>
-        <ProductDirectory Name="PublicApi"      LibType="Static"    RelativeTo="Root" Path="include"/>
-        <ProductDirectory Name="PublicApi"                          RelativeTo="Root" Path="include"/>
-        <ProductDirectory Name="VendorApi"      LibType="Static"    RelativeTo="Root" Path="include"/>
-        <ProductDirectory Name="VendorApi"                          RelativeTo="Root" Path="include"/>
-        <ProductDirectory Name="VendorNotices"  LibType="Static"    RelativeTo="Root" Path="notices"/>
-        <ProductDirectory Name="VendorNotices"                      RelativeTo="Root" Path="notices"/>
+        <ProductDirectory Name="Assemblies"                                 RelativeTo="Root" Path="bin"/>
+        <ProductDirectory Name="Assemblies"             LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="Assets"                                     RelativeTo="Root" Path="assets"/>
+        <ProductDirectory Name="Assets"                 LibType="static"    RelativeTo="Root" Path="assets"/>
+        <ProductDirectory Name="BeHttpXliffs"                               RelativeTo="Root" Path="xliffs"/>
+        <ProductDirectory Name="BeHttpXliffs"           LibType="Static"    RelativeTo="Root" Path="xliffs"/>
+        <ProductDirectory Name="DgnPlatformXliffs"                          RelativeTo="Root" Path="xliffs"/>
+        <ProductDirectory Name="DgnPlatformXliffs"      LibType="Static"    RelativeTo="Root" Path="xliffs"/>
+        <ProductDirectory Name="ECPresentationXliffs"                       RelativeTo="Root" Path="xliffs"/>
+        <ProductDirectory Name="ECPresentationXliffs"   LibType="Static"    RelativeTo="Root" Path="xliffs"/>
+        <ProductDirectory Name="Libs"                                       RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="Libs"                   LibType="Static"    RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="PublicApi"                                  RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="PublicApi"              LibType="Static"    RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="VendorApi"                                  RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="VendorApi"              LibType="Static"    RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="VendorNotices"                              RelativeTo="Root" Path="notices"/>
+        <ProductDirectory Name="VendorNotices"          LibType="Static"    RelativeTo="Root" Path="notices"/>
+        <ProductDirectory Name="WSClientXliffs"                             RelativeTo="Root" Path="xliffs"/>
+        <ProductDirectory Name="WSClientXliffs"         LibType="Static"    RelativeTo="Root" Path="xliffs"/>
+
     </ProductDirectoryList>
 
     <!-- ======================================================================================================================================== -->
