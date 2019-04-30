@@ -321,7 +321,7 @@ def main():
             tiaMap = getTiaMapAll(covRoot, component, dll)
             writeMapToFiles(mapDir, tiaMap, component)
             adjustMapFiles(mapDir)
-            #copyMapFiles(mapDir, comps)
+            copyMapFiles(mapDir, comps)
     if args.pushChanges:
         status = pushMapFiles()
         if not status:

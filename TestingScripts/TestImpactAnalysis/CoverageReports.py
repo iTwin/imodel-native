@@ -35,9 +35,11 @@ def getChangedTests(reportPath, comp):
     tl = []
     gc = GitCommand()
     mapFile = cmp.TiaMapPathForComp(comp)
-    if not os.path.exists(mapFile):
-        return tl
-    timeToCompare = gc.get_mod_time(mapFile)
+    print mapFile
+    if not os.path.exists(mapFile): # creating for the first time
+        timeToCompare = 1
+    else:
+        timeToCompare = gc.get_mod_time(mapFile)
     tcatalog = TestCatalog(cmp.RepoPathForComp(comp))
     sf = tcatalog.get_files()
     for sfn in sf:

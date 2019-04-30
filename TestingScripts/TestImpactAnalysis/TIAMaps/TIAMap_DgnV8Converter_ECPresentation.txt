@@ -1,0 +1,83 @@
+
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\selectednodeinstancesspecification.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\rulesetlocater.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\contentspecificationshandler.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:TextBlockTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:MultiBridgeTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\allinstancenodesspecification.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.DuplicateRulesetIsReplaced:RulesetEmbedderTests.DuplicateRulesetIsSkipped:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\presentationruleset.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:V8AttachmentTests.AttachIfc:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\contentmodifier.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:V8AttachmentTests.AttachIfc:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\updatehandler.h]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\querycontracts.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:TextBlockTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:MultiBridgeTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\updatehandler.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\commontoolsinternal.h]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:V8AttachmentTests.AttachIfc:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\navnodescache.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:TextBlockTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:MultiBridgeTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\contentspecification.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\ecdbbasedcache.h]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\imageidoverride.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\ecdbbasedcache.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\instancelabeloverride.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\presentationmanager.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\childnoderule.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\groupingrule.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\singlethreadqueueexecutor.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\relatedpropertiesspecification.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.AttachIfc:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\navnodescache.h]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\labeloverride.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\styleoverride.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\logginghelper.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:TextBlockTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:MultiBridgeTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
+[imodel02\imodelcore\ecpresentation\source\ecpresentationpch.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\customnodespecification.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\connection.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\presentationrule.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:V8AttachmentTests.AttachIfc:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\presentationmanagerimpl.h]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\sortingrule.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\predefined c++ types (compiler internal)]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\presentationmanager.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\presentationmanagerimpl.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\childnodespecification.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\commontools.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:V8AttachmentTests.AttachIfc:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\contentrule.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\customizationrule.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\customfunctions.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\checkboxrule.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\usersettings.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
