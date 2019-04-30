@@ -217,17 +217,14 @@ double CompositeElement::GetFootprintArea() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CompositeElement::CalculateProperties()
     {
-    CurveVectorPtr curveVec = DgnGeometryUtils::GetBaseShape(*this);
-    if (!curveVec.IsValid ())
+    CurveVectorPtr curve = DgnGeometryUtils::GetSliceAtZero(*this);
+    if (curve.IsNull())
         {
         SetFootprintArea (0.0);
         return;
         }
-
-    double area;
-    DVec3d normal;
-    DPoint3d centroid;
-    curveVec->CentroidNormalArea (centroid, normal, area);
+        
+    double area = GeometryUtils::GetCurveArea(*curve);
 
     SetFootprintArea(area);
     }
