@@ -11,9 +11,11 @@
 #include <BeSQLite/BeSQLite.h>
 #include "BuildingSpatialTestFixtureBase.h"
 #include <BuildingSpatial/Elements/ElevationStory.h>
+#include <BuildingShared/BuildingSharedApi.h>
 
 USING_NAMESPACE_BUILDINGSPATIAL
 USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BUILDING_SHARED
 
 //=======================================================================================
 // Sets up environment for BuildingSpatial testing.
@@ -52,20 +54,16 @@ TEST_F(ElevationStoryTestFixture, SetFootprintShape)
     ElevationStoryPtr elevationStory = BuildingSpatial::ElevationStory::Create(*m_model);
     ASSERT_TRUE(elevationStory->Insert().IsValid());
 
-    double area = elevationStory->GetFootprintArea();
-    ASSERT_EQ(0, area);
+    ASSERT_EQ(0, elevationStory->GetFootprintArea());
 
     CurveVectorPtr rectCurve = CurveVector::CreateRectangle(0, 0, 10, 10, 0);
 
-    DPoint3d curveCentroid;
-    double curveArea;
-    rectCurve->CentroidAreaXY(curveCentroid, curveArea);
-
     elevationStory->SetFootprintShape(rectCurve);
 
-    area = elevationStory->GetFootprintArea();
+    CurveVectorPtr elevationStoryShape = DgnGeometryUtils::GetBaseShape(*elevationStory);
 
-    ASSERT_EQ(curveArea, area);
+    ASSERT_TRUE(elevationStoryShape.IsValid());
+    ASSERT_EQ(GeometryUtils::GetCurveArea(*rectCurve), GeometryUtils::GetCurveArea(*elevationStoryShape));
 
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
     }
