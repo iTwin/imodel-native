@@ -54,9 +54,11 @@
     <None Include="Tests.mke" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\ArbitraryCenterLineProfileGeometryTests.cpp" />
     <ClCompile Include="src\ArbitraryCenterLineProfileTests.cpp" />
     <ClCompile Include="src\ArbitraryCompositeProfileTests.cpp" />
-    <ClCompile Include="src\ArbitraryShapeProfileTests.cpp" />
+    <ClCompile Include="src\ArbitraryGeometryProfileTestCase.cpp" />
+    <ClCompile Include="src\ArbitraryShapeProfileGeometryTests.cpp" />
     <ClCompile Include="src\AsymmetricIShapeProfileTests.cpp" />
     <ClCompile Include="src\BentPlateProfileTests.cpp" />
     <ClCompile Include="src\CapsuleProfileTests.cpp" />
@@ -90,6 +92,7 @@
     <ClCompile Include="src\ZShapeProfileTests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\ArbitraryGeometryProfileTestCase.h" />
     <ClInclude Include="src\ProfilesTestCase.h" />
     <ClInclude Include="src\ProfileValidationTestCase.h" />
     <ClInclude Include="src\TestHost.h" />
