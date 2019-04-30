@@ -2,16 +2,13 @@
 |
 |  $Source: Tests/NonPublished/GeometryUtils_Test.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley\BeTest.h>
-#include <DgnPlatform\DgnPlatformApi.h>
 #include <BuildingShared/BuildingSharedApi.h>
 #include "BuildingSharedTestFixtureBase.h"
 
-USING_NAMESPACE_BENTLEY_DGN
-USING_NAMESPACE_BUILDING
 USING_NAMESPACE_BUILDING_SHARED
 
 struct GeometryUtilsTests : public BuildingSharedTestFixtureBase
@@ -19,146 +16,7 @@ struct GeometryUtilsTests : public BuildingSharedTestFixtureBase
     public:
         GeometryUtilsTests() {}
         ~GeometryUtilsTests() {};
-
     };
-
-
-//--------------------------------------------------------------------------------------
-// @betest                                       Mindaugas Butkus                08/2017
-//---------------+---------------+---------------+---------------+---------------+------
-TEST_F(GeometryUtilsTests, GetXYCrossSection_LowestCrossSectionParallelToXYPlane)
-    {
-    DgnConeDetail body = DgnConeDetail({ 0, 0, 0 }, { 0, 0, 20 }, 20, 10, true);
-    DEllipse3d expectedEllipse;
-    body.FractionToSection(0, expectedEllipse);
-    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(body);
-    Dgn::IBRepEntityPtr solid = nullptr;
-    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
-    ASSERT_TRUE(solid.IsValid()) << "Failed to create solid";
-
-    CurveVectorPtr crossSection = DgnGeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().low.z);
-    ASSERT_TRUE(crossSection.IsValid());
-    ASSERT_EQ(crossSection->size(), 1) << "Cross-section should contain 1 CurvePrimitive";
-    ASSERT_EQ(crossSection->at(0)->GetCurvePrimitiveType(), ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Arc);
-    ASSERT_TRUE(crossSection->at(0)->GetArcCP()->IsAlmostEqual(expectedEllipse, DoubleOps::SmallCoordinateRelTol()));
-    }
-
-//--------------------------------------------------------------------------------------
-// @betest                                       Mindaugas Butkus                08/2017
-//---------------+---------------+---------------+---------------+---------------+------
-TEST_F(GeometryUtilsTests, GetXYCrossSection_TopmostCrossSectionParallelToXYPlane)
-    {
-    DgnConeDetail body = DgnConeDetail({ 0, 0, 0 }, { 0, 0, 20 }, 20, 10, true);
-    DEllipse3d expectedEllipse;
-    body.FractionToSection(1, expectedEllipse);
-    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(body);
-    Dgn::IBRepEntityPtr solid = nullptr;
-    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
-    ASSERT_TRUE(solid.IsValid()) << "Failed to create solid";
-
-    CurveVectorPtr crossSection = DgnGeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().high.z);
-    ASSERT_TRUE(crossSection.IsValid());
-    ASSERT_EQ(crossSection->size(), 1) << "Cross-section should contain 1 CurvePrimitive";
-    ASSERT_EQ(crossSection->at(0)->GetCurvePrimitiveType(), ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Arc);
-    ASSERT_TRUE(crossSection->at(0)->GetArcCP()->IsAlmostEqual(expectedEllipse, DoubleOps::SmallCoordinateRelTol()));
-    }
-
-//--------------------------------------------------------------------------------------
-// @betest                                       Mindaugas Butkus                08/2017
-//---------------+---------------+---------------+---------------+---------------+------
-TEST_F(GeometryUtilsTests, GetXYCrossSection_TryGetCrossSectionBelowSolid)
-    {
-    DgnConeDetail body = DgnConeDetail({ 0, 0, 0 }, { 0, 0, 20 }, 20, 10, true);
-    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(body);
-    Dgn::IBRepEntityPtr solid = nullptr;
-    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
-    ASSERT_TRUE(solid.IsValid()) << "Failed to create solid";
-
-    CurveVectorPtr crossSection = DgnGeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().low.z - 1);
-    ASSERT_FALSE(crossSection.IsValid());
-    }
-
-//--------------------------------------------------------------------------------------
-// @betest                                       Mindaugas Butkus                08/2017
-//---------------+---------------+---------------+---------------+---------------+------
-TEST_F(GeometryUtilsTests, GetXYCrossSection_TryGetCrossSectionAboveSolid)
-    {
-    DgnConeDetail body = DgnConeDetail({ 0, 0, 0 }, { 0, 0, 20 }, 20, 10, true);
-    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(body);
-    Dgn::IBRepEntityPtr solid = nullptr;
-    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
-    ASSERT_TRUE(solid.IsValid()) << "Failed to create solid";
-
-    CurveVectorPtr crossSection = DgnGeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().high.z + 1);
-    ASSERT_FALSE(crossSection.IsValid());
-    }
-
-//--------------------------------------------------------------------------------------
-// @betest                                       Mindaugas Butkus                08/2017
-//---------------+---------------+---------------+---------------+---------------+------
-TEST_F(GeometryUtilsTests, GetXYCrossSection_ReturnsPointStringWhenSinglePointOnPlane)
-    {
-    DgnConeDetail body = DgnConeDetail({ 0, 0, 0 }, { 0, 0, 20 }, 20, 0, true);
-    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(body);
-    Dgn::IBRepEntityPtr solid = nullptr;
-    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
-    ASSERT_TRUE(solid.IsValid()) << "Failed to create solid";
-
-    CurveVectorPtr crossSection = DgnGeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().high.z);
-    ASSERT_TRUE(crossSection.IsValid());
-    ASSERT_EQ(crossSection->size(), 1);
-    ASSERT_EQ(crossSection->at(0)->GetCurvePrimitiveType(), ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_PointString);
-    ASSERT_EQ(crossSection->at(0)->GetPointStringCP()->size(), 1);
-    ASSERT_TRUE(DPoint3d::From(0, 0, 20).AlmostEqual(crossSection->at(0)->GetPointStringCP()->at(0)));
-    }
-
-//--------------------------------------------------------------------------------------
-// @betest                                       Mindaugas Butkus                08/2017
-//---------------+---------------+---------------+---------------+---------------+------
-TEST_F(GeometryUtilsTests, GetXYCrossSection_GetLowestPointOfSolidWithRoundNotXYOrientedBase)
-    {
-    DgnConeDetail body = DgnConeDetail({ 0, 0, 0 }, { 20, 0, 20 }, 20 * sqrt(2), 0, true);
-    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(body);
-    Dgn::IBRepEntityPtr solid = nullptr;
-    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
-    ASSERT_TRUE(solid.IsValid()) << "Failed to create solid";
-
-    CurveVectorPtr crossSection = DgnGeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().low.z);
-    ASSERT_TRUE(crossSection.IsValid());
-    ASSERT_EQ(crossSection->size(), 1);
-    ASSERT_EQ(crossSection->at(0)->GetCurvePrimitiveType(), ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_PointString);
-    ASSERT_EQ(crossSection->at(0)->GetPointStringCP()->size(), 1);
-    ASSERT_TRUE(DPoint3d::From(20, 0, -20).AlmostEqual(crossSection->at(0)->GetPointStringCP()->at(0)));
-    }
-
-//--------------------------------------------------------------------------------------
-// @betest                                       Mindaugas Butkus                08/2017
-//---------------+---------------+---------------+---------------+---------------+------
-TEST_F(GeometryUtilsTests, GetXYCrossSection_BoxUnionTouchesAndIntersects)
-    {
-    DgnBoxDetail box1Detail = DgnBoxDetail(DPoint3d::From( 0, 0, 0 ), DPoint3d::From( 0, 0, 100 ), DVec3d::UnitX(), DVec3d::UnitY(),
-                                           200, 200, 200, 200, true);
-    DgnBoxDetail box2Detail = DgnBoxDetail(DPoint3d::From( 150, 150, -20 ), DPoint3d::From( 150, 150, 10 ), DVec3d::UnitX(), DVec3d::UnitY(),
-                                           50, 50, 50, 50, true);
-
-    ISolidPrimitivePtr box1SolidPrimitive = ISolidPrimitive::CreateDgnBox(box1Detail);
-    ISolidPrimitivePtr box2SolidPrimitive = ISolidPrimitive::CreateDgnBox(box2Detail);
-
-    GeometricPrimitivePtr box1GeomPrimitive = GeometricPrimitive::Create(box1SolidPrimitive);
-    GeometricPrimitivePtr box2GeomPrimitive = GeometricPrimitive::Create(box2SolidPrimitive);
-
-    IBRepEntityPtr box1Solid;
-    IBRepEntityPtr box2Solid;
-    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(box1Solid, box1GeomPrimitive, true);
-    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(box2Solid, box2GeomPrimitive, true);
-
-    BRepUtil::Modify::BooleanOperation(box1Solid, box2Solid, BRepUtil::Modify::BooleanMode::Unite);
-    ASSERT_TRUE(box1Solid.IsValid()) << "Failed to create solid";
-    CurveVectorPtr crossSection = DgnGeometryUtils::GetXYCrossSection(*box1Solid, 0);
-    ASSERT_TRUE(crossSection.IsValid());
-    CurveVectorPtr expectedCV = CurveVector::CreateLinear({ {0,0,0}, {200,0,0}, {200, 200, 0}, {0, 200, 0} }, CurveVector::BoundaryType::BOUNDARY_TYPE_Outer);
-    ASSERT_TRUE(GeometryUtils::IsSameSingleLoopGeometry(*crossSection, *expectedCV));
-    }
 
 //--------------------------------------------------------------------------------------
 // @betest                                       Mindaugas Butkus                09/2017
@@ -192,13 +50,13 @@ TEST_F(GeometryUtilsTests, AddVertex_LinearCurveVector_VertexAlreadyExists)
 TEST_F(GeometryUtilsTests, AddVertex_OnArc)
     {
     CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    cv->Add(ICurvePrimitive::CreateArc(DEllipse3d::FromVectors({0,0,0}, DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0), 0, Angle::DegreesToRadians(270))));
+    cv->Add(ICurvePrimitive::CreateArc(DEllipse3d::FromVectors({ 0,0,0 }, DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0), 0, Angle::DegreesToRadians(270))));
 
-    GeometryUtils::AddVertex(*cv, {-1,0,0});
+    GeometryUtils::AddVertex(*cv, { -1,0,0 });
 
     CurveVectorPtr expectedCV = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    expectedCV->Add(ICurvePrimitive::CreateArc(DEllipse3d::FromVectors({0,0,0}, DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0), 0, Angle::DegreesToRadians(180))));
-    expectedCV->Add(ICurvePrimitive::CreateArc(DEllipse3d::FromVectors({0,0,0}, DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0), Angle::DegreesToRadians(180), Angle::DegreesToRadians(90))));
+    expectedCV->Add(ICurvePrimitive::CreateArc(DEllipse3d::FromVectors({ 0,0,0 }, DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0), 0, Angle::DegreesToRadians(180))));
+    expectedCV->Add(ICurvePrimitive::CreateArc(DEllipse3d::FromVectors({ 0,0,0 }, DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0), Angle::DegreesToRadians(180), Angle::DegreesToRadians(90))));
     ASSERT_TRUE(cv->IsSameStructureAndGeometry(*expectedCV));
     }
 
@@ -207,11 +65,11 @@ TEST_F(GeometryUtilsTests, AddVertex_OnArc)
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(GeometryUtilsTests, AddVertex_OpenType_ClosedShape)
     {
-    CurveVectorPtr cv = CurveVector::CreateLinear({{0,0,0}, {0,200,0}, {200,200,0}, {200,0,0}, {0,0,0}}, CurveVector::BOUNDARY_TYPE_Open);
+    CurveVectorPtr cv = CurveVector::CreateLinear({ {0,0,0}, {0,200,0}, {200,200,0}, {200,0,0}, {0,0,0} }, CurveVector::BOUNDARY_TYPE_Open);
 
-    GeometryUtils::AddVertex(*cv, {100,0,0});
+    GeometryUtils::AddVertex(*cv, { 100,0,0 });
 
-    CurveVectorPtr expectedCV = CurveVector::CreateLinear({{0,0,0},{0,200,0},{200,200,0},{200,0,0},{100,0,0},{0,0,0}}, CurveVector::BOUNDARY_TYPE_Open);
+    CurveVectorPtr expectedCV = CurveVector::CreateLinear({ {0,0,0},{0,200,0},{200,200,0},{200,0,0},{100,0,0},{0,0,0} }, CurveVector::BOUNDARY_TYPE_Open);
     ASSERT_TRUE(cv->IsSameStructureAndGeometry(*expectedCV));
     }
 
@@ -221,14 +79,14 @@ TEST_F(GeometryUtilsTests, AddVertex_OpenType_ClosedShape)
 TEST_F(GeometryUtilsTests, AddVertex_OnInnerShape)
     {
     CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
-    cv->Add(CurveVector::CreateLinear({{0,0,0}, {300,0,0}, {300,300,0}, {0,300,0}, {0,0,0}}, CurveVector::BOUNDARY_TYPE_Outer));
-    cv->Add(CurveVector::CreateLinear({{100,100,0}, {100,200,0}, {200,200,0}, {200,100,0}, {100,100,0}}, CurveVector::BOUNDARY_TYPE_Inner));
+    cv->Add(CurveVector::CreateLinear({ {0,0,0}, {300,0,0}, {300,300,0}, {0,300,0}, {0,0,0} }, CurveVector::BOUNDARY_TYPE_Outer));
+    cv->Add(CurveVector::CreateLinear({ {100,100,0}, {100,200,0}, {200,200,0}, {200,100,0}, {100,100,0} }, CurveVector::BOUNDARY_TYPE_Inner));
 
-    GeometryUtils::AddVertex(*cv, {150,100,0});
+    GeometryUtils::AddVertex(*cv, { 150,100,0 });
 
     CurveVectorPtr expectedCV = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
-    expectedCV->Add(CurveVector::CreateLinear({{0,0,0}, {300,0,0}, {300,300,0}, {0,300,0}, {0,0,0}}, CurveVector::BOUNDARY_TYPE_Outer));
-    expectedCV->Add(CurveVector::CreateLinear({{100,100,0}, {100,200,0}, {200,200,0}, {200,100,0}, {150,100,0}, {100,100,0}}, CurveVector::BOUNDARY_TYPE_Inner));
+    expectedCV->Add(CurveVector::CreateLinear({ {0,0,0}, {300,0,0}, {300,300,0}, {0,300,0}, {0,0,0} }, CurveVector::BOUNDARY_TYPE_Outer));
+    expectedCV->Add(CurveVector::CreateLinear({ {100,100,0}, {100,200,0}, {200,200,0}, {200,100,0}, {150,100,0}, {100,100,0} }, CurveVector::BOUNDARY_TYPE_Inner));
     ASSERT_TRUE(cv->IsSameStructureAndGeometry(*expectedCV));
     }
 
@@ -237,11 +95,11 @@ TEST_F(GeometryUtilsTests, AddVertex_OnInnerShape)
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(GeometryUtilsTests, AddVertex_OuterCurveVector)
     {
-    CurveVectorPtr cv = CurveVector::CreateLinear({{0,0,0},{200,0,0},{200,200,0},{0,200,0},{0,0,0}}, CurveVector::BOUNDARY_TYPE_Outer);
+    CurveVectorPtr cv = CurveVector::CreateLinear({ {0,0,0},{200,0,0},{200,200,0},{0,200,0},{0,0,0} }, CurveVector::BOUNDARY_TYPE_Outer);
 
-    GeometryUtils::AddVertex(*cv, {100,0,0});
+    GeometryUtils::AddVertex(*cv, { 100,0,0 });
 
-    CurveVectorPtr expectedCV = CurveVector::CreateLinear({{0,0,0},{100,0,0},{200,0,0},{200,200,0},{0,200,0},{0,0,0}}, CurveVector::BOUNDARY_TYPE_Outer);
+    CurveVectorPtr expectedCV = CurveVector::CreateLinear({ {0,0,0},{100,0,0},{200,0,0},{200,200,0},{0,200,0},{0,0,0} }, CurveVector::BOUNDARY_TYPE_Outer);
     ASSERT_TRUE(cv->IsSameStructureAndGeometry(*expectedCV));
     }
 
@@ -534,160 +392,18 @@ TEST_F(GeometryUtilsTests, IsSameSingleLoopGeometry_EqualEllipsesWithDifferentSt
     }
 
 //--------------------------------------------------------------------------------------
-// @betest                                       Mindaugas Butkus                07/2018
+// @betest                                       Elonas.Seviakovas               04/2019
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(GeometryUtilsTests, GetBodySlice)
+TEST_F(GeometryUtilsTests, ProjectCurveOntoZeroPlane)
     {
-    DgnBoxDetail boxDetail = DgnBoxDetail(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, 100), DVec3d::UnitX(), DVec3d::UnitY(),
-                                           200, 200, 200, 200, true);
-    ISolidPrimitivePtr boxSolidPrimitive = ISolidPrimitive::CreateDgnBox(boxDetail);
-    ASSERT_TRUE(boxSolidPrimitive.IsValid());
-    GeometricPrimitivePtr boxGeomPrimitive = GeometricPrimitive::Create(boxSolidPrimitive);
-    ASSERT_TRUE(boxGeomPrimitive.IsValid());
-    IBRepEntityPtr boxSolid;
-    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(boxSolid, boxGeomPrimitive, true);
-    ASSERT_TRUE(boxSolid.IsValid());
+    STDVectorDPoint3d points{{10, 0, 0}, {10, 10, 10}, {0, 10, 10}, {0, 0, 0}};
+    CurveVectorPtr rectCurve = CurveVector::CreateLinear(points, CurveVector::BOUNDARY_TYPE_Outer);
 
-    if (true)
-        {
-        IBRepEntityPtr slice = DgnGeometryUtils::GetBodySlice(*boxSolid, 10, 20);
-        ASSERT_TRUE(slice.IsValid());
-        DRange3d sliceRange = slice->GetEntityRange();
-        ASSERT_DOUBLE_EQ(sliceRange.low.z, 10);
-        ASSERT_DOUBLE_EQ(sliceRange.high.z, 20);
-        }
+    double area1 = GeometryUtils::GetCurveArea(*rectCurve);
+    CurveVectorPtr curve = GeometryUtils::ProjectCurveOntoZeroPlane(*rectCurve);
 
-    if (true)
-        {
-        IBRepEntityPtr slice = DgnGeometryUtils::GetBodySlice(*boxSolid, -5, 10);
-        ASSERT_TRUE(slice.IsValid());
-        DRange3d sliceRange = slice->GetEntityRange();
-        ASSERT_DOUBLE_EQ(sliceRange.low.z, 0);
-        ASSERT_DOUBLE_EQ(sliceRange.high.z, 10);
-        }
+    double area2 = GeometryUtils::GetCurveArea(*curve);
 
-    if (true)
-        {
-        IBRepEntityPtr slice = DgnGeometryUtils::GetBodySlice(*boxSolid, 90, 110);
-        ASSERT_TRUE(slice.IsValid());
-        DRange3d sliceRange = slice->GetEntityRange();
-        ASSERT_DOUBLE_EQ(sliceRange.low.z, 90);
-        ASSERT_DOUBLE_EQ(sliceRange.high.z, 100);
-        }
-
-    if (true)
-        {
-        IBRepEntityPtr slice = DgnGeometryUtils::GetBodySlice(*boxSolid, -5, 105);
-        ASSERT_TRUE(slice.IsValid());
-        DRange3d sliceRange = slice->GetEntityRange();
-        ASSERT_DOUBLE_EQ(sliceRange.low.z, 0);
-        ASSERT_DOUBLE_EQ(sliceRange.high.z, 100);
-        }
-
-    if (true)
-        {
-        IBRepEntityPtr slice = DgnGeometryUtils::GetBodySlice(*boxSolid, 50, 50);
-        ASSERT_TRUE(slice.IsValid());
-        DRange3d sliceRange = slice->GetEntityRange();
-        ASSERT_DOUBLE_EQ(sliceRange.low.z, 50);
-        ASSERT_DOUBLE_EQ(sliceRange.high.z, 50);
-        }
-    }
-
-//--------------------------------------------------------------------------------------
-// @betest                                       Mindaugas Butkus                07/2018
-//---------------+---------------+---------------+---------------+---------------+------
-TEST_F(GeometryUtilsTests, GetUpwardSlice)
-    {
-    DgnBoxDetail boxDetail = DgnBoxDetail(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, 100), DVec3d::UnitX(), DVec3d::UnitY(),
-                                          200, 200, 200, 200, true);
-    ISolidPrimitivePtr boxSolidPrimitive = ISolidPrimitive::CreateDgnBox(boxDetail);
-    ASSERT_TRUE(boxSolidPrimitive.IsValid());
-    GeometricPrimitivePtr boxGeomPrimitive = GeometricPrimitive::Create(boxSolidPrimitive);
-    ASSERT_TRUE(boxGeomPrimitive.IsValid());
-    IBRepEntityPtr boxSolid;
-    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(boxSolid, boxGeomPrimitive, true);
-    ASSERT_TRUE(boxSolid.IsValid());
-
-    if (true)
-        {
-        IBRepEntityPtr slice = DgnGeometryUtils::GetUpwardSlice(*boxSolid, 10);
-        ASSERT_TRUE(slice.IsValid());
-        DRange3d sliceRange = slice->GetEntityRange();
-        ASSERT_DOUBLE_EQ(sliceRange.low.z, 10);
-        ASSERT_DOUBLE_EQ(sliceRange.high.z, 100);
-        }
-
-    if (true)
-        {
-        IBRepEntityPtr slice = DgnGeometryUtils::GetUpwardSlice(*boxSolid, -5);
-        ASSERT_TRUE(slice.IsValid());
-        DRange3d sliceRange = slice->GetEntityRange();
-        ASSERT_DOUBLE_EQ(sliceRange.low.z, 0);
-        ASSERT_DOUBLE_EQ(sliceRange.high.z, 100);
-        }
-
-    if (true)
-        {
-        IBRepEntityPtr slice = DgnGeometryUtils::GetUpwardSlice(*boxSolid, 105);
-        ASSERT_TRUE(slice.IsNull());
-        }
-
-    if (true)
-        {
-        IBRepEntityPtr slice = DgnGeometryUtils::GetUpwardSlice(*boxSolid, 100);
-        ASSERT_TRUE(slice.IsValid());
-        DRange3d sliceRange = slice->GetEntityRange();
-        ASSERT_DOUBLE_EQ(sliceRange.low.z, 100);
-        ASSERT_DOUBLE_EQ(sliceRange.high.z, 100);
-        }
-    }
-
-//--------------------------------------------------------------------------------------
-// @betest                                       Mindaugas Butkus                07/2018
-//---------------+---------------+---------------+---------------+---------------+------
-TEST_F(GeometryUtilsTests, GetDownwardSlice)
-    {
-    DgnBoxDetail boxDetail = DgnBoxDetail(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, 100), DVec3d::UnitX(), DVec3d::UnitY(),
-                                          200, 200, 200, 200, true);
-    ISolidPrimitivePtr boxSolidPrimitive = ISolidPrimitive::CreateDgnBox(boxDetail);
-    ASSERT_TRUE(boxSolidPrimitive.IsValid());
-    GeometricPrimitivePtr boxGeomPrimitive = GeometricPrimitive::Create(boxSolidPrimitive);
-    ASSERT_TRUE(boxGeomPrimitive.IsValid());
-    IBRepEntityPtr boxSolid;
-    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(boxSolid, boxGeomPrimitive, true);
-    ASSERT_TRUE(boxSolid.IsValid());
-
-    if (true)
-        {
-        IBRepEntityPtr slice = DgnGeometryUtils::GetDownwardSlice(*boxSolid, 10);
-        ASSERT_TRUE(slice.IsValid());
-        DRange3d sliceRange = slice->GetEntityRange();
-        ASSERT_DOUBLE_EQ(sliceRange.low.z, 0);
-        ASSERT_DOUBLE_EQ(sliceRange.high.z, 10);
-        }
-
-    if (true)
-        {
-        IBRepEntityPtr slice = DgnGeometryUtils::GetDownwardSlice(*boxSolid, 105);
-        ASSERT_TRUE(slice.IsValid());
-        DRange3d sliceRange = slice->GetEntityRange();
-        ASSERT_DOUBLE_EQ(sliceRange.low.z, 0);
-        ASSERT_DOUBLE_EQ(sliceRange.high.z, 100);
-        }
-
-    if (true)
-        {
-        IBRepEntityPtr slice = DgnGeometryUtils::GetDownwardSlice(*boxSolid, -5);
-        ASSERT_TRUE(slice.IsNull());
-        }
-
-    if (true)
-        {
-        IBRepEntityPtr slice = DgnGeometryUtils::GetDownwardSlice(*boxSolid, 0);
-        ASSERT_TRUE(slice.IsValid());
-        DRange3d sliceRange = slice->GetEntityRange();
-        ASSERT_DOUBLE_EQ(sliceRange.low.z, 0);
-        ASSERT_DOUBLE_EQ(sliceRange.high.z, 0);
-        }
+    ASSERT_EQ(100, area2);
+    ASSERT_NE(area1, area2);
     }
