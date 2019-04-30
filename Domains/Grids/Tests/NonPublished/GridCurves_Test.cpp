@@ -14,7 +14,7 @@ USING_NAMESPACE_GRIDS
 
 //=======================================================================================
 // Sets up environment for Grid Curves testing.
-// @bsiclass                                    Haroldas.Vitunskas              03/2019
+// @bsiclass                                    Haroldas.Vitunskas              04/2019
 //=======================================================================================
 struct GridCurvesTest : GridsTestFixtureBase
     {
@@ -28,15 +28,15 @@ struct GridCurvesTest : GridsTestFixtureBase
         void SetUp() override;
         void TearDown() override;
 
-        ElevationGridCPtr InsertElevationGrid();
-        OrthogonalGridCPtr InsertOrthogonalGrid();
-        GridCurveBundleCPtr InsertOrthogonalGridCurves();
+        ElevationGridCPtr InsertElevationGrid() const;
+        OrthogonalGridCPtr InsertOrthogonalGrid() const;
+        GridCurveBundleCPtr InsertOrthogonalGridCurves() const;
     };
 
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Haroldas.Vitunskas              03/2019
-//--------------+---------------+---------------+---------------+---------------+-------- 
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
 void GridCurvesTest::SetUp()
     {
     GridsTestFixtureBase::SetUp();
@@ -46,12 +46,13 @@ void GridCurvesTest::SetUp()
     SpatialLocationPartitionPtr partition = SpatialLocationPartition::Create (*rootSubject, "GridSpatialPartition");
     db.Elements().Insert<SpatialLocationPartition> (*partition);
     m_model = SpatialLocationModel::CreateAndInsert (*partition);
+
     db.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Haroldas.Vitunskas              03/2019
-//--------------+---------------+---------------+---------------+---------------+-------- 
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
 void GridCurvesTest::TearDown()
     {
     m_model = nullptr;
@@ -59,9 +60,9 @@ void GridCurvesTest::TearDown()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Haroldas.Vitunskas              03/2019
-//--------------+---------------+---------------+---------------+---------------+-------- 
-ElevationGridCPtr GridCurvesTest::InsertElevationGrid()
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+ElevationGridCPtr GridCurvesTest::InsertElevationGrid() const
     {
     double heightInterval = 10;
     int gridIteration = 0;
@@ -83,31 +84,31 @@ ElevationGridCPtr GridCurvesTest::InsertElevationGrid()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Haroldas.Vitunskas              03/2019
-//--------------+---------------+---------------+---------------+---------------+-------- 
-OrthogonalGridCPtr GridCurvesTest::InsertOrthogonalGrid()
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//--------------------------------------------------------------------------------------- 
+OrthogonalGridCPtr GridCurvesTest::InsertOrthogonalGrid() const
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGrid::CreateParams orthogonalParams = OrthogonalGrid::CreateParams (*m_model,
-        db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
-        "Orthogonal Grid",
-        15, /*defaultCoordIncX*/
-        10, /*defaultCoordIncY*/
-        0.0, /*defaultStaExtX*/
-        50.0, /*defaultEndExtX*/
-        0.0, /*defaultStaExtY*/
-        50.0, /*defaultEndExtY*/
-        -2 * BUILDING_TOLERANCE, /*defaultStaElevation*/
-        30.0 + 2 * BUILDING_TOLERANCE /*defaultEndElevation*/
-    );
+    OrthogonalGrid::CreateParams orthogonalParams (*m_model,
+                                                   db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
+                                                   "Orthogonal Grid",
+                                                   15, /*defaultCoordIncX*/
+                                                   10, /*defaultCoordIncY*/
+                                                   0.0, /*defaultStaExtX*/
+                                                   50.0, /*defaultEndExtX*/
+                                                   0.0, /*defaultStaExtY*/
+                                                   50.0, /*defaultEndExtY*/
+                                                   -2 * BUILDING_TOLERANCE, /*defaultStaElevation*/
+                                                   30.0 + 2 * BUILDING_TOLERANCE /*defaultEndElevation*/
+                                                   );
 
     return OrthogonalGrid::CreateAndInsertWithSurfaces (orthogonalParams, 2, 1);
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Haroldas.Vitunskas              03/2019
-//--------------+---------------+---------------+---------------+---------------+-------- 
-GridCurveBundleCPtr GridCurvesTest::InsertOrthogonalGridCurves()
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+GridCurveBundleCPtr GridCurvesTest::InsertOrthogonalGridCurves() const
     {
     DgnDbR db = *DgnClientApp::App().Project();
     ElevationGridCPtr elevationGrid = InsertElevationGrid();
@@ -125,9 +126,25 @@ GridCurveBundleCPtr GridCurvesTest::InsertOrthogonalGridCurves()
     }
 
 //---------------------------------------------------------------------------------------
-// @betest                                      Haroldas.Vitunskas              03/2019
-//--------------+---------------+---------------+---------------+---------------+-------- 
-TEST_F (GridCurvesTest, GridCurvesHaveBubbleProperties)
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+static GridSurfaceCPtr getGridSurface(GridCurveCR curve)
+    {
+    bvector<DgnElementId> intersectingSurfaces = curve.GetIntersectingSurfaceIds ();
+    for (DgnElementId surfaceId : intersectingSurfaces)
+        {
+        GridSurfaceCPtr surface = curve.GetDgnDb ().Elements ().Get<GridSurface> (surfaceId);
+        if (nullptr == dynamic_cast<ElevationGridSurfaceCP>(surface.get ()))
+            return surface;
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+TEST_F (GridCurvesTest, GridCurvesHaveLabels)
     {
     DgnDbR db = *DgnClientApp::App().Project();
     db.BriefcaseManager().StartBulkOperation();
@@ -139,16 +156,24 @@ TEST_F (GridCurvesTest, GridCurvesHaveBubbleProperties)
     db.BriefcaseManager().StartBulkOperation();
 
     GridCurvePtr curve = dynamic_cast<GridCurve*>(curveBundle->GetGridCurve()->CopyForEdit().get());
-    ASSERT_TRUE (curve.IsValid()) << "Failed to get grid curve";
+    ASSERT_TRUE (curve.IsValid());
 
-    ASSERT_FALSE (curve->GetBubbleAtStart());
-    ASSERT_FALSE (curve->GetBubbleAtEnd());
-    
-    curve->SetBubbleAtStart (true);
-    ASSERT_TRUE (curve->GetBubbleAtStart());
+    GridLabelCPtr gridLabel = curve->GetNonElevationSurfaceGridLabel();
+    EXPECT_TRUE (gridLabel.IsNull());
 
-    curve->SetBubbleAtEnd (true);
-    ASSERT_TRUE (curve->GetBubbleAtEnd());
+    GridLabelPtr newLabel = GridLabel::Create (*getGridSurface(*curve), "Label", true, true);
+    ASSERT_TRUE (newLabel.IsValid());
 
-    db.SaveChanges();
+    DgnDbStatus status;
+    newLabel->Insert (&status);
+    EXPECT_EQ (DgnDbStatus::Success, status);
+    EXPECT_EQ (BeSQLite::BE_SQLITE_OK, db.SaveChanges());
+
+    gridLabel = curve->GetNonElevationSurfaceGridLabel();
+    ASSERT_TRUE (gridLabel.IsValid());
+    EXPECT_EQ (gridLabel->GetElementId(), newLabel->GetElementId());
+
+    EXPECT_STRCASEEQ ("Label", gridLabel->GetLabel().c_str());
+    EXPECT_TRUE (gridLabel->HasLabelAtStart());
+    EXPECT_TRUE (gridLabel->HasLabelAtEnd());
     }

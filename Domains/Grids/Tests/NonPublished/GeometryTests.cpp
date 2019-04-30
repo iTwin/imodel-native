@@ -7,10 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include <Grids/GridsApi.h>
 #include <Bentley/BeTest.h>
-#include <DgnView\DgnViewLib.h>
-#include <DgnPlatform\DesktopTools\KnownDesktopLocationsAdmin.h>
-#include <DgnPlatform\GenericDomain.h>
-#include <BuildingShared\DgnUtils\BuildingUtils.h>
+#include <BuildingShared/DgnUtils/BuildingUtils.h>
+#include "GridsTestFixtureBase.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -19,244 +17,102 @@ USING_NAMESPACE_BUILDING_SHARED
 
 #define BUBBLE_RADIUS 1.5
 
-#pragma region TestHost
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass                                                                      03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct TestHost : DgnViewLib::Host
-    {
-    private:
-        TestHost();
-
-    public:
-        static TestHost& Instance();
-        virtual ~TestHost();
-
-        BeFileName GetBaseDbPath() const { return s_baseDbPath; }
-
-    protected:
-        virtual void _SupplyProductName (BentleyApi::Utf8StringR name) override;
-        virtual NotificationAdmin& _SupplyNotificationAdmin() override;
-        virtual Dgn::ViewManager& _SupplyViewManager() override;
-        virtual BentleyApi::BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
-        virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
-
-    private:
-        static BeFileName s_baseDbPath;
-    };
-
-BeFileName TestHost::s_baseDbPath;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass                                                                      03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ConverterViewManager : ViewManager
-    {
-    protected:
-        virtual Display::SystemContext* _GetSystemContext() override { return nullptr; }
-        virtual bool _DoesHostHaveFocus() override { return true; }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BeFileName getOutputDirectory()
-    {
-    BeFileName outputDirectory;
-    BeTest::GetHost().GetTempDir (outputDirectory);
-
-    if (!BeFileName::DoesPathExist (outputDirectory.c_str()))
-        BeFileName::CreateNewDirectory (outputDirectory.c_str());
-
-    return outputDirectory;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbPtr createDgnDb (BeFileName const& bimFilename)
-    {
-    CreateDgnDbParams createProjectParams;
-    createProjectParams.SetOverwriteExisting (true);
-    createProjectParams.SetRootSubjectName ("GridsTests");
-    createProjectParams.SetRootSubjectDescription ("Tests for Grids domain");
-    createProjectParams.SetOpenMode (Db::OpenMode::ReadWrite);
-    createProjectParams.SetDbType (Db::CreateParams::DbType::Standalone);
-
-    DbResult status = BeSQLite::DbResult::BE_SQLITE_ERROR;
-    DgnDbPtr db = DgnDb::CreateDgnDb (&status, bimFilename, createProjectParams);
-    BeAssert (status == BE_SQLITE_OK);
-
-    return db;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-TestHost::TestHost()
-    {
-    DgnViewLib::Initialize (*this, true);
-
-    BentleyStatus registrationStatus = DgnDomains::RegisterDomain (GridsDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
-    BeAssert (BentleyStatus::SUCCESS == registrationStatus);
-
-    BeFileName::EmptyDirectory (getOutputDirectory());
-
-    DgnDbPtr dbPtr = createDgnDb (getOutputDirectory().AppendToPath (L"GridsTests"));
-    BeAssert (dbPtr.IsValid());
-
-    // Get fully qualified path (including db extension)
-    s_baseDbPath = dbPtr->GetFileName();
-    dbPtr->CloseDb();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-TestHost::~TestHost()
-    {
-    Terminate (false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-TestHost& TestHost::Instance()
-    {
-    static TestHost testHost;
-    return testHost;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TestHost::_SupplyProductName (BentleyApi::Utf8StringR name)
-    {
-    name.assign ("GridsDomainTests");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewLib::Host::NotificationAdmin& TestHost::_SupplyNotificationAdmin()
-    {
-    return *new DgnPlatformLib::Host::NotificationAdmin();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass                                                                      03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct GridsViewManager : ViewManager
-    {
-    protected:
-        virtual Display::SystemContext* _GetSystemContext() override { return nullptr; }
-        virtual bool _DoesHostHaveFocus() override { return true; }
-    };
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewManager& TestHost::_SupplyViewManager()
-    {
-    return *new GridsViewManager();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-L10N::SqlangFiles TestHost::_SupplySqlangFiles()
-    {
-    BentleyApi::BeFileName sqlangFile (GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    sqlangFile.AppendToPath (L"sqlang/GridsTests_en-US.sqlang.db3");
-    //BeAssert (sqlangFile.DoesPathExist());
-
-    return L10N::SqlangFiles (sqlangFile);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewLib::Host::IKnownLocationsAdmin& TestHost::_SupplyIKnownLocationsAdmin()
-    {
-    return *new KnownDesktopLocationsAdmin();
-    }
-
-#pragma endregion TestHost
-
 //=======================================================================================
 // Tests for visualizing grids
-// @bsiclass                                                                     03/2019
+// @bsiclass                                                                     04/2019
 //=======================================================================================
-struct GeometryTests : testing::Test
+struct GeometryTests : GridsTestFixtureBase
     {
     private:
         DgnDbPtr m_dbPtr;
         SpatialLocationModelPtr m_model;
-        Dgn::PhysicalModelPtr m_physicalModelPtr;
+        PhysicalModelPtr m_physicalModelPtr;
         DgnCategoryId m_categoryId;
         Render::GeometryParams m_shapeGeometryParams;
 
     protected:
-        GeometryTests();
-        virtual ~GeometryTests();
+        GeometryTests () = default;
+        virtual ~GeometryTests () = default;
 
-        void SetUpForGeometryPresentation();
-        void InsertPhysicalCurveElement (GridCurvePtr curvePtr);
+        PhysicalPartitionPtr SetUpPhysicalModelPartition () const;
+        void SetUpPhysicalModel ();
+        SpatialLocationPartitionPtr SetUpGridPartition () const;
+        void SetUpGridModel ();
+        void SetUpGridTestCategory ();
+        void SetUpGeometryParams ();
+        CategorySelectorPtr SetUpCategorySelector ( DictionaryModelR dictionaryModel ) const;
+        ModelSelectorPtr SetUpModelSelector ( DictionaryModelR dictionaryModel ) const;
+        Render::ViewFlags SetUpViewFlags ( DisplayStylePtr displayStylePtr ) const;
+        DisplayStyle3dPtr SetUpDisplayStyle ( DictionaryModelR dictionaryModel ) const;
+        void SetUpViewDefinition ( DictionaryModelR dictionaryModel,
+                                   CategorySelectorR categorySelector,
+                                   ModelSelectorR modelSelector,
+                                   DisplayStyle3dR displayStyle ) const;
+        void SetUpForGeometryPresentation ();
+        void InsertPhysicalCurveElement ( GridCurveCR curve ) const;
 
-        DgnDb& GetDb();
-        SpatialLocationModel& GetModel();
-        PhysicalModel& GetPhysicalModel() { return *m_physicalModelPtr; }
-        DgnCategoryId GetCategoryId();
-        Render::GeometryParams& GetGeometryParams();
-        bool AppendGridBubbleGraphics (GeometryBuilderR builder, GridCurveCR curve) const;
+        DgnDb& GetDb () const { return *m_dbPtr; }
+        SpatialLocationModel& GetModel () const { return *m_model; }
+        PhysicalModel& GetPhysicalModel () const { return *m_physicalModelPtr; }
+        DgnCategoryId GetCategoryId () const { return m_categoryId; }
+        Render::GeometryParamsCR GetGeometryParams () const { return m_shapeGeometryParams; }
+        bool AppendGridBubbleGraphics ( GeometryBuilderR builder, GridCurveCR curve ) const;
 
-        ElevationGridPtr InsertElevationGrid (DPoint3d origin, double length, double width,  double elevationIncrement, int count, Utf8CP gridName);
-        OrthogonalGridPtr InsertOrthogonalGrid (DPoint3d origin, double incrementX, double incrementY, double minExtentX, double maxExtentX,
-                                                double minExtentY, double maxExtentY, double elevation, int countX, int countY, Utf8CP gridName);
-        RadialGridPtr InsertRadialGrid (DPoint3d origin, Angle angleIncrement, double radiusIncrement, Angle startAngle, Angle endAngle,
-                                        double startRadius, double endRadius, double elevation, int radialCount, int circularCount, Utf8CP gridName);
+        ElevationGridPtr InsertElevationGrid ( DPoint3d origin,
+                                               double length,
+                                               double width,
+                                               double elevationIncrement,
+                                               int count,
+                                               Utf8CP gridName ) const;
+        OrthogonalGridPtr InsertOrthogonalGrid ( DPoint3d origin,
+                                                 double incrementX,
+                                                 double incrementY,
+                                                 double minExtentX,
+                                                 double maxExtentX,
+                                                 double minExtentY,
+                                                 double maxExtentY,
+                                                 double elevation,
+                                                 int countX,
+                                                 int countY,
+                                                 Utf8CP gridName ) const;
+        RadialGridPtr InsertRadialGrid ( DPoint3d origin,
+                                         Angle angleIncrement,
+                                         double radiusIncrement,
+                                         Angle startAngle,
+                                         Angle endAngle,
+                                         double startRadius,
+                                         double endRadius,
+                                         double elevation,
+                                         int radialCount,
+                                         int circularCount,
+                                         Utf8CP gridName ) const;
 
-        bvector<GridCurvePtr> InsertIntersectionCurves (ElevationGridPtr elevationGrid, GridPtr otherGrid);
+        bvector <GridCurvePtr> InsertIntersectionCurves ( ElevationGridCR elevationGrid, GridCR otherGrid ) const;
 
-        /*---------------------------------------------------------------------------------**//**
-        * Create and insert a DgnModel.
-        * @bsimethod                                                                     03/2019
-        +---------------+---------------+---------------+---------------+---------------+------*/
-        template<typename T_Model, typename T_Partition>
-        RefCountedPtr<T_Model> InsertDgnModel (Utf8CP pPartitionName)
-            {
-            Dgn::SubjectCPtr rootSubjectPtr = GetDb().Elements().GetRootSubject();
+        bool CreateGridLabel ( GridCurveCR curve, Utf8CP label, bool atStart, bool atEnd ) const;
 
-            RefCountedPtr<T_Partition> partitionPtr = typename T_Partition::Create (*rootSubjectPtr, pPartitionName);
-            GetDb().BriefcaseManager().AcquireForElementInsert (*partitionPtr);
-
-            Dgn::DgnDbStatus status;
-            partitionPtr->Insert (&status);
-            if (status != Dgn::DgnDbStatus::Success)
-                return nullptr;
-
-            RefCountedPtr<T_Model> modelPtr = typename T_Model::Create (*partitionPtr);
-            status = modelPtr->Insert();
-            if (status != Dgn::DgnDbStatus::Success)
-                return nullptr;
-
-            return modelPtr;
-            }
+        virtual void SetUp () override;
+        virtual void TearDown () override;
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-static BeFileName copyWorkingDb()
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+static BeFileName GetWorkingDatabasePath ( BeFileName baseDbPath )
     {
-    BeFileName baseDbPath = TestHost::Instance().GetBaseDbPath();
     WString directory = baseDbPath.GetDirectoryName();
     WString name = baseDbPath.GetFileNameWithoutExtension();
     WString extension = baseDbPath.GetExtension();
 
-    BeFileName workingDbPath (directory + name + L"_Working." + extension);
+    return BeFileName (directory + name + L"_Geometry." + extension);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+static BeFileName copyWorkingDb (BeFileName baseDbPath)
+    {
+    BeFileName workingDbPath = GetWorkingDatabasePath (baseDbPath);
 
     BeFileNameStatus fileCopyStatus = BeFileName::BeCopyFile (baseDbPath, workingDbPath);
     BeAssert (fileCopyStatus == BeFileNameStatus::Success);
@@ -266,147 +122,182 @@ static BeFileName copyWorkingDb()
 
 #pragma region GeometryTests Methods
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryTests::SetUpForGeometryPresentation()
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+PhysicalPartitionPtr GeometryTests::SetUpPhysicalModelPartition () const
     {
-    m_physicalModelPtr = InsertDgnModel<PhysicalModel, PhysicalPartition> ("GridsTestPartition_Physical");
-    BeAssert (m_physicalModelPtr.IsValid());
+    SubjectCPtr rootSubjectPtr = GetDb().Elements().GetRootSubject();
+    PhysicalPartitionPtr partitionPtr = PhysicalPartition::Create (*rootSubjectPtr, "GridsTestPartition_Physical");
+    GetDb().BriefcaseManager().AcquireForElementInsert (*partitionPtr);
+    DgnDbStatus status;
+    partitionPtr->Insert (&status);
+    BeAssert(DgnDbStatus::Success == status);
+    return partitionPtr;
+    }
 
-    // Create default model and partition for grid elements
-    m_dbPtr->BriefcaseManager().StartBulkOperation();
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+void GeometryTests::SetUpPhysicalModel ()
+    {
+    PhysicalPartitionCPtr partitionPtr = SetUpPhysicalModelPartition();
+    m_physicalModelPtr = PhysicalModel::Create (*partitionPtr);
+    BeAssert (m_physicalModelPtr.IsValid());
+    DgnDbStatus status = m_physicalModelPtr->Insert();
+    BeAssert (DgnDbStatus::Success == status);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+SpatialLocationPartitionPtr GeometryTests::SetUpGridPartition () const
+    {
     SubjectCPtr rootSubject = m_dbPtr->Elements().GetRootSubject();
     SpatialLocationPartitionPtr partition = SpatialLocationPartition::Create (*rootSubject, "GridSpatialPartition");
-    m_dbPtr->Elements().Insert<SpatialLocationPartition> (*partition);
+    m_dbPtr->Elements().Insert <SpatialLocationPartition> (*partition);
+    return partition;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+void GeometryTests::SetUpGridModel ()
+    {
+    SpatialLocationPartitionCPtr partition = SetUpGridPartition();
     m_model = SpatialLocationModel::CreateAndInsert (*partition);
     m_dbPtr->SaveChanges();
+    m_dbPtr->BriefcaseManager ().StartBulkOperation ();
+    }
 
-    // Create a SpatialCategory used for creating Elements
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+void GeometryTests::SetUpGridTestCategory ()
+    {
     SpatialCategory category (GetDb().GetDictionaryModel(), "GridTestCategory", DgnCategory::Rank::Application);
 
     DgnDbStatus status;
     SpatialCategoryCPtr categoryPtr = category.Insert (DgnSubCategory::Appearance(), &status);
     BeAssert (status == DgnDbStatus::Success);
     m_categoryId = categoryPtr->GetCategoryId();
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+void GeometryTests::SetUpGeometryParams ()
+    {
     m_shapeGeometryParams.SetCategoryId (m_categoryId);
     m_shapeGeometryParams.SetFillDisplay (Render::FillDisplay::Always);
-    m_shapeGeometryParams.SetLineColor (ColorDef::ColorDef (66, 134, 244));
-    m_shapeGeometryParams.SetFillColor (ColorDef::ColorDef (66, 134, 244));
+    m_shapeGeometryParams.SetLineColor (ColorDef (66, 134, 244));
+    m_shapeGeometryParams.SetFillColor (ColorDef (66, 134, 244));
     m_shapeGeometryParams.SetWeight (1);
+    }
 
-    DefinitionModelR dictionaryModel = GetDb().GetDictionaryModel();
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+CategorySelectorPtr GeometryTests::SetUpCategorySelector ( DictionaryModelR dictionaryModel ) const
+    {
     CategorySelectorPtr categorySelectorPtr = new CategorySelector (dictionaryModel, "GridsTest");
     categorySelectorPtr->AddCategory (m_categoryId);
+    return categorySelectorPtr;
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+ModelSelectorPtr GeometryTests::SetUpModelSelector ( DictionaryModelR dictionaryModel ) const
+    {
     ModelSelectorPtr modelSelectorPtr = new ModelSelector (dictionaryModel, "GridsTest");
     modelSelectorPtr->AddModel (GetModel().GetModelId());
     modelSelectorPtr->AddModel (GetPhysicalModel().GetModelId());
+    return modelSelectorPtr;
+    }
 
-    DisplayStyle3dPtr displayStylePtr = new DisplayStyle3d (dictionaryModel, "GridsTest");
-    displayStylePtr->SetBackgroundColor (ColorDef::LightGrey());
-    displayStylePtr->SetSkyBoxEnabled (false);
-    displayStylePtr->SetGroundPlaneEnabled (false);
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+Render::ViewFlags GeometryTests::SetUpViewFlags ( DisplayStylePtr displayStylePtr ) const
+    {
     Render::ViewFlags viewFlags = displayStylePtr->GetViewFlags();
     viewFlags.SetRenderMode (Render::RenderMode::Wireframe);
     viewFlags.SetShowTransparency (false);
     viewFlags.SetShowGrid (true);
     viewFlags.SetShowAcsTriad (true);
-    displayStylePtr->SetViewFlags (viewFlags);
+    return viewFlags;
+    }
 
-    OrthographicViewDefinition view (dictionaryModel, "Grids View", *categorySelectorPtr, *displayStylePtr, *modelSelectorPtr);
-    view.SetCategorySelector (*categorySelectorPtr);
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+DisplayStyle3dPtr GeometryTests::SetUpDisplayStyle ( DictionaryModelR dictionaryModel ) const
+    {
+    DisplayStyle3dPtr displayStylePtr = new DisplayStyle3d (dictionaryModel, "GridsTest");
+    displayStylePtr->SetBackgroundColor (ColorDef::LightGrey());
+    displayStylePtr->SetSkyBoxEnabled (false);
+    displayStylePtr->SetGroundPlaneEnabled (false);
+
+    Render::ViewFlags viewFlags = SetUpViewFlags (displayStylePtr);
+    displayStylePtr->SetViewFlags (viewFlags);
+    return displayStylePtr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+void GeometryTests::SetUpViewDefinition ( DictionaryModelR dictionaryModel,
+                                          CategorySelectorR categorySelector,
+                                          ModelSelectorR modelSelector,
+                                          DisplayStyle3dR displayStyle ) const
+    {
+    OrthographicViewDefinition view (dictionaryModel, "Grids View", categorySelector, displayStyle, modelSelector);
+    view.SetCategorySelector (categorySelector);
     view.SetStandardViewRotation (StandardView::Top);
     view.LookAtVolume (GetDb().GeoLocation().GetProjectExtents());
     view.Insert();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometryTests::GeometryTests()
-    : m_dbPtr (nullptr)
-    , m_model (nullptr)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+void GeometryTests::SetUpForGeometryPresentation ()
     {
-    // Copy and open a fresh DB
-    BeFileName workingDbPath = copyWorkingDb();
+    SetUpPhysicalModel();
+    SetUpGridModel();
+    SetUpGridTestCategory();
+    SetUpGeometryParams();
 
-    DgnDb::OpenParams openParams (BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade);
-    BeSQLite::DbResult openStatus;
-    m_dbPtr = DgnDb::OpenDgnDb (&openStatus, workingDbPath, openParams);
-    BeAssert (m_dbPtr.IsValid());
-
-    SetUpForGeometryPresentation();
+    DictionaryModelR dictionaryModel = GetDb().GetDictionaryModel();
+    CategorySelectorPtr categorySelectorPtr = SetUpCategorySelector (dictionaryModel);
+    ModelSelectorPtr modelSelectorPtr = SetUpModelSelector (dictionaryModel);
+    DisplayStyle3dPtr displayStylePtr = SetUpDisplayStyle (dictionaryModel);
+    SetUpViewDefinition (dictionaryModel, *categorySelectorPtr, *modelSelectorPtr, *displayStylePtr);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometryTests::~GeometryTests()
-    {
-    m_dbPtr->CloseDb();
-    TestHost::Instance().Terminate (false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDb& GeometryTests::GetDb()
-    {
-    BeAssert (m_dbPtr.IsValid());
-    return *m_dbPtr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-SpatialLocationModel& GeometryTests::GetModel()
-    {
-    BeAssert (m_model.IsValid());
-    return *m_model;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     04/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId GeometryTests::GetCategoryId()
-    {
-    BeAssert (m_categoryId.IsValid());
-    return m_categoryId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     04/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::GeometryParams& GeometryTests::GetGeometryParams()
-    {
-    return m_shapeGeometryParams;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     04/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryTests::InsertPhysicalCurveElement (GridCurvePtr curvePtr)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+void GeometryTests::InsertPhysicalCurveElement ( GridCurveCR curve ) const
     {
     PhysicalElementPtr physicalElementPtr = GenericPhysicalObject::Create (GetPhysicalModel(), GetCategoryId());
-    physicalElementPtr->SetUserLabel (curvePtr->GetUserLabel());
-    physicalElementPtr->SetPlacement (curvePtr->GetPlacement());
+    physicalElementPtr->SetUserLabel (curve.GetNonElevationSurfaceGridLabel()->GetLabel().c_str());
+    physicalElementPtr->SetPlacement (curve.GetPlacement());
 
     GeometrySource* pGeometrySource = physicalElementPtr->ToGeometrySourceP();
     GeometryBuilderPtr builder = GeometryBuilder::Create (*pGeometrySource);
     builder->Append (GetGeometryParams());
 
-    GeometryCollection geomData = *curvePtr->ToGeometrySource();
+    GeometryCollection geomData = *curve.ToGeometrySource();
     for (auto itGeometricPrimitive : geomData)
         {
         GeometricPrimitivePtr geometricPrimitivePtr = itGeometricPrimitive.GetGeometryPtr();
         ASSERT_TRUE (geometricPrimitivePtr.IsValid());
         builder->Append (*geometricPrimitivePtr);
-        ASSERT_TRUE(AppendGridBubbleGraphics (*builder, *curvePtr));
+        ASSERT_TRUE(AppendGridBubbleGraphics (*builder, curve));
         }
-    
+
     builder->Finish (*pGeometrySource);
 
     DgnDbStatus insertStatus;
@@ -414,13 +305,12 @@ void GeometryTests::InsertPhysicalCurveElement (GridCurvePtr curvePtr)
     ASSERT_TRUE (insertStatus == DgnDbStatus::Success);
     }
 
-
 #pragma region Bubble Graphics
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     04/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DVec3d getDirectionAtEndPoint (ICurvePrimitiveCR primitive, bool atStart)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+static DVec3d getDirectionAtEndPoint ( ICurvePrimitiveCR primitive, bool atStart )
     {
     // FractionToPointAndUnitTangent doesn't work on child curve vector, so extract very first leaf curve primitive
     if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == primitive.GetCurvePrimitiveType())
@@ -432,8 +322,12 @@ static DVec3d getDirectionAtEndPoint (ICurvePrimitiveCR primitive, bool atStart)
         return getDirectionAtEndPoint (*curve->at (0), atStart);
         }
 
-    ValidatedDRay3d pointAndTangent = primitive.FractionToPointAndUnitTangent (atStart ? 0.0 : 1.0);
-    DVec3d direction = pointAndTangent.IsValid() ? pointAndTangent.Value().direction : DVec3d::FromZero();
+    ValidatedDRay3d pointAndTangent = primitive.FractionToPointAndUnitTangent (atStart
+                                                                                   ? 0.0
+                                                                                   : 1.0);
+    DVec3d direction = pointAndTangent.IsValid()
+                           ? pointAndTangent.Value().direction
+                           : DVec3d::FromZero();
 
     if (!atStart)
         direction.Negate();
@@ -441,10 +335,10 @@ static DVec3d getDirectionAtEndPoint (ICurvePrimitiveCR primitive, bool atStart)
     return direction;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     04/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool getBubbleOrigin (DPoint3dR origin, ICurvePrimitiveCR curve, double bubbleRadius, bool atStart)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+static bool getBubbleOrigin ( DPoint3dR origin, ICurvePrimitiveCR curve, double bubbleRadius, bool atStart )
     {
     // Put bubble so that it touches the curve start point
     // And its center-to-curveStart direction is in the same as beginning of the curve.
@@ -452,7 +346,9 @@ static bool getBubbleOrigin (DPoint3dR origin, ICurvePrimitiveCR curve, double b
     if (!curve.GetStartEnd (start, end))
         return false;
 
-    DPoint3d point = atStart ? start : end;
+    DPoint3d point = atStart
+                         ? start
+                         : end;
     DVec3d direction = getDirectionAtEndPoint (curve, atStart);
     if (direction.IsZero())
         return false;
@@ -464,10 +360,15 @@ static bool getBubbleOrigin (DPoint3dR origin, ICurvePrimitiveCR curve, double b
     return true;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     04/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool addBubble (GeometryBuilderR builder, TextString labelGeometry, ICurvePrimitiveCR bubbleGeometry, ICurvePrimitiveCR curve, TransformCR toWorld, bool atStart)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+static bool addBubble ( GeometryBuilderR builder,
+                        TextString labelGeometry,
+                        ICurvePrimitiveCR bubbleGeometry,
+                        ICurvePrimitiveCR curve,
+                        TransformCR toWorld,
+                        bool atStart )
     {
     DPoint3d origin;
     if (!getBubbleOrigin (origin, curve, bubbleGeometry.GetArcCP()->vector0.Magnitude(), atStart))
@@ -483,16 +384,20 @@ static bool addBubble (GeometryBuilderR builder, TextString labelGeometry, ICurv
     toLocal.Multiply (origin);
     ICurvePrimitivePtr bubbleGeometryCopy = bubbleGeometry.Clone();
     bubbleGeometryCopy->TransformInPlace (Transform::From (origin));
-    labelGeometry.SetOriginFromJustificationOrigin (origin, TextString::HorizontalJustification::Center, TextString::VerticalJustification::Middle);
+    labelGeometry.SetOriginFromJustificationOrigin (origin,
+                                                    TextString::HorizontalJustification::Center,
+                                                    TextString::VerticalJustification::Middle);
 
     builder.SetAppendAsSubGraphics();
     return builder.Append (labelGeometry) && builder.Append (*bubbleGeometryCopy);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     04/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void setUpBubbleAndLabelGeometry (TextStringPtr& labelGeometry, ICurvePrimitivePtr& bubbleGeometry, Utf8CP text)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+static void setUpBubbleAndLabelGeometry ( TextStringPtr& labelGeometry,
+                                          ICurvePrimitivePtr& bubbleGeometry,
+                                          Utf8CP text )
     {
     TextStringStylePtr labelTextStyle = TextStringStyle::Create();
     labelTextStyle->SetWidth (BUBBLE_RADIUS / 2);
@@ -505,10 +410,15 @@ static void setUpBubbleAndLabelGeometry (TextStringPtr& labelGeometry, ICurvePri
     bubbleGeometry = ICurvePrimitive::CreateArc (DEllipse3d::FromCenterRadiusXY (DPoint3d::FromZero(), BUBBLE_RADIUS));
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     04/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool addBubbles (GeometryBuilderR builder, ICurvePrimitiveCR geometry, TransformCR toWorld, Utf8CP label, bool addAtStart, bool addAtEnd)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+static bool addBubbles ( GeometryBuilderR builder,
+                         ICurvePrimitiveCR geometry,
+                         TransformCR toWorld,
+                         Utf8CP label,
+                         bool addAtStart,
+                         bool addAtEnd )
     {
     TextStringPtr labelGeometry;
     ICurvePrimitivePtr bubbleGeometry;
@@ -525,40 +435,70 @@ static bool addBubbles (GeometryBuilderR builder, ICurvePrimitiveCR geometry, Tr
 
 #pragma endregion Bubble Graphics
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     04/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryTests::AppendGridBubbleGraphics(GeometryBuilderR builder, GridCurveCR curve) const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+bool GeometryTests::AppendGridBubbleGraphics ( GeometryBuilderR builder, GridCurveCR curve ) const
     {
     DPoint3d originPoint;
     curve.GetCurve()->GetStartPoint (originPoint);
 
     Placement3d newPlacement (originPoint, curve.GetPlacement().GetAngles());
 
-    Utf8CP label = curve.GetUserLabel();
-    return Utf8String::IsNullOrEmpty (label) || addBubbles (builder, *curve.GetCurve(), newPlacement.GetTransform(), label, curve.GetBubbleAtStart(), curve.GetBubbleAtEnd());
+    GridLabelCPtr gridLabel = curve.GetNonElevationSurfaceGridLabel();
+    if (gridLabel.IsNull())
+        return false;
+
+    Utf8String label = gridLabel->GetLabel().c_str();
+    return Utf8String::IsNullOrEmpty (label.c_str()) || addBubbles (builder,
+                                                                    *curve.GetCurve(),
+                                                                    newPlacement.GetTransform(),
+                                                                    label.c_str(),
+                                                                    gridLabel->HasLabelAtStart(),
+                                                                    gridLabel->HasLabelAtEnd());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     04/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElevationGridPtr GeometryTests::InsertElevationGrid (DPoint3d origin, double length, double width, double elevationIncrement, int count, Utf8CP gridName)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+ElevationGridPtr GeometryTests::InsertElevationGrid ( DPoint3d origin,
+                                                      double length,
+                                                      double width,
+                                                      double elevationIncrement,
+                                                      int count,
+                                                      Utf8CP gridName ) const
     {
-    bvector<DPoint3d> baseShape = { {0, 0, 0}, {length, 0, 0}, {length, width, 0}, {0, width, 0}, {0, 0, 0} };
-    bvector<CurveVectorPtr> floorPlaneCurves = bvector<CurveVectorPtr> (count);
+    bvector <DPoint3d> baseShape = {
+        { 0, 0, 0 },
+        { length, 0, 0 },
+        { length, width, 0 },
+        { 0, width, 0 },
+        { 0, 0, 0 }
+    };
+    bvector <CurveVectorPtr> floorPlaneCurves = bvector <CurveVectorPtr> (count);
     int gridIteration = 0;
     for (CurveVectorPtr& curveShape : floorPlaneCurves)
         {
-        bvector<DPoint3d> thisShape = baseShape;
-        std::transform (thisShape.begin(), thisShape.end(), thisShape.begin(), [&] (DPoint3d point) -> DPoint3d {point.z = elevationIncrement * gridIteration; return point; });
+        bvector <DPoint3d> thisShape = baseShape;
+        std::transform (thisShape.begin(),
+                        thisShape.end(),
+                        thisShape.begin(),
+                        [&] ( DPoint3d point ) ->DPoint3d
+                            {
+                            point.z = elevationIncrement * gridIteration;
+                            return point;
+                            });
         curveShape = CurveVector::CreateLinear (thisShape, CurveVector::BOUNDARY_TYPE_Outer);
         ++gridIteration;
         }
 
     ElevationGridPtr grid = ElevationGrid::CreateAndInsertWithSurfaces (ElevationGrid::CreateParams (GetModel(),
-        GetDb().Elements().GetRootSubject()->GetElementId(),
-        gridName),
-        floorPlaneCurves);
+                                                                                                     GetDb().
+                                                                                                     Elements().
+                                                                                                     GetRootSubject()->
+                                                                                                     GetElementId(),
+                                                                                                     gridName),
+                                                                        floorPlaneCurves);
 
     Placement3d gridPlacement = grid->GetPlacement();
     gridPlacement.SetOrigin (origin);
@@ -568,65 +508,43 @@ ElevationGridPtr GeometryTests::InsertElevationGrid (DPoint3d origin, double len
     return grid;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     04/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-OrthogonalGridPtr GeometryTests::InsertOrthogonalGrid (DPoint3d origin, 
-                                                        double incrementX, double incrementY, 
-                                                        double minExtentX, double maxExtentX, 
-                                                        double minExtentY, double maxExtentY, 
-                                                        double elevation, 
-                                                        int countX, int countY,
-                                                        Utf8CP gridName)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+OrthogonalGridPtr GeometryTests::InsertOrthogonalGrid ( DPoint3d origin,
+                                                        double incrementX,
+                                                        double incrementY,
+                                                        double minExtentX,
+                                                        double maxExtentX,
+                                                        double minExtentY,
+                                                        double maxExtentY,
+                                                        double elevation,
+                                                        int countX,
+                                                        int countY,
+                                                        Utf8CP gridName ) const
     {
-    OrthogonalGrid::CreateParams orthogonalParams = OrthogonalGrid::CreateParams (GetModel(),
-        GetDb().Elements().GetRootSubject()->GetElementId(), /*parent element*/
-        gridName,
-        incrementX, /*defaultCoordIncX*/
-        incrementY, /*defaultCoordIncY*/
-        minExtentX, /*defaultStaExtX*/
-        maxExtentX, /*defaultEndExtX*/
-        minExtentY, /*defaultStaExtY*/
-        maxExtentY, /*defaultEndExtY*/
-        -2 * BUILDING_TOLERANCE, /*defaultStaElevation*/
-        elevation + 2 * BUILDING_TOLERANCE /*defaultEndElevation*/
-    );
+    OrthogonalGrid::CreateParams orthogonalParams (GetModel(),
+                                                   GetDb().Elements().GetRootSubject()->GetElementId(),
+                                                   /*parent element*/
+                                                   gridName,
+                                                   incrementX,
+                                                   /*defaultCoordIncX*/
+                                                   incrementY,
+                                                   /*defaultCoordIncY*/
+                                                   minExtentX,
+                                                   /*defaultStaExtX*/
+                                                   maxExtentX,
+                                                   /*defaultEndExtX*/
+                                                   minExtentY,
+                                                   /*defaultStaExtY*/
+                                                   maxExtentY,
+                                                   /*defaultEndExtY*/
+                                                   -2 * BUILDING_TOLERANCE,
+                                                   /*defaultStaElevation*/
+                                                   elevation + 2 * BUILDING_TOLERANCE /*defaultEndElevation*/
+                                                  );
 
     OrthogonalGridPtr grid = OrthogonalGrid::CreateAndInsertWithSurfaces (orthogonalParams, countX, countY);
-    
-    Placement3d gridPlacement = grid->GetPlacement();
-    gridPlacement.SetOrigin (origin);
-
-    grid->SetPlacement (gridPlacement);
-    grid->Update();
-    return grid;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     04/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-RadialGridPtr GeometryTests::InsertRadialGrid (DPoint3d origin,
-                                               Angle angleIncrement, double radiusIncrement,
-                                               Angle startAngle, Angle endAngle,
-                                               double startRadius, double endRadius,
-                                               double elevation,
-                                               int radialCount, int circularCount,
-                                               Utf8CP gridName)
-    {
-    RadialGrid::CreateParams createParams = RadialGrid::CreateParams (GetModel(),
-        GetDb().Elements().GetRootSubject()->GetElementId(), /*scope element*/
-        gridName,   /*name*/
-        angleIncrement.Radians(), /*defaultAngleIncrement*/
-        radiusIncrement, /*defaultRadiusIncrement*/
-        startAngle.Radians(), /*defaultStartAngle*/
-        endAngle.Radians(), /*defaultEndAngle*/
-        startRadius, /*defaultStartRadius*/
-        endRadius, /*defaultEndRadius*/
-        -2 * BUILDING_TOLERANCE, /*defaultstaElevation*/
-        elevation + 2 * BUILDING_TOLERANCE /*defaultendElevation*/
-    );
-
-    RadialGridPtr grid = RadialGrid::CreateAndInsertWithSurfaces(createParams, radialCount, circularCount);
 
     Placement3d gridPlacement = grid->GetPlacement();
     gridPlacement.SetOrigin (origin);
@@ -636,30 +554,80 @@ RadialGridPtr GeometryTests::InsertRadialGrid (DPoint3d origin,
     return grid;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     04/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<GridCurvePtr> GeometryTests::InsertIntersectionCurves (ElevationGridPtr elevationGrid, GridPtr otherGrid)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+RadialGridPtr GeometryTests::InsertRadialGrid ( DPoint3d origin,
+                                                Angle angleIncrement,
+                                                double radiusIncrement,
+                                                Angle startAngle,
+                                                Angle endAngle,
+                                                double startRadius,
+                                                double endRadius,
+                                                double elevation,
+                                                int radialCount,
+                                                int circularCount,
+                                                Utf8CP gridName ) const
     {
-    bvector<GridCurvePtr> curves;
+    RadialGrid::CreateParams createParams (GetModel(),
+                                           GetDb().Elements().GetRootSubject()->GetElementId(),
+                                           /*scope element*/
+                                           gridName,
+                                           /*name*/
+                                           angleIncrement.Radians(),
+                                           /*defaultAngleIncrement*/
+                                           radiusIncrement,
+                                           /*defaultRadiusIncrement*/
+                                           startAngle.Radians(),
+                                           /*defaultStartAngle*/
+                                           endAngle.Radians(),
+                                           /*defaultEndAngle*/
+                                           startRadius,
+                                           /*defaultStartRadius*/
+                                           endRadius,
+                                           /*defaultEndRadius*/
+                                           -2 * BUILDING_TOLERANCE,
+                                           /*defaultstaElevation*/
+                                           elevation + 2 * BUILDING_TOLERANCE /*defaultendElevation*/
+                                          );
+
+    RadialGridPtr grid = RadialGrid::CreateAndInsertWithSurfaces (createParams, radialCount, circularCount);
+
+    Placement3d gridPlacement = grid->GetPlacement();
+    gridPlacement.SetOrigin (origin);
+
+    grid->SetPlacement (gridPlacement);
+    grid->Update();
+    return grid;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+bvector <GridCurvePtr> GeometryTests::InsertIntersectionCurves ( ElevationGridCR elevationGrid, GridCR otherGrid ) const
+    {
+    bvector <GridCurvePtr> curves;
 
     GridCurvesSetPtr curvesPortion = GridCurvesSet::Create (GetModel());
     curvesPortion->Insert();
 
-    for (DgnElementId elevationSurfaceId : elevationGrid->GetSurfacesModel()->MakeIterator().BuildIdList<DgnElementId>())
+    for (DgnElementId const& elevationSurfaceId : elevationGrid.
+                                                  GetSurfacesModel()->MakeIterator().BuildIdList <DgnElementId>())
         {
         GridPlanarSurfaceCPtr floorGridSurface = GridPlanarSurface::Get (GetDb(), elevationSurfaceId);
-        BeAssert (BentleyStatus::SUCCESS == otherGrid->IntersectGridSurface (floorGridSurface.get(), *curvesPortion));
+        BeAssert (BentleyStatus::SUCCESS == otherGrid.IntersectGridSurface (floorGridSurface.get(), *curvesPortion));
         GetDb().SaveChanges();
+        GetDb ().BriefcaseManager ().StartBulkOperation ();
 
-        for (DgnElementId curveBundleId : floorGridSurface->MakeGridCurveBundleIterator().BuildIdList<DgnElementId>())
+        for (DgnElementId const& curveBundleId : floorGridSurface->
+                                                 MakeGridCurveBundleIterator().BuildIdList <DgnElementId>())
             {
-            GridCurveBundlePtr curveBundle = GridCurveBundle::GetForEdit (GetDb(), curveBundleId);
+            GridCurveBundleCPtr curveBundle = GridCurveBundle::Get (GetDb(), curveBundleId);
             GridCurveCPtr gridCurveReadOnly = curveBundle->GetGridCurve();
             if (gridCurveReadOnly.IsNull())
                 continue;
 
-            curves.push_back(dynamic_cast<GridCurve*>(gridCurveReadOnly->CopyForEdit().get()));
+            curves.push_back (dynamic_cast <GridCurve*> (gridCurveReadOnly->CopyForEdit().get()));
             }
         }
 
@@ -669,50 +637,148 @@ bvector<GridCurvePtr> GeometryTests::InsertIntersectionCurves (ElevationGridPtr 
 #pragma endregion GeometryTests Methods
 
 //---------------------------------------------------------------------------------------
-// @betest                                                                       03/2019
-//--------------+---------------+---------------+---------------+---------------+-------- 
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+static GridSurfaceCPtr getGridSurface ( GridCurveCR curve )
+    {
+    bvector <DgnElementId> intersectingSurfaces = curve.GetIntersectingSurfaceIds();
+    for (DgnElementId const& surfaceId : intersectingSurfaces)
+        {
+        GridSurfaceCPtr surface = curve.GetDgnDb().Elements().Get <GridSurface> (surfaceId);
+        if (nullptr == dynamic_cast <ElevationGridSurfaceCP> (surface.get()))
+            return surface;
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+bool GeometryTests::CreateGridLabel ( GridCurveCR curve, Utf8CP label, bool atStart, bool atEnd ) const
+    {
+    GridLabelPtr newLabel = GridLabel::Create (*getGridSurface (curve), label, atStart, atEnd);
+    if (newLabel.IsNull())
+        return false;
+
+    DgnDbStatus status;
+    newLabel->Insert (&status);
+    return DgnDbStatus::Success == status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+void GeometryTests::SetUp ()
+    {
+    GridsTestFixtureBase::SetUp ();
+    // Copy and open a fresh DB
+    BeFileName workingDbPath = copyWorkingDb (GetGivenProjectPath ());
+
+    DgnDb::OpenParams openParams (Db::OpenMode::ReadWrite,
+        DefaultTxn::Yes,
+        SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade);
+    DbResult openStatus;
+    m_dbPtr = DgnDb::OpenDgnDb (&openStatus, workingDbPath, openParams);
+    BeAssert (m_dbPtr.IsValid ());
+    m_dbPtr->BriefcaseManager ().StartBulkOperation ();
+
+    SetUpForGeometryPresentation ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+void GeometryTests::TearDown ()
+    {
+    m_dbPtr->CloseDb ();
+    GridsTestFixtureBase::TearDown ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
 TEST_F (GeometryTests, CreateGridsGeometry)
     {
-        { // orthogonal grid without extents
+    {
+        // orthogonal grid without extents
         ElevationGridPtr elevation = InsertElevationGrid (DPoint3d::From (0, 0, 5), 40, 40, 0, 1, "Elevation-O0");
-        OrthogonalGridPtr orthogonal = InsertOrthogonalGrid (DPoint3d::From (0, 0, 0), 10, 5, 0, 15, 0, 30, 10, 4, 4, "Orthogonal-Basic");
-        bvector<GridCurvePtr> curves = InsertIntersectionCurves (elevation, orthogonal);
+        OrthogonalGridPtr orthogonal = InsertOrthogonalGrid (DPoint3d::From (0, 0, 0),
+                                                             10,
+                                                             5,
+                                                             0,
+                                                             15,
+                                                             0,
+                                                             30,
+                                                             10,
+                                                             4,
+                                                             4,
+                                                             "Orthogonal-Basic");
+        bvector <GridCurvePtr> curves = InsertIntersectionCurves (*elevation, *orthogonal);
         int curveNo = 0;
         for (GridCurvePtr curve : curves)
             {
-            curve->SetUserLabel (Utf8PrintfString("%d", curveNo++).c_str());
-            curve->SetBubbleAtStart (curveNo % 2 != 0);
-            curve->SetBubbleAtEnd (curveNo % 3 != 0);
-            curve->Update();
-            InsertPhysicalCurveElement (curve);
+            ASSERT_TRUE (CreateGridLabel (*curve, Utf8PrintfString ("%d", curveNo++).c_str (), curveNo % 2 != 0, curveNo
+ % 3 != 0));
+            GetDb ().SaveChanges ();
+            GetDb ().BriefcaseManager ().StartBulkOperation ();
+            InsertPhysicalCurveElement (*curve);
             }
-        }
+    }
 
-        { // orthogonal grid with extents
+    {
+        // orthogonal grid with extents
         ElevationGridPtr elevation = InsertElevationGrid (DPoint3d::From (35, -5, 5), 40, 40, 0, 1, "Elevation-O1");
-        OrthogonalGridPtr orthogonal = InsertOrthogonalGrid (DPoint3d::From (40, 0, 0), 10, 5, -1, 16, -1, 31, 10, 4, 4, "Orthogonal-Extended");
-        bvector<GridCurvePtr> curves = InsertIntersectionCurves (elevation, orthogonal);
+        OrthogonalGridPtr orthogonal = InsertOrthogonalGrid (DPoint3d::From (40, 0, 0),
+                                                             10,
+                                                             5,
+                                                             -1,
+                                                             16,
+                                                             -1,
+                                                             31,
+                                                             10,
+                                                             4,
+                                                             4,
+                                                             "Orthogonal-Extended");
+        bvector <GridCurvePtr> curves = InsertIntersectionCurves (*elevation, *orthogonal);
         int curveNo = 0;
         for (GridCurvePtr curve : curves)
             {
-            curve->SetUserLabel (Utf8PrintfString ("%d", curveNo++).c_str());
-            curve->SetBubbleAtStart (curveNo % 2 != 0);
-            curve->SetBubbleAtEnd (curveNo % 3 != 0);
-            curve->Update();
-            InsertPhysicalCurveElement (curve);
+            ASSERT_TRUE (CreateGridLabel (*curve, Utf8PrintfString ("%d", curveNo++).c_str (), curveNo % 2 != 0, curveNo
+ % 3 != 0));
+            GetDb ().SaveChanges ();
+            GetDb ().BriefcaseManager ().StartBulkOperation ();
+            InsertPhysicalCurveElement (*curve);
             }
-        }
+    }
 
-        { // orthogonal grid altered individual extents
+    {
+        // orthogonal grid altered individual extents
         ElevationGridPtr elevation = InsertElevationGrid (DPoint3d::From (75, -5, 5), 40, 40, 0, 1, "Elevation-O2");
-        OrthogonalGridPtr orthogonal = InsertOrthogonalGrid (DPoint3d::From (80, 0, 0), 10, 5, 0, 15, 0, 30, 10, 4, 4, "Orthogonal-CustomExtended");
-        for (DgnElementId axisId : orthogonal->MakeAxesIterator().BuildIdList<DgnElementId>())
+        OrthogonalGridPtr orthogonal = InsertOrthogonalGrid (DPoint3d::From (80, 0, 0),
+                                                             10,
+                                                             5,
+                                                             0,
+                                                             15,
+                                                             0,
+                                                             30,
+                                                             10,
+                                                             4,
+                                                             4,
+                                                             "Orthogonal-CustomExtended");
+        for (DgnElementId axisId : orthogonal->MakeAxesIterator().BuildIdList <DgnElementId>())
             {
             GridAxisCPtr axis = GridAxis::Get (GetDb(), axisId);
-            bvector<DgnElementId> surfacesIds = axis->MakeIterator().BuildIdList<DgnElementId>();
-            bvector<PlanCartesianGridSurfacePtr> surfaces = bvector<PlanCartesianGridSurfacePtr> (4);
-            std::transform (surfacesIds.begin(), surfacesIds.end(), surfaces.begin(), [this] (DgnElementId elementId) -> PlanCartesianGridSurfacePtr {return PlanCartesianGridSurface::GetForEdit (GetDb(), elementId); });
-            
+            bvector <DgnElementId> surfacesIds = axis->MakeIterator().BuildIdList <DgnElementId>();
+            bvector <PlanCartesianGridSurfacePtr> surfaces = bvector <PlanCartesianGridSurfacePtr> (4);
+            std::transform (surfacesIds.begin(),
+                            surfacesIds.end(),
+                            surfaces.begin(),
+                            [this] ( DgnElementId elementId ) ->PlanCartesianGridSurfacePtr
+                                {
+                                return PlanCartesianGridSurface::GetForEdit (GetDb(), elementId);
+                                });
+
             surfaces[0]->SetStartExtent (-5);
             surfaces[0]->SetEndExtent (35);
             surfaces[0]->Update();
@@ -729,56 +795,95 @@ TEST_F (GeometryTests, CreateGridsGeometry)
             surfaces[3]->SetEndExtent (20);
             surfaces[3]->Update();
             }
-        bvector<GridCurvePtr> curves = InsertIntersectionCurves (elevation, orthogonal);
+        bvector <GridCurvePtr> curves = InsertIntersectionCurves (*elevation, *orthogonal);
         int curveNo = 0;
         for (GridCurvePtr curve : curves)
             {
-            curve->SetUserLabel (Utf8PrintfString ("%d", curveNo++).c_str());
-            curve->SetBubbleAtStart (curveNo % 2 != 0);
-            curve->SetBubbleAtEnd (curveNo % 3 != 0);
-            curve->Update();
-            InsertPhysicalCurveElement (curve);
+            ASSERT_TRUE (CreateGridLabel (*curve, Utf8PrintfString ("%d", curveNo++).c_str (), curveNo % 2 != 0, curveNo
+ % 3 != 0));
+            GetDb ().SaveChanges ();
+            GetDb ().BriefcaseManager ().StartBulkOperation ();
+            InsertPhysicalCurveElement (*curve);
             }
-        }
+    }
 
-        { // radial grid without extents
+    {
+        // radial grid without extents
         ElevationGridPtr elevation = InsertElevationGrid (DPoint3d::From (0, 40, 5), 40, 40, 0, 1, "Elevation-R0");
-        RadialGridPtr radial = InsertRadialGrid (DPoint3d::From (0, 40, 0), Angle::FromDegrees (30), 5, Angle::FromDegrees (0), Angle::FromDegrees (90), 0, 30, 10, 4, 6, "Radial-Basic");
-        bvector<GridCurvePtr> curves = InsertIntersectionCurves (elevation, radial);
+        RadialGridPtr radial = InsertRadialGrid (DPoint3d::From (0, 40, 0),
+                                                 Angle::FromDegrees (30),
+                                                 5,
+                                                 Angle::FromDegrees (0),
+                                                 Angle::FromDegrees (90),
+                                                 0,
+                                                 30,
+                                                 10,
+                                                 4,
+                                                 6,
+                                                 "Radial-Basic");
+        bvector <GridCurvePtr> curves = InsertIntersectionCurves (*elevation, *radial);
         int curveNo = 0;
         for (GridCurvePtr curve : curves)
             {
-            curve->SetUserLabel (Utf8PrintfString ("%04d", curveNo++).c_str());
-            curve->SetBubbleAtStart (curveNo % 2 != 0);
-            curve->SetBubbleAtEnd (curveNo % 3 != 0);
-            curve->Update();
-            InsertPhysicalCurveElement (curve);
+            ASSERT_TRUE (CreateGridLabel (*curve, Utf8PrintfString ("%04d", curveNo++).c_str (), curveNo % 2 != 0,
+ curveNo % 3 != 0));
+            GetDb ().SaveChanges ();
+            GetDb ().BriefcaseManager ().StartBulkOperation ();
+            InsertPhysicalCurveElement (*curve);
             }
-        }
+    }
 
-        { // radial grid with extents
+    {
+        // radial grid with extents
         ElevationGridPtr elevation = InsertElevationGrid (DPoint3d::From (35, 35, 5), 40, 40, 0, 1, "Elevation-R1");
-        RadialGridPtr radial = InsertRadialGrid (DPoint3d::From (40, 40, 0), Angle::FromDegrees (30), 5, Angle::FromDegrees (-10), Angle::FromDegrees (100), -5, 35, 10, 4, 6, "Radial-Extended");
-        bvector<GridCurvePtr> curves = InsertIntersectionCurves (elevation, radial);
+        RadialGridPtr radial = InsertRadialGrid (DPoint3d::From (40, 40, 0),
+                                                 Angle::FromDegrees (30),
+                                                 5,
+                                                 Angle::FromDegrees (-10),
+                                                 Angle::FromDegrees (100),
+                                                 -5,
+                                                 35,
+                                                 10,
+                                                 4,
+                                                 6,
+                                                 "Radial-Extended");
+        bvector <GridCurvePtr> curves = InsertIntersectionCurves (*elevation, *radial);
         int curveNo = 0;
         for (GridCurvePtr curve : curves)
             {
-            curve->SetUserLabel (Utf8PrintfString ("%d", curveNo++).c_str());
-            curve->SetBubbleAtStart (curveNo % 2 != 0);
-            curve->SetBubbleAtEnd (curveNo % 3 != 0);
-            curve->Update();
-            InsertPhysicalCurveElement (curve);
+            ASSERT_TRUE (CreateGridLabel (*curve, Utf8PrintfString ("%d", curveNo++).c_str (), curveNo % 2 != 0, curveNo
+ % 3 != 0));
+            GetDb ().SaveChanges ();
+            GetDb ().BriefcaseManager ().StartBulkOperation ();
+            InsertPhysicalCurveElement (*curve);
             }
-        }
+    }
 
-        { // radial grid altered individual extents
+    {
+        // radial grid altered individual extents
         ElevationGridPtr elevation = InsertElevationGrid (DPoint3d::From (75, 35, 5), 40, 40, 0, 1, "Elevation-R2");
-        RadialGridPtr radial = InsertRadialGrid (DPoint3d::From (80, 40, 0), Angle::FromDegrees (30), 5, Angle::FromDegrees (0), Angle::FromDegrees (90), 0, 30, 10, 4, 6, "Radial-CustomExtended");
-        
+        RadialGridPtr radial = InsertRadialGrid (DPoint3d::From (80, 40, 0),
+                                                 Angle::FromDegrees (30),
+                                                 5,
+                                                 Angle::FromDegrees (0),
+                                                 Angle::FromDegrees (90),
+                                                 0,
+                                                 30,
+                                                 10,
+                                                 4,
+                                                 6,
+                                                 "Radial-CustomExtended");
+
         RadialAxisCPtr radialAxis = radial->GetRadialAxis();
-        bvector<DgnElementId> radialSurfacesIds = radialAxis->MakeIterator().BuildIdList<DgnElementId>();
-        bvector<PlanRadialGridSurfacePtr> radialSurfaces = bvector<PlanRadialGridSurfacePtr> (4);
-        std::transform (radialSurfacesIds.begin(), radialSurfacesIds.end(), radialSurfaces.begin(), [this] (DgnElementId elementId) -> PlanRadialGridSurfacePtr {return PlanRadialGridSurface::GetForEdit (GetDb(), elementId); });
+        bvector <DgnElementId> radialSurfacesIds = radialAxis->MakeIterator().BuildIdList <DgnElementId>();
+        bvector <PlanRadialGridSurfacePtr> radialSurfaces = bvector <PlanRadialGridSurfacePtr> (4);
+        std::transform (radialSurfacesIds.begin(),
+                        radialSurfacesIds.end(),
+                        radialSurfaces.begin(),
+                        [this] ( DgnElementId elementId ) ->PlanRadialGridSurfacePtr
+                            {
+                            return PlanRadialGridSurface::GetForEdit (GetDb(), elementId);
+                            });
         radialSurfaces[0]->SetStartRadius (5);
         radialSurfaces[0]->SetEndRadius (35);
         radialSurfaces[0]->Update();
@@ -796,11 +901,17 @@ TEST_F (GeometryTests, CreateGridsGeometry)
         radialSurfaces[3]->Update();
 
         CircularAxisCPtr circularAxis = radial->GetCircularAxis();
-        bvector<DgnElementId> circularSurfacesIds = circularAxis->MakeIterator().BuildIdList<DgnElementId>();
-        bvector<PlanCircumferentialGridSurfacePtr> circularSurfaces = bvector<PlanCircumferentialGridSurfacePtr> (6);
-        std::transform (circularSurfacesIds.begin(), circularSurfacesIds.end(), circularSurfaces.begin(), [this] (DgnElementId elementId) -> PlanCircumferentialGridSurfacePtr {return PlanCircumferentialGridSurface::GetForEdit (GetDb(), elementId); });
-        circularSurfaces[0]->SetStartAngle (Angle::DegreesToRadians(-10));
-        circularSurfaces[0]->SetEndAngle (Angle::DegreesToRadians(100));
+        bvector <DgnElementId> circularSurfacesIds = circularAxis->MakeIterator().BuildIdList <DgnElementId>();
+        bvector <PlanCircumferentialGridSurfacePtr> circularSurfaces = bvector <PlanCircumferentialGridSurfacePtr> (6);
+        std::transform (circularSurfacesIds.begin(),
+                        circularSurfacesIds.end(),
+                        circularSurfaces.begin(),
+                        [this] ( DgnElementId elementId ) ->PlanCircumferentialGridSurfacePtr
+                            {
+                            return PlanCircumferentialGridSurface::GetForEdit (GetDb(), elementId);
+                            });
+        circularSurfaces[0]->SetStartAngle (Angle::DegreesToRadians (-10));
+        circularSurfaces[0]->SetEndAngle (Angle::DegreesToRadians (100));
         circularSurfaces[0]->Update();
 
         circularSurfaces[1]->SetStartAngle (Angle::DegreesToRadians (0));
@@ -823,36 +934,62 @@ TEST_F (GeometryTests, CreateGridsGeometry)
         circularSurfaces[5]->SetEndAngle (Angle::DegreesToRadians (75));
         circularSurfaces[5]->Update();
 
-        bvector<GridCurvePtr> curves = InsertIntersectionCurves (elevation, radial);
+        bvector <GridCurvePtr> curves = InsertIntersectionCurves (*elevation, *radial);
         int curveNo = 0;
         for (GridCurvePtr curve : curves)
             {
-            curve->SetUserLabel (Utf8PrintfString ("%d", curveNo++).c_str());
-            curve->SetBubbleAtStart (curveNo % 2 != 0);
-            curve->SetBubbleAtEnd (curveNo % 3 != 0);
-            curve->Update();
-            InsertPhysicalCurveElement (curve);
+            ASSERT_TRUE (CreateGridLabel (*curve, Utf8PrintfString ("%d", curveNo++).c_str (), curveNo % 2 != 0, curveNo
+ % 3 != 0));
+            GetDb ().SaveChanges ();
+            GetDb ().BriefcaseManager ().StartBulkOperation ();
+            InsertPhysicalCurveElement (*curve);
             }
-        }
+    }
 
-        { // spline grid
+    {
+        // spline grid
         ElevationGridPtr elevation = InsertElevationGrid (DPoint3d::From (0, 80, 5), 40, 40, 0, 1, "Elevation-S0");
-        SketchGridPtr sketchGrid = SketchGrid::Create (GetModel(), GetModel().GetModeledElementId(), "Sketch Grid", 0.0, 10.0);
+        SketchGridPtr sketchGrid = SketchGrid::Create (GetModel(),
+                                                       GetModel().GetModeledElementId(),
+                                                       "Sketch Grid",
+                                                       0.0,
+                                                       10.0);
         sketchGrid->Insert();
 
-        Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel (GetDb());
-        Grids::GeneralGridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert (defModel, *sketchGrid);
-        
-        SketchLineGridSurface::CreateParams params (*sketchGrid->GetSurfacesModel().get(), *gridAxis, 0.0, 10, DPoint2d::From (0, 20), DPoint2d::From (0, 70));
+        DgnModelCR defModel = BuildingUtils::GetGroupInformationModel (GetDb());
+        GeneralGridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert (defModel, *sketchGrid);
+
+        SketchLineGridSurface::CreateParams params (*sketchGrid->GetSurfacesModel().get(),
+                                                    *gridAxis,
+                                                    0.0,
+                                                    10,
+                                                    DPoint2d::From (0, 20),
+                                                    DPoint2d::From (0, 70));
         GridPlanarSurfacePtr plane = SketchLineGridSurface::Create (params);
         plane->Insert();
 
-        SketchArcGridSurface::CreateParams arcParams (*sketchGrid->GetSurfacesModel().get(), *gridAxis, 0.0, 10, GeometryUtils::CreateArc (10, Angle::Pi(), 0));
+        SketchArcGridSurface::CreateParams arcParams (*sketchGrid->GetSurfacesModel().get(),
+                                                      *gridAxis,
+                                                      0.0,
+                                                      10,
+                                                      GeometryUtils::CreateArc (10, Angle::Pi(), 0));
         GridArcSurfacePtr arc = SketchArcGridSurface::Create (arcParams);
         arc->Insert();
 
-        ICurvePrimitivePtr splinePrimitive = GeometryUtils::CreateSplinePrimitive ({ { 0, 0, 0 },{ 10, 0, 0 },{ 0, 10, 0 }, {10, 10, 0}, {20, 0, 0}, {0, 20, 0}, {20, 20, 0} });
-        SketchSplineGridSurface::CreateParams splineParams (*sketchGrid->GetSurfacesModel().get(), *gridAxis, 0.0, 10.0, *splinePrimitive);
+        ICurvePrimitivePtr splinePrimitive = GeometryUtils::CreateSplinePrimitive ({
+            { 0, 0, 0 },
+            { 10, 0, 0 },
+            { 0, 10, 0 },
+            { 10, 10, 0 },
+            { 20, 0, 0 },
+            { 0, 20, 0 },
+            { 20, 20, 0 }
+        });
+        SketchSplineGridSurface::CreateParams splineParams (*sketchGrid->GetSurfacesModel().get(),
+                                                            *gridAxis,
+                                                            0.0,
+                                                            10.0,
+                                                            *splinePrimitive);
         GridSplineSurfacePtr spline = SketchSplineGridSurface::Create (splineParams);
         spline->Insert();
 
@@ -861,19 +998,20 @@ TEST_F (GeometryTests, CreateGridsGeometry)
         sketchGrid->SetPlacement (gridPlacement);
         sketchGrid->Update();
 
-        GetDb().SaveChanges();
+        GetDb ().SaveChanges ();
+        GetDb ().BriefcaseManager ().StartBulkOperation ();
 
-        bvector<GridCurvePtr> curves = InsertIntersectionCurves (elevation, sketchGrid);
+        bvector <GridCurvePtr> curves = InsertIntersectionCurves (*elevation, *sketchGrid);
         int curveNo = 0;
         for (GridCurvePtr curve : curves)
             {
-            curve->SetUserLabel (Utf8PrintfString ("%04d", curveNo++).c_str());
-            curve->SetBubbleAtStart (true);
-            curve->SetBubbleAtEnd (true);
-            curve->Update();
-            InsertPhysicalCurveElement (curve);
+            ASSERT_TRUE (CreateGridLabel (*curve, Utf8PrintfString ("%d", curveNo++).c_str (), curveNo % 2 != 0, curveNo
+ % 3 != 0));
+            GetDb ().SaveChanges ();
+            GetDb ().BriefcaseManager ().StartBulkOperation ();
+            InsertPhysicalCurveElement (*curve);
             }
-        }
-    
+    }
+
     GetDb().SaveChanges();
     }

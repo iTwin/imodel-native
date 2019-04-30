@@ -23,6 +23,7 @@ GridCurve::GridCurve
 CreateParams const& params
 ) : T_Super(params) 
     {
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -103,11 +104,38 @@ Dgn::DgnDbStatus GridCurve::_OnUpdate(Dgn::DgnElementCR original)
     DgnDbStatus status = CheckDependancyToModel();
     if (status != DgnDbStatus::Success)
         return status;
-    InitGeometry (GetCurve());
     if (!_ValidateGeometry(GetCurve()))
         return DgnDbStatus::ValidationFailed;
 
     return T_Super::_OnUpdate(original);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+GridLabelCPtr GridCurve::GetNonElevationSurfaceGridLabel () const
+    {
+    GridSurfaceCPtr labelOwner = GetFirstNonElevationIntersectingGridSurface ();
+    if (labelOwner.IsNull ())
+        return nullptr;
+
+    return labelOwner->GetGridLabel ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+GridSurfaceCPtr GridCurve::GetFirstNonElevationIntersectingGridSurface () const
+    {
+    bvector<DgnElementId> intersectingSurfaces = GetIntersectingSurfaceIds ();
+    for (DgnElementId surfaceId : intersectingSurfaces)
+        {
+        GridSurfaceCPtr surface = GetDgnDb ().Elements ().Get<GridSurface> (surfaceId);
+        if (nullptr == dynamic_cast<ElevationGridSurfaceCP>(surface.get ()))
+            return surface;
+        }
+
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -134,12 +162,12 @@ void            GridCurve::InitGeometry
 CurveVectorPtr  curve
 )
     {
-    Dgn::GeometrySourceP geomElem = ToGeometrySourceP();
+    Dgn::GeometrySourceP geomElem = ToGeometrySourceP ();
 
     DPoint3d originPoint;
     (*curve)[0]->GetStartPoint (originPoint);
 
-    Placement3d newPlacement (originPoint, GetPlacement().GetAngles());
+    Placement3d newPlacement (originPoint, GetPlacement ().GetAngles ());
     SetPlacement (newPlacement);
 
     Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create (*geomElem);
@@ -160,7 +188,21 @@ void            GridCurve::InitGeometry
 ICurvePrimitivePtr  curve
 )
     {
-    return InitGeometry (CurveVector::Create (curve));
+    Dgn::GeometrySourceP geomElem = ToGeometrySourceP ();
+
+    DPoint3d originPoint;
+    curve->GetStartPoint (originPoint);
+
+    Placement3d newPlacement (originPoint, GetPlacement ().GetAngles ());
+    SetPlacement (newPlacement);
+
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create (*geomElem);
+
+    if (builder->Append (*curve, Dgn::GeometryBuilder::CoordSystem::World))
+        {
+        if (SUCCESS != builder->Finish (*geomElem))
+            BeAssert (!"Failed to create IntersectionCurve Geometry");
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -172,7 +214,7 @@ ICurvePrimitivePtr  curve
 )
     {
     //clean the existing geometry
-    GetGeometryStreamR().Clear();
+    GetGeometryStreamR ().Clear ();
     InitGeometry (curve);
     }
 
@@ -185,7 +227,7 @@ CurveVectorPtr  curve
 )
     {
     //clean the existing geometry
-    GetGeometryStreamR().Clear();
+    GetGeometryStreamR ().Clear ();
     InitGeometry (curve);
     }
 
@@ -196,29 +238,13 @@ ICurvePrimitivePtr                  GridCurve::GetCurve
 (
 ) const
     {
-    GeometryCollection geomData = *ToGeometrySource();
+    GeometryCollection geomData = *ToGeometrySource ();
     ICurvePrimitivePtr curve = nullptr;
-    GeometricPrimitivePtr geometricPrimitivePtr = (*(geomData.begin())).GetGeometryPtr();
+    GeometricPrimitivePtr geometricPrimitivePtr = (*(geomData.begin ())).GetGeometryPtr ();
     if (geometricPrimitivePtr.IsValid())
         {
-        switch (geometricPrimitivePtr->GetGeometryType())
-            {
-            case GeometricPrimitive::GeometryType::CurvePrimitive:
-                curve = geometricPrimitivePtr->GetAsICurvePrimitive();
-                break;
-            case GeometricPrimitive::GeometryType::CurveVector:
-                {
-                CurveVectorPtr curveVector = geometricPrimitivePtr->GetAsCurveVector();
-                if (1 == curveVector->size())
-                    curve = curveVector->at (0);
-                else
-                    curve = ICurvePrimitive::CreateChildCurveVector (curveVector);
-                }
-            break;
-            default:
-                return nullptr;
-            }
-        curve->TransformInPlace ((*geomData.begin()).GetGeometryToWorld());
+        curve = geometricPrimitivePtr->GetAsICurvePrimitive ();
+        curve->TransformInPlace ((*geomData.begin ()).GetGeometryToWorld ());
         }
 
     return curve;

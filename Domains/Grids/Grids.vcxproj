@@ -38,6 +38,7 @@
     <ClCompile Include="Grids\Elements\GridSurfaceDrivesGridCurveBundleHandler.cpp" />
     <ClCompile Include="Grids\Elements\IntersectionCurve.cpp" />
     <ClCompile Include="Grids\Elements\OrthogonalGridPortion.cpp" />
+    <ClCompile Include="Grids\Elements\PublicApi\GridLabel.cpp" />
     <ClCompile Include="Grids\Elements\RadialGridPortion.cpp" />
     <ClCompile Include="Grids\Elements\SketchGridPortion.cpp" />
     <ClCompile Include="Grids\Elements\SurfaceSet.cpp" />
@@ -45,6 +46,7 @@
     <ClCompile Include="Grids\Handlers\GridArcSurfaceHandler.cpp" />
     <ClCompile Include="Grids\Handlers\GridCurveBundleHandler.cpp" />
     <ClCompile Include="Grids\Handlers\GridHandlers.cpp" />
+    <ClCompile Include="Grids\Handlers\GridLabelHandler.cpp" />
     <ClCompile Include="Grids\Handlers\GridPlaneSurfaceHandler.cpp" />
     <ClCompile Include="Grids\Handlers\GridSurfaceHandler.cpp" />
     <ClCompile Include="Grids\Handlers\IntersectionCurveHandlers.cpp" />
@@ -83,6 +85,7 @@
     <ClInclude Include="Grids\Elements\PublicApi\GridCurvesSet.h" />
     <ClInclude Include="Grids\Elements\PublicApi\GridDrivesGridSurfaceHandler.h" />
     <ClInclude Include="Grids\Elements\PublicApi\GridElementsAPI.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridLabel.h" />
     <ClInclude Include="Grids\Elements\PublicApi\GridLine.h" />
     <ClInclude Include="Grids\Elements\PublicApi\GridPlaneSurface.h" />
     <ClInclude Include="Grids\Elements\PublicApi\GridPortion.h" />
@@ -100,6 +103,7 @@
     <ClInclude Include="Grids\Handlers\PublicApi\GridCurveBundleHandler.h" />
     <ClInclude Include="Grids\Handlers\PublicApi\GridHandlers.h" />
     <ClInclude Include="Grids\Handlers\PublicApi\GridHandlersAPI.h" />
+    <ClInclude Include="Grids\Handlers\PublicApi\GridLabelHandler.h" />
     <ClInclude Include="Grids\Handlers\PublicApi\GridPlaneSurfaceHandler.h" />
     <ClInclude Include="Grids\Handlers\PublicApi\GridSurfaceHandler.h" />
     <ClInclude Include="Grids\Handlers\PublicApi\IntersectionCurveHandlers.h" />
