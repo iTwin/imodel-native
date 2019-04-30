@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <BuildingShared/BuildingSharedMacros.h>
+#include <DgnPlatform/DgnPlatformApi.h>
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
@@ -18,7 +20,12 @@ struct DgnGeometryUtils
     {
     private:
         static Dgn::IBRepEntityPtr GetCutSheetBody(Dgn::IBRepEntityCR geometryToSlice, double elevation);
+        
+        static DVec3d GetNormal(Dgn::ISubEntityCR face);
 
+        static CurveVectorPtr ExtractBottomXYProfileFromSolid(Dgn::IBRepEntityCR solid);
+        static CurveVectorPtr ExtractTopXYProfileFromSolid(Dgn::IBRepEntityCR solid);
+        
         static void ClearElementGeometry(Dgn::GeometricElement3dCR element);
     public:
         BUILDINGSHAREDDGNUTILS_EXPORT static BentleyStatus    CreateBodyFromGeometricPrimitive(Dgn::IBRepEntityPtr& out, Dgn::GeometricPrimitiveCPtr primitive, bool assignIds = false);
