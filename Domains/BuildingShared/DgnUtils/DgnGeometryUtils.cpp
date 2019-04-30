@@ -707,52 +707,40 @@ CurveVectorPtr DgnGeometryUtils::ExtractBottomFaceShape(Dgn::GeometricElement3dC
     {
     auto pGeometrySource = extrusionThatIsSolid.ToGeometrySource();
     if (nullptr == pGeometrySource)
-        {
         return nullptr;
-        }
 
+    CurveVectorPtr curves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
     Dgn::GeometryCollection geomDatas(*pGeometrySource);
     for (auto geomData : geomDatas)
         {
         switch (geomData.GetEntryType())
             {
             case (Dgn::GeometryCollection::Iterator::EntryType::BRepEntity):
-            {
-            Dgn::IBRepEntityPtr solidPtr = (*geomData).GetGeometryPtr()->GetAsIBRepEntity();
-            if (solidPtr.IsValid() && (solidPtr->GetEntityType() == Dgn::IBRepEntity::EntityType::Solid))
                 {
-                return DgnGeometryUtils::ExtractXYProfileFromSolid(*solidPtr);
+                Dgn::IBRepEntityPtr solidPtr = (*geomData).GetGeometryPtr()->GetAsIBRepEntity();
+                if (solidPtr.IsValid() && (solidPtr->GetEntityType() == Dgn::IBRepEntity::EntityType::Solid))
+                    curves->Add(DgnGeometryUtils::ExtractXYProfileFromSolid(*solidPtr));
+                    
+                break;
                 }
-            break;
-            }
             case (Dgn::GeometryCollection::Iterator::EntryType::CurveVector):
-            {
-            CurveVectorPtr cvPtr = (*geomData).GetGeometryPtr()->GetAsCurveVector();
-            if (cvPtr.IsValid())
                 {
-                if (cvPtr->IsClosedPath())
-                    {
-                    return cvPtr; //data from ABD bridge has text artifacts and geometry.
-                    }
-
-                DPoint3d centroid;
-                DVec3d   normal;
-                double   area;
-                if (cvPtr->CentroidNormalArea(centroid, normal, area))
-                    {
-                    if (area > 0.0)
-                        {
-                        return cvPtr; //data from ABD bridge has text artifacts and geometry.
-                        }
-                    }
+                CurveVectorPtr curve = (*geomData).GetGeometryPtr()->GetAsCurveVector();
+                if (curve.IsValid() && (curve->IsClosedPath() || GeometryUtils::GetCurveArea(*curve) > 0.0))
+                    curves->Add(curve); //data from ABD bridge has text artifacts and geometry.
+                    
+                break;
                 }
-
-            break;
-            }
             }
         }
 
-    return nullptr;
+    if(curves->CountPrimitivesBelow() == 0)
+        return nullptr;
+
+    if (curves->HasSingleCurvePrimitive())
+        return curves->front()->GetChildCurveVectorP();    
+
+    return curves;
     }
 
 /*---------------------------------------------------------------------------------**//**

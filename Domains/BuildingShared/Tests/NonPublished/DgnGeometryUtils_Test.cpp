@@ -428,7 +428,7 @@ TEST_F(DgnGeometryUtilsTests, ExtractBottomFaceShape_SingeCurveAsGeometry_Return
 // @betest                                       Elonas.Seviakovas               04/2019
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DgnGeometryUtilsTests, GetBaseShape_ExtrusionGeometry_ReturnsExtrusionBottomShape)
-{
+    {
     DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
     db.BriefcaseManager().StartBulkOperation();
 
@@ -454,7 +454,70 @@ TEST_F(DgnGeometryUtilsTests, GetBaseShape_ExtrusionGeometry_ReturnsExtrusionBot
     ASSERT_EQ(curveArea, shapeArea);
 
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
-}
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DgnGeometryUtilsTests, ExtractBottomFaceShape_MultipleCurvesAsGeometry_ReturnsNestedCurve)
+    {
+    DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    GenericPhysicalObjectPtr object = createAndInsertObject(db);
+    ASSERT_TRUE(object.IsValid());
+
+    CurveVectorPtr rectCurve = CurveVector::CreateRectangle(0, 0, 10, 10, 0);
+    CurveVectorPtr rectCurve2 = CurveVector::CreateRectangle(20, 20, 30, 30, 0);
+
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*object);
+    builder->Append(*rectCurve);
+    builder->Append(*rectCurve2);
+    builder->Finish(*object);
+
+    CurveVectorPtr shape = DgnGeometryUtils::ExtractBottomFaceShape(*object);
+    ASSERT_TRUE(shape.IsValid());
+
+    ASSERT_TRUE(shape->CountPrimitivesBelow() == 2);
+    ASSERT_EQ(GeometryUtils::GetCurveArea(*rectCurve) + GeometryUtils::GetCurveArea(*rectCurve2), GeometryUtils::GetCurveArea(*shape));
+
+    ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DgnGeometryUtilsTests, ExtractBottomFaceShape_CurveAndBRepEntityAsGeometry_ReturnsNestedCurve)
+    {
+    DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    GenericPhysicalObjectPtr object = createAndInsertObject(db);
+    ASSERT_TRUE(object.IsValid());
+
+    CurveVectorPtr rectCurve = CurveVector::CreateRectangle(0, 0, 10, 10, 0);
+
+    DgnBoxDetail boxDetail(DPoint3d::From(20, 20, 0), DPoint3d::From(20, 20, 10), DVec3d::UnitX(), DVec3d::UnitY(),
+        10, 10, 10, 10, true);
+
+    ISolidPrimitivePtr boxSolidPrimitive = ISolidPrimitive::CreateDgnBox(boxDetail);
+
+    IBRepEntityPtr boxSolid;
+    Dgn::BRepUtil::Create::BodyFromSolidPrimitive(boxSolid, *boxSolidPrimitive);
+
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*object);
+    builder->Append(*rectCurve);
+    builder->Append(*boxSolid);
+    builder->Finish(*object);
+
+    CurveVectorPtr shape = DgnGeometryUtils::ExtractBottomFaceShape(*object);
+    ASSERT_TRUE(shape.IsValid());
+
+    ASSERT_TRUE(shape->CountPrimitivesBelow() == 2);
+    ASSERT_EQ(200, GeometryUtils::GetCurveArea(*shape));
+
+    ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
+    }
 
 //--------------------------------------------------------------------------------------
 // @betest                                       Elonas.Seviakovas               04/2019
