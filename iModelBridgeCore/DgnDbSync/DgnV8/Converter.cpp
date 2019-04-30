@@ -136,6 +136,21 @@ StableIdPolicy Converter::GetIdPolicyFromAppData(DgnV8FileCR file)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::ComputeEffectiveEmbeddedFileName(Utf8StringCR fullName)
+    {
+    //  masterfile.i.dgn<n>referencefile.i.dgn
+    //                    ^
+    auto iSep = fullName.find(">");
+    if (iSep == Utf8String::npos)
+        return fullName;
+
+    // TODO: if _GetParams().GetMatchOnEmbeddedFileBasename() is true ...
+    return fullName.substr(iSep+1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::ComputeRepositoryLinkCodeValueAndUri(Utf8StringR code, Utf8StringR uri, DgnV8FileR file)
@@ -146,6 +161,9 @@ void Converter::ComputeRepositoryLinkCodeValueAndUri(Utf8StringR code, Utf8Strin
         code = uri;
         return;
         }
+
+    if (uri.StartsWithI("file:"))
+        uri = ComputeEffectiveEmbeddedFileName(uri);
 
     char let;
     Utf8String urilwr = uri.ToLower();

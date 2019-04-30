@@ -942,6 +942,7 @@ static BentleyApi::bvector<DgnModelCPtr> getModelsByName(DgnDbR db, Utf8CP model
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConverterTests, CommonReferences)
     {
+    // The inputs files to this test have PW doc GUIDs. That is how we detect the common (embedded) reference.
     const Utf8CP s_master1Name = "master3d1 Package";
     const Utf8CP s_master2Name = "master3d2 Package";
     const Utf8CP s_refName = "ref3d";
@@ -972,6 +973,48 @@ TEST_F(ConverterTests, CommonReferences)
         ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
         ASSERT_EQ(1, getModelsByName(*db, s_master2Name).size());
         ASSERT_EQ(1, getModelsByName(*db, s_refName).size()) << "Since both master files reference the same ref3d, there should be only one copy of ref3d in the iModel";
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConverterTests, CommonReferencesNoDocGuids)
+    {
+    // The inputs files to this test DO NOT have PW doc GUIDs. So, we have to use the common embedded reference file's basename to detect that it's common.
+    const Utf8CP s_master1Name = "master3d1 Package";
+    const Utf8CP s_master2Name = "master3d2 Package";
+    const Utf8CP s_refName = "commonref";
+
+    BentleyApi::BeFileName inFile = GetInputFileName(L"referencesCommon.i.dgn");
+    BentleyApi::BeFileName masterPackageFile1, masterPackageFile2;
+    MakeWritableCopyOf(masterPackageFile1, inFile, L"master3d1 Package.i.dgn");
+    MakeWritableCopyOf(masterPackageFile2, inFile, L"master3d2 Package.i.dgn");
+
+    m_dgnDbFileName = GetOutputFileName(L"CommonReferencesNoDocGuids.bim");
+    DeleteExistingDgnDb(m_dgnDbFileName);
+    MakeWritableCopyOf(m_dgnDbFileName, m_seedDgnDbFileName, m_dgnDbFileName.GetFileNameAndExtension().c_str());
+
+    m_v8FileName = masterPackageFile1;
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    if (true)
+        {
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+        ASSERT_TRUE(db.IsValid());
+        ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
+        ASSERT_EQ(0, getModelsByName(*db, s_master2Name).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_refName).size());
+        }
+
+    m_v8FileName = masterPackageFile2;
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    if (true)
+        {
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+        ASSERT_TRUE(db.IsValid());
+        ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_master2Name).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_refName).size()) << "Since both master files reference the same commonref (by name), there should be only one copy of commonref in the iModel";
         }
     }
 

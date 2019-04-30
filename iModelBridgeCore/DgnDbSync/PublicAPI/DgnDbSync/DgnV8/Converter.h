@@ -1102,6 +1102,8 @@ public:
     //! @name V8Files
     //! @{
 
+    DGNDBSYNC_EXPORT Utf8String ComputeEffectiveEmbeddedFileName(Utf8StringCR fullName);
+
     //! Open the specified V8File
     DGNDBSYNC_EXPORT static DgnFilePtr OpenDgnV8File(DgnV8Api::DgnFileStatus&, BeFileNameCR, Utf8CP password);
 
