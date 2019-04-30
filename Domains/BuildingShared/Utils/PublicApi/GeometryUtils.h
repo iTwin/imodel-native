@@ -2,10 +2,12 @@
 |
 |     $Source: Utils/PublicApi/GeometryUtils.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <BuildingShared/BuildingSharedMacros.h>
+#include <Geom/GeomApi.h>
 
 #define SPLINE_ORDER 3
 #define EGRESS_CORRECTION 0.3048
@@ -28,13 +30,33 @@ public:
     //! @return a "deep copy" with transform applied
     BUILDINGSHAREDUTILS_EXPORT static CurveVectorPtr CloneTransformed(CurveVectorCR curve, TransformCR transform);
 
-    BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d>   ExtractSingleCurvePoints (CurveVectorCR curve);
-    
+    BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d> ExtractSingleCurvePoints (CurveVectorCR curve);
+
+    //! Project curve onto specified plane
+    //! @param[in] curve    Curve that will be projected
+    //! @param[in] plane    Plane that the curve will be projecte onto
+    //! @return a curve that is projected onto specified plane
+    BUILDINGSHAREDUTILS_EXPORT static CurveVectorPtr ProjectCurveOntoPlane(CurveVectorCR curve, DPlane3d const& plane);
+
+    //! Project curve onto horizontal plane
+    //! @param[in] curve    Curve that will be projected
+    //! @return a curve that is projected onto horizontal plane
+    BUILDINGSHAREDUTILS_EXPORT static CurveVectorPtr ProjectCurveOntoZeroPlane(CurveVectorCR curve);
 
     //! transforms a curvevector onto zero plane
     //! @param[in] planar curvevector
     //! @return profile transformed on zero plane
-    BUILDINGSHAREDUTILS_EXPORT static CurveVectorPtr    GetProfileOnZeroPlane (CurveVectorCR profile);
+    BUILDINGSHAREDUTILS_EXPORT static CurveVectorPtr GetProfileOnZeroPlane (CurveVectorCR profile);
+
+    //! Get normal vector of the specified curve
+    //! @param[in] curve    A curve that will be measured
+    //! @return a normal vector
+    BUILDINGSHAREDUTILS_EXPORT static DVec3d GetCurveNormal(CurveVectorCR curve);
+
+    //! Get an area of the specified curve
+    //! @param[in] curve    A curve that will be measured
+    //! @return an area of curve
+    BUILDINGSHAREDUTILS_EXPORT static double GetCurveArea(CurveVectorCR curve);
 
     //! Forms points into a rectangle by a bounding point
     //! @params[out] point1, point2, point3, point4 points forming a rectangle

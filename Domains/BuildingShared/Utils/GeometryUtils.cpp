@@ -2,11 +2,11 @@
 |
 |     $Source: Utils/GeometryUtils.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "PublicApi/UtilsApi.h"
+#include "PublicApi/GeometryUtils.h"
 
 #define CONTAINEMENT_TOLERANCE 0.001
 
@@ -58,6 +58,42 @@ CurveVectorPtr GeometryUtils::CloneTransformed
     return transformed;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr GeometryUtils::ProjectCurveOntoPlane(CurveVectorCR curve, DPlane3d const& plane)
+    {
+    bvector<STDVectorDPoint3d> pointVectors;
+    curve.CollectLinearGeometry(pointVectors);
+
+    CurveVectorPtr projectedCurves = CurveVector::Create(curve.GetBoundaryType());
+
+    for (STDVectorDPoint3dR points : pointVectors)
+        {
+        STDVectorDPoint3d projectedPoints;
+        for (DPoint3dR point : points)
+            {
+            DPoint3d projectedPoint;
+            plane.ProjectPoint(projectedPoint, point);
+            projectedPoints.push_back(projectedPoint);
+            }
+
+        CurveVectorPtr newCurve = CurveVector::CreateLinear(projectedPoints, curve.GetBoundaryType());
+
+        projectedCurves->Add(newCurve);
+        }
+    return projectedCurves;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr GeometryUtils::ProjectCurveOntoZeroPlane(CurveVectorCR curve)
+    {
+    DPlane3d plane = DPlane3d::From3Points(DPoint3d{0,0,0}, DPoint3d{1,0,0}, DPoint3d{0,1,0});
+    return ProjectCurveOntoPlane(curve, plane);
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  03/2018
 //---------------+---------------+---------------+---------------+---------------+------
@@ -74,6 +110,30 @@ CurveVectorCR profile
     localToWorld.GetOriginAndVectors (surfacePlane.origin, xVector, yVector, surfacePlane.normal);
     Transform transToZeroPlane = Transform::From(0.0, 0.0, -surfacePlane.origin.z);
     return CloneTransformed(profile, transToZeroPlane);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+double GeometryUtils::GetCurveArea(CurveVectorCR curve)
+    {
+    DPoint3d centroid;
+    DVec3d normal;
+    double area;
+    curve.CentroidNormalArea(centroid, normal, area);
+    return area;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+DVec3d GeometryUtils::GetCurveNormal(CurveVectorCR curve)
+    {
+    DPoint3d centroid;
+    DVec3d normal;
+    double area;
+    curve.CentroidNormalArea(centroid, normal, area);
+    return normal;
     }
 
 //---------------------------------------------------------------------------------------
