@@ -1975,7 +1975,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFe
         POINT pointToInsert = PointOp<POINT>::Create(pt.x, pt.y, pt.z);
         this->GetPointsPtr()->push_back(pointToInsert);
         indexes.push_back((int32_t)this->GetPointsPtr()->size() - 1);
-        }
+        }    
 
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = GetLinearFeaturesPtr();
     linearFeaturesPtr->push_back((int)indexes.size()+1); //include type flag
@@ -2684,6 +2684,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
 
 template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bset<uint64_t>& clips, Transform tr)
 {
+    return true;
+#if 0 
     bvector<uint64_t> clipList;
     bvector<DRange3d> clipRanges;
     bvector<bool> withSkirts;
@@ -2701,6 +2703,7 @@ template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncW
     }
 
     return this->SyncWithClipSets(clipList, withSkirts, clipRanges, tr);
+#endif
 }
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 10/18
@@ -2731,6 +2734,9 @@ template<class POINT, class EXTENT>  void  SMMeshIndexNode<POINT, EXTENT>::Colle
 //=======================================================================================
 template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bvector<uint64_t>& clipIds, const bvector<bool>& hasSkirts, const bvector<DRange3d>& clipExtents, Transform tr)
 {
+    assert(!"Currently deactivated");
+
+
     if (!this->IsLoaded()) this->Load();
 
     bool expected = false;
@@ -2753,6 +2759,33 @@ template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncW
         if (ModifyClip(clipId, false, hasSkirts[i], tr))
             hasSynced = true;
     }
+
+    /*MUST HANDLE THE CASE WHERE A CLIP DOESN'T INTERSECT A TILE AFTER BEING MODIFY
+    if (clipIds.size() == 0)
+        {
+        RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
+
+        if (diffSetPtr.IsValid())
+            {
+            for (auto it = diffSetPtr->begin(); it != diffSetPtr->end(); ++it)
+                {                    
+                if (it->clientID > 0)
+                    {
+                    diffSetPtr->clear();
+                    m_nbClips = 0;
+                    ISDiffSetDataStorePtr nodeDiffsetStore;
+                    bool result = this->m_SMIndex->GetDataStore()->GetSisterNodeDataStore(nodeDiffsetStore, &this->m_nodeHeader, false);
+                    BeAssert(result == true);
+                    if (nodeDiffsetStore.IsValid()) 
+                        nodeDiffsetStore->DestroyBlock(this->GetBlockID());                
+                    hasSynced = true;
+                    break;
+                    }
+                }       
+            }
+        }
+		*/
+
     expected = true;
     while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
     return hasSynced;
@@ -2775,9 +2808,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
     if (this->m_SMIndex->IsFromCesium()) //there we consider all three dimensions due to not being able to rely on XY orientation
         {
         if (!extent.IntersectsWith(nodeRange)) return;
-        }
+        } 
     bool clipApplied = true;
-    uint64_t myTs = LastClippingStateUpdateTimestamp();
+    /*TFS# 1021172 - SyncWithClipSets can trigger a delete on the child clips, that can lead to great children node to be update during modified (clipApplied will return false for the child node).
+    uint64_t myTs = LastClippingStateUpdateTimestamp();*/
     switch (action)
         {
         case ClipAction::ACTION_ADD:
@@ -2794,10 +2828,15 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
     else
         nOfNodesTouched++;
 
-    if (nOfNodesTouched >= 5000 && action != ClipAction::ACTION_DELETE)
+    //#TFS 629427 - Deactivate until all cases are handle, including a breathfirst propagation to handle not unified 3SM produced by ContextCapture.
+    /*
+    if (nOfNodesTouched >= 5 && action != ClipAction::ACTION_DELETE)
         return;
+        */
+
     if (this->m_pSubNodeNoSplit != NULL && !this->m_pSubNodeNoSplit->IsVirtualNode())
-        {
+        {        
+        /*TFS# 1021172 - SyncWithClipSets can trigger a delete on the child clips, that can lead to great children node to be update during modified (clipApplied will return false for the child node).
         uint64_t childTs = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->LastClippingStateUpdateTimestamp();
         if (childTs < myTs)
         {
@@ -2805,6 +2844,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
             CollectClipIds(collectedClips);
             dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->SyncWithClipSets(collectedClips, tr);
         }
+        */
         dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->ClipActionRecursive(action, clipId, extent, nOfNodesTouched, setToggledWhenIdIsOn, tr);
         }
     else if (this->m_nodeHeader.m_numberOfSubNodesOnSplit > 1 && this->m_apSubNodes[0] != nullptr)
@@ -2813,6 +2853,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
             {
             if (this->m_apSubNodes[indexNodes] != nullptr)
                 {
+                /*TFS# 1021172 - SyncWithClipSets can trigger a delete on the child clips, that can lead to great children node to be update during modified (clipApplied will return false for the child node).
                 uint64_t childTs = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->LastClippingStateUpdateTimestamp();
                 if (childTs < myTs)
                 {
@@ -2820,6 +2861,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
                     CollectClipIds(collectedClips);
                     dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->SyncWithClipSets(collectedClips, tr);
                 }
+                */
                 dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->ClipActionRecursive(action, clipId, extent, nOfNodesTouched, setToggledWhenIdIsOn, tr);
                 }
              }
@@ -4656,6 +4698,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
 
     bset<uint64_t> collectedClips;
     uint64_t maxUpdateTimeStamp = this->LastClippingStateUpdateTimestamp();
+    bool needSync = false;
         
     while (parentNodePtr != nullptr)
         {        
@@ -4663,12 +4706,14 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
             {
             maxUpdateTimeStamp = parentNodePtr->LastClippingStateUpdateTimestamp();
             parentNodePtr->CollectClipIds(collectedClips);
+            needSync = true;
             }   
 
         parentNodePtr = dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(parentNodePtr->GetParentNode().GetPtr());
         }
 
-    this->SyncWithClipSets(collectedClips);
+    if (needSync)
+        this->SyncWithClipSets(collectedClips);
     }
 
 //=======================================================================================
@@ -5209,6 +5254,28 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
     DRange3d polyRange = DRange3d::From(polyPts.front());
     size_t n = 0;
     bool noIntersect = true;
+
+#if 1 
+    for (auto&pt : polyPts)
+        {
+        if (extRange.IsContainedXY(pt)) ++n;
+        pt.z = 0;
+        polyRange.Extend(pt);
+        if (noIntersect && &pt - &polyPts[0] != 0)
+            {
+            DRange3d edgeRange = DRange3d::From(pt, polyPts[&pt - &polyPts[0] - 1]);
+            if (extRange.IntersectsWith(edgeRange))
+                {
+                noIntersect = false;
+                }
+            }
+        }
+
+    if (n >2) return true;
+
+    ICurvePrimitivePtr curvePtr(ICurvePrimitive::CreateLineString(polyPts));
+
+#else //Optimization for Defect 989564:Performance profiling needed on load test data. Deactivate for current ConceptStation release as it is not robust enough.
     bvector<int> indices;
     bool useX = extRange.XLength() > extRange.YLength();
     DRange1d ext1d = useX ? DRange1d::From(extRange.low.x, extRange.high.x) : DRange1d::From(extRange.low.y, extRange.high.y);
@@ -5262,6 +5329,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
 
         curvePtr = ICurvePrimitive::CreateLineString(collectedIndices);
     }
+#endif
     CurveVectorPtr curveVectorPtr(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr));
 
     extRange.low.z = extRange.high.z = 0;
@@ -5402,6 +5470,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
         if (shouldClearDiffsets)
             {
             diffSetPtr->clear();
+            m_nbClips = 0;
             ISDiffSetDataStorePtr nodeDiffsetStore;
             bool result = this->m_SMIndex->GetDataStore()->GetSisterNodeDataStore(nodeDiffsetStore, &this->m_nodeHeader, false);
             BeAssert(result == true);
