@@ -1388,6 +1388,7 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
             m_saveToCache = false;
             m_precomputeBoxes = false;
             m_useClipsToShow = false;
+            m_shouldInvertClips = false;
             }
 
         virtual ~ScalableMeshMeshFlags() {}
