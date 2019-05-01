@@ -511,6 +511,7 @@ struct iModelBridge
         bool m_wantThumbnails = true;
         bool m_doDetectDeletedModelsAndElements =  true;
         bool m_mergeDefinitions = true;  // WIP make this default to false
+        bool m_matchOnEmbeddedFileBasename = false;
         PushIntermediateRevisions m_pushIntermediateRevisions = PushIntermediateRevisions::None;
         BeFileName m_inputFileName;
         BeFileName m_drawingsDirs;
@@ -627,6 +628,8 @@ struct iModelBridge
         bool WantThumbnails() const {return m_wantThumbnails;}
         void SetMergeDefinitions(bool b) {m_mergeDefinitions = b;}
         bool GetMergeDefinitions() const {return m_mergeDefinitions;}
+        void SetMatchOnEmbeddedFileBasename(bool b) {m_matchOnEmbeddedFileBasename=b;}
+        bool GetMatchOnEmbeddedFileBasename() const {return m_matchOnEmbeddedFileBasename;}
         void SetBridgeJobName(Utf8StringCR str) {m_converterJobName=str;}
         Utf8String GetBridgeJobName() const {return m_converterJobName;}
         void SetBridgeRegSubKey(WStringCR str) {m_thisBridgeRegSubKey=str;}

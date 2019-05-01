@@ -982,6 +982,9 @@ TEST_F(ConverterTests, CommonReferences)
 TEST_F(ConverterTests, CommonReferencesNoDocGuids)
     {
     // The inputs files to this test DO NOT have PW doc GUIDs. So, we have to use the common embedded reference file's basename to detect that it's common.
+
+    m_params.SetMatchOnEmbeddedFileBasename(true);  // Must opt into this filename-based matching. It is off by default.
+
     const Utf8CP s_master1Name = "master3d1 Package";
     const Utf8CP s_master2Name = "master3d2 Package";
     const Utf8CP s_refName = "commonref";

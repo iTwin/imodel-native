@@ -140,13 +140,15 @@ StableIdPolicy Converter::GetIdPolicyFromAppData(DgnV8FileCR file)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Converter::ComputeEffectiveEmbeddedFileName(Utf8StringCR fullName)
     {
+    if (!_GetParams().GetMatchOnEmbeddedFileBasename())
+        return fullName;
+
     //  masterfile.i.dgn<n>referencefile.i.dgn
     //                    ^
     auto iSep = fullName.find(">");
     if (iSep == Utf8String::npos)
         return fullName;
 
-    // TODO: if _GetParams().GetMatchOnEmbeddedFileBasename() is true ...
     return fullName.substr(iSep+1);
     }
 
