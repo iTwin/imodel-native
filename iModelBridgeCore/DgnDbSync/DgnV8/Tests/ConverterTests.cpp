@@ -13,6 +13,7 @@
 //----------------------------------------------------------------------------------------
 struct ConverterTests : public ConverterTestBaseFixture
     {
+    void CheckNoDupXsas(DgnDbR, Utf8CP kind);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -938,11 +939,28 @@ static BentleyApi::bvector<DgnModelCPtr> getModelsByName(DgnDbR db, Utf8CP model
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConverterTests::CheckNoDupXsas(DgnDbR db, Utf8CP kind)
+    {
+    Utf8PrintfString totalCountSql   ("select count(*) from (select          scope.id, identifier from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " where kind='%s')", kind);
+    Utf8PrintfString distinctCountSql("select count(*) from (select distinct scope.id, identifier from " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " where kind='%s')", kind);
+
+    EC::ECSqlStatement totalCountStmt;
+    ASSERT_EQ(EC::ECSqlStatus::Success, totalCountStmt.Prepare(db, totalCountSql.c_str()));
+    EC::ECSqlStatement distinctCountStmt;
+    ASSERT_EQ(EC::ECSqlStatus::Success, distinctCountStmt.Prepare(db, distinctCountSql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, totalCountStmt.Step());
+    ASSERT_EQ(BE_SQLITE_ROW, distinctCountStmt.Step());
+    ASSERT_EQ(totalCountStmt.GetValueInt(0), distinctCountStmt.GetValueInt(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConverterTests, CommonReferences)
     {
-    // The inputs files to this test have PW doc GUIDs. That is how we detect the common (embedded) reference.
+    // The input files to this test have PW doc GUIDs. That is how we detect the common (embedded) reference.
     const Utf8CP s_master1Name = "master3d1 Package";
     const Utf8CP s_master2Name = "master3d2 Package";
     const Utf8CP s_refName = "ref3d";
@@ -962,6 +980,7 @@ TEST_F(ConverterTests, CommonReferences)
         ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
         ASSERT_EQ(0, getModelsByName(*db, s_master2Name).size());
         ASSERT_EQ(1, getModelsByName(*db, s_refName).size());
+        CheckNoDupXsas(*db, SyncInfo::ExternalSourceAspect::Kind::Element);
         }
 
     m_v8FileName = masterPackageFile2;
@@ -973,6 +992,7 @@ TEST_F(ConverterTests, CommonReferences)
         ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
         ASSERT_EQ(1, getModelsByName(*db, s_master2Name).size());
         ASSERT_EQ(1, getModelsByName(*db, s_refName).size()) << "Since both master files reference the same ref3d, there should be only one copy of ref3d in the iModel";
+        CheckNoDupXsas(*db, SyncInfo::ExternalSourceAspect::Kind::Element);
         }
     }
 
@@ -981,7 +1001,7 @@ TEST_F(ConverterTests, CommonReferences)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConverterTests, CommonReferencesNoDocGuids)
     {
-    // The inputs files to this test DO NOT have PW doc GUIDs. So, we have to use the common embedded reference file's basename to detect that it's common.
+    // The input files to this test DO NOT have PW doc GUIDs. So, we have to use the common embedded reference file's basename to detect that it's common.
 
     m_params.SetMatchOnEmbeddedFileBasename(true);  // Must opt into this filename-based matching. It is off by default.
 
@@ -1007,6 +1027,7 @@ TEST_F(ConverterTests, CommonReferencesNoDocGuids)
         ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
         ASSERT_EQ(0, getModelsByName(*db, s_master2Name).size());
         ASSERT_EQ(1, getModelsByName(*db, s_refName).size());
+        CheckNoDupXsas(*db, SyncInfo::ExternalSourceAspect::Kind::Element);
         }
 
     m_v8FileName = masterPackageFile2;
@@ -1018,6 +1039,7 @@ TEST_F(ConverterTests, CommonReferencesNoDocGuids)
         ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
         ASSERT_EQ(1, getModelsByName(*db, s_master2Name).size());
         ASSERT_EQ(1, getModelsByName(*db, s_refName).size()) << "Since both master files reference the same commonref (by name), there should be only one copy of commonref in the iModel";
+        CheckNoDupXsas(*db, SyncInfo::ExternalSourceAspect::Kind::Element);
         }
     }
 

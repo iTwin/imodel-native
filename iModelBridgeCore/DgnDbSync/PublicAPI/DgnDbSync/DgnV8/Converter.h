@@ -2130,36 +2130,6 @@ struct ElementFilters
 };
 
 //=======================================================================================
-//! A nop "change detector" that is used when a converter knows that it is importing
-//! a set of V8 files for the first time. 
-// @bsiclass                                                    Sam.Wilson      11/16
-//=======================================================================================
-struct CreatorChangeDetector : IChangeDetector
-{
-    bool _ShouldSkipFileByName(Converter&, BeFileNameCR) override {return false;}
-    bool _ShouldSkipFile(Converter&, DgnV8FileCR) override {return false;}
-    bool _AreContentsOfModelUnChanged(Converter&, ResolvedModelMapping const&) override {return false;}
-    bool _ShouldSkipLevel(DgnCategoryId&, Converter&, DgnV8Api::LevelHandle const&, DgnV8FileR, Utf8StringCR) override {return false;}
-    void _OnElementSeen(Converter&, DgnElementId) override {}
-    void _OnModelSeen(Converter&, ResolvedModelMapping const&) override {}
-    void _OnModelInserted(Converter&, ResolvedModelMapping const&) override {}
-    void _OnViewSeen(Converter&, DgnViewId) override {}
-    void _DetectDeletedElements(Converter&, SyncInfo::V8ElementExternalSourceAspectIterator&) override {}
-    void _DetectDeletedElementsInFile(Converter&, DgnV8FileR) override {}
-    void _DetectDeletedElementsEnd(Converter&) override {}
-    void _DetectDeletedModels(Converter&, SyncInfo::V8ModelExternalSourceAspectIterator&) override {}
-    void _DetectDeletedModelsInFile(Converter&, DgnV8FileR) override {}
-    void _DetectDeletedModelsEnd(Converter&) override {}
-    void _DetectDeletedViews(Converter&, SyncInfo::ViewDefinitionExternalSourceAspectIterator&) override {}
-    void _DetectDeletedViewsInFile(Converter&, DgnV8FileR) override {}
-    void _DetectDeletedViewsEnd(Converter&) override {}
-    
-    DGNDBSYNC_EXPORT bool _IsElementChanged(SearchResults&, Converter&, DgnV8EhCR, ResolvedModelMapping const&, T_SyncInfoElementFilter* filter) override; // fills in element MD5 and returns true
-
-    CreatorChangeDetector() {}
-};
-
-//=======================================================================================
 //! ChangeDetector is a set of algorithms that can be used to detect changes to elements in V8 files,
 //! plus algorithms that can update the corresponding elements in the output DgnDb file.
 //! An updating converter uses an instance of ChangeDetector to detect changes.

@@ -14,14 +14,9 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TiledFileConverter::_SetChangeDetector(bool isUpdating)
     {
-    if (!isUpdating)
-        m_changeDetector.reset(new CreatorChangeDetector);
-    else
-        {
-        BeAssert((nullptr != GetRootV8File()) && "_SetChangeDetector should be called after _OpenSource");
-        m_changeDetector.reset(new ChangeDetectorForTiles(*GetRootV8File())); 
-        m_skipECContent = false;
-        }
+    BeAssert((nullptr != GetRootV8File()) && "_SetChangeDetector should be called after _OpenSource");
+    m_changeDetector.reset(new ChangeDetectorForTiles(*GetRootV8File())); 
+    m_skipECContent = false;
     }
 
 /*---------------------------------------------------------------------------------**//**

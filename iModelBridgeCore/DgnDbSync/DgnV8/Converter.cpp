@@ -3631,7 +3631,7 @@ ConverterLibrary::ConverterLibrary(DgnDbR bim, RootModelSpatialParams& params) :
     {
     m_dgndb = &bim;
 
-    m_changeDetector.reset(new CreatorChangeDetector); // *** NEEDS WORK: we must use a real change detector in case we are updating, if only to detect changes to drawings and sheets.
+    m_changeDetector.reset(new ChangeDetector);
     
     AttachSyncInfo();
 
