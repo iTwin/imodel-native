@@ -208,7 +208,7 @@ namespace std { typedef ::max_align_t max_align_t; }
 // clang/iOS: Fixes "ambiguous reference" issues related to "pair".
 // Automatically opt-in so consuming MKE files don't have to know to declare.
 // Was #if FOLLY_USE_LIBCPP
-#if defined(FOLLY_USE_LIBCPP) || defined(__clang__) 
+#if defined(FOLLY_USE_LIBCPP) || (defined(__clang__) && !defined(_GLIBCXX_RELEASE))
 
 #include <__config>
 #define FOLLY_NAMESPACE_STD_BEGIN     _LIBCPP_BEGIN_NAMESPACE_STD
