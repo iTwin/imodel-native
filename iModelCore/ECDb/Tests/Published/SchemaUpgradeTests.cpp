@@ -11795,7 +11795,7 @@ TEST_F(SchemaUpgradeTestFixture, SchemaDiff)
             ASSERT_TRUE(propChange.ArrayMaxOccurs().IsChanged());
             ASSERT_EQ(ECChange::OpCode::Modified, propChange.ArrayMaxOccurs().GetOpCode());
             ASSERT_TRUE(propChange.ArrayMaxOccurs().GetOld().IsNull());
-            ASSERT_EQ(std::numeric_limits<uint32_t>::max(), propChange.ArrayMaxOccurs().GetNew().Value());
+            ASSERT_EQ(std::numeric_limits<int32_t>::max(), propChange.ArrayMaxOccurs().GetNew().Value());
 
             continue;
             }
