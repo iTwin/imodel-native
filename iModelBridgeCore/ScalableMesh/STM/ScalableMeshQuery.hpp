@@ -1360,7 +1360,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
                 else
                 {
                     m_meshNode->ComputeMergedClips();
-                    uint64_t clipId = 0;
+                    uint64_t clipId = flags->ShouldInvertClips() ? 1 : 0;
                     if (m_meshNode->HasClip(clipId))
                     {
                         assert(m_meshNode->GetDiffSetPtr() != nullptr);

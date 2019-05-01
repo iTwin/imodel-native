@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:07:12 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1384,6 +1384,7 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
             m_saveToCache = false;
             m_precomputeBoxes = false;
             m_useClipsToShow = false;
+            m_shouldInvertClips = false;
             }
 
         virtual ~ScalableMeshMeshFlags() {}
