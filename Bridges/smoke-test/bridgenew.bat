@@ -8,9 +8,9 @@ set Server_Projectnumber=Hkbridges125
 
 set staging_directory=C:\bridge\staging_qa
 
-set user_name=Glen.worrall@bentley.com 
+set user_name=abdbridgetestuser@mailinator.com 
 
-set user_password=4Kc3WBdAWGqX
+set user_password=mpyb475hFvpe
 
 
 set LOGFILE="C:\bridge\log.txt"
