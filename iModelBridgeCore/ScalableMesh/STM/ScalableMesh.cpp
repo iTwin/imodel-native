@@ -2662,6 +2662,10 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const ClipVectorPtr& c
         }
     }
 
+    if (!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
+    {
+        clipP->TransformInPlace(m_reprojectionTransform);
+    }
     if (m_scmIndexPtr->GetClipRegistry()->HasClip(clipID)) return false;
     m_scmIndexPtr->GetClipRegistry()->AddClipWithParameters(clipID, clipP, geom, type, isActive);
 
@@ -2735,6 +2739,12 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const ClipVectorPtr
     bool isActive2;
     m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(clipID, clipData,geom2,type2,isActive2);
     DRange3d extent;
+    if (!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
+    {
+        Transform trans;
+        trans.InverseOf(m_reprojectionTransform);
+        clipData->TransformInPlace(trans);
+    }
     clipData->GetRange(extent, nullptr);
     if (extent.Volume() == 0)
     {
@@ -2765,6 +2775,11 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const ClipVectorPtr
     DRange3d extentNew;
     clipP->GetRange(extentNew, nullptr);
     extent.Extend(extentNew);
+
+    if (!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
+    {
+        clipP->TransformInPlace(m_reprojectionTransform);
+    }
 
     m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, clipP, geom, type, isActive);
 
@@ -2852,6 +2867,13 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
 
     if(clipVectorData.IsValid() && !clipVectorData->empty())
         {
+        if(!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
+            {
+            Transform trans;
+            trans.InverseOf(m_reprojectionTransform);
+            clipVectorData->TransformInPlace(trans);
+            }
+
         DRange3d clipVectorRange;
         clipVectorData->GetRange(clipVectorRange, nullptr);
         extent.Extend(clipVectorRange);

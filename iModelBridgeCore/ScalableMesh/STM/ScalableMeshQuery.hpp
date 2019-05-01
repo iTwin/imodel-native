@@ -1360,7 +1360,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
                 else
                 {
                     m_meshNode->ComputeMergedClips();
-                    uint64_t clipId = 0;
+                    uint64_t clipId = flags->ShouldInvertClips() ? 1 : 0;
                     if (m_meshNode->HasClip(clipId))
                     {
                         assert(m_meshNode->GetDiffSetPtr() != nullptr);
@@ -2853,46 +2853,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
         {
         m_params = params;
 
-        DRange3d meshRange = this->GetContentExtent();
-        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-        auto meshP = this->GetMesh(flags);
-        if (meshP.get() == nullptr) return;
-
-        double roundedDownNextMultiple = (floor(meshRange.low.z / m_params.majorContourSpacing)*m_params.majorContourSpacing);
-        double roundedUpNextMultiple = (ceil(meshRange.high.z / m_params.majorContourSpacing)*m_params.majorContourSpacing);
-        for (double i = roundedDownNextMultiple; i < roundedUpNextMultiple; i += m_params.majorContourSpacing)
-            {
-            DPlane3d plane = DPlane3d::From3Points(DPoint3d::From(0, 0, i), DPoint3d::From(0, 1, i), DPoint3d::From(1, 0, i));
-            bvector<DSegment3d> allSegments;
-
-            meshP->CutWithPlane(allSegments, plane);
-
-            bvector<bvector<DPoint3d>> polylines;
-            for (auto& seg : allSegments)
-                seg.point[0].z = seg.point[1].z = i;
-            StitchSegmentsAtJunctions(polylines, allSegments);
-
-            for(auto& line: polylines)
-                m_contours.push_back(line);
-            }
-
-        roundedDownNextMultiple = (floor(meshRange.low.z / m_params.minorContourSpacing)*m_params.minorContourSpacing);
-        roundedUpNextMultiple = (ceil(meshRange.high.z / m_params.minorContourSpacing)*m_params.minorContourSpacing);
-        for (double i = roundedDownNextMultiple; i < roundedUpNextMultiple; i += m_params.minorContourSpacing)
-            {
-            DPlane3d plane = DPlane3d::From3Points(DPoint3d::From(0, 0, i), DPoint3d::From(0, 1, i), DPoint3d::From(1, 0, i));
-            bvector<DSegment3d> allSegments;
-
-            meshP->CutWithPlane(allSegments, plane);
-
-            bvector<bvector<DPoint3d>> polylines;
-            for (auto& seg : allSegments)
-                seg.point[0].z = seg.point[1].z = i;
-            StitchSegmentsAtJunctions(polylines, allSegments);
-
-            for (auto& line : polylines)
-                m_contours.push_back(line);
-            }
+        this->_MakeContours(m_contours, m_contours, m_params);
 
         m_contoursReady = true;
         }
@@ -2955,6 +2916,25 @@ IScalableMeshNodePtr ScalableMeshNode<POINT>::_GetParentNode() const
 
     return new ScalableMeshNode<POINT>(nodePtr);
     }
+
+template <class POINT>
+void ScalableMeshNode<POINT>::_MakeContours(bvector<bvector<DPoint3d>>& major, bvector<bvector<DPoint3d>>& minor, ContoursParameters params)
+{
+    LOAD_NODE
+
+    DRange3d meshRange = this->GetContentExtent();
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+    auto meshP = this->GetMesh(flags);
+    if (meshP.get() == nullptr) return;
+
+    double roundedDownNextMultiple = (floor(meshRange.low.z / params.majorContourSpacing)*params.majorContourSpacing);
+    double roundedUpNextMultiple = (ceil(meshRange.high.z / params.majorContourSpacing)*params.majorContourSpacing);
+    ScalableMeshContourExtractor(params).GetMajorContours(major, meshP, roundedDownNextMultiple, roundedUpNextMultiple);
+
+    roundedDownNextMultiple = (floor(meshRange.low.z / params.minorContourSpacing)*params.minorContourSpacing);
+    roundedUpNextMultiple = (ceil(meshRange.high.z / params.minorContourSpacing)*params.minorContourSpacing);
+    ScalableMeshContourExtractor(params).GetMinorContours(minor, meshP, roundedDownNextMultiple, roundedUpNextMultiple);
+}
 
 #ifdef WIP_MESH_IMPORT
 
@@ -3353,12 +3333,12 @@ template <class POINT> SMNodeViewStatus ScalableMeshNode<POINT>::_IsCorrectForVi
     return SMNodeViewStatus::NotVisible;    
     }
 
-template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph)
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph, bool arePoints3D)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(this->m_node->GetPointsPtr());    
     pointsPtr->clear();
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(this->m_node);
-    m_meshNode->m_nodeHeader.m_arePoints3d = true;
+    m_meshNode->m_nodeHeader.m_arePoints3d = arePoints3D;
     vector<POINT> nodePts(nVertices);
     vector<size_t> sorted(nVertices);
     std::iota(sorted.begin(), sorted.end(), 0);
@@ -3411,13 +3391,13 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d*
     return BSISUCCESS;
     }
 
-template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph)
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph, bool arePoints3D)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(this->m_node->GetPointsPtr());
     pointsPtr->clear();
 
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(this->m_node);
-    //m_meshNode->m_nodeHeader.m_arePoints3d = true;
+    m_meshNode->m_nodeHeader.m_arePoints3d = arePoints3D;
     m_meshNode->m_nodeHeader.m_isTextured = true;
 
     if (texID != -1)
@@ -3477,13 +3457,13 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
     return BSISUCCESS;
     }
 
-template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph)
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph, bool arePoints3D)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(this->m_node->GetPointsPtr());    
     pointsPtr->clear();
     
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(this->m_node);
-    m_meshNode->m_nodeHeader.m_arePoints3d = true;    
+    m_meshNode->m_nodeHeader.m_arePoints3d = arePoints3D;
     m_meshNode->m_nodeHeader.m_isTextured = true;
 
     if (texID != -1)

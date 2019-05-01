@@ -35,6 +35,8 @@
 #include "SMMeshIndex.h"
 #include "./ScalableMesh/ScalableMeshGraph.h"
 #include "Edits/DifferenceSet.h"
+#include "ScalableMeshContourExtractor.h"
+
 #ifdef SCALABLE_MESH_ATP
 #include <ScalableMesh/IScalableMeshATP.h>
 #endif
@@ -1384,6 +1386,7 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
             m_saveToCache = false;
             m_precomputeBoxes = false;
             m_useClipsToShow = false;
+            m_shouldInvertClips = false;
             }
 
         virtual ~ScalableMeshMeshFlags() {}
@@ -1470,6 +1473,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
         SMNodeViewStatus _IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const override;
 
         virtual IScalableMeshNodeEditPtr _EditNode() override;
+
+        virtual void _MakeContours(bvector<bvector<DPoint3d>>& major, bvector<bvector<DPoint3d>>& minor, ContoursParameters params) override;
 
 #ifdef WIP_MESH_IMPORT
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) override;
@@ -1704,12 +1709,6 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             typedef RefCountedPtr<ScalableMeshCachedDisplayNode<POINT>> Ptr;
     };
 
-    struct ContoursParameters
-    {
-        float majorContourSpacing;
-        float minorContourSpacing;
-    };
-
     template<class POINT> class ScalableMeshContourCachedDisplayNode : public virtual ScalableMeshCachedDisplayNode<POINT>
     {
 #if ANDROID
@@ -1750,14 +1749,14 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
 
     protected:
 
-        virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph = false) override;
+        virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph = false, bool arePoints3D = true) override;
 
         // The binary buffer for each texture starts with three int numbers representing texture width, texture height and number of color channels
         virtual StatusInt _AddTextures(bvector<Byte>& data) override;
 
-        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph = false) override;
+        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph = false, bool arePoints3D = true) override;
 
-        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph = false) override;
+        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph = false, bool arePoints3D = true) override;
         
         virtual StatusInt _SetNodeExtent(DRange3d& extent) override;
 

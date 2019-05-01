@@ -450,8 +450,9 @@ void PerformGroundExtractionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         BaseGCSCPtr destinationGcs;
         BeFileName groundOutputFileName(BeFileName::GetFileNameWithoutExtension(groundOutputName.c_str()).c_str());
         BeFileName outputDirName(outputDir.c_str());
-                            
-        SMStatus status = IScalableMeshDetectGround::DetectGroundForRegion(scalableMeshPtr, groundOutputFileName, outputDirName, areas[areaInd], areaInd, pSmQuickGroundPreviewer, destinationGcs, true);
+        BeFileName dataSourceDir;
+                                                     
+        SMStatus status = IScalableMeshDetectGround::DetectGroundForRegion(scalableMeshPtr, groundOutputFileName, outputDirName, areas[areaInd], areaInd, pSmQuickGroundPreviewer, destinationGcs, true, false, dataSourceDir);
         if (status != S_SUCCESS)
             {
             errorInfo += WPrintfString(L"Error returned by DetectGroundForRegion for area %i    ", areaInd);

@@ -1542,6 +1542,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh(bv
                 bool isMeshed;
                 if (node->m_nodeHeader.m_arePoints3d)
                     {
+                    assert(!"3D Meshing is currently supported by ContextCapture - Should not be called.");
                     isMeshed = node->m_mesher3d->Mesh(node);
                     }
                 else
@@ -2797,7 +2798,7 @@ template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncW
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipActionRecursive(ClipAction action, uint64_t clipId, DRange3d& extent, size_t& nOfNodesTouched, bool setToggledWhenIdIsOn, Transform tr)
     {
     if (!this->IsLoaded()) Load();
-    if (this->m_nodeHeader.m_totalCountDefined ? this->m_nodeHeader.m_totalCount == 0 : this->GetNbPoints() == 0 || this->m_nodeHeader.m_nbFaceIndexes < 3) return;
+    if (this->m_nodeHeader.m_totalCountDefined ? this->m_nodeHeader.m_totalCount == 0 : this->IsLeaf() && (this->GetNbPoints() == 0 || this->m_nodeHeader.m_nbFaceIndexes < 3)) return;
    /* DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(this->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(this->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(this->m_nodeHeader.m_nodeExtent),
                                         ExtentOp<EXTENT>::GetXMax(this->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(this->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(this->m_nodeHeader.m_nodeExtent));*/
     
