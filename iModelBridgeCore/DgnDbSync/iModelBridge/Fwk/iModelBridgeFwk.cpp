@@ -1095,6 +1095,9 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
 	if (!m_jobEnvArgs.m_jobSubjectName.empty())
 		params.SetBridgeJobName(m_jobEnvArgs.m_jobSubjectName);
     params.SetMergeDefinitions(m_jobEnvArgs.m_mergeDefinitions);
+    auto tempVarCheck = getenv("iModelBridge_MatchOnEmbeddedFileBasename");     // TODO: Replace this with a settings service parameter check
+    if (tempVarCheck && *tempVarCheck == '1')
+        params.SetMatchOnEmbeddedFileBasename(true);
     if (m_useIModelHub)
         {
         params.SetUrlEnvironment(m_iModelHubArgs->m_environment);
