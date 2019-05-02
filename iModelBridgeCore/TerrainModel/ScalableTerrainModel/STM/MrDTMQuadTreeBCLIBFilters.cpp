@@ -1,12 +1,11 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: ScalableTerrainModel/STM/MrDTMQuadTreeBCLIBFilters.cpp $
 //:>    $RCSfile: MrDTMQuadTreeBCLIBFilters.cpp,v $
 //:>   $Revision: 1.13 $
 //:>       $Date: 2011/06/27 14:53:05 $
 //:>     $Author: Alain.Robert $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 

@@ -1,12 +1,11 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: ScalableTerrainModel/STM/HGF3DFilterCoord.h $
 //:>    $RCSfile: HGF3DFilterCoord.h,v $
 //:>   $Revision: 1.3 $
 //:>       $Date: 2010/08/19 13:21:39 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF3DCoord

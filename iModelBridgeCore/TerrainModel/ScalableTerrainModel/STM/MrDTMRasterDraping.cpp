@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/STM/MrDTMRasterDraping.cpp $
 |    $RCSfile: MrDTMRasterDraping.cpp,v $
 |   $Revision: 1.7 $
 |       $Date: 2010/11/29 13:15:51 $
 |     $Author: Daryl.Holmwood $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

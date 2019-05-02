@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/STM/MrDTMFilteringOptions.cpp $
 |    $RCSfile: MrDTMFilteringOptions.cpp,v $
 |   $Revision: 1.7 $
 |       $Date: 2010/12/15 18:23:17 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

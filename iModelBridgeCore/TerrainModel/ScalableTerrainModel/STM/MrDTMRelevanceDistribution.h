@@ -1,12 +1,11 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: ScalableTerrainModel/STM/MrDTMRelevanceDistribution.h $
 //:>    $RCSfile: MrDTMRelevanceDistribution.h,v $
 //:>   $Revision: 1.4 $
 //:>       $Date: 2010/08/19 13:45:40 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 

@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/Import/PluginRegistryHelper.hpp $
 |    $RCSfile: PluginRegistryHelper.hpp,v $
 |   $Revision: 1.4 $
 |       $Date: 2012/02/16 00:36:57 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //---------------------------------------------------------------------------+
 // civdtm.h : main header file for the CIVDTM DLL
 //

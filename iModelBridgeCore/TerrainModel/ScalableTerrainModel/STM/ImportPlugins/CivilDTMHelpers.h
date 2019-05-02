@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: ScalableTerrainModel/STM/ImportPlugins/CivilDTMHelpers.h $
 |    $RCSfile: CivilDTMHelpers.h,v $
 |   $Revision: 1.8 $
 |       $Date: 2011/08/08 19:02:26 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
