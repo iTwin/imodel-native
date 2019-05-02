@@ -294,6 +294,8 @@ $(o)ScalableMeshProgressiveQueryPlanner$(oext) : $(stmDir)ScalableMeshProgressiv
 
 $(o)ScalableMeshProgressiveContourQueryPlanner$(oext) : $(stmDir)ScalableMeshProgressiveContourQueryPlanner.cpp ${MultiCompileDepends}
 
+$(o)ScalableMeshContourExtractor$(oext) : $(stmDir)ScalableMeshContourExtractor.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
 $(o)ScalableMeshVolume$(oext) : $(stmDir)ScalableMeshVolume.cpp  ${MultiCompileDepends}
 
 $(o)ScalableMeshSourceImporter$(oext) : $(stmDir)ScalableMeshSourceImporter.cpp   ${MultiCompileDepends}
