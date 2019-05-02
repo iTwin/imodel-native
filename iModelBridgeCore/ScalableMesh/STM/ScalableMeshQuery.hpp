@@ -1339,24 +1339,31 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
 
                     flags->GetClipsToShow(clipsToShow);
 
-                    if (clipsToShow.size() > 0)
-                    {
-                        DifferenceSet clipDiffSet;
-
-                        bool anythingToApply = ComputeDiffSet(clipDiffSet, clipsToShow, flags->ShouldInvertClips());
-
-                        if (anythingToApply)
+                    if (clipsToShow.empty())
                         {
-                            clipDiffSet.template ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes,
-                                toLoadUv, toLoadUvIndex, toLoadUvCount,
-                                dataPoints.data(), dataPoints.size(),
-                                dataFaceIndexes.data(), dataFaceIndexes.size(),
-                                dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0, 0, 0));
+                        if(flags->ShouldInvertClips())
+                            clipsToShow.insert(1);
+                        else
+                            {
+                            // Default to using all clips
+                            m_meshNode->CollectClipIds(clipsToShow);
+                            }
+                        }
+                    DifferenceSet clipDiffSet;
 
-                            clipsLoaded = true;
+                    bool anythingToApply = ComputeDiffSet(clipDiffSet, clipsToShow, flags->ShouldInvertClips());
+
+                    if(anythingToApply)
+                        {
+                        clipDiffSet.template ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes,
+                                                                                        toLoadUv, toLoadUvIndex, toLoadUvCount,
+                                                                                        dataPoints.data(), dataPoints.size(),
+                                                                                        dataFaceIndexes.data(), dataFaceIndexes.size(),
+                                                                                        dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0, 0, 0));
+
+                        clipsLoaded = true;
                         }
                     }
-                }
                 else
                 {
                     m_meshNode->ComputeMergedClips();
