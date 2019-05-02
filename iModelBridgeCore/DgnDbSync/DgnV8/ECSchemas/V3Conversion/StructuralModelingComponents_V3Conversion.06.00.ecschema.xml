@@ -20,4 +20,9 @@
             <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
     </ECClass>
+    <ECClass typeName="IsmToleranceAttributes" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
 </ECSchema>
