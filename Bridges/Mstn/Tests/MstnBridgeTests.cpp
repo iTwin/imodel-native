@@ -605,31 +605,42 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridge)
     //We need to shut down v8host at the end so that rest of the processing works.
     TerminateHost();
 
-    AddAttachment(inputFile, refFile, 1, true);
-    AddAttachment(inputFile, refFile, 1, true);
+    // Run each bridge once, before we add the ABD-specific attachment.
     int modelCount = 0;
     if (true)
         {
-        // Ask the framework to run our test bridge to do the initial conversion and create the repo
         bvector<WString> margs(args);
         margs.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
         RunTheBridge(margs);
-
-        modelCount = DbFileInfo(m_briefcaseName).GetModelCount();
-        ASSERT_EQ(8, modelCount);
+        modelCount = DbFileInfo(m_briefcaseName).GetModelCount(); // MstnBridge will create some definition models for its own use, plus a PhysicalModel for the root input model
+        }
+    if (true)
+        {
+        bvector<WString> rargs(args);
+        rargs.push_back(L"--fwk-bridge-regsubkey=ABD");
+        RunTheBridge(rargs);
+        modelCount = DbFileInfo(m_briefcaseName).GetModelCount(); // ABD bridge will create some definition models for its own use
         }
 
+    // Add an ABD-specific attachment (twice)
+    AddAttachment(inputFile, refFile, 1, true);
+    AddAttachment(inputFile, refFile, 1, true);
+    
+    if (true)
+        {
+        bvector<WString> margs(args);
+        margs.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
+        RunTheBridge(margs);
+        ASSERT_EQ(modelCount, DbFileInfo(m_briefcaseName).GetModelCount()) << "MstnBridge should not have converted or created any more models";
+        }
 
     if (true)
         {
-        //We added a new attachment.
         bvector<WString> rargs(args);
         rargs.push_back(L"--fwk-bridge-regsubkey=ABD");
-
         RunTheBridge(rargs);
-        ASSERT_EQ(modelCount + 1, DbFileInfo(m_briefcaseName).GetModelCount());
+        ASSERT_EQ(modelCount + 1, DbFileInfo(m_briefcaseName).GetModelCount()) << "ABD bridge should have detected and converted the new attachments, and it should have that both point to the same model.";
         }
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -672,6 +683,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
 
 
     int modelCount = 0;
+    BeFileName b1BriefcaseName;
     if (true)
         {
         BentleyApi::BeFileName testDir1;
@@ -691,6 +703,8 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         ASSERT_EQ(1, provenanceCount1);
         ASSERT_EQ(0, provenanceCountRef);
         ASSERT_EQ(1, modelCount);
+
+        b1BriefcaseName = m_briefcaseName;
         }
     
     if (true)
@@ -714,8 +728,8 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         ASSERT_EQ(1, provenanceCount1);
         ASSERT_EQ(1, provenanceCountRef);
         
+        ASSERT_TRUE(!b1BriefcaseName.EqualsI(m_briefcaseName)) << "Different bridges should use different briefcases";
         }
-
     
     if (true)
         {
