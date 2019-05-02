@@ -18,6 +18,7 @@ url=r'https://qa-connect-imodelhubwebsite.bentley.com/Project/0b048e3d-9699-4a6c
 driver = webdriver.Chrome("C:\\bridge\\chromedriver.exe")
 driver.set_page_load_timeout(150)
 driver.get(url)
+time.sleep(20)
 driver.find_element_by_name('EmailAddress').send_keys('Saddam.khattak@bentley.com')
 #driver.find_element_by_name('Password').send_keys('Hkbridges124@')
 #driver.find_element_by_id('submitLogon').click()
