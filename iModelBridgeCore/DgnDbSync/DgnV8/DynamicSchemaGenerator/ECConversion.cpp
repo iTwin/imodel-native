@@ -352,6 +352,9 @@ ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IE
         default:
             LOG.warningv("Found an ExtendType custom attribute on an ECProperty, '%s.%s', with an unknown standard value %d.  Only values 7-11 are supported.",
                          prop->GetClass().GetFullName(), prop->GetName().c_str());
+            prop->RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+            prop->RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+
             break;
         }
 
