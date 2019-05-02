@@ -441,8 +441,10 @@ static IFacetOptionsPtr createFacetOptions(Napi::Object const& exportProps)
     Napi::Value chordTolVal = exportProps.Get("chordTol");
     if (chordTolVal.IsNumber()) chordTol = chordTolVal.As<Napi::Number>().DoubleValue();
 
+    // Per Earlin's advice on avoiding topology problems, restrict max angle tolerance to 45 deg
     Napi::Value angleTolVal = exportProps.Get("angleTol");
-    if (angleTolVal.IsNumber()) angleTol = angleTolVal.As<Napi::Number>().DoubleValue();
+    if (angleTolVal.IsNumber())
+        angleTol = std::min(msGeomConst_piOver4, angleTolVal.As<Napi::Number>().DoubleValue());
 
     Napi::Value maxEdgeLengthVal = exportProps.Get("maxEdgeLength");
     if (maxEdgeLengthVal.IsNumber()) maxEdgeLength = maxEdgeLengthVal.As<Napi::Number>().DoubleValue();
