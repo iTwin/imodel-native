@@ -746,8 +746,8 @@ threadId);
                         for (auto& node : (*queryItr)->m_newOverviews[threadIter])
                         {
                             for (auto& nodeOld : staleOverviews)
-                            {
-                                if (dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>(nodeOld.get())->GetNodePtr().GetPtr() == dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>(nodeOld.get())->GetNodePtr().GetPtr())
+                            {                                
+                                if (dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>(nodeOld.get())->GetNodePtr()->GetBlockID().m_integerID == dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>(node.get())->GetNodePtr()->GetBlockID().m_integerID)
                                     nodeOld = dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>(node.get());
                             }
                         }
@@ -774,7 +774,7 @@ void IScalableMeshProgressiveQueryEngine::CancelAllQueries()
 static double s_updateOverviewsDelay = (double)1 / 10 * CLOCKS_PER_SEC;
 
 //controls whether preload of overviews is subject to delay
-static bool s_shouldDelayPreloadOverviews = true;
+static bool s_shouldDelayPreloadOverviews = false;
 
 void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
     {    
@@ -807,7 +807,6 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
 void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, IScalableMesh* sMesh)
     {     
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, sMesh));
-    assert(meshNode->IsLoaded(m_displayCacheManagerPtr.get(), m_loadTexture) == false || node->GetNbPoints() == 0);
     
     SMMeshIndexNode<DPoint3d, Extent3dType>* smNode = dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(node.GetPtr());
     TRACEPOINT(THREAD_ID(), EventType::EVT_CREATE_DISPLAY_OVR_PRELOAD, node->GetBlockID().m_integerID, (uint64_t)-1, smNode->GetSingleTextureID(), -1, (uint64_t)meshNode.get(), -1)
@@ -1103,10 +1102,10 @@ size_t threadId, IScalableMeshPtr* scalableMeshPtr, IScalableMeshDisplayCacheMan
                     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd], scalableMeshPtr->get()));
                     bvector<IScalableMeshCachedDisplayNodePtr> ovr;
                     DRange3d nodeExtent(meshNodePtr->GetNodeExtent());
-                    FindOverview(ovr, collectedClips, nodeExtent, m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
+                    //FindOverview(ovr, collectedClips, nodeExtent, m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
 
 
-                    if (dynamic_cast<SMMeshIndexNode<DPoint3d, DRange3d>*>(&*m_nodesToSearch->GetNodes()[nodeInd])->SyncWithClipSets(collectedClips, &*(*scalableMeshPtr)))
+                    if (false && dynamic_cast<SMMeshIndexNode<DPoint3d, DRange3d>*>(&*m_nodesToSearch->GetNodes()[nodeInd])->SyncWithClipSets(collectedClips, &*(*scalableMeshPtr)))
                     {
                         meshNodePtr->RemoveDisplayDataFromCache();
                         m_lowerResOverviewNodes[threadId].insert(m_lowerResOverviewNodes[threadId].end(), ovr.begin(), ovr.end());
@@ -1158,7 +1157,7 @@ size_t threadId, IScalableMeshPtr* scalableMeshPtr, IScalableMeshDisplayCacheMan
 
                     bvector<IScalableMeshCachedDisplayNodePtr> ovr;
                     DRange3d range3d = meshNodePtr->GetNodeExtent();
-                        
+                    /*
                     FindOverview(ovr, collectedClips, range3d, m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
                     if (dynamic_cast<SMMeshIndexNode<DPoint3d, DRange3d>*>(&*m_foundNodes->GetNodes()[nodeInd])->SyncWithClipSets(collectedClips, &*(*scalableMeshPtr)))
                     {
@@ -1166,7 +1165,7 @@ size_t threadId, IScalableMeshPtr* scalableMeshPtr, IScalableMeshDisplayCacheMan
                         m_lowerResOverviewNodes[threadId].insert(m_lowerResOverviewNodes[threadId].end(), ovr.begin(), ovr.end());
                         m_toLoadNodes[threadId].push_back(m_foundNodes->GetNodes()[nodeInd]);
                     }
-                    else
+                    else*/
                     {
                         m_lowerResOverviewNodes[threadId].push_back(meshNodePtr);
 

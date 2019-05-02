@@ -1495,8 +1495,10 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
             double positionAlongRay = m_is2d ? par : fraction.low;
             auto it = m_fractions.insert(std::lower_bound(m_fractions.begin(), m_fractions.end(), positionAlongRay), positionAlongRay);
             meshNodes.insert(meshNodes.begin() + (it - m_fractions.begin()), node);
+            if (node->GetLevel() == this->m_requestedLevel)
+                return false;
             }
-        else if (node->GetLevel() > this->m_requestedLevel) return false; //too deep
+        else if (node->GetLevel() >= this->m_requestedLevel) return false; //too deep
         }
     else return false; //don't do subnodes, this is not the right extent
     return true;

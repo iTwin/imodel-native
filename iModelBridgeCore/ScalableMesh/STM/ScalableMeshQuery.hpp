@@ -2240,7 +2240,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::HasCorrectClip
     
     for (auto& clipToShow : clipsToShow)
         {                    
-        if (meshNode->HasClip(clipToShow))
+        if (meshNode->HasClip(clipToShow, false))
             {        
             size_t clipInd = 0;
 
@@ -3201,7 +3201,7 @@ template <class POINT> uint64_t ScalableMeshNode<POINT>::_LastClippingStateUpdat
 
 template <class POINT> void ScalableMeshNode<POINT>::_RefreshMergedClip(Transform tr) const
     {
-    dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(this->m_node.GetPtr())->PropagateClipSetFromAncestors();
+    //dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(this->m_node.GetPtr())->PropagateClipSetFromAncestors();
     dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(this->m_node.GetPtr())->BuildSkirts();
     dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(this->m_node.GetPtr())->ComputeMergedClips(tr);
     }
