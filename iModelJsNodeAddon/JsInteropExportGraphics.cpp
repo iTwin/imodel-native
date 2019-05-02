@@ -228,8 +228,10 @@ public:
         CachedEntry(ColorDef c, DgnTextureId id) : color(c), textureId(id) { }
         };
     bvector<CachedEntry>            m_cachedEntries;
+    bool                            m_gotBadPolyface;
 
-    ExportGraphicsProcessor(DgnDbR db, IFacetOptionsR facetOptions) : m_db(db), m_facetOptions(facetOptions) { }
+    ExportGraphicsProcessor(DgnDbR db, IFacetOptionsR facetOptions) :
+        m_db(db), m_facetOptions(facetOptions), m_gotBadPolyface(false) { }
     virtual ~ExportGraphicsProcessor() { }
 
 private:
@@ -281,15 +283,31 @@ std::unique_ptr<Json::Value> ResolveColorAndMaterial(SimplifyGraphic& sg, ColorD
     return std::unique_ptr<Json::Value>(new Json::Value(patternMap.m_value));
     }
 
+bool VerifyTriangulationAndZeroBlocking(PolyfaceQueryCR pfQuery)
+    {
+    const int32_t* indices = pfQuery.GetPointIndexCP();
+    for (uint32_t i = 0, indexCount = (uint32_t)pfQuery.GetPointIndexCount(); i < indexCount; i += 4)
+        {
+        for (uint32_t j = 0; j < 3; ++j) { if (indices[i + j] == 0) { return false; } }
+        if (indices[i + 3] != 0) { return false; }
+        }
+
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Matt.Gooding    02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg) override
     {
+    // Receiving empty polyfaces isn't ideal, but just ignore and don't count as real error condition
     if (pfQuery.GetPointIndexCount() == 0 || pfQuery.GetPointCount() == 0) return true;
-    if (pfQuery.GetNormalIndexCP() == nullptr || pfQuery.GetNormalCount() == 0) return true;
-    if (pfQuery.GetParamIndexCP() == nullptr || pfQuery.GetParamCount() == 0) return true;
-    if (pfQuery.GetMeshStyle() != MESH_ELM_STYLE_INDEXED_FACE_LOOPS) return true;
+
+    // Polyfaces missing requested information or in the wrong style are indicative of real problems upstream
+    if (pfQuery.GetNormalIndexCP() == nullptr || pfQuery.GetNormalCount() == 0) { m_gotBadPolyface = true; return true; }
+    if (pfQuery.GetParamIndexCP() == nullptr || pfQuery.GetParamCount() == 0) { m_gotBadPolyface = true; return true; }
+    if (pfQuery.GetMeshStyle() != MESH_ELM_STYLE_INDEXED_FACE_LOOPS) { m_gotBadPolyface = true; return true; }
+    if (!VerifyTriangulationAndZeroBlocking(pfQuery)) { m_gotBadPolyface = true; return true; }
 
     ColorDef color;
     std::unique_ptr<Json::Value> patternMapJson = ResolveColorAndMaterial(sg, color);
@@ -397,9 +415,11 @@ struct ExportGraphicsJob
     ExportGraphicsProcessor         m_processor;
     ExportGraphicsContext           m_context;
     Napi::String                    m_elementId;
+    DgnElementId                    m_debugElementId;
 
-    ExportGraphicsJob(DgnDbR db, IFacetOptionsR fo, Napi::String elementId) :
-        m_geom(db), m_db(db), m_processor(db, fo), m_context(m_processor), m_elementId(elementId) { }
+    ExportGraphicsJob(DgnDbR db, IFacetOptionsR fo, Napi::String elId, DgnElementId debugElId) :
+        m_geom(db), m_db(db), m_processor(db, fo), m_context(m_processor), m_elementId(elId),
+        m_debugElementId(debugElId) { }
 
     void Execute()
         {
@@ -512,7 +532,7 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
         auto status = db.Elements().LoadGeometryStream(geomStream, stmt->GetValueBlob(1), stmt->GetColumnBytes(1));
         if (status != DgnDbStatus::Success) continue;
 
-        ExportGraphicsJob* job = new ExportGraphicsJob(db, *facetOptions.get(), napiElementId);
+        ExportGraphicsJob* job = new ExportGraphicsJob(db, *facetOptions.get(), napiElementId, elementId);
         job->m_geom.m_categoryId = stmt->GetValueId<DgnCategoryId>(0);
         job->m_geom.m_placement = getPlacement(*stmt);
         job->m_geom.m_geomStream = std::move(geomStream);
@@ -529,6 +549,12 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
         jobHandles[i].wait(); // Should use folly chaining? Good enough for now, jobs are FIFO
 
         ExportGraphicsJob* job = jobs[i].get();
+        if (job->m_processor.m_gotBadPolyface)
+            {
+            Utf8CP errorMsg = "Element 0x%llx generated invalid geometry, this may indicate problems with the source data.";
+            JsInterop::GetLogger().errorv(errorMsg, job->m_debugElementId.GetValueUnchecked());
+            }
+
         for (auto& entry : job->m_processor.m_cachedEntries)
             {
             Napi::Object cbArgument = Napi::Object::New(Env());
