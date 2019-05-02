@@ -1626,27 +1626,27 @@ bool ECDiffValueHelper::TryParseClassKey(Utf8StringR schemaName, Utf8StringR cla
 * @bsimethod                                                    Affan.Khan      10/2013
 static
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDiffValueHelper::TryParsePrimitiveType(ECN::PrimitiveType& primitiveType, Utf8StringCR primtiveTypeValue)
+bool ECDiffValueHelper::TryParsePrimitiveType(ECN::PrimitiveType& primitiveType, Utf8StringCR primitiveTypeValue)
     {
-    if (primtiveTypeValue.CompareToI ("String") == 0)
+    if (primitiveTypeValue.CompareToI ("String") == 0)
         primitiveType = ECN::PRIMITIVETYPE_String;
-    else if (primtiveTypeValue.CompareToI ("Binary") == 0)
+    else if (primitiveTypeValue.CompareToI ("Binary") == 0)
         primitiveType = ECN::PRIMITIVETYPE_Binary;
-    else if (primtiveTypeValue.CompareToI ("Boolean") == 0)
+    else if (primitiveTypeValue.CompareToI ("Boolean") == 0)
         primitiveType = ECN::PRIMITIVETYPE_Boolean;
-    else if (primtiveTypeValue.CompareToI ("DateTime") == 0)
+    else if (primitiveTypeValue.CompareToI ("DateTime") == 0)
         primitiveType = ECN::PRIMITIVETYPE_DateTime;
-    else if (primtiveTypeValue.CompareToI ("Double") == 0)
+    else if (primitiveTypeValue.CompareToI ("Double") == 0)
         primitiveType = ECN::PRIMITIVETYPE_Double;
-    else if (primtiveTypeValue.CompareToI ("IGeometry") == 0)
+    else if (primitiveTypeValue.CompareToI ("IGeometry") == 0 || primitiveTypeValue.CompareToI("Bentley.Geometry.Common.IGeometry") == 0)
         primitiveType = ECN::PRIMITIVETYPE_IGeometry;
-    else if (primtiveTypeValue.CompareToI ("Integer") == 0 || primtiveTypeValue.CompareToI ("Int") == 0)
+    else if (primitiveTypeValue.CompareToI ("Integer") == 0 || primitiveTypeValue.CompareToI ("Int") == 0)
         primitiveType = ECN::PRIMITIVETYPE_Integer;
-    else if (primtiveTypeValue.CompareToI ("Long") == 0)
+    else if (primitiveTypeValue.CompareToI ("Long") == 0)
         primitiveType = ECN::PRIMITIVETYPE_Long;
-    else if (primtiveTypeValue.CompareToI ("Point2d") == 0)
+    else if (primitiveTypeValue.CompareToI ("Point2d") == 0)
         primitiveType = ECN::PRIMITIVETYPE_Point2d;
-    else if (primtiveTypeValue.CompareToI ("Point3d") == 0)
+    else if (primitiveTypeValue.CompareToI ("Point3d") == 0)
         primitiveType = ECN::PRIMITIVETYPE_Point3d;
     else
         return false;
