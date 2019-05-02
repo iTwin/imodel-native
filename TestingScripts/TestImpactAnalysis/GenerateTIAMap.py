@@ -302,8 +302,10 @@ def main():
         os.mkdir(covRoot)
     if comp == None:
         comps = cmp.AllCompsProper()
-        comps.remove('BeHttp')
-
+        # Do not have setup for the following yet
+        comps.remove('MstnBridge')
+        comps.remove('BuildingDomain')
+        comps.remove('StructuralDomains')
     else:
         comps.append(comp)
 

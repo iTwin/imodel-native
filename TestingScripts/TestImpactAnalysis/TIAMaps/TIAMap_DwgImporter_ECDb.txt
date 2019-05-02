@@ -1,0 +1,301 @@
+
+[imodel02\imodelcore\ecdb\ecdb\relationshipclassmap.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlcolumninfo.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecdbpch.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\pointecsqlbinder.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecinstanceupdater.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\listexp.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\dbschemapersistencemanager.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\classmapcolumnfactory.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecdbsqlfunctions.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\propertymap.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlpropertynameexppreparer.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\classmappersistencemanager.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\dbutilities.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlfield.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\schemawriter.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqltypeinfo.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\primitiveecsqlfield.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\dbmapvalidator.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\navigationpropertyecsqlbinder.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\dbschema.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\pointecsqlbinder.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\propertymapvisitor.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\dynamicselectclauseecclass.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\parser\sqlscan.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecdblogger.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlstatementimpl.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecdbexpressionsymbolprovider.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlpreparecontext.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\profilemanager.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\schemamanagerdispatcher.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\navigationpropertyecsqlbinder.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\deletestatementexp.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecdbsystemschemahelper.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\schemareader.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\profileupgrader.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\insertstatementexp.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\mapstrategy.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\policymanager.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqltypeinfo.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\classmappersistencemanager.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\classmap.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\dbmappingmanager.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\policymanager.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecinstanceecsqlselectadapter.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\schemawriter.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\featuremanager.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\issuereporter.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\navigationpropertyecsqlfield.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\selectstatementexp.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqldeletepreparer.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlstatementcache.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\valueexp.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\exphelper.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlupdatepreparer.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlinsertpreparer.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\dbschemapersistencemanager.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\parser\sqlparse.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\nativesqlbuilder.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\featuremanager.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlstatus.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\valueexp.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\systempropertymap.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\idecsqlbinder.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\exp.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\primitiveecsqlbinder.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\classmappinginfo.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\insertstatementexp.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlparser.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlstatement.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\schemavalidator.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\classmapcolumnfactory.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\listexp.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlfield.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecdb.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\changemanager.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecdbsystemschemahelper.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\parser\sqlnode.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecdbinternaltypes.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\lightweightcache.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlbinder.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\classmappinginfo.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecdbimpl.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\dbutilities.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecdbexpressionsymbolprovider.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\viewgenerator.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\schemamanagerdispatcher.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlpreparedstatement.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\optionsexp.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\optionsexp.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\schemavalidator.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\lightweightcache.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\parser\sqlnode.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\dbmappingmanager.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\schemaimportcontext.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlbinder.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\pointecsqlfield.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\whereexp.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\mapstrategy.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\schemapersistencehelper.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\schemamanager.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\updatestatementexp.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\dynamicselectclauseecclass.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\dbschema.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlpreparer.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\whereexp.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\propertynameexp.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\propertynameexp.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecdbmapschemahelper.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\propertymap.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\propertymapvisitor.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecdbimpl.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\primitiveecsqlbinder.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\systempropertymap.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlselectpreparer.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\classrefexp.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\changemanager.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\pointecsqlfield.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\relationshipclassmap.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecdbsqlfunctions.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\issuereporter.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\dbmapvalidator.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\iecsqlvalue.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\navigationpropertyecsqlfield.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\computedexp.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\viewgenerator.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\updatestatementexp.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\primitiveecsqlfield.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\classrefexp.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecinstanceadapterhelper.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlpreparedstatement.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecinstanceadapterhelper.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\classmap.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\parser\sqlparse.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\nativesqlbuilder.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlfieldfactory.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\schemareader.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\selectstatementexp.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlparser.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlpreparecontext.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\parser\sqlbison.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\iecsqlbinder.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\schemapersistencehelper.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\exp.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecdbmapschemahelper.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecinstanceinserter.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\computedexp.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\schemaimportcontext.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\idecsqlbinder.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\profilemanager.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\ecsqlstatementimpl.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
