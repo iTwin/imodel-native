@@ -33,17 +33,18 @@ time.sleep(10)
 #if driver.find_element_by_class_name('menu-button'):
 imodelList=['MS_'+version,'VM_'+version , 'HYB_'+version, 'IFC_'+version ,'BB24_'+version,'FNT_'+version, 'PRN_'+version, 'OFF_'+version, '2D_'+version, 'LVL_'+version, 'SAV_'+version, '3SM_'+version]
 for index,imodel in enumerate(imodelList):
+   time.sleep(10)
    driver.find_element_by_class_name('create-button').click()
-   time.sleep(5)
+   time.sleep(10)
    driver.find_element_by_class_name('bnt-margin-enabled').click()
    actions = ActionChains(driver)
    actions.send_keys(imodel)
    actions.perform()
-   time.sleep(5)
+   time.sleep(10)
    driver.find_element_by_class_name('confirmation-button').click()
    time.sleep(22)
    driver.find_element_by_class_name('hf-breadcrumb-text ').click()
-   time.sleep(5)
+   time.sleep(10)
 
 driver.quit()
 
