@@ -1542,7 +1542,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh(bv
                 bool isMeshed;
                 if (node->m_nodeHeader.m_arePoints3d)
                     {
-                    assert(!"3D Meshing is currently supported by ContextCapture - Should not be called.");
+                    assert(!"3D Meshing code in ScalableMesh is not used anymore. Only ContextCapture can do 3D meshing - Should not be called.");
                     isMeshed = node->m_mesher3d->Mesh(node);
                     }
                 else
