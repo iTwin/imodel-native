@@ -1959,7 +1959,7 @@ DgnCode Converter::CreateCode(Utf8StringCR value) const
     {
     auto codeSpec = m_dgndb->CodeSpecs().GetCodeSpec(m_businessKeyCodeSpecId);
     BeDataAssert(codeSpec.IsValid());
-    return codeSpec.IsValid() ? codeSpec->CreateCode(_GetJobSubject(), value) : DgnCode();
+    return codeSpec.IsValid() ? codeSpec->CreateCode(_GetSpatialParentSubject(), value) : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2190,7 +2190,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
         if (!elementClassId.IsValid())
             {
             BeAssert(false);
-            LOG.errorv("Failed to compute element class for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
+            LOG.debugv("Failed to compute element class for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
             return BSIERROR;
             }
         }
@@ -2202,7 +2202,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
         {
         if (BentleyApi::SUCCESS != _CreateElementAndGeom(results, v8mm, elementClassId, hasPrimaryInstance, categoryId, elementCode, v8eh))
             {
-            LOG.errorv("Failed to create element and geom for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
+            LOG.debugv("Failed to create element and geom for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
             return BSIERROR;
             }
         if (wouldBe3dMismatch(results, v8mm))
@@ -2218,7 +2218,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
             m_skipECContent = was;
             if (BentleyApi::SUCCESS != res)
                 {
-                LOG.errorv("Failed to create element and geom after 3d mismatch for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
+                LOG.debugv("Failed to create element and geom after 3d mismatch for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
                 return BSIERROR;
                 }
             }
@@ -2230,7 +2230,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
         if (nullptr == elementHandler)
             {
             BeAssert(false);
-            LOG.errorv("Failed to find element handler for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
+            LOG.debugv("Failed to find element handler for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
             return BSIERROR;
             }
 
@@ -2241,7 +2241,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
         results.m_element = elementHandler->Create(DgnElement::CreateParams(GetDgnDb(), targetModelId, elementClassId, elementCode));
         if (!results.m_element.IsValid())
             {
-            LOG.errorv("Failed to create element from element handler for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
+            LOG.debugv("Failed to create element from element handler for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
             return BSIERROR;
             }
 
