@@ -1993,7 +1993,7 @@ public:
     DGNDBSYNC_EXPORT void ReportFailedModelConversion(ResolvedModelMapping const& v8mm);
     DGNDBSYNC_EXPORT void ReportFailedDrawingElementConversion(DgnV8Api::ElementHandle const& inEl);
     DGNDBSYNC_EXPORT void ReportFailedThumbnails();
-    DGNDBSYNC_EXPORT void ReportAdjustedProjectExtents(size_t nOutliers, DRange3dCR unadjustedRange, DRange3dCR adjustedRange);
+    DGNDBSYNC_EXPORT void ReportAdjustedProjectExtents(size_t nOutliers, DRange3dCR unadjustedRange, DRange3dCR adjustedRange, Utf8StringCR message);
     DGNDBSYNC_EXPORT void ReportFailedPresentationRules();
 
 

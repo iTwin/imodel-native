@@ -563,10 +563,10 @@ void Converter::ReportFailedDrawingElementConversion(DgnV8Api::ElementHandle con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::ReportAdjustedProjectExtents(size_t nOutliers, DRange3dCR unadjustedRange, DRange3dCR adjustedRange)
+void Converter::ReportAdjustedProjectExtents(size_t nOutliers, DRange3dCR unadjustedRange, DRange3dCR adjustedRange, Utf8StringCR message)
     {
     // TBD... Notify project manager.
-    ReportIssueV(IssueSeverity::Warning, IssueCategory::Unknown(), Issue::ProjectExtentsAdjusted(),nullptr);
+    ReportIssueV(IssueSeverity::Warning, IssueCategory::Unknown(), Issue::ProjectExtentsAdjusted(), message.c_str ());
     }
                 
 /*---------------------------------------------------------------------------------**//**
