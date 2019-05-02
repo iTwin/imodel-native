@@ -574,8 +574,11 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
             DgnLockCR lock = *iter;
             if (isLockExclusiveToJob(lock))    // I only keep locks on the things that I created
                 continue;
+            if ((lock.GetType() == LockableType::Model) && (lock.GetLockableId().GetId() == DgnModel::RepositoryModelId()))
+                continue;                       // Don't demote/relinquish the shared lock on the RepositoryModel. That is where the bridge created its JobSubject. The bridge must retain its exclusive lock on that element.
+            // Do relinquish the shared lock on the DictionaryModel, along with any locks on elements in that model. These are definitions, such as Categories, which are meant to be shared. 
             if (LockableType::Db == lock.GetType())
-                continue;                                   // Don't demote/relinquish the shared lock on the Db. That would have the side effect of relinquishing *all* my locks.
+                continue;                       // Don't demote/relinquish the shared lock on the Db. That would have the side effect of relinquishing *all* my locks.
             GetLogger().infov("Releasing lock: type=%d level=%d objid=%llx", lock.GetType(), lock.GetLevel(), lock.GetId().GetValue());
             DgnLock lockReq(lock);
             lockReq.SetLevel(LockLevel::None);

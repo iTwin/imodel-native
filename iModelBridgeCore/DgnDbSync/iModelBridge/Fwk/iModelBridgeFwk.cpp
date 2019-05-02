@@ -1068,6 +1068,9 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
 	if (!m_jobEnvArgs.m_jobSubjectName.empty())
 		params.SetBridgeJobName(m_jobEnvArgs.m_jobSubjectName);
     params.SetMergeDefinitions(m_jobEnvArgs.m_mergeDefinitions);
+    auto tempVarCheck = getenv("iModelBridge_MatchOnEmbeddedFileBasename");     // TODO: Replace this with a settings service parameter check
+    if (tempVarCheck && *tempVarCheck == '1')
+        params.SetMatchOnEmbeddedFileBasename(true);
     if (m_useIModelHub)
         {
         params.SetUrlEnvironment(m_iModelHubArgs->m_environment);
@@ -1298,6 +1301,9 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     DbResult dbres;
 
     iModelBridgeSacAdapter::InitCrt(false);
+
+    IBriefcaseManager::SetExclusiveLockOnScopeIsPermanent(true); // TODO: This will change when we get real "Permanent" lock levels.
+    IBriefcaseManager::SetMustReportCodesInLockedScopes(false);
 
     Briefcase_MakeBriefcaseName();
     BeFileName::BeDeleteFile(ComputeReportFileName(m_briefcaseName));  // delete any old issues file hanging round from the previous run

@@ -2084,13 +2084,8 @@ void RootModelConverter::_SetChangeDetector(bool isUpdating)
     {
     BeAssert(isUpdating == IsUpdating());
 
-    if (!isUpdating)
-        m_changeDetector.reset(new CreatorChangeDetector);
-    else
-        {
-        m_changeDetector.reset(new ChangeDetector);
-        m_skipECContent = false;
-        }
+    m_changeDetector.reset(new ChangeDetector);
+    m_skipECContent = false;
     }
 
 /*---------------------------------------------------------------------------------**//**

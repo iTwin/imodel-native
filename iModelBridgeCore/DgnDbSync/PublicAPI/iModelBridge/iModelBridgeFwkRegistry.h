@@ -31,7 +31,7 @@ struct iModelBridgeDocumentProperties
     };
 
 //! The bridge's affinity to some source file.
-enum iModelBridgeAffinityLevel {None, Low, Medium, High, ExactMatch};
+enum iModelBridgeAffinityLevel {None, Low, Medium, High, ExactMatch, Override};
 
 //! Identifies a bridge that has some affinity to a requested source file
 struct iModelBridgeWithAffinity

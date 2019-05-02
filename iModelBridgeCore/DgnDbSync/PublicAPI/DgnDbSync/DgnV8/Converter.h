@@ -1071,7 +1071,6 @@ public:
             _GetParams().GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFilename); 
         }
 
-
     //! @name Graphics Conversion Utilties
     //! @{
     DGNDBSYNC_EXPORT static void ConvertLineStyleParams(Render::LineStyleParams& lsParams, DgnV8Api::LineStyleParams const* v8lsParams, double uorPerMeter, double componentScale, double modelLsScale);
@@ -1102,6 +1101,8 @@ public:
 
     //! @name V8Files
     //! @{
+
+    DGNDBSYNC_EXPORT Utf8String ComputeEffectiveEmbeddedFileName(Utf8StringCR fullName);
 
     //! Open the specified V8File
     DGNDBSYNC_EXPORT static DgnFilePtr OpenDgnV8File(DgnV8Api::DgnFileStatus&, BeFileNameCR, Utf8CP password);
@@ -1911,8 +1912,7 @@ public:
 
     //! @name  Tags
     //! @{
-    DGNDBSYNC_EXPORT virtual void _ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files, bvector<DgnV8ModelP> const& uniqueModels);
-    static WCharCP GetV8TagSetDefinitionSchemaName() {return L"V8TagSetDefinitions";}
+    static Utf8CP GetV8TagSetDefinitionSchemaName() {return "V8TagSetDefinitions";}
     //! @}
 
     //! @name Codes
@@ -2127,36 +2127,6 @@ struct ElementFilters
             return converter.GetDgnDb().Elements().Get<ViewDefinition>(entry->GetElementId()).IsValid();
             };
          }
-};
-
-//=======================================================================================
-//! A nop "change detector" that is used when a converter knows that it is importing
-//! a set of V8 files for the first time. 
-// @bsiclass                                                    Sam.Wilson      11/16
-//=======================================================================================
-struct CreatorChangeDetector : IChangeDetector
-{
-    bool _ShouldSkipFileByName(Converter&, BeFileNameCR) override {return false;}
-    bool _ShouldSkipFile(Converter&, DgnV8FileCR) override {return false;}
-    bool _AreContentsOfModelUnChanged(Converter&, ResolvedModelMapping const&) override {return false;}
-    bool _ShouldSkipLevel(DgnCategoryId&, Converter&, DgnV8Api::LevelHandle const&, DgnV8FileR, Utf8StringCR) override {return false;}
-    void _OnElementSeen(Converter&, DgnElementId) override {}
-    void _OnModelSeen(Converter&, ResolvedModelMapping const&) override {}
-    void _OnModelInserted(Converter&, ResolvedModelMapping const&) override {}
-    void _OnViewSeen(Converter&, DgnViewId) override {}
-    void _DetectDeletedElements(Converter&, SyncInfo::V8ElementExternalSourceAspectIterator&) override {}
-    void _DetectDeletedElementsInFile(Converter&, DgnV8FileR) override {}
-    void _DetectDeletedElementsEnd(Converter&) override {}
-    void _DetectDeletedModels(Converter&, SyncInfo::V8ModelExternalSourceAspectIterator&) override {}
-    void _DetectDeletedModelsInFile(Converter&, DgnV8FileR) override {}
-    void _DetectDeletedModelsEnd(Converter&) override {}
-    void _DetectDeletedViews(Converter&, SyncInfo::ViewDefinitionExternalSourceAspectIterator&) override {}
-    void _DetectDeletedViewsInFile(Converter&, DgnV8FileR) override {}
-    void _DetectDeletedViewsEnd(Converter&) override {}
-    
-    DGNDBSYNC_EXPORT bool _IsElementChanged(SearchResults&, Converter&, DgnV8EhCR, ResolvedModelMapping const&, T_SyncInfoElementFilter* filter) override; // fills in element MD5 and returns true
-
-    CreatorChangeDetector() {}
 };
 
 //=======================================================================================
@@ -2932,8 +2902,13 @@ struct ConvertV8TextToDgnDbExtension : ConvertToDgnDbElementExtension
 //=======================================================================================
 struct ConvertV8TagToDgnDbExtension : ConvertToDgnDbElementExtension
 {
+private:
+    bool TryFindClassNameForTagSet(Converter& converter, DgnV8Api::ElementId tagSetId, Utf8StringR className);
+    bool TryFindPropNamesForTagSet(Converter& converter, DgnV8Api::ElementId tagSetId, Json::Value& propNames);
+
+public:
     static void Register();
-    virtual Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override {return Result::SkipElement;}
+    Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override;
 };
 
 //=======================================================================================
