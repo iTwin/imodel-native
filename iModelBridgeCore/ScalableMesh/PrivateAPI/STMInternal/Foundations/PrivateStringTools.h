@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: PrivateAPI/STMInternal/Foundations/PrivateStringTools.h $
 |    $RCSfile: PrivateStringTools.h,v $
 |   $Revision: 1.3 $
 |       $Date: 2011/10/20 18:47:26 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

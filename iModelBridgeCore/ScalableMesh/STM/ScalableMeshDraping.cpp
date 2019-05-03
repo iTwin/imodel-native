@@ -1543,9 +1543,22 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
             {
             DTMStatusInt retval = DTM_ERROR;
             initDistanceList->reserve(nodesToDrape.size());
-            auto lineWithDistances = SMDrapedLine::Create(line, 0);
-            for (auto& node : nodesToDrape)
+
+            RefCountedPtr<SMDrapedLine> lineWithDistances;            
+
+            if (isCesium)
+                {//TFS# 1023922 - SMDrapedLine compute the segment length using XY coordinates only, so reproject the data in a Z up coordinate system.
+                bvector<DPoint3d> transformedLine(line);
+                reproTransform.Multiply(&transformedLine[0], (int)transformedLine.size());
+                lineWithDistances = SMDrapedLine::Create(transformedLine, 0);
+                }
+            else
                 {
+                lineWithDistances = SMDrapedLine::Create(line, 0);
+                }
+                        
+            for (auto& node : nodesToDrape)
+                {                
                 double initDistance = DBL_MAX;
                 if (!node.linkedNode->ArePoints3d() && !isCesium)
                     {
@@ -1600,7 +1613,8 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
                     if (pts.size() > 0)
                         initDistanceList->push_back(make_bpair(absoluteDist, Location(outPts->size() - pts.size(), outPts->size(), node.currentSegment)));
                     }
-                }
+                }            
+
             return retval;
             }, &drapedPointsTemp[&chunk - &stepData.front()], chunk, &initDistances[&chunk - &stepData.front()], transformedLine, m_scmPtr->IsCesium3DTiles()? m_scmPtr->GetReprojectionTransform(): Transform::FromIdentity(), m_scmPtr->IsCesium3DTiles()));
         }

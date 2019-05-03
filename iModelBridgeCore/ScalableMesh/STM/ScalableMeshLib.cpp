@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: STM/ScalableMeshLib.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -84,7 +82,7 @@ void InitializeScalableMeshLogging()
     // Priority: 1- App  2- Env. Variable  3- default SM logging config file  4- Console
     if(NativeLogging::LoggingConfig::IsProviderActive())
         return; // Provider already setup by app
-
+#ifdef SCALABLE_MESH_ATP
 #if _WIN32
     // Setup logging system
     BeFileName appDir;
@@ -111,6 +109,7 @@ void InitializeScalableMeshLogging()
         NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
 #if _WIN32
         }
+#endif
 #endif
     }
 
@@ -211,7 +210,7 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     Utf8String pemFileName;
 
-#ifdef VANCOUVER_API //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error.
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)  //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error.
     GetCertificateAutoritiesFileUrl(pemFileName);
     curl_easy_setopt(curl, CURLOPT_CAINFO, pemFileName.c_str());
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
@@ -517,9 +516,9 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
 
         if (!pemFileName.empty())
             {
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
             pCertAutorityAuth->SetCertificateAuthFileUrl(WString(pemFileName.c_str(), true));
-#else	
+#else
             //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error. 
             //pCertAutorityAuth->SetCertificateAuthFileUrl(pemFileName);
 #endif

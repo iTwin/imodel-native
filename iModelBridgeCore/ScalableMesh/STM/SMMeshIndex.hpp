@@ -1542,7 +1542,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh(bv
                 bool isMeshed;
                 if (node->m_nodeHeader.m_arePoints3d)
                     {
-                    assert(!"3D Meshing is currently supported by ContextCapture - Should not be called.");
+                    assert(!"3D Meshing code in ScalableMesh is not used anymore. Only ContextCapture can do 3D meshing - Should not be called.");
                     isMeshed = node->m_mesher3d->Mesh(node);
                     }
                 else
@@ -1976,7 +1976,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddFe
         POINT pointToInsert = PointOp<POINT>::Create(pt.x, pt.y, pt.z);
         this->GetPointsPtr()->push_back(pointToInsert);
         indexes.push_back((int32_t)this->GetPointsPtr()->size() - 1);
-        }
+        }    
 
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = GetLinearFeaturesPtr();
     linearFeaturesPtr->push_back((int)indexes.size()+1); //include type flag
@@ -2685,6 +2685,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
 
 template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bset<uint64_t>& clips, Transform tr)
 {
+    return true;
+#if 0 
     bvector<uint64_t> clipList;
     bvector<DRange3d> clipRanges;
     bvector<bool> withSkirts;
@@ -2702,6 +2704,7 @@ template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncW
     }
 
     return this->SyncWithClipSets(clipList, withSkirts, clipRanges, tr);
+#endif
 }
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 10/18
@@ -2732,6 +2735,9 @@ template<class POINT, class EXTENT>  void  SMMeshIndexNode<POINT, EXTENT>::Colle
 //=======================================================================================
 template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bvector<uint64_t>& clipIds, const bvector<bool>& hasSkirts, const bvector<DRange3d>& clipExtents, Transform tr)
 {
+    assert(!"Currently deactivated");
+
+
     if (!this->IsLoaded()) this->Load();
 
     bool expected = false;
@@ -2740,20 +2746,47 @@ template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncW
     if (/*size() == 0 || this->m_nodeHeader.m_nbFaceIndexes < 3*/this->m_nodeHeader.m_totalCount == 0) return false;
     for (size_t i =0; i < clipIds.size(); ++i)
     {
-        uint64_t clipId = clipIds[i];
+        uint64_t clipId = clipIds[i];  
         const DRange3d& extent = clipExtents[i];
 
         DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetYMin(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetZMin(this->m_nodeHeader.m_contentExtent),
             ExtentOp<EXTENT>::GetXMax(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetYMax(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetZMax(this->m_nodeHeader.m_contentExtent));
-        if (!this->m_SMIndex->IsFromCesium() && !extent.IntersectsWith(nodeRange, 2) && !HasClip(clipId)) continue;
+        if (!this->m_SMIndex->IsFromCesium() && !extent.IntersectsWith(nodeRange, 2) && !HasClip(clipId, false)) continue;
 
         if (this->m_SMIndex->IsFromCesium()) //there we consider all three dimensions due to not being able to rely on XY orientation
         {
-            if (!extent.IntersectsWith(nodeRange) && !HasClip(clipId)) continue;
+            if (!extent.IntersectsWith(nodeRange) && !HasClip(clipId, false)) continue;
         }
         if (ModifyClip(clipId, false, hasSkirts[i], tr))
             hasSynced = true;
     }
+
+    /*MUST HANDLE THE CASE WHERE A CLIP DOESN'T INTERSECT A TILE AFTER BEING MODIFY
+    if (clipIds.size() == 0)
+        {
+        RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
+
+        if (diffSetPtr.IsValid())
+            {
+            for (auto it = diffSetPtr->begin(); it != diffSetPtr->end(); ++it)
+                {                    
+                if (it->clientID > 0)
+                    {
+                    diffSetPtr->clear();
+                    m_nbClips = 0;
+                    ISDiffSetDataStorePtr nodeDiffsetStore;
+                    bool result = this->m_SMIndex->GetDataStore()->GetSisterNodeDataStore(nodeDiffsetStore, &this->m_nodeHeader, false);
+                    BeAssert(result == true);
+                    if (nodeDiffsetStore.IsValid()) 
+                        nodeDiffsetStore->DestroyBlock(this->GetBlockID());                
+                    hasSynced = true;
+                    break;
+                    }
+                }       
+            }
+        }
+		*/
+
     expected = true;
     while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
     return hasSynced;
@@ -2776,9 +2809,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
     if (this->m_SMIndex->IsFromCesium()) //there we consider all three dimensions due to not being able to rely on XY orientation
         {
         if (!extent.IntersectsWith(nodeRange)) return;
-        }
+        } 
     bool clipApplied = true;
-    uint64_t myTs = LastClippingStateUpdateTimestamp();
+    /*TFS# 1021172 - SyncWithClipSets can trigger a delete on the child clips, that can lead to great children node to be update during modified (clipApplied will return false for the child node).
+    uint64_t myTs = LastClippingStateUpdateTimestamp();*/
     bool expected = false;
     while(!this->m_isClipping.compare_exchange_weak(expected, true)) 
         {
@@ -2804,16 +2838,15 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
     else
         nOfNodesTouched++;
 
-// NEEDS_WORK_SM : The following define is deactivated until we find a more robust algorithm
-// to apply clips "on demand" using the query system.
-//#define ACTIVATE_NODE_LIMIT
-#ifdef ACTIVATE_NODE_LIMIT
-    if (nOfNodesTouched >= 5000 && action != ClipAction::ACTION_DELETE)
+    //#TFS 629427 - Deactivate until all cases are handle, including a breathfirst propagation to handle not unified 3SM produced by ContextCapture.
+    /*
+    if (nOfNodesTouched >= 5 && action != ClipAction::ACTION_DELETE)
         return;
-#endif
+        */
 
     if (this->m_pSubNodeNoSplit != NULL && !this->m_pSubNodeNoSplit->IsVirtualNode())
-        {
+        {        
+        /*TFS# 1021172 - SyncWithClipSets can trigger a delete on the child clips, that can lead to great children node to be update during modified (clipApplied will return false for the child node).
         uint64_t childTs = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->LastClippingStateUpdateTimestamp();
         if (childTs < myTs)
         {
@@ -2821,6 +2854,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
             CollectClipIds(collectedClips);
             dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->SyncWithClipSets(collectedClips, tr);
         }
+        */
         dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->ClipActionRecursive(action, clipId, extent, nOfNodesTouched, setToggledWhenIdIsOn, tr);
         }
     else if (this->m_nodeHeader.m_numberOfSubNodesOnSplit > 1 && this->m_apSubNodes[0] != nullptr)
@@ -2829,6 +2863,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
             {
             if (this->m_apSubNodes[indexNodes] != nullptr)
                 {
+                /*TFS# 1021172 - SyncWithClipSets can trigger a delete on the child clips, that can lead to great children node to be update during modified (clipApplied will return false for the child node).
                 uint64_t childTs = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->LastClippingStateUpdateTimestamp();
                 if (childTs < myTs)
                 {
@@ -2836,6 +2871,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
                     CollectClipIds(collectedClips);
                     dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->SyncWithClipSets(collectedClips, tr);
                 }
+                */
                 dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->ClipActionRecursive(action, clipId, extent, nOfNodesTouched, setToggledWhenIdIsOn, tr);
                 }
              }
@@ -4664,19 +4700,51 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::HasAny
 }
 
 //=======================================================================================
+// @bsimethod                                                   Mathieu St-Pierre   03/19
+//=======================================================================================
+template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::PropagateClipSetFromAncestors()
+    {
+    HFCPtr<SMMeshIndexNode<POINT, EXTENT>> parentNodePtr(dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(this->GetParentNode().GetPtr()));
+
+    bset<uint64_t> collectedClips;
+    uint64_t maxUpdateTimeStamp = this->LastClippingStateUpdateTimestamp();
+    bool needSync = false;
+        
+    while (parentNodePtr != nullptr)
+        {        
+        if (parentNodePtr->LastClippingStateUpdateTimestamp() > maxUpdateTimeStamp)
+            {
+            maxUpdateTimeStamp = parentNodePtr->LastClippingStateUpdateTimestamp();
+            parentNodePtr->CollectClipIds(collectedClips);
+            needSync = true;
+            }   
+
+        parentNodePtr = dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(parentNodePtr->GetParentNode().GetPtr());
+        }
+
+    if (needSync)
+        this->SyncWithClipSets(collectedClips);
+    }
+
+//=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 02/16
 //=======================================================================================
-template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::HasClip(uint64_t clipId)
-{
+template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::HasClip(uint64_t clipId, bool propagateClipSetFromAncestors)
+    {
+    if (propagateClipSetFromAncestors)
+        {
+        PropagateClipSetFromAncestors();
+        }
+
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
     if (!diffsetPtr.IsValid()) return false;
     bool isUpToDate = false;
     for (const auto& diffSet : *diffsetPtr)
-    {
+        {
         if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) isUpToDate= true;
-    }
+        }
     for (const auto& diffSet : *diffsetPtr)
-    {
+        {
         if (diffSet.clientID == clipId && (!isUpToDate || !diffSet.upToDate || !diffSet.IsEmpty() || diffSet.clientID == (uint64_t)-1)) return true;
         }
     return false;
@@ -4812,14 +4880,14 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
                 polys.resize(polys.size() - 1);
                 clipIds.resize(clipIds.size() - 1);
                 continue;
-                }
-
-            if (s_simplifyOverviewClips && this->m_nodeHeader.m_level <= 1 && polys.back().size() >= this->m_nodeHeader.m_nodeCount)
-            {
+                }            
+                
+            if (s_simplifyOverviewClips && this->m_nodeHeader.m_level <= SM_SIMPLIFY_OVERVIEW_CLIPS_MAX_LEVEL && this->m_SMIndex->m_indexHeader.m_depth > SM_SIMPLIFY_OVERVIEW_CLIPS_MAX_LEVEL && polys.back().size() >= this->m_nodeHeader.m_nodeCount)
+                {
                 if (minEdgeLength == DBL_MAX)
                     minEdgeLength = ComputeMinEdgeLength(&points[0], pointsPtr->size(), &(*ptIndices)[0], ptIndices->size());
                 SimplifyPolygonToMinEdge(minEdgeLength / 2.0, polys.back());
-            }
+                }
 
             int nOfLoops = 0;
             if (geom == SMClipGeometryType::ComplexPolygon)
@@ -5197,6 +5265,28 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
     DRange3d polyRange = DRange3d::From(polyPts.front());
     size_t n = 0;
     bool noIntersect = true;
+
+#if 1 
+    for (auto&pt : polyPts)
+        {
+        if (extRange.IsContainedXY(pt)) ++n;
+        pt.z = 0;
+        polyRange.Extend(pt);
+        if (noIntersect && &pt - &polyPts[0] != 0)
+            {
+            DRange3d edgeRange = DRange3d::From(pt, polyPts[&pt - &polyPts[0] - 1]);
+            if (extRange.IntersectsWith(edgeRange))
+                {
+                noIntersect = false;
+                }
+            }
+        }
+
+    if (n >2) return true;
+
+    ICurvePrimitivePtr curvePtr(ICurvePrimitive::CreateLineString(polyPts));
+
+#else //Optimization for Defect 989564:Performance profiling needed on load test data. Deactivate for current ConceptStation release as it is not robust enough.
     bvector<int> indices;
     bool useX = extRange.XLength() > extRange.YLength();
     DRange1d ext1d = useX ? DRange1d::From(extRange.low.x, extRange.high.x) : DRange1d::From(extRange.low.y, extRange.high.y);
@@ -5249,18 +5339,8 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
                 collectedIndices.push_back(polyPts[i]);
 
         curvePtr = ICurvePrimitive::CreateLineString(collectedIndices);
-        for (auto& pt : collectedIndices)
-        {
-            if (noIntersect && &pt - &polyPts[0] != 0)
-            {
-                DRange3d edgeRange = DRange3d::From(pt, collectedIndices[&pt - &collectedIndices[0] - 1]);
-                if (extRange.IntersectsWith(edgeRange))
-                {
-                    noIntersect = false;
-                }
-            }
-        }
     }
+#endif
     CurveVectorPtr curveVectorPtr(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr));
 
     extRange.low.z = extRange.high.z = 0;
@@ -5401,6 +5481,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
         if (shouldClearDiffsets)
             {
             diffSetPtr->clear();
+            m_nbClips = 0;
             ISDiffSetDataStorePtr nodeDiffsetStore;
             bool result = this->m_SMIndex->GetDataStore()->GetSisterNodeDataStore(nodeDiffsetStore, &this->m_nodeHeader, false);
             BeAssert(result == true);
@@ -6135,6 +6216,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::SaveGro
     auto clipId = pi_pGroup->GetStrategy<EXTENT>()->GetClipID();
     if (clipId != -1)
         {
+		PropagateClipSetFromAncestors();
         this->ComputeMergedClips();
         if (clipId == 0 || this->HasClip(clipId))
             {
@@ -6350,6 +6432,77 @@ template<class POINT, class EXTENT>  int     SMMeshIndex<POINT, EXTENT>::RemoveW
     return SMStatus::S_SUCCESS;
     }
 
+   
+
+/**----------------------------------------------------------------------------
+DoParallelStitching
+Stitch nodes in parallel
+-----------------------------------------------------------------------------*/
+template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::DoParallelStitching(vector<SMMeshIndexNode<POINT, EXTENT>*>& nodesToStitch)
+    {
+    set<SMMeshIndexNode<POINT, EXTENT>*> stitchedNodes;
+    std::recursive_mutex stitchedMutex;
+    for (auto& node : nodesToStitch)
+        {
+        LightThreadPool::GetInstance()->m_nodeMap[(void*)node] = std::make_shared<std::atomic<unsigned int>>();
+        *LightThreadPool::GetInstance()->m_nodeMap[(void*)node] = -1;
+        }
+    for (size_t i =0; i < LightThreadPool::GetInstance()->m_nbThreads; ++i)
+        RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>** vec, set<SMMeshIndexNode<POINT,EXTENT>*>* stitchedNodes, std::recursive_mutex* stitchedMutex, size_t nNodes, size_t threadId) ->void
+        {
+        vector<SMMeshIndexNode<POINT, EXTENT>*> myNodes;
+        size_t firstIdx = nNodes / LightThreadPool::GetInstance()->m_nbThreads * threadId;
+        myNodes.push_back(vec[firstIdx]);
+        while (myNodes.size() > 0)
+            {
+            //grab node
+            SMMeshIndexNode<POINT, EXTENT>* current = myNodes[0];
+            vector<SMPointIndexNode<POINT, EXTENT>*> neighbors;
+            current->GetAllNeighborNodes(neighbors);
+            neighbors.push_back(current);
+            bool reservedNode = false;
+
+            reservedNode = TryReserveNodes(LightThreadPool::GetInstance()->m_nodeMap, (void**)&neighbors[0], neighbors.size(),(unsigned int)threadId);
+
+            if (reservedNode == true)
+                {
+                bool needsStitching = false;
+                stitchedMutex->lock();
+                if (stitchedNodes->count(current) != 0) needsStitching = false;
+                else
+                    {
+                    stitchedNodes->insert(current);
+                    needsStitching = true;
+                    }
+                for (auto& neighbor : neighbors)
+                    if (std::find(myNodes.begin(), myNodes.end(), neighbor) == myNodes.end() && stitchedNodes->count((SMMeshIndexNode<POINT,EXTENT>*)neighbor) == 0) myNodes.push_back((SMMeshIndexNode<POINT, EXTENT>*)neighbor);
+                stitchedMutex->unlock();
+                if(needsStitching) current->Stitch((int)current->m_nodeHeader.m_level, 0);
+                unsigned int val = (unsigned int)-1;
+                unsigned int id = (unsigned int)threadId;
+                  if(LightThreadPool::GetInstance()->m_nodeMap.count(current) == 0)
+                LightThreadPool::GetInstance()->m_nodeMap[current] = std::make_shared<std::atomic<unsigned int>>();
+                LightThreadPool::GetInstance()->m_nodeMap[current]->compare_exchange_strong(id, val);
+                }
+            myNodes.erase(myNodes.begin());
+            if (myNodes.size() == 0 && firstIdx + 1 < nNodes / LightThreadPool::GetInstance()->m_nbThreads * (threadId+1))
+                {
+                firstIdx += 1;
+                myNodes.push_back(vec[firstIdx]);
+                }
+            }
+        SetThreadAvailableAsync(threadId);
+        }, &nodesToStitch[0], &stitchedNodes, &stitchedMutex, nodesToStitch.size(), std::placeholders::_1));
+
+    WaitForThreadStop(this->m_progress.get());
+    LightThreadPool::GetInstance()->m_nodeMap.clear();
+    for (auto& node : nodesToStitch)
+        {
+        if (stitchedNodes.count(node) == 0)
+            node->Stitch((int)node->m_nodeHeader.m_level, 0);
+        }
+    }
+
 /**----------------------------------------------------------------------------
 Stitch
 Stitch the data.
@@ -6425,67 +6578,8 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                     s_useThreadsInStitching = true;
                     return;
                     }
-                set<SMMeshIndexNode<POINT, EXTENT>*> stitchedNodes;
-                std::recursive_mutex stitchedMutex;
-                for (auto& node : nodesToStitch)
-                    {
-                    LightThreadPool::GetInstance()->m_nodeMap[(void*)node] = std::make_shared<std::atomic<unsigned int>>();
-                    *LightThreadPool::GetInstance()->m_nodeMap[(void*)node] = -1;
-                    }
-                for (size_t i =0; i < LightThreadPool::GetInstance()->m_nbThreads; ++i)
-                    RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>** vec, set<SMMeshIndexNode<POINT,EXTENT>*>* stitchedNodes, std::recursive_mutex* stitchedMutex, size_t nNodes, size_t threadId) ->void
-                    {
-                    vector<SMMeshIndexNode<POINT, EXTENT>*> myNodes;
-                    size_t firstIdx = nNodes / LightThreadPool::GetInstance()->m_nbThreads * threadId;
-                    myNodes.push_back(vec[firstIdx]);
-                    while (myNodes.size() > 0)
-                        {
-                        //grab node
-                        SMMeshIndexNode<POINT, EXTENT>* current = myNodes[0];
-                        vector<SMPointIndexNode<POINT, EXTENT>*> neighbors;
-                        current->GetAllNeighborNodes(neighbors);
-                        neighbors.push_back(current);
-                        bool reservedNode = false;
 
-                        reservedNode = TryReserveNodes(LightThreadPool::GetInstance()->m_nodeMap, (void**)&neighbors[0], neighbors.size(),(unsigned int)threadId);
-
-                        if (reservedNode == true)
-                            {
-                            bool needsStitching = false;
-                            stitchedMutex->lock();
-                            if (stitchedNodes->count(current) != 0) needsStitching = false;
-                            else
-                                {
-                                stitchedNodes->insert(current);
-                                needsStitching = true;
-                                }
-                            for (auto& neighbor : neighbors)
-                                if (std::find(myNodes.begin(), myNodes.end(), neighbor) == myNodes.end() && stitchedNodes->count((SMMeshIndexNode<POINT,EXTENT>*)neighbor) == 0) myNodes.push_back((SMMeshIndexNode<POINT, EXTENT>*)neighbor);
-                            stitchedMutex->unlock();
-                            if(needsStitching) current->Stitch((int)current->m_nodeHeader.m_level, 0);
-                            unsigned int val = (unsigned int)-1;
-                            unsigned int id = (unsigned int)threadId;
-                              if(LightThreadPool::GetInstance()->m_nodeMap.count(current) == 0)
-                            LightThreadPool::GetInstance()->m_nodeMap[current] = std::make_shared<std::atomic<unsigned int>>();
-                            LightThreadPool::GetInstance()->m_nodeMap[current]->compare_exchange_strong(id, val);
-                            }
-                        myNodes.erase(myNodes.begin());
-                        if (myNodes.size() == 0 && firstIdx + 1 < nNodes / LightThreadPool::GetInstance()->m_nbThreads * (threadId+1))
-                            {
-                            firstIdx += 1;
-                            myNodes.push_back(vec[firstIdx]);
-                            }
-                        }
-                    SetThreadAvailableAsync(threadId);
-                    }, &nodesToStitch[0], &stitchedNodes, &stitchedMutex, nodesToStitch.size(), std::placeholders::_1));
-
-                WaitForThreadStop(this->m_progress.get());
-                LightThreadPool::GetInstance()->m_nodeMap.clear();
-                for (auto& node : nodesToStitch)
-                    {
-                    if (stitchedNodes.count(node) == 0)
-                        node->Stitch((int)node->m_nodeHeader.m_level, 0);
-                    }
+                DoParallelStitching(nodesToStitch);
                 }
             else
                 {
