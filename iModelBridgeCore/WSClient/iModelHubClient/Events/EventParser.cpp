@@ -93,6 +93,7 @@ std::shared_ptr<Json::Value> EventPropertiesToJSON(Utf8String jsonString, Event:
             break;
             }
         case BentleyB0200::iModel::Hub::Event::VersionEvent:
+        case BentleyB0200::iModel::Hub::Event::VersionModifiedEvent:
             {
             if (
                 data.isMember(Event::EventTopic) &&
@@ -232,9 +233,9 @@ EventPtr ParseIntoDeletedEvent(Utf8String jsonString, Event::EventType deletedEv
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Viktorija.Adomauskaite               06/2016
 //---------------------------------------------------------------------------------------
-EventPtr ParseIntoVersionEvent(Utf8String jsonString)
+EventPtr ParseIntoVersionEvent(Utf8String jsonString, Event::EventType versionEventType)
     {
-    std::shared_ptr < Json::Value> data = EventPropertiesToJSON(jsonString, Event::VersionEvent);
+    std::shared_ptr < Json::Value> data = EventPropertiesToJSON(jsonString, versionEventType);
     if (data == nullptr)
         return nullptr;
     return VersionEvent::Create
@@ -243,7 +244,8 @@ EventPtr ParseIntoVersionEvent(Utf8String jsonString)
         (*data)[Event::FromEventSubscriptionId].asString(),
         (*data)[Event::VersionEventProperties::VersionId].asString(),
         (*data)[Event::VersionEventProperties::VersionName].asString(),
-        (*data)[Event::VersionEventProperties::ChangeSetId].asString()
+        (*data)[Event::VersionEventProperties::ChangeSetId].asString(),
+        versionEventType
         );
     }
 
@@ -274,7 +276,8 @@ Utf8String responseString
 	    case Event::EventType::CodeEvent:                   return ParseIntoCodeEvent(actualJsonPart);
 	    case Event::EventType::AllLocksDeletedEvent:
 	    case Event::EventType::AllCodesDeletedEvent:        return ParseIntoDeletedEvent(actualJsonPart, eventType);
-        case Event::EventType::VersionEvent:                return ParseIntoVersionEvent(actualJsonPart);
+        case Event::EventType::VersionEvent:
+        case Event::EventType::VersionModifiedEvent:        return ParseIntoVersionEvent(actualJsonPart, eventType);
 	    default:
 	    case Event::EventType::UnknownEventType:            return nullptr;
 	    }
