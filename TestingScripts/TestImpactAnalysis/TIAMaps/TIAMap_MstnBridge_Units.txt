@@ -1,0 +1,3 @@
+
+[imodel02\imodelcore\units\src\formatting\formatutils.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:

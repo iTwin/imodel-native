@@ -37,7 +37,8 @@ class TestResults:
             failed = failedpat.search(line)
             passed = passedpat.search(line)
             if failed or passed:
-               testName = line.split(']')[1].strip().split('(')[0].strip()
+               p = line.split(']')
+               testName = p[len(p) - 1].strip().split('(')[0].strip()
                testName = testName.replace('/', '_')
                if failed:
                    if testName not in self.failedTests:

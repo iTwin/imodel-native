@@ -74,6 +74,7 @@ Components = {'BeHttp':             {'dll': 'BeHttpM02.dll', 'exe': 'BeHttpTest'
                                      'special_path': ['DgnV8ConverterTests']},
               'MstnBridge':         {'dll': 'iModelBridgeM02.dll', 'exe': 'MstnBridgeTests',
                                      'pdb': ['MstnBridge', 'MstnBridgeTests'],
+                                     'ignore': ['Bridges', 'Mstn', 'Tests'],
                                      'owner': 'Abeesh Basheer',
                                      'product': 'MstnBridgeTests',
                                      'repo': ['imodel02', 'Bridges', 'Mstn'],
@@ -157,7 +158,7 @@ def LogPathForComp(compToFind):
             exeName = ExeForComp(comp)
             if exeName is None:
                 return None
-            base_path = os.path.join('%OutRoot%Winx64', 'build', 'RunGTest')
+            base_path = os.path.join(os.getenv('OutRoot'), 'Winx64', 'build', 'RunGTest')
             log_path = base_path
             if 'special_path' in Components[comp].keys():
                 for path in Components[comp]['special_path']:

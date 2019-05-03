@@ -1,0 +1,9 @@
+
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\querycontracts.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\logginghelper.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\contentspecificationshandler.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\navnodescache.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
