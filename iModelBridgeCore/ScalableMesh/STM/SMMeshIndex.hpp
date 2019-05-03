@@ -73,6 +73,7 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Init()
     this->m_nodeHeader.m_ptsIndiceID[0] = this->GetBlockID();
 
     this->m_updateClipTimestamp = dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(this->m_SMIndex)->m_nodeInstanciationClipTimestamp;
+    this->m_isClipping = false;
     }
 
 
@@ -2766,9 +2767,15 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
     if (this->m_SMIndex->IsFromCesium()) //there we consider all three dimensions due to not being able to rely on XY orientation
         {
         if (!extent.IntersectsWith(nodeRange)) return;
-        }
+        } 
     bool clipApplied = true;
     uint64_t myTs = LastClippingStateUpdateTimestamp();
+    bool expected = false;
+    while(!this->m_isClipping.compare_exchange_weak(expected, true)) 
+        {
+        expected = false;
+        }
+
     switch (action)
         {
         case ClipAction::ACTION_ADD:
@@ -2781,6 +2788,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
             clipApplied = DeleteClip(clipId, false, setToggledWhenIdIsOn);
             break;
         }
+
+    this->m_isClipping = false;
+
     if (!clipApplied) return;
     else
         nOfNodesTouched++;
@@ -4693,17 +4703,36 @@ template<class POINT, class EXTENT>  uint64_t SMMeshIndexNode<POINT, EXTENT>::La
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ComputeMergedClips(Transform tr)
     {
     if (dynamic_cast<SMMeshIndex<POINT,EXTENT>*>(this->m_SMIndex)->m_isInsertingClips) return;
+
+    bool expected = false;
+    while (!this->m_isClipping.compare_exchange_weak(expected, true)) 
+        {
+        expected = false;
+        }
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
 
     if (!diffSetPtr.IsValid())
+    {
+        this->m_isClipping = false;
         return;
-
+    }
 
     {
-    if (diffSetPtr->size() == 0) return;
-    for (const auto& diffSet : *diffSetPtr)
+        if (diffSetPtr->size() == 0)
         {
-        if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) return;
+            expected = true;
+            while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
+            return;
+        }
+
+        for (const auto& diffSet : *diffSetPtr)
+        {
+            if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate)
+            {
+                expected = true;
+                while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
+                return;
+            }
         }
     //std::cout << "Merging clips for " << this->GetBlockID().m_integerID << " we have " << diffSetPtr->size() << "clips" << std::endl;
    
@@ -5002,6 +5031,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         m_nbClips++;
         }
     assert(m_nbClips > 0 || diffSetPtr->size() == 0);
+
+    this->m_isClipping = false;
 
     //std::cout << "Merged clips for " << this->GetBlockID().m_integerID << " we have " << diffSetPtr->size() << "clips" << std::endl;
 
@@ -5381,6 +5412,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
         if (shouldClearDiffsets)
             {
             diffSetPtr->clear();
+            m_nbClips = 0;
             ISDiffSetDataStorePtr nodeDiffsetStore;
             bool result = this->m_SMIndex->GetDataStore()->GetSisterNodeDataStore(nodeDiffsetStore, &this->m_nodeHeader, false);
             BeAssert(result == true);
