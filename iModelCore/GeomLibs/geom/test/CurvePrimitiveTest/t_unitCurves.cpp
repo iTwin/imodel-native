@@ -103,4 +103,102 @@ TEST(CurvePrimitive, Tracking)
     
     }
     
-    
+   // reltolR = relative tolerance for fraction of R.
+void EvaluateClothoidTerms(double s, double L, double R, bvector<double> &terms, uint32_t minTerm, uint32_t maxTerm, double relTolR)
+    {
+    if (maxTerm > 32)
+        maxTerm = 32;
+    double tol = relTolR * R;
+    terms.clear ();
+    // here q is angle  q = s * s / (2 L R)
+    // angle = s2 * A
+    // generic series term is   Qk =  q^k/ k! = (1/k!) * s^(2k) * A^k
+    // Hence Qk integrates to   Uk = (1/ (2k + 1)(1/k!) * s* s ^2k / A^k = (s/(2k+1) * Wk
+    //     and W(k+1) = s * s * Ak * Wk / (k+1) = B * Wk / (k+1)
+    terms.push_back (s);
+    double W = s;
+    double B = s * s / (2.0 * L * R);
+    double Q;
+    uint32_t numAccept = 0;
+    for (double k = 1; k < maxTerm; k++)
+        {
+        W = B * W / (double)(k);
+        Q = W / (2.0 * k + 1.0);
+        terms.push_back (Q);
+        if (Q < tol)
+            numAccept++;
+        if (numAccept > 1 && k >= minTerm)
+            return;
+        }
+    }
+
+void SumClothoidTerms(bvector<double> &terms, double &x, double &y, double &lastXTerm, double &lastYTerm)
+    {
+    x = 0.0;
+    y = 0.0;
+    // sum in reverse order ...
+    ptrdiff_t ix, iy;
+    size_t n = terms.size ();
+    if (n & 0x01)
+        {
+        ix = n - 1;
+        iy = n - 2;
+        }
+    else
+        {
+        iy = n - 1;
+        ix = n - 2;
+        }
+    double sx = ix & 0x02 ? -1.0 : 1.0;
+    double sy = iy & 0x02 ? -1.0 : 1.0;
+    lastXTerm = terms[ix];
+    lastYTerm = terms[iy];
+
+    for (ptrdiff_t i = ix; i >= 0; i -= 2, sx *= -1.0)
+        x += sx * terms[i];
+    for (ptrdiff_t i = iy; i >= 0; i -= 2, sy *= -1.0)
+        y += sy * terms[i];
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClothoidSeries, BareTerms)
+    {
+    double L = 100.0;
+    bvector<double>terms;
+    double x, y, dx, dy;
+    for (double relTol : {1.0e-9, 1.0e-12, 1.0e-13, 1.0e-14, 1.0e-15})
+        {
+        double rxMax = 0.0;
+        double ryMax = 0.0;
+        for (double rFactor : {4.0, 10.0, 20.0})
+            {
+            double R = rFactor * L;
+            auto spiral = ICurvePrimitive::CreateSpiralBearingRadiusLengthRadius
+                (
+                DSpiral2dBase::TransitionType_Clothoid,
+                0.0, 0.0,
+                L, R,
+                Transform::FromIdentity (),
+                0.0, 1.0
+                );
+            printf ("\n Series Clothoid R = %lg   L = %lg  relTol = %.2le\n", R, L, relTol);
+            for (double f : { 0.0, 0.1, 0.2, 0.7, 0.8, 0.9, 1.0 })
+                {
+                EvaluateClothoidTerms (f * L, L, R, terms, 2, 20, relTol);
+                SumClothoidTerms (terms, x, y, dx, dy);
+                DPoint3d xyz;
+                spiral->FractionToPoint(f, xyz);
+                double ex, ey;
+                DoubleOps::SafeDivide (ex, xyz.x - x, x, 0.0);
+                DoubleOps::SafeDivide (ey, xyz.y - y, y, 0.0);
+                printf (" (%d)  (x %.14g    %8.1le %8.1le)      (y %.14g    %8.1le  %8.1le)\n", (int) terms.size (), x, dx, ex, y, dy, ey);
+                Check::LessThanOrEqual(ex, relTol);
+                Check::LessThanOrEqual(ey, relTol);
+                rxMax = DoubleOps::MaxAbs (ex, rxMax);
+                ryMax = DoubleOps::MaxAbs(ey, ryMax);
+                }
+            }
+        printf ("      relTol %le   rxMax %le     ryMax=%le\n\n", relTol, rxMax, ryMax);
+        }
+    }
