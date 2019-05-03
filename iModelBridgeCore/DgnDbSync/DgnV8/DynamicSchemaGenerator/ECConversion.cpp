@@ -352,6 +352,9 @@ ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IE
         default:
             LOG.warningv("Found an ExtendType custom attribute on an ECProperty, '%s.%s', with an unknown standard value %d.  Only values 7-11 are supported.",
                          prop->GetClass().GetFullName(), prop->GetName().c_str());
+            prop->RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+            prop->RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+
             break;
         }
 
@@ -882,7 +885,7 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
         {
         auto schemaIter = kvPairs.second.begin();
         BECN::SchemaKey const& schemaKey = schemaIter->first;
-        if (!schemaKey.Matches(key, matchType))
+        if (!schemaKey.Matches(key, BECN::SchemaMatchType::Latest))
             continue;
 
         BECN::ECSchemaPtr leftSchema;
@@ -1467,6 +1470,26 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
          }
      ECN::ECSchemaConverter::RemoveConverter(ECN::ECSchemaConverter::GetQualifiedClassName("EditorCustomAttributes", EXTEND_TYPE));
 
+     bmap<Utf8String, ECN::SchemaKey> noDuplicates;
+     bvector<ECN::ECSchemaP> schemas2;
+     m_schemaReadContext->GetCache().GetSchemas(schemas2);
+     bvector<ECN::SchemaKey> toDrop;
+     for (ECN::ECSchemaP schema : schemas2)
+         {
+         auto it = noDuplicates.find(schema->GetName());
+         if (it == noDuplicates.end())
+             noDuplicates[schema->GetName()] = schema->GetSchemaKey();
+         else if (0 < schema->GetSchemaKey().CompareByVersion(it->second))
+             {
+             if (std::find(toDrop.begin(), toDrop.end(), it->second) == toDrop.end())
+                 toDrop.push_back(it->second);
+             noDuplicates[schema->GetName()] = schema->GetSchemaKey();
+             }
+         else if (0 > schema->GetSchemaKey().CompareByVersion(it->second))
+             toDrop.push_back(schema->GetSchemaKey());
+         }
+     for (ECN::SchemaKey key : toDrop)
+         m_schemaReadContext->GetCache().DropSchema(key);
      return BSISUCCESS;
     }
 
