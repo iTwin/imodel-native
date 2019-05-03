@@ -28,7 +28,7 @@ FOLLY_NAMESPACE_STD_BEGIN
 // BENTLEY_CHANGE
 // Linux clang + libstdc++ already declare these, and without [[noreturn]].
 //#if !defined(_LIBCPP_VERSION) || _LIBCPP_VERSION < 4000
-#if ((!defined(_LIBCPP_VERSION) || _LIBCPP_VERSION < 4000) && !defined(_GLIBCXX_RELEASE))
+#if ((!defined(_LIBCPP_VERSION) || _LIBCPP_VERSION < 4000) && !defined(__GLIBCXX__))
 [[noreturn]] void __throw_length_error(const char* msg);
 [[noreturn]] void __throw_logic_error(const char* msg);
 [[noreturn]] void __throw_out_of_range(const char* msg);
