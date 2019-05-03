@@ -15,8 +15,8 @@ USING_NAMESPACE_BENTLEY_HTTP
 
 const std::basic_regex<Utf8String::value_type> s_uriSchemeAndAuthorityPattern
 (
-R"(^([a-z][a-z0-9+\-.]*):(?:\/\/((?:([^@\/?#]*)@)?((?:[^:\/?#\[\]]+|\[[^\]\/]+\]))?(?::(\d+))?))?)",
-std::regex_constants::icase | std::regex_constants::optimize
+R"(^([a-zA-Z][a-zA-Z0-9+\-.]*):(?:\/\/((?:([^@\/?#]*)@)?((?:[^:\/?#\[\]]+|\[[^\]\/]+\]))?(?::(\d+))?))?)",
+std::regex_constants::optimize
 );
 const size_t CAPTURE_GROUP_SCHEME = 1;
 const size_t CAPTURE_GROUP_AUTHORITY = 2;
@@ -27,7 +27,7 @@ const size_t CAPTURE_GROUP_PORT = 5;
 const std::basic_regex<Utf8String::value_type> s_uriPathQueryAndFragmentPattern
 (
 R"(([^?#]*)(?:\?([^#]*))?(?:#(.*))?)",
-std::regex_constants::icase | std::regex_constants::optimize
+std::regex_constants::optimize
 );
 const size_t CAPTURE_GROUP_PATH = 1;
 const size_t CAPTURE_GROUP_QUERY = 2;
