@@ -1,0 +1,19 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+
+%include mdl.mki
+
+targetAPIDir = $(BuildContext)PublicAPI/
+
+targetSchemasDir = $(BuildContext)ECSchemas/Domain/
+
+$(targetAPIDir)AecUnits : $(_MakeFilePath)PublicAPI/AecUnits
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(targetSchemasDir)AecUnits.ecschema.xml : $(_MakeFilePath)Schema/AecUnits.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
+    
