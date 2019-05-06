@@ -1,28 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="StructuralModelingComponents_V3Conversion" nameSpacePrefix="ismv3" version="6.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+<ECSchema schemaName="BuildingDataGroup_V3Conversion" nameSpacePrefix="bdgv3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
     <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
-    <ECCustomAttributes>
-        <ResolvePropertyNameConflicts xmlns="ECv3ConversionAttributes.01.00" />
-        <ResolveClassNameConflicts xmlns="ECv3ConversionAttributes.01.00" />
-    </ECCustomAttributes>
-    <ECClass typeName="IsmClassAttributes" isDomainClass="True">
+    <ECClass typeName="DataGroupCatalogInstanceNameProperty" isDomainClass="True">
         <ECCustomAttributes>
             <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
     </ECClass>
-    <ECClass typeName="IsmPropertyAttributes" isDomainClass="True">
+    <ECClass typeName="DataGroupClassNameProperty" isDomainClass="True">
         <ECCustomAttributes>
             <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
     </ECClass>
-    <ECClass typeName="IsmRelationshipAttributes" isDomainClass="True">
+    <ECClass typeName="DGPropTypeMapperProperty" isDomainClass="True">
         <ECCustomAttributes>
             <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
     </ECClass>
-    <ECClass typeName="IsmToleranceAttributes" isDomainClass="True">
+    <ECClass typeName="XpathDGMapperProperty" isDomainClass="True">
         <ECCustomAttributes>
             <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
     </ECClass>
 </ECSchema>
+

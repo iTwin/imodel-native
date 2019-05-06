@@ -954,7 +954,12 @@ ECDiffNodeP ECSchemaDiffTool::DiffClass (Utf8CP className, ECN::ECSchemaCR schem
     //    diff->Add (ID_NAME)->SetValue (left->GetName().c_str(), right->GetName().c_str());
 
     if (left->GetDisplayLabel() != right->GetDisplayLabel())
-        diff->Add (DiffNodeId::DisplayLabel)->SetValue (left->GetIsDisplayLabelDefined()? left->GetDisplayLabel().c_str() : NULL, right->GetIsDisplayLabelDefined()? right->GetDisplayLabel().c_str(): NULL);
+        {
+        if (left->GetIsDisplayLabelDefined() || right->GetIsDisplayLabelDefined())
+            diff->Add(DiffNodeId::DisplayLabel)->SetValue(left->GetIsDisplayLabelDefined() ? left->GetDisplayLabel().c_str() : NULL, right->GetIsDisplayLabelDefined() ? right->GetDisplayLabel().c_str() : NULL);
+        else
+            diff->Add(DiffNodeId::DisplayLabel)->SetValue(left->GetDisplayLabel().c_str(), right->GetDisplayLabel().c_str());
+        }
 
     if (left->GetDescription() != right->GetDescription())
         diff->Add (DiffNodeId::Description)->SetValue (left->GetDescription().c_str(), right->GetDescription().c_str());
@@ -1626,27 +1631,27 @@ bool ECDiffValueHelper::TryParseClassKey(Utf8StringR schemaName, Utf8StringR cla
 * @bsimethod                                                    Affan.Khan      10/2013
 static
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDiffValueHelper::TryParsePrimitiveType(ECN::PrimitiveType& primitiveType, Utf8StringCR primtiveTypeValue)
+bool ECDiffValueHelper::TryParsePrimitiveType(ECN::PrimitiveType& primitiveType, Utf8StringCR primitiveTypeValue)
     {
-    if (primtiveTypeValue.CompareToI ("String") == 0)
+    if (primitiveTypeValue.CompareToI ("String") == 0)
         primitiveType = ECN::PRIMITIVETYPE_String;
-    else if (primtiveTypeValue.CompareToI ("Binary") == 0)
+    else if (primitiveTypeValue.CompareToI ("Binary") == 0)
         primitiveType = ECN::PRIMITIVETYPE_Binary;
-    else if (primtiveTypeValue.CompareToI ("Boolean") == 0)
+    else if (primitiveTypeValue.CompareToI ("Boolean") == 0)
         primitiveType = ECN::PRIMITIVETYPE_Boolean;
-    else if (primtiveTypeValue.CompareToI ("DateTime") == 0)
+    else if (primitiveTypeValue.CompareToI ("DateTime") == 0)
         primitiveType = ECN::PRIMITIVETYPE_DateTime;
-    else if (primtiveTypeValue.CompareToI ("Double") == 0)
+    else if (primitiveTypeValue.CompareToI ("Double") == 0)
         primitiveType = ECN::PRIMITIVETYPE_Double;
-    else if (primtiveTypeValue.CompareToI ("IGeometry") == 0)
+    else if (primitiveTypeValue.CompareToI ("IGeometry") == 0 || primitiveTypeValue.CompareToI("Bentley.Geometry.Common.IGeometry") == 0)
         primitiveType = ECN::PRIMITIVETYPE_IGeometry;
-    else if (primtiveTypeValue.CompareToI ("Integer") == 0 || primtiveTypeValue.CompareToI ("Int") == 0)
+    else if (primitiveTypeValue.CompareToI ("Integer") == 0 || primitiveTypeValue.CompareToI ("Int") == 0)
         primitiveType = ECN::PRIMITIVETYPE_Integer;
-    else if (primtiveTypeValue.CompareToI ("Long") == 0)
+    else if (primitiveTypeValue.CompareToI ("Long") == 0)
         primitiveType = ECN::PRIMITIVETYPE_Long;
-    else if (primtiveTypeValue.CompareToI ("Point2d") == 0)
+    else if (primitiveTypeValue.CompareToI ("Point2d") == 0)
         primitiveType = ECN::PRIMITIVETYPE_Point2d;
-    else if (primtiveTypeValue.CompareToI ("Point3d") == 0)
+    else if (primitiveTypeValue.CompareToI ("Point3d") == 0)
         primitiveType = ECN::PRIMITIVETYPE_Point3d;
     else
         return false;
