@@ -1039,6 +1039,10 @@ void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir,
                                                 BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid)
     {
     testDir = GetOutputDir();
+    
+    if (dirName && *dirName)
+        testDir.AppendToPath(dirName);
+
     if (!testDir.DoesPathExist())
         ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
 
