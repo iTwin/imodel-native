@@ -132,6 +132,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BeFileName m_loggingConfigFileName;
         BeFileName m_stagingDir;
         BeFileName m_inputFileName;
+        BeFileName m_registryDir;
         Utf8String m_jobRunCorrelationId;
         Utf8String m_jobRequestId;
         Utf8String m_jobSubjectName;

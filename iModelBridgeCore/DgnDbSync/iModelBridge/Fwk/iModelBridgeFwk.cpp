@@ -302,6 +302,17 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             continue;
             }
 
+        if (argv[iArg] == wcsstr(argv[iArg], L"--registry-dir="))
+            {
+            if (!m_registryDir.empty())
+                {
+                fwprintf(stderr, L"The --registry-dir= option may appear only once.\n");
+                return BSIERROR;
+                }
+            m_registryDir.SetName(getArgValueW(argv[iArg]));
+            continue;
+            }
+
         if (0 != BeStringUtilities::Wcsnicmp(argv[iArg], L"--fwk", 5))
             {
             // Not a fwk argument. We will forward it to the bridge.
@@ -2191,8 +2202,12 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
     if (nullptr != s_registryForTesting)
         return *(m_registry = s_registryForTesting);
      
+    BeFileName registryDir = m_jobEnvArgs.m_registryDir;
+    if (registryDir.empty())
+        registryDir = m_jobEnvArgs.m_stagingDir;
+
     BeSQLite::DbResult res;
-    m_registry = iModelBridgeRegistry::OpenForFwk(res, m_jobEnvArgs.m_stagingDir, m_briefcaseBasename);
+    m_registry = iModelBridgeRegistry::OpenForFwk(res, registryDir, m_briefcaseBasename);
 
     if (!m_registry.IsValid())
         {
