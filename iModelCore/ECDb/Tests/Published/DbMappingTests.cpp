@@ -10069,37 +10069,37 @@ TEST_F(DbMappingTestFixture, ArrayPropertyTest)
     ArrayECPropertyCP p0_unbounded = arrayTestClass->GetPropertyP("p0_unbounded")->GetAsArrayProperty();
     ASSERT_TRUE(p0_unbounded != nullptr);
     ASSERT_EQ(p0_unbounded->GetMinOccurs(), 0);
-    ASSERT_EQ(p0_unbounded->GetMaxOccurs(), UINT32_MAX);
+    ASSERT_EQ(p0_unbounded->GetMaxOccurs(), INT_MAX);
 
     ArrayECPropertyCP p1_unbounded = arrayTestClass->GetPropertyP("p1_unbounded")->GetAsArrayProperty();
     ASSERT_TRUE(p1_unbounded != nullptr);
     ASSERT_EQ(p1_unbounded->GetMinOccurs(), 1);
-    ASSERT_EQ(p1_unbounded->GetMaxOccurs(), UINT32_MAX);
+    ASSERT_EQ(p1_unbounded->GetMaxOccurs(), INT_MAX);
 
     ArrayECPropertyCP p0_1 = arrayTestClass->GetPropertyP("p0_1")->GetAsArrayProperty();
     ASSERT_TRUE(p0_1 != nullptr);
     ASSERT_EQ(p0_1->GetMinOccurs(), 0);
-    ASSERT_EQ(p0_1->GetMaxOccurs(), UINT32_MAX);
+    ASSERT_EQ(p0_1->GetMaxOccurs(), INT_MAX);
 
     ArrayECPropertyCP p1_1 = arrayTestClass->GetPropertyP("p1_1")->GetAsArrayProperty();
     ASSERT_TRUE(p1_1 != nullptr);
     ASSERT_EQ(p1_1->GetMinOccurs(), 1);
-    ASSERT_EQ(p1_1->GetMaxOccurs(), UINT32_MAX);
+    ASSERT_EQ(p1_1->GetMaxOccurs(), INT_MAX);
 
     ArrayECPropertyCP p1_10000 = arrayTestClass->GetPropertyP("p1_10000")->GetAsArrayProperty();
     ASSERT_TRUE(p1_10000 != nullptr);
     ASSERT_EQ(p1_10000->GetMinOccurs(), 1);
-    ASSERT_EQ(p1_10000->GetMaxOccurs(), UINT32_MAX);
+    ASSERT_EQ(p1_10000->GetMaxOccurs(), INT_MAX);
 
     ArrayECPropertyCP p100_10000 = arrayTestClass->GetPropertyP("p100_10000")->GetAsArrayProperty();
     ASSERT_TRUE(p100_10000 != nullptr);
     ASSERT_EQ(p100_10000->GetMinOccurs(), 100);
-    ASSERT_EQ(p100_10000->GetMaxOccurs(), UINT32_MAX);
+    ASSERT_EQ(p100_10000->GetMaxOccurs(), INT_MAX);
 
     ArrayECPropertyCP p123_12345 = arrayTestClass->GetPropertyP("p123_12345")->GetAsArrayProperty();
     ASSERT_TRUE(p123_12345 != nullptr);
     ASSERT_EQ(p123_12345->GetMinOccurs(), 123);
-    ASSERT_EQ(p123_12345->GetMaxOccurs(), UINT32_MAX);
+    ASSERT_EQ(p123_12345->GetMaxOccurs(), INT_MAX);
     }
 
 //--------------------------------------------------------------------------------------
