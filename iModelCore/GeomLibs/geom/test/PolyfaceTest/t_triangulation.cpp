@@ -229,3 +229,47 @@ TEST(Polyface, ConstrainedTriangulationB)
         }
     Check::ClearGeometry("Polyface.ConstrainedTriangulationB");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Polyface, SmallGapsInContourTriangulation)
+    {
+
+    bvector<IGeometryPtr> geometryFromFile;
+    ReadDgnjsGeometry(geometryFromFile, 1, L"CurveVector", L"1904AContourStroking", L"cap.imjs");
+    if (geometryFromFile.size() == 1 && geometryFromFile.size() == 1) {
+        auto region = geometryFromFile[0]->GetAsCurveVector();
+        if (region.IsValid())
+            {
+            Check::SaveTransformed(*region);
+            Check::Shift (0.0, 2.0, 0.0);
+            double priorArea = 0.0095;
+            for (double degrees : {90.0, 45.0, 30.0, 10.0})
+                {
+                Check::StartScope("Mesh AngleTolerance degrees", degrees);
+                Check::Shift (0.1, 0.1);
+                IFacetOptionsPtr options = CreateFacetOptions();
+                options->SetMaxPerFace(3);
+                options->SetAngleTolerance (Angle::DegreesToRadians (degrees));
+                IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*options);
+                builder->Clear();
+                builder->AddRegion(*region);
+                auto mesh = builder->GetClientMeshPtr ();
+                Check::True (mesh.IsValid (), "triangulation created");
+                if (mesh.IsValid())
+                    {
+                    double meshArea = mesh->SumFacetAreas ();
+                    Check::LessThanOrEqual (meshArea, 0.011);
+                    Check::LessThanOrEqual (priorArea, meshArea); // more facets should increase area.
+                    if (degrees == 90.0)
+                        Check::Size(12, mesh->GetNumFacet ());
+                    Check::SaveTransformed(*mesh);
+                    priorArea = meshArea;
+                    }
+                Check::EndScope();
+                }
+            }
+        }
+    Check::ClearGeometry("Polyface.SmallGapsInContourTriangulation");
+    }
