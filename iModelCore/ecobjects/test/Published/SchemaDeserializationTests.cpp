@@ -117,7 +117,7 @@ struct SchemaDeserializationTest : ECTestFixture
         EXPECT_NE(nullptr, structArrayProperty);
         EXPECT_EQ(schema->GetClassP("Struct1"), &structArrayProperty->GetStructElementType());
         EXPECT_EQ(0, structArrayProperty->GetMinOccurs());
-        EXPECT_EQ(UINT_MAX, structArrayProperty->GetMaxOccurs());
+        EXPECT_EQ(INT_MAX, structArrayProperty->GetMaxOccurs());
         EXPECT_FALSE(pProperty->GetIsDisplayLabelDefined());
         EXPECT_STREQ("NestedArray", pProperty->GetDisplayLabel().c_str());
         EXPECT_STREQ("", pProperty->GetDescription().c_str());

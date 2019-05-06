@@ -1015,7 +1015,7 @@ bool ECProperty::_ToJson(Json::Value& outValue, bool isInherited, bvector<bpair<
         {
         ArrayECPropertyCP propArr = GetAsArrayProperty();
         outValue[MIN_OCCURS_ATTRIBUTE] = propArr->GetMinOccurs();
-        if (propArr->GetStoredMaxOccurs() != UINT_MAX)
+        if (propArr->GetStoredMaxOccurs() != INT_MAX)
             outValue[MAX_OCCURS_ATTRIBUTE] = propArr->GetStoredMaxOccurs();
         }
 
@@ -1732,7 +1732,7 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion 
     BeStringUtilities::Snprintf (valueString, _countof (valueString), "%u", m_minOccurs);
 
     additionalAttributes.push_back(make_bpair(MIN_OCCURS_ATTRIBUTE, valueString));
-    if (m_maxOccurs != UINT_MAX)
+    if (m_maxOccurs != INT_MAX)
         {
         BeStringUtilities::Snprintf (valueString, _countof (valueString), "%u", m_maxOccurs);
         additionalAttributes.push_back(make_bpair(MAX_OCCURS_ATTRIBUTE, valueString));
@@ -1856,7 +1856,7 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (Utf8StringCR maxOccurs)
     if (count != 1)
         {
         if (0 == strcmp (maxOccurs.c_str(), ECXML_UNBOUNDED))
-            iMaxOccurs = UINT_MAX;
+            iMaxOccurs = INT_MAX;
         else
             {
             LOG.errorv ("Failed to set MaxOccurs of ECProperty '%s' to '%s' because the value could not be parsed.  It must be a valid unsigned integer or the string 'unbounded'.",
