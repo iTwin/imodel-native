@@ -1461,31 +1461,31 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
     /*---------------------------------------------------------------------------------**//**
      * @bsimethod                                                    Vern.Francisco   01/18
      +---------------+---------------+---------------+---------------+---------------+------*/
-    GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, LightWeightConverter& converter, double v8SymbolScale)
+    GeometricPrimitivePtr GetGeometry (DgnFileR dgnFile, LightWeightConverter& converter, bool isPartCreate)
         {
         bool doFlatten = (!m_is3dDest && m_is3dSrc);
 
-        if (!m_geometry.IsValid())
+        if (!m_geometry.IsValid ())
             {
-            if (m_curve.IsValid())
+            if (m_curve.IsValid ())
                 {
                 BentleyApi::CurveVectorPtr clone;
 
-                Converter::ConvertCurveVector(clone, *m_curve, &m_v8ToDgnDbTrans);
-                m_geometry = GeometricPrimitive::Create(clone);
+                Converter::ConvertCurveVector (clone, *m_curve, &m_v8ToDgnDbTrans);
+                m_geometry = GeometricPrimitive::Create (clone);
                 }
-            else if (m_primitive.IsValid())
+            else if (m_primitive.IsValid ())
                 {
                 if (!m_is3dDest) // Drop solids found in 3d sheet to wireframe...
                     {
-                    Bentley::CurveVectorPtr wires = DgnV8Api::WireframeGeomUtil::CollectCurves(*m_primitive, true, true);
+                    Bentley::CurveVectorPtr wires = DgnV8Api::WireframeGeomUtil::CollectCurves (*m_primitive, true, true);
 
-                    if (wires.IsValid())
+                    if (wires.IsValid ())
                         {
                         BentleyApi::CurveVectorPtr clone;
 
-                        Converter::ConvertCurveVector(clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
-                        m_geometry = GeometricPrimitive::Create(clone);
+                        Converter::ConvertCurveVector (clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
+                        m_geometry = GeometricPrimitive::Create (clone);
                         doFlatten = true;
                         }
                     }
@@ -1493,22 +1493,22 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
                     {
                     BentleyApi::ISolidPrimitivePtr clone;
 
-                    Converter::ConvertSolidPrimitive(clone, *m_primitive);
-                    m_geometry = GeometricPrimitive::Create(clone);
+                    Converter::ConvertSolidPrimitive (clone, *m_primitive);
+                    m_geometry = GeometricPrimitive::Create (clone);
                     }
                 }
-            else if (m_surface.IsValid())
+            else if (m_surface.IsValid ())
                 {
                 if (!m_is3dDest) // Drop surfaces found in 3d sheet to wireframe...
                     {
-                    Bentley::CurveVectorPtr wires = DgnV8Api::WireframeGeomUtil::CollectCurves(*m_surface, true, true);
+                    Bentley::CurveVectorPtr wires = DgnV8Api::WireframeGeomUtil::CollectCurves (*m_surface, true, true);
 
-                    if (wires.IsValid())
+                    if (wires.IsValid ())
                         {
                         BentleyApi::CurveVectorPtr clone;
 
-                        Converter::ConvertCurveVector(clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
-                        m_geometry = GeometricPrimitive::Create(clone);
+                        Converter::ConvertCurveVector (clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
+                        m_geometry = GeometricPrimitive::Create (clone);
                         doFlatten = true;
                         }
                     }
@@ -1516,53 +1516,65 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
                     {
                     BentleyApi::MSBsplineSurfacePtr clone;
 
-                    Converter::ConvertMSBsplineSurface(clone, *m_surface);
-                    m_geometry = GeometricPrimitive::Create(clone);
+                    Converter::ConvertMSBsplineSurface (clone, *m_surface);
+                    m_geometry = GeometricPrimitive::Create (clone);
                     }
                 }
-            else if (m_mesh.IsValid())
+            else if (m_mesh.IsValid ())
                 {
                 if (!m_is3dDest) // Drop mesh found in 3d sheet or 2d model to shapes, 2d mesh is "ok" in MicroStation but we don't want to support this in a 2d GeometryStream.
                     {
-                    Bentley::PolyfaceVisitorPtr visitor = Bentley::PolyfaceVisitor::Attach(*m_mesh, true);
+                    Bentley::PolyfaceVisitorPtr visitor = Bentley::PolyfaceVisitor::Attach (*m_mesh, true);
 
-                    visitor->SetNumWrap(1);
+                    visitor->SetNumWrap (1);
 
-                    Bentley::CurveVectorPtr facetShapes = Bentley::CurveVector::Create(Bentley::CurveVector::BOUNDARY_TYPE_UnionRegion);
+                    Bentley::CurveVectorPtr facetShapes = Bentley::CurveVector::Create (Bentley::CurveVector::BOUNDARY_TYPE_UnionRegion);
 
-                    for (visitor->Reset(); visitor->AdvanceToNextFace(); )
+                    for (visitor->Reset (); visitor->AdvanceToNextFace (); )
                         {
-                        Bentley::CurveVectorPtr facet = Bentley::CurveVector::CreateLinear(&visitor->Point().front(), visitor->Point().size(), Bentley::CurveVector::BOUNDARY_TYPE_Outer);
+                        Bentley::CurveVectorPtr facet = Bentley::CurveVector::CreateLinear (&visitor->Point ().front (), visitor->Point ().size (), Bentley::CurveVector::BOUNDARY_TYPE_Outer);
 
-                        facetShapes->Add(facet);
+                        facetShapes->Add (facet);
                         }
 
                     BentleyApi::CurveVectorPtr clone;
 
-                    Converter::ConvertCurveVector(clone, *facetShapes, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
-                    m_geometry = GeometricPrimitive::Create(clone);
+                    Converter::ConvertCurveVector (clone, *facetShapes, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
+                    m_geometry = GeometricPrimitive::Create (clone);
                     doFlatten = true;
                     }
                 else
                     {
                     BentleyApi::PolyfaceHeaderPtr clone;
 
-                    Converter::ConvertPolyface(clone, *m_mesh);
-                    m_geometry = GeometricPrimitive::Create(clone);
+                    Converter::ConvertPolyface (clone, *m_mesh);
+                    m_geometry = GeometricPrimitive::Create (clone);
+#ifdef TEST_AUXDATA_TO_JSON
+                    Utf8String      jsonString;
+                    auto            jsonClone = IGeometry::Create (clone);
+
+                    jsonClone->TryTransformInPlace (m_v8ToDgnDbTrans);
+                    if (BentleyApi::IModelJson::TryGeometryToIModelJsonString (jsonString, *jsonClone))
+                        {
+                        FILE*       file = std::fopen ("d:\\tmp\\RadialWave.json", "w");
+                        fwrite (jsonString.c_str (), 1, jsonString.size (), file);
+                        fclose (file);
+                        }
+#endif
                     }
                 }
-            else if (m_brep.IsValid())
+            else if (m_brep.IsValid ())
                 {
                 if (!m_is3dDest) // Drop surfaces found in 3d sheet to wireframe...
                     {
-                    Bentley::CurveVectorPtr wires = DgnV8Api::WireframeGeomUtil::CollectCurves(*m_brep, true, true);
+                    Bentley::CurveVectorPtr wires = DgnV8Api::WireframeGeomUtil::CollectCurves (*m_brep, true, true);
 
-                    if (wires.IsValid())
+                    if (wires.IsValid ())
                         {
                         BentleyApi::CurveVectorPtr clone;
 
-                        Converter::ConvertCurveVector(clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
-                        m_geometry = GeometricPrimitive::Create(clone);
+                        Converter::ConvertCurveVector (clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
+                        m_geometry = GeometricPrimitive::Create (clone);
                         doFlatten = true;
                         }
                     }
@@ -1571,46 +1583,46 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
 #if defined (BENTLEYCONFIG_PARASOLID)
                     IBRepEntityPtr clone;
 
-                    Converter::ConvertSolidKernelEntity(clone, *m_brep);
+                    Converter::ConvertSolidKernelEntity (clone, *m_brep);
 
-                    if (clone.IsValid() && m_attachments.IsValid())
-                        DgnDbApi::PSolidUtil::SetFaceAttachments(*clone, m_attachments.get());
+                    if (clone.IsValid () && m_attachments.IsValid ())
+                        DgnDbApi::PSolidUtil::SetFaceAttachments (*clone, m_attachments.get ());
 
-                    m_geometry = GeometricPrimitive::Create(clone);
+                    m_geometry = GeometricPrimitive::Create (clone);
 #endif
                     }
                 }
-            else if (m_text.IsValid())
+            else if (m_text.IsValid ())
                 {
                 TextStringPtr clone;
 
-                LightWeightConverter::ConvertTextString(clone, *m_text, dgnFile, converter);
-                m_geometry = GeometricPrimitive::Create(clone);
+                LightWeightConverter::ConvertTextString (clone, *m_text, dgnFile, converter);
+                m_geometry = GeometricPrimitive::Create (clone);
                 }
             else
                 {
-                BeAssert(false);
+                BeAssert (false);
                 }
 
-            if (!m_geometry.IsValid())
+            if (!m_geometry.IsValid ())
                 return nullptr;
 
             Transform goopTrans = m_goopTrans;
 
-            if (0.0 != v8SymbolScale && 1.0 != fabs(v8SymbolScale))
+            if (isPartCreate && 0.0 != m_partScale && 1.0 != fabs (m_partScale))
                 {
-                double partScale = fabs(1.0 / v8SymbolScale);
+                double partScale = fabs (1.0 / m_partScale);
 
-                goopTrans.ScaleMatrixColumns(goopTrans, partScale, partScale, partScale);
+                goopTrans.ScaleMatrixColumns (goopTrans, partScale, partScale, partScale);
                 }
 
-            if (!goopTrans.IsIdentity())
+            if (!goopTrans.IsIdentity ())
                 {
-                m_geometry->TransformInPlace(goopTrans);
+                m_geometry->TransformInPlace (goopTrans);
 
                 // NOTE: Information in GeometryParams may need to be transformed (ex. linestyles, gradient angle/scale, patterns, etc.)
                 //       LineStyleParams only needs to be rotated for placement, the conversion scale has already been accounted for...
-                m_geomParams.ApplyTransform(goopTrans, 0x01); // <- 0x01 is lazy/stealth way of specifying not to scale line style...
+                m_geomParams.ApplyTransform (goopTrans, 0x01); // <- 0x01 is lazy/stealth way of specifying not to scale line style...
                 }
 
             // Check 3D-to-2D and flatten the geometry here. Avoids Placement2d issues with geometry from 3d sheets with non-zero z values, etc.
@@ -1618,10 +1630,10 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
                 {
                 Transform   flattenTrans;
 
-                flattenTrans.InitIdentity();
+                flattenTrans.InitIdentity ();
                 flattenTrans.form3d[2][2] = 0.0;
 
-                m_geometry->TransformInPlace(flattenTrans);
+                m_geometry->TransformInPlace (flattenTrans);
                 }
             }
 
