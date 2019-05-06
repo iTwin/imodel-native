@@ -122,7 +122,13 @@
     <ClCompile Include="src\BentPlateProfileTests.cpp">
       <Filter>Src\Tests</Filter>
     </ClCompile>
-    <ClCompile Include="src\ArbitraryShapeProfileTests.cpp">
+    <ClCompile Include="src\ArbitraryCenterLineProfileGeometryTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ArbitraryGeometryProfileTestCase.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ArbitraryShapeProfileGeometryTests.cpp">
       <Filter>Src\Tests</Filter>
     </ClCompile>
   </ItemGroup>
@@ -134,6 +140,9 @@
       <Filter>Src\TestCases</Filter>
     </ClInclude>
     <ClInclude Include="src\ProfileValidationTestCase.h">
+      <Filter>Src\TestCases</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ArbitraryGeometryProfileTestCase.h">
       <Filter>Src\TestCases</Filter>
     </ClInclude>
   </ItemGroup>
