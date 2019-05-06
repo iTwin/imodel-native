@@ -1,0 +1,120 @@
+{
+    "instances": [
+        {
+            "instanceId": "af3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+            "schemaName": "S3MX",
+            "className": "RealityData",
+            "properties": {
+                "Id": "af3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+                "OrganizationId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                "ContainerName": "af3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+                "Name": "Helsinki",
+                "Dataset": "Geogratis",
+                "Group": "TestGroup",
+                "Description": "Helsinki is the capital and largest city of Finland. It is in the region of Uusimaa, in southern Finland, on the shore of the Gulf of Finland. Helsinki has a population of 629,512,[3] an urban population of 1,214,210,[7] and a metropolitan population of over 1.4 million, making it the most populous municipality and urban area in Finland.",
+                "RootDocument": "Helsinki/Scene/Production_Helsinki_3MX_ok.3mx",
+                "Size": "1036657",
+                "Classification": "Terrain",
+                "Streamed": false,
+                "Type": "3mx",
+                "Footprint": {
+                    "Coordinates": [
+                        {
+                            "Longitude": "24.7828757",
+                            "Latitude": "59.9224887"
+                        },
+                        {
+                            "Longitude": "25.2544848",
+                            "Latitude": "59.9224887"
+                        },
+                        {
+                            "Longitude": "25.2544848",
+                            "Latitude": "60.2978389"
+                        },
+                        {
+                            "Longitude": "24.7828757",
+                            "Latitude": "60.2978389"
+                        },
+                        {
+                            "Longitude": "24.7828757",
+                            "Latitude": "59.9224887"
+                        }
+                    ]
+                },
+                "ThumbnailDocument": "Helsinki/thumbnail.jpg",
+                "MetadataUrl": "www.bigTest.com",
+                "UltimateId": "uId",
+                "UltimateSite": "www.bigTest.com/1",
+                "Copyright": "Copyright goes here",
+                "TermsOfUse": "And the terms go here",
+                "AccuracyInMeters": "16.147",
+                "ResolutionInMeters": "13.45x16.34",
+                "Visibility": "PRIVATE",
+                "Listable": true,
+                "ModifiedTimestamp": "2017-02-01T22:26:06.414Z",
+                "CreatedTimestamp": "2017-02-01T22:26:06.414Z",
+                "LastAccessedTimestamp": "2017-02-01T22:26:06.414Z",
+                "OwnedBy": "francis.boily@bentley.com"
+            },
+            "eTag": "bVDdVT+8j6HTmIo7PNaqVcyYyLw="
+        },
+        {
+            "instanceId": "bf3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+            "schemaName": "S3MX",
+            "className": "RealityData",
+            "properties": {
+                "Id": "bf3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+                "OrganizationId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                "ContainerName": "af3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+                "Name": "Helsinki2",
+                "Dataset": "Geogratis2",
+                "Group": "TestGroup",
+                "Description": "Helsinki222 is the capital and largest city of Finland. It is in the region of Uusimaa, in southern Finland, on the shore of the Gulf of Finland. Helsinki has a population of 629,512,[3] an urban population of 1,214,210,[7] and a metropolitan population of over 1.4 million, making it the most populous municipality and urban area in Finland.",
+                "RootDocument": "Helsinki2/Scene/Production_Helsinki_3MX_ok.3mx",
+                "Size": "1036657",
+                "Classification": "Terrain",
+                "Streamed": false,
+                "Type": "3mx",
+                "Footprint": {
+                    "Coordinates": [
+                        {
+                            "Longitude": "24.7828757",
+                            "Latitude": "59.9224887"
+                        },
+                        {
+                            "Longitude": "25.2544848",
+                            "Latitude": "59.9224887"
+                        },
+                        {
+                            "Longitude": "25.2544848",
+                            "Latitude": "60.2978389"
+                        },
+                        {
+                            "Longitude": "24.7828757",
+                            "Latitude": "60.2978389"
+                        },
+                        {
+                            "Longitude": "24.7828757",
+                            "Latitude": "59.9224887"
+                        }
+                    ]
+                },
+                "ThumbnailDocument": "Helsinki/thumbnail.jpg",
+                "MetadataUrl": "www.bigTest.com",
+                "UltimateId": "uId",
+                "UltimateSite": "www.bigTest.com/1",
+                "Copyright": "Copyright goes here",
+                "TermsOfUse": "And the terms go here",
+                "AccuracyInMeters": "16.147",
+                "ResolutionInMeters": "13.45x16.34",
+                "Visibility": "PRIVATE",
+                "Listable": true,
+                "ModifiedTimestamp": "2017-02-01T22:26:06.414Z",
+                "CreatedTimestamp": "2017-02-01T22:26:06.414Z",
+                "LastAccessedTimestamp": "2017-02-01T22:26:06.414Z",
+                "OwnedBy": "francis.boily@bentley.com"
+            },
+            "eTag": "bVDdVT+8j6HTmIo7PNaqVcyYyLw="
+        }
+    ]
+}
