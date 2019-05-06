@@ -1822,8 +1822,41 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessGenerateTask(BeXmlNodeP
 
         if (s_doMultiThreadStitching && nodesToStitch.size() > 0)
             {            
-            assert(nodesToStitch.size() == stitchTileIds.size());
-            m_pDataIndex->DoParallelStitching(nodesToStitch);
+            if (nodesToStitch.size() <= 72)
+                {                
+                SetThreadingOptions(false, false, false);        
+
+                for (auto& node : nodesToStitch)
+                    {
+#ifndef NDEBUG
+                    uint32_t pointCount = node->GetNbObjects();
+                    assert(node->m_nodeHeader.m_nodeCount == pointCount);
+#endif
+
+                    bool isStitched = pDataIndex->GetMesher2_5d()->Stitch(node);
+                    assert(isStitched == true);
+                    
+                    if (isStitched)
+                        {
+                        node->SetDirty(true);
+                        }
+                         
+    #ifndef NDEBUG
+                    uint32_t newPointCount = node->GetNbObjects();
+                    assert(pointCount <= newPointCount);
+                    assert(newPointCount > 0 || pointCount == 0);
+                    assert(node->m_nodeHeader.m_nodeCount == newPointCount);
+    #endif
+                    }
+                
+                SetThreadingOptions(false, true, false);                
+                
+                }
+            else
+                {
+                assert(nodesToStitch.size() == stitchTileIds.size());
+                m_pDataIndex->DoParallelStitching(nodesToStitch);
+                }
 
 #ifndef NDEBUG
             wchar_t text_buffer[1000] = { 0 }; //temporary buffer

@@ -2176,9 +2176,40 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
             }
         }
 	MergePolygonSets(bounds);
-	current = bounds[0];
+	
+    if (bounds.size() > 0)
+        {
+        //TFS# 1023914 - If multiple bounds try to obtain a boundary from a DTM created withh all points of all bounds.
+        if (bounds.size() > 1)
+            {
+            BcDTMPtr bcDtm(BcDTM::Create());
 
+            for (auto& bound : bounds)
+                {
+                bcDtm->AddPoints(bound);
+                }    
 
+            DTMStatusInt status = bcDtm->Triangulate ();
+
+            if (status == SUCCESS)
+                {        
+                BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray pointArray;
+                status = bcDtm->GetBoundary(pointArray);
+
+                if (status == SUCCESS)
+                    {        
+                    current.clear();
+                    current = pointArray;
+                    }                
+                }        
+            }
+
+        if (current.size() == 0)
+            {
+            current = bounds[0];
+            }
+        }
+        
 	//polyface->Compress();
 	//size_t numOpen = 0, numClosed = 0;
 /*	PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface);
@@ -2631,6 +2662,10 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const ClipVectorPtr& c
         }
     }
 
+    if (!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
+    {
+        clipP->TransformInPlace(m_reprojectionTransform);
+    }
     if (m_scmIndexPtr->GetClipRegistry()->HasClip(clipID)) return false;
     m_scmIndexPtr->GetClipRegistry()->AddClipWithParameters(clipID, clipP, geom, type, isActive);
 
@@ -2704,6 +2739,12 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const ClipVectorPtr
     bool isActive2;
     m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(clipID, clipData,geom2,type2,isActive2);
     DRange3d extent;
+    if (!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
+    {
+        Transform trans;
+        trans.InverseOf(m_reprojectionTransform);
+        clipData->TransformInPlace(trans);
+    }
     clipData->GetRange(extent, nullptr);
     if (extent.Volume() == 0)
     {
@@ -2734,6 +2775,11 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const ClipVectorPtr
     DRange3d extentNew;
     clipP->GetRange(extentNew, nullptr);
     extent.Extend(extentNew);
+
+    if (!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
+    {
+        clipP->TransformInPlace(m_reprojectionTransform);
+    }
 
     m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, clipP, geom, type, isActive);
 
@@ -2808,6 +2854,8 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
     bvector<DPoint3d> clipPolyData;
     m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipPolyData);
+    if (clipPolyData.empty())
+        return true;
 
     DRange3d extent = DRange3d::From(&clipPolyData[0], (int)clipPolyData.size());
 
@@ -2819,6 +2867,13 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
 
     if(clipVectorData.IsValid() && !clipVectorData->empty())
         {
+        if(!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
+            {
+            Transform trans;
+            trans.InverseOf(m_reprojectionTransform);
+            clipVectorData->TransformInPlace(trans);
+            }
+
         DRange3d clipVectorRange;
         clipVectorData->GetRange(clipVectorRange, nullptr);
         extent.Extend(clipVectorRange);

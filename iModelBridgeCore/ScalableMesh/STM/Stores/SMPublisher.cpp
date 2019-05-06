@@ -413,12 +413,12 @@ StatusInt SM3SMPublisher::SetNodeMeshData(IScalableMeshNodePtr sourceNode, IScal
                     auto dimension = texture->GetDimension();
                     newTextureID = m_params->GetDestination()->AddTextureCompressed(dimension.x, dimension.y, (int)texture->GetNOfChannels(), texture->GetData(), texture->GetSize());
                     }
-                if (SUCCESS != destNode->AddTexturedMesh(points, indices, uv, uvIndices, 1, newTextureID))
+                if (SUCCESS != destNode->AddTexturedMesh(points, indices, uv, uvIndices, 1, newTextureID, false, sourceNode->ArePoints3d()))
                     return ERROR;
                 }
             else
                 {
-                if (SUCCESS != destNode->AddMesh(points.data(), points.size(), indices.data(), indices.size()))
+                if (SUCCESS != destNode->AddMesh(points.data(), points.size(), indices.data(), indices.size(), false, sourceNode->ArePoints3d()))
                     return ERROR;
                 }
             }
