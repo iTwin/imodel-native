@@ -1343,7 +1343,13 @@ void            FacetEntity (IBRepEntityCR in, IFacetOptionsR facetOptions)
 
     memset (&m_table, 0, sizeof (m_table)); // Not initialized if error?!?
 
-    enableConcurrentFacetting();
+    // PK_TOPOL_facet_2 in concurrent mode is always significantly slower in our testing,
+    // regardless of how many threads are used. The actual concurrency inside PK_TOPOL_facet_2
+    // seems to be very poor with many fine-grained locks acquired and released - this overhead
+    // eliminates any potential gains. See Parasolid IR 8415939 for more info.
+    if (facetOptions.GetBRepConcurrentFacetting())
+        enableConcurrentFacetting();
+
     if (SUCCESS != PK_TOPOL_facet_2 (1, &entityTag, NULL, &options, &m_table) || !_IsTableValid ())
         return;
 

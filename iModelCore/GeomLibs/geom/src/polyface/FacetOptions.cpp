@@ -196,6 +196,8 @@ bool IFacetOptions::GetIgnoreHiddenBRepEntities () const { return _GetIgnoreHidd
 void IFacetOptions::SetIgnoreHiddenBRepEntities (bool ignoreHiddenBRepEntities) { _SetIgnoreHiddenBRepEntities(ignoreHiddenBRepEntities); }
 bool IFacetOptions::GetOmitBRepEdgeChainIds () const { return _GetOmitBRepEdgeChainIds(); }
 void IFacetOptions::SetOmitBRepEdgeChainIds (bool omit) { _SetOmitBRepEdgeChainIds(omit); }
+bool IFacetOptions::GetBRepConcurrentFacetting() const { return _GetBRepConcurrentFacetting(); }
+void IFacetOptions::SetBRepConcurrentFacetting (bool doConcurrentFacet) { _SetBRepConcurrentFacetting(doConcurrentFacet); }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
@@ -481,6 +483,8 @@ struct FacetOptions : public IFacetOptions
     bool m_ignoreHiddenBRepEntities = false;
     bool m_omitBRepEdgeChainIds = false;
 
+    bool m_bRepConcurrentFacetting = true;
+
     // Get/Set pair for ChordTolerance.  Simple access to m_chordTolerance
    double _GetChordTolerance () const override
             {return m_chordTolerance; }
@@ -659,6 +663,8 @@ struct FacetOptions : public IFacetOptions
     bool _GetOmitBRepEdgeChainIds () const override { return m_omitBRepEdgeChainIds; }
     void _SetOmitBRepEdgeChainIds (bool omitBRepEdgeChainIds) override { m_omitBRepEdgeChainIds = omitBRepEdgeChainIds; }
 
+    bool _GetBRepConcurrentFacetting() const override { return m_bRepConcurrentFacetting; }
+    void _SetBRepConcurrentFacetting(bool doConcurrentFacet) override { m_bRepConcurrentFacetting = doConcurrentFacet; }
 
     IFacetOptionsPtr _Clone () const override { return new FacetOptions (*this); }
 
@@ -697,6 +703,9 @@ void _SetDefaults () override
     m_bsplineSurfaceEdgeHiding = 1;
     m_ignoreHiddenBRepEntities = false;
     m_omitBRepEdgeChainIds = false;
+    // false is always faster, see Parasolid IR 8415939, but default to true so that current
+    // behavior is maintained and disabling concurrent facetting can be feature gated
+    m_bRepConcurrentFacetting = true; 
     }
 
 void _SetCurveDefaults () override

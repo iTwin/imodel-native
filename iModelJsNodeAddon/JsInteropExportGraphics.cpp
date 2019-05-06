@@ -451,6 +451,8 @@ static IFacetOptionsPtr createFacetOptions(Napi::Object const& exportProps)
 
     auto result = IFacetOptions::CreateForSurfaces(chordTol, angleTol, maxEdgeLength, true, true, true);
     result->SetIgnoreHiddenBRepEntities(true); // act like tile generation, big perf improvement
+    result->SetBRepConcurrentFacetting(false); // see Parasolid IR 8415939, always faster exclusive
+
     return result;
     }
 

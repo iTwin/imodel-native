@@ -126,6 +126,9 @@ protected:
    GEOMAPI_VIRTUAL bool _GetOmitBRepEdgeChainIds () const = 0;
    GEOMAPI_VIRTUAL void _SetOmitBRepEdgeChainIds (bool doOmit) = 0;
 
+   GEOMAPI_VIRTUAL bool _GetBRepConcurrentFacetting() const = 0;
+   GEOMAPI_VIRTUAL void _SetBRepConcurrentFacetting(bool doConcurrentFacet) = 0;
+
    GEOMAPI_VIRTUAL IFacetOptionsPtr  _Clone() const = 0;
 
 // Protected signatures of public/protected methods
@@ -296,6 +299,11 @@ GEOMDLLIMPEXP void SetIgnoreHiddenBRepEntities (bool ignoreHiddenBRepEntities);
 GEOMDLLIMPEXP bool GetOmitBRepEdgeChainIds () const;
 //! Set whether to omit edges chain ids. ((optimization for tile generation).
 GEOMDLLIMPEXP void SetOmitBRepEdgeChainIds (bool doOmit);
+
+//! Get whether PK_TOPOL_facet_2 runs in concurrent or exclusive mode.
+GEOMDLLIMPEXP bool GetBRepConcurrentFacetting() const;
+//! Set whether PK_TOPOL_facet_2 runs in concurrent or exclusive mode.
+GEOMDLLIMPEXP void SetBRepConcurrentFacetting(bool doConcurrentFacet);
 
 //! Set all parameters to default values
 GEOMDLLIMPEXP void SetDefaults ();
