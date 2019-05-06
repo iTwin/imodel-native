@@ -1418,10 +1418,6 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         return RETURN_STATUS_SERVER_ERROR;
         }
 
-    //  "Bootstrapping" the briefcase might have created a new repository. In that case, there is no need to go through the update logic and pullmergepush.
-    if (createdNewRepo)
-        return RETURN_STATUS_SUCCESS;
-
     LogPerformance(briefcaseTime, "Getting iModel Briefcase from iModelHub");
     LOG.tracev(L"Setting up iModel Briefcase for processing  : Done");
     }
