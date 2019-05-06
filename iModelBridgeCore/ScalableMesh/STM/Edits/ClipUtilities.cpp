@@ -933,9 +933,24 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
                 if (metadata[&poly - &polygons[0]].first / (m_range.XLength()* m_range.YLength()) > 0.001) applyClipPoly = true;
                 }
             }
-        if (applyClipPoly)
-            {
 
+        if (applyClipPoly && poly.size() > 1)
+            {
+            bvector<DPoint3d> closedPoly;
+            closedPoly.reserve(poly.size());
+
+            for (auto& point : poly)
+                {
+                closedPoly.push_back(point);
+                }
+            
+            if (poly[0].x != poly[poly.size() - 1].x ||
+                poly[0].y != poly[poly.size() - 1].y ||
+                poly[0].z != poly[poly.size() - 1].z)
+                {
+                closedPoly.push_back(poly[0]);
+                }
+                        
             stat = bcdtmInsert_internalDtmFeatureMrDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(),
                                                              DTMFeatureType::Region,
                                                              1,
@@ -943,8 +958,8 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
                                                              userTag,
                                                              &textureRegionIdsP,
                                                              &numRegionTextureIds,
-                                                             &poly[0],
-                                                             (long)poly.size(),
+                                                             &closedPoly[0],
+                                                             (long)closedPoly.size(),
                                                              m_uvBuffer && m_uvIndices ? GetInsertPointCallback(originalFaceMap, dtmPtr) : nullptr);
 
             userTag++;
@@ -1902,7 +1917,7 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
             boundaryInfo.second = &clip - polygons.data();
             }
 
-        meshIsCut = meshIsCut || InsertMeshCuts(clippedMesh, vis, currentPoly, triangleBoxes, polyBox);
+        meshIsCut = InsertMeshCuts(clippedMesh, vis, currentPoly, triangleBoxes, polyBox) || meshIsCut;
 
         clipPolys.push_back(cp);
         }

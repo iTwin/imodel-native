@@ -401,6 +401,37 @@ ElementIdIterator GridSurface::MakeGridCurveBundleIterator() const
     return GridSurfaceDrivesGridCurveBundleHandler::MakeGridCurveBundleIterator(*this);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+DgnElementId GridSurface::GetGridLabelId() const
+    {
+    Utf8CP ecsql = "SELECT TargetECInstanceId FROM " GRIDS_SCHEMA_NAME "." GRIDS_REL_GridSurfaceOwnsGridLabel " WHERE SourceECInstanceId=? LIMIT 1";
+    BeSQLite::EC::ECSqlStatement ecStmt;
+    BeSQLite::EC::ECSqlStatus status = ecStmt.Prepare (GetDgnDb(), ecsql);
+    if (!status.IsSuccess())
+        return DgnElementId();
+
+    ecStmt.BindId (1, GetElementId());
+
+    if (BeSQLite::BE_SQLITE_ROW != ecStmt.Step())
+        return DgnElementId ();
+    
+    return ecStmt.GetValueId<DgnElementId> (0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+GridLabelCPtr GridSurface::GetGridLabel() const
+    {
+    DgnElementId labelId = GetGridLabelId();
+    if (!labelId.IsValid())
+        return nullptr;
+
+    return GetDgnDb().Elements().Get<GridLabel> (labelId);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/

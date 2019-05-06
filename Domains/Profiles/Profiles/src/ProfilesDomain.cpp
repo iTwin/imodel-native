@@ -70,7 +70,8 @@ void ProfilesDomain::_OnSchemaImported (DgnDb& db) const
     fragments.push_back (CodeFragmentSpec::FromFixedString (" "));
     fragments.push_back (CodeFragmentSpec::FromPropertyValue ("Designation"));
 
-    BeAssert (codeSpecPtr->Insert() == DgnDbStatus::Success);
+    DgnDbStatus status = codeSpecPtr->Insert();
+    BeAssert (status == DgnDbStatus::Success);
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

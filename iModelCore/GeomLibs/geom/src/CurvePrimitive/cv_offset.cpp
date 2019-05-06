@@ -474,6 +474,30 @@ CurveVectorPtr CurveVector::CloneOffsetCurvesXY (CurveOffsetOptionsCR options) c
         }
     }
 
+static void TrimSegment (DSegment3dCR segment, DSegment1dR interval, DRay3dCR ray, bool headTrim)
+    {
+    double dot0 = segment.point[0].DotDifference (ray.origin, ray.direction);
+    double dot1 = segment.point[1].DotDifference(ray.origin, ray.direction);
+    if (headTrim && dot0 > 1.0 && dot1 > 1.0)
+        return;
+    if (!headTrim && dot0 < 0.0 && dot1 < 0.0)
+        return;
+    auto trimFraction = DoubleOps::InverseInterpolate (dot0, 0.0, dot1);
+    if (trimFraction.IsValid ())
+        {
+        double f = trimFraction.Value ();
+        if (headTrim)
+            {
+            if (f < interval.GetEnd ())
+                interval.SetEnd (f);
+            }
+        else
+            {
+            if (f > interval.GetStart ())
+                interval.SetStart(f);
+            }
+        }
+    }
 
 static void CollectOffsetSegment (DRay3dCR tangentA1, DSegment3dCR segment, DRay3dCR tangentC0,
 CurveOffsetOptionsCR options,
@@ -487,20 +511,29 @@ CurveVectorR collector
     perp.Scale (-r1);
     DPoint3d points[5];
     size_t n = 0;
+    DSegment3d offsetSegment;
+    offsetSegment.point[0].SumOf(segment.point[0], perp),
+    offsetSegment.point[1].SumOf(segment.point[1], perp);
+    DSegment1d interval (0.0, 1.0);
+    TrimSegment (offsetSegment, interval, tangentA1, false);
+    TrimSegment (offsetSegment, interval, tangentC0, true);
+    if (interval.GetStart () > interval.GetEnd ())
+        return;     // umm..  need triangle?
+
     if (r1 > 0.0)
         {
         points[0] = points[4] = segment.point[0];
-        points[1].SumOf (points[0], perp);
+        points[1] = offsetSegment.FractionToPoint (interval.GetStart ());
+        points[2] = offsetSegment.FractionToPoint (interval.GetEnd ());
         points[3] = segment.point[1];
-        points[2].SumOf (points[3], perp);
         n = 5;
         }
     else if (r1 < 0.0)
         {
         points[0] = points[4] = segment.point[0];
         points[1] = segment.point[1];
-        points[2].SumOf (points[1], perp);
-        points[3].SumOf (points[0], perp);
+        points[2] = offsetSegment.FractionToPoint(interval.GetStart ());
+        points[3] = offsetSegment.FractionToPoint(interval.GetEnd ());
         n = 5;
         }
     if (n > 0)
@@ -786,12 +819,12 @@ CurveVectorR collector
     DSegment3d segment;
     DEllipse3d arc;
     bool done = false;
-    if (curveA->TryGetLine (segment))
+    if (curveB.TryGetLine (segment))
         {
         CollectOffsetSegment (tangentA1, segment, tangentC0, options, collector);
         done = true;
         }
-    else if (curveA->TryGetArc (arc))
+    else if (curveB.TryGetArc (arc))
         {
         done = CollectOffsetCircularArc (tangentA1, arc, tangentC0, options, collector);
         }
@@ -873,6 +906,30 @@ CurveVectorPtr CurveVector::AreaOffset (CurveOffsetOptionsCR options) const
     return result;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      12/2012
++--------------------------------------------------------------------------------------*/
+CurveVectorPtr CurveVector::AreaOffsetFromPath(CurveOffsetOptionsCR options, double leftOffset, double rightOffset) const
+    {
+    CurveVectorPtr leftOffsetChunks = CurveVector::Create(CurveVector::BOUNDARY_TYPE_UnionRegion);
+    CurveVectorPtr rightOffsetChunks = CurveVector::Create(CurveVector::BOUNDARY_TYPE_UnionRegion);
+
+    auto myOptions = options;
+    if (leftOffset != 0.0)
+        {
+        myOptions.SetOffsetDistance (-leftOffset);
+        CollectOffsetAreas(*this, myOptions, *leftOffsetChunks);
+        }
+    if (rightOffset != 0.0)
+        {
+        myOptions.SetOffsetDistance (rightOffset);
+        CollectOffsetAreas(*this, options, *rightOffsetChunks);
+        }
+    auto result = AreaUnion(*leftOffsetChunks, *rightOffsetChunks);
+    if (result.IsValid())
+        result->ConsolidateAdjacentPrimitives();
+    return result;
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      12/2012

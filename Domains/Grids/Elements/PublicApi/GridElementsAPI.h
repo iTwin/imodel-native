@@ -30,3 +30,4 @@
 #include "GridCurveBundle.h"
 #include "GridSurfaceDrivesGridCurveBundleHandler.h"
 #include "GridCurveBundleCreatesGridCurveHandler.h"
+#include "GridLabel.h"

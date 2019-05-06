@@ -10,6 +10,7 @@
 #include <WebServices/iModelHub/Events/ChangeSetPostPushEvent.h>
 #include <WebServices/iModelHub/Events/CodeEvent.h>
 #include <WebServices/iModelHub/Events/DeletedEvent.h>
+#include <WebServices/iModelHub/Events/VersionEvent.h>
 
 using namespace ::testing;
 using namespace ::std;
@@ -112,6 +113,23 @@ Utf8String StubHttpResponseValidDeletedEvent()
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod									Andrius.Zonys                   05/2019
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseValidVersionEvent()
+    {
+    return R"(
+              {
+              "Date":"SomeDate",
+              "EventTopic":"SomeEventTopic",
+              "FromEventSubscriptionId":"SomeFromEventSubscriptionId",
+              "VersionId":"SomeVersionId",
+              "VersionName":"SomeVersionName",
+              "ChangeSetId":"SomeChangeSetId"
+              }
+             )";
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseInvalidLockEvent1()
@@ -199,6 +217,21 @@ Utf8String StubHttpResponseInvalidDeletedEvent()
               {
               "Date":"SomeDate",
               "EventTopic":"SomeEventTopic"
+              }
+             )";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Andrius.Zonys                   05/2019
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidVersionEvent()
+    {
+    return R"(
+              {
+              "Date":"SomeDate",
+              "EventTopic":"SomeEventTopic",
+              "FromEventSubscriptionId":"SomeFromEventSubscriptionId",
+              "VersionId":"SomeVersionId"
               }
              )";
     }
@@ -300,6 +333,38 @@ Utf8String StubHttpResponseInvalidCodesDeletedContentType()
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod									Andrius.Zonys                   05/2019
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseValidVersionEventContentType()
+    {
+    return Event::Helper::GetEventNameFromEventType(Event::EventType::VersionEvent).c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Andrius.Zonys                   05/2019
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidVersionEventContentType()
+    {
+    return Event::Helper::GetEventNameFromEventType(Event::EventType::UnknownEventType).c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Andrius.Zonys                   05/2019
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseValidVersionModifiedEventContentType()
+    {
+    return Event::Helper::GetEventNameFromEventType(Event::EventType::VersionModifiedEvent).c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Andrius.Zonys                   05/2019
+//---------------------------------------------------------------------------------------
+Utf8String StubHttpResponseInvalidVersionModifiedEventContentType()
+    {
+    return Event::Helper::GetEventNameFromEventType(Event::EventType::UnknownEventType).c_str();
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 void EventParserTests::SetUp()
@@ -392,6 +457,42 @@ TEST_F(EventParserTests, CodesDeletedEventTests)
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod									Andrius.Zonys                   05/2019
+//---------------------------------------------------------------------------------------
+TEST_F(EventParserTests, VersionEventTests)
+    {
+    //Check for valid values
+    EventPtr validPtr = EventParser::ParseEvent(StubHttpResponseValidVersionEventContentType().c_str(), StubHttpResponseValidVersionEvent());
+    EXPECT_TRUE(validPtr.IsValid());
+    EXPECT_EQ(Event::EventType::VersionEvent, validPtr->GetEventType());
+    VersionEvent& versionEvent1 = dynamic_cast<VersionEvent&>(*validPtr);
+    EXPECT_TRUE(dynamic_cast<Event::GenericEvent*>(&versionEvent1)); //VersionEvent is a subclass of Event
+    RefCountedPtr<struct VersionEvent> versionEvent2 = EventParser::GetVersionEvent(validPtr);
+    EXPECT_TRUE(versionEvent2.IsValid());
+    EXPECT_EQ(versionEvent1.GetVersionId(), versionEvent2->GetVersionId());
+    EXPECT_EQ(versionEvent1.GetVersionName(), versionEvent2->GetVersionName());
+    EXPECT_EQ(versionEvent1.GetChangeSetId(), versionEvent2->GetChangeSetId());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod									Andrius.Zonys                   05/2019
+//---------------------------------------------------------------------------------------
+TEST_F(EventParserTests, VersionModifiedEventTests)
+    {
+    //Check for valid values
+    EventPtr validPtr = EventParser::ParseEvent(StubHttpResponseValidVersionModifiedEventContentType().c_str(), StubHttpResponseValidVersionEvent());
+    EXPECT_TRUE(validPtr.IsValid());
+    EXPECT_EQ(Event::EventType::VersionModifiedEvent, validPtr->GetEventType());
+    VersionEvent& versionEvent1 = dynamic_cast<VersionEvent&>(*validPtr);
+    EXPECT_TRUE(dynamic_cast<Event::GenericEvent*>(&versionEvent1)); //VersionEvent is a subclass of Event
+    RefCountedPtr<struct VersionEvent> versionEvent2 = EventParser::GetVersionEvent(validPtr);
+    EXPECT_TRUE(versionEvent2.IsValid());
+    EXPECT_EQ(versionEvent1.GetVersionId(), versionEvent2->GetVersionId());
+    EXPECT_EQ(versionEvent1.GetVersionName(), versionEvent2->GetVersionName());
+    EXPECT_EQ(versionEvent1.GetChangeSetId(), versionEvent2->GetChangeSetId());
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 TEST_F(EventParserTests, InvalidEventTests)
@@ -450,6 +551,26 @@ TEST_F(EventParserTests, InvalidEventTests)
     EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType().c_str(), StubHttpResponseInvalidCodeEvent2()).IsNull());
     EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType().c_str(), StubHttpResponseValidLockEvent()).IsNull());
     EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType().c_str(), StubHttpResponseValidChangeSetPostPushEvent()).IsNull());
+
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionEventContentType().c_str(), StubHttpResponseEmpty()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionEventContentType().c_str(), StubHttpResponseEmptyJson()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionEventContentType().c_str(), StubHttpResponseInvalid()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionEventContentType().c_str(), StubHttpResponseInvalidLockEvent1()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionEventContentType().c_str(), StubHttpResponseInvalidLockEvent2()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionEventContentType().c_str(), StubHttpResponseInvalidChangeSetPostPushEvent()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionEventContentType().c_str(), StubHttpResponseInvalidCodeEvent1()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionEventContentType().c_str(), StubHttpResponseInvalidCodeEvent2()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionEventContentType().c_str(), StubHttpResponseInvalidVersionEvent()).IsNull());
+
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionModifiedEventContentType().c_str(), StubHttpResponseEmpty()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionModifiedEventContentType().c_str(), StubHttpResponseEmptyJson()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionModifiedEventContentType().c_str(), StubHttpResponseInvalid()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionModifiedEventContentType().c_str(), StubHttpResponseInvalidLockEvent1()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionModifiedEventContentType().c_str(), StubHttpResponseInvalidLockEvent2()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionModifiedEventContentType().c_str(), StubHttpResponseInvalidChangeSetPostPushEvent()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionModifiedEventContentType().c_str(), StubHttpResponseInvalidCodeEvent1()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionModifiedEventContentType().c_str(), StubHttpResponseInvalidCodeEvent2()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseValidVersionModifiedEventContentType().c_str(), StubHttpResponseInvalidVersionEvent()).IsNull());
     }
 
 //---------------------------------------------------------------------------------------
@@ -488,4 +609,14 @@ TEST_F(EventParserTests, InvalidContentTypeTests)
     EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseInvalidCodeEventContentType().c_str(), StubHttpResponseValidDeletedEvent()).IsNull());
     EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseInvalidLocksDeletedContentType().c_str(), StubHttpResponseValidDeletedEvent()).IsNull());
     EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseInvalidCodesDeletedContentType().c_str(), StubHttpResponseValidDeletedEvent()).IsNull());
+
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseEmptyContentType().c_str(), StubHttpResponseValidVersionEvent()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseInvalidContentType().c_str(), StubHttpResponseValidVersionEvent()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseInvalidLockEventContentType().c_str(), StubHttpResponseValidVersionEvent()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseInvalidChangeSetPostPushEventContentType().c_str(), StubHttpResponseValidVersionEvent()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseInvalidCodeEventContentType().c_str(), StubHttpResponseValidVersionEvent()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseInvalidLocksDeletedContentType().c_str(), StubHttpResponseValidVersionEvent()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseInvalidCodesDeletedContentType().c_str(), StubHttpResponseValidVersionEvent()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseInvalidVersionEventContentType().c_str(), StubHttpResponseValidVersionEvent()).IsNull());
+    EXPECT_TRUE(EventParser::ParseEvent(StubHttpResponseInvalidVersionModifiedEventContentType().c_str(), StubHttpResponseValidVersionEvent()).IsNull());
     }

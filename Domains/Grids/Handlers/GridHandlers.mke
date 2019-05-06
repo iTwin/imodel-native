@@ -41,6 +41,8 @@ $(o)GridHandlers$(oext) : $(_MakeFilePath)GridHandlers.cpp ${MultiCompileDepends
 
 $(o)GridCurveBundleHandler$(oext) : $(_MakeFilePath)GridCurveBundleHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridCurveBundleHandler.h
 
+$(o)GridLabelHandler$(oext) : $(_MakeFilePath)GridLabelHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridLabelHandler.h
+
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
 

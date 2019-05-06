@@ -384,17 +384,6 @@ void SpatialConverterBase::_DetectDeletedDocuments()
     T_Super::_DetectDeletedDocuments();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CreatorChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter, DgnV8EhCR v8eh, 
-                                              ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter*)
-    {
-    res.m_currentElementProvenance = SyncInfo::ElementProvenance(v8eh, converter.GetSyncInfo(), converter.GetCurrentIdPolicy());
-    res.m_changeType = ChangeType::Insert;
-    return true;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2018
 //---------------+---------------+---------------+---------------+---------------+-------

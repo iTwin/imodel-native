@@ -1,10 +1,12 @@
 /*--------------------------------------------------------------------------------------+
+|
+|     $Source: vu/src/vupointin.cpp $
 |    $RCSfile: vupointin.c,v $
 |   $Revision: 1.2 $
 |       $Date: 2006/09/14 14:56:12 $
 |     $Author: DavidAssaf $
 |
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -189,5 +191,170 @@ int                     numLoopPoints
     if (status == SUCCESS && numFace > 0 && pXYOut)
         *pXYOut = xySave;
     return status;
+    }
+/*
+* If vector from x0 to x1 crossed with ux,uy is positive,
+* create a parallelogram with first edge along (x0,y0) to (x1,y1) and
+*  opposite edge shifted by ux,uy
+*/
+static void addOffsetParallelogram(
+    VuSetP graph,
+    bvector<DPoint3d> &work,
+    double x0,
+    double y0,
+    double x1,
+    double y1,
+    double ux,
+    double uy,
+    VuMask leftMask,
+    VuMask rightMask
+)
+    {
+    double vx = x1 - x0;
+    double vy = y1 - y0;
+    if ((ux != 0.0 || uy != 0.0) && DoubleOps::DeterminantXYXY(vx, vy, ux, uy) > 0.0)
+        {
+        work.clear ();
+        work.push_back (DPoint3d::From (x0, y0));
+        work.push_back(DPoint3d::From(x1, y1));
+        work.push_back(DPoint3d::From(x1 + ux, y1 + uy));
+        work.push_back(DPoint3d::From(x0 + ux, y0 + uy));
+        vu_addEdgesXYTol(graph, nullptr, work, true, 0.0, leftMask, rightMask);
+        }
+    }
+static void addRectangle (
+    VuSetP graph,
+    bvector<DPoint3d> &work,
+    double x0,
+    double y0,
+    double x1,
+    double y1,
+    VuMask leftMask,
+    VuMask rightMask
+)
+    {
+    if (!DoubleOps::AlmostEqual (x0, x1)  && !DoubleOps::AlmostEqual (y0, y1))
+        {
+        work.clear();
+        work.push_back(DPoint3d::From(x0, y0));
+        work.push_back(DPoint3d::From(x1, y0));
+        work.push_back(DPoint3d::From(x1, y1));
+        work.push_back(DPoint3d::From(x0, y1));
+        work.push_back(DPoint3d::From(x0, y0));
+        vu_addEdgesXYTol(graph, nullptr, work, true, 0.0, leftMask, rightMask);
+        }
+    }
+
+/*-----------------------------------------------------------------*//**
+* @description Return a graph whose interior points are at least (ax,bx) distance from 
+*     loop interior points to the left and right, and (ay, by) below and above.
+* @param loops > array of loops.  In these loops, inside is defined by parity.
+* @param ax => rightward offset from an edge on the left side.
+* @param bx => leftward offset from edge on the right side.
+* @param ax => rightward offset from an edge on the top side.
+* @param bx => leftward offset from edge on the bottom side.
+* @param interiorLoops <= loops containing valid region.
+* @bsimethod                            EarlinLutz      07/01
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void vu_createXYOffsetLoops
+(
+bvector<bvector<DPoint3d>> &loops,
+double ax,
+double bx, 
+double ay,
+double by,
+bvector<bvector<DPoint3d>> &interiorLoops
+)
+    {
+    interiorLoops.clear ();
+    bvector<DPoint3d> work;
+    VuSetP      graph = vu_newVuSet (0);
+    bvector<DPoint3d> workPoints;
+    VuArrayP    faceArrayP;
+   
+    for (size_t loopIndex = 0; loopIndex < loops.size (); loopIndex++)
+        {
+        if (loops[loopIndex].size () > 0)
+            vu_makeLoopFromArray3d(graph, const_cast <DPoint3d*> (loops[loopIndex].data ()),
+                        (int)loops[loopIndex].size (), true, true);
+        }
+
+    VuMask offsetFragmentBoundaryMask = VU_BOUNDARY_EDGE;
+    VuMask offsetFragmentExteriorMask = VU_RULE_EDGE;
+    vu_mergeOrUnionLoops(graph, VUUNION_UNION);
+
+    vu_regularizeGraph(graph);
+    vu_markAlternatingExteriorBoundaries(graph, true);
+    // record one node per face in the primary loops.
+    faceArrayP = vu_grabArray(graph);
+    vu_collectInteriorFaceLoops(faceArrayP, graph);
+    // push the primary graph while we work on the offsets.
+    // (but note tha the primary face nodes are still valid for traversals)
+    vu_stackPush (graph);
+    static int s_doRectangles = 0;
+    vu_arrayOpen(faceArrayP);
+    static double s_vertexFactor = 1.01;
+    VuMask maskA = offsetFragmentBoundaryMask;
+    VuMask maskB = offsetFragmentBoundaryMask | offsetFragmentExteriorMask;
+    for (VuP faceP; vu_arrayRead(faceArrayP, &faceP);)
+        {
+        VU_FACE_LOOP(nodeA, faceP)
+            {
+            if (vu_getMask (nodeA, VU_BOUNDARY_EDGE))
+                {
+                auto nodeB = vu_fsucc (nodeA);
+                double xA = vu_getX (nodeA);
+                double yA = vu_getY(nodeA);
+                double xB = vu_getX(nodeB);
+                double yB = vu_getY(nodeB);
+                addOffsetParallelogram(graph, workPoints, xA, yA, xB, yB, ax, 0, maskA, maskB);
+                addOffsetParallelogram(graph, workPoints, xA, yA, xB, yB, -bx, 0, maskA, maskB);
+                addOffsetParallelogram(graph, workPoints, xA, yA, xB, yB, 0, ay, maskA, maskB);
+                addOffsetParallelogram(graph, workPoints, xA, yA, xB, yB, 0, -ay, maskA, maskB);
+                if (s_doRectangles)
+                    addRectangle (graph, workPoints, xA - s_vertexFactor * bx, yA - s_vertexFactor * by, xA + s_vertexFactor * ax, yA + s_vertexFactor * ay, maskA, maskB);
+                }
+            }
+        END_VU_FACE_LOOP(nodeA, faceP)
+        }
+
+    // the active graph has overlapping areas.
+    // get the union of these.  (No need to add connects?)
+    vu_mergeOrUnionLoops(graph, VUUNION_UNION);
+    vu_windingFloodFromNegativeAreaFaces (graph, offsetFragmentExteriorMask, VU_EXTERIOR_EDGE);
+    static int doSubtract = 2;
+    VuMask outputExterior = VU_EXTERIOR_EDGE;
+    if (doSubtract == 2)
+        {
+        vu_toggleMaskInSet(graph, VU_EXTERIOR_EDGE);
+        vu_stackPop (graph);
+        VuMask compositeExteriorMask = VU_KNOT_EDGE;
+        vu_mergeOrUnionLoops(graph, VUUNION_UNION);
+        vu_windingFloodFromNegativeAreaFaces(graph, VU_EXTERIOR_EDGE, compositeExteriorMask);
+        }
+    else if (doSubtract == 1)
+        {
+        vu_toggleMaskInSet(graph, VU_EXTERIOR_EDGE);
+        }
+
+    bvector<bvector<VuP>> loopNodes;
+    vu_collectMaskedFaces (graph, outputExterior, false, loopNodes);
+    for (auto &loop : loopNodes)
+        {
+        if (vu_area (loop[0]) > 0.0)
+            {
+            interiorLoops.push_back (bvector<DPoint3d> ());
+            DPoint3d xyz;
+            for (auto &node : loop)
+                {
+                vu_getDPoint3d(&xyz, node);
+                interiorLoops.back ().push_back (xyz);
+                }
+            vu_getDPoint3d(&xyz, loop.front());
+            interiorLoops.back ().push_back (xyz);
+            }
+        }
+    vu_returnArray(graph, faceArrayP);
+    vu_freeVuSet(graph);
     }
 END_BENTLEY_GEOMETRY_NAMESPACE

@@ -569,7 +569,8 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
 
     // Bootstrap the source master model subject element. (Note: another bridge might have created it already.)
     auto sourceMasterModelSubject = FindSourceMasterModelSubject(*GetRootModelP());
-    if (!sourceMasterModelSubject.IsValid())
+    bool alreadyHaveSourceMasterModelSubject = sourceMasterModelSubject.IsValid();
+    if (!alreadyHaveSourceMasterModelSubject)
         sourceMasterModelSubject = CreateAndInsertSourceMasterModelSubject(*GetRootModelP());
 
     // Create a BridgeJob Subject as a child of the sourceMasterModel Subject
@@ -644,12 +645,16 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     SetSpatialParentSubject(*hsubj);
     m_rootModelMapping = GetResolvedModelMapping(*m_rootModelRef->GetDgnModelP(), m_rootTrans);
 
-    // Finally, go back and fix up the reference from the SourceMasterModel Subject to the root model's V8ModelExternalSourceAspect.
-    // This is what will allow _GetRootModelId and FindJob to find the source master model (aka "root model").
-    // We use an XSA ECInstanceId in order to identify the BIM root model unambiguously. 
-    // This will work even if multiple source models are mapped into the iModel model that (also) represents the source master model (as TileFileConverter does).
-    // That is because this V8ModelExternalSourceAspect is specific to one source model (and one specific transform of it).
-    SetRootModelAspectIdInSourceMasterModelSubject(*sourceMasterModelSubject);
+    if (!alreadyHaveSourceMasterModelSubject)
+        {
+        // Finish creation of the SourceMasterModelSubject.
+        // Go back and fix up the reference from the SourceMasterModel Subject to the root model's V8ModelExternalSourceAspect.
+        // This is what will allow _GetRootModelId and FindJob to find the source master model (aka "root model").
+        // We use an XSA ECInstanceId in order to identify the BIM root model unambiguously. 
+        // This will work even if multiple source models are mapped into the iModel model that (also) represents the source master model (as TileFileConverter does).
+        // That is because this V8ModelExternalSourceAspect is specific to one source model (and one specific transform of it).
+        SetRootModelAspectIdInSourceMasterModelSubject(*sourceMasterModelSubject);
+        }
 
     BeAssert(FindSourceMasterModelSubject(*GetRootModelP()).IsValid()); // had to wait until RootModelAspectId was filled in to do this check
 
@@ -2084,13 +2089,8 @@ void RootModelConverter::_SetChangeDetector(bool isUpdating)
     {
     BeAssert(isUpdating == IsUpdating());
 
-    if (!isUpdating)
-        m_changeDetector.reset(new CreatorChangeDetector);
-    else
-        {
-        m_changeDetector.reset(new ChangeDetector);
-        m_skipECContent = false;
-        }
+    m_changeDetector.reset(new ChangeDetector);
+    m_skipECContent = false;
     }
 
 /*---------------------------------------------------------------------------------**//**

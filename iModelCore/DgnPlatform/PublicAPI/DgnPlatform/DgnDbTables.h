@@ -748,12 +748,12 @@ public:
 
     //! @private
     //! Initialize the project extents by querying the volume of all the spatial models. Should only be used after conversion from external formats.
-    DGNPLATFORM_EXPORT void InitializeProjectExtents(DRange3dP rangeWithOutliers = nullptr, size_t* outlierCount = nullptr);
+    DGNPLATFORM_EXPORT void InitializeProjectExtents(DRange3dP rangeWithOutliers = nullptr, bvector<BeInt64Id>* elementOutliers = nullptr);
 
     //! @private
     //! Compute the project extents by querying the volume of all the spatial models. Should only be used after conversion from external formats.
     //! ###TODO: Remove once ScalableMesh folks fix their _QueryModelRange() to produce valid result during conversion from V8
-    DGNPLATFORM_EXPORT AxisAlignedBox3d ComputeProjectExtents(DRange3dP rangeWithOutliers = nullptr, size_t* outlierCount = nullptr) const;
+    DGNPLATFORM_EXPORT AxisAlignedBox3d ComputeProjectExtents(DRange3dP rangeWithOutliers = nullptr, bvector<BeInt64Id>* elementOutliers = nullptr) const;
 
     //! @private
     //! Update the global origin. @note Changing global origin invalidates all existing xyz coordinates stored in the BIM.

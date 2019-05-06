@@ -1,12 +1,15 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|  $Source: geom/test/PolyfaceTest/t_localCoordinates.cpp $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include <stdio.h>
 #include <Vu/VuApi.h>
 static int s_noisy = 0;
+
 void CopyCyclic (bvector<DPoint3d> &dest, bvector<DPoint3d> const & source, size_t baseIndex, bool close)
     {
     size_t n = source.size ();
@@ -71,6 +74,7 @@ void TestLCS (bvector<DPoint3d> const &points, LocalCoordinateSelect select)
         Check::Int (CurveVector::INOUT_In, cv->PointInOnOutXY (interiorPoint),
                         "interiorpoint confirmed");
         }
+
     }
 
 // ASSUME no disconnects or self intersections.

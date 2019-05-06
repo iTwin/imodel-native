@@ -1,6 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|     $Source: geom/src/polyface/FacetOptions.cpp $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -310,7 +312,7 @@ double angleTolerance,
 double maxEdgeLength
 )
     {
-    size_t maxCount = 100;
+    size_t maxCount = 400;
     size_t numChord = 1;
     double radians1 = fabs (distance * maxCurvature);
     if (distance > 0.0)

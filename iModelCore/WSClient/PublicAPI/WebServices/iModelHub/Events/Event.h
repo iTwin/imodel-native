@@ -62,7 +62,8 @@ namespace Event
         AllLocksDeletedEvent,
         AllCodesDeletedEvent,
         UnknownEventType,
-        VersionEvent
+        VersionEvent,
+        VersionModifiedEvent
         };
 
     /*--------------------------------------------------------------------------------------+
@@ -82,6 +83,7 @@ namespace Event
                     case EventType::AllLocksDeletedEvent:    return "AllLocksDeletedEvent";
                     case EventType::AllCodesDeletedEvent:    return "AllCodesDeletedEvent";
                     case EventType::VersionEvent:            return "VersionEvent";
+                    case EventType::VersionModifiedEvent:    return "VersionModifiedEvent";
                     case EventType::UnknownEventType:
                     default:                                 return "UnknownEventType";
                 }
@@ -103,6 +105,8 @@ namespace Event
                 return EventType::AllCodesDeletedEvent;
             if (0 == (BeStringUtilities::Stricmp("VersionEvent", eventName)))
                 return EventType::VersionEvent;
+            if (0 == (BeStringUtilities::Stricmp("VersionModifiedEvent", eventName)))
+                return EventType::VersionModifiedEvent;
         
             return EventType::UnknownEventType;
             }

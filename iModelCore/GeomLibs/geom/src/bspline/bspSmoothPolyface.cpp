@@ -1,6 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|     $Source: geom/src/bspline/bspSmoothPolyface.cpp $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -226,6 +228,63 @@ void vu_deletePairedEdges (VuSetP graph, VuMask mask)
     END_VU_SET_LOOP (sectorSeed, graph)
     vu_freeMarkedEdges (graph, deleteMask);
     vu_returnMask (graph, deleteMask);
+    }
+// (with absolute values)
+// accumulate dx into allSums
+// if dx > zeroTol AND dy < maxSlope * dx into strongSums
+void Accumulate(double dx, double dy, double zeroTol, double maxSlope, double maxDX, UsageSums &allSums, UsageSums &strongSums)
+    {
+    dx = fabs (dx);
+    dy = fabs (dy);
+    allSums.Accumulate (dx);
+    if (dx > zeroTol && dy < maxSlope * dx)
+        strongSums.Accumulate (dx);
+    }
+//  for each edge
+//    accumulate sums of all dx,dy
+//    accumualte sums of dx,dy for edges with (dy/dx) < slopeX or (dx/dy) < slopY projection greater than zeroDY,zeroDY
+//                and ignoring if larger than maxDX, maxDY
+void ComputeDirectionalPropertiesOfPolygons(bvector<bvector<DPoint2d>> &loops,
+    bool addClosure,
+    double zeroDX,
+    double zeroDY,
+    double maxDX,
+    double maxDY,
+    double slopeX,
+    double slopeY,
+    UsageSums &allXSums,
+    UsageSums &allYSums,
+    UsageSums &strongXSums,
+    UsageSums &strongYSums
+)
+    {
+    allXSums.ClearSums();
+    allYSums.ClearSums();
+    strongXSums.ClearSums();
+    strongYSums.ClearSums();
+    for (auto &loop : loops)
+        {
+        size_t n = loop.size ();
+        if (loop.size () > 1)
+            {
+            DPoint2d xy0 = loop.front ();
+            size_t i1 = 1;
+            if (addClosure)
+                {
+                xy0 = loop.back ();
+                i1 = 0;
+                }
+            for (size_t i = i1; i < n; i++)
+                {
+                DPoint2d xy1 = loop[i];
+                double dx = fabs (xy1.x - xy0.x);
+                double dy = fabs (xy1.y - xy0.y);
+                Accumulate (dx, dy, zeroDX, slopeX, maxDX, allXSums, strongXSums);
+                Accumulate(dy, dx, zeroDY, slopeY, maxDY, allYSums, strongYSums);
+                xy0 = xy1;
+                }
+            }
+        }
     }
 static VuSetP vu_createTriangulated
 (
@@ -537,18 +596,21 @@ void AddEvaluatedVuToPolyface (VuSetP graph, IPolyfaceConstructionR builder, MSB
     }
 
 static size_t s_minOnEdge = 4;
-static size_t s_maxOnEdge = 100;
+static size_t s_maxOnEdge = 400;
 static double s_smallDistanceFraction = 1.0e-6;
 void SetParameterStep (
     MSBsplineSurfaceCR surface,
     IFacetOptionsR options,
+    double meanEdgeLength,
+    double meanEdgeFactor,      // allow split edges up to this factor of meanEdgeLength
     bvector<double> length,
     bvector<double> turn,
     size_t &numEdge,
-    double &averageDistance
+    double &averageDistance,
+    double &totalDistance
     )
     {
-    double totalDistance = 0.0;
+    totalDistance = 0.0;
     numEdge = s_minOnEdge;
     for (size_t i = 0; i < length.size (); i++)
         totalDistance += length[i];
@@ -563,7 +625,16 @@ void SetParameterStep (
         if (num1 > numEdge)
             numEdge = num1;
         }
-
+    if (meanEdgeLength > 0.0)
+        {
+        double q;
+        if (DoubleOps::SafeDivide(q, totalDistance, meanEdgeLength * meanEdgeFactor, (double)s_maxOnEdge))
+            {
+            size_t num1 = (size_t)q;
+            if (num1 > numEdge)
+                numEdge = num1;
+            }
+        }
     if (numEdge > s_maxOnEdge)
         numEdge = s_maxOnEdge;
     averageDistance = totalDistance / length.size ();
@@ -617,9 +688,27 @@ void IPolyfaceConstruction::AddSmoothed (MSBsplineSurfaceCR surface)
                 vLength, vTurn);
     double xSize, ySize;    // parametric chord size
     double xLength, yLength;    // physical total length
+    double averageXBezierLength, averageYBezierLength;  // averages per bezier span
     size_t numXStep, numYStep;
-    SetParameterStep (surface, GetFacetOptionsR (), uLength, uTurn, numXStep, xLength);
-    SetParameterStep (surface, GetFacetOptionsR (), vLength, vTurn, numYStep, yLength);
+
+    static double s_meanEdgeFactor = 5.0;       // Keep mesh edges less than this factor time mean
+    // first round SetParameterStep gets length sums ...
+    SetParameterStep (surface, GetFacetOptionsR (), 0.0, s_meanEdgeFactor, uLength, uTurn, numXStep, averageXBezierLength, xLength);
+    SetParameterStep (surface, GetFacetOptionsR (), 0.0, s_meanEdgeFactor, vLength, vTurn, numYStep, averageYBezierLength, yLength);
+
+    UsageSums allX, allY, strongX, strongY;
+    static double s_zeroUV = 1.0e-7;
+    static double s_slopeLimit = 2.0;
+    double xSlopeLimit = s_slopeLimit * xLength / yLength;
+    double ySlopeLimit = s_slopeLimit * yLength / xLength;
+    double s_bigUV = 0.5;
+    ComputeDirectionalPropertiesOfPolygons(uvBoundaries, false, s_zeroUV, s_zeroUV, s_bigUV, s_bigUV, xSlopeLimit, ySlopeLimit, allX, allY, strongX, strongY);
+    double meanDX = strongX.Mean() * xLength;
+    double meanDY = strongY.Mean() * yLength;
+
+    SetParameterStep(surface, GetFacetOptionsR(), meanDX, s_meanEdgeFactor, uLength, uTurn, numXStep, averageXBezierLength, xLength);
+    SetParameterStep(surface, GetFacetOptionsR(), meanDY, s_meanEdgeFactor, vLength, vTurn, numYStep, averageYBezierLength, yLength);
+
     // ASSUME count and length are both nonzero ...
     // Adjust for approximate overall length to get simliar step in each direction ...
     double hx = xLength / numXStep;         // Apparent physical sizes in each direction.

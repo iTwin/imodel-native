@@ -66,11 +66,11 @@ static ICurvePrimitivePtr createArcBetweenLines (ICurvePrimitivePtr& firstLinePt
     DPoint3d const ellipseStart = firstLineEndPoint + v1 * lineOffset;
     DPoint3d const ellipseEnd = firstLineEndPoint + v2 * lineOffset;
 
-    BeAssert (firstLinePtr->TrySetEnd (ellipseStart) && "Should be able to set end points of a single segment line");
+    firstLinePtr->TrySetEnd (ellipseStart);
     if (BeNumerical::IsEqualToZero (pFirstLineSegment->Length()))
         firstLinePtr = nullptr;
 
-    BeAssert (secondLinePtr->TrySetStart (ellipseEnd) && "Should be able to set end points of a single segment line");
+    secondLinePtr->TrySetStart (ellipseEnd);
     if (BeNumerical::IsEqualToZero (pSecondLineSegment->Length()))
         secondLinePtr = nullptr;
 
@@ -1584,8 +1584,8 @@ IGeometryPtr ProfilesGeometry::CreateDoubleLShape (DoubleLShapeProfile const& do
         }
 
     Transform rightSideTransform, leftSideTransform;
-    BeAssert (rightSideTransform.InitFrom (rightSideMatrix));
-    BeAssert (leftSideTransform.InitFrom (leftSideMatrix));
+    rightSideTransform.InitFrom (rightSideMatrix);
+    leftSideTransform.InitFrom (leftSideMatrix);
 
     CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
     curveVector->Add (singleProfileGeometryPtr->Clone (rightSideTransform)->GetAsCurveVector());
@@ -1611,8 +1611,8 @@ IGeometryPtr ProfilesGeometry::CreateDoubleCShape (DoubleCShapeProfile const& do
     DMatrix4d leftSideMatrix = DMatrix4d::FromScaleAndTranslation (DPoint3d::From (-1.0, 1.0, 1.0), DPoint3d::From (-singleSideOffset, 0.0, 0.0));
 
     Transform rightSideTransform, leftSideTransform;
-    BeAssert (rightSideTransform.InitFrom (rightSideMatrix));
-    BeAssert (leftSideTransform.InitFrom (leftSideMatrix));
+    rightSideTransform.InitFrom (rightSideMatrix);
+    leftSideTransform.InitFrom (leftSideMatrix);
 
     CurveVectorPtr curveVector = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
     curveVector->Add (singleProfileGeometryPtr->Clone (rightSideTransform)->GetAsCurveVector());
@@ -1649,7 +1649,7 @@ IGeometryPtr ProfilesGeometry::CreateArbitraryCompositeShape (ArbitraryComposite
             }
 
         Transform transform;
-        BeAssert (transform.InitFrom (transformMatrix));
+        transform.InitFrom (transformMatrix);
 
         IGeometryPtr profileGeometryPtr = nullptr;
         if (updatedProfilePtr.IsValid() && updatedProfilePtr->GetElementId() == singleProfilePtr->GetElementId())
@@ -1685,7 +1685,7 @@ IGeometryPtr ProfilesGeometry::CreateDerivedShape (DerivedProfile const& profile
         }
 
     Transform transform;
-    BeAssert (transform.InitFrom (transformMatrix));
+    transform.InitFrom (transformMatrix);
 
     return baseProfile.GetShape()->Clone (transform);
     }

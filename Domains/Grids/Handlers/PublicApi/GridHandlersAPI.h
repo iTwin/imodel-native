@@ -13,3 +13,4 @@
 #include "PortionHandlers.h"
 #include "GridHandlers.h"
 #include "GridCurveBundleHandler.h"
+#include "GridLabelHandler.h"

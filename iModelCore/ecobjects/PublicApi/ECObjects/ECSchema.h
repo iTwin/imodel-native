@@ -900,7 +900,7 @@ private:
 protected:
     ArrayKind m_arrayKind;
 
-    ArrayECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_minOccurs(0), m_maxOccurs(UINT_MAX) { };
+    ArrayECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_minOccurs(0), m_maxOccurs(INT_MAX) { };
 
     ECObjectsStatus                     SetMinOccurs(Utf8StringCR minOccurs);
     ECObjectsStatus                     SetMaxOccurs(Utf8StringCR maxOccurs);
@@ -930,14 +930,16 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetMaxOccurs(uint32_t value);
 
     //! Gets the maximum number of array members.
-    uint32_t GetMaxOccurs() const {return /* m_maxOccurs; */ UINT_MAX;} // D-106653
+    //! defect 106653 https://tfs.bentley.com/tfs/ProductLine/Shared%20Components/_workitems?id=106653&_a=edit
+    //! defect 120202 https://bentleycs.visualstudio.com/iModelTechnologies/_workitems/edit/120202
+    uint32_t GetMaxOccurs() const {return /* m_maxOccurs; */ INT_MAX;}
 
     //! Because of a legacy bug GetMaxOccurs always returns "unbounded". For components that need to persist
     //! the ECSchema as is, GetStoredMaxOccurs can be called as a workaround until the max occurs issue has been resolved.
     uint32_t GetStoredMaxOccurs () const {return m_maxOccurs;}
 
     //! Indicates if the stored max occurs is unbound
-    bool IsStoredMaxOccursUnbounded() const { return m_maxOccurs == UINT_MAX; }
+    bool IsStoredMaxOccursUnbounded() const { return m_maxOccurs == INT_MAX; }
    };
 
 //=======================================================================================

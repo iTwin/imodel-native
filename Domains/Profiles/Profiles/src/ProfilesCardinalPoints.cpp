@@ -80,8 +80,8 @@ static DgnDbStatus setCardinalPoint (Profile& profile, CardinalPoint const& card
 
     StandaloneECInstancePtr instancePtr = enablerPtr->CreateInstance();
 
-    BeAssert (instancePtr->SetValue (PRF_PROP_CardinalPoint_Name, ECValue (cardinalPoint.name.c_str())) == ECObjectsStatus::Success);
-    BeAssert (instancePtr->SetValue (PRF_PROP_CardinalPoint_Location, ECValue (cardinalPoint.location)) == ECObjectsStatus::Success);
+    instancePtr->SetValue (PRF_PROP_CardinalPoint_Name, ECValue (cardinalPoint.name.c_str()));
+    instancePtr->SetValue (PRF_PROP_CardinalPoint_Location, ECValue (cardinalPoint.location));
 
     ECValue arrayValue;
     arrayValue.SetStruct (instancePtr.get());
@@ -122,7 +122,7 @@ static DgnDbStatus findCardinalPointECValue (Profile const& profile, Utf8String 
             return status;
 
         ECValue propertyValue;
-        BeAssert (structValue.GetStruct()->GetValue (propertyValue, PRF_PROP_CardinalPoint_Name) == ECObjectsStatus::Success);
+        structValue.GetStruct()->GetValue (propertyValue, PRF_PROP_CardinalPoint_Name);
 
         if (name.Equals (propertyValue.GetUtf8CP()))
             {
@@ -146,10 +146,10 @@ static CardinalPoint cardinalPointFromECValue (ECValue const& ecValue)
     CardinalPoint cardinalPoint;
     ECValue propertyValue;
 
-    BeAssert (ecValue.GetStruct()->GetValue (propertyValue, PRF_PROP_CardinalPoint_Name) == ECObjectsStatus::Success);
+    ecValue.GetStruct()->GetValue (propertyValue, PRF_PROP_CardinalPoint_Name);
     cardinalPoint.name = propertyValue.GetUtf8CP();
 
-    BeAssert (ecValue.GetStruct()->GetValue (propertyValue, PRF_PROP_CardinalPoint_Location) == ECObjectsStatus::Success);
+    ecValue.GetStruct()->GetValue (propertyValue, PRF_PROP_CardinalPoint_Location);
     cardinalPoint.location = propertyValue.GetPoint2d();
 
     return cardinalPoint;

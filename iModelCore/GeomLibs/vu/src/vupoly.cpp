@@ -8,6 +8,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 #ifndef VU_NULL_MASK
 #define VU_NULL_MASK 0
 #endif
+DRange3d RangeWithDisconnects(DPoint3dCP points, size_t n);
 
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -230,6 +231,11 @@ bool                addVerticesAtCrossings
     static double s_relTol = 1.0e-9;
     vu_setTol (graphP, s_absTol, s_relTol);
     jmdlEmbeddedIntArray_empty (pIndices);
+
+    static double s_shortEdgeToleranceFactor = 1.0e-8;
+    DRange3d range = RangeWithDisconnects(pPoints, numPoint);
+    xyTolerance = DoubleOps::MaxAbs (xyTolerance, s_shortEdgeToleranceFactor * range.low.Distance(range.high));
+
 
     if (pXYZOut)
         {
