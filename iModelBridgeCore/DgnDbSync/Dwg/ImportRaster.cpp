@@ -44,13 +44,12 @@ bool            DwgRasterImageExt::GetExistingModel (ResolvedModelMapping& model
 
         // search the syncInfo
         modelMap = m_importer->GetModelFromSyncInfo (rasterId, *dwg, searchTrans);
-        if (modelMap.IsValid() && modelMap.GetModel() != nullptr && modelMap.GetMapping().GetSourceType() == DwgSyncInfo::ModelSourceType::RasterAttachment)
+        if (modelMap.IsValid() && modelMap.GetModel() != nullptr && modelMap.GetModelAspect().GetSourceType() == DwgSourceAspects::ModelAspect::SourceType::RasterAttachment)
             {
             if (searchByOldTrans)
                 {
                 // update model map with the new transform
                 modelMap.SetTransform (toDgn);
-                modelMap.GetMapping().Update (m_importer->GetDgnDb());
                 }
             return  true;
             }
@@ -58,7 +57,7 @@ bool            DwgRasterImageExt::GetExistingModel (ResolvedModelMapping& model
         }
 
     // see if this model has already been created
-    modelMap = m_importer->FindModel (rasterId, toDgn, DwgSyncInfo::ModelSourceType::RasterAttachment);
+    modelMap = m_importer->FindModel (rasterId, toDgn, DwgSourceAspects::ModelAspect::SourceType::RasterAttachment);
 
     return  modelMap.IsValid() && modelMap.GetModel() != nullptr;
     }
@@ -278,18 +277,17 @@ BentleyStatus   DwgRasterImageExt::CreateRasterModel (BeFileNameCR rasterFilenam
     Transform   toDgn = m_toBimContext->GetTransform();
 
     // add the model to the sync info:
-    DwgSyncInfo::DwgModelMapping   mapping;
-    auto    rc = m_importer->GetSyncInfo().InsertModel (mapping, model->GetModelId(), *m_dwgRaster, toDgn);
-    if (rc != BSISUCCESS)
+    auto aspect = m_importer->GetSourceAspects().AddModelAspect (*model, *m_dwgRaster, toDgn);
+    if (!aspect.IsValid())
         {
-        BeAssert (false && "Raster model cannot be inserted into DwgSync DB!");
-        return BSIERROR;
+        BeAssert (false && "Failed adding an ExternalSourceAspect to a raster model");
+        return  BSIERROR;
         }
 
     if (LOG_MODEL_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
-        LOG_MODEL.tracev("+ %s %d -> %s %d", mapping.GetDwgName().c_str(), mapping.GetDwgModelId().GetValue(), model->GetName().c_str(), model->GetModelId().GetValue());
+        LOG_MODEL.tracev("+ %s %lls -> %s %d", aspect.GetDwgModelName().c_str(), aspect.GetDwgModelHandle().AsAscii().c_str(), model->GetName().c_str(), model->GetModelId().GetValue());
 
-    ResolvedModelMapping   modelMap(rasterId, model, mapping);
+    ResolvedModelMapping   modelMap(rasterId, model, aspect);
 
     // save the model info in our list of known model mappings.
     m_importer->AddToDwgModelMap (modelMap);

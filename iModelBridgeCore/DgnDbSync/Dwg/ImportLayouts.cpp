@@ -331,7 +331,7 @@ BentleyStatus   DwgImporter::_ImportLayouts ()
         // get the model ID
         DwgDbObjectId   modelId = entry.GetModelInstanceId ();
         // skip all models expcept for paperspaces:
-        if (modelspaceId == modelId || entry.GetMapping().GetSourceType() != DwgSyncInfo::ModelSourceType::PaperSpace)
+        if (modelspaceId == modelId || entry.GetModelAspect().GetSourceType() != DwgSourceAspects::ModelAspect::SourceType::PaperSpace)
             continue;
 
         DwgDbBlockTableRecordPtr    block(modelId, DwgDbOpenMode::ForRead);
@@ -363,7 +363,7 @@ BentleyStatus   DwgImporter::_ImportLayouts ()
                     DwgDbObjectIdArray  ids;
                     DwgDbLayoutPtr  layout (block->GetLayoutId(), DwgDbOpenMode::ForRead);
                     if (layout.OpenStatus() == DwgDbStatus::Success && layout->GetViewports(ids) > 0)
-                        changeDetector._OnViewSeen (*this, this->GetSyncInfo().FindView(ids.front(), DwgSyncInfo::View::Type::PaperspaceViewport));
+                        changeDetector._OnViewSeen (*this, this->GetSourceAspects().FindView(ids.front(), DwgSourceAspects::ViewAspect::SourceType::PaperSpaceViewport));
                     continue;
                     }
                 }

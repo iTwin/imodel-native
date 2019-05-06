@@ -6,7 +6,6 @@
 #include "DwgDbInternal.h"
 
 #define     DWGDB_FILEIDPOLICY_KEY          L"FILEIDPOLICY"
-#define     DWGDB_FILEIDPOLICY_FORMAT       "%I32u+%I32u"
 #define     DWGDB_REPOSITORYLINK_KEY        L"REPOSITORYLINKID"
 
 USING_NAMESPACE_DWGDB
@@ -210,16 +209,16 @@ DwgString       DwgDbDatabase::GetFileName () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbStatus     DwgDbDatabase::SetFileIdPolicy (uint32_t id, uint32_t policy)
+DwgDbStatus     DwgDbDatabase::SetFileIdPolicy (uint32_t policy)
     {
-    char    keynvalue[248];
-    ::sprintf (keynvalue, DWGDB_FILEIDPOLICY_FORMAT, id, policy);
+    char    value[248];
+    ::sprintf (value, "%I32u", policy);
 
 #ifdef DWGTOOLKIT_OpenDwg
     OdDbDatabaseSummaryInfoPtr  summaryInfo = oddbGetSummaryInfo (this);
     if (!summaryInfo.isNull())
         {
-        summaryInfo->setCustomSummaryInfo (DWGDB_FILEIDPOLICY_KEY, OdString(keynvalue));
+        summaryInfo->setCustomSummaryInfo (DWGDB_FILEIDPOLICY_KEY, OdString(value));
 
         oddbPutSummaryInfo (summaryInfo);
 
@@ -230,10 +229,10 @@ DwgDbStatus     DwgDbDatabase::SetFileIdPolicy (uint32_t id, uint32_t policy)
     AcDbDatabaseSummaryInfo*    summaryInfo = nullptr;
     if (Acad::eOk == acdbGetSummaryInfo(this, summaryInfo) && nullptr != summaryInfo)
         {
-        AcString                idAndPolicy(keynvalue);
-        Acad::ErrorStatus       es = summaryInfo->setCustomSummaryInfo (DWGDB_FILEIDPOLICY_KEY, idAndPolicy.kwszPtr());
+        AcString                idPolicy(value);
+        Acad::ErrorStatus       es = summaryInfo->setCustomSummaryInfo (DWGDB_FILEIDPOLICY_KEY, idPolicy.kwszPtr());
         if (Acad::eKeyNotFound == es)
-            es = summaryInfo->addCustomSummaryInfo (DWGDB_FILEIDPOLICY_KEY, idAndPolicy.kwszPtr());
+            es = summaryInfo->addCustomSummaryInfo (DWGDB_FILEIDPOLICY_KEY, idPolicy.kwszPtr());
         
         if (Acad::eOk == es)
             es = acdbPutSummaryInfo (summaryInfo);
@@ -250,9 +249,9 @@ DwgDbStatus     DwgDbDatabase::SetFileIdPolicy (uint32_t id, uint32_t policy)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbStatus     DwgDbDatabase::GetFileIdPolicy (uint32_t& id, uint32_t& policy)
+DwgDbStatus     DwgDbDatabase::GetFileIdPolicy (uint32_t& idPolicy)
     {
-    id = policy = 0;
+    idPolicy = 0;
 
 #ifdef DWGTOOLKIT_OpenDwg
     OdDbDatabaseSummaryInfoPtr  summaryInfo = oddbGetSummaryInfo (this);
@@ -261,7 +260,7 @@ DwgDbStatus     DwgDbDatabase::GetFileIdPolicy (uint32_t& id, uint32_t& policy)
         OdString    value;
         if (summaryInfo->getCustomSummaryInfo(DWGDB_FILEIDPOLICY_KEY, value) && !value.isEmpty())
             {
-            ::sscanf (static_cast<const char*>(value), DWGDB_FILEIDPOLICY_FORMAT, &id, &policy);
+            ::sscanf (static_cast<const char*>(value), "%I32u", &idPolicy);
 
             return  DwgDbStatus::Success;
             }
@@ -278,10 +277,10 @@ DwgDbStatus     DwgDbDatabase::GetFileIdPolicy (uint32_t& id, uint32_t& policy)
             {
             AcString    str(value);
 #if VendorVersion < 2017
-            ::sscanf (str.kszPtr(), DWGDB_FILEIDPOLICY_FORMAT, &id, &policy);
+            ::sscanf (str.kszPtr(), "%I32u", &idPolicy);
 #else
-            if (::sscanf(str.utf8Ptr(), DWGDB_FILEIDPOLICY_FORMAT, &id, &policy) != 2)
-                id = policy = 0;
+            if (::sscanf(str.utf8Ptr(), "%I32u", &idPolicy) != 1)
+                idPolicy = 0;
 #endif
             }
         

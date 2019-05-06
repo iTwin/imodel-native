@@ -7,7 +7,7 @@
 
 #if defined(_MSC_VER) && defined(DWGTOOLKIT_RealDwg)
 // RealDWG uses MFC which requires afx headers to be included first!
-#ifndef UNITCODE
+#ifndef UNICODE
     #define     UNICODE
 #endif
 #ifndef _AFXDLL
@@ -53,7 +53,6 @@ protected:
     DWG_EXPORT void           _OnCloseBim (BentleyStatus, iModelBridge::ClosePurpose purpose) override;
     DWG_EXPORT BentleyStatus  _OpenSource () override;
     DWG_EXPORT void           _CloseSource (BentleyStatus,iModelBridge::ClosePurpose) override;
-    DWG_EXPORT void           _DeleteSyncInfo () override;
     DWG_EXPORT BentleyStatus  _DetectDeletedDocuments() override;
     DWG_EXPORT void           _PrintUsage () override;
     iModelBridge::Params&     _GetParams () override { return m_options; }
@@ -69,7 +68,6 @@ private:
     BentleyStatus   GetLogConfigurationFilename (BeFileNameR configFile, WCharCP argv0);
     BentleyStatus   GetEnv (BeFileName& fn, WCharCP envname);
     void    GetImportConfiguration (BeFileNameR instanceFilePath, BeFileNameCR configurationPath, WCharCP argv0);
-    void    CreateSyncInfoIfAbsent ();
 };  // DwgBridge
 
 END_DWG_NAMESPACE

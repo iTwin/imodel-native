@@ -857,7 +857,7 @@ BentleyStatus   DwgImporter::_ImportMaterial (DwgDbMaterialPtr& dwgMaterial, Utf
 
     if (status == BSISUCCESS)
         {
-        this->GetSyncInfo().InsertMaterial (dgnMaterialId, *dwgMaterial.get());
+        this->GetSourceAspects().AddOrUpdateMaterialAspect (dgnMaterialId, *dwgMaterial.get());
         m_importedMaterials.insert (T_DwgRenderMaterialId(dwgMaterial->GetObjectId(), dgnMaterialId));
         }
     
@@ -923,23 +923,29 @@ BentleyStatus   DwgImporter::_ImportMaterialSection ()
 
         if (this->IsUpdating())
             {
-            DwgSyncInfo::Material   oldMaterial;
-            if (m_syncInfo.FindMaterial(oldMaterial, material->GetObjectId()))
+            auto aspect = this->GetSourceAspects().FindMaterialAspect(material->GetObjectId());
+            if (aspect.IsValid())
                 {
                 // update material & syncInfo as needed
-                this->_OnUpdateMaterial (oldMaterial, material);
+                this->_OnUpdateMaterial (aspect, material);
                 // add to processed material list
-                m_importedMaterials.insert (T_DwgRenderMaterialId(material->GetObjectId(), oldMaterial.m_id));
+                m_importedMaterials.insert (T_DwgRenderMaterialId(material->GetObjectId(), aspect.GetRenderMaterialId()));
                 continue;
                 }
             }
 
-        // if found the material in db, use it (i.e. share with other apps)
+        // if found the material in db, update it (i.e. share with other apps)
         auto dgnMaterialId = RenderMaterial::QueryMaterialId (*model, materialName);
         if (dgnMaterialId.IsValid())
             {
-            this->GetSyncInfo().InsertMaterial (dgnMaterialId, *material.get());
+            auto element = this->GetDgnDb().Elements().GetForEdit<RenderMaterial>(dgnMaterialId);
+            if (element.IsValid())
+                {
+                MaterialFactory factory(*this, material, paletteName, materialName);
+                factory.Update (*element.get());
+                }
             m_importedMaterials.insert (T_DwgRenderMaterialId(material->GetObjectId(), dgnMaterialId));
+            // Do not add an ExternalSourceAspect - we do not own this material!
             continue;
             }
 
@@ -989,9 +995,9 @@ void            DwgImporter::AddDgnMaterialTexture (Utf8StringCR fileName, DgnTe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::_OnUpdateMaterial (DwgSyncInfo::Material const& syncMaterial, DwgDbMaterialPtr& dwgMaterial)
+BentleyStatus   DwgImporter::_OnUpdateMaterial (DwgSourceAspects::MaterialAspectCR oldAspect, DwgDbMaterialPtr& dwgMaterial)
     {
-    if (!syncMaterial.IsValid() || dwgMaterial.IsNull())
+    if (!oldAspect.IsValid() || dwgMaterial.IsNull())
         return  BSIERROR;
 
     DwgDbDatabasePtr    dwg = dwgMaterial->GetDatabase ();
@@ -1001,25 +1007,29 @@ BentleyStatus   DwgImporter::_OnUpdateMaterial (DwgSyncInfo::Material const& syn
     if (this->_GetChangeDetector()._ShouldSkipFile(*this, *dwg.get()))
         return  BSISUCCESS;
         
-    DwgSyncInfo::Material   newSyncMaterial(syncMaterial.m_id, DwgSyncInfo::DwgFileId::GetFrom(*dwg), this->GetCurrentIdPolicy(), *dwgMaterial.get());
-    if (!newSyncMaterial.IsValid())
-        return  BSIERROR;
-
-    if (newSyncMaterial.IsSame(syncMaterial))
+    Utf8String  newName(dwgMaterial->GetName().c_str());
+    auto        newProv = DwgSourceAspects::MaterialAspect::CreateProvenance(*dwgMaterial, *this);
+    if (oldAspect.IsSameMaterial(newProv, newName))
         return  BSISUCCESS;
 
     RenderMaterialPtr  newElement;
-    RenderMaterialCPtr oldElement = RenderMaterial::Get (this->GetDgnDb(), syncMaterial.m_id);
+    RenderMaterialCPtr oldElement = RenderMaterial::Get (this->GetDgnDb(), oldAspect.GetRenderMaterialId());
     if (!oldElement.IsValid() || !(newElement = oldElement->MakeCopy<RenderMaterial>()).IsValid())
         return  BSIERROR;
 
     // re-create the material and update BIM:
-    MaterialFactory factory (*this, dwgMaterial, oldElement->GetPaletteName(), newSyncMaterial.m_name);
+    MaterialFactory factory (*this, dwgMaterial, oldElement->GetPaletteName(), newName);
     BentleyStatus   status = factory.Update (*newElement.get());
 
     // update syncInfo
     if (BSISUCCESS == status)
-        status = m_syncInfo.UpdateMaterial (newSyncMaterial);
+        {
+        auto writeAspect = DwgSourceAspects::MaterialAspect::GetForEdit(*newElement);
+        if (writeAspect.IsValid())
+            writeAspect.Update(newProv, newName);
+        else
+            status = BSIERROR;
+        }
 
     return  status;
     }

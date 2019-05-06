@@ -22,7 +22,7 @@ Welcome to the DwgImporter API from <a href="http://www.bentley.com/">Bentley Sy
 
 These are the main classes and namespaces for the API references:
 - @ref BentleyApi::Dwg::DwgImporter
-- @ref BentleyApi::Dwg::DwgSyncInfo
+- @ref BentleyApi::Dwg::DwgSourceAspects
 - @ref BentleyApi::Dwg::DwgBridge
 - @ref BentleyApi::Dwg::DwgHelper
 - @ref BentleyApi::DwgDb

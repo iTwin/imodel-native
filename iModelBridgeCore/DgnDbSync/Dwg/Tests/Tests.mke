@@ -67,8 +67,6 @@ $(o)ImportConfigEditor.obj          : $(BEGTEST_INPUT)ImportConfigEditor.cpp    
 
 $(o)DwgFileEditor.obj               : $(BEGTEST_INPUT)DwgFileEditor.cpp             $(TestsHeaders) ${MultiCompileDepends}
 
-$(o)SyncInfoReader.obj              : $(BEGTEST_INPUT)SyncInfoReader.cpp            $(TestsHeaders) ${MultiCompileDepends}
-
 %include MultiCppCompileGo.mki
 
 %undef CPchOpts

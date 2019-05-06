@@ -52,8 +52,8 @@ public:
     DWGDB_EXPORT DwgDbDatabase(bool buildDefaultDrawing = true, bool noDocument = false) : AcDbDatabase (buildDefaultDrawing, noDocument) {}
 #endif
 
-    DWGDB_EXPORT DwgDbStatus        GetFileIdPolicy (uint32_t& id, uint32_t& policy);
-    DWGDB_EXPORT DwgDbStatus        SetFileIdPolicy (uint32_t id, uint32_t policy);
+    DWGDB_EXPORT DwgDbStatus        GetFileIdPolicy (uint32_t& policy);
+    DWGDB_EXPORT DwgDbStatus        SetFileIdPolicy (uint32_t policy);
     DWGDB_EXPORT DwgDbStatus        GetRepositoryLinkId (uint64_t& linkId);
     DWGDB_EXPORT DwgDbStatus        SetRepositoryLinkId (uint64_t linkId);
     DWGDB_EXPORT DwgDbObjectId      GetModelspaceId ();

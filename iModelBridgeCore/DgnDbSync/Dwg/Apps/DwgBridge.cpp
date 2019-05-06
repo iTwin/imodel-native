@@ -184,12 +184,11 @@ BentleyStatus   DwgBridge::_OnOpenBim (DgnDbR bim)
     {
     // instantiate a new importer to begin a new job
     m_importer.reset (this->_CreateDwgImporter());
+    if (m_importer == nullptr)
+        return  BentleyStatus::BSIERROR;
     // will save elements into target BIM
     m_importer->SetDgnDb (bim);
-    // boostrap importer with required syncInfo file
-    this->CreateSyncInfoIfAbsent ();
-    // attach syncInfo to importer
-    return  m_importer->AttachSyncInfo ();
+    return  BentleyStatus::BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -272,30 +271,6 @@ Dgn::SubjectCPtr DwgBridge::_FindJob ()
         return  &m_importer->GetImportJob().GetSubject ();
 
     return  nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DwgBridge::CreateSyncInfoIfAbsent ()
-    {
-    //  If I am creating a new local file or if I just acquired a briefcase for an existing repository, then I will have to bootstrap syncinfo.
-    if (!DwgSyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()).DoesPathExist())
-        {
-        // Bootstrap the DWG importer by pairing an empty syncinfo file with the briefcase
-        DwgSyncInfo::CreateEmptyFile (DwgSyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()));
-        }
-
-    BeAssert (DwgSyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()).DoesPathExist() && "syncInfo file not exists!");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DwgBridge::_DeleteSyncInfo ()
-    {
-    // force deleting the syncInfo
-    DwgSyncInfo::GetDbFileName(_GetParams().GetBriefcaseName()).BeDeleteFile ();
     }
 
 /*---------------------------------------------------------------------------------**//**

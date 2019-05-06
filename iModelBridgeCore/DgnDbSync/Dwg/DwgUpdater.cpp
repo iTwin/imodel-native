@@ -23,26 +23,12 @@ void    DwgImporter::_SetChangeDetector (bool updating)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedImportJob DwgImporter::GetResolvedImportJob (DwgSyncInfo::ImportJob const& importJob)
-    {
-    auto jobSubject = GetDgnDb().Elements().Get<Subject>(importJob.GetSubjectId());
-    if (jobSubject.IsValid())
-        return ResolvedImportJob (importJob, *jobSubject);
-    return ResolvedImportJob();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 void UpdaterChangeDetector::_Prepare (DwgImporter& importer)
     {
-    m_byIdIter   = new DwgSyncInfo::ByDwgObjectIdIter (importer.GetDgnDb());
-    m_byHashIter = new DwgSyncInfo::ByHashIter (importer.GetDgnDb());
-
 #ifdef DEBUG_CHECKENTITY
-    DwgSyncInfo::ElementIterator  all(importer.GetDgnDb(), nullptr);
+    DwgSourceAspects::ObjectAspectIterator  all(importer.GetDgnDb(), nullptr);
     for (auto el = all.begin(); el != all.end(); ++el)
-        LOG_ENTITY.debugv("Seen elementId=%lld, entityId=%lld[%x], syncModelId=%d", el.GetElementId(), el.GetDwgObjectId(), el.GetDwgObjectId(), el.GetDwgModelSyncInfoId().GetValue());
+        LOG_ENTITY.debugv("Seen elementId=%lld, entityId=%lld[%x], syncModelId=%d", el.GetElementId(), el.GetObjectHandle().AsUInt64(), el.GetObjectHandle().AsUInt64(), el.GetModelId().GetValue());
 #endif  // DEBUG_CHECKENTITY
     }
 
@@ -52,8 +38,6 @@ void UpdaterChangeDetector::_Prepare (DwgImporter& importer)
 void UpdaterChangeDetector::_Cleanup (DwgImporter& importer)
     {
     // release memory
-    DELETE_AND_CLEAR (m_byHashIter);
-    DELETE_AND_CLEAR (m_byIdIter);
     m_elementsSeen.clear();
     m_dwgModelsSeen.clear ();
     m_viewsSeen.clear ();
@@ -69,9 +53,6 @@ void UpdaterChangeDetector::_Cleanup (DwgImporter& importer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 UpdaterChangeDetector::~UpdaterChangeDetector ()
     {
-    // ensure that we release the statements held by the "Iter" member variables, in case of abort.
-    DELETE_AND_CLEAR (m_byHashIter);
-    DELETE_AND_CLEAR (m_byIdIter);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -87,14 +68,10 @@ void DwgImporter::CheckSameRootModelAndUnits ()
         }
 
     // Note: FindModelInDwgSyncInfo will fail if m_rootTrans (i.e., units scaling) is different from what it was at create time.
-    DwgSyncInfo::DwgModelMapping    modelInfo;
-    Transform                       trans = GetRootTransform ();
-    if (BSISUCCESS != this->GetSyncInfo().FindModel(&modelInfo, modelspace->GetObjectId(), &trans) || 
-        modelInfo.GetDwgModelSyncInfoId() != this->GetImportJob().GetDwgModelSyncInfoId())
-        {
-        ReportSyncInfoIssue (IssueSeverity::Fatal, IssueCategory::Sync(), Issue::RootModelChanged(), "");
-        OnFatalError ();
-        }
+    Transform   trans = GetRootTransform ();
+    auto modelAspect = this->GetSourceAspects().FindModelAspect(modelspace->GetObjectId(), GetDwgDb(), trans);
+    if (!modelAspect.IsValid())
+        OnFatalError (IssueCategory::Sync(), Issue::RootModelChanged(), "maybe different units?");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -189,8 +166,12 @@ BentleyStatus   DwgImporter::_OnUpdateLineType (DgnStyleId& id, DwgDbLinetypeTab
         el->SetName (name.c_str());
         if (!el->Update().IsValid())
             return  BSIERROR;
-        // update the mapping in SyncInfo:
-        return m_syncInfo.UpdateLinetype (id, linetype);
+        // also update the aspect
+        auto writeAspect = DwgSourceAspects::LinetypeAspect::GetForEdit(*el);
+        if (writeAspect.IsValid())
+            writeAspect.Update(name);
+        else
+            return  BSIERROR;
         }
 
     return  BSISUCCESS;
@@ -199,11 +180,21 @@ BentleyStatus   DwgImporter::_OnUpdateLineType (DgnStyleId& id, DwgDbLinetypeTab
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    CreatorChangeDetector::_IsElementChanged (DetectionResults& results, DwgImporter& importer, DwgDbObjectCR obj, ResolvedModelMapping const& modelMap, T_DwgSyncInfoElementFilter* filter)
+bool    CreatorChangeDetector::_IsElementChanged (DetectionResults& results, DwgImporter& importer, DwgDbObjectCR obj, ResolvedModelMapping const& modelMap, DwgSourceAspects::T_ObjectAspectFilter* filter)
     {
     // will always insert the new element
-    DwgSyncInfo::DwgObjectProvenance    newProv(obj, importer.GetSyncInfo(), importer.GetCurrentIdPolicy(), importer.GetOptions().GetSyncBlockChanges());
-    results.SetObjectProvenance (newProv);
+    DwgSourceAspects::ObjectProvenance  newProv(obj, importer);
+    results.SetCurrentProvenance (newProv);
+    results.SetChangeType (ChangeType::Insert);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CreatorChangeDetector::_IsElementChanged (DetectionResults& results, DwgImporter& importer, DwgDbHandleCR handle, DgnModelCR model, DwgSourceAspects::T_ObjectAspectFilter* filter)
+    {
+    // will always insert the new element
     results.SetChangeType (ChangeType::Insert);
     return true;
     }
@@ -242,73 +233,73 @@ bool    UpdaterChangeDetector::IsUpdateRequired (DetectionResults& results, DwgI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    UpdaterChangeDetector::_IsElementChanged (DetectionResults& results, DwgImporter& importer, DwgDbObjectCR obj, ResolvedModelMapping const& modelMap, T_DwgSyncInfoElementFilter* filter)
+bool    UpdaterChangeDetector::_IsElementChanged (DetectionResults& results, DwgImporter& importer, DwgDbObjectCR obj, ResolvedModelMappingCR modelMap, DwgSourceAspects::T_ObjectAspectFilter* filter)
     {
-    DwgSyncInfo::DwgObjectProvenance    newProv(obj, importer.GetSyncInfo(), importer.GetCurrentIdPolicy(), importer.GetOptions().GetSyncBlockChanges());
-    results.SetObjectProvenance (newProv);
+    DgnModelCP  model = modelMap.GetModel();
+    if (model == nullptr)
+        {
+        BeAssert(false && "Null target model, likely an unintialized modelMap!");
+        return  false;
+        }
+    auto objHandle = obj.GetObjectId().GetHandle ();
+
+    DwgSourceAspects::ObjectProvenance  newProv(obj, importer);
+    results.SetCurrentProvenance (newProv);
 
 #ifdef DEBUG_CHECKENTITY
-    uint64_t    entityId = obj.GetObjectId().ToUInt64 ();
+    uint64_t    entityId = objHandle.AsUInt64();
     DwgString   name = obj.GetDxfName ();
-    DwgSyncInfo::DwgModelSyncInfoId modelSyncId = modelMap.GetModelSyncInfoId ();
-    LOG_ENTITY.debugv ("checking entity[%ls]: %lld[%llx] in model %lld[%s]", name.c_str(), entityId, entityId, modelSyncId.GetValue(), modelMap.GetMapping().GetDwgName().c_str());
+    LOG_ENTITY.debugv ("checking entity[%ls]: %lld[%llx] in model %lld[%s]", name.c_str(), entityId, entityId, model->GetModelId().GetValue(), modelMap.GetModelAspect().GetDwgModelName().c_str());
 #endif
 
-    DwgSyncInfo::ElementIterator*       iter = nullptr;
-    if (importer.GetCurrentIdPolicy() == StableIdPolicy::ById)
-        {
-        iter = m_byIdIter;
-        m_byIdIter->Bind (modelMap.GetModelSyncInfoId(), obj.GetObjectId().ToUInt64());
-        }
-    else
-        {
-        iter = m_byHashIter;
-        m_byHashIter->Bind (modelMap.GetModelSyncInfoId(), newProv.GetPrimaryHash(), newProv.GetSecondaryHash());
-        }
-
-    auto found = iter->begin();
-    if (nullptr != filter)
-        {
-        // filter supplied, try it
-        while ((found != iter->end()) && !(*filter)(found, importer))
-            ++found;
-        }
-    if (found == iter->end())
-        {
-        // we never saw this entity before, treat it as a new entity. 
-        // or maybe it was previously discarded (DwgSyncInfo::WasElementDiscarded). Even so, give the converter another shot at it. Maybe it will convert it this time.
-        results.SetChangeType (ChangeType::Insert);
-        iter->GetStatement()->Reset();  // NB: don't leave the iterator in an active state!
-        return  true;
-        }
-
-    // This entity was previously mapped to at least one element in the BIM. See if the entity has changed.
-    DwgSyncInfo::DwgObjectProvenance    oldProv = found.GetProvenance ();
-
-    results.SetChangeType (newProv.IsSame(oldProv) ? ChangeType::None : ChangeType::Update);
-    results.SetObjectMapping (found.GetObjectMapping());
-
-    iter->GetStatement()->Reset (); // NB: don't leave the iterator in an active state!
+    auto changed = this->_IsElementChanged(results, importer, objHandle, *model, filter);
 
 #ifdef DUMPHASH
     if (LOG_ENTITY_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
         {
-        Utf8String  oldHash, newHash;
-        oldProv.m_primaryHash.AsHexString (oldHash);
-        newProv.m_primaryHash.AsHexString (newHash);
-        LOG_ENTITY.tracev("Primary hash %s ? %s for entity %ls[%lld]", oldHash.c_str(), newHash.c_str(), obj.GetClassName().c_str(), obj.GetObjectId().ToUInt64());
-
-        if (hashBlocks)
-            {
-            oldProv.m_secondaryHash.AsHexString (oldHash);
-            newProv.m_secondaryHash.AsHexString (newHash);
-            LOG_ENTITY.tracev("Secondary hash %s ? %s", oldHash.c_str(), newHash.c_str(), obj.GetClassName().c_str(), obj.GetObjectId().ToUInt64());
-            }
+        Utf8String  oldHash = results.GetObjectAspect().GetHashString ();
+        Utf8String  newHash;
+        newProv.GetHash().AsHexString (newHash);
+        LOG_ENTITY.tracev("Hash %s ? %s for entity %ls[%lld]", oldHash.c_str(), newHash.c_str(), obj.GetDwgClassName().c_str(), obj.GetObjectId().ToUInt64());
         }
 #endif
 
     if (this->IsUpdateRequired(results, importer, obj))
         results.SetChangeType (ChangeType::Update);
+
+    return  changed;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UpdaterChangeDetector::_IsElementChanged (DetectionResults& results, DwgImporter& importer, DwgDbHandleCR sourceHandle, DgnModelCR model, DwgSourceAspects::T_ObjectAspectFilter* filter)
+    {
+    auto newProv = results.GetCurrentProvenance();
+    if (newProv.IsNull())
+        {
+        LOG_ENTITY.debugv ("Caller must call DetectionResults::SetCurrentProvenance before detecting changes!");
+        return  false;
+        }
+
+    DwgSourceAspects::ObjectAspect  aspect;
+    if (importer.GetCurrentIdPolicy() == StableIdPolicy::ById)
+        aspect = importer.GetSourceAspects().FindObjectAspect (sourceHandle, model, filter);
+    else
+        aspect = importer.GetSourceAspects().FindObjectAspect (newProv, model, filter);
+
+    if (!aspect.IsValid())
+        {
+        // we never saw this entity before, treat it as a new entity. 
+        // or maybe it was previously discarded (DwgSyncInfo::WasElementDiscarded). Even so, give the converter another shot at it. Maybe it will convert it this time.
+        results.SetChangeType (ChangeType::Insert);
+        return  true;
+        }
+
+    // This entity was previously mapped to at least one element in the BIM. See if the entity has changed.
+    bool isSame = aspect.IsProvenanceEqual(newProv);
+    results.SetChangeType (isSame ? ChangeType::None : ChangeType::Update);
+    results.SetObjectAspect (aspect);
 
     // if new & old don't match, we will have to either import anew or update it:
     return (results.GetChangeType() != ChangeType::None);
@@ -317,9 +308,11 @@ bool    UpdaterChangeDetector::_IsElementChanged (DetectionResults& results, Dwg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElementId existingElementId)
+DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DwgSourceAspects::ObjectAspect::SourceDataCR source)
     {
-    if (!results.m_importedElement.IsValid() || !existingElementId.IsValid())
+    auto importedElement = results.GetImportedElement();
+    auto existingElementId = results.GetExistingElementId();
+    if (importedElement == nullptr || !existingElementId.IsValid())
         {
         BeAssert(false && L"invalid element imported!");
         return DgnDbStatus::BadArg;
@@ -332,10 +325,10 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElemen
         return DgnDbStatus::BadArg;
         }
 
-    if (existingEl->GetElementClassId() != results.m_importedElement->GetElementClassId())
+    if (existingEl->GetElementClassId() != importedElement->GetElementClassId())
         {
         this->ReportIssueV (IssueSeverity::Error, IssueCategory::Unsupported(), Issue::UpdateDoesNotChangeClass(), nullptr,
-            m_issueReporter.FmtElement (*existingEl).c_str(), results.m_importedElement->GetElementClass()->GetECSqlName().c_str());
+            m_issueReporter.FmtElement (*existingEl).c_str(), importedElement->GetElementClass()->GetECSqlName().c_str());
         }
 
     // get an editable element
@@ -343,7 +336,7 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElemen
     if (!writeEl.IsValid())
         return  DgnDbStatus::WriteError;
 
-    writeEl->CopyFrom(*results.m_importedElement);
+    writeEl->CopyFrom(*importedElement);
 
     // reset the code if changed
     DgnCode code = existingEl->GetCode ();
@@ -352,6 +345,10 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElemen
         code = newCode;
     writeEl->SetCode (code);
 
+    // update the ObjectAspect from the source object, with pre-calculated prevenence
+    results.m_existingElementMapping = m_sourceAspects.AddOrUpdateObjectAspect (*writeEl, source);
+    BeAssert (results.m_existingElementMapping.IsValid() && "Failed updating a ExternalSourceAspect for a DWG object");
+    
     DgnDbStatus     status = DgnDbStatus::Success;
     DgnElementCPtr  ret = GetDgnDb().Elements().Update (*writeEl, &status);
     if (!ret.IsValid())
@@ -391,7 +388,7 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElemen
             auto found = existingChildIdSet.find (existingChildElementId);
             if (found != existingChildIdSet.end())
                 {
-                this->UpdateResults (childResults, existingChildElementId);
+                this->UpdateResults (childResults, source);
                 // *** WIP_CONVERTER - bail out if any child update fails?
                 }
             }
@@ -413,14 +410,14 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElemen
     size_t  i = 0;
     for (; i < existingCount; ++i)
         {
-        this->UpdateResults (results.m_childElements.at(i), existingChildren.at(i));
+        this->UpdateResults (results.m_childElements.at(i), source);
         // *** WIP_CONVERTER - bail out if any child update fails?
         }
 
     // insert the left overs as new
     for (; i < results.m_childElements.size(); ++i)
         {
-        this->InsertResults (results.m_childElements.at(i));
+        this->InsertResults (results.m_childElements.at(i), source);
         // *** WIP_CONVERTER - bail out if any child insertion fails?
         }
 
@@ -444,11 +441,11 @@ static bool HasFileNameBeenLogged (Utf8StringCR filename)
 bool UpdaterChangeDetector::_ShouldSkipFile (DwgImporter& importer, DwgDbDatabaseCR dwg)
     {
     // if a DWG file is changed via an AutoCAD based product, its version GUID must have been changed:
-    if (importer.GetOptions().GetSyncDwgVersionGuid() && !importer.GetSyncInfo().HasVersionGuidChanged(dwg))
+    if (importer.GetOptions().GetSyncDwgVersionGuid() && !importer.GetSourceAspects().HasVersionGuidChanged(dwg))
         return  true;
     
     // if it hasn't changed per the "last saved time", don't bother with it.
-    if (importer.GetSyncInfo().HasLastSaveTimeChanged(dwg))
+    if (importer.GetSourceAspects().HasLastSaveTimeChanged(dwg))
         return false;
 
     if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
@@ -473,7 +470,7 @@ bool UpdaterChangeDetector::_ShouldSkipModel (DwgImporter& importer, ResolvedMod
         }
 
 #ifdef DEBUG_SKIP_MODELS
-    uint64_t    dwgId = modelMap.GetModelInstanceId().ToUInt64 ();
+    uint64_t    dwgId = modelMap.GetDwgModelHandle().AsUInt64 ();
     LOG_MODEL.debugv ("Testing model from syncInfo %lld, InstanceId=%lld[%llx], %s", modelMap.GetModelSyncInfoId().GetValue(), dwgId, dwgId, modelMap.GetMapping().GetDwgName().c_str());
 #endif
 
@@ -482,8 +479,8 @@ bool UpdaterChangeDetector::_ShouldSkipModel (DwgImporter& importer, ResolvedMod
         return  false;
 
     // if the model is new, do not skip it:
-    DwgSyncInfo::DwgModelSyncInfoId entryId = modelMap.GetModelSyncInfoId ();
-    if (m_newlyDiscoveredModels.find(entryId) != m_newlyDiscoveredModels.end())
+    auto modelId = modelMap.GetModelId ();
+    if (m_newlyDiscoveredModels.find(modelId) != m_newlyDiscoveredModels.end())
         return  false;
 
     // model is not new, check the file of the object((for an xref it's the insert entity):
@@ -502,32 +499,32 @@ bool UpdaterChangeDetector::_ShouldSkipModel (DwgImporter& importer, ResolvedMod
         return  false;
 
     // skip this model
-    m_dwgModelsSkipped.insert (entryId);
+    m_dwgModelsSkipped.insert (modelId);
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UpdaterChangeDetector::_OnModelInserted (DwgImporter& importer, ResolvedModelMapping const& modelMap, DwgDbDatabaseCP xRef)
+void UpdaterChangeDetector::_OnModelInserted (DwgImporter& importer, ResolvedModelMappingCR modelMap, DwgDbDatabaseCP xRef)
     {
     if (modelMap.IsValid())
-        m_newlyDiscoveredModels.insert (modelMap.GetModelSyncInfoId());
+        m_newlyDiscoveredModels.insert (modelMap.GetModelId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UpdaterChangeDetector::_OnModelSeen (DwgImporter& importer, ResolvedModelMapping const& modelMap)
+void UpdaterChangeDetector::_OnModelSeen (DwgImporter& importer, ResolvedModelMappingCR modelMap)
     {
     if (modelMap.IsValid())
-        m_dwgModelsSeen.insert (modelMap.GetModelSyncInfoId());
+        m_dwgModelsSeen.insert (modelMap.GetModelId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UpdaterChangeDetector::_DetectDeletedModels(DwgImporter& importer, DwgSyncInfo::ModelIterator& iter)
+void UpdaterChangeDetector::_DetectDeletedModels(DwgImporterR importer, DwgSourceAspects::ModelAspectIteratorR iter)
     {
     // *** NB: This alogorithm *infers* that a model was deleted in DWG if we did not see it or its file during processing.
     //          This inference is valid only if we know that a) we saw all models and/or files, and b) they were all registered in Files/ModelsSkipped or m_dwgModelsSeen.
@@ -536,23 +533,28 @@ void UpdaterChangeDetector::_DetectDeletedModels(DwgImporter& importer, DwgSyncI
     // them were missing this time around. Those models and their constituent Models must to be deleted.
     for (auto wasModel=iter.begin(); wasModel!=iter.end(); ++wasModel)
         {
-        DwgSyncInfo::DwgModelSyncInfoId modelRowId = wasModel.GetDwgModelSyncInfoId ();
-        if (m_dwgModelsSeen.find(modelRowId) == m_dwgModelsSeen.end())
+        auto modelId = wasModel->GetModelId();
+        if (m_dwgModelsSeen.find(modelId) == m_dwgModelsSeen.end())
             {
-            if (m_dwgModelsSkipped.find(modelRowId) != m_dwgModelsSkipped.end())
+            if (m_dwgModelsSkipped.find(modelId) != m_dwgModelsSkipped.end())
                 continue;   // we skipped this DWG model, so we don't expect to see it in m_dwgModelsSeen
 
-            // not found, delete this model
-            Utf8CP  name = wasModel.GetDwgName ();
-            LOG.tracev("Delete model %lld [%s]", wasModel.GetModelId().GetValue(), nullptr == name ? "no name" : name);
-            auto model = importer.GetDgnDb().Models().GetModel(wasModel.GetModelId());
-            model->Delete();
-            importer.GetSyncInfo().DeleteModel (wasModel.GetDwgModelSyncInfoId());
+            auto model = importer.GetDgnDb().Models().GetModel(modelId);
+            if (!model.IsValid())
+                continue;   // should never happen!
 
-            // Note that DetectDeletedElements will take care of detecting and deleting the elements that were in the DWG model.
+            // only delete models owned by this import job
+            auto modelElementId = model->GetModeledElementId();
+            if (!DwgHelper::IsElementOwnedByJobSubject(model->GetDgnDb(), modelElementId, importer.GetImportJob().GetSubject().GetElementId()))
+                continue;
+
+            // not found, delete this model
+            auto    name = wasModel->GetDwgModelName ();
+            LOG.tracev("Delete model %lld [%s]", wasModel->GetModelId().GetValue(), name.empty() ? "no name" : name.c_str());
+            model->Delete();
+            importer.GetDgnDb().Elements().Delete(modelElementId);
             }
         }
-    // do not clear m_dwgModelsSeen until _DetectDeletedModelsEnd is called!
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -560,14 +562,19 @@ void UpdaterChangeDetector::_DetectDeletedModels(DwgImporter& importer, DwgSyncI
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdaterChangeDetector::_DetectDeletedModelsInFile (DwgImporter& importer, DwgDbDatabaseR dwg)
     {
-    DwgSyncInfo::ModelIterator iter (importer.GetDgnDb(), nullptr);
-    _DetectDeletedModels (importer, iter);
+    auto rlinkId = importer.GetRepositoryLink (&dwg);
+    auto repositoryLink = importer.GetDgnDb().Elements().Get<RepositoryLink>(rlinkId);
+    if (repositoryLink.IsValid())
+        {
+        DwgSourceAspects::ModelAspectIterator iter(*repositoryLink);
+        _DetectDeletedModels (importer, iter);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UpdaterChangeDetector::_DetectDeletedElements (DwgImporter& importer, DwgSyncInfo::ElementIterator& iter)
+void UpdaterChangeDetector::_DetectDeletedElements (DwgImporterR importer, DwgSourceAspects::ObjectAspectIteratorR iter)
     {
     // *** NB: This alogorithm *infers* that an element was deleted in DWG if we did not see it, its model, or its file during processing.
     //          This inference is valid only if we know that a) we saw all models and/or files, and b) they were all registered in Files/ModelsSkipped or m_elementsSeen.
@@ -575,30 +582,19 @@ void UpdaterChangeDetector::_DetectDeletedElements (DwgImporter& importer, DwgSy
     // iterate over all of the previously converted elements from the syncinfo.
     for (auto elementInSyncInfo=iter.begin(); elementInSyncInfo!=iter.end(); ++elementInSyncInfo)
         {
-        auto previouslyConvertedElementId = elementInSyncInfo.GetElementId();
+        auto previouslyConvertedElementId = elementInSyncInfo->GetElementId();
         if (m_elementsSeen.Contains(previouslyConvertedElementId)) // if update encountered at least one DWG entity that was mapped to this BIM element,
             continue;   // keep this BIM element alive
 
-        if (m_dwgModelsSkipped.find(elementInSyncInfo.GetDwgModelSyncInfoId()) != m_dwgModelsSkipped.end()) // if we skipped this whole DWG model (e.g., because it was unchanged),
+        if (m_dwgModelsSkipped.find(elementInSyncInfo->GetModelId()) != m_dwgModelsSkipped.end()) // if we skipped this whole DWG model (e.g., because it was unchanged),
             continue;   // we don't expect any element from it to be in m_elementsSeen. Keep them all alive.
-
-        if (importer.GetSyncInfo().IsMappedToSameDwgObject(previouslyConvertedElementId, m_elementsSeen)) // if update encountered at least one DWG entity that this element was mapped to, 
-            continue;   // infer that this is a child of an assembly, and the assembly parent is in m_elementsSeen.
 
         // We did not encounter the DWG entity that was mapped to this BIM element. We infer that the DWG entity 
         // was deleted. Therefore, the update to the BIM is to delete the corresponding BIM element.
         LOG.tracev ("Delete element %lld", previouslyConvertedElementId.GetValue());
 
-        // importer._OnElementBeforeDelete (previouslyConvertedElementId);
-
         importer.GetDgnDb().Elements().Delete (previouslyConvertedElementId);
-        importer.GetSyncInfo().DeleteElement (previouslyConvertedElementId);
-
-        //if (importer._WantProvenanceInBim())
-        //    DgnV8ElementProvenance::Delete (previouslyConvertedElementId, importer.GetDgnDb());
-        //importer._OnElementConverted (elementInSyncInfo.GetElementId(), nullptr, importer::ChangeOperation::Delete);
         }
-    // Let _DetectDeletedElementsEnd clear m_elementsSeen!
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -608,12 +604,20 @@ void UpdaterChangeDetector::_DetectDeletedElementsInFile (DwgImporter& importer,
     {
     // iterate over all of the previously found elements from the syncinfo to determine if any of 
     // them were missing this time around. Those elements need to be deleted.
-    DwgSyncInfo::ModelIterator  modelsInFile (importer.GetDgnDb(), "DwgFileId=?");
-    modelsInFile.GetStatement()->BindInt (1, DwgSyncInfo::GetDwgFileId(dwg).GetValue());
+    auto rlinkId = importer.GetRepositoryLink (&dwg);
+    auto repositoryLink = importer.GetDgnDb().Elements().Get<RepositoryLink>(rlinkId);
+    if (!repositoryLink.IsValid())
+        return;
+    DwgSourceAspects::ModelAspectIterator  modelsInFile (*repositoryLink);
     for (auto modelInFile = modelsInFile.begin(); modelInFile != modelsInFile.end(); ++modelInFile)
         {
-        DwgSyncInfo::ElementIterator elementsInModel(importer.GetDgnDb(), "DwgModelSyncInfoId=?");
-        elementsInModel.GetStatement()->BindInt(1, modelInFile.GetDwgModelSyncInfoId().GetValue());
+        auto model = importer.GetDgnDb().Models().GetModel(modelInFile->GetModelId());
+        if (!model.IsValid())
+            continue;
+        // only delete models owned by this import job
+        if (!DwgHelper::IsElementOwnedByJobSubject(model->GetDgnDb(), model->GetModeledElementId(), importer.GetImportJob().GetSubject().GetElementId()))
+            continue;
+        DwgSourceAspects::ObjectAspectIterator elementsInModel(*model);
         _DetectDeletedElements (importer, elementsInModel);
         }
     }
@@ -638,7 +642,8 @@ void UpdaterChangeDetector::_OnElementSeen (DwgImporter& importer, DgnElementId 
 void UpdaterChangeDetector::_DetectDeletedMaterials (DwgImporter& importer)
     {
     // collect materials from syncInfo:
-    DwgSyncInfo::MaterialIterator syncMaterials (importer.GetDgnDb());
+    auto scopeId = importer.GetRepositoryLink(&importer.GetDwgDb());
+    DwgSourceAspects::MaterialAspectIterator syncMaterials (importer.GetDgnDb(), scopeId);
     // collect imported/seen materials
     DwgImporter::T_MaterialIdMap& importedMaterials = importer.GetImportedDgnMaterials ();
 
@@ -646,7 +651,7 @@ void UpdaterChangeDetector::_DetectDeletedMaterials (DwgImporter& importer)
     bset<RenderMaterialId>  deleteList;
     for (auto entry : syncMaterials)
         {
-        RenderMaterialId   id = entry.GetRenderMaterialId ();
+        RenderMaterialId    id(entry.GetElementId().GetValueUnchecked());
 
         auto found = std::find_if (importedMaterials.begin(), importedMaterials.end(), [&](DwgImporter::T_DwgRenderMaterialId map){return map.second == id;});
         if (importedMaterials.end() == found)
@@ -657,12 +662,11 @@ void UpdaterChangeDetector::_DetectDeletedMaterials (DwgImporter& importer)
         {
         // delete unseen materials from both db and syncinfo
         DgnElements&    dbElements = importer.GetDgnDb().Elements ();
-        DwgSyncInfo&    syncInfo = importer.GetSyncInfo ();
 
         for (auto id : deleteList)
             {
+            LOG.tracev ("Delete material %lld", id.GetValue());
             dbElements.Delete (id);
-            syncInfo.DeleteMaterial (id);
             }
         }
     }
@@ -686,7 +690,6 @@ void UpdaterChangeDetector::_DetectDeletedGroups (DwgImporter& importer)
         return;
 
     auto&   elements = importer.GetDgnDb().Elements ();
-    auto&   syncInfo = importer.GetSyncInfo ();
 
     for (auto groupId : groupModel->MakeIterator().BuildIdSet<DgnElementId>())
         {
@@ -695,7 +698,6 @@ void UpdaterChangeDetector::_DetectDeletedGroups (DwgImporter& importer)
             auto group = elements.Get<DgnElement> (groupId);
             LOG.tracev ("Delete group %s (ID=%lld)", group.IsValid() ? group->GetUserLabel() : "??", groupId.GetValue());
             elements.Delete (groupId);
-            syncInfo.DeleteGroup (groupId);
             }
         }
 
@@ -717,7 +719,6 @@ void UpdaterChangeDetector::_OnViewSeen (DwgImporter& importer, DgnViewId viewId
 void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
     {
     auto&   elements = importer.GetDgnDb().Elements ();
-    auto&   syncInfo = importer.GetSyncInfo ();
     auto    jobModelId = importer.GetOrCreateJobDefinitionModel()->GetModelId ();
 
     for (auto const& entry : ViewDefinition::MakeIterator(importer.GetDgnDb()))
@@ -742,10 +743,7 @@ void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
                     }
                 }
             if (!isAttached)
-                {
                 elements.Delete (viewId);
-                syncInfo.DeleteView (viewId);
-                }
             }
         }
 
@@ -758,22 +756,22 @@ void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
 void UpdaterChangeDetector::_DetectDetachedXrefs (DwgImporter& importer)
     {
     auto&   db = importer.GetDgnDb ();
-    auto&   syncInfo = importer.GetSyncInfo ();
     auto&   loadedXrefs = importer.GetLoadedXrefs ();
-    auto    rootfileId = DwgSyncInfo::DwgFileId::GetFrom (importer.GetDwgDb());
+    auto    rootfileId = importer.GetRepositoryLink(&importer.GetDwgDb());
 
-    DwgSyncInfo::FileIterator files(db, nullptr);
+    DwgSourceAspects::RepositoryLinkAspectIterator files(db, nullptr);
     for (auto file : files)
         {
         // skip the root file
-        if (file.GetSyncId() == rootfileId)
+        auto rlinkId = file.GetRepositoryLinkId();
+        if (rlinkId == rootfileId)
             continue;
         
         bool    detached = true;
         for (auto& xref : loadedXrefs)
             {
             auto dwg = xref.GetDatabaseP ();
-            if (nullptr != dwg && DwgSyncInfo::DwgFileId::GetFrom(*dwg) == file.GetSyncId())
+            if (nullptr != dwg && importer.GetRepositoryLink(dwg) == rlinkId)
                 {
                 uint64_t    savedId = 0;
                 detached = false;
@@ -783,14 +781,14 @@ void UpdaterChangeDetector::_DetectDetachedXrefs (DwgImporter& importer)
 
         if (detached)
             {
+            // first delete models in the scope of this file
+            DwgSourceAspects::ModelAspectIterator iter(db, rlinkId);
+            _DetectDeletedModels(importer, iter);
+
             BeFileName  filename(file.GetDwgName().c_str());
 
             LOG.tracev ("Deleting xRef entry %ls from syncInfo", filename.c_str());
-            syncInfo.DeleteFile (file.GetSyncId());
-
-            RepositoryLinkFactory   factory(db, importer.GetOptions());
-            if (factory.DeleteFromDb(filename) == BSISUCCESS)
-                LOG.tracev ("Deleted RepositoryLink %ls from bim", filename.c_str());
+            importer.GetDgnDb().Elements().Delete (rlinkId);
             }
         }
     }
@@ -813,8 +811,7 @@ BentleyStatus DwgImporter::_DetectDeletedDocuments ()
 
     auto& detector = this->_GetChangeDetector ();
     auto& db = this->GetDgnDb ();
-    auto& syncInfo = this->GetSyncInfo ();  
-    DwgSyncInfo::FileIterator files(db, nullptr);
+    DwgSourceAspects::RepositoryLinkAspectIterator files(db, nullptr);
 
     for (auto file : files)
         {
@@ -833,24 +830,23 @@ BentleyStatus DwgImporter::_DetectDeletedDocuments ()
         LOG.tracev ("Document %s has been detected for deletion.", name.c_str());
 
         // need to delete this file - walk through all model mappings in the sync info:
-        DwgSyncInfo::ModelIterator  modelMaps(db, "DwgFileId=?");
-        modelMaps.GetStatement()->BindInt (1, file.GetSyncId().GetValue());
+        auto rlinkId = file.GetRepositoryLinkId();
+        auto repositoryLink = this->GetDgnDb().Elements().Get<RepositoryLink>(rlinkId);
+        if (!repositoryLink.IsValid())
+            continue;   // should not happen
+        DwgSourceAspects::ModelAspectIterator  modelMaps(*repositoryLink);
         for (auto modelMap : modelMaps)
             {
             // delete elements in DgnModel:
-            DwgSyncInfo::ElementIterator elements(db, "DwgModelSyncInfoId=?");
-            elements.GetStatement()->BindInt(1, modelMap.GetDwgModelSyncInfoId().GetValue());
+            auto model = db.Models().GetModel(modelMap.GetModelId());
+            if (!model.IsValid())
+                continue;
+            DwgSourceAspects::ObjectAspectIterator elements(*model);
             detector._DetectDeletedElements (*this, elements);
 
             // delete DgnModel from db:
-            auto model = db.Models().GetModel (modelMap.GetModelId());
             model->Delete();
-
-            // delele the model mapping from the sync info:
-            syncInfo.DeleteModel (modelMap.GetDwgModelSyncInfoId());
             }
-        // delete the file mapping from the sync info:
-        syncInfo.DeleteFile (file.GetSyncId());
         }
 
     if (!detectorPresent)

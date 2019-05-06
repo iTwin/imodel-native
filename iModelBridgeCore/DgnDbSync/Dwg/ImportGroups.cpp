@@ -28,15 +28,15 @@ DgnElementIdSet GroupFactory::FindAllElements (DwgDbObjectIdCR objectId) const
         {
         // the member is an xRef insert - find the target DgnModel and add all elements from the model:
         DgnModelP   model = nullptr;
-        ResolvedModelMapping modelMap = m_importer.FindModel (objectId, DwgSyncInfo::ModelSourceType::XRefAttachment);
+        ResolvedModelMapping modelMap = m_importer.FindModel (objectId, DwgSourceAspects::ModelAspect::SourceType::XRefAttachment);
         if (modelMap.IsValid() && nullptr != (model = modelMap.GetModel()))
             found = model->MakeIterator().BuildIdSet<DgnElementId> ();
         return  found;
         }
 
     // the member is a single entity - query all elements (potentially across models) mapped from it:
-    if (!m_importer.GetSyncInfo().FindElements(found, objectId))
-        found.clear ();
+    auto handle = objectId.GetHandle();
+    found = m_importer.GetSourceAspects().FindElementsBy(handle);
 
     return  found;
     }
@@ -168,25 +168,26 @@ DgnElementPtr   GroupFactory::Create () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::_OnUpdateGroup (DwgSyncInfo::Group const& oldProvenance, DwgDbGroupCR dwgGroup)
+BentleyStatus   DwgImporter::_OnUpdateGroup (DwgSourceAspects::GroupAspectCR oldAspect, DwgDbGroupCR dwgGroup)
     {
-    if (!oldProvenance.IsValid())
+    if (!oldAspect.IsValid())
         return  BSIERROR;
 
     auto dwg = dwgGroup.GetDatabase ();
     if (!dwg.IsValid())
         return  BSIERROR;
 
-    auto groupId = oldProvenance.GetDgnElementId ();
-    auto& detector = this->_GetChangeDetector ();
-    auto addMembers = this->_ShouldSyncGroupWithMembers ();
+    Utf8String newName(dwgGroup.GetName().c_str());
 
-    DwgSyncInfo::Group  newProvenance(groupId, DwgSyncInfo::DwgFileId::GetFrom(*dwg), this->GetCurrentIdPolicy(), dwgGroup, addMembers);
-    if (!newProvenance.IsValid())
+    auto groupId = oldAspect.GetElementId ();
+    auto& detector = this->_GetChangeDetector ();
+
+    auto newProvenance = DwgSourceAspects::GroupAspect::CreateProvenance(dwgGroup, *this);
+    if (newProvenance.IsNull())
         return  BSIERROR;
 
     // detect if the file and the group object has any change:
-    if (detector._ShouldSkipFile(*this, *dwg.get()) || newProvenance.IsSame(oldProvenance))
+    if (detector._ShouldSkipFile(*this, *dwg.get()) || oldAspect.IsSameGroup(newProvenance, newName))
         {
         // record this group as seen
         detector._OnGroupSeen (*this, groupId);
@@ -205,11 +206,14 @@ BentleyStatus   DwgImporter::_OnUpdateGroup (DwgSyncInfo::Group const& oldProven
     // update the sync info
     if (status == BSISUCCESS)
         {
+        auto writeAspect = DwgSourceAspects::GroupAspect::GetForEdit(*newElement);
+        if (writeAspect.IsValid())
+            writeAspect.Update (newProvenance, newName);
+
         DgnDbStatus dbStat = DgnDbStatus::Success;
         if (!newElement->Update(&dbStat).IsValid() || dbStat != DgnDbStatus::Success)
             return  BSIERROR;
         
-        status = this->GetSyncInfo().UpdateGroup (newProvenance);
         detector._OnGroupSeen (*this, groupId);
         }
 
@@ -257,7 +261,7 @@ BentleyStatus   DwgImporter::_ImportGroups (DwgDbDatabaseCR dwg)
         return  BentleyStatus::BSIERROR;
 
     auto& detector = this->_GetChangeDetector ();
-    auto& syncInfo = this->GetSyncInfo ();
+    auto& sourceAspects = this->GetSourceAspects ();
 
     // Check all entries of the dictionary:
     for (; !iter->Done(); iter->Next())
@@ -273,10 +277,10 @@ BentleyStatus   DwgImporter::_ImportGroups (DwgDbDatabaseCR dwg)
 
         if (this->IsUpdating())
             {
-            DwgSyncInfo::Group  oldProvenance;
-            if (this->GetSyncInfo().FindGroup(oldProvenance, group->GetObjectId()))
+            auto oldAspect = sourceAspects.FindGroupAspect(group->GetObjectId());
+            if (oldAspect.IsValid())
                 {
-                this->_OnUpdateGroup (oldProvenance, *group);
+                this->_OnUpdateGroup (oldAspect, *group);
                 continue;
                 }
             // fall through to create a new group
@@ -294,9 +298,8 @@ BentleyStatus   DwgImporter::_ImportGroups (DwgDbDatabaseCR dwg)
                 groupId = inserted->GetElementId ();
                 }
             // insert group into the sync info if not inserted by _ImportGroup, and record it as a seen group:
-            DwgSyncInfo::Group  prov;
-            if (!this->IsUpdating() || !syncInfo.FindGroup(prov, group->GetObjectId()))
-                syncInfo.InsertGroup (groupId, *group);
+            if (!this->IsUpdating() || !DwgSourceAspects::GroupAspect::Get(*dgnGroup).IsValid())
+                sourceAspects.AddOrUpdateGroupAspect (*dgnGroup, *group);
             detector._OnGroupSeen (*this, groupId);
             }
         }

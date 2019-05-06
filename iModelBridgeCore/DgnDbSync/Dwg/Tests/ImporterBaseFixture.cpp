@@ -49,13 +49,6 @@ void ImporterTestBaseFixture::SetUp_CreateNewDgnDb()
     DgnDbPtr dgndb = DgnDb::CreateDgnDb(nullptr, m_seedDgnDbFileName, createProjectParams);
     ASSERT_TRUE(dgndb.IsValid());
 
-    auto sfilename = DwgSyncInfo::GetDbFileName(m_seedDgnDbFileName);
-    if (sfilename.DoesPathExist())
-        {
-        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, sfilename.BeDeleteFile());
-        }
-    ASSERT_EQ(BSISUCCESS, DwgSyncInfo::CreateEmptyFile(sfilename));
-    ASSERT_TRUE(sfilename.DoesPathExist());
     FunctionalDomain::GetDomain().ImportSchema(*dgndb);
     BentleyApi::Raster::RasterDomain::GetDomain().ImportSchema(*dgndb);
     }
@@ -99,7 +92,6 @@ void    ImporterTestBaseFixture::DoConvert (DwgImporter* importer, BentleyApi::B
     ASSERT_TRUE(db.IsValid());
 
     importer->SetDgnDb(*db.get());
-    importer->AttachSyncInfo();
     importer->MakeSchemaChanges ();
 
     // start a new import job
@@ -147,7 +139,6 @@ void ImporterTestBaseFixture::DoUpdate (DwgImporter* importer, BentleyApi::BeFil
     ASSERT_TRUE(db.IsValid());
 
     importer->SetDgnDb (*db.get());
-    importer->AttachSyncInfo ();
     importer->MakeSchemaChanges ();
 
     // find an existing import job
@@ -172,9 +163,6 @@ void ImporterTestBaseFixture::LineUpFiles(BentleyApi::WCharCP outputDgnDbFileNam
     m_dgnDbFileName = GetOutputFileName(outputDgnDbFileName);
     DeleteExistingDgnDb(m_dgnDbFileName);
     MakeWritableCopyOf(m_dgnDbFileName, m_seedDgnDbFileName, m_dgnDbFileName.GetFileNameAndExtension().c_str());
-    auto syncFile(DwgSyncInfo::GetDbFileName(m_seedDgnDbFileName));
-    BentleyApi::BeFileName outSyncFile;
-    MakeWritableCopyOf(outSyncFile, syncFile, DwgSyncInfo::GetDbFileName(m_dgnDbFileName).GetFileNameAndExtension().c_str());
     if (doConvert)
         DoConvert(m_dgnDbFileName, m_dwgFileName);
     }
@@ -189,9 +177,6 @@ void ImporterTestBaseFixture::LineUpFilesForNewDwg(WCharCP outputDgnDbFileName, 
     m_dgnDbFileName = GetOutputFileName(outputDgnDbFileName);
     DeleteExistingDgnDb(m_dgnDbFileName);
     MakeWritableCopyOf(m_dgnDbFileName, m_seedDgnDbFileName, m_dgnDbFileName.GetFileNameAndExtension().c_str());
-    auto syncFile(DwgSyncInfo::GetDbFileName(m_seedDgnDbFileName));
-    BentleyApi::BeFileName outSyncFile;
-    MakeWritableCopyOf(outSyncFile, syncFile, DwgSyncInfo::GetDbFileName(m_dgnDbFileName).GetFileNameAndExtension().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

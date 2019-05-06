@@ -36,7 +36,7 @@
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <BeXml/BeXml.h>
 #include <ECObjects/ECObjectsAPI.h>
-#include <Dwg/DwgSyncInfo.h>
+#include <Dwg/DwgSourceAspects.h>
 #include <Dwg/DwgL10N.h>
 
 USING_NAMESPACE_DWGDB
@@ -103,28 +103,31 @@ private:
     // the key: an object ID of model/paperspace block, xref insert or raster attachment.
     DwgDbObjectId                   m_dwgModelInstanceId;
     DgnModelP                       m_model;
-    DwgSyncInfo::DwgModelMapping    m_mapping;
+    DwgSourceAspects::ModelAspect   m_modelAspect;
 
 public:
     //! construct invalid mappings
     ResolvedModelMapping () : m_model(nullptr) {}
     ResolvedModelMapping (DwgDbObjectIdCR id) : m_dwgModelInstanceId(id), m_model(nullptr) {}
     //! construct valid mapping
-    ResolvedModelMapping (DwgDbObjectIdCR id, DgnModelP model, DwgSyncInfo::DwgModelMapping const& map) : m_dwgModelInstanceId(id), m_model(model), m_mapping(map) {}
+    ResolvedModelMapping (DwgDbObjectIdCR id, DgnModelP model, DwgSourceAspects::ModelAspectCR aspect) { Set(id, model, aspect); }
+    void Set(DwgDbObjectIdCR id, DgnModelP model, DwgSourceAspects::ModelAspectCR aspect) { m_dwgModelInstanceId=id, m_model=model, m_modelAspect=aspect; }
 
     bool            operator < (ResolvedModelMapping const &o) const { return m_dwgModelInstanceId < o.m_dwgModelInstanceId; }
-    bool            IsValid () const { return m_dwgModelInstanceId.IsValid() && m_mapping.IsValid(); }
+    bool            IsValid () const { return m_dwgModelInstanceId.IsValid() && m_modelAspect.IsValid(); }
     DwgDbObjectId   GetModelInstanceId () const { return m_dwgModelInstanceId; }
     void            SetModelInstanceId (DwgDbObjectIdCR id) { m_dwgModelInstanceId=id; }
     DgnModelP       GetModel () { return m_model; }
+    DgnModelCP      GetModel () const { return m_model; }
+    DgnModelId      GetModelId () const { return m_model==nullptr ? DgnModelId() : m_model->GetModelId(); }
     void            SetModel (DgnModelP model) { m_model=model; }
-    DwgSyncInfo::DwgModelMapping const& GetMapping () const { return m_mapping; }
-    void            SetMapping (DwgSyncInfo::DwgModelMapping const& m) { m_mapping=m; }
-    TransformCR     GetTransform () const { return m_mapping.GetTransform(); }
-    void            SetTransform (TransformCR t) { return m_mapping.SetTransform(t); }
-    DwgSyncInfo::DwgModelSyncInfoId GetModelSyncInfoId () const { return m_mapping.GetDwgModelSyncInfoId(); }
+    DwgSourceAspects::ModelAspectCR GetModelAspect () const { return m_modelAspect; }
+    void            SetModelAspect (DwgSourceAspects::ModelAspectCR aspect) { m_modelAspect = aspect; }
+    Transform       GetTransform () const { return m_modelAspect.GetTransform(); }
+    void            SetTransform (TransformCR t) { return m_modelAspect.SetTransform(t); }
 };  // ResolvedModelMapping
 typedef bmultiset<ResolvedModelMapping>     T_DwgModelMapping;
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(ResolvedModelMapping)
 
 //=======================================================================================
 //! An import "job" definition, including its subject element.
@@ -132,25 +135,16 @@ typedef bmultiset<ResolvedModelMapping>     T_DwgModelMapping;
 struct ResolvedImportJob
 {
 protected:
-    DwgSyncInfo::ImportJob m_mapping;
     SubjectCPtr m_jobSubject;
 public:
     ResolvedImportJob () {}
-    ResolvedImportJob (DwgSyncInfo::ImportJob const& j, SubjectCR s) : m_mapping(j), m_jobSubject(&s) {}
     ResolvedImportJob (SubjectCR s) : m_jobSubject(&s) {}
 
     bool IsValid() const {return m_jobSubject.IsValid();}
-    void FromSelect(BeSQLite::Statement& stmt) {m_mapping.FromSelect(stmt); /* WIP_IMPORT_JOB -- resolve the subject */}
-    DwgSyncInfo::ImportJob& GetImportJob() {return m_mapping;}
-    //! Get the root model for this job
-    DwgSyncInfo::DwgModelSyncInfoId GetDwgModelSyncInfoId() const { return m_mapping.GetDwgModelSyncInfoId(); }
     //! Get the job subject
     SubjectCR GetSubject() const {BeAssert(IsValid()); return *m_jobSubject;}
-    //! Get the type of converter that created this job
-    DwgSyncInfo::ImportJob::Type GetImporterType() const {return m_mapping.GetType();}
-    //! Get the name prefix that is used by this job
-    Utf8StringCR GetNamePrefix() const { return m_mapping.GetPrefix(); }
 };  // ResolvedImportJob
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(ResolvedImportJob)
 
 //=======================================================================================
 //! An interface for a change detector that detects changes in a DWG file
@@ -169,19 +163,20 @@ struct IDwgChangeDetector
     {
     private:
         ChangeType m_changeType;
-        DwgSyncInfo::DwgObjectMapping m_dwgObjectMapping;
-        DwgSyncInfo::DwgObjectProvenance m_currentObjectProvenance;
+        DwgSourceAspects::ObjectAspect m_objectAspect;
+        DwgSourceAspects::ObjectProvenance m_currentObjectProvenance;
 
     public:
         DetectionResults() : m_changeType(ChangeType::None) {}
-        DgnElementId    GetExistingElementId() const { return m_dwgObjectMapping.m_elementId; }
+        DgnElementId    GetExistingElementId() const { return m_objectAspect.GetElementId(); }
         ChangeType  GetChangeType () const { return m_changeType; }
         void        SetChangeType (ChangeType c) { m_changeType = c; }
-        DwgSyncInfo::DwgObjectMapping const& GetObjectMapping () const { return m_dwgObjectMapping; }
-        void SetObjectMapping (DwgSyncInfo::DwgObjectMapping const& m) { m_dwgObjectMapping = m; }
-        DwgSyncInfo::DwgObjectProvenance const& GetObjectProvenance () const { return m_currentObjectProvenance; }
-        void SetObjectProvenance (DwgSyncInfo::DwgObjectProvenance const& p) { m_currentObjectProvenance = p; }
+        DwgSourceAspects::ObjectAspectCR GetObjectAspect () const { return m_objectAspect; }
+        void SetObjectAspect (DwgSourceAspects::ObjectAspectCR aspect) { m_objectAspect = aspect; }
+        DwgSourceAspects::ObjectProvenanceCR GetCurrentProvenance () const { return m_currentObjectProvenance; }
+        void SetCurrentProvenance (DwgSourceAspects::ObjectProvenanceCR prov) { m_currentObjectProvenance = prov; }
     };  // DetectionResults
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(DetectionResults)
 
     virtual ~IDwgChangeDetector () {}
 
@@ -199,10 +194,7 @@ struct IDwgChangeDetector
     virtual bool _ShouldSkipFile (DwgImporter&, DwgDbDatabaseCR) = 0;
     //! Called to check if an entire model could be skipped (i.e., because no element in the model is changed).
     //! @note DwgImporter must not call this during the model-discovery step but only skip it during the element-conversion step.
-    virtual bool _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const&,  DwgDbDatabaseCP xref = nullptr) = 0;
-
-    //! Used to choose one of many existing entries in DwgSyncInfo
-    typedef std::function<bool(DwgSyncInfo::ElementIterator::Entry const&, DwgImporter& converter)> T_DwgSyncInfoElementFilter;
+    virtual bool _ShouldSkipModel (DwgImporter&, ResolvedModelMappingCR,  DwgDbDatabaseCP xref = nullptr) = 0;
 
     //! Called by a DwgImporter to detect if a DWG object is changed or new.
     //! @param[out] results The information about what the change detector has found
@@ -211,7 +203,15 @@ struct IDwgChangeDetector
     //! @param[in] map      Mapping info for the DWG model that contains this DWG object
     //! @param[in] filter   Optional. Chooses among existing elements in DwgSyncInfo
     //! @return true if the element is new or has changed.
-    virtual bool _IsElementChanged (DetectionResults& results, DwgImporter& importer, DwgDbObjectCR id, ResolvedModelMapping const& map, T_DwgSyncInfoElementFilter* filter = nullptr) = 0;
+    virtual bool _IsElementChanged (DetectionResultsR results, DwgImporter& importer, DwgDbObjectCR id, ResolvedModelMappingCR map, DwgSourceAspects::T_ObjectAspectFilter* filter = nullptr) = 0;
+    //! Detect a non-DWG source object with pre-calculated object provenance.
+    //! @param[out] results Input pre-calculated source object provenance, and output rest of detection results
+    //! @param[in] importer An instance of the DwgImporter
+    //! @param[in] sourceHandle The object handle of a non-DWG object
+    //! @param[in] model    The target BIM model
+    //! @param[in] filter   Optional. Chooses among existing elements in DwgSyncInfo
+    //! @return true if the element is new or has changed.
+    virtual bool _IsElementChanged (DetectionResultsR results, DwgImporter& importer, DwgDbHandleCR sourceHandle, DgnModelCR model, DwgSourceAspects::T_ObjectAspectFilter* filter = nullptr) = 0;
     //! @}
 
     //! @name Recording DWG content seen (so that we can deduce deletes)
@@ -225,12 +225,12 @@ struct IDwgChangeDetector
     //! before the elements in the specified model are converted.
     //! @param[in] importer An instance of the DwgImporter
     //! @param[in] map      Mapping info for the DWG model
-    virtual void _OnModelSeen (DwgImporter& importer, ResolvedModelMapping const& map) = 0;
+    virtual void _OnModelSeen (DwgImporter& importer, ResolvedModelMappingCR map) = 0;
     //! Called when a DWG model is first mapped into the BIM.
     //! @param[in] importer An instance of the DwgImporter
     //! @param[in] map      The DWG model and the DgnModel to which it is mapped
     //! @param[in] xRef     The xref attachment if the DWG model is a root model, this will be nullptr. Otherwise, this would be the attachment that was used to reach the DWG model.
-    virtual void _OnModelInserted (DwgImporter& importer, ResolvedModelMapping const& map, DwgDbDatabaseCP xRef) = 0;
+    virtual void _OnModelInserted (DwgImporter& importer, ResolvedModelMappingCR map, DwgDbDatabaseCP xRef) = 0;
 
     //! Called when a DWG modelspace viewport or a paperspace viewport is dicovered.
     virtual void  _OnViewSeen (DwgImporter&, DgnViewId) = 0;
@@ -240,10 +240,10 @@ struct IDwgChangeDetector
 
     //! @name  Inferring Deletions - call these methods after processing all models in a conversion unit. Don't forget to call the ...End function when done.
     //! @{
-    virtual void _DetectDeletedElements (DwgImporter&, DwgSyncInfo::ElementIterator&) = 0;  //!< don't forget to call _DetectDeletedElementsEnd when done
+    virtual void _DetectDeletedElements (DwgImporter&, DwgSourceAspects::ObjectAspectIteratorR) = 0;  //!< don't forget to call _DetectDeletedElementsEnd when done
     virtual void _DetectDeletedElementsInFile (DwgImporter&, DwgDbDatabaseR) = 0;          //!< don't forget to call _DetectDeletedElementsEnd when done
     virtual void _DetectDeletedElementsEnd (DwgImporter&) = 0;
-    virtual void _DetectDeletedModels (DwgImporter&, DwgSyncInfo::ModelIterator&) = 0;      //!< don't forget to call _DetectDeletedModelsEnd when done
+    virtual void _DetectDeletedModels (DwgImporter&, DwgSourceAspects::ModelAspectIteratorR) = 0;      //!< don't forget to call _DetectDeletedModelsEnd when done
     virtual void _DetectDeletedModelsInFile (DwgImporter&, DwgDbDatabaseR) = 0;             //!< don't forget to call _DetectDeletedModelsEnd when done
     virtual void _DetectDeletedModelsEnd (DwgImporter&) = 0;
     virtual void _DetectDeletedMaterials (DwgImporter&) = 0;
@@ -253,6 +253,7 @@ struct IDwgChangeDetector
     //! @}
 };  // IDwgChangeDetector
 typedef std::unique_ptr <IDwgChangeDetector>    T_DwgChangeDetectorPtr;
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(IDwgChangeDetector)
 
 
 //=======================================================================================
@@ -263,6 +264,7 @@ struct DwgImporter
 //__PUBLISH_SECTION_END__
     friend struct DwgBridge;
     friend struct DwgSyncInfo;
+    friend struct DwgSourceAspects;
     friend struct DwgImportHost;
     friend struct ViewportFactory;
     friend struct AttributeFactory;
@@ -347,6 +349,7 @@ public:
         T_DwgWeightMap      m_lineweightMapping;
         bool                m_syncBlockChanges;
         bool                m_syncAsmBodyInFull;
+        bool                m_syncDependentObjects;
         bool                m_syncDwgVersionGuid;
         bool                m_importRasters;
         bool                m_importPointClouds;
@@ -369,6 +372,7 @@ public:
             m_lineweightMapping.clear ();
             m_syncBlockChanges = false;
             m_syncAsmBodyInFull = false;
+            m_syncDependentObjects = false;
             m_syncDwgVersionGuid = false;
             m_importRasters = false;
             m_importPointClouds = false;
@@ -394,6 +398,7 @@ public:
         void SetLineWeightMapping (T_DwgWeightMap const& map) { m_lineweightMapping = map; }
         void SetSyncBlockChanges (bool syncBlocks) { m_syncBlockChanges = syncBlocks; }
         void SetSyncAsmBodyInFull (bool fullSync) { m_syncAsmBodyInFull = fullSync; }
+        void SetSyncDependentObjects (bool dep) { m_syncDependentObjects = dep; }
         void SetSyncDwgVersionGuid (bool checkGuid) { m_syncDwgVersionGuid = checkGuid; }
         void SetImportRasterAttachments (bool allow) { m_importRasters = allow; }
         void SetImportPointClouds (bool allow) { m_importPointClouds = allow; }
@@ -423,6 +428,8 @@ public:
         bool GetSyncBlockChanges () const { return m_syncBlockChanges; }
         //! Fully sync ASM Brep data? Recommended for detail editing such as imprinting or edge coloring etc.
         bool GetSyncAsmBodyInFull () const { return m_syncAsmBodyInFull; }
+        //! Add dependent objects that are found in the Extension Dictionary of an entity into the syncInfo.
+        bool GetSyncDependentObjects () const { return m_syncDependentObjects; }
         //! Can DWG VersionGuid be used for sync?  Recommended for DWG files changed only by AutoCAD based products.
         bool GetSyncDwgVersionGuid () const { return m_syncDwgVersionGuid; }
         bool GetImportRasterAttachments () const { return m_importRasters; }
@@ -611,6 +618,8 @@ public:
     typedef bvector<DwgXRefInPaperspace>    T_DwgXRefsInPaperspaces;
     typedef bpair<DgnViewId,DwgDbObjectId>  T_PaperspaceView;
     typedef bmap<DgnViewId,DwgDbObjectId>   T_PaperspaceViewMap;
+    typedef bpair<DwgDbDatabaseP,DgnElementId>  T_DwgRepositoryLink;
+    typedef bmap<DwgDbDatabaseP,DgnElementId>   T_DwgRepositoryLinkMap;
 
     //! A data context for a modelspace or paperspace entity ready to be imported into a target DgnDb model.
     struct ElementImportInputs
@@ -655,9 +664,8 @@ public:
         void                    SetTemplateEntity (DwgDbEntityCP dbent) { if(dbent==nullptr || dbent->GetObjectId().IsValid()) m_templateEntity = dbent; else BeAssert(false && "Input entity not a db resident!"); }
         void                    SetSpatialFilter (DwgDbSpatialFilterP filter) { m_spatialFilter = filter; }
         DwgDbSpatialFilterP     GetSpatialFilter () const { return m_spatialFilter; }
-        void                    SetModelMapping (ResolvedModelMapping const& m) { m_modelMapping = m; }
+        void                    SetModelMapping (ResolvedModelMappingCR m) { m_modelMapping = m; }
         ResolvedModelMapping    GetModelMapping () const { return m_modelMapping; }
-        DwgSyncInfo::DwgModelSyncInfoId GetModelSyncInfoId () const { return m_modelMapping.GetModelSyncInfoId(); }
         };  // ElementImportInputs
 
     //! A data context for output DgnElement's imported from a modelspace or paperspace entity.
@@ -668,7 +676,7 @@ public:
         DgnElementPtr                   m_importedElement;
         bvector<ElementImportResults>   m_childElements;
         // from DwgSyncInfo after importing
-        DwgSyncInfo::DwgObjectMapping   m_existingElementMapping;
+        DwgSourceAspects::ObjectAspect  m_existingElementMapping;
         bool                            m_wasDiscarded;
     public:
         ElementImportResults () : m_importedElement(nullptr), m_wasDiscarded(false) { m_childElements.clear(); }
@@ -678,8 +686,9 @@ public:
         DgnElementP     GetImportedElement () { return m_importedElement.IsValid() ? m_importedElement.get() : nullptr; }
         void            SetImportedElement (DgnElementP el) { m_importedElement = el; }
         void            AddChildResults (ElementImportResults& child) { m_childElements.push_back(child); }
-        DwgSyncInfo::DwgObjectMapping const&  GetExistingElement () const { return m_existingElementMapping; }
-        void SetExistingElement (DwgSyncInfo::DwgObjectMapping const& map) { if (map.IsValid()) m_existingElementMapping = map; }
+        DwgSourceAspects::ObjectAspectCR  GetExistingElement () const { return m_existingElementMapping; }
+        void SetExistingElement (DwgSourceAspects::ObjectAspectCR aspect) { if (aspect.IsValid()) m_existingElementMapping = aspect; }
+        DgnElementId    GetExistingElementId () const { return m_existingElementMapping.GetElementId(); }
         };  // ElementImportResults
 
     //! Cache entry for geometry collection
@@ -691,7 +700,7 @@ public:
         Transform                   m_transform;
         Utf8String                  m_blockName;
         DwgDbObjectId               m_blockId;
-        DwgSyncInfo::DwgFileId      m_fileId;
+        DgnElementId                m_fileId;
     public:
         bool    IsValid () const { return m_geometry.IsValid(); }
         GeometricPrimitiveCR GetGeometry () const { BeAssert(IsValid()); return *m_geometry; }
@@ -706,8 +715,8 @@ public:
         void    SetBlockName (Utf8StringCR name) { m_blockName = name; }
         DwgDbObjectIdCR GetBlockId () const { return m_blockId; }
         void    SetBlockId (DwgDbObjectIdCR id) { m_blockId = id; }
-        DwgSyncInfo::DwgFileId  GetDwgFileId () const { return m_fileId; }
-        void    SetDwgFileId (DwgSyncInfo::DwgFileId  id) { m_fileId = id; }
+        DgnElementId GetDwgFileId () const { return m_fileId; }
+        void    SetDwgFileId (DgnElementId id) { m_fileId = id; }
         };  // GeometryEntry
     typedef bvector<GeometryEntry>                      T_GeometryList;
     typedef bpair<DwgDbObjectId, T_GeometryList>        T_BlockGeometryEntry;
@@ -770,11 +779,13 @@ public:
     private:
         DgnCategoryId       m_categoryId;
         DgnSubCategoryId    m_subcategoryId;
+        DwgDbObjectId       m_layerIdInMasterFile;
     public:
-        CategoryEntry (DgnCategoryId cat, DgnSubCategoryId sub) : m_categoryId(cat), m_subcategoryId(sub) {}
+        CategoryEntry (DgnCategoryId cat, DgnSubCategoryId sub, DwgDbObjectIdCR mlid) : m_categoryId(cat), m_subcategoryId(sub), m_layerIdInMasterFile(mlid) {}
         CategoryEntry () {}
         DgnCategoryId       GetCategoryId () const { return m_categoryId; }
         DgnSubCategoryId    GetSubCategoryId () const { return m_subcategoryId; }
+        DwgDbObjectId       GetLayerIdInMasterFile () const { return m_layerIdInMasterFile; }
         };  // CategoryEntry
     typedef bpair<DwgDbObjectId, CategoryEntry>         T_DwgDgnLayer;
     typedef bmap<DwgDbObjectId, CategoryEntry>          T_DwgDgnLayerMap;
@@ -949,7 +960,7 @@ protected:
     bool                        m_wasAborted;
     Options&                    m_options;
     GeometryOptions             m_currentGeometryOptions;
-    DwgSyncInfo                 m_syncInfo;
+    DwgSourceAspects            m_sourceAspects;
     T_DwgChangeDetectorPtr      m_changeDetector;
     uint32_t                    m_fileCount;
     DgnCategoryId               m_uncategorizedCategoryId;
@@ -978,6 +989,7 @@ protected:
     T_MaterialTextureIdMap      m_materialTextures;
     bvector<BeFileName>         m_materialSearchPaths;
     T_DwgDgnLayerMap            m_layersInSync;
+    T_DwgRepositoryLinkMap      m_repositoryLinksInSync;
     uint32_t                    m_entitiesImported;
     uint32_t                    m_layersImported;
     MessageCenter               m_messageCenter;
@@ -986,10 +998,10 @@ protected:
     DgnModelId                  m_sheetListModelId;
     DgnModelId                  m_drawingListModelId;
     DgnModelId                  m_groupModelId;
-    DefinitionModelPtr          m_geometryPartsModel;
     DefinitionModelPtr          m_jobDefinitionModel;
     T_BlockPartsMap             m_blockPartsMap;
     T_PresentationRuleContents  m_presentationRuleContents;
+    double                      m_sizeTolerance;
 
 //__PUBLISH_SECTION_END__
 private:
@@ -1015,17 +1027,14 @@ private:
     void                    ImportDomainSchema (WCharCP fileName, DgnDomain& domain);
     void                    SaveViewDefinition (ViewControllerR viewController);
     void                    CheckSameRootModelAndUnits ();
-    void                    ComputeDefaultImportJobName (Utf8StringCR rootModelName);
-    Utf8String              GetImportJobNamePrefix () const { return ""; }
+    void                    ComputeDefaultImportJobName (Utf8StringCR rootModelName) const;
     bool                    IsXrefInsertedInPaperspace (DwgDbObjectIdCR xrefInsertId) const;
-    bool                    ShouldSkipAllXrefs (ResolvedModelMapping const& ownerModel, DwgDbObjectIdCR ownerSpaceId);
+    bool                    ShouldSkipAllXrefs (ResolvedModelMappingCR ownerModel, DwgDbObjectIdCR ownerSpaceId);
     DgnDbStatus             UpdateElementName (DgnElementR editElement, Utf8StringCR newValue, Utf8CP label = nullptr, bool save = true);
     bool                    UpdateModelspaceView (ViewControllerP view);
     bool                    UpdatePaperspaceView (ViewControllerP view, DwgDbObjectIdCR viewportId);
-    BentleyStatus           UpdateRepositoryLink (DwgDbDatabaseP dwg = nullptr);
+    DgnElementId            CreateOrUpdateRepositoryLink (DwgDbDatabaseP dwg = nullptr);
     BentleyStatus           InsertElementHasLinks (DgnModelR model, DwgDbDatabaseR dwg);
-    DgnCategoryId           FindCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
-    DgnSubCategoryId        FindSubCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
 
     static void             RegisterProtocolExtensions ();
 
@@ -1060,10 +1069,15 @@ protected:
     void        GetOrCreateJobPartitions ();
     //! Get the one and only hierarchy subject for the job
     SubjectCPtr GetJobHierarchySubject ();
-    ResolvedImportJob GetResolvedImportJob (DwgSyncInfo::ImportJob const& job);
-    ResolvedImportJob FindSoleImportJobForFile (DwgDbDatabaseR dwg);
+    //! Get/set the one and only one SourceMasterModel subject that owns the import job
+    SubjectCPtr FindSourceMasterModelSubject (DgnElementId repositoryLinkId, Utf8StringCR modelName, bool createIfNotFound = false) const;
+    BeSQLite::EC::ECInstanceId GetRootModelAspectIdFromSourceMasterModelSubject(SubjectCR) const;
+    DwgSourceAspects::ModelAspect GetRootModelAspectFromSourceMasterModelSubject(SubjectCR) const;
+    void SetRootModelAspectIdInSourceMasterModelSubject(SubjectCR) const;
+    ResolvedImportJob FindSoleImportJobForSourceMasterModel (SubjectCR masterModelSubject) const;
+    Utf8String  _ComputeImportJobName (DwgDbBlockTableRecordCR modelspaceBlock) const;
     // model subjects
-    enum class ModelSubjectType {Hierarchy, References, GeometryParts};
+    enum class ModelSubjectType {Hierarchy, References};
     SubjectCPtr GetOrCreateModelSubject(SubjectCR parent, Utf8StringCR, ModelSubjectType);
     bool        IsUpdating () const { return GetOptions().IsUpdating(); }
     bool        IsCreatingNewDgnDb () { return GetOptions().IsCreatingNewDgnDb(); }
@@ -1095,16 +1109,14 @@ protected:
     //! @return A ResolvedModelMapping created or retrieved for the input DWG block.  Return an invalid mapping to skip the xRef instance.
     DWG_EXPORT virtual ResolvedModelMapping _ImportXrefModel (DwgDbBlockTableRecordCR block, DwgDbObjectIdCR insertId, DwgDbDatabaseP xRefDwg);
     //! Create the root model from the modelspace block if importing, or retrieve it from the syncInfo if updating.
-    //! @param[in] updating True for updating existing DgnDb; false for the initial creation of DgnDb.
-    DWG_EXPORT virtual ResolvedModelMapping _GetOrCreateRootModel (bool updating);
+    //! @param[in] rootModelAspect A model aspect for the root model when updating bim; nullptr when initializing a job
+    DWG_EXPORT virtual ResolvedModelMapping _GetOrCreateRootModel (DwgSourceAspects::ModelAspectCP rootModelAspect);
     //! Set unit formats to be displayed in the DgnModel created from the input block.
     //! @param[out] displayInfo Unit formats to be displayed in the model created from the input block
     //! @param[in] block A modelspace, layout/paperspace, or xRef block
     DWG_EXPORT virtual void       _SetModelUnits (GeometricModel::Formatter& displayInfo, DwgDbBlockTableRecordCR block);
     //! Get a DgnModel from the syncInfo for updating, or create a new DgnModel for importing, from a DWG model/paperspace or an xref (when xrefInsert!=nullptr & xrefDwg!=nullptr)
     DWG_EXPORT ResolvedModelMapping GetOrCreateModelFromBlock (DwgDbBlockTableRecordCR block, TransformCR trans, DwgDbBlockReferenceCP xrefInsert = nullptr, DwgDbDatabaseP xrefDwg = nullptr);
-    //! Partition the parent subject and create a DefinitionModel dedicated for GeometryParts
-    DWG_EXPORT BentleyStatus      GetOrCreateGeometryPartsModel ();
     DWG_EXPORT ResolvedModelMapping GetRootModel () const { return  m_rootDwgModelMap; }
     //! Retrieve model mapping from the sync info
     DWG_EXPORT ResolvedModelMapping GetModelFromSyncInfo (DwgDbObjectIdCR id, DwgDbDatabaseR dwg, TransformCR trans);
@@ -1115,14 +1127,14 @@ protected:
     //! @param[in] xrefInsert An instance of xRef, null if not an xRef model mapping
     //! @param[in] xrefDwg The DWG database of the xRef file, null if not an xRef model mapping
     DWG_EXPORT ResolvedModelMapping CreateAndInsertModelMap (DgnModelP model, DwgDbBlockTableRecordCR block, TransformCR trans, DwgDbBlockReferenceCP xrefInsert = nullptr, DwgDbDatabaseP xrefDwg = nullptr);
-    DWG_EXPORT bool               AddToDwgModelMap (ResolvedModelMapping const&);
+    DWG_EXPORT bool               AddToDwgModelMap (ResolvedModelMappingCR);
     DWG_EXPORT ResolvedModelMapping FindRootModelFromImportJob ();
     //! Find a cached DgnModel mapped from a DWG "model", with matching transformation.  Only search the cached map, no attempt to search in the syncInfo.
-    DWG_EXPORT ResolvedModelMapping FindModel (DwgDbObjectIdCR dwgModelId, TransformCR trans, DwgSyncInfo::ModelSourceType source);
+    DWG_EXPORT ResolvedModelMapping FindModel (DwgDbObjectIdCR dwgModelId, TransformCR trans, DwgSourceAspects::ModelAspect::SourceType source);
     //! Find a cached DgnModel mapped from a DWG "model", ignoring transformation. Only search the cached map, no attempt to search in the syncInfo.
-    DWG_EXPORT ResolvedModelMapping FindModel (DwgDbObjectIdCR dwgModelId, DwgSyncInfo::ModelSourceType sourceType);
+    DWG_EXPORT ResolvedModelMapping FindModel (DwgDbObjectIdCR dwgModelId, DwgSourceAspects::ModelAspect::SourceType sourceType);
     DWG_EXPORT Utf8String         RemapModelName (Utf8StringCR name, BeFileNameCR, Utf8StringCR suffix);
-    DWG_EXPORT virtual Utf8String _ComputeModelName (DwgDbBlockTableRecordCR block, Utf8CP suffix = nullptr);
+    DWG_EXPORT virtual Utf8String _ComputeModelName (DwgDbBlockTableRecordCR block, DwgDbHandleCP idAsSuffix = nullptr);
     DWG_EXPORT virtual DgnClassId _GetModelType (DwgDbBlockTableRecordCR block);
 
     //! @name  Importing layers
@@ -1133,6 +1145,8 @@ protected:
     DWG_EXPORT virtual BentleyStatus  _ImportLayer (DwgDbLayerTableRecordCR layer, DwgStringP overrideName = nullptr);
     DWG_EXPORT virtual BentleyStatus  _OnUpdateLayer (DgnCategoryId&, DwgDbLayerTableRecordCR);
     BentleyStatus                     GetLayerAppearance (DgnSubCategory::Appearance& appearance, DwgDbLayerTableRecordCR layer, DwgDbObjectIdCP viewportId = nullptr);
+    T_DwgDgnLayerMap&  GetLayerMappingCache () { return m_layersInSync; }
+    
 
     //! @name  Importing viewport table
     //! @{
@@ -1163,7 +1177,7 @@ protected:
     // The materials dictionay contains all materials used in a DWG file
     DWG_EXPORT virtual BentleyStatus    _ImportMaterialSection ();
     DWG_EXPORT virtual BentleyStatus    _ImportMaterial (DwgDbMaterialPtr& material, Utf8StringCR paletteName, Utf8StringCR materialName);
-    DWG_EXPORT virtual BentleyStatus    _OnUpdateMaterial (DwgSyncInfo::Material const& syncMaterial, DwgDbMaterialPtr& dwgMaterial);
+    DWG_EXPORT virtual BentleyStatus    _OnUpdateMaterial (DwgSourceAspects::MaterialAspectCR oldAspect, DwgDbMaterialPtr& dwgMaterial);
     //! Search material paths specified in the Config file.  If a match found, replace the file name.
     DWG_EXPORT virtual bool             _FindTextureFile (BeFileNameR filename) const;
     DWG_EXPORT bvector<BeFileName> const& GetMaterialSearchPaths () const { return m_materialSearchPaths; }
@@ -1199,10 +1213,13 @@ protected:
     //! Should create a DgnElement if there is no geometry at all?
     DWG_EXPORT virtual bool           _SkipEmptyElement (DwgDbEntityCP entity);
     //! Insert imported DgnElement into DgnDb.  This method is called after _ImportEntity.
-    DWG_EXPORT DgnDbStatus    InsertResults (ElementImportResults& results);
-    DWG_EXPORT DgnDbStatus    UpdateResults (ElementImportResults& results, DgnElementId existingElement);
-    //! Insert or update imported DgnElement and source DWG entity in DwgSynchInfo
-    DWG_EXPORT BentleyStatus  InsertOrUpdateResultsInSyncInfo (ElementImportResults& results, IDwgChangeDetector::DetectionResults const& updatePlan, DwgDbEntityCR entity, DwgSyncInfo::DwgModelSyncInfoId const& modelSyncId);
+    //! @param[in] results Imported element data from a source object
+    //! @param[in] source Input source data with pre-calculated provenance
+    DWG_EXPORT DgnDbStatus    InsertResults (ElementImportResults& results, DwgSourceAspects::ObjectAspect::SourceDataCR source);
+    //! Update existing element from imported element
+    //! @param[in] results Imported element data from a source object
+    //! @param[in] source Input source data with pre-calculated provenance
+    DWG_EXPORT DgnDbStatus    UpdateResults (ElementImportResults& results, DwgSourceAspects::ObjectAspect::SourceDataCR source);
     //! Create a new or update an existing element from an entity based on the sync info
     DWG_EXPORT BentleyStatus  ImportOrUpdateEntity (ElementImportInputs& inputs);
 
@@ -1210,7 +1227,7 @@ protected:
     //! @{
     //! A DWG layout is made up by a Paperspace block containing graphical entities and a sheet/plot definition.
     DWG_EXPORT virtual BentleyStatus  _ImportLayouts ();
-    DWG_EXPORT virtual BentleyStatus  _ImportLayout (ResolvedModelMapping& modelMap, DwgDbBlockTableRecordR block, DwgDbLayoutCR layout);
+    DWG_EXPORT virtual BentleyStatus  _ImportLayout (ResolvedModelMappingR modelMap, DwgDbBlockTableRecordR block, DwgDbLayoutCR layout);
 
     //! @name  Importing groups
     //! @{
@@ -1231,10 +1248,10 @@ protected:
     //! @param[in] dwgGroup Input object of the DWG group from which the DgnDb group will be updated.
     DWG_EXPORT virtual BentleyStatus  _UpdateGroup (DgnElementR dgnGroup, DwgDbGroupCR dwgGroup);
     //! Detect existing DWG group against its provenance and act according to the detection results.
-    //! @param[in] prov Input provenance of the DWG group retrieved from the sync info.
+    //! @param[in] aspect ExternalSourceAspectt for the DWG group
     //! @param[in] dwgGroup Input object of the DWG group dictionary.
     //! @note When a change is detected for a DWG group, _UpdateGroup will be called; otherwise _ImportGroup will be called, by the default implementation.
-    DWG_EXPORT virtual BentleyStatus  _OnUpdateGroup (DwgSyncInfo::Group const& prov, DwgDbGroupCR dwgGroup);
+    DWG_EXPORT virtual BentleyStatus  _OnUpdateGroup (DwgSourceAspects::GroupAspectCR aspect, DwgDbGroupCR dwgGroup);
     //! Tell DwgSyncInfo how to sync groups: group object alone or members included?
     //! @return True to include members - needed when members are not made persistent elements; False to sync group object only - members are tracked by entity mappings.
     DWG_EXPORT virtual bool _ShouldSyncGroupWithMembers () const { return false; }
@@ -1257,9 +1274,9 @@ protected:
 
     //! @name DWG-DgnDb sync info
     //! @{
-    DWG_EXPORT virtual DwgSyncInfo::DwgFileId _AddFileInSyncInfo (DwgDbDatabaseR, StableIdPolicy);
     DWG_EXPORT virtual StableIdPolicy         _GetDwgFileIdPolicy () const;
-    DwgSyncInfo::DwgFileId  GetDwgFileId (DwgDbDatabaseR, bool setIfNotExist = true);
+    //! Get a unique identifier from a file name
+    DWG_EXPORT virtual Utf8String   _GetUniqueNameForFile (WStringCR fullFileName) const;
 
     //! @name  Product installations
     //! @{
@@ -1279,11 +1296,10 @@ public:
     DWG_EXPORT DwgImporter (Options& options);
     DWG_EXPORT ~DwgImporter ();
 
-    DWG_EXPORT ImportJobCreateStatus InitializeJob (Utf8CP comment=nullptr, DwgSyncInfo::ImportJob::Type = DwgSyncInfo::ImportJob::Type::RootModels);
+    DWG_EXPORT ImportJobCreateStatus InitializeJob (Utf8CP comment=nullptr);
     DWG_EXPORT ImportJobLoadStatus FindJob ();
-    DWG_EXPORT ResolvedImportJob const& GetImportJob () const { return m_importJob; }
-    DWG_EXPORT BentleyStatus    AttachSyncInfo ();
-    DwgSyncInfo&                GetSyncInfo () { return m_syncInfo; }
+    ResolvedImportJobCR         GetImportJob () const { return m_importJob; }
+    DwgSourceAspects&           GetSourceAspects () { return m_sourceAspects; }
     DWG_EXPORT bool             ArePointsValid (DPoint3dCP checkPoints, size_t numPoints, DwgDbEntityCP entity = nullptr) { return _ArePointsValid(checkPoints, numPoints, entity); }
     DgnFontCP                   GetDgnFontFor (DwgFontInfoCR fontInfo);
     DgnFontCP                   GetDefaultFont () const { return m_defaultFont.get(); }
@@ -1324,9 +1340,7 @@ public:
     DgnSubCategoryId            InsertAlternateSubCategory (DgnSubCategoryCPtr subcategory, DgnSubCategory::Appearance const& appearance, Utf8CP desiredName = nullptr);
     //! Get the block-geometry map that caches imported geometries.
     T_BlockPartsMap&            GetBlockPartsR () { return m_blockPartsMap; }
-    //! Get the DefinitionModel that stores GeometryParts
-    DefinitionModelPtr          GetGeometryPartsModel () { return m_geometryPartsModel; }
-    //! Get/create the DefinitionModel that stores all other job specific definitions, expcept for GeometryParts.
+    //! Get/create the DefinitionModel that stores all other job specific definitions
     DefinitionModelPtr          GetOrCreateJobDefinitionModel ();
 
     //! An iModelBridge must call this method from _MakeSchemaChanges, to change schemass.
@@ -1343,9 +1357,10 @@ public:
     DWG_EXPORT static void      Initialize (BentleyApi::BeFileNameCP toolkitDir = nullptr);
     DWG_EXPORT static void      TerminateDwgHost ();
     DWG_EXPORT BentleyStatus    OpenDwgFile (BeFileNameCR dwgdxfName);
-    DWG_EXPORT void             SetDgnDb (DgnDbR bim) const { m_dgndb = &bim; }
+    DWG_EXPORT void             SetDgnDb (DgnDbR bim);
     DWG_EXPORT DgnDbR           GetDgnDb () const { return *m_dgndb; }
-    DWG_EXPORT DwgDbDatabaseR   GetDwgDb () { return *m_dwgdb.get(); }
+    DwgDbDatabaseR              GetDwgDb () { return *m_dwgdb.get(); }
+    DwgDbDatabaseP              GetDwgDbP () { return m_dwgdb.get(); }
     DWG_EXPORT BentleyStatus    Process ();
     DWG_EXPORT void             Progress ();
     DWG_EXPORT DgnModelId       CreateModel (DwgDbBlockTableRecordCR block, Utf8CP modelName, DgnClassId classId);
@@ -1353,7 +1368,6 @@ public:
     void                        ReportError (IssueCategory::StringId category, Issue::StringId issue, WCharCP details) {ReportError(category,issue,Utf8String(details).c_str());}
     DWG_EXPORT void             ReportIssueV (IssueSeverity, IssueCategory::StringId, Issue::StringId, Utf8CP context, ...);
     DWG_EXPORT void             ReportIssue (IssueSeverity, IssueCategory::StringId, Issue::StringId, Utf8CP details, Utf8CP context = nullptr);
-    DWG_EXPORT void             ReportSyncInfoIssue (IssueSeverity, IssueCategory::StringId, Issue::StringId, Utf8CP details);
     DWG_EXPORT BentleyStatus    OnFatalError (IssueCategory::StringId cat=IssueCategory::Unknown(), Issue::StringId num=Issue::ProgramExits(), ...);
     DWG_EXPORT bool             WasAborted () const { return m_wasAborted; }
     DgnProgressMeterR           GetProgressMeter() const;
@@ -1367,6 +1381,8 @@ public:
     DwgXRefHolder*              FindXRefHolder (DwgDbBlockTableRecordCR xrefBlock, bool createIfNotFound = false);
     DwgDbDatabaseP              FindLoadedXRef (BeFileNameCR path);
     T_LoadedXRefFiles&          GetLoadedXrefs () { return m_loadedXrefFiles; }
+    //! Get or add a RepositoryLink for a DWG
+    DWG_EXPORT DgnElementId GetRepositoryLink (DwgDbDatabaseP dwg);
     //! Import a database-resident entity
     DWG_EXPORT BentleyStatus    ImportEntity (ElementImportResults& results, ElementImportInputs& inputs);
     //! Import a none database-resident entity in a desired block (must be a valid block)
@@ -1376,6 +1392,7 @@ public:
     DWG_EXPORT DgnModelId       GetGroupModelId () const { return m_groupModelId; }
     
     };  // DwgImporter
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(DwgImporter)
 
 //=======================================================================================
 //! A no-op change detector for creating DgnDb from DWG
@@ -1387,16 +1404,16 @@ public:
     void    _Prepare (DwgImporter&) override {}
     void    _Cleanup (DwgImporter&) override {}
     bool    _ShouldSkipFile (DwgImporter&, DwgDbDatabaseCR) override { return false; }
-    bool    _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const& m,  DwgDbDatabaseCP xref = nullptr) override { return false; }
-    void    _OnModelSeen (DwgImporter&, ResolvedModelMapping const& m) override {}
+    bool    _ShouldSkipModel (DwgImporter&, ResolvedModelMappingCR m,  DwgDbDatabaseCP xref = nullptr) override { return false; }
+    void    _OnModelSeen (DwgImporter&, ResolvedModelMappingCR m) override {}
     void    _OnViewSeen (DwgImporter&, DgnViewId) override {}
     void    _OnGroupSeen (DwgImporter&, DgnElementId) override {}
-    void    _OnModelInserted (DwgImporter&, ResolvedModelMapping const&, DwgDbDatabaseCP) override {}
+    void    _OnModelInserted (DwgImporter&, ResolvedModelMappingCR, DwgDbDatabaseCP) override {}
     void    _OnElementSeen (DwgImporter&, DgnElementId) override {}
-    void    _DetectDeletedElements (DwgImporter&, DwgSyncInfo::ElementIterator&) override {}
+    void    _DetectDeletedElements (DwgImporter&, DwgSourceAspects::ObjectAspectIteratorR) override {}
     void    _DetectDeletedElementsInFile (DwgImporter&, DwgDbDatabaseR) override {}
     void    _DetectDeletedElementsEnd (DwgImporter&) override {}
-    void    _DetectDeletedModels (DwgImporter&, DwgSyncInfo::ModelIterator&) override {}
+    void    _DetectDeletedModels (DwgImporterR, DwgSourceAspects::ModelAspectIterator&) override {}
     void    _DetectDeletedModelsInFile (DwgImporter&, DwgDbDatabaseR) override {}
     void    _DetectDeletedModelsEnd (DwgImporter&) override {}
     void    _DetectDeletedMaterials (DwgImporter&) override {}
@@ -1405,9 +1422,11 @@ public:
     void    _DetectDetachedXrefs (DwgImporter&) override {}
 
     //! always fills in element provenence and returns true
-    DWG_EXPORT bool   _IsElementChanged (DetectionResults&, DwgImporter&, DwgDbObjectCR, ResolvedModelMapping const&, T_DwgSyncInfoElementFilter*) override;
+    DWG_EXPORT bool   _IsElementChanged (DetectionResultsR, DwgImporterR, DwgDbObjectCR, ResolvedModelMappingCR, DwgSourceAspects::T_ObjectAspectFilter*) override;
+    DWG_EXPORT bool   _IsElementChanged (DetectionResultsR, DwgImporterR, DwgDbHandleCR, DgnModelCR, DwgSourceAspects::T_ObjectAspectFilter*) override;
     CreatorChangeDetector () {}
 };  // CreatorChangeDetector
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(CreatorChangeDetector)
 
 //=======================================================================================
 //! A change detector to help updating DgnDb previously imported from DWG
@@ -1415,20 +1434,18 @@ public:
 struct UpdaterChangeDetector : IDwgChangeDetector
 {
 private:
-    DwgSyncInfo::ByDwgObjectIdIter*         m_byIdIter;
-    DwgSyncInfo::ByHashIter*                m_byHashIter;
-    DgnElementIdSet                         m_elementsSeen;
-    bset<DwgSyncInfo::DwgModelSyncInfoId>   m_dwgModelsSeen;
-    bset<DwgSyncInfo::DwgModelSyncInfoId>   m_dwgModelsSkipped;
-    bset<DwgSyncInfo::DwgModelSyncInfoId>   m_newlyDiscoveredModels;
-    bset<DgnViewId>                         m_viewsSeen;
-    DgnElementIdSet                         m_groupsSeen;
-    uint32_t                                m_elementsDiscarded;
+    DgnElementIdSet     m_elementsSeen;
+    DgnModelIdSet       m_dwgModelsSeen;
+    DgnModelIdSet       m_dwgModelsSkipped;
+    DgnModelIdSet       m_newlyDiscoveredModels;
+    bset<DgnViewId>     m_viewsSeen;
+    DgnElementIdSet     m_groupsSeen;
+    uint32_t            m_elementsDiscarded;
 
     bool    IsUpdateRequired (DetectionResults& results, DwgImporter& importer, DwgDbObjectCR obj) const;
 
 public:
-    UpdaterChangeDetector () : m_byIdIter(nullptr), m_byHashIter(nullptr) {}
+    UpdaterChangeDetector () : m_elementsDiscarded(0) {}
     DWG_EXPORT ~UpdaterChangeDetector ();
     DWG_EXPORT void _Prepare(DwgImporter&) override;
     DWG_EXPORT void _Cleanup(DwgImporter&) override;
@@ -1436,23 +1453,26 @@ public:
     //! @name  Override tracking & detection methods
     //! @{
     DWG_EXPORT bool   _ShouldSkipFile (DwgImporter&, DwgDbDatabaseCR) override;
-    DWG_EXPORT bool   _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const&, DwgDbDatabaseCP xref = nullptr) override;
-    DWG_EXPORT void   _OnModelSeen (DwgImporter&, ResolvedModelMapping const&) override;
-    DWG_EXPORT void   _OnModelInserted (DwgImporter&, ResolvedModelMapping const&, DwgDbDatabaseCP xRef) override;
+    DWG_EXPORT bool   _ShouldSkipModel (DwgImporter&, ResolvedModelMappingCR, DwgDbDatabaseCP xref = nullptr) override;
+    DWG_EXPORT void   _OnModelSeen (DwgImporter&, ResolvedModelMappingCR) override;
+    DWG_EXPORT void   _OnModelInserted (DwgImporter&, ResolvedModelMappingCR, DwgDbDatabaseCP xRef) override;
     DWG_EXPORT void   _OnViewSeen (DwgImporter&, DgnViewId) override;
     DWG_EXPORT void   _OnGroupSeen (DwgImporter&, DgnElementId) override;
     DWG_EXPORT void   _OnElementSeen (DwgImporter&, DgnElementId) override;
-    DWG_EXPORT bool   _IsElementChanged (DetectionResults&, DwgImporter&, DwgDbObjectCR, ResolvedModelMapping const&, T_DwgSyncInfoElementFilter* filter) override;
+    //! detect input DWG object for change and fill DetectionResults as appropriate
+    DWG_EXPORT bool   _IsElementChanged (DetectionResultsR, DwgImporterR, DwgDbObjectCR, ResolvedModelMappingCR, DwgSourceAspects::T_ObjectAspectFilter* filter) override;
+    //! detect current provenance in DetectionResults for change and fill other fields as appropriate
+    DWG_EXPORT bool   _IsElementChanged (DetectionResultsR, DwgImporterR, DwgDbHandleCR, DgnModelCR, DwgSourceAspects::T_ObjectAspectFilter* filter) override;
     //! @}
 
     //! @name  Inferring Deletions - call these methods after processing all models in a conversion unit
     //! @{
     //! delete elements
-    DWG_EXPORT void   _DetectDeletedElements (DwgImporter&, DwgSyncInfo::ElementIterator&) override;
+    DWG_EXPORT void   _DetectDeletedElements (DwgImporterR, DwgSourceAspects::ObjectAspectIteratorR) override;
     DWG_EXPORT void   _DetectDeletedElementsInFile (DwgImporter&, DwgDbDatabaseR) override;  //!< don't forget to call _DetectDeletedElementsEnd when done
     DWG_EXPORT void   _DetectDeletedElementsEnd (DwgImporter&) override { m_elementsSeen.clear(); }
     //! delete models
-    DWG_EXPORT void   _DetectDeletedModels (DwgImporter&, DwgSyncInfo::ModelIterator&) override;
+    DWG_EXPORT void   _DetectDeletedModels (DwgImporterR, DwgSourceAspects::ModelAspectIteratorR) override;
     DWG_EXPORT void   _DetectDeletedModelsInFile (DwgImporter&, DwgDbDatabaseR) override;    //!< don't forget to call _DetectDeletedModelsEnd when done
     DWG_EXPORT void   _DetectDeletedModelsEnd (DwgImporter&) override {m_dwgModelsSeen.clear();}
     //! delete tables
@@ -1462,6 +1482,7 @@ public:
     DWG_EXPORT void   _DetectDetachedXrefs (DwgImporter&) override;
     //! @}
 };  // UpdaterChangeDetector
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(UpdaterChangeDetector)
 
 END_DWG_NAMESPACE
 //__PUBLISH_SECTION_END__

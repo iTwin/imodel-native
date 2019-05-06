@@ -27,13 +27,55 @@ DgnElementId QueryElementId (DgnDbCR db, Utf8CP className, Utf8CP codeValue) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId    FindElement (DwgDbHandleCR entityHandle, uint64_t dwgModelId, SyncInfoReader const& reader, bool shouldExist = true) const
+DgnElementId    FindElement (DwgDbHandleCR entityHandle, uint64_t dwgModelId, DgnDbR db, bool shouldExist = true) const
     {
-    DwgSyncInfo::DwgModelSyncInfoId infoId;
-    reader.MustFindModelSyncInfo (infoId, dwgModelId, DwgSyncInfo::ModelSourceType::ModelSpace);
+    // find model mapped from the modelspace with its blockID
+    auto modelElementId = FindModelElement(dwgModelId, db, DwgSourceAspects::ModelAspect::SourceType::ModelSpace);
+    
+    Utf8PrintfString    handleStr("0x%ls", entityHandle.AsAscii().c_str());
+    Utf8PrintfString    modelIdStr("0x%X", modelElementId.GetValue());
+
+    auto sql = db.GetPreparedECSqlStatement("SELECT Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " WHERE (Scope.Id=? AND Kind=? AND Identifier=?)");
+    EXPECT_TRUE(sql != nullptr) << "SQL query for element ExternalSourceAspect failed!";
+
+    sql->BindText(1, modelIdStr.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    sql->BindText(2, DwgSourceAspects::BaseAspect::Kind::Element, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    sql->BindText(3, handleStr.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+
     DgnElementId    elementId;
-    int count = shouldExist ? 1 : 0;
-    reader.MustFindElementByDwgEntityHandle (elementId, infoId, entityHandle, count);
+    if (BE_SQLITE_ROW == sql->Step())
+        elementId = sql->GetValueId<DgnElementId>(0);
+
+    EXPECT_EQ(shouldExist, elementId.IsValid()) << "Check for existing elememnt failed!";
+    
+    return  elementId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId    FindModelElement (uint64_t dwgModelId, DgnDbR db, DwgSourceAspects::ModelAspect::SourceType sourceType) const
+    {
+    // matching DwgSourceAspects::ModelAspect::SourceType enumeration
+    static Utf8CP s_sourcetypes[]={"Unknown","ModelSpace","PaperSpace","XRefAttachment","RasterAttachment"};
+    uint32_t index = static_cast<uint32_t>(sourceType);
+
+    Utf8PrintfString    idstr("0x%X", dwgModelId);
+    Utf8PrintfString    typestr("%s", s_sourcetypes[index]);
+
+    auto sql = db.GetPreparedECSqlStatement(
+            "SELECT x.Element.Id, x.JsonProperties FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " x "
+            " WHERE (x.Kind=? AND x.Identifier=? AND json_extract(x.JsonProperties, '$.SourceType')=?)");
+
+    EXPECT_TRUE(sql != nullptr) << "SQL query for model ExternalSourceAspect failed!";
+
+    sql->BindText(1, DwgSourceAspects::BaseAspect::Kind::Model, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    sql->BindText(2, idstr.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    sql->BindText(3, typestr.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+
+    DgnElementId    elementId;
+    if (BE_SQLITE_ROW == sql->Step())
+        elementId = sql->GetValueId<DgnElementId>(0);
     return  elementId;
     }
 
@@ -90,8 +132,7 @@ void CheckDbElement (size_t expectedCount, DwgDbHandleCR entityHandle, uint64_t 
     EXPECT_EQ (expectedCount, db->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialElement)).BuildIdList<DgnElementId>().size()) << "Spaitial element count in the DgnDb is incorrect.";
 
     // retreive element ID for the requested entity handle from the syncInfo:
-    SyncInfoReader reader (m_dgnDbFileName);
-    auto elementId = FindElement (entityHandle, dwgModelId, reader, shouldExist);
+    auto elementId = FindElement (entityHandle, dwgModelId, *db, shouldExist);
     
     // check the presence of the imported element
     EXPECT_EQ (shouldExist, elementId.IsValid()) << "The requested elememnt is not added/deleted as it should!";
@@ -108,14 +149,13 @@ void ExtractPlacementOrigins (DPoint3dArrayR origins, T_EntityHandles handles) c
     auto db = OpenExistingDgnDb (m_dgnDbFileName, Db::OpenMode::Readonly);
     EXPECT_TRUE (db.IsValid());
 
-    SyncInfoReader  reader(m_dgnDbFileName);
     DwgFileEditor   editor(m_dwgFileName);
 
     auto modelspaceId = editor.GetModelspaceId().ToUInt64 ();
     auto iter = db->Elements().MakeIterator (BIS_SCHEMA(BIS_CLASS_SpatialElement));
     for (auto& handle : handles)
         {
-        auto elementId = FindElement (handle, modelspaceId, reader);
+        auto elementId = FindElement (handle, modelspaceId, *db);
         for (auto& entry : iter)
             {
             auto element = db->Elements().GetElement (elementId);
@@ -215,10 +255,9 @@ void CheckGenericGroup (Utf8StringCR expectedName, DwgDbObjectIdArrayCR expected
     DgnElementIdSet expectedElements;
 
     // expect spatial elements exist in db
-    SyncInfoReader  reader (m_dgnDbFileName);
     for (auto entityId : expectedEntities)
         {
-        auto elementId = FindElement (entityId.GetHandle(), blockId.ToUInt64(), reader, true);
+        auto elementId = FindElement (entityId.GetHandle(), blockId.ToUInt64(), *db, true);
         EXPECT_TRUE (elementId.IsValid()) << "DgnElement is not found for a DWG group's memeber entity!";
         expectedElements.insert (elementId);
         }
@@ -339,15 +378,14 @@ TEST_F(BasicTests, UpdateElements_DeleteMove)
     EXPECT_TRUE (db->IsDbOpen());
 
     // is the deleted element in the DgnDb
-    SyncInfoReader  reader (m_dgnDbFileName);
-    auto id = FindElement (deleteHandle, modelspaceId, reader, false);
+    auto id = FindElement (deleteHandle, modelspaceId, *db, false);
     EXPECT_FALSE (id.IsValid());
 
     // check element placement origins, in Meters
     auto iter = db->Elements().MakeIterator (BIS_SCHEMA(BIS_CLASS_SpatialElement));
     for (auto& handle : handles)
         {
-        id = FindElement (handle, modelspaceId, reader);
+        id = FindElement (handle, modelspaceId, *db);
         for (auto& entry : iter)
             {
             if (entry.GetElementId() == id)

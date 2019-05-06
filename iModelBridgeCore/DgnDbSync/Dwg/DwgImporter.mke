@@ -31,7 +31,7 @@ DwgDepends          = $(DwgDbPubApi)DwgDbCommon.h           \
                       $(DwgDbPubApi)DwgDbEntities.h         \
                       $(DwgDbPubApi)DwgDbSymbolTables.h     \
                       $(DwgDbPubApi)BasicTypes.h            \
-                      $(DwgPublicApi)DwgSyncInfo.h          \
+                      $(DwgPublicApi)DwgSourceAspects.h     \
                       $(DwgPublicApi)DwgHelper.h            \
                       $(DwgPublicApi)DwgL10N.h              \
                       $(DwgPublicApi)DwgImporter.h          \
@@ -55,6 +55,8 @@ $(o)DwgImporter$(oext)      : $(baseDir)DwgImporter.cpp $(DwgDepends) ${MultiCom
 $(o)DwgUpdater$(oext)       : $(baseDir)DwgUpdater.cpp $(DwgDepends) ${MultiCompileDepends}
 
 $(o)DwgImportHost$(oext)    : $(baseDir)DwgImportHost.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)DwgImportJob$(oext)     : $(baseDir)DwgImportJob.cpp $(DwgDepends) ${MultiCompileDepends}
 
 $(o)ImportLayers$(oext)     : $(baseDir)ImportLayers.cpp $(DwgDepends) ${MultiCompileDepends}
 
@@ -92,7 +94,7 @@ $(o)RepositoryLinks$(oext)  : $(baseDir)RepositoryLinks.cpp $(DwgDepends) ${Mult
 
 $(o)DwgHelper$(oext)        : $(baseDir)DwgHelper.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)DwgSyncInfo$(oext)      : $(baseDir)DwgSyncInfo.cpp $(DwgDepends) ${MultiCompileDepends}
+$(o)DwgSourceAspects$(oext) : $(baseDir)DwgSourceAspects.cpp $(DwgDepends) ${MultiCompileDepends}
 
 $(o)ConvertConfig$(oext)    : $(baseDir)Config/ConvertConfig.cpp $(DwgDepends) ${MultiCompileDepends}
 
@@ -122,6 +124,8 @@ LINKER_LIBRARIES        + $(ContextSubpartsLibs)Units$(libext)
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeJsonCpp$(libext)
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeXml$(libext)
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeLibXml2$(libext)
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
 
 LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)Bentley$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnPlatform$(libext)
@@ -152,5 +156,10 @@ LINKER_LIBRARIES_DELAYLOADED + Msi$(libext)
 %endif
 
 %endif  # DWGTOOLKIT
+
+%if $(TARGET_PLATFORM) == "Windows"
+# Need GetFileVersionInfo to extract DLL version
+LINKER_LIBRARIES_DELAYLOADED + Mincore$(libext)
+%endif
 
 %include $(sharedMki)LinkLibrary.mki

@@ -57,12 +57,23 @@ DgnElementId    RepositoryLinkFactory::CreateOrUpdate (DwgDbDatabaseR dwg)
             }
         }
 
+    // create a repository link aspect
+    auto dwgInfo = DwgSourceAspects::DwgFileInfo(dwg, m_importer);
+    auto aspect = DwgSourceAspects::RepositoryLinkAspect::Create (m_dgndb, dwgInfo, m_importer.GetCurrentIdPolicy());
+    if (!aspect.IsValid())
+        return DgnElementId();
+
+    aspect.AddAspect (*newLink);
+
     auto updatedLink = linkId.IsValid() ? newLink->Update(): newLink->Insert();
     if (!updatedLink.IsValid())
         return DgnElementId();
 
     linkId = updatedLink->GetElementId ();
     dwg.SetRepositoryLinkId (linkId.GetValue());
+
+    // also set file id policy
+    dwg.SetFileIdPolicy (static_cast<uint32_t>(m_importer.GetCurrentIdPolicy()));
 
     return linkId;
     }
@@ -96,7 +107,7 @@ BentleyStatus   DwgImporter::InsertElementHasLinks (DgnModelR model, DwgDbDataba
     // if a Respository has not been created for this DWG, create one now:
     uint64_t    savedId = 0;
     if (dwg.GetRepositoryLinkId(savedId) != DwgDbStatus::Success || savedId == 0)
-        status = this->UpdateRepositoryLink (&dwg);
+        status = this->CreateOrUpdateRepositoryLink(&dwg).IsValid() ? BSISUCCESS : BSIERROR;
 
     // get the RepositoryLinkId from the DWG
     DgnDbStatus dbStatus = DgnDbStatus::InvalidId;
@@ -117,20 +128,36 @@ BentleyStatus   DwgImporter::InsertElementHasLinks (DgnModelR model, DwgDbDataba
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::UpdateRepositoryLink (DwgDbDatabaseP source)
+DgnElementId    DwgImporter::CreateOrUpdateRepositoryLink (DwgDbDatabaseP source)
     {
+    DgnElementId    repLinkId;
     DwgDbDatabaseP  dwg = source == nullptr ? m_dwgdb.get() : source;
     if (nullptr == dwg)
-        return  BentleyStatus::BSIERROR;
+        return  repLinkId;
 
-    RepositoryLinkFactory   factory(*m_dgndb, this->GetOptions());
-    auto linkId = factory.CreateOrUpdate (*dwg);
+    RepositoryLinkFactory   factory(*m_dgndb, *this);
+    repLinkId = factory.CreateOrUpdate (*dwg);
     
-    if (!linkId.IsValid())
-        {
+    if (!repLinkId.IsValid())
         this->ReportError (IssueCategory::Briefcase(), Issue::Message(), Utf8PrintfString("Failed to insert/update RepositoryLink for %ls", dwg->GetFileName().c_str()).c_str());
-        return  BentleyStatus::BSIERROR;
-        }
+    else
+        m_repositoryLinksInSync.insert (T_DwgRepositoryLink(dwg, repLinkId));
 
-    return  BentleyStatus::BSISUCCESS;
+    return  repLinkId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId    DwgImporter::GetRepositoryLink (DwgDbDatabaseP source)
+    {
+    DgnElementId    rlinkId;
+    DwgDbDatabaseP  dwg = nullptr == source ? m_dwgdb.get() : source;
+
+    auto found = m_repositoryLinksInSync.find(dwg);
+    if (found == m_repositoryLinksInSync.end())
+        rlinkId = this->CreateOrUpdateRepositoryLink (dwg);
+    else
+        rlinkId = found->second;
+    return  rlinkId;
     }

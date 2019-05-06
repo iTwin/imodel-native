@@ -31,7 +31,7 @@ NativeLogging::ILogger&         DwgImportLogging::GetLogger (Namespace name)
             "DwgImporter.Textstyle",
             "DwgImporter.Material",
             "DwgImporter.Entity",
-            "DwgImporter.Dictionary",
+            "DwgImporter.SyncInfo",
             "DwgImporter.Performance"
             };
         s_loggers[index] = LoggingManager::GetLogger (s_loggerNamespaces[index]);
@@ -317,23 +317,6 @@ void            DwgImporter::ReportIssueV(IssueSeverity severity, IssueCategory:
 void            DwgImporter::ReportError (IssueCategory::StringId category, Issue::StringId issue, Utf8CP details) 
     {
     ReportIssue (IssueSeverity::Error, category, issue, details);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            DwgImporter::ReportSyncInfoIssue (IssueSeverity severity, IssueCategory::StringId category, Issue::StringId issue, Utf8CP details)
-    {
-    BeSQLite::DbResult lastError;
-    Utf8String lastErrorDesc;
-    GetSyncInfo().GetLastError (lastError, lastErrorDesc);
-    BeFileName syncInfoFileName = DwgSyncInfo::GetDbFileName (GetDgnDb());
-    Utf8String desc;
-    if (!lastErrorDesc.empty() || 0 != *details)
-        desc.Sprintf("[%s] - %s - %s", Utf8String(syncInfoFileName).c_str(), lastErrorDesc.c_str(), details);
-    else
-        desc = Utf8String(syncInfoFileName);
-    ReportIssue (severity, category, issue, desc.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

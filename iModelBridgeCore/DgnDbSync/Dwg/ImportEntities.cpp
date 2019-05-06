@@ -879,15 +879,15 @@ struct GeometryFactory : public IDwgDrawGeometry
     private:
         DwgDbObjectId           m_blockId;
         Utf8String              m_blockName;
-        DwgSyncInfo::DwgFileId  m_fileId;
+        DgnElementId            m_fileId;
     public:
-        BlockInfo (DwgDbObjectIdCR id, DwgStringCR name, DwgSyncInfo::DwgFileId file) : m_blockId(id), m_fileId(file)
+        BlockInfo (DwgDbObjectIdCR id, DwgStringCR name, DgnElementId file) : m_blockId(id), m_fileId(file)
             {
             m_blockName.Assign (name.c_str());
             }
         DwgDbObjectIdCR GetBlockId () const { return m_blockId; }
         Utf8StringCR    GetBlockName () const { return m_blockName; }
-        DwgSyncInfo::DwgFileId  GetFileId () const { return m_fileId; }
+        DgnElementId    GetFileId () const { return m_fileId; }
         };  // BlockInfo
 
 private:
@@ -925,9 +925,9 @@ GeometryFactory (DwgImporter::ElementCreateParams& createParams, DrawParameters&
     m_isTargetModel2d = !createParams.GetModel().Is3d ();
 
     // start block stack by input entity's block
-    auto dwg = nullptr == ent ? m_drawParams.GetDatabase() : ent->GetDatabase().get();
-    auto blockId = nullptr == ent ? dwg->GetModelspaceId() : ent->GetOwnerId();
-    m_blockStack.push_back (BlockInfo(blockId, L"ModelSpace", DwgSyncInfo::GetDwgFileId(*dwg)));
+    auto dwg = nullptr == ent || ent->GetDatabase().IsNull() ? m_drawParams.GetDatabase() : ent->GetDatabase().get();
+    auto blockId = nullptr == ent || !ent->GetOwnerId().IsValid() ? dwg->GetModelspaceId() : ent->GetOwnerId();
+    m_blockStack.push_back (BlockInfo(blockId, L"ModelSpace", DwgSourceAspects::GetRepositoryLinkId(*dwg)));
     }
 
 // the destructor
@@ -953,7 +953,7 @@ void    PushDrawingBlock (DwgDbBlockTableRecordCR block)
     if (!dwg.IsValid())
         dwg = m_drawParams.GetDatabase ();
     BeAssert (dwg.IsValid());
-    BlockInfo entry (block.GetObjectId(), block.GetName(), DwgSyncInfo::GetDwgFileId(*dwg));
+    BlockInfo entry (block.GetObjectId(), block.GetName(), DwgSourceAspects::GetRepositoryLinkId(*dwg));
     m_blockStack.push_back (entry);
     }
 bool        IsDrawingBlock () { return m_blockStack.size() > 1; }
@@ -2406,7 +2406,7 @@ Utf8String  ElementFactory::BuildPartCodeValue (DwgImporter::GeometryEntry const
     // set a persistent code value, "blockName[fileId:blockId]-partIndex"
     auto name = geomEntry.GetBlockName().c_str ();
     auto blockid = geomEntry.GetBlockId().ToUInt64 ();
-    auto fileid = geomEntry.GetDwgFileId ();
+    auto fileid = geomEntry.GetDwgFileId().GetValue ();
 
     // a different code value for a mirrored block
     if (m_basePartScale < 0.0)
@@ -2463,9 +2463,16 @@ DgnGeometryPartId ElementFactory::CreateGeometryPart (DRange3dR range, double& p
     range = geomPart->GetBoundingBox ();
 
     // insert the new part into the syncInfo
-    DwgSyncInfo::GeomPart   syncPart(partId, partTag);
-    if (syncPart.Insert(db) != BeSQLite::BE_SQLITE_DONE)
+    DwgSourceAspects::GeomPartAspect aspect = DwgSourceAspects::GeomPartAspect::Create(m_partModel->GetModeledElementId(), partTag, db);
+    if (aspect.IsValid())
+        {
+        aspect.AddAspect(*geomPart);
+        geomPart->Update();
+        }
+    else
+        {
         m_importer.ReportError (IssueCategory::Sync(), Issue::Error(), "failed adding geometry part in the SyncInfo");
+        }
 
     return  partId;
     }
@@ -2501,11 +2508,7 @@ BentleyStatus   ElementFactory::GetOrCreateGeometryPart (DwgImporter::SharedPart
     double partScale = 0.0;
     DRange3d range;
 
-    DgnGeometryPartId       partId;
-    DwgSyncInfo::GeomPart   syncPart;
-    if (DwgSyncInfo::GeomPart::FindByTag(syncPart, db, partTag.c_str()) == BSISUCCESS)
-        partId = syncPart.GetPartId ();
-
+    auto partId = DwgSourceAspects::GeomPartAspect::FindGeometryPart(m_partModel->GetModeledElementId(), partTag, db);
     if (!partId.IsValid())
         {
         // create a new geometry part:
@@ -3086,7 +3089,7 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
         xrefDwg = nullptr;
 
     // GeometryParts 
-    params.m_geometryPartsModel = this->GetGeometryPartsModel ();
+    params.m_geometryPartsModel = this->GetOrCreateJobDefinitionModel ();
 
     if (model.Is3d())
         {
@@ -3204,12 +3207,13 @@ BentleyStatus   DwgImporter::ImportOrUpdateEntity (ElementImportInputs& inputs)
     IDwgChangeDetector::DetectionResults    detectionResults;
     ElementImportResults    elementResults;
     BentleyStatus   status = BentleyStatus::SUCCESS;
+    DwgDbHandle objectHandle = object->GetObjectId().GetHandle();
 
     // consult the sync info to see if the entity has been changed, and what action to take:
     if (changeDetector._IsElementChanged(detectionResults, *this, *object, inputs.GetModelMapping()))
         {
-        // set existing element in elementResults primarily for entity protocol extensions:
-        elementResults.SetExistingElement (detectionResults.GetObjectMapping());
+        // set existing element in elementResults
+        elementResults.SetExistingElement (detectionResults.GetObjectAspect());
         // create a new non-database resident element
         status = this->ImportEntity (elementResults, inputs);
         }
@@ -3223,15 +3227,16 @@ BentleyStatus   DwgImporter::ImportOrUpdateEntity (ElementImportInputs& inputs)
         case IDwgChangeDetector::ChangeType::None:
             {
             // no change - just update input entity for output results
-            elementResults.SetExistingElement (detectionResults.GetObjectMapping());
+            elementResults.SetExistingElement (detectionResults.GetObjectAspect());
             changeDetector._OnElementSeen (*this, detectionResults.GetExistingElementId());
             break;
             }
 
         case IDwgChangeDetector::ChangeType::Insert:
             {
-            // new entity - insert results into BIM
-            this->InsertResults (elementResults);
+            // new entity - insert results into BIM, with an ExternalSourceAspect from previously calculated prevenance
+            DwgSourceAspects::ObjectAspect::SourceData source(objectHandle, inputs.GetTargetModel().GetModelId(), detectionResults.GetCurrentProvenance(), Utf8String());
+            this->InsertResults (elementResults, source);
             if (elementResults.GetImportedElement() != nullptr)
                 changeDetector._OnElementSeen (*this, elementResults.GetImportedElement()->GetElementId());
             break;
@@ -3239,13 +3244,16 @@ BentleyStatus   DwgImporter::ImportOrUpdateEntity (ElementImportInputs& inputs)
 
         case IDwgChangeDetector::ChangeType::Update:
             {
-            // existing element needs update
-            this->UpdateResults (elementResults, detectionResults.GetExistingElementId());
+            // existing element along with an ExternalSourceAspect needs update
+            DwgSourceAspects::ObjectAspect::SourceData source(objectHandle, inputs.GetTargetModel().GetModelId(), detectionResults.GetCurrentProvenance(), Utf8String());
+            this->UpdateResults (elementResults, source);
             changeDetector._OnElementSeen (*this, detectionResults.GetExistingElementId());
+            break;
             }
-        }
 
-    this->InsertOrUpdateResultsInSyncInfo (elementResults, detectionResults, inputs.GetEntity(), inputs.GetModelMapping().GetModelSyncInfoId());
+        default:
+            this->ReportError (IssueCategory::Unsupported(), Issue::Message(), "unknown change type ignored by the change detector");
+        }
 
     return  status;
     }
@@ -3285,7 +3293,7 @@ BentleyStatus   DwgImporter::_ImportEntitySection ()
     if (!entityIter.IsValid() || !entityIter->IsValid())
         return  BSIERROR;
 
-    ResolvedModelMapping    modelMap = this->FindModel (m_modelspaceId, this->GetRootTransform(), DwgSyncInfo::ModelSourceType::ModelSpace);
+    ResolvedModelMapping    modelMap = this->FindModel (m_modelspaceId, this->GetRootTransform(), DwgSourceAspects::ModelAspect::SourceType::ModelSpace);
     if (!modelMap.IsValid())
         {
         this->ReportError (IssueCategory::UnexpectedData(), Issue::Error(), "cannot find the default target model!");
@@ -3452,10 +3460,14 @@ DgnClassId      DwgImporter::_GetElementType (DwgDbBlockTableRecordCR block)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus     DwgImporter::InsertResults (ElementImportResults& results)
+DgnDbStatus     DwgImporter::InsertResults (ElementImportResults& results, DwgSourceAspects::ObjectAspect::SourceDataCR source)
     {
     if (!results.m_importedElement.IsValid())
         return DgnDbStatus::Success;
+
+    // create & add an ObjectAspect for the new element
+    results.m_existingElementMapping = m_sourceAspects.AddOrUpdateObjectAspect (*results.m_importedElement, source);
+    BeAssert (results.m_existingElementMapping.IsValid() && "Failed adding a ExternalSourceAspect for a DWG object");
 
     // insert the primary element
     DgnDbStatus status = DgnDbStatus::Success;
@@ -3494,52 +3506,10 @@ DgnDbStatus     DwgImporter::InsertResults (ElementImportResults& results)
 
         childElement->SetParentId (parentId, m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements));
 
-        status = this->InsertResults (child);
+        status = this->InsertResults (child, source);
         if (DgnDbStatus::Success != status)
             return status;
         }
         
     return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::InsertOrUpdateResultsInSyncInfo (ElementImportResults& results, IDwgChangeDetector::DetectionResults const& updatePlan, DwgDbEntityCR entity, DwgSyncInfo::DwgModelSyncInfoId const& modelSyncId)
-    {
-    // This method attempts to insert a new, or to update an existing, element in the sync info.
-    if (updatePlan.GetChangeType() == IDwgChangeDetector::ChangeType::None)
-        return  BSISUCCESS;
-    
-    DgnElementP element = results.GetImportedElement ();
-    if (nullptr == element || !modelSyncId.IsValid())
-        return  BSIERROR;
-
-    BentleyStatus   status = BentleyStatus::SUCCESS;
-
-    // a block reference needs a secondary hash from its block definition:
-    bool    hash2nd = this->GetOptions().GetSyncBlockChanges() && DwgDbBlockReference::Cast (&entity);
-
-    // create a provenence from the source DWG object:
-    DwgSyncInfo::DwgObjectProvenance    entityprov (*DwgDbObject::Cast(&entity), this->GetSyncInfo(), this->GetCurrentIdPolicy(), hash2nd);
-    // insert a new or update an existing element
-    if (updatePlan.GetChangeType() == IDwgChangeDetector::ChangeType::Insert)
-        status = this->GetSyncInfo().InsertElement (element->GetElementId(), entity, entityprov, modelSyncId);
-    else
-        status = this->GetSyncInfo().UpdateElement (element->GetElementId(), entity, entityprov);
-
-    if (BSISUCCESS != status)
-        {
-        uint64_t    entityId = entity.GetObjectId().ToUInt64 ();
-        Utf8PrintfString msg("failed inserting element into DwgSynchInfo for entityId=%llx!", entityId);
-        this->ReportError (IssueCategory::Sync(), Issue::Error(), msg.c_str());
-        }
-
-    // insert or update children
-    for (auto& child : results.m_childElements)
-        status = this->InsertOrUpdateResultsInSyncInfo (child, updatePlan, entity, modelSyncId);
-
-    this->Progress ();
-
-    return  status;
     }

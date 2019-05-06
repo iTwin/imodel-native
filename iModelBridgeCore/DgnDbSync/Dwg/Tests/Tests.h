@@ -23,17 +23,3 @@ protected:
     bool _IsFeatureEnabled(Utf8CP feature) override {return 0 == strcmp(feature, "Platform.RenderViewAttachments");}
 };
 
-//=======================================================================================
-// @bsiclass                                    Sam.Wilson                      04/15
-//=======================================================================================
-struct SyncInfoReader
-    {
-    DgnDbPtr m_dgndb;
-    BentleyApi::BeSQLite::Db m_syncInfo;
-
-    SyncInfoReader (BentleyApi::BeFileNameCR);
-    void AttachToDgnDb (BentleyApi::BeFileNameCR);
-    void MustFindModelSyncInfo (DwgSyncInfo::DwgModelSyncInfoId& out, uint64_t dwgModelId, DwgSyncInfo::ModelSourceType type) const;
-    void MustFindElementByDwgEntityHandle (DgnElementId&, DwgSyncInfo::DwgModelSyncInfoId const&, DwgDbHandleCR, int expectedCount=1) const;
-    };
-

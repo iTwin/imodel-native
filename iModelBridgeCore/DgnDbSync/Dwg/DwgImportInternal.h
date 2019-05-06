@@ -44,7 +44,7 @@
 #include <Dwg/DwgDb/DwgDrawables.h>
 #include <Dwg/DwgDb/DwgDbHost.h>
 #include <Dwg/DwgImporter.h>
-#include <Dwg/DwgSyncInfo.h>
+#include <Dwg/DwgSourceAspects.h>
 #include <Dwg/DwgHelper.h>
 #include <Dwg/ProtocalExtensions.h>
 #include <Dwg/DwgL10N.h>
@@ -271,7 +271,7 @@ private:
     Transform           m_transform;
     CategorySelectorPtr m_categories;
     DwgImporter&        m_importer;
-    DwgSyncInfo::View::Type m_viewportType;
+    DwgSourceAspects::ViewAspect::SourceType m_viewportType;
 
     void ComputeSpatialView (SpatialViewDefinitionR dgnView);
     void ComputeSheetView (ViewDefinitionR dgnView);
@@ -281,6 +281,7 @@ private:
     bool ComposeLayoutTransform (TransformR trans, DwgDbObjectIdCR blockId);
     void TransformDataToBim ();
     bool IsLayerDisplayed (DwgDbHandleCR layer, DwgDbObjectIdArrayCR vpfrozenLayers, DwgDbDatabaseR dwg) const;
+    void UpdateModelspaceCategories (DgnCategoryIdSet& catIds, DwgDbObjectIdArrayCR frozenLayers, DwgDbDatabaseR dwg) const;
     void AddModelspaceCategories (Utf8StringCR viewName);
     // clip SpatialView attached to ViewAttachment - legacy clipping, may be removed.
     void ApplyViewportClipping (SpatialViewDefinitionR dgnView, double frontClip, double backClip);
@@ -290,7 +291,7 @@ private:
     void ComputeEnvironment (DisplayStyle3dR displayStyle);
     DgnTextureId FindEnvironmentImageFile (BeFileNameCR filename) const;
     bool UpdateViewName (ViewDefinitionR view, Utf8StringCR proposedName);
-    void UpdateSyncInfo (DgnViewId viewId, Utf8StringCR viewName, bool isNew);
+    void UpdateViewAspect (ViewDefinitionR view, Utf8StringCR viewName, bool isNew);
 
 public:
     // constructor for a modelspace viewport
@@ -320,6 +321,22 @@ public:
     void    SetBackgroundColor (ColorDefCR color) { m_backgroundColor = color; }
     void    SetViewSourcePrivate (bool viewSourcePrivate) { m_isPrivate = viewSourcePrivate; }
     };  // ViewportFactory
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          12/16
++===============+===============+===============+===============+===============+======*/
+struct    XRefLayerResolver
+{
+private:
+    DwgImporter&        m_importer;
+    DwgDbDatabaseP      m_xrefDwg;
+
+public:
+    XRefLayerResolver (DwgImporter& importer, DwgDbDatabaseP xref) : m_importer(importer), m_xrefDwg(xref) {}
+    DwgDbObjectId   ResolveEntityLayer (DwgDbObjectId layerId) const;
+    bool    SearchXrefLayerByName (DwgDbObjectIdR layerId, Utf8StringCR masterLayerName);
+    bool    SearchMasterLayerFromXrefLayer (DwgDbObjectIdR masterLayerId, DwgDbObjectIdCR xrefLayerId) const;
+};  // XRefLayerResolver
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          05/18
@@ -475,12 +492,13 @@ struct RepositoryLinkFactory
     {
 private:
     DgnDbR      m_dgndb;
+    DwgImporterR    m_importer;
     iModelBridge::Params const& m_bridgeparams;
 
     Utf8String  ComputeURN (BeFileNameCR dwgFilename);
 
 public:
-    RepositoryLinkFactory (DgnDbR db, iModelBridge::Params const& bp) : m_dgndb(db), m_bridgeparams(bp) {}
+    RepositoryLinkFactory (DgnDbR db, DwgImporterR imp) : m_dgndb(db), m_importer(imp), m_bridgeparams(imp.GetOptions()) {}
 
     DgnElementId    CreateOrUpdate (DwgDbDatabaseR dwg);
     BentleyStatus   DeleteFromDb (BeFileNameCR dwgFileName);

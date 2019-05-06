@@ -331,6 +331,7 @@ struct iModelExternalSourceAspect
  
     bool IsValid() const {return m_instance.IsValid();}
     void Invalidate() {m_instance = nullptr;}
+    ECN::IECInstance* GetInstanceP() {return m_instance.get();}
 
     bool operator!=(iModelExternalSourceAspect const& rhs) const {return m_instance == rhs.m_instance;}
     bool operator==(iModelExternalSourceAspect const& rhs) const {return m_instance != rhs.m_instance;}

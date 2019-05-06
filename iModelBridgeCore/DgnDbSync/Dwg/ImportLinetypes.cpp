@@ -343,13 +343,13 @@ LineStyleStatus LineStyleFactory::CreatePointSymbol (LsComponentId& outId, uint3
     DgnDbR      dgndb = m_importer.GetDgnDb ();
 
     // place parts in our partitioned model
-    auto partsModel = m_importer.GetGeometryPartsModel ();
+    auto partsModel = m_importer.GetOrCreateJobDefinitionModel ();
     if (!partsModel.IsValid())  // should not occur!
         partsModel = &dgndb.GetDictionaryModel ();
 
     auto ltypeId = m_linetype->GetObjectId().ToUInt64 ();
-    auto fileId = m_importer.GetDwgFileId (m_importer.GetDwgDb(), false);
-    Utf8PrintfString codevalue("%s-%d:%x-%d", m_linetypeName.c_str(), fileId, ltypeId, segNo);
+    auto fileName = m_importer.GetRootDwgFileName().GetFileNameWithoutExtension ();
+    Utf8PrintfString codevalue("%s-%lls:%x-%d", m_linetypeName.c_str(), fileName.c_str(), ltypeId, segNo);
 
     // build geometry part
     DgnGeometryPartPtr  geometryPart = DgnGeometryPart::Create (*partsModel, codevalue);
@@ -568,8 +568,9 @@ LineStyleStatus DwgImporter::_ImportLineType (DwgDbLinetypeTableRecordPtr& linet
 
     if (LINESTYLE_STATUS_Success == status)
         {
+        Utf8String  ltypeName(linetype->GetName().c_str());
         // save the imported DWG-DGN linestyle into the syncInfo
-        this->GetSyncInfo().InsertLinetype (styleId, *linetype.get());
+        this->GetSourceAspects().AddOrUpdateLinetypeAspect (styleId, linetype->GetObjectId(), ltypeName);
         // save it to our linestyle map
         m_importedLinestyles.insert (T_DwgDgnLineStyleId(linetype->GetObjectId(), styleId));
         }
@@ -618,11 +619,11 @@ BentleyStatus   DwgImporter::_ImportLineTypeSection ()
         if (linetype->IsByLayer() || linetype->IsByBlock())
             continue;
 
-        DwgString       name = linetype->GetName ();
-        if (name.IsEmpty())
+        Utf8String name(linetype->GetName().c_str());
+        if (name.empty())
             this->ReportIssue (IssueSeverity::Warning, IssueCategory::UnexpectedData(), Issue::Error(), "empty linetype name!");
         else
-            LOG_LINETYPE.tracev ("Processinging DWG Linetype %ls", name.c_str());
+            LOG_LINETYPE.tracev ("Processinging DWG Linetype %s", name.c_str());
 
         DgnStyleId  lstyleId;
 
@@ -630,7 +631,7 @@ BentleyStatus   DwgImporter::_ImportLineTypeSection ()
         if (this->IsUpdating())
             {
             // this is an unscaled linestyle
-            lstyleId = m_syncInfo.FindLineStyle (linetype->GetObjectId());
+            lstyleId = m_sourceAspects.FindLineStyle (linetype->GetObjectId());
             if (lstyleId.IsValid())
                 {
                 // update syncInfo
@@ -642,11 +643,11 @@ BentleyStatus   DwgImporter::_ImportLineTypeSection ()
             }
 
         // if found the linestyle in db, use it (i.e. share it with other apps)
-        lstyleId = LineStyleElement::QueryId (*m_dgndb, Utf8String(name.c_str()).c_str());
+        lstyleId = LineStyleElement::QueryId (*m_dgndb, name.c_str());
         if (lstyleId.IsValid())
             {
-            this->GetSyncInfo().InsertLinetype (lstyleId, *linetype.get());
             m_importedLinestyles.insert (T_DwgDgnLineStyleId(linetype->GetObjectId(), lstyleId));
+            // Do not add an ExternalSourceAspect - we do not own this linestyle!
             continue;
             }
 

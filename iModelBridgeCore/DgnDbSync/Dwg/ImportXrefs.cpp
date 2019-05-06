@@ -75,7 +75,7 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
     found in the list is a potential missing xref instance.
     -----------------------------------------------------------------------------------*/
     DgnModelP               model = nullptr;
-    ResolvedModelMapping    modelMap= this->FindModel (xrefInsertId, xtrans, DwgSyncInfo::ModelSourceType::XRefAttachment);
+    ResolvedModelMapping    modelMap= this->FindModel (xrefInsertId, xtrans, DwgSourceAspects::ModelAspect::SourceType::XRefAttachment);
     if (!modelMap.IsValid() || nullptr == (model = modelMap.GetModel()))
         {
         // Step2 - decide on if we need to look it up in syncInfo using old or new transform:
@@ -110,7 +110,6 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
             {
             // update model map with the new transform
             modelMap.SetTransform (xtrans);
-            modelMap.GetMapping().Update (this->GetDgnDb());
             }
 
         // cache the new model in the xref holder:
@@ -357,9 +356,10 @@ DwgImporter::DwgXRefHolder* DwgImporter::FindXRefHolder (DwgDbBlockTableRecordCR
     DwgXRefHolder   xref(xrefBlock, *this);
     if (xref.IsValid())
         {
-        // add the new xref in local cache, as well as in the syncInfo:
+        // add the new xref in local cache
         m_loadedXrefFiles.push_back (xref);
-        this->_AddFileInSyncInfo (xref.GetDatabaseR(), this->_GetDwgFileIdPolicy());
+        // add a repository link for the new xref
+        this->CreateOrUpdateRepositoryLink (xref.GetDatabaseP());
         return  &m_loadedXrefFiles.back ();
         }
 
@@ -502,24 +502,22 @@ void    LayoutXrefFactory::UpdateSpatialCategories (DgnCategoryIdSet& categoryId
     DwgDbObjectIdArray  frozenLayers;
     auto numFrozenLayers = this->GetViewportFrozenLayers (frozenLayers);
 
-    // lookup current DWG file in syncInfo
-    DwgDbDatabaseR          dwg = m_importer.GetDwgDb ();
-    DwgSyncInfo::DwgFileId  fileId = DwgSyncInfo::DwgFileId::GetFrom (dwg);
-    DwgSyncInfo&            syncInfo = m_importer.GetSyncInfo ();
+    // lookup current xref DWG for LayerAspects
+    auto scopeId = m_importer.GetRepositoryLink (m_xrefDwg);
+    auto layerMap = m_importer.GetLayerMappingCache ();
 
-    // add displayed xRef spatial categories to the view:
-    for (ElementIteratorEntry entry : SpatialCategory::MakeIterator(m_importer.GetDgnDb()))
+    // add xRef spatial categories displayed through the master file to the view:
+    for (auto aspect : DwgSourceAspects::LayerAspectIterator(m_importer.GetDgnDb(), scopeId))
         {
-        DgnCategoryId   categoryId = entry.GetId <DgnCategoryId> ();
-        Utf8String      codeValue = entry.GetCodeValue ();
+        bool isViewed = false;
+        auto categoryId = aspect.GetCategoryId (m_importer.GetDgnDb());
+        auto layerId = m_xrefDwg->GetObjectId (aspect.GetLayerHandle());
 
-        if (codeValue.StartsWith(xrefPrefix.c_str()) || codeValue.Equals("0") || codeValue.EqualsI("defpoints"))
+        // this is a category from a layer of this xref - check on/off status in master file
+        auto entry = layerMap.find(layerId);
+        if (entry != layerMap.end())
             {
-            // this is a category from a layer of this xref - check on/off status
-            bool isViewed = false;
-            auto layerId = dwg.GetObjectId (syncInfo.FindLayerHandle(categoryId, fileId));
-
-            DwgDbLayerTableRecordPtr    layer(layerId, DwgDbOpenMode::ForRead);
+            DwgDbLayerTableRecordPtr    layer(entry->second.GetLayerIdInMasterFile(), DwgDbOpenMode::ForRead);
             if (layer.OpenStatus() == DwgDbStatus::Success && !layer->IsOff() && !layer->IsFrozen())
                 {
                 isViewed = true;
@@ -661,7 +659,7 @@ BentleyStatus   LayoutXrefFactory::UpdateSpatialView (bool updateBim)
             return  BSIERROR;
             }
         m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
-        m_importer.GetSyncInfo().UpdateView (viewId, m_xrefInsert.GetObjectId(), DwgSyncInfo::View::Type::XrefAttachment, m_spatialView->GetName());
+        m_importer.GetSourceAspects().AddOrUpdateViewAspect(*m_spatialView, m_xrefInsert.GetObjectId(), DwgSourceAspects::ViewAspect::SourceType::XRefAttachment, m_spatialView->GetName());
         }
 
     return BSISUCCESS;
@@ -706,7 +704,7 @@ BentleyStatus   LayoutXrefFactory::CreateSpatialView ()
 
     // and add it to syncInfo
     m_importer._GetChangeDetector()._OnViewSeen (m_importer, m_spatialView->GetViewId());
-    m_importer.GetSyncInfo().InsertView (m_spatialView->GetViewId(), m_xrefInsert.GetObjectId(), DwgSyncInfo::View::Type::XrefAttachment, m_spatialView->GetName());
+    m_importer.GetSourceAspects().AddOrUpdateViewAspect(*m_spatialView, m_xrefInsert.GetObjectId(), DwgSourceAspects::ViewAspect::SourceType::XRefAttachment, m_spatialView->GetName());
     return  BSISUCCESS;
     }
 
@@ -775,7 +773,7 @@ BentleyStatus   LayoutXrefFactory::ConvertToBim (DwgImporter::ElementImportResul
     if (!sheetModel->IsSheetModel())
         {
         // a nested xRef in current paperspace, get the paperspace model:
-        auto modelMap = m_importer.FindModel (m_importer.GetCurrentSpaceId(), DwgSyncInfo::ModelSourceType::PaperSpace);
+        auto modelMap = m_importer.FindModel (m_importer.GetCurrentSpaceId(), DwgSourceAspects::ModelAspect::SourceType::PaperSpace);
         if (!modelMap.IsValid() || (sheetModel = modelMap.GetModel()) == nullptr || !sheetModel->IsSheetModel())
             return  BSIERROR;
         }

@@ -9,22 +9,10 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
 USING_NAMESPACE_DWG
 
-/*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          12/16
-+===============+===============+===============+===============+===============+======*/
-struct    XRefLayerResolver
-{
-private:
-    DwgImporter&        m_importer;
-    DwgDbDatabaseP      m_xrefDwg;
-
-public:
-    XRefLayerResolver (DwgImporter& importer, DwgDbDatabaseP xref) : m_importer(importer), m_xrefDwg(xref) {}
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbObjectId   ResolveEntityLayer (DwgDbObjectId layerId)
+DwgDbObjectId   XRefLayerResolver::ResolveEntityLayer (DwgDbObjectId layerId) const
     {
     // if the layer is in the master file, there is nothing to resolve:
     if (nullptr == m_xrefDwg)
@@ -34,55 +22,125 @@ DwgDbObjectId   ResolveEntityLayer (DwgDbObjectId layerId)
     if (&masterDwg == m_xrefDwg)
         return  layerId;
 
-    DwgDbObjectId               effectiveLayerId;
-    DwgDbLayerTableRecordPtr    layer(layerId, DwgDbOpenMode::ForRead);
-
-    if (layer.IsNull())
+    DwgDbObjectId   effectiveLayerId;
+    if (!layerId.IsValid())
         {
         m_importer.ReportError (IssueCategory::MissingData(), Issue::CantOpenObject(), "failed opening an xref layer!");
         effectiveLayerId = masterDwg.GetLayer0Id ();
         }
     else if (layerId == m_xrefDwg->GetLayer0Id())
         {
-        // always use layer "0" in mater file
+        // always use layer "0" in master file
         effectiveLayerId = masterDwg.GetLayer0Id ();
         }
     else if (layerId == m_xrefDwg->GetLayerDefpointsId())
         {
-        // always use layer "defpoints" in mater file
+        // always use layer "defpoints" in master file
         effectiveLayerId = masterDwg.GetLayerDefpointsId ();
-        }
-    else if (!masterDwg.GetVISRETAIN())
-        {
-        // xref layers are not saved in the master file - use the layerId of the xRef:
-        if (layerId.GetDatabase() != m_xrefDwg)
-            {
-            m_importer.ReportError (IssueCategory::UnexpectedData(), Issue::Error(), Utf8PrintfString("Invalid xref layer %ls", layer->GetName().c_str()).c_str());
-            effectiveLayerId = masterDwg.GetLayer0Id ();
-            }
-        else
-            {
-            effectiveLayerId = layerId;
-            }
         }
     else
         {
-        // xref layers are saved in the master file - find the layer in the master file by name:
-        WString layerName = m_importer.GetCurrentXRefHolder().GetPrefixInRootFile() + WString(L"|") + layer->GetName().c_str();
-        DwgDbSymbolTablePtr masterFileLayers(masterDwg.GetLayerTableId(), DwgDbOpenMode::ForRead);
-        if (masterFileLayers.IsNull() || !(layerId = masterFileLayers->GetByName(layerName.c_str())).IsValid())
-            {
-            m_importer.ReportError (IssueCategory::UnexpectedData(), Issue::Error(), Utf8PrintfString("can't find xref layer %ls", layerName.c_str()).c_str());
-            effectiveLayerId = masterDwg.GetLayer0Id ();
-            }
-        else
-            {
-            effectiveLayerId = layerId;
-            }
+        // keep xRef layerId
+        effectiveLayerId = layerId;
         }
     return  effectiveLayerId;
     }
-}; // XRefLayerResolver
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    XRefLayerResolver::SearchXrefLayerByName (DwgDbObjectIdR layerId, Utf8StringCR masterLayerName)
+    {
+    // search all xRef files to find a layer matching the input layer from master file
+    auto foundAt = masterLayerName.find ("|");
+    if (foundAt == Utf8String::npos)
+        return  false;
+
+    Utf8String xblockName = masterLayerName.substr(0, foundAt);
+    if (xblockName.empty())
+        return  false;
+
+    WString xlayerName;
+    xlayerName.AssignUtf8 (masterLayerName.substr(foundAt+1).c_str());
+    if (xlayerName.empty())
+        return  false;
+
+    auto loadedXrefs = m_importer.GetLoadedXrefs ();
+    for (auto xref : loadedXrefs)
+        {
+        Utf8String  prefix(xref.GetPrefixInRootFile().c_str());
+        if (xblockName.EqualsI(prefix))
+            {
+            // the layer name prefix matches the ref block name prefix in xref holder
+            m_xrefDwg = xref.GetDatabaseP();
+            if (m_xrefDwg == nullptr)
+                continue;
+
+            DwgDbLayerTablePtr xrefLayers(m_xrefDwg->GetLayerTableId(), DwgDbOpenMode::ForRead);
+            if (xrefLayers.OpenStatus() != DwgDbStatus::Success)
+                continue;
+
+            auto xrefLayerId = xrefLayers->GetByName(xlayerName);
+            if (xrefLayerId.IsValid())
+                {
+                // layer found in xref, update the output layer ID
+                layerId = xrefLayerId;
+                return  true;
+                }
+            }
+        }
+    return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    XRefLayerResolver::SearchMasterLayerFromXrefLayer (DwgDbObjectIdR masterLayerId, DwgDbObjectIdCR xrefLayerId) const
+    {
+    // Lookup master file's layer table from an xRef layerId
+    masterLayerId = this->ResolveEntityLayer (xrefLayerId);
+    if (masterLayerId != xrefLayerId)
+        return  true;
+
+    if (xrefLayerId.GetDatabase() == m_importer.GetDwgDbP())
+        {
+        masterLayerId = xrefLayerId;
+        return  true;
+        }
+
+    DwgDbLayerTableRecordPtr    xrefLayer(xrefLayerId, DwgDbOpenMode::ForRead);
+    if (xrefLayer.OpenStatus() != DwgDbStatus::Success)
+        return  false;
+
+    DwgDbLayerTablePtr  masterLayerTable(m_importer.GetDwgDb().GetLayerTableId(), DwgDbOpenMode::ForRead);
+    if (masterLayerTable.OpenStatus() != DwgDbStatus::Success)
+        return  false;
+    auto iter = masterLayerTable->NewIterator();
+    if (!iter.IsValid() || !iter->IsValid())
+        return  false;
+
+     // try match xref layer in master layer table
+    Utf8String xrefLayerName(xrefLayer->GetName().c_str());
+    for (iter->Start(); !iter->Done(); iter->Step())
+        {
+        DwgDbLayerTableRecordPtr masterLayer(iter->GetRecordId(), DwgDbOpenMode::ForRead);
+        if (masterLayer.OpenStatus() != DwgDbStatus::Success)
+            continue;
+
+        Utf8String masterLayerName(masterLayer->GetName().c_str());
+        auto foundAt = masterLayerName.find ("|");
+        if (foundAt == Utf8String::npos)
+            continue;
+
+        auto xlayerName = masterLayerName.substr(foundAt+1);
+        if (xrefLayerName.EqualsI(xlayerName.c_str()))
+            {
+            masterLayerId = iter->GetRecordId();
+            return  true;
+            }
+        }
+    return  false;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
@@ -165,14 +223,13 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
     DgnSubCategory::Appearance  appear;
     this->GetLayerAppearance (appear, layer);
 
-    DgnDbR      db = this->GetDgnDb ();
+    auto layerId = layer.GetObjectId ();
+    auto& db = this->GetDgnDb ();
     DgnDbStatus status;
-    // use dictionary model(0) for layers in the syncInfo
-    DwgSyncInfo::DwgModelSource     modelSource (DwgSyncInfo::GetDwgFileId(*dwg));
 
     // use the default Unrecognized category for layer "0"
     DgnCategoryId   categoryId = this->GetUncategorizedCategory ();
-    if (layer.GetObjectId() == dwg->GetLayer0Id())
+    if (layerId == dwg->GetLayer0Id())
         {
         DgnSubCategoryId    subId = DgnCategory::GetDefaultSubCategoryId (categoryId);
         DgnSubCategoryCPtr  subCat = DgnSubCategory::Get (db, subId);
@@ -190,7 +247,11 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
                 this->ReportError (IssueCategory::VisualFidelity(), Issue::Error(), "failed setting layer 0's appearance!");
             }
 
-        m_syncInfo.InsertLayer (subId, modelSource, layer);
+        // add an ExternalSourceAspect
+        m_sourceAspects.AddLayerAspect(subId, layerId);
+        // also cache the mapping
+        CategoryEntry   entry(categoryId, subId, layerId);
+        m_layersInSync.insert (T_DwgDgnLayer(layerId, entry));
 
 #ifdef ADD_SUBCATEGORIES_WHILE_IMPORTING_LAYERS
         // add another sub-category which has an inversed on/off status of the default sub-category:
@@ -199,7 +260,7 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
 #endif
 
         if (LOG_LAYER_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
-            LOG_LAYER.tracev("merged layer %ls (%llx) -> %d", layer.GetName().c_str(), layer.GetObjectId().GetHandle().AsUInt64(), categoryId.GetValue());
+            LOG_LAYER.tracev("merged layer %ls (%llx) -> %d", layer.GetName().c_str(), layerId.GetHandle().AsUInt64(), categoryId.GetValue());
         return  BSISUCCESS;
         }
 
@@ -221,7 +282,7 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
     if (categoryId.IsValid())
         {
         if (LOG_LAYER_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
-            LOG_LAYER.tracev("merged layer %ls (%llx) -> %s (%d)", layer.GetName().c_str(), layer.GetObjectId().GetHandle().AsUInt64(), name.c_str(), categoryId.GetValue());
+            LOG_LAYER.tracev("merged layer %ls (%llx) -> %s (%d)", layer.GetName().c_str(), layerId.GetHandle().AsUInt64(), name.c_str(), categoryId.GetValue());
         }
     else if (isRoot3d)
         {
@@ -263,9 +324,28 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
 #endif
 
     if (LOG_LAYER_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
-        LOG_LAYER.tracev("inserted layer (%llx) -> %s (%d)", layer.GetObjectId().GetHandle().AsUInt64(), name.c_str(), categoryId.GetValue());
+        LOG_LAYER.tracev("inserted layer (%llx) -> %s (%d)", layerId.GetHandle().AsUInt64(), name.c_str(), categoryId.GetValue());
 
-    m_syncInfo.InsertLayer (DgnCategory::GetDefaultSubCategoryId(categoryId), modelSource, layer);
+    /*-----------------------------------------------------------------------------------
+    Ready to create an ExternalSourceAspect for the layer.  If the layer depends on an xRef,
+    find the layer in that xRef file.  It may sound like an expensive operation, but when 
+    compared this operation to searching for a layer in master file in reverse when an entity 
+    in an xRef is drawn, this is much cheaper.  Number of layers are generally less than 
+    number of entities.
+    -----------------------------------------------------------------------------------*/
+    name.Assign (layer.GetName().c_str());
+    XRefLayerResolver xrefResolver(*this, nullptr);
+
+    auto layerIdInMasterFile = layerId;
+
+    bool matched = xrefResolver.SearchXrefLayerByName (layerId, name);
+
+    DgnSubCategoryId    subcategoryId = DgnCategory::GetDefaultSubCategoryId (categoryId);
+    m_sourceAspects.AddLayerAspect(subcategoryId, layerId);
+
+    // also cache the mapping for fast future retrieving
+    CategoryEntry   entry(categoryId, subcategoryId, layerIdInMasterFile);
+    m_layersInSync.insert (T_DwgDgnLayer(layerId, entry));
 
     m_layersImported++;
     
@@ -287,7 +367,6 @@ size_t  DwgImporter::_ImportLayersByFile (DwgDbDatabaseP dwg)
     if (layerTable.IsNull())
         return  BSIERROR;
 
-    DwgSyncInfo::DwgFileId      dwgfileId = DwgSyncInfo::GetDwgFileId (*dwg);
     DwgDbSymbolTableIteratorPtr iter = layerTable->NewIterator ();
 
     if (!iter.IsValid() || !iter->IsValid())
@@ -297,10 +376,8 @@ size_t  DwgImporter::_ImportLayersByFile (DwgDbDatabaseP dwg)
     iter->SetSkipHiddenLayers (false);
     iter->SetSkipReconciledLayers (false);
 
-    size_t      count = 0;
-    DwgString   xrefName;
-    if (dwg != m_dwgdb.get())
-        xrefName.Assign (BeFileName::GetFileNameWithoutExtension(dwg->GetFileName().c_str()).c_str());
+    size_t  count = 0;
+    bool    isXref = dwg != m_dwgdb.get();
 
     for (iter->Start(); !iter->Done(); iter->Step())
         {
@@ -311,12 +388,26 @@ size_t  DwgImporter::_ImportLayersByFile (DwgDbDatabaseP dwg)
             continue;
             }
 
+        DwgString   name = layer->GetName ();
         if (this->IsUpdating())
             {
-            DgnCategoryId   categoryId = m_syncInfo.FindCategory (layer->GetObjectId(), dwgfileId);
+            auto layerId = layer->GetObjectId();
+            auto layerIdInMasterFile = layerId;
+            if (!isXref && name.Find(L"|") > 1)
+                {
+                // this layer is from an xRef - find the layer ID from in the xRef file:
+                XRefLayerResolver xrefResolver(*this, nullptr);
+                xrefResolver.SearchXrefLayerByName (layerId, Utf8String(name.c_str()));
+                }
+
+            DgnSubCategoryId subcategoryId;
+            DgnCategoryId   categoryId = m_sourceAspects.FindCategory(&subcategoryId, layerId);
             if (categoryId.IsValid())
                 {
                 this->_OnUpdateLayer (categoryId, *layer.get());
+                // cache the layer mapping
+                CategoryEntry   entry(categoryId, subcategoryId, layerIdInMasterFile);
+                m_layersInSync.insert (T_DwgDgnLayer(layerId, entry));
                 continue;
                 }
             }
@@ -325,23 +416,17 @@ size_t  DwgImporter::_ImportLayersByFile (DwgDbDatabaseP dwg)
             this->Progress ();
 
         bool        overrideName = false;
-        DwgString   name = layer->GetName ();
         if (name.IsEmpty())
             {
             this->ReportIssue (IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::ConfigUsingDefault(), DwgHelper::ToUtf8CP(name));
             name = L"Unnamed";
             overrideName = true;
             }
-        else if (!xrefName.IsEmpty())
+        else if (isXref)
             {
             // xref layers "0" and "Defpoints" use the same layers of the master file:
             if (name.EqualsI(L"0") || name.EqualsI(L"DefPoints"))
                 continue;
-
-            // build an xref layer name, "xrefName|layerName"
-            name.Insert (0, L"|");
-            name.Insert (0, xrefName.c_str());
-            overrideName = true;
             }
 
         this->_ImportLayer (*layer.get(), overrideName ? &name : nullptr);
@@ -522,12 +607,13 @@ DgnCategoryId   DwgImporter::GetOrAddDrawingCategory (DgnSubCategoryId& subCateg
 DgnCategoryId   DwgImporter::GetSpatialCategory (DgnSubCategoryId& subCategoryId, DwgDbObjectIdCR entityLayer, DwgDbDatabaseP xrefDwg)
     {
     /*-----------------------------------------------------------------------------------
-    This method finds category and sub-categeory from the syncInfo for a layer.  If found,
-    it caches the entry so next time when the same layer is requested it will be retrieved
-    from the cache.  This is done for the sake of performance.
+    Spetial layers in xRef share the same layers in master file, resolve these layers.
+    The layer-category mapping should have been cached in _ImportLayer, so retrieving 
+    the entry should be fast.
     -----------------------------------------------------------------------------------*/
     DwgDbObjectId   layerId = entityLayer;
-    if (nullptr != xrefDwg && xrefDwg != m_dwgdb.get())
+    bool isXrefLayer = nullptr != xrefDwg && xrefDwg != m_dwgdb.get();
+    if (isXrefLayer)
         {
         // entity is in an xRef file - find the layer in master file by layer name:
         XRefLayerResolver xresolver (*this, xrefDwg);
@@ -544,8 +630,7 @@ DgnCategoryId   DwgImporter::GetSpatialCategory (DgnSubCategoryId& subCategoryId
         }
 
     // not cached yet - querying them from the syncInfo for the resolved master file layer:
-    auto categoryId = this->FindCategoryFromSyncInfo (layerId);
-    subCategoryId = this->FindSubCategoryFromSyncInfo (layerId);
+    auto categoryId = m_sourceAspects.FindCategory (&subCategoryId, layerId);
 
     if (!categoryId.IsValid() || !subCategoryId.IsValid())
         {
@@ -561,63 +646,21 @@ DgnCategoryId   DwgImporter::GetSpatialCategory (DgnSubCategoryId& subCategoryId
         subCategoryId = DgnCategory::GetDefaultSubCategoryId (this->GetUncategorizedCategory());
         }
 
+    auto masterLayerId = layerId;
+    if (isXrefLayer)
+        {
+        // the default bridge workflow should not reach here, but just in case an app skips the default _ImportLayer
+        XRefLayerResolver   resolver(*this, xrefDwg);
+        if (!resolver.SearchMasterLayerFromXrefLayer(masterLayerId, layerId))
+            {
+            BeAssert (false && "Xref layer does not exist in master file");
+            masterLayerId = m_dwgdb->GetLayer0Id ();
+            }
+        }
+
     // cache the sync'ed layer-category mapping for fast retrieving
-    CategoryEntry   entry(categoryId, subCategoryId);
+    CategoryEntry   entry(categoryId, subCategoryId, masterLayerId);
     m_layersInSync.insert (T_DwgDgnLayer(layerId, entry));
 
     return  categoryId;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId   DwgImporter::FindCategoryFromSyncInfo (DwgDbObjectIdCR entityLayerId, DwgDbDatabaseP xrefDwg)
-    {
-    // find spatial category from syncInfo for the input layer
-    auto&           syncInfo = this->GetSyncInfo ();
-    DwgDbObjectId   layerId = entityLayerId;
-    DgnCategoryId   categoryId;
-
-    if (nullptr != xrefDwg && xrefDwg != m_dwgdb.get())
-        {
-        // entity is in an xref file - find category by layer name
-        XRefLayerResolver xresolver (*this, xrefDwg);
-        layerId = xresolver.ResolveEntityLayer (layerId);
-
-        bool isLayerInXref = layerId.GetDatabase() == xrefDwg;
-        auto dwgfileId = DwgSyncInfo::DwgFileId::GetFrom (isLayerInXref ? *xrefDwg : *m_dwgdb);
-
-        if (layerId.IsValid())
-            categoryId = syncInfo.FindCategory (layerId, dwgfileId);
-        else
-            categoryId = this->GetUncategorizedCategory ();
-        }
-    else
-        {
-        // entity is in the master file
-        categoryId = syncInfo.GetCategory (layerId, m_dwgdb.get());
-        }
-
-    return  categoryId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategoryId    DwgImporter::FindSubCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg)
-    {
-    // find spatial sub-category from syncInfo for the input layer
-    DwgDbDatabaseP  dwg = nullptr == xrefDwg ? layerId.GetDatabase() : xrefDwg;
-    if (nullptr == dwg)
-        {
-        BeAssert (false && "layer querying sub-category from syncInfo must be a database resident!");
-        dwg = m_dwgdb.get ();
-        }
-
-    auto&   syncInfo = this->GetSyncInfo ();
-
-    // query the default sub-category from the syncInfo
-    DwgSyncInfo::DwgModelSource     modelSource (DwgSyncInfo::GetDwgFileId(*dwg));
-    return  modelSource.IsValid() ? syncInfo.GetSubCategory(layerId, modelSource) : DgnSubCategoryId();
-    }
-

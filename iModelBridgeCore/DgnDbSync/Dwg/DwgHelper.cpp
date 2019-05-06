@@ -1797,6 +1797,53 @@ uint32_t    DwgHelper::GetDwgImporterVersion ()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgHelper::GetImporterModuleVersion (Utf8StringR versionString)
+    {
+    BentleyStatus   status = BSIERROR;
+#ifdef BENTLEY_WIN32
+    // get DLL file path
+    wchar_t dllPath[MAX_PATH] = {0};
+    if(::GetModuleFileNameW(nullptr, dllPath, MAX_PATH) <= 0)
+        return  status;
+
+    // query the size for DLL version info 
+    ::DWORD dllHandle = 0;
+    ::DWORD versionInfoSize = ::GetFileVersionInfoSizeW(dllPath, &dllHandle);
+    if (versionInfoSize == 0)
+        return  status;
+
+    ::LPBYTE buffer = nullptr;
+    ::LPSTR versionInfoData = static_cast<::LPSTR>(new char[versionInfoSize]);
+    if (versionInfoData == nullptr)
+        return  status;
+
+    // extract version info into a buffer
+    if (::GetFileVersionInfoW(dllPath, dllHandle, versionInfoSize, versionInfoData))
+        {
+        // read version info from the extracted buffer
+        ::UINT readSize = 0;
+        if (::VerQueryValueW(versionInfoData, L"\\", reinterpret_cast<VOID FAR* FAR*>(&buffer), &readSize) && readSize > 0)
+            {
+            // parse version into to output string
+            ::VS_FIXEDFILEINFO* versonInfo = reinterpret_cast<VS_FIXEDFILEINFO*>(buffer);
+            if (versonInfo != nullptr && versonInfo->dwSignature == 0xfeef04bd)
+                {
+                uint32_t majorV = (versonInfo->dwFileVersionMS >> 16) & 0xffff;
+                uint32_t minorV = (versonInfo->dwFileVersionMS >>  0) & 0xffff;
+                uint32_t subV1  = (versonInfo->dwFileVersionLS >> 16) & 0xffff;
+                uint32_t subV2  = (versonInfo->dwFileVersionLS >>  0) & 0xffff;
+                versionString.Sprintf ("%d.%d.%d.%d", majorV, minorV, subV1, subV2);
+                }
+            }
+        }
+    delete[] versionInfoData;
+#endif  // BENTLEY_WIN32
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    DwgHelper::GetTransformForSharedParts (TransformP out, double* uniformScale, TransformCR in)
@@ -1888,3 +1935,55 @@ Utf8String DwgHelper::CompareSubcatAppearance (DgnSubCategory::Appearance const&
     return  diff;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Value DwgHelper::GetJsonFromDoubleArray (double const* array, size_t count, rapidjson::MemoryPoolAllocator<>& allocator)
+    {
+    rapidjson::Value jsonValue;
+    jsonValue.SetArray ();
+    jsonValue.Reserve (count, allocator);
+    for (size_t i=0; i<count; ++i)
+        jsonValue.PushBack (array[i], allocator);
+    return jsonValue;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void DwgHelper::GetDoubleArrayFromJson (double* array, size_t count, rapidjson::Value const& jsonValue)
+    {
+    if (jsonValue.Size() != count)
+        {
+        BeAssert (false);
+        return;
+        }
+    for (int i = 0; i < count; ++i)
+        array[i] = jsonValue[i].GetDouble ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DwgHelper::IsElementOwnedByJobSubject(DgnDbCR db, DgnElementId checkId, DgnElementId jobSubjectId)
+    {
+    if (checkId != db.Elements().GetRootSubjectId())
+        {
+        auto checkElement = db.Elements().GetElement(checkId);
+        if (checkElement.IsValid())
+            {
+            auto ownerId = checkElement->GetParentId();
+            if (ownerId.IsValid())
+                {
+                if (ownerId == jobSubjectId)
+                    return true;
+                }
+            else
+                {
+                ownerId = checkElement->GetModel()->GetModeledElementId();
+                }
+            return IsElementOwnedByJobSubject(db, ownerId, jobSubjectId);
+            }
+        }
+    return  false;
+    }

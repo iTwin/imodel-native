@@ -313,7 +313,7 @@ DgnElementIdSet ImportXData::FindElementsMappedFrom (DwgDbObjectIdCR objectId)
     DwgDbBlockReferencePtr  blockInsert(objectId, DwgDbOpenMode::ForRead);
     if (blockInsert.OpenStatus() == DwgDbStatus::Success && blockInsert->IsXAttachment())
         {
-        auto modelMap = T_Super::FindModel (objectId, DwgSyncInfo::ModelSourceType::XRefAttachment);
+        auto modelMap = T_Super::FindModel (objectId, DwgSourceAspects::ModelAspect::SourceType::XRefAttachment);
 
         DgnModelP model = nullptr;
         if (modelMap.IsValid() && nullptr != (model = modelMap.GetModel()))
@@ -322,8 +322,9 @@ DgnElementIdSet ImportXData::FindElementsMappedFrom (DwgDbObjectIdCR objectId)
         return  ids;
         }
 
-    // Consult the SyncInfo and Find the elements that have been mapped from this object, in the same model:
-    if (!T_Super::GetSyncInfo().FindElements(ids, objectId))
+    // Consult the ExternalSourceAspects and find all elements that have been mapped from this object
+    ids = T_Super::GetSourceAspects().FindElementsBy(objectId.GetHandle());
+    if (ids.empty())
         T_Super::ReportError (IssueCategory::UnexpectedData(), Issue::GroupError(), Utf8PrintfString("No DgnElement found for object ID=%llx", objectId.ToUInt64()).c_str());
         
     return  ids;
