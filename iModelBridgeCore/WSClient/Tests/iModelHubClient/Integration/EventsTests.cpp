@@ -100,6 +100,7 @@ TEST_F(EventsTests, SingleCallbackTest)
     eventTypes.insert(Event::EventType::ChangeSetPrePushEvent);
     eventTypes.insert(Event::EventType::ChangeSetPostPushEvent);
     eventTypes.insert(Event::EventType::VersionEvent);
+    eventTypes.insert(Event::EventType::VersionModifiedEvent);
 
     //Subscribe, unsubscribe
     EventCallbackPtr callback1 = std::make_shared<EventCallback>([=] (EventPtr event) {});
@@ -113,6 +114,7 @@ TEST_F(EventsTests, SingleCallbackTest)
     static int changeSetPrePushEventCallbackNum = 0;
     static int changeSetPostPushEventCallbackNum = 0;
     static int versionEventCallbackNum = 0;
+    static int versionModifiedEventCallbackNum = 0;
 
     EventCallbackPtr callback = std::make_shared<EventCallback>([=] (EventPtr event)
         {
@@ -120,15 +122,16 @@ TEST_F(EventsTests, SingleCallbackTest)
 
         if (Event::EventType::CodeEvent == eventType)
             codeEventCallbackNum++;
-        if (Event::EventType::LockEvent == eventType)
+        else if (Event::EventType::LockEvent == eventType)
             lockEventCallbackNum++;
-        if (Event::EventType::ChangeSetPrePushEvent == eventType)
+        else if (Event::EventType::ChangeSetPrePushEvent == eventType)
             changeSetPrePushEventCallbackNum++;
-        if (Event::EventType::ChangeSetPostPushEvent == eventType)
+        else if (Event::EventType::ChangeSetPostPushEvent == eventType)
             changeSetPostPushEventCallbackNum++;
-        if (Event::EventType::VersionEvent == eventType)
+        else if (Event::EventType::VersionEvent == eventType)
             versionEventCallbackNum++;
-
+        else if (Event::EventType::VersionModifiedEvent == eventType)
+            versionModifiedEventCallbackNum++;
         callbackNum++;
         });
 
@@ -145,7 +148,7 @@ TEST_F(EventsTests, SingleCallbackTest)
     version->SetName("NewName");
     EXPECT_SUCCESS(versionManager.UpdateVersion(*version)->GetResult());
 
-    WaitForEventsCount(callbackNum, 8, 0, 0);
+    WaitForEventsCount(callbackNum, 13, 0, 0);
 
     EXPECT_SUCCESS(briefcase->UnsubscribeEventsCallback(callback)->GetResult());
     EXPECT_EQ(13, callbackNum);
@@ -154,7 +157,8 @@ TEST_F(EventsTests, SingleCallbackTest)
     EXPECT_EQ(3, lockEventCallbackNum);
     EXPECT_EQ(1, changeSetPrePushEventCallbackNum);
     EXPECT_EQ(1, changeSetPostPushEventCallbackNum);
-    EXPECT_EQ(2, versionEventCallbackNum);
+    EXPECT_EQ(1, versionEventCallbackNum);
+    EXPECT_EQ(1, versionModifiedEventCallbackNum);
     }
 
 //---------------------------------------------------------------------------------------

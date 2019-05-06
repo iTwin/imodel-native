@@ -16,7 +16,8 @@ Utf8String eventTopic,
 Utf8String fromSubscriptionId,
 Utf8String versionId,
 Utf8String versionName,
-Utf8String changeSetId
+Utf8String changeSetId,
+Event::EventType versionEventType
 )
     {
     m_eventTopic = eventTopic;
@@ -24,6 +25,7 @@ Utf8String changeSetId
     m_versionId = versionId;
     m_versionName = versionName;
     m_changeSetId = changeSetId;
+    m_versionEventType = versionEventType;
     }
 
 //---------------------------------------------------------------------------------------
@@ -35,7 +37,8 @@ Utf8String eventTopic,
 Utf8String fromSubscriptionId, 
 Utf8String versionId, 
 Utf8String versionName, 
-Utf8String changeSetId
+Utf8String changeSetId,
+Event::EventType versionEventType
 )
     {
     return new VersionEvent
@@ -44,6 +47,7 @@ Utf8String changeSetId
                 fromSubscriptionId, 
                 versionId, 
                 versionName, 
-                changeSetId
+                changeSetId,
+                versionEventType
                 );
     }
