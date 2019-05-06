@@ -1,0 +1,12 @@
+PRIMITIVE LineSegment
+<def name=Interface_BaseList>IGeometry, IPrimitiveCurve</def>
+<def name=Class_BaseList>ILineSegment</def>
+<def name=SUMMARY>LineSegment primitive.
+</def>
+
+
+<def name=MEMBERS><field ItemType=DPoint3d ItemParamName=startPoint ItemMemberName=mStartPoint ItemDescription="Start coordinates." ScaleMode=Length/>
+<field ItemType=DPoint3d ItemParamName=endPoint ItemMemberName=mEndPoint ItemDescription="End coordinates." ScaleMode=Length/>
+</def>
+
+END_PRIMITIVE

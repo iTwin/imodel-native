@@ -1,0 +1,5 @@
+message CurveGroup
+{
+repeated ICurve Curve = 1;
+}
+

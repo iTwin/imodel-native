@@ -1,0 +1,14 @@
+PRIMITIVE SkewedCone
+<def name=SUMMARY>Cone with circular cross sections, but axis not perpendicular to the circles.
+</def>
+<def name=Interface_BaseList>IGeometry, IAnalyticSolid</def>
+
+
+<def name=MEMBERS><field ItemType=IPlacement ItemParamName=placement ItemMemberName=mPlacement ItemDescription="Center and orientation" ScaleMode=Length/>
+<field ItemType=DPoint3d ItemParamName=centerB ItemMemberName=mCenterB ItemDescription="center at final cross section" ScaleMode=Length/>
+<field ItemType=double ItemParamName=radiusA ItemMemberName=mRadiusA ItemDescription="radius in xy plane at origin." ScaleMode=Length/>
+<field ItemType=double ItemParamName=radiusB ItemMemberName=mRadiusB ItemDescription="radius parallel to xy plane at centerB" ScaleMode=Length/>
+<field ItemType=bool ItemParamName=bSolidFlag ItemMemberName=mbSolidFlag ItemDescription="true for closed caps" ScaleMode=None/>
+</def>
+
+END_PRIMITIVE

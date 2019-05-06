@@ -1,0 +1,18 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------------------------
+%include $(_MakefilePath)GeomLibsTest.mki
+
+#--------------------------------------------------------------------------------------
+# Run the test*exe from the product directory.
+#--------------------------------------------------------------------------------------
+GUNITTEST_OUT       = $(o)
+GUNITTEST_NAME      = $(appName)
+GUNITTEST_PATH      = $(o)
+GUNITTEST_SYMB      = $(o)
+GUNITTEST_DEST      = $(OutputRootDir)Product/GeomLibsSerializationTest/
+GUNITTEST_NOBUILD   = 1
+
+%include $(SrcRoot)bsicommon/sharedmki/gunittest.mki

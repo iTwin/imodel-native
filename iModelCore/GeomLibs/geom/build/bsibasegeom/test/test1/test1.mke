@@ -1,0 +1,11 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+TESTAPP_NAME=test1
+
+%include    $(_MakeFilePath)/../testapp.mki
+
+always:
+	cl1.cmd
