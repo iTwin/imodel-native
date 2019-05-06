@@ -1,0 +1,21 @@
+{
+  "Environment": "DEV",
+  "ProjectId": "52a2af9e-1430-4a09-8b77-f168762863e6",
+  "ServerUrl": "",
+  "Users": [
+    {
+      "Username": "admin_password_please_change",
+      "Password": "fadmin_user_please_change",
+      "IsAdmin": true
+    },
+    {
+      "Password": "admin_password_please_change",
+      "Username": "admin_user_please_change"
+    },
+    {
+      "Password": "service_account_password_please_change",
+      "Username": "service_account_username_please_change",
+      "IsServiceAccount": true
+    }
+  ]
+}
