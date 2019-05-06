@@ -5519,67 +5519,105 @@ void LightWeightConverter::ConvertLineStyleParams(Render::LineStyleParams& lsPar
 //! This function is a clone of the Converter methods to support the LigthWeightConverter
 //!
 //---------------------------------------------------------------------------------------
-void LightWeightConverter::ConvertTextString(TextStringPtr& clone, Bentley::TextStringCR v8Text, DgnFileR dgnFile, LightWeightConverter& converter)
+void LightWeightConverter::ConvertTextString (TextStringPtr& clone, Bentley::TextStringCR v8Text, DgnFileR dgnFile, LightWeightConverter& converter)
     {
     uint32_t v8FontId = 0;
-    dgnFile.GetDgnFontMapP()->GetFontNumber(v8FontId, v8Text.GetProperties().GetFont(), false);
+    dgnFile.GetDgnFontMapP ()->GetFontNumber (v8FontId, v8Text.GetProperties ().GetFont (), false);
 
-    DgnFont const& dbFont = converter._RemapV8Font(dgnFile, v8FontId);
-    Utf8String dbTextValue(v8Text.GetString());
+    DgnFont const& dbFont = converter._RemapV8Font (dgnFile, v8FontId);
+    Utf8String dbTextValue (v8Text.GetString ());
 
     DgnDbApi::TextString dbText;
-    dbText.SetText(dbTextValue.c_str());
-    dbText.SetOrigin(DoInterop(v8Text.GetOrigin()));
-    dbText.SetOrientation(DoInterop(v8Text.GetRotMatrix()));
-    dbText.GetStyleR().SetFont(dbFont);
-    dbText.GetStyleR().SetIsBold(v8Text.GetProperties().IsBold());
-    dbText.GetStyleR().SetIsItalic(v8Text.GetProperties().IsItalic());
-    dbText.GetStyleR().SetSize(DoInterop(v8Text.GetProperties().GetFontSize()));
+    dbText.SetText (dbTextValue.c_str ());
+    dbText.SetOrigin (DoInterop (v8Text.GetOrigin ()));
+    dbText.SetOrientation (DoInterop (v8Text.GetRotMatrix ()));
+    dbText.GetStyleR ().SetFont (dbFont);
+    dbText.GetStyleR ().SetIsBold (v8Text.GetProperties ().IsBold ());
+    dbText.GetStyleR ().SetIsItalic (v8Text.GetProperties ().IsItalic ());
+    dbText.GetStyleR ().SetSize (DoInterop (v8Text.GetProperties ().GetFontSize ()));
 
+    // DgnV8 sub-/super-script is a hard-coded display-time scale and shift.
+    if (v8Text.GetProperties ().IsSubScript () || v8Text.GetProperties ().IsSuperScript ())
+        {
+        DPoint2d scaledSize = dbText.GetStyle ().GetSize ();
+        scaledSize.Scale (0.3);
+        dbText.GetStyleR ().SetSize (scaledSize);
+        }
     // Because DgnV8 has unsupported underline (and overline) styles, never tell this hacked DB TextString to draw an underline even if it's present, and draw it manually ourselves.
 
     // Internal implementation detail: A DgnV8 TextString will report 0 glyphs unless the caller performed layout with a listener that claimed to capture the glyphs.
     struct ShimGlyphLayoutListener : DgnV8Api::IDgnGlyphLayoutListener
         {
-        virtual void _OnGlyphAnnounced(DgnV8Api::DgnGlyph&, Bentley::DPoint3d const&) override {}
-        virtual UInt32 _OnFontAnnounced(DgnV8Api::TextString const&) override { return 0; }
-        virtual bool _DidCacheGlyphs() override { return true; }
+        virtual void _OnGlyphAnnounced (DgnV8Api::DgnGlyph&, Bentley::DPoint3d const&) override {}
+        virtual UInt32 _OnFontAnnounced (DgnV8Api::TextString const&) override { return 0; }
+        virtual bool _DidCacheGlyphs () override { return true; }
         };
     static ShimGlyphLayoutListener s_shimGlyphLayoutListener;
 
     // Force the DgnV8 TextString to do its layout pass.
-    v8Text.LoadGlyphs(&s_shimGlyphLayoutListener);
+    v8Text.LoadGlyphs (&s_shimGlyphLayoutListener);
 
     // Mark the DB TextString as valid so it doesn't try to perform its own layout later.
     dbText.m_isValid = true;
 
     // Directly copy the DgnV8 TextString's layout information into the DB TextString's cache.
-    size_t v8NumGlyphs = v8Text.GetNumGlyphs();
-    dbText.m_glyphs.resize(v8NumGlyphs);
-    dbText.m_glyphIds.resize(v8NumGlyphs);
-    dbText.m_glyphOrigins.resize(v8NumGlyphs);
+    size_t v8NumGlyphs = v8Text.GetNumGlyphs ();
+    dbText.m_glyphs.resize (v8NumGlyphs);
+    dbText.m_glyphIds.resize (v8NumGlyphs);
+    dbText.m_glyphOrigins.resize (v8NumGlyphs);
 
     // Has the side effect of loading the font data, which is required for FindGlyphCP anyway.
-    if (!dbText.GetStyle().GetFont().IsResolved())
+    if (!dbText.GetStyle ().GetFont ().IsResolved ())
         {
-        BeAssert(false);
+        BeAssert (false);
         }
 
-    DgnFontStyle dbFontStyle = DgnFont::FontStyleFromBoldItalic(dbText.GetStyle().IsBold(), dbText.GetStyle().IsItalic());
+    DgnFontStyle dbFontStyle = DgnFont::FontStyleFromBoldItalic (dbText.GetStyle ().IsBold (), dbText.GetStyle ().IsItalic ());
 
-    for (size_t iV8Glyph = 0; iV8Glyph < v8Text.GetNumGlyphs(); ++iV8Glyph)
+    // N.B. Ensure to use the TextString's font object. It took steps to resolve the font (vs. this
+    // function's local dbFont variable), and this data needs to match its exact font.
+    DgnFontCR resolvedDbFont = dbText.GetStyle ().GetFont ();
+
+    // In terms of a glyph ID within a TT font, PowerPlatform supports both glyph and character
+    // index, but does not currently expose what "glyph code" actually means in the public API (only
+    // DgnTrueTypeGlyph actually retains this information, which is in a CPP file). It's unclear to
+    // me in Uniscribe's documentation if setting SCRIPT_ANALYSIS::fNoGlyphIndex to FALSE
+    // necessarily forces use of glyph indices, but it's highly suggestive. PP normally sets to
+    // FALSE, except if !T_HOST.GetDgnFontManager().IsGlyphShapingEnabled() ||
+    // layoutContext.IsVertical(), so that's as good as we can get unless/until we can change PP's
+    // API to explicitly expose this information.
+    bvector<unsigned int> derivedGlyphIndices;
+    bool useDerivedGlyphIndices = false;
+    if ((DgnFontType::TrueType == resolvedDbFont.GetType ())
+        && (!DgnV8Api::DgnFontManager::GetManager ().IsGlyphShapingEnabled ()
+            || v8Text.GetProperties ().IsVertical ()))
         {
-        // N.B. Ensure to use the TextString's font object. It took steps to resolve the font (vs. this function's local dbFont variable), and this data needs to match its exact font.
-        DgnGlyphCP dbGlyph = dbText.GetStyle().GetFont().FindGlyphCP(v8Text.GetGlyphCodes()[iV8Glyph], dbFontStyle);
-        dbText.m_glyphIds[iV8Glyph] = v8Text.GetGlyphCodes()[iV8Glyph];
-        dbText.m_glyphs[iV8Glyph] = dbGlyph;
-        dbText.m_glyphOrigins[iV8Glyph] = DoInterop(v8Text.GetGlyphOrigins()[iV8Glyph]);
+        useDerivedGlyphIndices = true;
+        derivedGlyphIndices = ((DgnTrueTypeFontCR)resolvedDbFont).ComputeGlyphIndices (dbText.GetText ().c_str (), dbText.GetStyle ().IsBold (), dbText.GetStyle ().IsItalic ());
+
+        // I can't image how this would differ, but I'd rather be defensive since we'll use
+        // v8Text.GetNumGlyphs as loop control below.
+        BeAssert (derivedGlyphIndices.size () == v8Text.GetNumGlyphs ());
+        if (derivedGlyphIndices.size () < v8Text.GetNumGlyphs ())
+            {
+            // Fill with 0's... better than crashing.
+            derivedGlyphIndices.resize (v8Text.GetNumGlyphs ());
+            }
         }
 
-    dbText.m_range.low = DoInterop(v8Text.GetExtents().low);
-    dbText.m_range.high = DoInterop(v8Text.GetExtents().high);
+    for (size_t iV8Glyph = 0; iV8Glyph < v8Text.GetNumGlyphs (); ++iV8Glyph)
+        {
+        DgnGlyph::T_Id resolvedGlyphId = useDerivedGlyphIndices ? derivedGlyphIndices[iV8Glyph] : v8Text.GetGlyphCodes ()[iV8Glyph];
 
-    clone = dbText.Clone();
+        dbText.m_glyphIds[iV8Glyph] = resolvedGlyphId;
+        dbText.m_glyphs[iV8Glyph] = resolvedDbFont.FindGlyphCP (resolvedGlyphId, dbFontStyle);
+        dbText.m_glyphOrigins[iV8Glyph] = DoInterop (v8Text.GetGlyphOrigins ()[iV8Glyph]);
+        }
+
+    dbText.m_range.low = DoInterop (v8Text.GetExtents ().low);
+    dbText.m_range.high = DoInterop (v8Text.GetExtents ().high);
+
+    clone = dbText.Clone ();
     }
 
 
