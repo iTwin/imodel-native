@@ -303,7 +303,6 @@ def main():
     if comp == None:
         comps = cmp.AllCompsProper()
         # Do not have setup for the following yet
-        comps.remove('MstnBridge')
         comps.remove('BuildingDomain')
         comps.remove('StructuralDomains')
     else:
