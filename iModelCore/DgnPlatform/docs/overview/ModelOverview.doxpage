@@ -1,0 +1,26 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
+BEGIN_BENTLEY_DGN_NAMESPACE
+
+/** @page PAGE_ModelOverview Model Overview
+
+A DgnModel is a container that owns and organizes %DgnElements to represent a <i>model</i> of something.
+A DgnModel can contain spatial elements to geometrically model physical objects in a given domain, graphical elements to represent a drawing, or definition elements to capture project styles and templates.
+
+@tableofcontents
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ModelOverviewSeeAlso See Also
+
+@see GROUP_DgnModel
+@see @ref PAGE_CustomModel
+
+*/
+
+END_BENTLEY_DGN_NAMESPACE
