@@ -74,7 +74,7 @@ private:
     RepositoryAdmin& _SupplyRepositoryAdmin() override {return JsInterop::GetRepositoryAdmin();}
 
 public:
-    JsDgnHost() { BeAssertFunctions::SetBeAssertHandler(&handleAssertion);}
+    JsDgnHost() { BeAssertFunctions::SetBeAssertHandler(&JsInterop::HandleAssertion);}
 };
 
 //=======================================================================================

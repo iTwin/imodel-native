@@ -73,8 +73,6 @@ END_TILE_NAMESPACE
 
 namespace IModelJsNative {
 
-void handleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type);
-
 struct JsInterop
 {
     static bmap<Utf8String, Utf8String> s_crashReportProperties;
@@ -142,6 +140,7 @@ private:
     static void RegisterOptionalDomains();
     static void InitializeParasolid();
 public:
+    static void HandleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type);
     static void GetECValuesCollectionAsJson(Json::Value &json, ECN::ECValuesCollectionCR);
     static ECN::ECClassCP GetClassFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static BeSQLite::EC::ECInstanceId GetInstanceIdFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
@@ -231,6 +230,7 @@ public:
     static Napi::Env& Env() { static Napi::Env s_env(nullptr); return s_env; }
     static intptr_t& MainThreadId() {static intptr_t s_mainThreadId; return s_mainThreadId;}
     static bool IsMainThread() { return BeThreadUtilities::GetCurrentThreadId() == MainThreadId(); }
+    static bool IsJsExecutionDisabled();
 
     static Tile::TreePtr GetTileTree(GeometricModelR, Tile::Tree::Id const&, bool createIfNotFound);
 

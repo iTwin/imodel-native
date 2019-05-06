@@ -103,6 +103,26 @@ static BeFileName s_addonDllDir;
 static intptr_t s_mainThreadId;
 static Napi::Env *s_env;
 static Napi::ObjectReference s_logger;
+static int s_disableJsCalls;
+
+struct DisableJsCalls
+    {
+    DisableJsCalls() {++s_disableJsCalls;}
+    ~DisableJsCalls() {--s_disableJsCalls;}
+    };
+
+// The following must be the first line of every ObjectWrap's destructor:
+#define OBJECT_WRAP_DTOR_DISABLE_JS_CALLS DisableJsCalls disableJsCallsInScope;
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod                                    Sam.Wilson                      05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool JsInterop::IsJsExecutionDisabled()
+    {
+    return (s_disableJsCalls != 0) 
+        || !IsMainThread()
+        || (!s_logger.IsEmpty() && s_logger.Env().IsExceptionPending());
+    }
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Sam.Wilson                      02/18
@@ -360,7 +380,7 @@ struct NativeSQLiteDb : Napi::ObjectWrap<NativeSQLiteDb>
 
   public:
     NativeSQLiteDb(const Napi::CallbackInfo &info) : Napi::ObjectWrap<NativeSQLiteDb>(info) {}
-    ~NativeSQLiteDb() {}
+    ~NativeSQLiteDb() {OBJECT_WRAP_DTOR_DISABLE_JS_CALLS}
 
     // Check if val is really a NativeSQLiteDb peer object
     static bool InstanceOf(Napi::Value val)
@@ -512,7 +532,7 @@ struct NativeSQLiteStatement : Napi::ObjectWrap<NativeSQLiteStatement>
 
   public:
     NativeSQLiteStatement(const Napi::CallbackInfo &info) : Napi::ObjectWrap<NativeSQLiteStatement>(info), m_stmt(new Statement()) {}
-    ~NativeSQLiteStatement() {}
+    ~NativeSQLiteStatement() {OBJECT_WRAP_DTOR_DISABLE_JS_CALLS}
 
     // Check if val is really a NativeSQLiteDb peer object
     static bool InstanceOf(Napi::Value val)

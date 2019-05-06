@@ -22,6 +22,7 @@ namespace IModelBank
 struct JsInterop
 {
     static bool IsMainThread();
+    static bool IsJsExecutionDisabled();
 
     static void ThrowJsException(Utf8CP msg);
 

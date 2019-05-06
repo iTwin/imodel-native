@@ -79,6 +79,12 @@ struct NativeLoggingShim : NativeLogging::Provider::ILogProvider
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
 {
+    if (JsInterop::IsJsExecutionDisabled())
+        {
+        BeAssert(false);
+        return;
+        }
+
     auto env = jsInterop_getLogger().Env();
     Napi::HandleScope scope(env);
 
@@ -103,6 +109,12 @@ static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP 
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool callIsLogLevelEnabledJs(Utf8CP category, NativeLogging::SEVERITY sev)
 {
+    if (JsInterop::IsJsExecutionDisabled())
+        {
+        BeAssert(false);
+        return false;
+        }
+
     auto env = jsInterop_getLogger().Env();
     Napi::HandleScope scope(env);
 
@@ -145,6 +157,12 @@ static void deferLogging(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP ms
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void doDeferredLogging()
 {
+    if (JsInterop::IsJsExecutionDisabled())
+        {
+        BeAssert(false);
+        return;
+        }
+        
     BeSystemMutexHolder ___;
     if (!s_deferredLogging)
         return;
@@ -167,7 +185,7 @@ using namespace IModelBank;
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IModelBank::JsInterop::LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
 {
-    if (IModelBank::jsInterop_getLogger().IsEmpty() || !IsMainThread())
+    if (IModelBank::jsInterop_getLogger().IsEmpty() || IsJsExecutionDisabled())
     {
         IModelBank::deferLogging(category, sev, msg);
         return;
@@ -182,7 +200,7 @@ void IModelBank::JsInterop::LogMessage(Utf8CP category, NativeLogging::SEVERITY 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IModelBank::JsInterop::IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev)
 {
-    if (IModelBank::jsInterop_getLogger().IsEmpty() || !IsMainThread())
+    if (IModelBank::jsInterop_getLogger().IsEmpty() || IsJsExecutionDisabled())
         return true;
 
     IModelBank::doDeferredLogging();
