@@ -2139,6 +2139,8 @@ if (stitchedPoints.size() != 0 &&!isColinear)// return false; //nothing to stitc
 //            for (auto& def : node->m_featureDefinitions) if (!def.Discarded()) def.Discard();
             for (auto& polyline : features)
                 {
+                if (polyline.size() == 0) continue;
+
                 DRange3d extent = DRange3d::From(polyline);
 #if 0 
                     {
