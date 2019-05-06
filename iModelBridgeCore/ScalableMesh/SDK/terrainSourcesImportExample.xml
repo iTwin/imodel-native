@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<list gcsKeyName="UT83-CF" maxNbPointsToImport="5000000" xmin="1535041.99616421" xmax="1542608.21007285" ymin="7408451.27262358" ymax="7415808.60276194" tempPath="C:\Users\MATHIE~1.ST-\AppData\Local\Temp\Bentley\ConceptStationApp\" systemDtyPath="D:\BSI\DgnDb06Dev\out\Debug\Winx64\Product\ConceptStation\Bin\DgnGeoCoord\" userDtyPath="D:\BSI\DgnDb06Dev\out\Debug\Winx64\Product\ConceptStation\Bin\UserGeoCoord\">
+<source dataType="DTM" path="D:\MyDoc\CC - Iteration 16\OSM road based on number of lane\DetailedDemo.tin"/>
+</list>
