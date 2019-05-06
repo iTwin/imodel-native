@@ -595,7 +595,7 @@ BENTLEYDTM_Public int bcdtmCleanUp_resolveMultipleIntersectingPolygonalDtmObject
                             }
                         ++numVoids ;
                     }
-                sp = np ;
+                sp = nodeAddrP(polyDtmP,sp)->hPtr ;
                 } while ( sp != polyDtmP->hullPoint ) ;
                 isLookingForVoids = !isLookingForVoids;
                 /*
