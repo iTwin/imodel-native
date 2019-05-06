@@ -576,7 +576,20 @@ TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridgeAlternateRegistry)
     assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
     FakeRegistry testRegistry(registryDir, assignDbName);
     testRegistry.WriteAssignments();
-    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
+
+    BentleyApi::WString mstnbridgeRegSubKey = L"iModelBridgeForMstn";
+
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer,
+        const size_t bufferSize,
+        iModelBridgeAffinityLevel& affinityLevel,
+        BentleyApi::WCharCP affinityLibraryPath,
+            BentleyApi::WCharCP sourceFileName)
+        {
+        wcsncpy(buffer, mstnbridgeRegSubKey.c_str(), mstnbridgeRegSubKey.length());
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        };
+
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, lambda);
 
     BentleyApi::BeSQLite::BeGuid guid, refGuid;
     guid.Create();
