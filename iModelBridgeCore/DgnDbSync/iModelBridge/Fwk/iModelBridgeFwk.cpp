@@ -667,39 +667,6 @@ iModelBridgeFwk::SyncState iModelBridgeFwk::GetSyncState()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::SaveNewModelIds()
-    {
-    if (m_modelsInserted.empty())
-        return;
-
-    auto stmt = m_stateDb.GetCachedStatement("INSERT INTO fwk_CreatedModels (ModelId) VALUES(?)");
-    for (auto mid : m_modelsInserted)
-        {
-        stmt->Reset();
-        stmt->ClearBindings();
-        stmt->BindId(1, mid);
-        stmt->Step();
-        }
-    m_stateDb.SaveChanges();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::ReadNewModelIds()
-    {
-    BeAssert(m_modelsInserted.empty());
-
-    auto stmt = m_stateDb.GetCachedStatement("SELECT ModelId FROM fwk_CreatedModels");
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
-        m_modelsInserted.push_back(stmt->GetValueId<DgnModelId>(0));
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult iModelBridgeFwk::OpenOrCreateStateDb()
@@ -728,7 +695,6 @@ BeSQLite::DbResult iModelBridgeFwk::OpenOrCreateStateDb()
     if (!stateFileName.DoesPathExist())
         {
         MUSTBEOK(m_stateDb.CreateNewDb(stateFileName));
-        MUSTBEOK(m_stateDb.CreateTable("fwk_CreatedModels", "ModelId BIGINT"));
         MUSTBEOK(m_stateDb.SavePropertyString(s_schemaVerPropSpec, s_schemaVer.ToJson()));
         MUSTBEOK(m_stateDb.SaveChanges());
         }
@@ -949,33 +915,6 @@ BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedRepository()
         return BSIERROR;
         }
 
-    SetState(BootstrappingState::NewBriefcaseNeedsLocks);
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::IModelHub_DoNewBriefcaseNeedsLocks()
-    {
-    // I just created a repository and pulled a briefcase for it.
-    // I must now manually get an exclusive lock on all of the models that I created
-#ifdef DEBUG_BIM_BRIDGE
-    bvector<DgnModelId> check;
-    std::swap(check, m_modelsInserted);
-#endif
-    if (m_modelsInserted.empty())
-        ReadNewModelIds();
-
-#ifdef DEBUG_BIM_BRIDGE
-    BeAssert(check == m_modelsInserted);
-#endif
-
-    if (BSISUCCESS != Briefcase_AcquireExclusiveLocks())
-        return BSIERROR;
-
-    //DeleteNewModelIdsFile();  *** NEEDS WORK: What did I intend here? Am I trying to clean up after a crash??
-
     SetState(BootstrappingState::HaveBriefcase);
     return BSISUCCESS;
     }
@@ -1001,7 +940,6 @@ BentleyStatus iModelBridgeFwk::BootstrapBriefcase(bool& createdNewRepo)
             case BootstrappingState::Initial:                   status = DoInitial(); break;
             case BootstrappingState::CreatedLocalDb:            status = IModelHub_DoCreatedLocalDb(); createdNewRepo = true; break;
             case BootstrappingState::CreatedRepository:         status = IModelHub_DoCreatedRepository(); break;
-            case BootstrappingState::NewBriefcaseNeedsLocks:    status = IModelHub_DoNewBriefcaseNeedsLocks(); break;
             }
 
         if (BSISUCCESS != status)

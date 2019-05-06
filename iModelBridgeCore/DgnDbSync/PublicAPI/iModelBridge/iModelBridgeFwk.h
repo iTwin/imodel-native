@@ -74,7 +74,6 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     //                 *CreatedRepository*                           |
     //                  delete localdb                               |
     //                  AcquireBriefcase                             |
-    //                 *NewBriefcaseNeedsLocks*                      |
     //                  LockModelsExclusively                        |
     //                            +--------------->+<----------------+
     //                                             v
@@ -85,12 +84,12 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         Initial = 0,                // This is our initial state, when we have an empty job work dir
         CreatedLocalDb = 1,         // We reach this state after the first stage in creating a new repository
         CreatedRepository = 2,      // We reach this state after creating a new repo, but before acquiring a briefcase.
-        NewBriefcaseNeedsLocks = 3, // we have a briefcase for a newly created repository. We must lock all newly created models exclusively.
+
         HaveBriefcase = 4,          // We have a briefcase. This is where we want to be all of the time.
         LastState = HaveBriefcase
         };
 
-    void SaveNewModelIds();
+    
     void ReadNewModelIds();
     void SetState(BootstrappingState);
     BootstrappingState GetState();
@@ -98,7 +97,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     BentleyStatus DoInitial();
     BentleyStatus IModelHub_DoCreatedLocalDb();
     BentleyStatus IModelHub_DoCreatedRepository();
-    BentleyStatus IModelHub_DoNewBriefcaseNeedsLocks();
+    
     BentleyStatus BootstrapBriefcase(bool& createdNewRepo);
     BentleyStatus GetSchemaLock();
     
@@ -257,7 +256,7 @@ protected:
     IModelClientForBridges* m_client;
     EffectiveServerError m_lastServerError;
     iModelBridge::IBriefcaseManager::PushStatus m_lastBridgePushStatus;
-    bvector<DgnModelId> m_modelsInserted;
+    
     iModelBridge* m_bridge;
     bvector<WCharCP> m_bargptrs;        // bridge command-line arguments
     JobDefArgs m_jobEnvArgs;            // the framework's command-line arguments
@@ -304,7 +303,6 @@ protected:
     BentleyStatus Briefcase_IModelHub_CreateRepository();
     void Briefcase_MakeBriefcaseName(); // Sets m_briefcaseName
     BentleyStatus Briefcase_AcquireBriefcase();
-    BentleyStatus Briefcase_AcquireExclusiveLocks();
     BentleyStatus Briefcase_Push(Utf8CP);
     BentleyStatus Briefcase_PullMergePush(Utf8CP, bool doPullAndMerge = true, bool doPush = true);
     BentleyStatus Briefcase_ReleaseAllPublicLocks();
