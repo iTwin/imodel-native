@@ -1461,31 +1461,31 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
     /*---------------------------------------------------------------------------------**//**
      * @bsimethod                                                    Vern.Francisco   01/18
      +---------------+---------------+---------------+---------------+---------------+------*/
-    GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, LightWeightConverter& converter, double v8SymbolScale)
+    GeometricPrimitivePtr GetGeometry (DgnFileR dgnFile, LightWeightConverter& converter, bool isPartCreate)
         {
         bool doFlatten = (!m_is3dDest && m_is3dSrc);
 
-        if (!m_geometry.IsValid())
+        if (!m_geometry.IsValid ())
             {
-            if (m_curve.IsValid())
+            if (m_curve.IsValid ())
                 {
                 BentleyApi::CurveVectorPtr clone;
 
-                Converter::ConvertCurveVector(clone, *m_curve, &m_v8ToDgnDbTrans);
-                m_geometry = GeometricPrimitive::Create(clone);
+                Converter::ConvertCurveVector (clone, *m_curve, &m_v8ToDgnDbTrans);
+                m_geometry = GeometricPrimitive::Create (clone);
                 }
-            else if (m_primitive.IsValid())
+            else if (m_primitive.IsValid ())
                 {
                 if (!m_is3dDest) // Drop solids found in 3d sheet to wireframe...
                     {
-                    Bentley::CurveVectorPtr wires = DgnV8Api::WireframeGeomUtil::CollectCurves(*m_primitive, true, true);
+                    Bentley::CurveVectorPtr wires = DgnV8Api::WireframeGeomUtil::CollectCurves (*m_primitive, true, true);
 
-                    if (wires.IsValid())
+                    if (wires.IsValid ())
                         {
                         BentleyApi::CurveVectorPtr clone;
 
-                        Converter::ConvertCurveVector(clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
-                        m_geometry = GeometricPrimitive::Create(clone);
+                        Converter::ConvertCurveVector (clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
+                        m_geometry = GeometricPrimitive::Create (clone);
                         doFlatten = true;
                         }
                     }
@@ -1493,22 +1493,22 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
                     {
                     BentleyApi::ISolidPrimitivePtr clone;
 
-                    Converter::ConvertSolidPrimitive(clone, *m_primitive);
-                    m_geometry = GeometricPrimitive::Create(clone);
+                    Converter::ConvertSolidPrimitive (clone, *m_primitive);
+                    m_geometry = GeometricPrimitive::Create (clone);
                     }
                 }
-            else if (m_surface.IsValid())
+            else if (m_surface.IsValid ())
                 {
                 if (!m_is3dDest) // Drop surfaces found in 3d sheet to wireframe...
                     {
-                    Bentley::CurveVectorPtr wires = DgnV8Api::WireframeGeomUtil::CollectCurves(*m_surface, true, true);
+                    Bentley::CurveVectorPtr wires = DgnV8Api::WireframeGeomUtil::CollectCurves (*m_surface, true, true);
 
-                    if (wires.IsValid())
+                    if (wires.IsValid ())
                         {
                         BentleyApi::CurveVectorPtr clone;
 
-                        Converter::ConvertCurveVector(clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
-                        m_geometry = GeometricPrimitive::Create(clone);
+                        Converter::ConvertCurveVector (clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
+                        m_geometry = GeometricPrimitive::Create (clone);
                         doFlatten = true;
                         }
                     }
@@ -1516,53 +1516,65 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
                     {
                     BentleyApi::MSBsplineSurfacePtr clone;
 
-                    Converter::ConvertMSBsplineSurface(clone, *m_surface);
-                    m_geometry = GeometricPrimitive::Create(clone);
+                    Converter::ConvertMSBsplineSurface (clone, *m_surface);
+                    m_geometry = GeometricPrimitive::Create (clone);
                     }
                 }
-            else if (m_mesh.IsValid())
+            else if (m_mesh.IsValid ())
                 {
                 if (!m_is3dDest) // Drop mesh found in 3d sheet or 2d model to shapes, 2d mesh is "ok" in MicroStation but we don't want to support this in a 2d GeometryStream.
                     {
-                    Bentley::PolyfaceVisitorPtr visitor = Bentley::PolyfaceVisitor::Attach(*m_mesh, true);
+                    Bentley::PolyfaceVisitorPtr visitor = Bentley::PolyfaceVisitor::Attach (*m_mesh, true);
 
-                    visitor->SetNumWrap(1);
+                    visitor->SetNumWrap (1);
 
-                    Bentley::CurveVectorPtr facetShapes = Bentley::CurveVector::Create(Bentley::CurveVector::BOUNDARY_TYPE_UnionRegion);
+                    Bentley::CurveVectorPtr facetShapes = Bentley::CurveVector::Create (Bentley::CurveVector::BOUNDARY_TYPE_UnionRegion);
 
-                    for (visitor->Reset(); visitor->AdvanceToNextFace(); )
+                    for (visitor->Reset (); visitor->AdvanceToNextFace (); )
                         {
-                        Bentley::CurveVectorPtr facet = Bentley::CurveVector::CreateLinear(&visitor->Point().front(), visitor->Point().size(), Bentley::CurveVector::BOUNDARY_TYPE_Outer);
+                        Bentley::CurveVectorPtr facet = Bentley::CurveVector::CreateLinear (&visitor->Point ().front (), visitor->Point ().size (), Bentley::CurveVector::BOUNDARY_TYPE_Outer);
 
-                        facetShapes->Add(facet);
+                        facetShapes->Add (facet);
                         }
 
                     BentleyApi::CurveVectorPtr clone;
 
-                    Converter::ConvertCurveVector(clone, *facetShapes, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
-                    m_geometry = GeometricPrimitive::Create(clone);
+                    Converter::ConvertCurveVector (clone, *facetShapes, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
+                    m_geometry = GeometricPrimitive::Create (clone);
                     doFlatten = true;
                     }
                 else
                     {
                     BentleyApi::PolyfaceHeaderPtr clone;
 
-                    Converter::ConvertPolyface(clone, *m_mesh);
-                    m_geometry = GeometricPrimitive::Create(clone);
+                    Converter::ConvertPolyface (clone, *m_mesh);
+                    m_geometry = GeometricPrimitive::Create (clone);
+#ifdef TEST_AUXDATA_TO_JSON
+                    Utf8String      jsonString;
+                    auto            jsonClone = IGeometry::Create (clone);
+
+                    jsonClone->TryTransformInPlace (m_v8ToDgnDbTrans);
+                    if (BentleyApi::IModelJson::TryGeometryToIModelJsonString (jsonString, *jsonClone))
+                        {
+                        FILE*       file = std::fopen ("d:\\tmp\\RadialWave.json", "w");
+                        fwrite (jsonString.c_str (), 1, jsonString.size (), file);
+                        fclose (file);
+                        }
+#endif
                     }
                 }
-            else if (m_brep.IsValid())
+            else if (m_brep.IsValid ())
                 {
                 if (!m_is3dDest) // Drop surfaces found in 3d sheet to wireframe...
                     {
-                    Bentley::CurveVectorPtr wires = DgnV8Api::WireframeGeomUtil::CollectCurves(*m_brep, true, true);
+                    Bentley::CurveVectorPtr wires = DgnV8Api::WireframeGeomUtil::CollectCurves (*m_brep, true, true);
 
-                    if (wires.IsValid())
+                    if (wires.IsValid ())
                         {
                         BentleyApi::CurveVectorPtr clone;
 
-                        Converter::ConvertCurveVector(clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
-                        m_geometry = GeometricPrimitive::Create(clone);
+                        Converter::ConvertCurveVector (clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
+                        m_geometry = GeometricPrimitive::Create (clone);
                         doFlatten = true;
                         }
                     }
@@ -1571,46 +1583,46 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
 #if defined (BENTLEYCONFIG_PARASOLID)
                     IBRepEntityPtr clone;
 
-                    Converter::ConvertSolidKernelEntity(clone, *m_brep);
+                    Converter::ConvertSolidKernelEntity (clone, *m_brep);
 
-                    if (clone.IsValid() && m_attachments.IsValid())
-                        DgnDbApi::PSolidUtil::SetFaceAttachments(*clone, m_attachments.get());
+                    if (clone.IsValid () && m_attachments.IsValid ())
+                        DgnDbApi::PSolidUtil::SetFaceAttachments (*clone, m_attachments.get ());
 
-                    m_geometry = GeometricPrimitive::Create(clone);
+                    m_geometry = GeometricPrimitive::Create (clone);
 #endif
                     }
                 }
-            else if (m_text.IsValid())
+            else if (m_text.IsValid ())
                 {
                 TextStringPtr clone;
 
-                LightWeightConverter::ConvertTextString(clone, *m_text, dgnFile, converter);
-                m_geometry = GeometricPrimitive::Create(clone);
+                LightWeightConverter::ConvertTextString (clone, *m_text, dgnFile, converter);
+                m_geometry = GeometricPrimitive::Create (clone);
                 }
             else
                 {
-                BeAssert(false);
+                BeAssert (false);
                 }
 
-            if (!m_geometry.IsValid())
+            if (!m_geometry.IsValid ())
                 return nullptr;
 
             Transform goopTrans = m_goopTrans;
 
-            if (0.0 != v8SymbolScale && 1.0 != fabs(v8SymbolScale))
+            if (isPartCreate && 0.0 != m_partScale && 1.0 != fabs (m_partScale))
                 {
-                double partScale = fabs(1.0 / v8SymbolScale);
+                double partScale = fabs (1.0 / m_partScale);
 
-                goopTrans.ScaleMatrixColumns(goopTrans, partScale, partScale, partScale);
+                goopTrans.ScaleMatrixColumns (goopTrans, partScale, partScale, partScale);
                 }
 
-            if (!goopTrans.IsIdentity())
+            if (!goopTrans.IsIdentity ())
                 {
-                m_geometry->TransformInPlace(goopTrans);
+                m_geometry->TransformInPlace (goopTrans);
 
                 // NOTE: Information in GeometryParams may need to be transformed (ex. linestyles, gradient angle/scale, patterns, etc.)
                 //       LineStyleParams only needs to be rotated for placement, the conversion scale has already been accounted for...
-                m_geomParams.ApplyTransform(goopTrans, 0x01); // <- 0x01 is lazy/stealth way of specifying not to scale line style...
+                m_geomParams.ApplyTransform (goopTrans, 0x01); // <- 0x01 is lazy/stealth way of specifying not to scale line style...
                 }
 
             // Check 3D-to-2D and flatten the geometry here. Avoids Placement2d issues with geometry from 3d sheets with non-zero z values, etc.
@@ -1618,10 +1630,10 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
                 {
                 Transform   flattenTrans;
 
-                flattenTrans.InitIdentity();
+                flattenTrans.InitIdentity ();
                 flattenTrans.form3d[2][2] = 0.0;
 
-                m_geometry->TransformInPlace(flattenTrans);
+                m_geometry->TransformInPlace (flattenTrans);
                 }
             }
 
@@ -5507,67 +5519,105 @@ void LightWeightConverter::ConvertLineStyleParams(Render::LineStyleParams& lsPar
 //! This function is a clone of the Converter methods to support the LigthWeightConverter
 //!
 //---------------------------------------------------------------------------------------
-void LightWeightConverter::ConvertTextString(TextStringPtr& clone, Bentley::TextStringCR v8Text, DgnFileR dgnFile, LightWeightConverter& converter)
+void LightWeightConverter::ConvertTextString (TextStringPtr& clone, Bentley::TextStringCR v8Text, DgnFileR dgnFile, LightWeightConverter& converter)
     {
     uint32_t v8FontId = 0;
-    dgnFile.GetDgnFontMapP()->GetFontNumber(v8FontId, v8Text.GetProperties().GetFont(), false);
+    dgnFile.GetDgnFontMapP ()->GetFontNumber (v8FontId, v8Text.GetProperties ().GetFont (), false);
 
-    DgnFont const& dbFont = converter._RemapV8Font(dgnFile, v8FontId);
-    Utf8String dbTextValue(v8Text.GetString());
+    DgnFont const& dbFont = converter._RemapV8Font (dgnFile, v8FontId);
+    Utf8String dbTextValue (v8Text.GetString ());
 
     DgnDbApi::TextString dbText;
-    dbText.SetText(dbTextValue.c_str());
-    dbText.SetOrigin(DoInterop(v8Text.GetOrigin()));
-    dbText.SetOrientation(DoInterop(v8Text.GetRotMatrix()));
-    dbText.GetStyleR().SetFont(dbFont);
-    dbText.GetStyleR().SetIsBold(v8Text.GetProperties().IsBold());
-    dbText.GetStyleR().SetIsItalic(v8Text.GetProperties().IsItalic());
-    dbText.GetStyleR().SetSize(DoInterop(v8Text.GetProperties().GetFontSize()));
+    dbText.SetText (dbTextValue.c_str ());
+    dbText.SetOrigin (DoInterop (v8Text.GetOrigin ()));
+    dbText.SetOrientation (DoInterop (v8Text.GetRotMatrix ()));
+    dbText.GetStyleR ().SetFont (dbFont);
+    dbText.GetStyleR ().SetIsBold (v8Text.GetProperties ().IsBold ());
+    dbText.GetStyleR ().SetIsItalic (v8Text.GetProperties ().IsItalic ());
+    dbText.GetStyleR ().SetSize (DoInterop (v8Text.GetProperties ().GetFontSize ()));
 
+    // DgnV8 sub-/super-script is a hard-coded display-time scale and shift.
+    if (v8Text.GetProperties ().IsSubScript () || v8Text.GetProperties ().IsSuperScript ())
+        {
+        DPoint2d scaledSize = dbText.GetStyle ().GetSize ();
+        scaledSize.Scale (0.3);
+        dbText.GetStyleR ().SetSize (scaledSize);
+        }
     // Because DgnV8 has unsupported underline (and overline) styles, never tell this hacked DB TextString to draw an underline even if it's present, and draw it manually ourselves.
 
     // Internal implementation detail: A DgnV8 TextString will report 0 glyphs unless the caller performed layout with a listener that claimed to capture the glyphs.
     struct ShimGlyphLayoutListener : DgnV8Api::IDgnGlyphLayoutListener
         {
-        virtual void _OnGlyphAnnounced(DgnV8Api::DgnGlyph&, Bentley::DPoint3d const&) override {}
-        virtual UInt32 _OnFontAnnounced(DgnV8Api::TextString const&) override { return 0; }
-        virtual bool _DidCacheGlyphs() override { return true; }
+        virtual void _OnGlyphAnnounced (DgnV8Api::DgnGlyph&, Bentley::DPoint3d const&) override {}
+        virtual UInt32 _OnFontAnnounced (DgnV8Api::TextString const&) override { return 0; }
+        virtual bool _DidCacheGlyphs () override { return true; }
         };
     static ShimGlyphLayoutListener s_shimGlyphLayoutListener;
 
     // Force the DgnV8 TextString to do its layout pass.
-    v8Text.LoadGlyphs(&s_shimGlyphLayoutListener);
+    v8Text.LoadGlyphs (&s_shimGlyphLayoutListener);
 
     // Mark the DB TextString as valid so it doesn't try to perform its own layout later.
     dbText.m_isValid = true;
 
     // Directly copy the DgnV8 TextString's layout information into the DB TextString's cache.
-    size_t v8NumGlyphs = v8Text.GetNumGlyphs();
-    dbText.m_glyphs.resize(v8NumGlyphs);
-    dbText.m_glyphIds.resize(v8NumGlyphs);
-    dbText.m_glyphOrigins.resize(v8NumGlyphs);
+    size_t v8NumGlyphs = v8Text.GetNumGlyphs ();
+    dbText.m_glyphs.resize (v8NumGlyphs);
+    dbText.m_glyphIds.resize (v8NumGlyphs);
+    dbText.m_glyphOrigins.resize (v8NumGlyphs);
 
     // Has the side effect of loading the font data, which is required for FindGlyphCP anyway.
-    if (!dbText.GetStyle().GetFont().IsResolved())
+    if (!dbText.GetStyle ().GetFont ().IsResolved ())
         {
-        BeAssert(false);
+        BeAssert (false);
         }
 
-    DgnFontStyle dbFontStyle = DgnFont::FontStyleFromBoldItalic(dbText.GetStyle().IsBold(), dbText.GetStyle().IsItalic());
+    DgnFontStyle dbFontStyle = DgnFont::FontStyleFromBoldItalic (dbText.GetStyle ().IsBold (), dbText.GetStyle ().IsItalic ());
 
-    for (size_t iV8Glyph = 0; iV8Glyph < v8Text.GetNumGlyphs(); ++iV8Glyph)
+    // N.B. Ensure to use the TextString's font object. It took steps to resolve the font (vs. this
+    // function's local dbFont variable), and this data needs to match its exact font.
+    DgnFontCR resolvedDbFont = dbText.GetStyle ().GetFont ();
+
+    // In terms of a glyph ID within a TT font, PowerPlatform supports both glyph and character
+    // index, but does not currently expose what "glyph code" actually means in the public API (only
+    // DgnTrueTypeGlyph actually retains this information, which is in a CPP file). It's unclear to
+    // me in Uniscribe's documentation if setting SCRIPT_ANALYSIS::fNoGlyphIndex to FALSE
+    // necessarily forces use of glyph indices, but it's highly suggestive. PP normally sets to
+    // FALSE, except if !T_HOST.GetDgnFontManager().IsGlyphShapingEnabled() ||
+    // layoutContext.IsVertical(), so that's as good as we can get unless/until we can change PP's
+    // API to explicitly expose this information.
+    bvector<unsigned int> derivedGlyphIndices;
+    bool useDerivedGlyphIndices = false;
+    if ((DgnFontType::TrueType == resolvedDbFont.GetType ())
+        && (!DgnV8Api::DgnFontManager::GetManager ().IsGlyphShapingEnabled ()
+            || v8Text.GetProperties ().IsVertical ()))
         {
-        // N.B. Ensure to use the TextString's font object. It took steps to resolve the font (vs. this function's local dbFont variable), and this data needs to match its exact font.
-        DgnGlyphCP dbGlyph = dbText.GetStyle().GetFont().FindGlyphCP(v8Text.GetGlyphCodes()[iV8Glyph], dbFontStyle);
-        dbText.m_glyphIds[iV8Glyph] = v8Text.GetGlyphCodes()[iV8Glyph];
-        dbText.m_glyphs[iV8Glyph] = dbGlyph;
-        dbText.m_glyphOrigins[iV8Glyph] = DoInterop(v8Text.GetGlyphOrigins()[iV8Glyph]);
+        useDerivedGlyphIndices = true;
+        derivedGlyphIndices = ((DgnTrueTypeFontCR)resolvedDbFont).ComputeGlyphIndices (dbText.GetText ().c_str (), dbText.GetStyle ().IsBold (), dbText.GetStyle ().IsItalic ());
+
+        // I can't image how this would differ, but I'd rather be defensive since we'll use
+        // v8Text.GetNumGlyphs as loop control below.
+        BeAssert (derivedGlyphIndices.size () == v8Text.GetNumGlyphs ());
+        if (derivedGlyphIndices.size () < v8Text.GetNumGlyphs ())
+            {
+            // Fill with 0's... better than crashing.
+            derivedGlyphIndices.resize (v8Text.GetNumGlyphs ());
+            }
         }
 
-    dbText.m_range.low = DoInterop(v8Text.GetExtents().low);
-    dbText.m_range.high = DoInterop(v8Text.GetExtents().high);
+    for (size_t iV8Glyph = 0; iV8Glyph < v8Text.GetNumGlyphs (); ++iV8Glyph)
+        {
+        DgnGlyph::T_Id resolvedGlyphId = useDerivedGlyphIndices ? derivedGlyphIndices[iV8Glyph] : v8Text.GetGlyphCodes ()[iV8Glyph];
 
-    clone = dbText.Clone();
+        dbText.m_glyphIds[iV8Glyph] = resolvedGlyphId;
+        dbText.m_glyphs[iV8Glyph] = resolvedDbFont.FindGlyphCP (resolvedGlyphId, dbFontStyle);
+        dbText.m_glyphOrigins[iV8Glyph] = DoInterop (v8Text.GetGlyphOrigins ()[iV8Glyph]);
+        }
+
+    dbText.m_range.low = DoInterop (v8Text.GetExtents ().low);
+    dbText.m_range.high = DoInterop (v8Text.GetExtents ().high);
+
+    clone = dbText.Clone ();
     }
 
 
