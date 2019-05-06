@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Bentley_Civil__Model_Base_DgnDbSync" nameSpacePrefix="bcmbsync" version="3.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+
+    <ECRelationshipClass typeName="FeatureDefinitionRule__FeatureDefinition" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+</ECSchema>
+

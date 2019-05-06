@@ -1,0 +1,153 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------------------------
+programName = DwgImporterTests
+baseDir =   $(_MakeFilePath)
+DwgPublicAPI = $(SrcRoot)DgnDbSync/PublicAPI/Dwg/
+
+BEGTEST_INPUT=$(baseDir)
+
+%include mdl.mki
+
+%if $(DWGTOOLKIT) != "OpenDwg" && $(DWGTOOLKIT) != "RealDwg"
+    %error Must define DWGTOOLKIT to either OpenDwg or RealDwg!
+%elif $(DWGTOOLKIT) == "RealDwg" && $(TARGET_PLATFORM) != "Windows"
+    %error RealDWG only supports Windows platform!
+%endif
+
+DwgImporterLib  = $(BuildContext)Delivery/$(DWGTOOLKIT)$(VendorVersion)Importer/DwgImporter.lib
+DwgBridgeLib    = $(BuildContext)Delivery/$(DWGTOOLKIT)$(VendorVersion)Importer/DwgBridge.lib
+
+%include $(baseDir)../DwgCompileOptions.mki
+
+%ifdef PRG
+    CCompOpts +% -DPRG=1
+%endif
+
+%if MSVC_VERSION > 1900
+# C4996: 'std::tr1': warning STL4002: The non-Standard std::tr1 namespace and TR1-only machinery are deprecated and will be REMOVED.
+    CCompOpts +% -D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING
+%endif
+
+# We don't want to run the test from the build location because the dependencies are not there.
+GUNITTEST_NOEXEC = 1
+
+BEGTEST_NAME=$(programName)
+BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
+%include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
+
+TestsHeaders = $(baseDir)Tests.h $(baseDir)ImporterBaseFixture.h $(baseDir)ImporterTests.h $(baseDir)ImportConfigeditor.h $(baseDir)ImporterCommandBuilder.h
+
+# Let all stand-alone tests share the same gtestmain and TestFixture objects.
+o = $(OutputRootDir)build/Dwg/$(programName)/
+
+always:
+    !~@mkdir $(o)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)gtestmain.obj                   : $(BEGTEST_INPUT)gtestmain.cpp                 $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)Admins.obj                      : $(BEGTEST_INPUT)Admins.cpp                    $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ImporterCommandBuilder.obj      : $(BEGTEST_INPUT)ImporterCommandBuilder.cpp    $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ImporterTests.obj               : $(BEGTEST_INPUT)ImporterTests.cpp             $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ImporterBaseFixture.obj         : $(BEGTEST_INPUT)ImporterBaseFixture.cpp       $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ImporterAppTests.obj            : $(BEGTEST_INPUT)ImporterAppTests.cpp          $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)BasicTests.obj                  : $(BEGTEST_INPUT)BasicTests.cpp                $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ImportConfigEditor.obj          : $(BEGTEST_INPUT)ImportConfigEditor.cpp        $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)DwgFileEditor.obj               : $(BEGTEST_INPUT)DwgFileEditor.cpp             $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)SyncInfoReader.obj              : $(BEGTEST_INPUT)SyncInfoReader.cpp            $(TestsHeaders) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+%undef CPchOpts
+%undef CCPchOpts
+
+GUNITTEST_OUT       = $(o)
+GUNITTEST_NAME      = $(programName)
+GUNITTEST_DEST      = $(o)
+GUNITTEST_NTLIBS    = advapi32.lib ole32.lib ws2_32.lib $(DwgImporterLib)
+GUNITTEST_PATH      = $(o)
+GUNITTEST_SYMB      = $(o)
+GTEST_MAIN_IS_SUPPLIED = 1
+
+# This macro is used by gtestobj.mki
+GUnitTestDir        = $(BuildContext)SubParts/google_gtest/
+%include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
+
+LOCAL_GUNITTEST_OBJS + $(MultiCompileObjectList)
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/Be*.lib]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/Dgn*.lib]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/iModel*.lib]
+LOCAL_GUNITTEST_OBJS + $(BuildContext)SubParts/Libs/Raster.lib
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/RealDwg$(VendorVersion)/*.lib]
+
+
+LINKER_LIBRARIES    + $(DwgImporterLib)
+
+%include $(SharedMki)gunittest.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/$(programName).exe=$(o)$(programName).exe"
+
+$(BuildContext)Delivery/$(programName).logging.config.xml : $(baseDir)logging.config.xml
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/ImporterTestsConfig.xml : $(baseDir)../Config/ConvertConfig.xml
+    $(LinkFirstDepToFirstTarget)
+    
+$(BuildContext)Delivery/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/ImportTestData/ : $(baseDir)data/
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+# Create the sqlang database
+SQLANG_OutputDb     = $(o)DwgImporterTests_en-US.sqlang.db3
+SQLANG_DeliveryDir  = $(BuildContext)Delivery/
+SQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff
+%include $(SrcRoot)bsicommon\sqlang\mki\XliffsToDb.mke
+
+
+#----------------------------------------------------------------------
+#   Create a standalone EXE to test a 2D importer
+#----------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)Test2dImporter.obj  : $(baseDir)Test2dImporter.cpp $(DwgPublicAPI)DwgImporter.h $(DwgPublicAPI)DwgBridge.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+LINKER_LIBRARIES    = $(DwgImporterLib)
+LINKER_LIBRARIES    + $(DwgBridgeLib)
+
+LINKER_LIBRARIES_DELAYLOADED = $(BuildContext)SubParts/Libs/Bentley$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(BuildContext)SubParts/Libs/BeSQLiteEC$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(BuildContext)SubParts/Libs/DgnPlatform$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(BuildContext)SubParts/Libs/iModelBridge$(libext)
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+EXE_DEST        = $(o)
+EXE_NAME        = Test2dImporter
+EXE_OBJS        = $(MultiCompileObjectList)
+EXE_LOPT1       = -entry:wmainCRTStartup
+EXE_TMP_DIR     = $(o)
+
+%include $(sharedMki)linktool.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/Test2dImporter$(exeext)=$(o)Test2dImporter$(exeext)"

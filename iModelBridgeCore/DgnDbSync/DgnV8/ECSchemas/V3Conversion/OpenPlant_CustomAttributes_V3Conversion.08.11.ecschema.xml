@@ -1,0 +1,605 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="OpenPlant_CustomAttributes_V3Conversion" nameSpacePrefix="opcav3" version="8.11" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECClass typeName="EW_DMS_Map_Base" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AP_2D_AttributeProperties" displayLabel="AutoPLANT_P&amp;ID_Property_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AP_2D_ClassProperties" displayLabel="AutoPLANT_P&amp;ID_Class_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AP_2D_ExtPropertyMap" displayLabel="AutoPLANT_P&amp;ID_ExtPropertyMap" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AP_3D_AttributeProperties" displayLabel="AutoPLANT_PDW_Property_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AP_3D_Catalogue_AttributeProperties" displayLabel="AutoPLANT_PDW_Catalogue_Property_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AP_3D_Catalogue_ClassProperties" displayLabel="AutoPLANT_PDW_Catalogue_Class_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AP_3D_Catalogue_PortAttributeProperties" displayLabel="AutoPLANT_PDW_Catalogue_Port_Property_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AP_3D_Catalogue_TableProperties" displayLabel="AutoPLANT_PDW_Catalogue_Table_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AP_3D_Catalogue_ValueProperties" displayLabel="AutoPLANT_PDW_Catalogue_Value_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AP_3D_ClassProperties" displayLabel="AutoPLANT_PDW_Class_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AREA_COMPONENT_RELATIONSHIP" description="This class will hold the relationship that area class will use to related to components" displayLabel="Area Component Relationship" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AutoPIPE_AttributeProperties" displayLabel="AutoPIPE_Property_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AutoPIPE_ClassProperties" displayLabel="AutoPIPE_Class_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AutoPIPE_KindOfQuantity_Map" isDomainClass="False" isCustomAttributeClass="True" >
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AutoPIPE_Unit_Map" displayLabel="AutoPIPE Unit Map" isDomainClass="False" isCustomAttributeClass="True" >
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AutoPLANT_PDW_Value_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AXSYSPROCESS_AttributeProperties" displayLabel="AXSYS_PROCESS_Property_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AXSYSPROCESS_ClassProperties" displayLabel="AXSYS_PROCESS_Class_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CAE_To_Plant_ClassMapping" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CAE_To_Plant_MapTargets" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CAE_To_Plant_PropertyMapping" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ClassCodeGeneration" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="Component_Ports_Information" displayLabel="Component Ports Information" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CREATION_ATTRIBUTE" displayLabel="Creation Attribute" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CUSTOM_GEOMETRY_TYPE" description="Used by create custom tool" displayLabel="Custom geometry" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DATAGROUP_CATALOG_MAPPING" displayLabel="DataGroup Catalog Mapping" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DEFAULT_VALUE" displayLabel="Default Value" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="END_PREPARATION_SCRIPT_INFORMATION" displayLabel="End Preparation Script Information" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="End_Preparation_Type" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EW_AssociationProperties" displayLabel="eWarehouse_Association_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EW_AttributeProperties" displayLabel="eWarehouse_Property_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EW_ClassProperties" displayLabel="eWarehouse_Class_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EW_DMS_DocID_Map" displayLabel="eWarehouse DMS DocID Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EW_DMS_TipDocID_Map" displayLabel="eWarehouse DMS Tip DocID Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EW_DMS_URL_Map" displayLabel="eWarehouse DMS URL Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EW_DMS_Version_Map" displayLabel="eWarehouse DMS Version Map" isDomainClass="False" isCustomAttributeClass="True" >
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FILE_BACKED_OBJECT" displayLabel="FILE BACKED OBJECT" isDomainClass="False" isCustomAttributeClass="True" >
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HVAC_CUSTOM_GEOMETRY_TYPE" description="Used by Hvac Component builder tool" displayLabel="Hvac Custom Geometry" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IconInfo_ClassProperties" displayLabel="IconInfo_Class_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IFS_AssociationProperties" displayLabel="IFS_Association_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IFS_AttributeProperties" displayLabel="IFS_Property_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IFS_ClassProperties" displayLabel="IFS_Class_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IL_GRAPHICS_MAP" displayLabel="IL Graphics Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IsLookupTable" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LCS_ClassMap" displayLabel="Lifecycle Server Class Mapping" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LCS_RelationshipMap" displayLabel="Lifecycle Server Association Mapping" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LOOKUP_VALUE_MAP_POINTER" displayLabel="Lookup Value Map Pointer" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NOZZLE_PROPERTY" description="Identifies properties for nozzle manager and specifies order" displayLabel="Nozzle Property" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NOZZLE_TYPE_INFO" displayLabel="Nozzle Type Information" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_AdditionalDBQuery" displayLabel="OpenPlant_Physical_AdditionalDBQuery" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_AdditionalQuery" displayLabel="OpenPlant_Physical_AdditionalQuery" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_Catalogue_AttributeProperties" displayLabel="OpenPlant_Physical_Catalogue_Property_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_Catalogue_BranchCode" displayLabel="OpenPlant_Physical_Catalogue_BranchCode" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_Catalogue_ClassProperties" displayLabel="OpenPlant_Physical_Catalogue_Class_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_Catalogue_PortAttributeProperties" displayLabel="OpenPlant_Physical_Catalogue_Port_Property_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_Catalogue_SpecSection" displayLabel="OpenPlant_Physical_Catalogue_SpecSection" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_Catalogue_TableProperties" displayLabel="OpenPlant_Physical_Catalogue_Table_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_Catalogue_ValueProperties" displayLabel="OpenPlant_Physical_Catalogue_Value_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_Conversion" displayLabel="OpenPlant Physical Conversion" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_JointTypeProperties_Map" displayLabel="OpenPlant_Physical_JointType_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_Placeable_Child_Classes" displayLabel="OpenPlant_Physical_Placeable_Child_Classes" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OPENPLANT_ASSOCIATED_COMPONENT" displayLabel="Associated Component Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OPENPLANT_ASSOCIATED_COMPONENT_LIST" displayLabel="Associated Component List" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OPENPLANT_PHYSICAL_SUPPORT_MAP" description="OpenPlant Physical Support Map" displayLabel="OpenPlant Physical Support Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OPM_2D3D_ASSOCIATION_MAPPING" displayLabel="OPM 2D3D Association Mapping" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OPM_2D3D_TRANSFORM_MAPPING" displayLabel="OPM 2D3D Transform Mapping" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PARAMETRIC_PROPERTY_MARKER" displayLabel="Parametric Property Marker" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PDS_Catalogue_AttributeProperties" displayLabel="PDS_Catalogue_Property_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PDS_Catalogue_ClassProperties" displayLabel="PDS_Catalogue_Class_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PDS_Catalogue_ValueProperties" displayLabel="PDS_Catalogue_Value_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="Plant_To_CAE_MapTargets" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="Plant_To_CAE_PropertyMapping" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PlantSpace_DesignSeries_Migration_Spec_Filter" displayLabel="PSDS Migration Spec Filter" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PlantSpace_DesignSeries_Value_Map" displayLabel="PSDS Value Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PlantWise_Class_Map" displayLabel="PlantWise Class Mapping" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PlantWise_Property_Map" displayLabel="PlantWise Attribute Mapping" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PROPERTY_DISPLAY_STATUS" description="Defines whether the way property will be displayed in preoprty pane. Absence of this attribute means the property will be displayed as read only or hidden for property pane." displayLabel="Property Display Status" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PROPERTY_MAPPINGS_FOR_REPLACE" description="Defines mappings used for replacing a component with a different component." displayLabel="PropertyMappingforReplace" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PROPERTY_MATCH_DURING_REPLACE" description="During replace, compares the property of new and old components and copy other properties based on result." displayLabel="PropertyMatchDuringReplace" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PropertyCodeGeneration" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSDS_AttributeProperties" displayLabel="PSDS Property Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSDS_Catalogue_AttributeProperties" displayLabel="PSDS Catalogue Property Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSDS_Catalogue_ClassProperties" displayLabel="PSDS Catalogue Class Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSDS_Catalogue_MaterialValueProperties" displayLabel="PSDS Catalogue Material Value Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSDS_Catalogue_PortAttributeProperties" displayLabel="PSDS Catalogue Port Property Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSDS_Catalogue_TableProperties" displayLabel="PSDS Catalogue Table Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSDS_Catalogue_ValueProperties" displayLabel="PSDS Catalogue Value Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSDS_ClassProperties" displayLabel="PSDS Class Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSDS_PORT_PROPERTY_INDEX" displayLabel="PSDS Port Property Index" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSDS_SNAP_POINT_INDEX_FOR_COMPONENT_ORIGIN" displayLabel="PSDS Snap Point Index For Component Origin" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSDS_SNAP_POINT_INDEX_FOR_PORT_LOCATION" displayLabel="PSDS Snap Point Index for Port Location" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSDS_TransformationMatrix_Definition_Struct" displayLabel="PSDS TransformationMatrix Definition Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSDS_TRANSFORMATION_MATRIX_DEFINITION" displayLabel="PSDS Transformation Matrix Definition" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RDL" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ReplacementOptions" displayLabel="Replacement Options" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SchemaCodeGeneration" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SchemaNotes" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="Spec_Column_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="Spec_Table_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPMM_3D_Catalogue_AttributeProperties" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPMM_3D_Catalogue_ClassProperties" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPMM_3D_Catalogue_PortAttributeProperties" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPMM_3D_Catalogue_TableProperties" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPMM_3D_Catalogue_ValueProperties" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="StandardPreference" displayLabel="Standard Preference" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="USE_CLASS_AS_CUSTOM_COMPONENT" displayLabel="Use Class As Custom Component" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VOLUMEDEFCLASS" displayLabel="Plant Area Definition Class" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="XMP_AttributeProperties" displayLabel="XMpLant_Property_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="XMP_ClassProperties" displayLabel="XMpLant_Class_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="XMpLant_Value_Map" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+
+
+
+    <ECClass typeName="AP_3D_Catalogue_Class_Map_Struct" displayLabel="AutoPLANT_PDW_Catalogue_Class_Map_Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="END_PREPARATION_TYPE_PROPERTY_MAP_STRUCT" displayLabel="End Preparation Type Property Map Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_AdditionalClause_Struct" displayLabel="OpenPlant_Physical_AdditionalClause_Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_AdditionalQuery_Struct" displayLabel="OpenPlant_Physical_AdditionalQuery_Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_Catalogue_Class_Map_Struct" displayLabel="OpenPlant_Physical_Catalogue_Class_Map_Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OpenPlant_3D_JointTypeProperties_Struct" displayLabel="OpenPlant_Physical_JointType_Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPMM_3D_Catalogue_Class_Map_Struct" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
+
