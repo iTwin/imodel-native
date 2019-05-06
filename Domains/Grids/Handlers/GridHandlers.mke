@@ -1,0 +1,69 @@
+#----------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#----------------------------------------------------------------------
+AppName = GridHandlers
+CCompPDBName = $(AppName)
+
+%include mdl.mki
+%include $(SrcRoot)DgnDomains/Grids/publicmki/Grids.mki
+
+o = $(OutputRootDir)build/ConceptBuilding/Grids/Handlers/
+
+dirToSearch = $(GridElementsPublicApi)
+%include cincapnd.mki
+
+dirToSearch = $(GridsPublicApi)
+%include cincapnd.mki
+
+nameToDefine = __GRIDHANDLERS_BUILD__
+%include cdefapnd.mki
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)PortionHandlers$(oext) : $(_MakeFilePath)PortionHandlers.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PortionHandlers.h
+
+$(o)IntersectionCurveHandlers$(oext) : $(_MakeFilePath)IntersectionCurveHandlers.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/IntersectionCurveHandlers.h
+
+$(o)GridArcSurfaceHandler$(oext) : $(_MakeFilePath)GridArcSurfaceHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridArcSurfaceHandler.h $(GridElementsPublicApi)GridArcSurface.h
+
+$(o)GridPlaneSurfaceHandler$(oext) : $(_MakeFilePath)GridPlaneSurfaceHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridPlaneSurfaceHandler.h $(GridElementsPublicApi)GridPlaneSurface.h
+
+$(o)GridHandlers$(oext) : $(_MakeFilePath)GridHandlers.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridHandlers.h
+
+$(o)GridCurveBundleHandler$(oext) : $(_MakeFilePath)GridCurveBundleHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridCurveBundleHandler.h
+
+$(o)GridLabelHandler$(oext) : $(_MakeFilePath)GridLabelHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridLabelHandler.h
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)GridElements$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUtils$(libext)
+
+%include $(sharedMki)linkLibrary.mki
+
