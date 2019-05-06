@@ -900,7 +900,7 @@ private:
 protected:
     ArrayKind m_arrayKind;
 
-    ArrayECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_minOccurs(0), m_maxOccurs(UINT_MAX) { };
+    ArrayECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_minOccurs(0), m_maxOccurs(INT_MAX) { };
 
     ECObjectsStatus                     SetMinOccurs(Utf8StringCR minOccurs);
     ECObjectsStatus                     SetMaxOccurs(Utf8StringCR maxOccurs);
