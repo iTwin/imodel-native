@@ -19,6 +19,7 @@ struct EXPORT_VTABLE_ATTRIBUTE VersionEvent : public Event::GenericEvent
         Utf8String m_versionId;
         Utf8String m_versionName;
         Utf8String m_changeSetId;
+        Event::EventType m_versionEventType;
 
         VersionEvent
         (
@@ -26,7 +27,8 @@ struct EXPORT_VTABLE_ATTRIBUTE VersionEvent : public Event::GenericEvent
             Utf8String fromSubscriptionId,
             Utf8String versionId,
             Utf8String versionName,
-            Utf8String changeSetId
+            Utf8String changeSetId,
+            Event::EventType versionEventType
         );
 
     public:
@@ -36,11 +38,12 @@ struct EXPORT_VTABLE_ATTRIBUTE VersionEvent : public Event::GenericEvent
             Utf8String fromSubscriptionId,
             Utf8String versionId,
             Utf8String versionName,
-            Utf8String changeSetId
+            Utf8String changeSetId,
+            Event::EventType versionEventType
         );
         Utf8String GetEventTopic() override { return m_eventTopic; }
         Utf8String GetFromEventSubscriptionId() override { return m_fromEventSubscriptionId; }
-        Event::EventType GetEventType() override { return Event::EventType::VersionEvent; }
+        Event::EventType GetEventType() override { return m_versionEventType; }
         Utf8String GetVersionId() const { return m_versionId; }
         Utf8String GetVersionName() const { return m_versionName; }
         Utf8String GetChangeSetId() const { return m_changeSetId; }

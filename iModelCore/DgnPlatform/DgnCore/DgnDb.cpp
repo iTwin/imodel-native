@@ -1057,7 +1057,7 @@ DRange3d ComputeRange(bvector<BeInt64Id>& outliers, DRange3dR fullRange, double 
 * Computes the range of elements that are "statistically" signficant - ignoring elements
 * that are more than maxDeviation standard deviations from the centroid.
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d DgnDb::ComputeGeometryExtentsWithoutOutliers(DRange3dP rangeWithOutliers, size_t* outlierCount, double maxDeviations) const
+DRange3d DgnDb::ComputeGeometryExtentsWithoutOutliers(DRange3dP rangeWithOutliers, bvector<BeInt64Id>* elementOutliers, double maxDeviations) const
     {
     auto stmt = GetPreparedECSqlStatement("SELECT ECInstanceId,Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d));
     RangeWithoutOutlierCalculator   elementRangeCalculator;
@@ -1081,19 +1081,22 @@ DRange3d DgnDb::ComputeGeometryExtentsWithoutOutliers(DRange3dP rangeWithOutlier
         elementRangeCalculator.Add(placement.CalculateRange(), stmt->GetValueId<DgnElementId>(0));
         }
     
-    bvector<BeInt64Id>  elementOutliers;
-    DRange3d            fullRange, elementRange = elementRangeCalculator.ComputeRange(elementOutliers, fullRange);
+    bvector<BeInt64Id>  outliers;
 
-    if (nullptr != outlierCount)
-        *outlierCount = elementOutliers.size();
+    DRange3d            fullRange, elementRange = elementRangeCalculator.ComputeRange(outliers, fullRange);
+    
+    if (nullptr != elementOutliers)
+        {
+        std::for_each (outliers.begin (), outliers.end (), [elementOutliers](BeInt64Id id) {elementOutliers->push_back (id);});
+        }
 
     if (nullptr != rangeWithOutliers)
         *rangeWithOutliers = fullRange;
 
-    if (!elementOutliers.empty())
+    if (!outliers.empty())
         {
         double      fullDiagonal = fullRange.DiagonalDistance(), reducedDiagonal = elementRange.DiagonalDistance(); 
-        auto logMessage1 = Utf8PrintfString("%d Outlying elements of %d Total were ignored when calculating project extents\n", (int) elementOutliers.size(), (int) elementRangeCalculator.m_stats.size());
+        auto logMessage1 = Utf8PrintfString("%d Outlying elements of %d Total were ignored when calculating project extents\n", (int)outliers.size(), (int) elementRangeCalculator.m_stats.size());
         auto logMessage2 = Utf8PrintfString("Range reduced from %lf to %lf (%lf %%)\n", fullDiagonal, reducedDiagonal, 100.0 * (fullDiagonal - reducedDiagonal) / fullDiagonal);
         DEBUG_PRINTF (">>>>>>>>>>>>>>>>>>%s %s<<<<<<<<<<<<<<<<<<<", logMessage1.c_str(), logMessage2.c_str());
         }

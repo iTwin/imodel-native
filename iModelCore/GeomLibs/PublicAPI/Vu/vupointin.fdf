@@ -1,6 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|     $Source: PublicAPI/Vu/vupointin.fdf $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,5 +42,25 @@ DPoint3dCP              pLoopPoints,
 int                     numLoopPoints
 );
 
+/*-----------------------------------------------------------------*//**
+* @description Return a graph whose interior points are at least (ax,bx) distance from 
+*     loop interior points to the left and right, and (ay, by) below and above.
+* @param loops > array of loops.  In these loops, inside is defined by parity.
+* @param ax => rightward offset from an edge on the left side.
+* @param bx => leftward offset from edge on the right side.
+* @param ax => rightward offset from an edge on the top side.
+* @param bx => leftward offset from edge on the bottom side.
+* @param interiorLoops <= loops containing valid region.
+* @bsimethod                            EarlinLutz      07/01
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void vu_createXYOffsetLoops
+(
+bvector<bvector<DPoint3d>> &loops,
+double ax,
+double bx, 
+double ay,
+double by,
+bvector<bvector<DPoint3d>> &interiorLoops
+);
 END_BENTLEY_GEOMETRY_NAMESPACE
 

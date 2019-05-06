@@ -1,6 +1,8 @@
 #----------------------------------------------------------------------------------------
 #
-#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  $Source: geom/test/BuildTests.mke $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
@@ -29,6 +31,7 @@ dirToSearch = $(baseDir)src/
 %include cincapnd.mki
 BEGTEST_ADDITIONAL_HFILES = \
     $(_MakefilePath)src/FlightPlanner.h \
+    $(_MakefilePath)src/CurveVectorXYOffsetContext.h \
     $(BuildContext)PublicAPI/Mtg/MTGShortestPaths.h \
     $(_MakefilePath)src/VuSpringModel.h
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki

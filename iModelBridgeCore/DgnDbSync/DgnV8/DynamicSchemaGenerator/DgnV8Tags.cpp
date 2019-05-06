@@ -110,7 +110,10 @@ bmap<uint16_t, Utf8String>& tagPropertyNames
 
         if (nonUniqueTags.end() != nonUniqueTags.find(def.id))
             uniqueTagName.append(Bentley::Utf8PrintfString("-%d", def.id));
-        if (0 == uniqueTagName.CompareToIAscii("Element"))
+        if (uniqueTagName.EqualsIAscii("Element"))
+            uniqueTagName.append(Utf8PrintfString("-%d", def.id));
+
+        if (uniqueTagName.EqualsIAscii("Id"))
             uniqueTagName.append(Utf8PrintfString("-%d", def.id));
 
         // Must be a valid EC identifier.

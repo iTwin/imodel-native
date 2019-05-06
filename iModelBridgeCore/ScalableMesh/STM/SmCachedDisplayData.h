@@ -100,6 +100,7 @@ struct SmCachedDisplayMeshData
                                 size_t                               memorySize,
                                 const bvector<uint64_t>&             appliedClips)
             {
+            assert(displayCacheManagerPtr.IsValid());
             m_cachedDisplayMesh = cachedDisplayMesh;
             m_textureID = textureID;
             m_isTextured = isTextured;
@@ -111,7 +112,7 @@ struct SmCachedDisplayMeshData
 
         virtual ~SmCachedDisplayMeshData()
             {
-            if (m_cachedDisplayMesh != 0)
+            if (m_cachedDisplayMesh != 0 && m_displayCacheManagerPtr.IsValid())
                 {
                 BentleyStatus status = m_isInVRAM ? m_displayCacheManagerPtr->_DeleteFromVideoMemory(m_cachedDisplayMesh) : m_displayCacheManagerPtr->_DestroyCachedMesh(m_cachedDisplayMesh);
                 assert(status == SUCCESS);
@@ -176,6 +177,7 @@ struct SmCachedDisplayTextureData
                                    IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr,
                                    size_t                               memorySize)
             {
+            assert(displayCacheManagerPtr.IsValid());
             m_cachedDisplayTexture = cachedDisplayTexture;
             m_textureID = textureID;
             m_displayCacheManagerPtr = displayCacheManagerPtr;
@@ -191,6 +193,7 @@ struct SmCachedDisplayTextureData
             m_consumers(texData.m_consumers),
             m_isInVRAM(texData.m_isInVRAM)
            {
+            assert(m_displayCacheManagerPtr.IsValid());
 
            }
 

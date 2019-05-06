@@ -82,6 +82,8 @@
 #define GRIDS_REL_GridCurveBundleCreatesGridCurve               "GridCurveBundleCreatesGridCurve"
 #define GRIDS_REL_GridCurveBundleRefersToGridCurvesSet      "GridCurveBundleRefersToGridCurvesSet"
 
+#define GRIDS_REL_GridSurfaceOwnsGridLabel                      "GridSurfaceOwnsGridLabel"
+
 #define GRIDS_CLASS_GridCurvesSet                    "GridCurvesSet"
 #define GRIDS_CLASS_Grid                                 "Grid"
 #define GRIDS_CLASS_ElevationGrid                        "ElevationGrid"
@@ -118,6 +120,7 @@
 #define GRIDS_CLASS_SketchSplineGridSurface                     "SketchSplineGridSurface"
 
 #define GRIDS_CLASS_GridCurveBundle                             "GridCurveBundle"
+#define GRIDS_CLASS_GridLabel                                   "GridLabel"
 
 //Categories
 #define GRIDS_CATEGORY_CODE_GridCurve                           "GridCurve"

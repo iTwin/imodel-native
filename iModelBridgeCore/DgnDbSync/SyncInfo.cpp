@@ -148,11 +148,6 @@ BentleyStatus SyncInfo::DiskFileInfo::GetInfo(BeFileNameCR fileName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SyncInfo::GetUniqueNameForFile(DgnV8FileCR file)
     {
-    //  The unique name is the key into the syncinfo_file table. 
-    //  Therefore, we must distinguish between like-named files in different directories.
-    //  The unique name must also be stable. If the whole project is moved to a new directory or machine, 
-    //  the unique names of the files must be unaffected.
-
     // If we have a DMS URN for the document corresponding to this file, that is the unique name.
     Utf8String urn = GetConverter().GetDocumentURNforFile(file);
     if (!urn.empty())
@@ -166,7 +161,7 @@ Utf8String SyncInfo::GetUniqueNameForFile(DgnV8FileCR file)
         if (!docProps.m_docGuid.empty())
             return docProps.m_docGuid;
 
-        return urn;
+        return m_converter.ComputeEffectiveEmbeddedFileName(urn.ToLower());
         }
 
     // If we do not have a DMS URN or a doc GUID, we try to compute a stable unique name from the filename.

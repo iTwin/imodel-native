@@ -431,7 +431,7 @@ TEST_F(ECConversionTests, VerifyLimitsForArrayPropertyAfterConversion)
     ASSERT_TRUE(prop->GetIsArray());
     ASSERT_TRUE(prop->GetIsPrimitiveArray());
     ASSERT_EQ(uint32_t(0), Array->GetMinOccurs());
-    ASSERT_EQ(UINT32_MAX, Array->GetMaxOccurs());
+    ASSERT_EQ(INT_MAX, Array->GetMaxOccurs());
     }
 
 //---------------------------------------------------------------------------------------

@@ -2609,59 +2609,59 @@ TEST_F(SchemaValidatorTests, NoClassShouldSubclassDefinitionModelWithExceptions)
 //---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, NoModelSubclassMayHaveProperties)
     {
-            {
-            Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-                "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
-                "    <ECEntityClass typeName='Model' modifier='Abstract'>"
-                "        <ECProperty propertyName='ModelTestProp' typeName='int'/>"
-                "    </ECEntityClass>"
-                "    <ECEntityClass typeName='TestClass'>"
-                "        <BaseClass>Model</BaseClass>"
-                "        <ECProperty propertyName='TestProperty' typeName='int'/>"
-                "    </ECEntityClass>"
-                "</ECSchema>";
-            InitContextWithSchemaXml(goodSchemaXml.c_str());
-            ASSERT_TRUE(schema.IsValid());
-            ASSERT_TRUE(validator.Validate(*schema)) << "Model Subclasses with properties in BisCore are valid";
-            }
-            {
-            Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-                "<ECSchema schemaName='ModelTestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
-                "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
-                "    <ECEntityClass typeName='TestClass'>"
-                "        <BaseClass>bis:Model</BaseClass>"
-                "    </ECEntityClass>"
-                "</ECSchema>";
-            InitBisContextWithSchemaXml(goodSchemaXml.c_str());
-            ASSERT_TRUE(schema.IsValid());
-            ASSERT_TRUE(validator.Validate(*schema)) << "Model Subclasses without properties are valid";
-            }
-            {
-            Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-                "<ECSchema schemaName='ModelTestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
-                "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
-                "    <ECEntityClass typeName='TestClass'>"
-                "        <BaseClass>bis:Model</BaseClass>"
-                "        <ECProperty propertyName='TestProperty' typeName='int'/>"
-                "    </ECEntityClass>"
-                "</ECSchema>";
-            InitBisContextWithSchemaXml(badSchemaXml.c_str());
-            ASSERT_TRUE(schema.IsValid());
-            ASSERT_FALSE(validator.Validate(*schema)) << "Model Subclasses with properties are not valid";
-            }
-            {
-            Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-                "<ECSchema schemaName='ModelTestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
-                "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
-                "    <ECEntityClass typeName='TestClass'>"
-                "        <BaseClass>bis:Model</BaseClass>"
-                "        <ECProperty propertyName='IsPrivate' typeName='boolean'/>"
-                "    </ECEntityClass>"
-                "</ECSchema>";
-            InitBisContextWithSchemaXml(goodSchemaXml.c_str());
-            ASSERT_TRUE(schema.IsValid());
-            ASSERT_TRUE(validator.Validate(*schema)) << "Model Subclasses with override properties are valid";
-            }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECEntityClass typeName='Model' modifier='Abstract'>"
+        "        <ECProperty propertyName='ModelTestProp' typeName='int'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>Model</BaseClass>"
+        "        <ECProperty propertyName='TestProperty' typeName='int'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Model Subclasses with properties in BisCore are valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ModelTestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Model</BaseClass>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Model Subclasses without properties are valid";
+    }
+    {
+    Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ModelTestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Model</BaseClass>"
+        "        <ECProperty propertyName='TestProperty' typeName='int'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(badSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(validator.Validate(*schema)) << "Model Subclasses with properties are not valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ModelTestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Model</BaseClass>"
+        "        <ECProperty propertyName='IsPrivate' typeName='boolean'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Model Subclasses with override properties are valid";
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -2669,106 +2669,106 @@ TEST_F(SchemaValidatorTests, NoModelSubclassMayHaveProperties)
 //---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, ErrorsForAlreadyReleasedSchemasAreSuppressed)
     {
-        {
-        // BuildingPhysical
-        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-            "<ECSchema schemaName='BuildingPhysical' alias='bp' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
-            "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
-            "    <ECEntityClass typeName='BuildingPhysicalModel'>"
-            "        <BaseClass>bis:PhysicalModel</BaseClass>"
-            "    </ECEntityClass>"
-            "    <ECEntityClass typeName='BuildingTypeDefinitionModel'>"
-            "        <BaseClass>bis:DefinitionModel</BaseClass>"
-            "    </ECEntityClass>"
-            "</ECSchema>";
-        InitBisContextWithSchemaXml(goodSchemaXml.c_str());
-        ASSERT_TRUE(schema.IsValid());
-        EXPECT_TRUE(validator.Validate(*schema)) << "BuildingPhysical may violate the model subclassing rule with BuildingPhyscialModel and BuildingTypeDefinitionModel";
-        }
-        {
-        // Raster
-        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-            "<ECSchema schemaName='Raster' alias='raster' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
-            "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
-            "    <ECEntityClass typeName='RasterModel'>"
-            "        <BaseClass>bis:Model</BaseClass>"
-            "        <ECProperty propertyName='Clip' typeName='boolean'/>"
-            "    </ECEntityClass>"
-            "</ECSchema>";
-        InitBisContextWithSchemaXml(goodSchemaXml.c_str());
-        ASSERT_TRUE(schema.IsValid());
-        EXPECT_TRUE(validator.Validate(*schema)) << "Raster may violate the model subclass adds property rule with RasterModel property Clip";
-        }
-        {
-        // RoadRailAlignment
-        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-            "<ECSchema schemaName='RoadRailAlignment' alias='rra' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
-            "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
-            "    <ECEntityClass typeName='AlignmentModel'>"
-            "        <BaseClass>bis:SpatialLocationModel</BaseClass>"
-            "    </ECEntityClass>"
-            "    <ECEntityClass typeName='ConfigurationModel'>"
-            "        <BaseClass>bis:DefinitionModel</BaseClass>"
-            "    </ECEntityClass>"
-            "    <ECEntityClass typeName='HorizontalAlignmentModel'>"
-            "        <BaseClass>bis:SpatialLocationModel</BaseClass>"
-            "    </ECEntityClass>"
-            "    <ECEntityClass typeName='RoadRailCategoryModel'>"
-            "        <BaseClass>bis:DefinitionModel</BaseClass>"
-            "    </ECEntityClass>"
-            "</ECSchema>";
-        InitBisContextWithSchemaXml(goodSchemaXml.c_str());
-        ASSERT_TRUE(schema.IsValid());
-        EXPECT_TRUE(validator.Validate(*schema)) << "RoadRailAlignment may violate the model subclass rule with AlignmentModel, ConfigurationModel, HorizontalAlignmentModel, and RoadRailCategoryModel";
-        }
-        {
-        // RoadRailPhyscial
-        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-            "<ECSchema schemaName='RoadRailPhysical' alias='rrp' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
-            "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
-            "    <ECEntityClass typeName='DesignSpeed' displayLabel='Design Speed'>"
-            "        <BaseClass>bis:PhysicalElement</BaseClass>"
-            "    </ECEntityClass>"
-            "    <ECEntityClass typeName='DesignSpeedElement' displayLabel='Design Speed'>"
-            "        <BaseClass>bis:PhysicalElement</BaseClass>"
-            "    </ECEntityClass>"
-            "    <ECEntityClass typeName='RailwayStandardsModel'>"
-            "        <BaseClass>bis:DefinitionModel</BaseClass>"
-            "    </ECEntityClass>"
-            "</ECSchema>";
-        InitBisContextWithSchemaXml(goodSchemaXml.c_str());
-        ASSERT_TRUE(schema.IsValid());
-        EXPECT_TRUE(validator.Validate(*schema)) << "RoadRailPhyscial may violate the model subclass rule with RailwayStandardsModel and the same display label rule with DesignSpeed and DesignSpeedElement";
-        }
-        {
-        // ScalableMesh
-        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-            "<ECSchema schemaName='ScalableMesh' alias='sm' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
-            "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
-            "    <ECEntityClass typeName='ScalableMeshModel'>"
-            "        <BaseClass>bis:SpatialModel</BaseClass>"
-            "        <ECProperty propertyName='SmModelClips' typeName='boolean'/>"
-            "        <ECProperty propertyName='SmGroundCoverages' typeName='boolean'/>"
-            "        <ECProperty propertyName='SmModelClipVectors' typeName='boolean'/>"
-            "    </ECEntityClass>"
-            "</ECSchema>";
-        InitBisContextWithSchemaXml(goodSchemaXml.c_str());
-        ASSERT_TRUE(schema.IsValid());
-        EXPECT_TRUE(validator.Validate(*schema)) << "ScalableMesh may violate the model subclass adds property rule with ScalableMeshModel properties SmModelClips, SmGroundCoverages and SmModelClipVectors";
-        }
-        {
-        // BuildingPhysical
-        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-            "<ECSchema schemaName='StructuralPhysical' alias='sp' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
-            "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
-            "    <ECEntityClass typeName='StructuralPhysicalModel'>"
-            "        <BaseClass>bis:PhysicalModel</BaseClass>"
-            "    </ECEntityClass>"
-            "</ECSchema>";
-        InitBisContextWithSchemaXml(goodSchemaXml.c_str());
-        ASSERT_TRUE(schema.IsValid());
-        EXPECT_TRUE(validator.Validate(*schema)) << "StructuralPhysical may violate the model subclassing rule with StructuralPhysicalModel";
-        }
+    {
+    // BuildingPhysical
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='BuildingPhysical' alias='bp' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='BuildingPhysicalModel'>"
+        "        <BaseClass>bis:PhysicalModel</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='BuildingTypeDefinitionModel'>"
+        "        <BaseClass>bis:DefinitionModel</BaseClass>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "BuildingPhysical may violate the model subclassing rule with BuildingPhyscialModel and BuildingTypeDefinitionModel";
+    }
+    {
+    // Raster
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='Raster' alias='raster' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='RasterModel'>"
+        "        <BaseClass>bis:Model</BaseClass>"
+        "        <ECProperty propertyName='Clip' typeName='boolean'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "Raster may violate the model subclass adds property rule with RasterModel property Clip";
+    }
+    {
+    // RoadRailAlignment
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='RoadRailAlignment' alias='rra' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='AlignmentModel'>"
+        "        <BaseClass>bis:SpatialLocationModel</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='ConfigurationModel'>"
+        "        <BaseClass>bis:DefinitionModel</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='HorizontalAlignmentModel'>"
+        "        <BaseClass>bis:SpatialLocationModel</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='RoadRailCategoryModel'>"
+        "        <BaseClass>bis:DefinitionModel</BaseClass>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "RoadRailAlignment may violate the model subclass rule with AlignmentModel, ConfigurationModel, HorizontalAlignmentModel, and RoadRailCategoryModel";
+    }
+    {
+    // RoadRailPhyscial
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='RoadRailPhysical' alias='rrp' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='DesignSpeed' displayLabel='Design Speed'>"
+        "        <BaseClass>bis:PhysicalElement</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='DesignSpeedElement' displayLabel='Design Speed'>"
+        "        <BaseClass>bis:PhysicalElement</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='RailwayStandardsModel'>"
+        "        <BaseClass>bis:DefinitionModel</BaseClass>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "RoadRailPhyscial may violate the model subclass rule with RailwayStandardsModel and the same display label rule with DesignSpeed and DesignSpeedElement";
+    }
+    {
+    // ScalableMesh
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ScalableMesh' alias='sm' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='ScalableMeshModel'>"
+        "        <BaseClass>bis:SpatialModel</BaseClass>"
+        "        <ECProperty propertyName='SmModelClips' typeName='boolean'/>"
+        "        <ECProperty propertyName='SmGroundCoverages' typeName='boolean'/>"
+        "        <ECProperty propertyName='SmModelClipVectors' typeName='boolean'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "ScalableMesh may violate the model subclass adds property rule with ScalableMeshModel properties SmModelClips, SmGroundCoverages and SmModelClipVectors";
+    }
+    {
+    // BuildingPhysical
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='StructuralPhysical' alias='sp' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='StructuralPhysicalModel'>"
+        "        <BaseClass>bis:PhysicalModel</BaseClass>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "StructuralPhysical may violate the model subclassing rule with StructuralPhysicalModel";
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -2776,51 +2776,84 @@ TEST_F(SchemaValidatorTests, ErrorsForAlreadyReleasedSchemasAreSuppressed)
 //---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, DuplicatePresentationFormatsKoQ)
     {
-        {
-        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-            "<ECSchema schemaName='DuplicateKoQ' alias='DupKoQ' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
-            "   <ECSchemaReference name='Units' version='1.0.0' alias='u' />"
-            "   <ECSchemaReference name='Formats' version='1.0.0' alias='f' />"
-            "   <KindOfQuantity typeName='MyKindOfQuantity' relativeError='10e-3' persistenceUnit='u:M_PER_SEC_SQ' presentationUnits='f:DefaultRealU(4)[u:M_PER_SEC_SQ];f:DefaultRealU(4)[u:CM_PER_SEC_SQ];f:DefaultRealU(4)[u:FT_PER_SEC_SQ]'/>"
-            "</ECSchema>";
-        InitContextWithSchemaXml(goodSchemaXml.c_str());
-        ASSERT_TRUE(schema.IsValid());
-        EXPECT_TRUE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
-        }
-        {
-        Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-            "<ECSchema schemaName='NoDupRareCase' alias='DupKoQ' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
-            "   <ECSchemaReference name='Units' version='1.0.0' alias='u' />"
-            "   <ECSchemaReference name='Formats' version='1.0.0' alias='f' />"
-            "   <Format typeName = 'DefaultReal' displayLabel = 'real' type ='decimal' precision='4' formatTraits='keepSingleZero' />"
-            "   <KindOfQuantity typeName='MyKindOfQuantity' relativeError='10e-3' persistenceUnit='u:M_PER_SEC_SQ' presentationUnits='DefaultReal(4)[u:FT_PER_SEC_SQ];f:DefaultReal(4)[u:M_PER_SEC_SQ];f:DefaultReal(4)[u:FT_PER_SEC_SQ]'/>"
-            "</ECSchema>";
-        InitContextWithSchemaXml(goodSchemaXml.c_str());
-        ASSERT_TRUE(schema.IsValid());
-        EXPECT_TRUE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
-        }
-        {
-        Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-            "<ECSchema schemaName='dupKoQFormat' alias='DupKoQ' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
-            "   <ECSchemaReference name='Units' version='1.0.0' alias='u' />"
-            "   <ECSchemaReference name='Formats' version='1.0.0' alias='f' />"
-            "   <KindOfQuantity typeName='MyKindOfQuantity' relativeError='10e-3' persistenceUnit='u:M_PER_SEC_SQ' presentationUnits='f:DefaultRealU(4)[u:M_PER_SEC_SQ];f:DefaultRealU(4)[u:M_PER_SEC_SQ];f:DefaultRealU(4)[u:FT_PER_SEC_SQ]'/>"
-            "</ECSchema>";
-        InitContextWithSchemaXml(badSchemaXml.c_str());
-        ASSERT_TRUE(schema.IsValid());
-        EXPECT_FALSE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
-        }
-        {
-        Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-            "<ECSchema schemaName='dupKoQFormat' alias='DupKoQ' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-            "   <ECSchemaReference name='Units' version='1.0.0' alias='u' />"
-            "   <ECSchemaReference name='Formats' version='1.0.0' alias='f' />"
-            "   <KindOfQuantity typeName='MyKindOfQuantity' relativeError='10e-3' persistenceUnit='RAD(DefaultReal)' presentationUnits='ARC_DEG(real2u);ARC_DEG(dms);ARC_DEG(dms);ARC_DEG(real2u)'/>"
-            "</ECSchema>";
-        InitContextWithSchemaXml(badSchemaXml.c_str());
-        ASSERT_TRUE(schema.IsValid());
-        EXPECT_FALSE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
-        }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='DuplicateKoQ' alias='DupKoQ' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "   <ECSchemaReference name='Units' version='1.0.0' alias='u' />"
+        "   <ECSchemaReference name='Formats' version='1.0.0' alias='f' />"
+        "   <KindOfQuantity typeName='MyKindOfQuantity' relativeError='10e-3' persistenceUnit='u:M_PER_SEC_SQ' presentationUnits='f:DefaultRealU(4)[u:M_PER_SEC_SQ];f:DefaultRealU(4)[u:CM_PER_SEC_SQ];f:DefaultRealU(4)[u:FT_PER_SEC_SQ]'/>"
+        "</ECSchema>";
+    InitContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='NoDupRareCase' alias='DupKoQ' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "   <ECSchemaReference name='Units' version='1.0.0' alias='u' />"
+        "   <ECSchemaReference name='Formats' version='1.0.0' alias='f' />"
+        "   <Format typeName = 'DefaultReal' displayLabel = 'real' type ='decimal' precision='4' formatTraits='keepSingleZero' />"
+        "   <KindOfQuantity typeName='MyKindOfQuantity' relativeError='10e-3' persistenceUnit='u:M_PER_SEC_SQ' presentationUnits='DefaultReal(4)[u:FT_PER_SEC_SQ];f:DefaultReal(4)[u:M_PER_SEC_SQ];f:DefaultReal(4)[u:FT_PER_SEC_SQ]'/>"
+        "</ECSchema>";
+    InitContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
+    }
+    {
+    Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='dupKoQFormat' alias='DupKoQ' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "   <ECSchemaReference name='Units' version='1.0.0' alias='u' />"
+        "   <ECSchemaReference name='Formats' version='1.0.0' alias='f' />"
+        "   <KindOfQuantity typeName='MyKindOfQuantity' relativeError='10e-3' persistenceUnit='u:M_PER_SEC_SQ' presentationUnits='f:DefaultRealU(4)[u:M_PER_SEC_SQ];f:DefaultRealU(4)[u:M_PER_SEC_SQ];f:DefaultRealU(4)[u:FT_PER_SEC_SQ]'/>"
+        "</ECSchema>";
+    InitContextWithSchemaXml(badSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_FALSE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
+    }
+    {
+    Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='dupKoQFormat' alias='DupKoQ' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name='Units' version='1.0.0' alias='u' />"
+        "   <ECSchemaReference name='Formats' version='1.0.0' alias='f' />"
+        "   <KindOfQuantity typeName='MyKindOfQuantity' relativeError='10e-3' persistenceUnit='RAD(DefaultReal)' presentationUnits='ARC_DEG(real2u);ARC_DEG(dms);ARC_DEG(dms);ARC_DEG(real2u)'/>"
+        "</ECSchema>";
+    InitContextWithSchemaXml(badSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_FALSE(validator.Validate(*schema)) << "DuplicateKoQ may violate the duplicate presentation format in KoQ";
+    }
+    {
+    // AecUnits 1.0.0 exception
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="AecUnits" alias="AECU" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="LENGTH_SHORT" displayLabel="Short Length" persistenceUnit="M(DefaultReal)" presentationUnits="MM(real2u);CM(real4u);FT(fi8);IN(fi8);IN(fi16);IN(real4u)"                                   relativeError="0.01"/>
+        </ECSchema>)xml";
+
+    InitContextWithSchemaXml(schemaXml);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "The AecUnits, 1.0.0 and 1.0.1, were both released prior to the rule being implemented and should pass validation.";
+    }
+    {
+    // AecUnits 1.0.1 exception
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="AecUnits" alias="AECU" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="LENGTH_SHORT" displayLabel="Short Length" persistenceUnit="M(DefaultReal)" presentationUnits="MM(real2u);CM(real4u);FT(fi8);IN(fi8);IN(fi16);IN(real4u)"                                   relativeError="0.01"/>
+        </ECSchema>)xml";
+
+    InitContextWithSchemaXml(schemaXml);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "The AecUnits, 1.0.0 and 1.0.1, were both released prior to the rule being implemented and should pass validation.";
+    }
+    {
+    // AecUnits 1.0.2 is not an exception
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="AecUnits" alias="AECU" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="LENGTH_SHORT" displayLabel="Short Length" persistenceUnit="M(DefaultReal)" presentationUnits="MM(real2u);CM(real4u);FT(fi8);IN(fi8);IN(fi16);IN(real4u)"                                   relativeError="0.01"/>
+        </ECSchema>)xml";
+
+    InitContextWithSchemaXml(schemaXml);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_FALSE(validator.Validate(*schema)) << "The AecUnits, 1.0.0 and 1.0.1, were both released prior to the rule being implemented and should pass validation but a newer version should fail.";
+    }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

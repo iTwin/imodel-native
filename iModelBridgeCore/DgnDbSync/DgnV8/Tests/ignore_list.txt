@@ -14,9 +14,3 @@ NamedGroupTests.NamedGroupOf2dElement
 NamedGroupTests.NamedGroupAcrossReference # Sam broke this with switch to aspects for normal elements. Hopefully, Carole can fix it.
 
 ConverterTests.UseConverterAsLibrary # Sam - decide if we want to support the "record level mapping" feature of ConverterLibrary or not
-
-# These only fail when coverage is enabled, but since release builds compute coverage, need to ignore for now to get builds through.
-BasicGeometryTests.Cell
-BasicGeometryTests.NestedCell
-SheetCompositionTests.SheetSizeTest
-RulesetEmbedderTests.RulesetIsEmbeddedAndLocatedFromPresentationManager
