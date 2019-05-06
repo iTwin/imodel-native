@@ -1,0 +1,3 @@
+
+[imodel02\imodelcore\besecurity\securestore.cpp]
+%OutRoot%Winx64\Product\BeSecurity-GTest\BeSecurityTest.exe --gtest_filter=SecureLocalStateTests.GetValue_NonExistingRecord_ReturnsEmpty:

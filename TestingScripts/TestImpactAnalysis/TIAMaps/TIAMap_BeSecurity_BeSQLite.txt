@@ -1,0 +1,3 @@
+
+[imodel02\imodelcore\besqlite\l10n.cpp]
+%OutRoot%Winx64\Product\BeSecurity-GTest\BeSecurityTest.exe --gtest_filter=SecureLocalStateTests.*:
