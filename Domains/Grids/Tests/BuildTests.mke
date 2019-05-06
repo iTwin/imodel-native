@@ -4,7 +4,9 @@
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
-%include $(SrcRoot)Building/ConceptBuilding/privmki/ConceptBuilding.mki
+
+# Remove dependency on ConceptBuilding if building standalone domain
+IF !("%BUILDSTRATEGY%" == "Grids") %include $(SrcRoot)Building/ConceptBuilding/privmki/ConceptBuilding.mki
 
 %ifndef TestDir
     %error must define TestDir
