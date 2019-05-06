@@ -1,0 +1,17 @@
+#--------------------------------------------------------------------------------------
+#   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#--------------------------------------------------------------------------------------
+baseDir          = $(_MakeFilePath)
+PolicyFile= $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
+
+%include  mdl.mki
+#----------------------------------------------------------------------
+#       Define outputs
+#----------------------------------------------------------------------
+
+always:
+  ~mkdir  $(terrainModelBuildDir_)TestData
+  ~mkdir  $(terrainModelBuildDir_)TestData\TerrainModelNet
+  ~linkdir "$(terrainModelBuildDir_)TestData/TerrainModelNet/Bentley.Civil.Dtm.NUnit.dll=$(SrcRoot)TerrainModelTestData/bcTests/TestData/Bentley.Civil.Dtm.NUnit.dll"
+  ~linkdir "$(terrainModelBuildDir_)TestData/TerrainModelNet/Bentley.Civil.Dtm.Light.NUnit.dll=$(SrcRoot)TerrainModelTestData/bcTests/TestData/Bentley.Civil.Dtm.Light.NUnit.dll"
+  ~linkdir "$(BuildContext)TestData=$(terrainModelBuildDir_)TestData"
