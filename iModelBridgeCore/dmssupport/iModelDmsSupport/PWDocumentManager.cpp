@@ -61,20 +61,25 @@ DgnDocumentMonikerPtr PWDocumentManager::_CreateMonikerFromFileName(WCharCP file
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDocumentMonikerPtr   PWDocumentManager::_CreateMoniker(WCharCP portableName, WCharCP fullPathIn, WCharCP providerId, bool isRelative, WCharCP searchPathIn, bool findFullPathFirst, WCharCP customXMLString, WCharCP displayName)
     {
+    if (NULL == providerId)
+        return DgnDocumentManager::_CreateMoniker(portableName, fullPathIn, providerId, isRelative, searchPathIn, findFullPathFirst, customXMLString, displayName);
+
+    int folderId, documentId;
+    if (SUCCESS != m_helper.GetFolderIdFromMoniker(folderId, documentId, providerId))
+        return DgnDocumentManager::_CreateMoniker(portableName, fullPathIn, providerId, isRelative, searchPathIn, findFullPathFirst, customXMLString, displayName);
+
+    WString refFolderName;
+    refFolderName.Sprintf(L"%d_%d", folderId, documentId);
+
     WString searchPath;
     bvector<WString> paths;
-    if (NULL != searchPathIn && NULL != providerId)
+    BentleyApi::BeFileName portableFileName(portableName);
+    BentleyApi::WString refFileName = portableFileName.GetFileNameAndExtension();
+
+    if (NULL != searchPathIn)
         {
         searchPath = searchPathIn;
-        int folderId, documentId;
-        if (SUCCESS != m_helper.GetFolderIdFromMoniker(folderId, documentId, providerId))
-            return DgnDocumentManager::_CreateMoniker(portableName, fullPathIn, providerId, isRelative, searchPath.c_str(), findFullPathFirst, customXMLString, displayName);
-
-        BentleyApi::BeFileName portableFileName(portableName);
-        BentleyApi::WString refFileName =  portableFileName.GetFileNameAndExtension();
-        WString refFolderName;
-        refFolderName.Sprintf(L"%d_%d", folderId, documentId);
-
+        
         BentleyApi::BeFileName fullRefFileName;
         BeStringUtilities::Split(searchPathIn, L";", paths);
         for (WStringCR path : paths)
@@ -108,11 +113,23 @@ DgnDocumentMonikerPtr   PWDocumentManager::_CreateMoniker(WCharCP portableName, 
         fullRefFileName.AppendToPath(refFileName.c_str());
         if (fullRefFileName.DoesPathExist())
             return DgnDocumentManager::_CreateMoniker(portableName, fullRefFileName.c_str(), providerId, isRelative, searchPath.c_str(), findFullPathFirst, customXMLString, displayName);
-
         }
-    else
-        searchPath = searchPathIn;
+    //else search for this in the PW workspace folder with folder_id pattern
+    BentleyApi::WPrintfString dmsWorkspaceDirFilePath(L"%s\\dms%05d\\%s", m_helper.GetActiveWorkspaceDir().c_str(), folderId, refFileName.c_str());
+    BentleyApi::BeFileName dmsworkspaceDirFile(dmsWorkspaceDirFilePath);
+    if (dmsworkspaceDirFile.DoesPathExist())
+        return DgnDocumentManager::_CreateMoniker(portableName, dmsworkspaceDirFile.c_str(), providerId, isRelative, searchPath.c_str(), findFullPathFirst, customXMLString, displayName);
+
+    BentleyApi::WPrintfString workspaceDirFilePath(L"%s\\%s\\%s", m_helper.GetActiveWorkspaceDir().c_str(), refFolderName.c_str(), refFileName.c_str());
+    BentleyApi::BeFileName workspaceDirFile(workspaceDirFilePath);
+    if (workspaceDirFile.DoesPathExist())
+        return DgnDocumentManager::_CreateMoniker(portableName, workspaceDirFile.c_str(), providerId, isRelative, searchPath.c_str(), findFullPathFirst, customXMLString, displayName);
+
     
+    searchPath.append(L";");
+    searchPath.append(m_helper.GetActiveWorkspaceDir().c_str());
+    searchPath.append(L"\\*");
+
     return DgnDocumentManager::_CreateMoniker(portableName, fullPathIn, providerId, isRelative, searchPath.c_str(), findFullPathFirst, customXMLString, displayName);
     }
 
