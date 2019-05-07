@@ -759,7 +759,7 @@ DwgDbDatabasePtr    IDwgDbHost::ReadFile (WStringCR filename, bool convCodepage,
         const wchar_t*      pPassword = password.empty() ? nullptr : password.c_str();
         Acad::ErrorStatus   status = Acad::eOk;
 
-#ifndef NDEBUG
+#ifdef DEBUG
         class LinkerReactor : public AcRxDLinkerReactor
         {
         private:
@@ -803,7 +803,7 @@ DwgDbDatabasePtr    IDwgDbHost::ReadFile (WStringCR filename, bool convCodepage,
         AcRxEvent* arxEvent = AcRxEvent::cast (acrxSysRegistry()->at(ACRX_EVENT_OBJ));
         XrefEventReactor* xrefReactor = new XrefEventReactor (*this);
         arxEvent->addReactor (xrefReactor);
-#endif  // NDEBUG
+#endif  // DEBUG
 
         try
             {
@@ -833,7 +833,7 @@ DwgDbDatabasePtr    IDwgDbHost::ReadFile (WStringCR filename, bool convCodepage,
                 }
             }
 
-#ifndef NDEBUG
+#ifdef DEBUG
         if (nullptr != dynamicLinker && nullptr != linkReactor)
             dynamicLinker->removeReactor (linkReactor);
         if (nullptr != linkReactor)
@@ -842,7 +842,7 @@ DwgDbDatabasePtr    IDwgDbHost::ReadFile (WStringCR filename, bool convCodepage,
             arxEvent->removeReactor (xrefReactor);
         if (nullptr != xrefReactor)
             delete xrefReactor;
-#endif  // NDEBUG
+#endif  // DEBUG
 
         if (Acad::eOk == status)
             return  dwg;

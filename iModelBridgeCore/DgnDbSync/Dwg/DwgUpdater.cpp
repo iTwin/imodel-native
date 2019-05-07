@@ -258,6 +258,8 @@ bool    UpdaterChangeDetector::_IsElementChanged (DetectionResults& results, Dwg
     if (LOG_ENTITY_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
         {
         Utf8String  oldHash = results.GetObjectAspect().GetHashString ();
+        if (oldHash.empty())
+            oldHash.assign ("<null>");
         Utf8String  newHash;
         newProv.GetHash().AsHexString (newHash);
         LOG_ENTITY.tracev("Hash %s ? %s for entity %ls[%lld]", oldHash.c_str(), newHash.c_str(), obj.GetDwgClassName().c_str(), obj.GetObjectId().ToUInt64());

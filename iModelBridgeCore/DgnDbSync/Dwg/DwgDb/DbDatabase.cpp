@@ -521,7 +521,7 @@ DwgDbStatus DwgDbDatabase::ResolveXrefs (bool useThreadEngine, bool newXrefsOnly
     status = ToDwgDbStatus (OdDbXRefMan::loadAll(this, false));
     
 #elif DWGTOOLKIT_RealDwg
-#ifndef NDEBUG
+#ifdef DEBUG
     // track xref events
     class XrefEventReactor : public AcRxEventReactor
         {
@@ -545,17 +545,17 @@ DwgDbStatus DwgDbDatabase::ResolveXrefs (bool useThreadEngine, bool newXrefsOnly
     AcRxEvent* arxEvent = AcRxEvent::cast (acrxSysRegistry()->at(ACRX_EVENT_OBJ));
     XrefEventReactor* xrefReactor = new XrefEventReactor ();
     arxEvent->addReactor (xrefReactor);
-#endif  // NDEBUG
+#endif  // DEBUG
 
     Acad::ErrorStatus   es = ::acdbResolveCurrentXRefs (this, useThreadEngine, newXrefsOnly);
     status = ToDwgDbStatus (es);
 
-#ifndef NDEBUG
+#ifdef DEBUG
     if (nullptr != arxEvent && nullptr != xrefReactor)
         arxEvent->removeReactor (xrefReactor);
     if (nullptr != xrefReactor)
         delete xrefReactor;
-#endif  // NDEBUG
+#endif  // DEBUG
 #endif
     return  status;
     }

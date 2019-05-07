@@ -1075,7 +1075,7 @@ protected:
     DwgSourceAspects::ModelAspect GetRootModelAspectFromSourceMasterModelSubject(SubjectCR) const;
     void SetRootModelAspectIdInSourceMasterModelSubject(SubjectCR) const;
     ResolvedImportJob FindSoleImportJobForSourceMasterModel (SubjectCR masterModelSubject) const;
-    Utf8String  _ComputeImportJobName (DwgDbBlockTableRecordCR modelspaceBlock) const;
+    DWG_EXPORT virtual Utf8String  _ComputeImportJobName (DwgDbBlockTableRecordCR modelspaceBlock) const;
     // model subjects
     enum class ModelSubjectType {Hierarchy, References};
     SubjectCPtr GetOrCreateModelSubject(SubjectCR parent, Utf8StringCR, ModelSubjectType);
@@ -1341,7 +1341,7 @@ public:
     //! Get the block-geometry map that caches imported geometries.
     T_BlockPartsMap&            GetBlockPartsR () { return m_blockPartsMap; }
     //! Get/create the DefinitionModel that stores all other job specific definitions
-    DefinitionModelPtr          GetOrCreateJobDefinitionModel ();
+    DWG_EXPORT DefinitionModelPtr GetOrCreateJobDefinitionModel ();
 
     //! An iModelBridge must call this method from _MakeSchemaChanges, to change schemass.
     //! The default implementation iterates DWG block table for multiple tasks:

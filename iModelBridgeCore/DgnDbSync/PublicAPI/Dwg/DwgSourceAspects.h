@@ -1,7 +1,5 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/Dwg/DwgSyncInfo.h $
-|
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
@@ -320,20 +318,20 @@ public:
         BentleyApi::MD5 m_hasher;
 
     public:
-        //! Constructor from a pre-calculated hash
-        ObjectProvenance (HashCR hash) : m_hash(hash) {}
-        //! Constructor to calculate hash from a DWG specific object
-        ObjectProvenance (DwgDbObjectCR, DwgImporter& importer);
-        //! Default constructor ready to add new hash
-        ObjectProvenance () {}
+        //! Constructor from a pre-calculated hash. AddHash calls will have no effect on the hash constructed this way.
+        ObjectProvenance(HashCR hash) : m_hash(hash) {}
+        //! Constructor to calculate hash from a DWG specific object.  May add more data via AddHash calls.
+        DWG_EXPORT ObjectProvenance(DwgDbObjectCR, DwgImporter& importer);
+        //! Default constructor ready to add new hash.  May add data via AddHash calls.
+        ObjectProvenance() {}
         //! Directly hash input generic data and add it to to existing hash
-        DWG_EXPORT void AddHash (const void* binaryData, size_t numBytes);
+        DWG_EXPORT void AddHash(const void* binaryData, size_t numBytes);
         //! Calculate hash from input DWG object and add it to existing hash
-        DWG_EXPORT void AddHash (DwgDbObjectCR object);
+        DWG_EXPORT void AddHash(DwgDbObjectCR object);
         bool IsNull() const { return m_hash.IsNull(); }
-        bool IsSame (ObjectProvenance const& other) const { return m_hash.IsSame(other.m_hash); }
-        HashCR GetHash () const { return m_hash; }
-        void SetHash (HashCR hash) { m_hash = hash; }
+        bool IsSame(ObjectProvenance const& other) const { return m_hash.IsSame(other.m_hash); }
+        HashCR GetHash() const { return m_hash; }
+        void SetHash(HashCR hash) { m_hash = hash; }
         };  // ObjectProvenance
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(ObjectProvenance)
 
@@ -386,7 +384,7 @@ public:
         //! The ID of the source object
         DwgDbHandle GetObjectHandle() const { return BaseAspect::GetIdentifierAsHandle(); }
         DWG_EXPORT void Update(ObjectProvenanceCR); 
-        DWG_EXPORT Utf8String GetHashString () const;
+        DWG_EXPORT Utf8String GetHashString() const;
         DWG_EXPORT bool IsProvenanceEqual(ObjectProvenanceCR) const;
         };
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(ObjectAspect)

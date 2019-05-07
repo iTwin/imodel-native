@@ -1,2 +1,2 @@
-BasicTests.UpdateElements_AddDelete
+# BasicTests.UpdateElements_AddDelete
 # ImporterAppTests.BudweiserBenchmarks

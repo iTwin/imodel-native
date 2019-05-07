@@ -639,7 +639,7 @@ BentleyStatus   LayoutXrefFactory::UpdateSpatialView (bool updateBim)
     // re-compute the view
     this->ComputeSpatialView ();
 
-#ifdef NDEBUG
+#ifndef DEBUG
     m_spatialView->SetIsPrivate (true);
 #else
     m_spatialView->SetIsPrivate (false);

@@ -499,7 +499,7 @@ BentleyStatus   CreateObjectHash (bool reset = true)
         {
         DwgDbBlockReferenceCP   insert = DwgDbBlockReference::Cast (&m_object);
         if (nullptr != insert)
-            BeAssert(BSISUCCESS==this->AppendBlockHash(insert->GetBlockTableRecordId()));
+            this->AppendBlockHash(insert->GetBlockTableRecordId());
         }
 
     return  BSISUCCESS;
@@ -1349,8 +1349,10 @@ bool DwgSourceAspects::MaterialAspect::IsSameMaterial(ObjectProvenanceCR prov, U
     // match provenance
     auto sourceState = this->GetSourceState();
     Utf8String hashstr;
-    BeAssert (prov.GetHash().AsHexString(hashstr) > 0 && "ObjectProvenance not yet hashed!");
-    return hashstr.Equals(sourceState.m_checksum);
+    if (prov.GetHash().AsHexString(hashstr) > 0)
+        return hashstr.Equals(sourceState.m_checksum);
+    BeAssert (false && "ObjectProvenance not yet hashed!");
+    return  false;
     }
 
 
@@ -1471,8 +1473,10 @@ bool DwgSourceAspects::GroupAspect::IsSameGroup(ObjectProvenanceCR prov, Utf8Str
     // match provenance
     auto sourceState = this->GetSourceState();
     Utf8String hashstr;
-    BeAssert (prov.GetHash().AsHexString(hashstr) > 0 && "ObjectProvenance not yet hashed!");
-    return hashstr.Equals(sourceState.m_checksum);
+    if (prov.GetHash().AsHexString(hashstr) > 0)
+        return hashstr.Equals(sourceState.m_checksum);
+    BeAssert(false &&  && "ObjectProvenance not yet hashed!");
+    return  false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1699,6 +1703,8 @@ void DwgSourceAspects::ObjectAspect::Update(ObjectProvenanceCR prov)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String  DwgSourceAspects::ObjectAspect::GetHashString() const
     {
+    if (!this->IsValid())
+        return  Utf8String();
     auto sourceState = this->GetSourceState();
     return  sourceState.m_checksum;
     }
@@ -1710,8 +1716,10 @@ bool DwgSourceAspects::ObjectAspect::IsProvenanceEqual(ObjectProvenanceCR prov) 
     {
     auto sourceState = this->GetSourceState();
     Utf8String hashstr;
-    BeAssert (prov.GetHash().AsHexString(hashstr) > 0 && "ObjectProvenance not yet hashed!");
-    return hashstr.Equals(sourceState.m_checksum);
+    if (prov.GetHash().AsHexString(hashstr) > 0)
+        return hashstr.Equals(sourceState.m_checksum);
+    BeAssert(false && "ObjectProvenance not yet hashed!");
+    return  false;
     }
 
 
@@ -1991,7 +1999,8 @@ DwgSourceAspects::ObjectAspect DwgSourceAspects::FindObjectAspect (ObjectProvena
         void Bind(ObjectProvenanceCR prov)
             {
             Utf8String  hashstr;
-            BeAssert(prov.GetHash().AsHexString(hashstr) > 0);
+            if (prov.GetHash().AsHexString(hashstr) == 0)
+                BeAssert(false && "ObjectProvenance not yet hashed!");
             auto index = this->GetParameterIndex("checksumparm");
             m_stmt->Reset();
             m_stmt->BindText(index, hashstr.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
