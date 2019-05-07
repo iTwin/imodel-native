@@ -79,7 +79,8 @@ def generate_addon_for_platform(outdirParent, inputProductdir, versionsubdir, no
 
     # Compute the name of a directory that we can use to stage this package. This is just a temporary name.
     # The real name of the package is inside the package.json file.
-    outputpackagename = 'bridge-addon-' + versionsubdir + '-' + nodeOS + '-' + nodeCPU
+    # outputpackagename = 'bridge-addon-' + versionsubdir + '-' + nodeOS + '-' + nodeCPU
+    outputpackagename = 'bridge-addon-' + nodeOS + '-' + nodeCPU
 
     outputpackagedir = os.path.join(outdirParent, outputpackagename)
 
@@ -200,9 +201,9 @@ if __name__ == '__main__':
     # Generate a platform-specific package fo each platform that was built
     for versionsubdir in os.listdir(addonDir):
         # We are looking for the version-specific addon subdirectories. They tell us the names of the addons
-        if (re.match(r'^([a-z])_(\d+)_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([a-z])_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([a-z])_(\d+)$', versionsubdir) is None):
-            print '*** ' + versionsubdir + ' is unexpected. Only version-specific subdirectories should appear under addon.';
-            continue
+        # if (re.match(r'^([a-z])_(\d+)_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([a-z])_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([a-z])_(\d+)$', versionsubdir) is None):
+        #     print '*** ' + versionsubdir + ' is unexpected. Only version-specific subdirectories should appear under addon.';
+        #     continue
 
         publishPackage(generate_addon_for_platform(outdirParent, productdir, versionsubdir, nodeOS, nodeCPU, packageVersion, sourceDir), doPublish, tag);
 

@@ -5,4 +5,35 @@
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
 #pragma once
+
+#include <cstdio>
+#include <json/value.h>
+#include <Napi/napi.h>
+#include <iModelBridge/iModelBridgeFwk.h>
+
+#include "OidcTokenProvider.h"
+
+USING_NAMESPACE_BENTLEY_HTTP
+USING_NAMESPACE_BENTLEY_DGN
+using namespace Napi;
+
 int RunBridge(Napi::Env env, const char* json);
+
+
+namespace BridgeNative
+{
+//=======================================================================================
+// @bsistruct                                   Sam.Wilson                  06/18
+//=======================================================================================
+struct JsInterop
+{
+    static bool IsMainThread();
+
+    static void ThrowJsException(Utf8CP msg);
+
+    static void InitLogging();
+    static NativeLogging::ILogger &GetNativeLogger();
+    static void LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg);
+    static bool IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev);
+};
+} // namespace BridgeNative

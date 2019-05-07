@@ -36,12 +36,15 @@
   </ProductDirectoryList>
 
   <Part Name="bridge-addon-lib" BentleyBuildMakeFile="./iModelBridge/addon/bridge-addon.mke" >
-    <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+    <!-- <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/> -->
+    <!-- <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/> Does not deploy napi.dll -->
+    <SubPart PartName="napi-dll-win" PartFile="node-addon-api/node-addon-api"/>
+    
     <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
     <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" Repository="imodel02"/>
     <Bindings>
       <!-- KEEP THIS CONSISTENT WITH api_package\install-bridge-addon-native.js -->
-      <Files ProductDirectoryName="bridge_node_module" ProductSubDirectory="n_8">
+      <Files ProductDirectoryName="bridge_node_module" ProductSubDirectory="n_10">
         Delivery/bridge-addon/bridge-addon.node
       </Files>
     </Bindings>

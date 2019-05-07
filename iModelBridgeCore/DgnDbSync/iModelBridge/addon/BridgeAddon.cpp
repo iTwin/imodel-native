@@ -3,97 +3,141 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include <cstdio>
-#include <json/value.h>
-#include <Napi/napi.h>
-#include <iModelBridge/iModelBridgeFwk.h>
+// #include <cstdio>
+// #include <json/value.h>
+// #include <Napi/napi.h>
+// #include <iModelBridge/iModelBridgeFwk.h>
 
-#include "OidcTokenProvider.h"
+// #include "OidcTokenProvider.h"
 
-USING_NAMESPACE_BENTLEY_HTTP
-USING_NAMESPACE_BENTLEY_DGN
-using namespace Napi;
+// USING_NAMESPACE_BENTLEY_HTTP
+// USING_NAMESPACE_BENTLEY_DGN
+// using namespace Napi;
 
 #include "BridgeAddon.h"
 
+static intptr_t s_mainThreadId;
+static Napi::ObjectReference s_logger;
+static Napi::ObjectReference s_jobUtility;
+static Napi::Env *s_env;
+
+Napi::String toJsString(Napi::Env env, Utf8CP val, size_t len) { return Napi::String::New(env, val, len); }
+Napi::String toJsString(Napi::Env env, Utf8CP val) { return toJsString(env, val, std::strlen(val)); }
+Napi::String toJsString(Napi::Env env, Utf8StringCR str) { return toJsString(env, str.c_str(), str.length()); }
+Napi::String toJsString(Napi::Env env, BeInt64Id id) { return toJsString(env, id.ToHexStr()); }
+
+
+static void logMessageToJobUtility(Utf8CP msg) 
+    {
+    auto env = s_jobUtility.Env();
+    Napi::HandleScope scope(env);
+
+    Utf8CP fname = "logMessage";
+
+    auto method = s_jobUtility.Get(fname).As<Napi::Function>();
+    if (method == env.Undefined())
+        {
+        //Napi::Error::New(IModelJsNative::JsInterop::Env(), "Invalid Logger").ThrowAsJavaScriptException();
+        return;
+        }
+
+    auto msgJS = Napi::String::New(env, msg);
+
+    method({ msgJS });
+    }
+
+static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
+    {
+    auto env = s_logger.Env();
+    Napi::HandleScope scope(env);
+
+    Utf8CP fname = (sev == NativeLogging::LOG_TRACE)?   "logTrace":
+                (sev == NativeLogging::LOG_DEBUG)?   "logTrace": // Logger does not distinguish between trace and debug
+                (sev == NativeLogging::LOG_INFO)?    "logInfo":
+                (sev == NativeLogging::LOG_WARNING)? "logWarning":
+                                                        "logError"; // Logger does not distinguish between error and fatal
+
+    auto method = s_logger.Get(fname).As<Napi::Function>();
+    if (method == env.Undefined())
+        {
+        // Napi::Error::New(JsInterop::Env(), Utf8PrintfString("Invalid Logger -- missing %s function", fname).c_str()).ThrowAsJavaScriptException();
+        return;
+        }
+
+    auto catJS = toJsString(env, category);
+    auto msgJS = toJsString(env, msg);
+
+    method({catJS, msgJS});            
+    } 
+
+static void LogTrace(Utf8CP msg)         
+    {
+    logMessageToJs("iModelBridgeApiServer", NativeLogging::LOG_TRACE, msg);
+    } 
+/*
+static void LogInfo(Utf8CP msg)         
+    {
+        logMessageToJs("iModelBridgeApiServer", NativeLogging::LOG_INFO, msg);
+    }        
+*/
+static void LogError(Utf8CP msg)         
+    {
+    logMessageToJs("iModelBridgeApiServer", NativeLogging::LOG_WARNING, msg);
+    }      
+
 namespace BridgeNative {
 
-    static Napi::ObjectReference s_logger;
-    static Napi::ObjectReference s_JobUtility;
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Sam.Wilson                      02/18
+    /*---------------------------------------------------------------------------------**/ /**
+    * @bsimethod                                    Sam.Wilson                      06/18
     +---------------+---------------+---------------+---------------+---------------+------*/
+    bool JsInterop::IsMainThread()
+    {
+        return (BeThreadUtilities::GetCurrentThreadId() == s_mainThreadId);
+    }
+
+    /*---------------------------------------------------------------------------------**/ /**
+    * @bsimethod                                    Sam.Wilson                      01/18
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void JsInterop::ThrowJsException(Utf8CP msg)
+    {
+        Napi::Error::New(*s_env, msg).ThrowAsJavaScriptException();
+    }
+
+    //=======================================================================================
+    // @bsistruct                                   Sam.Wilson                  02/18
+    //=======================================================================================
     static Napi::Value GetLogger(Napi::CallbackInfo const& info) { return s_logger.Value(); }
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Sam.Wilson                      02/18
-    +---------------+---------------+---------------+---------------+---------------+------*/
+    Napi::ObjectReference &jsInterop_getLogger() { return s_logger; }
+
+    //=======================================================================================
+    // @bsistruct                                   Sam.Wilson                  02/18
+    //=======================================================================================
     static void SetLogger(Napi::CallbackInfo const& info)
         {
         s_logger = Napi::ObjectReference::New(info[0].ToObject());
         s_logger.SuppressDestruct();
         }
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Sam.Wilson                      02/18
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static void logMessageToSEQ(Utf8CP category, Utf8CP msg)
-       {
-       auto env = BridgeNative::s_logger.Env();
-       Napi::HandleScope scope(env);
+    //=======================================================================================
+    // @bsistruct                                   John.Majerle                  02/18
+    //=======================================================================================
+    static Napi::Value GetJobUtility(Napi::CallbackInfo const& info) { return s_jobUtility.Value(); }
 
-       Utf8CP fname = "logError";
-
-       auto method = BridgeNative::s_logger.Get(fname).As<Napi::Function>();
-       if (method == env.Undefined())
-           {
-           //Napi::Error::New(IModelJsNative::JsInterop::Env(), "Invalid Logger").ThrowAsJavaScriptException();
-           return;
-           }
-
-       auto catJS = Napi::String::New(env, category);
-       auto msgJS = Napi::String::New(env, msg);
-
-       method({catJS, msgJS});
-       }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    John.Majerle                      02/18
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static Napi::Value GetJobUtility(Napi::CallbackInfo const& info) { return s_JobUtility.Value(); }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    John.Majerle                      02/18
-    +---------------+---------------+---------------+---------------+---------------+------*/
+    //=======================================================================================
+    // @bsistruct                                   John.Majerle                  02/18
+    //=======================================================================================
     static void SetJobUtility(Napi::CallbackInfo const& info)
         {
-        s_JobUtility = Napi::ObjectReference::New(info[0].ToObject());
-        s_JobUtility.SuppressDestruct();
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    John.Majerle                      02/18
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static void logMessage(Utf8CP msg) 
-        {
-        auto env = BridgeNative::s_JobUtility.Env();
-        Napi::HandleScope scope(env);
-
-        Utf8CP fname = "logMessage";
-
-        auto method = BridgeNative::s_JobUtility.Get(fname).As<Napi::Function>();
-        if (method == env.Undefined())
-            {
-            //Napi::Error::New(IModelJsNative::JsInterop::Env(), "Invalid Logger").ThrowAsJavaScriptException();
-            return;
-            }
-
-        auto msgJS = Napi::String::New(env, msg);
-
-        method({ msgJS });
+        s_jobUtility = Napi::ObjectReference::New(info[0].ToObject());
+        s_jobUtility.SuppressDestruct();
         }
     }  // End namespace BridgeNative
+
+
+// ***********************************************************************************
+// Functions outside of namespace BridgeNative
+// ***********************************************************************************
 
 Value _RunBridge(const CallbackInfo& info) 
     {
@@ -107,13 +151,18 @@ Value _RunBridge(const CallbackInfo& info)
     return String::New(env, std::to_string(result).c_str());
     }
 
-/*---------------------------------------------------------------------------------**/ /**
-* @bsimethod                                    Sam.Wilson                      06/18
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=======================================================================================
+// @bsistruct                                   Sam.Wilson                  06/18
+//=======================================================================================
 static Napi::Object RegisterModule(Napi::Env env, Napi::Object exports)
     {
+    s_env = new Napi::Env(env);
+
     Napi::HandleScope scope(env);
 
+    s_mainThreadId = BeThreadUtilities::GetCurrentThreadId();
+
+    exports.Set(String::New(env, "RunBridge"), Napi::Function::New(env, _RunBridge));
 
     exports.DefineProperties(
         {
@@ -149,12 +198,12 @@ wchar_t const** argv = argptrs.data();\
 // Note: Used by OidcTokenProvider.cpp.
 Napi::Function RequestTokenFunction() 
     {
-    auto env = BridgeNative::s_JobUtility.Env();
+    auto env = s_jobUtility.Env();
     Napi::HandleScope scope(env);
 
     Utf8CP fname = "requestToken";
 
-    auto method = BridgeNative::s_JobUtility.Get(fname).As<Napi::Function>();
+    auto method = s_jobUtility.Get(fname).As<Napi::Function>();
     if (method == env.Undefined())
         {
         Napi::Error::New(env, "Invalid JobUtility function: requestToken").ThrowAsJavaScriptException();
@@ -169,20 +218,20 @@ static void justLogAssertionFailures(WCharCP message, WCharCP file, uint32_t lin
     NativeLogging::LoggingManager::GetLogger("iModelBridge")->errorv(str.c_str());
     }    
 
-/*---------------------------------------------------------------------------------**/ /**
-* @bsimethod                                    John.Majerle                      10/18
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=======================================================================================
+// @bsistruct                                   John.Majerle                  10/18
+//=======================================================================================
 int RunBridge(Env env, const char* jsonString)
     {
     int status = 1;  // Assume failure
 
-    printf("BridgeAddon.cpp: RunBridge() jsonString = %s\n", jsonString);           // [NEEDSWORK] This line just for testing.  Remove later.
- 
     // Disable asserts since we may be running as a service (and perhaps on the cloud)
     BeAssertFunctions::SetBeAssertHandler(justLogAssertionFailures);
 
-    BridgeNative::logMessageToSEQ("INFO", "BridgeAddon.cpp: RunBridge() BEGIN");        
-    BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() BEGIN");                 // [NEEDSWORK] This line just for testing.  Remove later.
+    BridgeNative::JsInterop::InitLogging();
+
+    LogTrace("BridgeAddon.cpp: RunBridge() BEGIN");        
+    logMessageToJobUtility("BridgeAddon.cpp: RunBridge() BEGIN");                 // [NEEDSWORK] This line just for testing.  Remove later.
     
     // Convert JSON string into a JSON object
     Json::Value json;
@@ -231,17 +280,17 @@ int RunBridge(Env env, const char* jsonString)
     MAKE_ARGC_ARGV(argptrs, args);
 
     if(1 == argc) {
-        BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() No valid members passed in json");
-        BridgeNative::logMessageToSEQ("ERROR", "BridgeAddon.cpp: RunBridge() No valid members passed in json"); 
+        logMessageToJobUtility("BridgeAddon.cpp: RunBridge() No valid members passed in json");
+        LogError("BridgeAddon.cpp: RunBridge() No valid members passed in json"); 
         return status;    
     }
 
     // [NEEDSWORK] This block just for testing.  Remove b4fore deployment!!!.
-    BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() argv[]:");
+    logMessageToJobUtility("BridgeAddon.cpp: RunBridge() argv[]:");
     for(int ii = 0; ii < argc; ++ii) {
         char buffer [MAX_PATH];
         sprintf(buffer, "BridgeAddon.cpp: argv[%d] = %S", ii, argv[ii]);
-        BridgeNative::logMessage(buffer);
+        logMessageToJobUtility(buffer);
     }
    
     try {
@@ -249,7 +298,7 @@ int RunBridge(Env env, const char* jsonString)
 
         // Initialze the bridge processor
         if (BentleyApi::BSISUCCESS != app.ParseCommandLine(argc, argv)) {
-            BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() ParseCommandLine failure");
+            logMessageToJobUtility("BridgeAddon.cpp: RunBridge() ParseCommandLine failure");
             return status;
         }
 
@@ -268,17 +317,17 @@ int RunBridge(Env env, const char* jsonString)
         {
             char buffer [MAX_PATH];
             sprintf(buffer, "BridgeAddon.cpp: RunBridge() Run completed with status = %d", status);
-            BridgeNative::logMessage(buffer);            
+            logMessageToJobUtility(buffer);            
         }
 
     } catch (...) {
-        BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() exception occurred during bridging");
-        BridgeNative::logMessageToSEQ("ERROR", "BridgeAddon.cpp: RunBridge() exception occurred during bridging"); 
+        logMessageToJobUtility("BridgeAddon.cpp: RunBridge() exception occurred during bridging");
+        LogError("BridgeAddon.cpp: RunBridge() exception occurred during bridging"); 
         return status;
     }
 
-    BridgeNative::logMessage("BridgeAddon.cpp: RunBridge() END"); // [NEEDSWORK] This line just for testing.  Remove later.
-    BridgeNative::logMessageToSEQ("INFO", "BridgeAddon.cpp: RunBridge() END");       
+    logMessageToJobUtility("BridgeAddon.cpp: RunBridge() END"); // [NEEDSWORK] This line just for testing.  Remove later.
+    LogTrace("BridgeAddon.cpp: RunBridge() END");       
 
     return status;
     }
