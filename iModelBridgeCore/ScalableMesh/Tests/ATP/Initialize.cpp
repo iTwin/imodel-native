@@ -72,9 +72,9 @@ struct AppViewManager : VIEWMANAGER
 // @bsiclass                                                    Keith.Bentley   01/10
 //=======================================================================================
 #ifdef VANCOUVER_API 
-class AppHost : public DgnViewLib::Host
+class AppHost : public ScalableMesh::ScalableMeshLib::Host, public DgnViewLib::Host
 #else
-class AppHost : public DgnPlatformLib::Host
+class AppHost : public ScalableMesh::ScalableMeshLib::Host, public DgnPlatformLib::Host
 #endif
     {
 
@@ -117,6 +117,8 @@ void AppHost::Startup()
     {
     //Ensure basegeocoord is initialized.
     _SupplyGeoCoordinationAdmin()._GetServices();
+
+    InitializeLogging();
     }
 
 void AppHost::Terminate()
