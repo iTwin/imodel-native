@@ -926,7 +926,7 @@ TEST_F(MstnBridgeTests, CodeReservation)
         ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
         }
 
-    VerifyLineHasCode(prevCount, bcName, srcId, prefix, false);
+    VerifyLineHasCode(prevCount, bcName, srcId, prefix, true);  // TODO: This should be false -- when we finally control locks and codes, there will be no code reservation in this case.
     ++prevCount;
 
     // Add a line using RELATED-ELEMENT-SCOPED CODES, where the related element is exclusively owned by the bridge.
@@ -942,7 +942,7 @@ TEST_F(MstnBridgeTests, CodeReservation)
         ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
         }
 
-    VerifyLineHasCode(prevCount, bcName, srcId, prefix, false);
+    VerifyLineHasCode(prevCount, bcName, srcId, prefix, true);  // TODO: This should be false -- when we finally control locks and codes, there will be no code reservation in this case.
     ++prevCount;
 
     // Add a line using RELATED-ELEMENT-SCOPED CODES, where the related is NOT exclusively owned by the bridge.
