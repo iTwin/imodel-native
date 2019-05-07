@@ -24,18 +24,28 @@ ListPropertyDepends = $(baseDir)ListProperty.h              \
 ### Pass $(DWGTOOLKIT) to compiler
 CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -I$(DwgVendorAPI)
 
+### Pass $(DWGTOOLKIT) to compiler
+CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -I$(DwgVendorAPI)
+
 %if $(DWGTOOLKIT) == "OpenDwg"
     DwgDbLibName    = OpenDwgDbExchange$(libext)
+    ToolkitLibs     = $(BuildContext)SubParts/teigha/Libs/
 
 %elif $(DWGTOOLKIT) == "RealDwg"
     DwgDbLibName    = RealDwg$(VendorVersion)/RealDwgDbExchange$(libext)
+    ToolkitLibs     = $(BuildContext)SubParts/Libs/$(DWGTOOLKIT)$(VendorVersion)/
 
-    ### Need to bypass the line #pragma comment(lib, "acpal.lib") in PAL\api\def.h; else we have to link with acpal.lib!!??
-    %if $(VendorVersion) <= 2018
-        CCompOpts + -D_ADESK_STATIC_LINKING_
+    ## RealDWG appends a version suffix to its core lib names:
+    %if $(VendorVersion) == 2017
+        RealDwgSuffix = 21
+    %elif $(VendorVersion) == 2018
+        RealDwgSuffix = 22
+    %elif $(VendorVersion) == 2019
+        RealDwgSuffix = 23
     %else
-        CCompOpts + -DACFABRIC_WINRT
+        %error RealDwgSuffix not defined (a newer release of RealDWG?)!!
     %endif
+
 %endif
 
 MultiCompileDepends = $(_MakeFileSpec)
@@ -59,11 +69,17 @@ LINKER_LIBRARIES    = $(DwgImporterDir)DwgImporter$(libext)
 LINKER_LIBRARIES    + $(DwgImporterDir)DwgBridge$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(DwgDbLibName)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeSQLite$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeSQLiteEC$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)Bentley$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)DgnPlatform$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeJsonCpp$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)ECObjects$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)iModelBridge$(libext)
+
+%if $(DWGTOOLKIT) == "RealDwg"
+LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acdb$(RealDwgSuffix)$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acpal$(libext)
+%endif
 
 %include $(sharedMki)linktool.mki
 
@@ -74,5 +90,5 @@ always:
 %if !defined(NDEBUG)
 # Symlink the exe to RealDwgImporter for debugging purpose
 always:
-    ~linkfile "$(OutputRootDir)Product/RealDwgImporter/$(EXE_NAME)$(exeext)=$(EXE_DEST)$(EXE_NAME)$(exeext)"
+    ~linkfile "$(OutputRootDir)Product/RealDwgBridge/$(EXE_NAME)$(exeext)=$(EXE_DEST)$(EXE_NAME)$(exeext)"
 %endif

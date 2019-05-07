@@ -126,6 +126,6 @@ always:
 %if !defined(NDEBUG)
 # Symlink the dll & exe to RealDwgImporter for debugging purpose
 always:
-    ~linkfile "$(OutputRootDir)Product/RealDwgImporter/$(EXE_NAME)$(exeext)=$(EXE_DEST)$(EXE_NAME)$(exeext)"
-    ~linkfile "$(OutputRootDir)Product/RealDwgImporter/SampleAffinity$(shlibext)=$(DLM_DEST)SampleAffinity$(shlibext)"
+    ~linkfile "$(OutputRootDir)Product/RealDwgBridge/$(EXE_NAME)$(exeext)=$(EXE_DEST)$(EXE_NAME)$(exeext)"
+    ~linkfile "$(OutputRootDir)Product/RealDwgBridge/SampleAffinity$(shlibext)=$(DLM_DEST)SampleAffinity$(shlibext)"
 %endif

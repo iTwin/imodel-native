@@ -69,7 +69,7 @@ void            DwgImporter::ImportAttributeDefinitionSchema (ECSchemaR attrdefS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::MakeSchemaChanges ()
+BentleyStatus   DwgImporter::_MakeSchemaChanges ()
     {
     if (!m_dgndb.IsValid() || !m_dwgdb.IsValid())
         return  static_cast<BentleyStatus>(DgnDbStatus::NotOpen);
@@ -1545,7 +1545,7 @@ void            DwgImporter::_FinishImport ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::MakeDefinitionChanges (SubjectCR jobSubject)
+BentleyStatus   DwgImporter::_MakeDefinitionChanges (SubjectCR jobSubject)
     {
     // only import dictionary tables that are shared with other bridges
     if (!m_hasBegunProcessing)

@@ -217,6 +217,171 @@ BentleyStatus   ListProperty::_ImportEntity (ElementImportResults& results, Elem
     return  status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8String  ListProperty::_ComputeImportJobName (DwgDbBlockTableRecordCR modelspaceBlock) const
+    {
+    /*-----------------------------------------------------------------------------------
+    This method is called from DwgImporter to build a import job name from a root DWG file's 
+    modelspace block. The default implementation builds the job name based on input block name
+    plus below iModelBridge params:
+
+    DwgImporter::Options::GetBridgeJobName
+    DwgImporter::Options::GetBridgeRegSubKeyUtf8
+    DwgImporter::Options::GetBridgeRegSubKey
+
+    This example sets the job name to a simple constant name.
+    -----------------------------------------------------------------------------------*/
+    return  "Sample iModelBridge ListProperty";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+SubjectPtr ListProperty::ConvertDictionary(SubjectCR parentSubject, DwgDbObjectCR sourceObject, Utf8StringCR name)
+    {
+    // Calculate a new object provenance from the input dictionary object
+    DwgSourceAspects::ObjectProvenance  prov(sourceObject, *this);
+
+    // Set the new provenance as current provenance in DetectionResults for the change detector.
+    IDwgChangeDetector::DetectionResults    detection;
+    detection.SetCurrentProvenance (prov);
+
+    // Get active change detector
+    auto& changeDetector = _GetChangeDetector();
+
+    // Will create a subject element as child of the input parent subject
+    SubjectPtr  subject;
+    auto targetModel = parentSubject.GetModel();
+    auto sourceHandle = sourceObject.GetObjectId().GetHandle();
+
+    // Detect changes
+    Json::Value data(Json::nullValue);
+    if (changeDetector._IsElementChanged(detection, *this, sourceHandle, *targetModel))
+        {
+        // A change has been detected since last job run, convert source data as necessary - this sample only saves class name as a json property.
+        data["DwgClass"] = DwgHelper::ToUtf8CP(sourceObject.GetDwgClassName());
+        }
+
+    // Act based on change detection result
+    switch (detection.GetChangeType())
+        {
+        case IDwgChangeDetector::ChangeType::None:
+            {
+            // No change - just tell change detector that we have seen this element
+            changeDetector._OnElementSeen(*this, detection.GetExistingElementId());
+
+            // In a normal workflow, probaly nothing else needs to be done, but this sample needs a subject element as next parent subject, so take the extra step here.
+            auto aspect = T_Super::GetSourceAspects().FindObjectAspect(sourceHandle, *targetModel);
+            BeAssert (aspect.IsValid());
+            subject = T_Super::GetDgnDb().Elements().GetForEdit<Subject>(aspect.GetElementId());
+            break;
+            }
+        case IDwgChangeDetector::ChangeType::Insert:
+            {
+            // New dictionary entry - create & insert a new subject element representing it
+            subject = Subject::Create(parentSubject, name);
+            subject->SetSubjectJsonProperties("DwgDictionary", data);
+
+            // Create an ExternalSourceAspect with pre-caculated provenance
+            T_Super::GetSourceAspects().AddOrUpdateObjectAspect(*subject, sourceHandle, detection.GetCurrentProvenance());
+
+            DgnDbStatus status;
+            auto newElement = subject->Insert(&status);
+            if (!newElement.IsValid() || status!=DgnDbStatus::Success)
+                break;  // error
+
+            changeDetector._OnElementSeen(*this, newElement->GetElementId());
+            break;
+            }
+        case IDwgChangeDetector::ChangeType::Update:
+            {
+            // Existing element - find it from ExternalSourceAspect then update it from the input dictionary
+            auto aspect = T_Super::GetSourceAspects().FindObjectAspect(sourceHandle, *targetModel);
+            BeAssert (aspect.IsValid());
+            subject = T_Super::GetDgnDb().Elements().GetForEdit<Subject>(aspect.GetElementId());
+            if (!subject.IsValid())
+                break;  // error
+
+            // Update set data and update the element
+            subject->SetSubjectJsonProperties("DwgDictionary", data);
+            subject->Update();
+            
+            changeDetector._OnElementSeen(*this, detection.GetExistingElementId());
+            break;
+            }
+        }
+    return  subject;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus ListProperty::DrillInDictionary (SubjectCR parentSubject, DwgDbDictionaryP dictionary, Utf8StringCR name, Utf8StringCR prefix)
+    {
+    auto sourceObject = DwgDbObject::Cast(dictionary);
+    if (sourceObject == nullptr)
+        return  BentleyStatus::BSIERROR;
+
+    // Create/update a subject element from input source dictionary
+    auto nextSubject = ConvertDictionary(parentSubject, *sourceObject, name);
+    if (!nextSubject.IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    auto iter = dictionary->GetIterator();
+    if (!iter.IsValid() || !iter->IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    for (; !iter->Done(); iter->Next())
+        {
+        // Filter out entries by entry name prefix
+        Utf8String  childName(iter->GetName().c_str());
+        if (!childName.StartsWithI(prefix.c_str()))
+            continue;
+        DwgDbObjectPtr  child(iter->GetObjectId(), DwgDbOpenMode::ForRead);
+        if (child.OpenStatus() != DwgDbStatus::Success)
+            continue;
+
+        // Drill into the dictionary
+        auto nextDictionary = DwgDbDictionary::Cast(child.get());
+        if (nextDictionary != nullptr)
+            DrillInDictionary(*nextSubject, nextDictionary, childName, prefix);
+        else
+            ConvertDictionary(*nextSubject, *child, name);
+        }
+    return  BentleyStatus::BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus ListProperty::_MakeDefinitionChanges(SubjectCR jobSubject)
+    {
+    /*-----------------------------------------------------------------------------------
+    This method is called from iModelBridgeFwk which holds dictionary locks for a bridge.
+    The default implementation updates dictionary model from DWG tables(layers, materials, etc).
+    After the tables have been processed, this sample code loops through DWG main dictionary
+    table and creates or updates Subject elements from selected dictionaries.  These subject
+    elements are inserted under the job subject, retaining the same hierarchy as they are
+    in the source dictionary.
+
+    Notice that the change detector is used in such a generic way that any source object
+    can apply.
+    -----------------------------------------------------------------------------------*/
+    T_Super::_MakeDefinitionChanges(jobSubject);
+
+    DwgDbDictionaryPtr acadDictionary(GetDwgDb().GetNamedObjectsDictionaryId(), DwgDbOpenMode::ForRead);
+    if (acadDictionary.OpenStatus() != DwgDbStatus::Success)
+        return  BentleyStatus::BSIERROR;
+
+    // Create the top subject as AcadDictionary and filter in "AVEVA_" dictionary entries
+    Utf8String  subjectName("AcadDictionary");
+    Utf8String  entryPrefix("AVEVA_");
+
+    return  DrillInDictionary(jobSubject, acadDictionary.get(), subjectName, entryPrefix);
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

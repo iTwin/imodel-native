@@ -31,6 +31,31 @@ USING_NAMESPACE_DWG
 BEGIN_DWG_NAMESPACE
 
 //=======================================================================================
+// This sample code shows two main features:
+//  1. Apply ACAD's LIST command on non-AcDb entities and collect property strings. Parse out the strings
+//      and create Adhoc properties for the imported elements. For this feature, only _ImportEntity 
+//      needs overridden.
+//  2. Walk through non-ACAD dictionaries, detect changes, create or update a subject converted from a
+//      dictionary entry.  For this feature, we opt for overriding _MakeDefinitionChanges but it can
+//      be done at a different step.
+//
+// General call sequenace from DwgBridge:
+//  OpenDwgFile
+//  InitializeJob(import) or FindJob(update)
+//  _MakeSchemaChanegs  (iModelBridgeFwk holds schema locks for the bridge to make changes)
+//  _BeginImport
+//  _MakeDefinitionChanges (iModelBridgeFwk holds dictionary locks)
+//      _ImportTextStyleSection
+//      _ImportLineTypeSection
+//      _ImportMaterialSection
+//      _ImportLayerSection
+//  _ImportSpaces
+//  _ImportDwgModels    (Model dicovery phase, no data filling)
+//  _ImportModelspaceViewports
+//  _ImportEntitySection    (Data filling from modelspace, including xRef's attached in modelspace)
+//  _ImportLayouts  (Data filling for from paperspaces, including xRef's attached paperspace)
+//  _ImportGroups
+//  _FinishImport
 //
 // @bsiclass
 //=======================================================================================
@@ -44,12 +69,21 @@ private:
     BentleyStatus   ConvertMessage (T_Utf8StringVectorR utf8List, WStringR currMessage, WStringR prevMessage) const;
     BentleyStatus   ConvertMessageCollection (T_Utf8StringVectorR utf8List, T_WStringVectorR wcharList) const;
     BentleyStatus   ListEntityProperties (DgnElementR element, DwgDbEntityCR entity);
+    // Methods converts selected dictionaries as subject elements
+    SubjectPtr      ConvertDictionary (SubjectCR parentSubject, DwgDbObjectCR sourceObject, Utf8StringCR name);
+    BentleyStatus   DrillInDictionary (SubjectCR parentSubject, DwgDbDictionaryP dictionary, Utf8StringCR name, Utf8StringCR prefix);
 
 public:
     // Constructor
     ListProperty (DwgImporter::Options& options) : T_Super(options) { }
     // Override _ImportEntity to LIST entity properties
     virtual BentleyStatus   _ImportEntity (ElementImportResults& results, ElementImportInputs& inputs) override;
+
+    // Override import job name
+    Utf8String  _ComputeImportJobName (DwgDbBlockTableRecordCR modelspaceBlock) const override;
+
+    // Override this method to make changes in dictionary model shared by all
+    BentleyStatus _MakeDefinitionChanges (SubjectCR jobSubject) override;
     };  // ListProperty
 
 //=======================================================================================

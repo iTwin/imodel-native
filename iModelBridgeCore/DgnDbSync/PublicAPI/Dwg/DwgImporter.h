@@ -1089,6 +1089,10 @@ protected:
     DWG_EXPORT BentleyStatus  AddPresentationRuleContent (DgnElementCR hostElement, Utf8StringCR attrdefName);
     //! Create and embed PresentationRules for DwgAttributeDefinitions schema:
     DWG_EXPORT virtual BentleyStatus  _EmbedPresentationRules ();
+    //! This method is called while the framework holds the schema locks for the bridge. Override this method to update your schemas. The default implementation updates DwgAttributeDefinitions schema.
+    DWG_EXPORT virtual BentleyStatus   _MakeSchemaChanges ();
+    //! This method is called while the framework holds the dictionary locks for the bridge. The default implementation updates shared DefinitionElements from DWG symbol tables.
+    DWG_EXPORT virtual BentleyStatus   _MakeDefinitionChanges (SubjectCR);
 
     //! @name  Creating DgnModels for DWG
     //! @{
@@ -1348,9 +1352,9 @@ public:
     //! 1) Create or update dynamic DwgAttributeDefinitions schema from ATTRDEF's
     //! 2) Load xRef files and cache them in m_loadedXrefFiles
     //! 3) Cache paperspace/layout block ID's in m_paperspaceBlockIds
-    DWG_EXPORT BentleyStatus    MakeSchemaChanges ();
+    BentleyStatus               MakeSchemaChanges() { return _MakeSchemaChanges(); }
     //! An iModelBridge must call this method from _MakeDefinitionChanges, to change dictionaries possibly shared with other bridges.
-    DWG_EXPORT BentleyStatus    MakeDefinitionChanges (SubjectCR jobSubject);
+    BentleyStatus               MakeDefinitionChanges(SubjectCR jobSubject) { return _MakeDefinitionChanges(jobSubject); }
 
     //! Call this once before working with DwgImporter, after initializing DgnDb's DgnPlatformLib
     //! @param toolkitDir Installed RealDWG or OpenDWG folder; default to the same folder as the EXE.

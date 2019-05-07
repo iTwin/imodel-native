@@ -866,7 +866,24 @@ DwgSourceAspects::ModelAspect   DwgSourceAspects::ModelAspect::Create (DwgDbBloc
     auto aspect = DwgSourceAspects::ModelAspect::CreateStub (block.GetObjectId(), block.GetDatabase().get(), transform, importer);
     if (aspect.IsValid())
         {
-        Utf8String dwgName(block.GetName().c_str());
+        // Use file name for modelspace and layout name for paperspaces
+        Utf8String dwgName;
+        if (block.IsModelspace())
+            {
+            auto dwg = block.GetDatabase();
+            if (dwg == nullptr)
+                dwgName.Assign(block.GetName().c_str());
+            else
+                dwgName.Assign(BeFileName::GetFileNameWithoutExtension(dwg->GetFileName().c_str()).c_str());
+            }
+        else
+            {
+            DwgDbLayoutPtr  layout(block.GetLayoutId(), DwgDbOpenMode::ForRead);
+            if (layout.OpenStatus() == DwgDbStatus::Success)
+                dwgName.Assign(layout->GetName().c_str());
+            else
+                dwgName.Assign(block.GetName().c_str());
+            }
         Utf8CP sourceType = block.IsModelspace() ? ModelProperty::SourceType::ModelSpace : ModelProperty::SourceType::PaperSpace;
         aspect.AddProperties (dwgName.c_str(), transform, sourceType);
         }
@@ -1475,7 +1492,7 @@ bool DwgSourceAspects::GroupAspect::IsSameGroup(ObjectProvenanceCR prov, Utf8Str
     Utf8String hashstr;
     if (prov.GetHash().AsHexString(hashstr) > 0)
         return hashstr.Equals(sourceState.m_checksum);
-    BeAssert(false &&  && "ObjectProvenance not yet hashed!");
+    BeAssert(false && "ObjectProvenance not yet hashed!");
     return  false;
     }
 
