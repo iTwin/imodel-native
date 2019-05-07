@@ -26,11 +26,15 @@ Json::Value EcefLocation::ToJson() const
 void EcefLocation::FromJson(JsonValueCR val)
     {
     m_isValid = false;
-    if (!val.isMember(json_origin()) || !val.isMember(json_orientation()))
+
+    // due to a bug in a previous version, we sometimes see an EcefLocation with a null orientation. That is never 
+    // a valid EcefLocation, just ignore it.
+    if (!val.isMember(json_origin()) || !val.isMember(json_orientation()) || val[json_orientation()].isNull())
         return;
 
     m_origin = JsonUtils::ToDPoint3d(val[json_origin()]);
     m_angles = JsonUtils::YawPitchRollFromJson(val[json_orientation()]);
+
     m_isValid = true;
     }
 
@@ -184,7 +188,7 @@ DgnDbStatus DgnGeoLocation::Load()
     JsonUtils::DPoint3dFromJson(m_globalOrigin, jsonObj[json_globalOrigin()]);
     LoadProjectExtents();
 
-    if (jsonObj.isMember(json_ecefLocation()))
+    if (jsonObj.isMember(json_ecefLocation())) 
         m_ecefLocation.FromJson(jsonObj[json_ecefLocation()]);
 
     if (jsonObj.isMember(json_initialProjectCenter()))
@@ -222,18 +226,16 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
         return;
         }
 
-    m_ecefLocation.m_isValid = !m_extent.IsEmpty() && newExtents.IsEqual(m_extent, 1.e-6);
-
-    if(m_ecefLocation.m_isValid) return;
-
     m_extent = newExtents;
     Json::Value jsonObj;
     JsonUtils::DRange3dToJson(jsonObj, m_extent);
     m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.ToString());
 
-    // Extent has changed; recompute ecef location
-    GetEcefLocation();
-    Save();
+    if (!m_ecefLocation.m_isValid)
+        {
+        GetEcefLocation(); // try to calculate the EcefLocation if it isn't set yet.
+        Save();
+        }
 
     for (auto const& kvp : m_dgndb.Models().GetLoadedModels())
         {
