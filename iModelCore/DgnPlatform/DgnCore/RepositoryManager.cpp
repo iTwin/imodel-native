@@ -101,11 +101,8 @@ protected:
         {
         RepositoryStatus status = el.PopulateRequest(req, op);
 
-        if (!IsLockRequired(el))
+        if (!LockRequired(el))
             req.Locks().Remove(LockableId(el));
-
-        if (!IsCodeReservationRequired(el.GetCode()))
-            req.Codes().erase(el.GetCode());
 
         return status;
         }
@@ -159,7 +156,6 @@ protected:
     RepositoryStatus PromoteDependentElements(LockRequestCR usedLocks, bvector<DgnModelId> const& models);
     void Cull(DgnLockSet& locks);
     void CullElementsInExclusiveModels(DgnLockSet& locks);
-    void CullCodeReservationsInExclusiveModels(DgnCodeSet&);
     RepositoryStatus AcquireLocks(LockRequestR locks, bool cull);
     Response DoFastQuery(Request const&);
     RepositoryStatus FastQueryLocks(Response& response, LockRequest const& locks, ResponseOptions options);
@@ -169,7 +165,7 @@ protected:
      * Check if an element's model id is exclusively locked, if it is do not require a lock
      * @bsimethod                                                    Diego.Pinate    03/18
      +---------------+---------------+---------------+---------------+---------------+------*/
-    bool IsLockRequired(DgnModelId elementsModelId)
+    bool LockRequired(DgnModelId elementsModelId)
         {
         if (LocksRequired())
             return (m_exclusivelyLockedModels.find(elementsModelId) == m_exclusivelyLockedModels.end());
@@ -180,66 +176,24 @@ protected:
     /*---------------------------------------------------------------------------------**//**
      * @bsimethod                                                    Diego.Pinate    03/18
      +---------------+---------------+---------------+---------------+---------------+------*/
-    bool IsLockRequired(DgnElementId elementId)
+    bool LockRequired(DgnElementId elementId)
         {
         CachedStatementPtr stmt = GetDgnDb().GetCachedStatement(STMT_ModelIdFromElement);
         stmt->BindId(1, elementId);
         stmt->Step();
         DgnModelId modelId = stmt->GetValueId<DgnModelId>(0);
         stmt->Reset();
-        return modelId.IsValid() ? IsLockRequired(modelId) : LocksRequired();
+        return modelId.IsValid() ? LockRequired(modelId) : LocksRequired();
         }
 
     /*---------------------------------------------------------------------------------**//**
      * @bsimethod                                                    Diego.Pinate    03/18
      +---------------+---------------+---------------+---------------+---------------+------*/
-    bool IsLockRequired(DgnElementCR element)
+    bool LockRequired(DgnElementCR element)
         {
-        return IsLockRequired(element.GetModelId());
+        return LockRequired(element.GetModelId());
         }
 
-    /*---------------------------------------------------------------------------------**//**
-     * @bsimethod                                                    Sam.Wilson      04/2019
-     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool IsCodeReservationRequired(DgnCodeCR code)
-        {
-        if (!code.IsValid() || code.GetScopeString().empty())
-            return false;
-
-        auto codeSpec = GetDgnDb().CodeSpecs().GetCodeSpec(code.GetCodeSpecId());
-        if (!codeSpec.IsValid())
-            {
-            BeAssert(false);
-            return false;
-            }
-
-        auto scopeType = codeSpec->GetScope().GetType();
-        switch (scopeType)
-            {
-            case CodeScopeSpec::Type::Repository:
-                return true;
-            
-            case CodeScopeSpec::Type::RelatedElement: // WIP: ???
-                return true;
-            }
-
-        DgnElementId scopeElementId = code.GetScopeElementId(GetDgnDb());
-
-        DgnModelId scopeModelId;
-        if (scopeType == CodeScopeSpec::Type::Model)
-            {
-            scopeModelId = DgnModelId(scopeElementId.GetValue());
-            }
-        else
-            {
-            BeAssert(scopeType == CodeScopeSpec::Type::ParentElement);
-            auto parentEl = GetDgnDb().Elements().GetElement(scopeElementId);
-            if (parentEl.IsValid())
-                scopeModelId = parentEl->GetModelId();
-            }
-
-        return (m_exclusivelyLockedModels.find(scopeModelId) == m_exclusivelyLockedModels.end());
-        }
 
     BeFileName GetLocalDbFileName() const
         {
@@ -736,24 +690,6 @@ void BriefcaseManagerBase::Cull(DgnCodeSet& codes)
 
         stmt->Reset();
         }
-
-    CullCodeReservationsInExclusiveModels(codes);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      04/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BriefcaseManagerBase::CullCodeReservationsInExclusiveModels(DgnCodeSet& codes)
-    {
-    DgnCodeSet toDelete;
-    for (auto const& code : codes)
-        {
-        if (!IsCodeReservationRequired(code))
-            toDelete.insert(code);
-        }
-
-    for (auto const& code : toDelete)
-        codes.erase(code);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1102,7 +1038,7 @@ void BriefcaseManagerBase::CullElementsInExclusiveModels(DgnLockSet& locks)
         if (lock.GetType() != LockableType::Element)
             continue;
         DgnElementId elementId(lock.GetId().GetValue());
-        if (!IsLockRequired(elementId))
+        if (!LockRequired(elementId))
             toDelete.insert(lock);
         }
 
@@ -1683,7 +1619,7 @@ RepositoryStatus BriefcaseManagerBase::_OnFinishRevision(DgnRevision const& rev)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BriefcaseManagerBase::_OnElementInserted(DgnElementId id)
     {
-    if (IsLockRequired(id) && Validate())
+    if (LockRequired(id) && Validate())
         InsertLock(LockableId(id), LockLevel::Exclusive, TableType::Owned);
     }
 
@@ -2718,11 +2654,8 @@ RepositoryStatus BulkUpdateBriefcaseManager::_PrepareForElementOperation(Request
     if (RepositoryStatus::Success != rstat)
         return rstat;
 
-    if (!IsLockRequired(el))
+    if (!LockRequired(el))
         reqOut.Locks().Remove(LockableId(el));
-
-    if (!IsCodeReservationRequired(el.GetCode()))
-        reqOut.Codes().erase(el.GetCode());
 
     AccumulateRequests(reqOut);
     return RepositoryStatus::Success;
@@ -2763,7 +2696,7 @@ void BulkUpdateBriefcaseManager::_OnElementInserted(DgnElementId id)
 #ifndef NDEBUG
     BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
 #endif
-    if (IsLockRequired(id)) // don't Validate
+    if (LockRequired(id)) // don't Validate
         m_req.Locks().GetLockSet().insert(DgnLock(LockableId(id), LockLevel::Exclusive));
     }
 
