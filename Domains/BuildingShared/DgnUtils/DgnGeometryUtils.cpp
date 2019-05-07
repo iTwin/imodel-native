@@ -709,7 +709,7 @@ CurveVectorPtr DgnGeometryUtils::ExtractBottomFaceShape(Dgn::GeometricElement3dC
     if (nullptr == pGeometrySource)
         return nullptr;
 
-    CurveVectorPtr curves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
+    CurveVectorPtr curves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_UnionRegion);
     Dgn::GeometryCollection geomDatas(*pGeometrySource);
     for (auto geomData : geomDatas)
         {
@@ -825,6 +825,236 @@ CurveVectorPtr DgnGeometryUtils::GetBaseShape(Dgn::GeometricElement3dCR extrusio
         };
 
     return CurveVector::CreateLinear(points, CurveVector::BOUNDARY_TYPE_Outer);
+    }
+
+bool isCurveParallelToLocal(CurveVectorCR curve)
+    {
+    DPoint3d centroid;
+    DVec3d normal;
+    double area;
+    curve.CentroidNormalArea(centroid, normal, area);
+
+    return normal.IsParallelTo(DVec3d::UnitZ()) && centroid.z == 0 && area != 0;
+    }
+
+#define PARASOLID_BUG_NOT_FIXED
+/*
+    Running BuildingPlacementStrategyTestFixture.ViewOverlay* test before StoryTestFixture.* hangs Story tests.
+    Specifically: 
+        DgnGeometryUtils::GetSliceAtZero
+            ...
+            Dgn::BRepUtil::Create::BodyFromSolidPrimitive
+                ...
+                pki_make_minimal_body (this function hangs)
+*/
+#ifdef PARASOLID_BUG_NOT_FIXED
+
+Dgn::IBRepEntityPtr tryGetBodyFromSolidPrimitive(Dgn::GeometricPrimitiveCR primitive)
+{
+    ISolidPrimitivePtr solid = primitive.GetAsISolidPrimitive();
+
+    if (solid.IsNull())
+        return nullptr;
+
+    DgnExtrusionDetail detail;
+    if (solid->TryGetDgnExtrusionDetail(detail))
+        return nullptr;
+
+    Dgn::IBRepEntityPtr bRepEntity;
+
+    Dgn::BRepUtil::Create::BodyFromSolidPrimitive(bRepEntity, *solid);
+
+    return bRepEntity;
+}
+
+CurveVectorPtr tryGetCurveFromExtrusion(Dgn::GeometricPrimitiveCR primitive)
+    {
+    ISolidPrimitivePtr solid = primitive.GetAsISolidPrimitive();
+
+    if (solid.IsNull())
+        return nullptr;
+
+    DgnExtrusionDetail extrusionDetail;
+
+    if (!solid->TryGetDgnExtrusionDetail(extrusionDetail))
+        return nullptr;
+
+    DRange3d range;
+    extrusionDetail.GetRange(range);
+
+    // Check if it intersects zero plane
+    if (range.high.z < 0 || range.low.z > 0)
+        return nullptr;
+
+    // Get extrusion base shape
+    CurveVectorPtr profile = extrusionDetail.FractionToProfile(0.0f);
+
+    // Simulate an extrusion slice by moving it to the zero plane
+    DPoint3d centroid;
+    double area;
+    profile->CentroidAreaXY(centroid, area);
+
+    profile->TransformInPlace(Transform::From(0.0f, 0.0f, -centroid.z));
+    return profile;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr DgnGeometryUtils::GetSliceAtZero(Dgn::GeometricPrimitiveCR primitive)
+    {
+    Dgn::IBRepEntityPtr bRepEntity = primitive.GetAsIBRepEntity();
+
+    if (bRepEntity.IsNull())
+        bRepEntity = tryGetBodyFromSolidPrimitive(primitive);
+
+    if (bRepEntity.IsValid())
+        return GetXYCrossSection(*bRepEntity, 0);
+
+    // If solid is an extrusion we try to get it's base shape
+    // Because of the bug, we don't slice and assume that extrusion is not tilted
+    CurveVectorPtr shapeCurve = tryGetCurveFromExtrusion(primitive);
+
+    if (shapeCurve.IsNull())
+        shapeCurve = primitive.GetAsCurveVector();
+
+    if (shapeCurve.IsNull())
+        return nullptr;
+
+    if (isCurveParallelToLocal(*shapeCurve))
+        return shapeCurve;
+
+    return nullptr;
+    }
+
+#else
+
+bool isSolidAnInvalidExtrusion(ISolidPrimitiveCR solid)
+    {
+    if (solid.GetSolidPrimitiveType() != SolidPrimitiveType::SolidPrimitiveType_DgnExtrusion)
+        return false;
+
+    DgnExtrusionDetail detail;
+    if (!solid.TryGetDgnExtrusionDetail(detail))
+        return false;
+
+    for (auto curve : *(detail.m_baseCurve))
+        {
+        ICurvePrimitive::CurvePrimitiveType type = curve->GetCurvePrimitiveType();
+        switch (type)
+            {
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_AkimaCurve:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
+                break;
+            default:
+                return true;
+            }
+        }
+
+    return false;
+    }
+
+Dgn::IBRepEntityPtr tryGetBodyFromSolidPrimitive(Dgn::GeometricPrimitiveCR primitive)
+    {
+    ISolidPrimitivePtr solid = primitive.GetAsISolidPrimitive();
+
+    if (solid.IsNull())
+        return nullptr;
+
+    // HACK to prevent BeAssert in BodyFromSolidPrimitive from spewing errors
+    if (isSolidAnInvalidExtrusion(*solid))
+        return nullptr;
+
+    Dgn::IBRepEntityPtr bRepEntity;
+
+    Dgn::BRepUtil::Create::BodyFromSolidPrimitive(bRepEntity, *solid);
+
+    return bRepEntity;
+    }
+
+CurveVectorPtr tryGetCurveFromFlatExtrusion(Dgn::GeometricPrimitiveCR primitive)
+    {
+    ISolidPrimitivePtr solid = primitive.GetAsISolidPrimitive();
+
+    if (solid.IsNull())
+        return nullptr;
+
+    DgnExtrusionDetail extrusionDetail;
+
+    if (!solid->TryGetDgnExtrusionDetail(extrusionDetail))
+        return nullptr;
+    
+    return extrusionDetail.FractionToProfile(0.0f);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr DgnGeometryUtils::GetSliceAtZero(Dgn::GeometricPrimitiveCR primitive)
+    {
+    Dgn::IBRepEntityPtr bRepEntity = primitive.GetAsIBRepEntity();
+
+    if (bRepEntity.IsNull())
+        bRepEntity = tryGetBodyFromSolidPrimitive(primitive);
+
+    if (bRepEntity.IsValid())
+        return GetXYCrossSection(*bRepEntity, 0);
+
+    // If solid was an extrusion with zero height, it couldn't be converted to IBRepEntity
+    // So we try to get it's shape directly
+    CurveVectorPtr shapeCurve = tryGetCurveFromFlatExtrusion(primitive);
+
+    if (shapeCurve.IsNull())
+        shapeCurve = primitive.GetAsCurveVector();
+
+    if (shapeCurve.IsNull())
+        return nullptr;
+
+    if (isCurveParallelToLocal(*shapeCurve))
+        return shapeCurve;
+
+    return nullptr;
+    }
+
+#endif // PARASOLID_BUG_NOT_FIXED
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr DgnGeometryUtils::GetSliceAtZero(Dgn::GeometricElement3dCR element)
+    {
+    Dgn::GeometryCollection geometryData(element);
+
+    if (geometryData.begin() == geometryData.end())
+        return nullptr;
+
+    CurveVectorPtr curves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_UnionRegion);
+
+    for (auto data : geometryData)
+        {
+        Dgn::GeometricPrimitivePtr primitive = data.GetGeometryPtr();
+
+        if (primitive.IsNull())
+            continue;;
+
+        CurveVectorPtr curve = GetSliceAtZero(*primitive);
+
+        if(curve.IsValid())
+            curves->Add(curve);
+        }
+
+    if (curves->CountPrimitivesBelow() == 0)
+        return nullptr;
+
+    if (curves->HasSingleCurvePrimitive())
+        return curves->front()->GetChildCurveVectorP();
+
+    return curves;
     }
 
 /*---------------------------------------------------------------------------------**//**

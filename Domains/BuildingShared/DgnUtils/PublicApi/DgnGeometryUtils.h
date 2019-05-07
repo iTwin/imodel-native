@@ -25,7 +25,8 @@ struct DgnGeometryUtils
 
         static CurveVectorPtr ExtractBottomXYProfileFromSolid(Dgn::IBRepEntityCR solid);
         static CurveVectorPtr ExtractTopXYProfileFromSolid(Dgn::IBRepEntityCR solid);
-        
+        static CurveVectorPtr GetSliceAtZero(Dgn::GeometricPrimitiveCR primitive);
+
         static void ClearElementGeometry(Dgn::GeometricElement3dCR element);
     public:
         BUILDINGSHAREDDGNUTILS_EXPORT static BentleyStatus    CreateBodyFromGeometricPrimitive(Dgn::IBRepEntityPtr& out, Dgn::GeometricPrimitiveCPtr primitive, bool assignIds = false);
@@ -110,6 +111,11 @@ struct DgnGeometryUtils
         //! @param element                  element for which we want to get the base shape
         //! @return                         base shape curve vector
         BUILDINGSHAREDDGNUTILS_EXPORT static CurveVectorPtr GetBaseShape(Dgn::GeometricElement3dCR element);
+
+        //! Gets geometric element's slice at zero local plane
+        //! @param element                  element that will be sliced
+        //! @return                         sliced shape as a curve vector
+        BUILDINGSHAREDDGNUTILS_EXPORT static CurveVectorPtr GetSliceAtZero(Dgn::GeometricElement3dCR element);
 
         //! Extracts spatial location element's bottom face shape
         //! @param element                  element for which we want to get the bottom face shape

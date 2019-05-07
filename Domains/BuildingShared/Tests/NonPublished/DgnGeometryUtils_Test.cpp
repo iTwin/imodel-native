@@ -10,6 +10,7 @@
 #include <BuildingShared/BuildingSharedApi.h>
 #include "BuildingSharedTestFixtureBase.h"
 #include <DgnPlatform/GenericDomain.h>
+#include <math.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BUILDING
@@ -549,6 +550,280 @@ TEST_F(DgnGeometryUtilsTests, GetBaseShape_RectangularPlaneGeometry_ReturnsUncha
 
     ASSERT_EQ(curveCenter, shapeCenter);
     ASSERT_EQ(curveArea, shapeArea);
+
+    ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DgnGeometryUtilsTests, GetSliceAtZero_NoGeometry_ReturnsNullptr)
+    {
+    DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    CurveVectorPtr rectCurve = CurveVector::CreateRectangle(0, 0, 10, 10, 0);
+
+    GenericPhysicalObjectPtr object = createAndInsertObject(db);
+    ASSERT_TRUE(object.IsValid());
+
+    CurveVectorPtr shape = DgnGeometryUtils::GetSliceAtZero(*object);
+    ASSERT_TRUE(shape.IsNull());
+
+    ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DgnGeometryUtilsTests, GetSliceAtZero_PlaneParallelToLocal_ReturnsPlane)
+    {
+    DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    CurveVectorPtr rectCurve = CurveVector::CreateRectangle(0, 0, 10, 10, 0);
+
+    GenericPhysicalObjectPtr object = createAndInsertObject(db);
+    ASSERT_TRUE(object.IsValid());
+
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*object);
+    builder->Append(*rectCurve);
+    builder->Finish(*object);
+
+    CurveVectorPtr shape = DgnGeometryUtils::GetSliceAtZero(*object);
+    ASSERT_TRUE(shape.IsValid());
+
+    ASSERT_EQ(GeometryUtils::GetCurveArea(*rectCurve), GeometryUtils::GetCurveArea(*shape));
+
+    ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DgnGeometryUtilsTests, GetSliceAtZero_PlaneNotParallelToLocal_ReturnsNullptr)
+    {
+    DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    STDVectorDPoint3d points{ {10, 0, 0}, {10, 10, 10}, {0, 10, 10}, {0, 0, 0} };
+    CurveVectorPtr rectCurve = CurveVector::CreateLinear(points, CurveVector::BOUNDARY_TYPE_Outer);
+
+    GenericPhysicalObjectPtr object = createAndInsertObject(db);
+    ASSERT_TRUE(object.IsValid());
+
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*object);
+    builder->Append(*rectCurve);
+    builder->Finish(*object);
+
+    CurveVectorPtr shape = DgnGeometryUtils::GetSliceAtZero(*object);
+    ASSERT_TRUE(shape.IsNull());
+
+    ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DgnGeometryUtilsTests, GetSliceAtZero_BRepIntersectingLocalPlane_ReturnsSlicedProfile)
+    {
+    DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    DgnBoxDetail boxDetail(DPoint3d::From(0, 0, -5), DPoint3d::From(0, 0, 5), DVec3d::UnitX(), DVec3d::UnitY(),
+        10, 10, 10, 10, true);
+
+    ISolidPrimitivePtr boxSolidPrimitive = ISolidPrimitive::CreateDgnBox(boxDetail);
+
+    IBRepEntityPtr boxSolid;
+    Dgn::BRepUtil::Create::BodyFromSolidPrimitive(boxSolid, *boxSolidPrimitive);
+
+    GenericPhysicalObjectPtr object = createAndInsertObject(db);
+    ASSERT_TRUE(object.IsValid());
+
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*object);
+    builder->Append(*boxSolid);
+    builder->Finish(*object);
+
+    CurveVectorPtr shape = DgnGeometryUtils::GetSliceAtZero(*object);
+    ASSERT_TRUE(shape.IsValid());
+
+    ASSERT_EQ(100, GeometryUtils::GetCurveArea(*shape));
+
+    ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DgnGeometryUtilsTests, GetSliceAtZero_SolidIntersectingLocalPlane_ReturnsSlicedProfile)
+    {
+    DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    DgnBoxDetail boxDetail(DPoint3d::From(0, 0, -5), DPoint3d::From(0, 0, 5), DVec3d::UnitX(), DVec3d::UnitY(),
+        10, 10, 10, 10, true);
+
+    ISolidPrimitivePtr boxSolidPrimitive = ISolidPrimitive::CreateDgnBox(boxDetail);
+
+    GenericPhysicalObjectPtr object = createAndInsertObject(db);
+    ASSERT_TRUE(object.IsValid());
+
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*object);
+    builder->Append(*boxSolidPrimitive);
+    builder->Finish(*object);
+
+    CurveVectorPtr shape = DgnGeometryUtils::GetSliceAtZero(*object);
+    ASSERT_TRUE(shape.IsValid());
+
+    ASSERT_EQ(100, GeometryUtils::GetCurveArea(*shape));
+
+    ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DgnGeometryUtilsTests, GetSliceAtZero_FlatExtrusionAtLocalPlane_ReturnsSlicedProfile)
+    {
+    DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    CurveVectorPtr rectCurve = CurveVector::CreateRectangle(0, 0, 10, 10, 0);
+
+    GenericPhysicalObjectPtr object = createAndInsertObject(db);
+    ASSERT_TRUE(object.IsValid());
+
+    DgnGeometryUtils::InitiateExtrusionGeometry(*object, nullptr, DgnSubCategoryId(), rectCurve, 0, nullptr, false);
+
+    CurveVectorPtr shape = DgnGeometryUtils::GetSliceAtZero(*object);
+    ASSERT_TRUE(shape.IsValid());
+
+    ASSERT_EQ(100, GeometryUtils::GetCurveArea(*shape));
+
+    ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DgnGeometryUtilsTests, GetSliceAtZero_ExtrusionIntersectingLocalPlane_ReturnsSlicedProfile)
+{
+    DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    CurveVectorPtr rectCurve = CurveVector::CreateRectangle(0, 0, 10, 10, -5);
+
+    GenericPhysicalObjectPtr object = createAndInsertObject(db);
+    ASSERT_TRUE(object.IsValid());
+
+    DgnGeometryUtils::InitiateExtrusionGeometry(*object, nullptr, DgnSubCategoryId(), rectCurve, 10, nullptr, false);
+
+    CurveVectorPtr shape = DgnGeometryUtils::GetSliceAtZero(*object);
+    ASSERT_TRUE(shape.IsValid());
+
+    ASSERT_EQ(100, GeometryUtils::GetCurveArea(*shape));
+
+    ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
+}
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DgnGeometryUtilsTests, GetSliceAtZero_BRepIsAtAnAngle_ReturnsSlicedProfile)
+    {
+    DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    double const boxWidth = 10;
+    double const boxLength = 10;
+    DgnBoxDetail boxDetail(DPoint3d::From(0, 0, -10), DPoint3d::From(0, 0, 10), DVec3d::UnitX(), DVec3d::UnitY(),
+        boxWidth, boxLength, boxWidth, boxLength, true);
+
+    ISolidPrimitivePtr boxSolidPrimitive = ISolidPrimitive::CreateDgnBox(boxDetail);
+
+    double const rotationAngle = 45 * (3.14f / 180.0f);
+    boxSolidPrimitive->TransformInPlace(Transform::FromLineAndRotationAngle(DVec3d::FromZero(), DVec3d::UnitY(), rotationAngle));
+
+    IBRepEntityPtr boxSolid;
+    Dgn::BRepUtil::Create::BodyFromSolidPrimitive(boxSolid, *boxSolidPrimitive);
+
+    GenericPhysicalObjectPtr object = createAndInsertObject(db);
+    ASSERT_TRUE(object.IsValid());
+
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*object);
+    builder->Append(*boxSolid);
+    builder->Finish(*object);
+
+    CurveVectorPtr shape = DgnGeometryUtils::GetSliceAtZero(*object);
+    ASSERT_TRUE(shape.IsValid());
+
+    double expectedArea = (boxWidth / sin(rotationAngle)) * boxWidth;
+    double floored = floor(expectedArea);
+    double floored2 = floor(GeometryUtils::GetCurveArea(*shape));
+    ASSERT_EQ(floor(expectedArea), floor(GeometryUtils::GetCurveArea(*shape)));
+
+    ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
+    }
+
+#define PARASOLID_BUG_NOT_FIXED
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+#ifdef PARASOLID_BUG_NOT_FIXED
+TEST_F(DgnGeometryUtilsTests, GetSliceAtZero_ExtrusionIsAtAnAngle_ReturnsNullptr)
+#else
+TEST_F(DgnGeometryUtilsTests, GetSliceAtZero_ExtrusionIsAtAnAngle_ReturnsSlicedProfile)
+#endif // PARASOLID_BUG_NOT_FIXED
+    {
+    DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    STDVectorDPoint3d points{ {10, 0, -10}, {10, 10, 0}, {0, 10, 0}, {0, 0, -10} };
+    CurveVectorPtr rectCurve = CurveVector::CreateLinear(points, CurveVector::BOUNDARY_TYPE_Outer);
+
+    GenericPhysicalObjectPtr object = createAndInsertObject(db);
+    ASSERT_TRUE(object.IsValid());
+
+    DgnGeometryUtils::InitiateExtrusionGeometry(*object, nullptr, DgnSubCategoryId(), rectCurve, 10, nullptr, false);
+
+    CurveVectorPtr shape = DgnGeometryUtils::GetSliceAtZero(*object);
+    
+#ifdef PARASOLID_BUG_NOT_FIXED
+    ASSERT_TRUE(shape.IsNull());
+#else
+    ASSERT_TRUE(shape.IsValid());
+#endif // PARASOLID_BUG_NOT_FIXED
+
+    ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DgnGeometryUtilsTests, GetSliceAtZero_BRepNotIntersectingLocalPlane_ReturnsNullptr)
+    {
+    DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    DgnBoxDetail boxDetail(DPoint3d::From(0, 0, 1), DPoint3d::From(0, 0, 5), DVec3d::UnitX(), DVec3d::UnitY(),
+        10, 10, 10, 10, true);
+
+    ISolidPrimitivePtr boxSolidPrimitive = ISolidPrimitive::CreateDgnBox(boxDetail);
+
+    IBRepEntityPtr boxSolid;
+    Dgn::BRepUtil::Create::BodyFromSolidPrimitive(boxSolid, *boxSolidPrimitive);
+
+    GenericPhysicalObjectPtr object = createAndInsertObject(db);
+    ASSERT_TRUE(object.IsValid());
+
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*object);
+    builder->Append(*boxSolid);
+    builder->Finish(*object);
+
+    CurveVectorPtr shape = DgnGeometryUtils::GetSliceAtZero(*object);
+    ASSERT_TRUE(shape.IsNull());
 
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
     }
