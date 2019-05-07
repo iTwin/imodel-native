@@ -236,7 +236,7 @@ protected:
         if (m_exclusivelyLockedModels.find(scopeEl->GetModelId()) != m_exclusivelyLockedModels.end())
             return true;
 
-        return const_cast<BriefcaseManagerBase*>(this)->QueryLockLevel(*scopeEl) == LockLevel::Exclusive;   // TODO: When we get the LockLevel of Permanent, then check for that.
+        return QueryLockLevel(*scopeEl) == LockLevel::Exclusive;   // TODO: When we get the LockLevel of Permanent, then check for that.
         }
 
     BeFileName GetLocalDbFileName() const
