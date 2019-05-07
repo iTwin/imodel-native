@@ -92,7 +92,7 @@ namespace ScalableMeshGTestUtil
     bool FilterEntry(BeFileName& entry, bool isDir, bool wantSource = false);
 
 #ifdef VANCOUVER_API
-    struct ScalableMeshModule : DgnViewLib::Host
+    struct ScalableMeshModule : ScalableMesh::ScalableMeshLib::Host, DgnViewLib::Host
 #else
     struct ScalableMeshModule : ScalableMesh::ScalableMeshLib::Host, DgnPlatformLib::Host
 #endif
