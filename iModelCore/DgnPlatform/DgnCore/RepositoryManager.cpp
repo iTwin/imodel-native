@@ -220,23 +220,19 @@ protected:
         if (!scopeElementId.IsValid())
             return false;
 
+        DgnModelId scopeModelId;
         if (scopeType == CodeScopeSpec::Type::Model)
             {
-            auto scopeModelId = DgnModelId(scopeElementId.GetValue());
-            return (m_exclusivelyLockedModels.find(scopeModelId) != m_exclusivelyLockedModels.end());
+            scopeModelId = DgnModelId(scopeElementId.GetValue());
             }
-
-        auto scopeEl = GetDgnDb().Elements().GetElement(scopeElementId);
-        if (!scopeEl.IsValid())
+        else
             {
-            BeDataAssert(false);
-            return false;
+            auto parentEl = GetDgnDb().Elements().GetElement(scopeElementId);
+            if (parentEl.IsValid())
+                scopeModelId = parentEl->GetModelId();
             }
 
-        if (m_exclusivelyLockedModels.find(scopeEl->GetModelId()) != m_exclusivelyLockedModels.end())
-            return true;
-
-        return QueryLockLevel(*scopeEl) == LockLevel::Exclusive;   // TODO: When we get the LockLevel of Permanent, then check for that.
+        return (m_exclusivelyLockedModels.find(scopeModelId) != m_exclusivelyLockedModels.end());
         }
 
     BeFileName GetLocalDbFileName() const
