@@ -1630,6 +1630,36 @@ void Converter::ValidateJob()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void getOutlierElementInfo (const bvector<BeInt64Id>& elementOutliers, DgnDbCP db, Utf8String& message, Converter* converter)
+{
+    for (auto eid : elementOutliers)
+    {
+        auto outlierElement = db->Elements ().GetElement ((DgnElementId)eid.GetValue ());
+        if (!outlierElement.IsNull ())
+        {
+            BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
+            auto status = estmt.Prepare (*db, "SELECT Identifier FROM " BIS_SCHEMA (BIS_CLASS_ExternalSourceAspect) " AS xsa WHERE (xsa.Element.Id=?)");
+
+            estmt.BindInt64 (1, eid.GetValue ());
+            int64_t v8ElementId = 0;
+            
+            if (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ())
+                v8ElementId = estmt.GetValueInt64 (0);
+
+            auto v8ModelInfo = std::get <1> (SyncInfo::V8ModelExternalSourceAspect::GetAspect (*outlierElement->GetModel ()));
+            Utf8String sourceModelName = v8ModelInfo.GetV8ModelName ();
+            RepositoryLinkId id = v8ModelInfo.GetRepositoryLinkId ();
+            auto repositoryLinkElement = converter->GetRepositoryLinkElement (id);
+            auto v8FileInfo = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect (*repositoryLinkElement);
+            Utf8String sourceFileName = v8FileInfo.GetFileName ();
+            message.Sprintf (" Element Id: %lld, Model Name: %s, File Name: %s", v8ElementId, sourceModelName.c_str (), sourceFileName.c_str ());
+        }
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::OnCreateComplete()
@@ -1638,9 +1668,15 @@ void Converter::OnCreateComplete()
 
     size_t      outlierCount;
     DRange3d    rangeWithOutliers;
-    m_dgndb->GeoLocation().InitializeProjectExtents(&rangeWithOutliers, &outlierCount);
-    if (0 != outlierCount)  
-        ReportAdjustedProjectExtents(outlierCount, m_dgndb->GeoLocation().GetProjectExtents(), rangeWithOutliers);
+    bvector<BeInt64Id> elementOutliers;
+    m_dgndb->GeoLocation().InitializeProjectExtents(&rangeWithOutliers, &elementOutliers);
+
+    if (elementOutliers.size () > 0)
+        {
+        Utf8String message;
+        getOutlierElementInfo (elementOutliers, m_dgndb.get (), message, this);
+        ReportAdjustedProjectExtents (elementOutliers.size (), m_dgndb->GeoLocation ().GetProjectExtents (), rangeWithOutliers, message);
+        }
 
     // *** NEEDS WORK: What is this for? m_rootScaleFactor is never set anywhere in the converter
     //m_dgndb->SaveProperty(PropertySpec("SourceRootScaleFactor", "dgn_Proj"), &m_rootScaleFactor, sizeof(m_rootScaleFactor));
@@ -1683,13 +1719,18 @@ void Converter::OnUpdateComplete()
     size_t      outlierCount;
     DRange3d    rangeWithOutliers;
 
-    auto calculated = m_dgndb->GeoLocation().ComputeProjectExtents(&rangeWithOutliers, &outlierCount);
+    bvector<BeInt64Id> elementOutliers;
+    auto calculated = m_dgndb->GeoLocation().ComputeProjectExtents(&rangeWithOutliers, &elementOutliers);
 
     if (!extents.IsEqual(calculated))
         {
         m_dgndb->GeoLocation().SetProjectExtents(calculated);
-        if (0 != outlierCount)  
-            ReportAdjustedProjectExtents(outlierCount, m_dgndb->GeoLocation().GetProjectExtents(), rangeWithOutliers);
+        if (elementOutliers.size () > 0)
+            {
+            Utf8String message;
+            getOutlierElementInfo (elementOutliers, m_dgndb.get (), message, this);
+            ReportAdjustedProjectExtents (elementOutliers.size (), m_dgndb->GeoLocation ().GetProjectExtents (), rangeWithOutliers, message);
+            }
         }
     }
 

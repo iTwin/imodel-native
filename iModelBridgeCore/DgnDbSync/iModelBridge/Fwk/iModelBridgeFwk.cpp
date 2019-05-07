@@ -302,6 +302,17 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             continue;
             }
 
+        if (argv[iArg] == wcsstr(argv[iArg], L"--registry-dir="))
+            {
+            if (!m_registryDir.empty())
+                {
+                fwprintf(stderr, L"The --registry-dir= option may appear only once.\n");
+                return BSIERROR;
+                }
+            m_registryDir.SetName(getArgValueW(argv[iArg]));
+            continue;
+            }
+
         if (0 != BeStringUtilities::Wcsnicmp(argv[iArg], L"--fwk", 5))
             {
             // Not a fwk argument. We will forward it to the bridge.
@@ -656,39 +667,6 @@ iModelBridgeFwk::SyncState iModelBridgeFwk::GetSyncState()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::SaveNewModelIds()
-    {
-    if (m_modelsInserted.empty())
-        return;
-
-    auto stmt = m_stateDb.GetCachedStatement("INSERT INTO fwk_CreatedModels (ModelId) VALUES(?)");
-    for (auto mid : m_modelsInserted)
-        {
-        stmt->Reset();
-        stmt->ClearBindings();
-        stmt->BindId(1, mid);
-        stmt->Step();
-        }
-    m_stateDb.SaveChanges();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::ReadNewModelIds()
-    {
-    BeAssert(m_modelsInserted.empty());
-
-    auto stmt = m_stateDb.GetCachedStatement("SELECT ModelId FROM fwk_CreatedModels");
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
-        m_modelsInserted.push_back(stmt->GetValueId<DgnModelId>(0));
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult iModelBridgeFwk::OpenOrCreateStateDb()
@@ -717,7 +695,6 @@ BeSQLite::DbResult iModelBridgeFwk::OpenOrCreateStateDb()
     if (!stateFileName.DoesPathExist())
         {
         MUSTBEOK(m_stateDb.CreateNewDb(stateFileName));
-        MUSTBEOK(m_stateDb.CreateTable("fwk_CreatedModels", "ModelId BIGINT"));
         MUSTBEOK(m_stateDb.SavePropertyString(s_schemaVerPropSpec, s_schemaVer.ToJson()));
         MUSTBEOK(m_stateDb.SaveChanges());
         }
@@ -861,47 +838,20 @@ BentleyStatus iModelBridgeFwk::DoInitial()
     //
     //  We need to create a new repository.
     //
+    CreateDgnDbParams createProjectParams;
+    
+    Utf8String rootSubjName(m_briefcaseName.GetBaseName());
+    createProjectParams.SetRootSubjectName(rootSubjName.c_str());
 
-    //  Initialize the bridge to do the creation.
-    //  Note: iModelBridge::_Initialize will register domains, and some of them may be required.
-    if (BSISUCCESS != InitBridge())
-        return BentleyStatus::ERROR;
-    if (true)
+    // Create the DgnDb file. All currently registered domain schemas are imported.
+    BeSQLite::DbResult createStatus;
+    auto db = DgnDb::CreateDgnDb(&createStatus, m_briefcaseName, createProjectParams);
+    if (!db.IsValid())
         {
-        iModelBridgeCallTerminate callTerminate(*m_bridge);
-
-        //  Create a new repository. (This will import all required domains and their schemas.)
-        m_isCreatingNewRepo = true;
-        m_briefcaseDgnDb = m_bridge->DoCreateDgnDb(m_modelsInserted, nullptr);
-        m_isCreatingNewRepo = false;
-        if (!m_briefcaseDgnDb.IsValid())
-            {
-            // Hopefully, this is a recoverable error. Stay in Initial state, so that we can try again.
-            return BSIERROR;
-            }
-        callTerminate.m_status = BSISUCCESS;
+        LOG.fatalv(L"Failed to create repository [%s] with error %x", m_briefcaseName.c_str(), createStatus);
+        return BSIERROR;
         }
-
-    auto rc = m_briefcaseDgnDb->SaveChanges();
-    if (BeSQLite::BE_SQLITE_OK != rc)
-        {
-        // Hopefully, this is a recoverable error. Stay in Initial state, so that we can try again.
-        LOG.fatalv("SaveChanges failed with %s", m_briefcaseDgnDb->GetLastError().c_str());
-        m_briefcaseDgnDb->AbandonChanges();
-        m_briefcaseDgnDb = nullptr;
-        m_briefcaseName.BeDeleteFile();
-        return BentleyStatus::ERROR;
-        }
-
-    BeAssert(!m_briefcaseDgnDb->Txns().HasChanges());
-
-    SaveNewModelIds();
-    m_modelsInserted.clear();   // *** CLEAR, SO THAT WE TEST WRITE/READ CODE
-
-    // Close the DgnDb that converter just created. The next states all start with a filename. Also, we
-    // must be sure that all changes are flushed to disk.
-    m_briefcaseDgnDb = nullptr;
-
+    db->SaveChanges();
     SetState(BootstrappingState::CreatedLocalDb);
 
     return BSISUCCESS;
@@ -965,33 +915,6 @@ BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedRepository()
         return BSIERROR;
         }
 
-    SetState(BootstrappingState::NewBriefcaseNeedsLocks);
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::IModelHub_DoNewBriefcaseNeedsLocks()
-    {
-    // I just created a repository and pulled a briefcase for it.
-    // I must now manually get an exclusive lock on all of the models that I created
-#ifdef DEBUG_BIM_BRIDGE
-    bvector<DgnModelId> check;
-    std::swap(check, m_modelsInserted);
-#endif
-    if (m_modelsInserted.empty())
-        ReadNewModelIds();
-
-#ifdef DEBUG_BIM_BRIDGE
-    BeAssert(check == m_modelsInserted);
-#endif
-
-    if (BSISUCCESS != Briefcase_AcquireExclusiveLocks())
-        return BSIERROR;
-
-    //DeleteNewModelIdsFile();  *** NEEDS WORK: What did I intend here? Am I trying to clean up after a crash??
-
     SetState(BootstrappingState::HaveBriefcase);
     return BSISUCCESS;
     }
@@ -1017,7 +940,6 @@ BentleyStatus iModelBridgeFwk::BootstrapBriefcase(bool& createdNewRepo)
             case BootstrappingState::Initial:                   status = DoInitial(); break;
             case BootstrappingState::CreatedLocalDb:            status = IModelHub_DoCreatedLocalDb(); createdNewRepo = true; break;
             case BootstrappingState::CreatedRepository:         status = IModelHub_DoCreatedRepository(); break;
-            case BootstrappingState::NewBriefcaseNeedsLocks:    status = IModelHub_DoNewBriefcaseNeedsLocks(); break;
             }
 
         if (BSISUCCESS != status)
@@ -1430,10 +1352,6 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         m_briefcaseDgnDb = nullptr;
         return RETURN_STATUS_SERVER_ERROR;
         }
-
-    //  "Bootstrapping" the briefcase might have created a new repository. In that case, there is no need to go through the update logic and pullmergepush.
-    if (createdNewRepo)
-        return RETURN_STATUS_SUCCESS;
 
     LogPerformance(briefcaseTime, "Getting iModel Briefcase from iModelHub");
     LOG.tracev(L"Setting up iModel Briefcase for processing  : Done");
@@ -2215,8 +2133,12 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
     if (nullptr != s_registryForTesting)
         return *(m_registry = s_registryForTesting);
      
+    BeFileName registryDir = m_jobEnvArgs.m_registryDir;
+    if (registryDir.empty())
+        registryDir = m_jobEnvArgs.m_stagingDir;
+
     BeSQLite::DbResult res;
-    m_registry = iModelBridgeRegistry::OpenForFwk(res, m_jobEnvArgs.m_stagingDir, m_briefcaseBasename);
+    m_registry = iModelBridgeRegistry::OpenForFwk(res, registryDir, m_briefcaseBasename);
 
     if (!m_registry.IsValid())
         {

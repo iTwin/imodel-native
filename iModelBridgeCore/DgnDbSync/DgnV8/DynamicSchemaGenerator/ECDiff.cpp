@@ -954,7 +954,12 @@ ECDiffNodeP ECSchemaDiffTool::DiffClass (Utf8CP className, ECN::ECSchemaCR schem
     //    diff->Add (ID_NAME)->SetValue (left->GetName().c_str(), right->GetName().c_str());
 
     if (left->GetDisplayLabel() != right->GetDisplayLabel())
-        diff->Add (DiffNodeId::DisplayLabel)->SetValue (left->GetIsDisplayLabelDefined()? left->GetDisplayLabel().c_str() : NULL, right->GetIsDisplayLabelDefined()? right->GetDisplayLabel().c_str(): NULL);
+        {
+        if (left->GetIsDisplayLabelDefined() || right->GetIsDisplayLabelDefined())
+            diff->Add(DiffNodeId::DisplayLabel)->SetValue(left->GetIsDisplayLabelDefined() ? left->GetDisplayLabel().c_str() : NULL, right->GetIsDisplayLabelDefined() ? right->GetDisplayLabel().c_str() : NULL);
+        else
+            diff->Add(DiffNodeId::DisplayLabel)->SetValue(left->GetDisplayLabel().c_str(), right->GetDisplayLabel().c_str());
+        }
 
     if (left->GetDescription() != right->GetDescription())
         diff->Add (DiffNodeId::Description)->SetValue (left->GetDescription().c_str(), right->GetDescription().c_str());

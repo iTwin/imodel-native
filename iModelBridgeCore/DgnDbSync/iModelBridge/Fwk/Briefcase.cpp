@@ -677,41 +677,6 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::Briefcase_AcquireExclusiveLocks()
-    {
-    if (m_modelsInserted.empty())
-        return BSISUCCESS;
-
-    DgnDb::OpenParams openParams(DgnDb::OpenMode::Readonly);
-    auto db = DgnDb::OpenDgnDb(nullptr, m_briefcaseName, openParams);
-    if (!db.IsValid())
-        {
-        GetLogger().errorv(L"iModelBridgeFwk unable to open db %s for Briefcase_AcquireExclusiveLocks.", m_briefcaseName.c_str());
-        return BSIERROR;
-        }
-
-    LockRequest req;
-    for (auto mid : m_modelsInserted)
-        {
-        auto model = db->Models().GetModel(mid);
-        if (!model.IsValid())
-            continue;
-        req.Insert(*model, LockLevel::Exclusive);
-        }
-
-    if (BSISUCCESS != m_client->AcquireLocks(req, *db))
-        {
-        GetLogger().info(m_client->GetLastError().GetMessage().c_str());
-        return BSIERROR;
-        }
-
-    m_modelsInserted.clear();
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 IRepositoryManagerP iModelBridgeFwk::FwkRepoAdmin::_GetRepositoryManager(DgnDbR db) const
