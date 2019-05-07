@@ -222,18 +222,16 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
         return;
         }
 
-    m_ecefLocation.m_isValid = !m_extent.IsEmpty() && newExtents.IsEqual(m_extent, 1.e-6);
-
-    if(m_ecefLocation.m_isValid) return;
-
     m_extent = newExtents;
     Json::Value jsonObj;
     JsonUtils::DRange3dToJson(jsonObj, m_extent);
     m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.ToString());
 
-    // Extent has changed; recompute ecef location
-    GetEcefLocation();
-    Save();
+    if (!m_ecefLocation.m_isValid)
+        {
+        GetEcefLocation(); // try to calculate the EcefLocation if it isn't set yet.
+        Save();
+        }
 
     for (auto const& kvp : m_dgndb.Models().GetLoadedModels())
         {
@@ -246,9 +244,9 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnGeoLocation::InitializeProjectExtents(DRange3dP rangeWithOutliers, size_t* outlierCount) 
+void DgnGeoLocation::InitializeProjectExtents(DRange3dP rangeWithOutliers, bvector<BeInt64Id>* elementOutliers)
     {
-    SetProjectExtents(ComputeProjectExtents(rangeWithOutliers, outlierCount));
+    SetProjectExtents(ComputeProjectExtents(rangeWithOutliers, elementOutliers));
 
     // We need an immutable origin for Cesium tile publishing that will not
     // change when project extents change.   Set it here only.
@@ -260,14 +258,14 @@ void DgnGeoLocation::InitializeProjectExtents(DRange3dP rangeWithOutliers, size_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d DgnGeoLocation::ComputeProjectExtents(DRange3dP rangeWithOutliers, size_t* outlierCount) const
+AxisAlignedBox3d DgnGeoLocation::ComputeProjectExtents(DRange3dP rangeWithOutliers, bvector<BeInt64Id>* elementOutliers) const
     {
     AxisAlignedBox3d extent;
     auto& models = GetDgnDb().Models();
 
     // Set the project extents to the union of the ranges of all elements - but ignoring outlying (statistically insignificant).
     // Elements so that we do not get huge project extents for "offending elements".
-    extent.Extend(GetDgnDb().ComputeGeometryExtentsWithoutOutliers(rangeWithOutliers, outlierCount));
+    extent.Extend(GetDgnDb().ComputeGeometryExtentsWithoutOutliers(rangeWithOutliers, elementOutliers));
     
     // Include non element (reality model) ranges.
     for (auto& entry : models.MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel)))
