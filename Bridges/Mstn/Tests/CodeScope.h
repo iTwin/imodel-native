@@ -4,6 +4,5 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "ConverterInternal.h"
-#include "V8FileEditor.h"
-#include <Bentley/BeTest.h>
+
+enum class CodeScope {Model, Related, Repository};

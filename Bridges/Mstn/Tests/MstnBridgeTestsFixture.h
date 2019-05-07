@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/MstnBridgeTestsFixture.h $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,6 +12,7 @@
 #include <iModelBridge/TestIModelHubClientForBridges.h>
 #include <WebServices/iModelHub/Client/Client.h>
 #include "MstnBridgeTestsLogProvider.h"
+#include "CodeScope.h"
 
 struct RevisionStats
     {
@@ -98,6 +97,22 @@ struct ProcessRunner
     int GetExitCode() const {return m_exitCode;}
     };
 
+//=======================================================================================
+// @bsistruct                              
+//=======================================================================================
+struct BriefClientRepositoryAdmin : BentleyApi::Dgn::DgnPlatformLib::Host::RepositoryAdmin
+{
+    DEFINE_T_SUPER(RepositoryAdmin);
+
+    BentleyApi::Dgn::IModelClientForBridges& m_client;
+
+    BriefClientRepositoryAdmin(BentleyApi::Dgn::IModelClientForBridges& client) : m_client(client) {}
+    BentleyApi::Dgn::IRepositoryManagerP _GetRepositoryManager(BentleyApi::Dgn::DgnDbR db) const override
+        {
+        return m_client.GetRepositoryManager(db);
+        }
+};
+
 struct LogProcessor;
 struct FwkArgvMaker;
 //=======================================================================================
@@ -177,20 +192,34 @@ struct MstnBridgeTestsFixture : ::testing::Test
 
     int64_t AddLine(BentleyApi::BeFileName& inputFile, int count = 1);
 
+    int32_t GetDefaultV8ModelId(BentleyApi::BeFileNameCR inputFile);
+
     struct DbFileInfo
         {
-        BentleyApi::Dgn::DgnDbPtr m_db;
         BentleyApi::Dgn::ScopedDgnHost m_host;
+        BentleyApi::Dgn::DgnDbPtr m_db;
+        
         DbFileInfo(BentleyApi::BeFileNameCR fileName);
+        ~DbFileInfo();
         int32_t GetElementCount();
         int32_t GetModelCount();
         int32_t GetPhysicalModelCount();
         int32_t GetBISClassCount(CharCP className);
         int32_t GetModelProvenanceCount(BentleyApi::BeSQLite::BeGuidCR fileGuid);
-        BentleyApi::BentleyStatus GetiModelElementByDgnElementId(BentleyApi::Dgn::DgnElementId& elementId, int64_t srcElementId);
-        BentleyApi::Dgn::DgnElementId MstnBridgeTestsFixture::DbFileInfo::GetRepositoryLinkByFileNameLike(BentleyApi::Utf8StringCR);
+        BentleyApi::BentleyStatus GetiModelElementByDgnElementId(BentleyApi::Dgn::DgnElementId& elementId, uint64_t srcElementId);
+        BentleyApi::Dgn::DgnElementId GetRepositoryLinkByFileNameLike(BentleyApi::Utf8StringCR);
+        void MustFindFileByName(BentleyApi::Dgn::RepositoryLinkId& fileid, BentleyApi::BeFileNameCR v8FileNameIn, int expectedCount);
+        void MustFindModelByV8ModelId(BentleyApi::Dgn::DgnModelId& fmid, BentleyApi::Dgn::RepositoryLinkId ffid, int32_t v8ModelId, int expectedCount);
+        void MustFindElementByV8ElementId(BentleyApi::Dgn::DgnElementId& eid, BentleyApi::Dgn::DgnModelId fmid, uint64_t v8ElementId, int expectedCount);
+        BentleyApi::Dgn::SubjectCPtr GetFirstJobSubject();
+        void SetRepositoryAdminFromBriefcaseClient(BentleyApi::Dgn::IModelClientForBridges&);
+        void ClearRepositoryAdmin();
+        BentleyApi::Dgn::DgnCodeInfoSet GetCodeInfos(BentleyApi::Dgn::DgnCodeSet const&, BentleyApi::Dgn::IModelClientForBridges&);
+        BentleyApi::BentleyStatus GetCodeInfo(BentleyApi::Dgn::DgnCodeInfo&, BentleyApi::Dgn::DgnCode const&, BentleyApi::Dgn::IModelClientForBridges&);
+        BentleyApi::Dgn::LockLevel QueryLockLevel(BentleyApi::Dgn::LockableId, BentleyApi::Dgn::IModelClientForBridges&);
+        BentleyApi::Dgn::LockLevel QueryLockLevel(BentleyApi::Dgn::DgnModelCR model, BentleyApi::Dgn::IModelClientForBridges& client) {return QueryLockLevel(BentleyApi::Dgn::LockableId(model), client);}
+        BentleyApi::Dgn::LockLevel QueryLockLevel(BentleyApi::Dgn::DgnElementCR el, BentleyApi::Dgn::IModelClientForBridges& client) {return QueryLockLevel(BentleyApi::Dgn::LockableId(el), client);}
         };
-    
 
     void RunTheBridge(BentleyApi::bvector<BentleyApi::WString> const& args);
     
@@ -199,6 +228,13 @@ struct MstnBridgeTestsFixture : ::testing::Test
     static void SetupTestDirectory(BentleyApi::BeFileNameR dirPath,  BentleyApi::WCharCP dirName, BentleyApi::WCharCP iModelName,
                                    BentleyApi::BeFileNameCR input1, BentleyApi::BeSQLite::BeGuidCR inputGuid, 
                                    BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid);
+    };
+
+struct ScopedCodeAssignerXDomain
+    {
+    ScopedCodeAssignerXDomain(BentleyApi::Dgn::DgnElementId, Utf8CP prefix, CodeScope);
+    ScopedCodeAssignerXDomain(BentleyApi::Dgn::DgnModelId mid, Utf8CP prefix) : ScopedCodeAssignerXDomain(BentleyApi::Dgn::DgnElementId(mid.GetValue()), prefix, CodeScope::Model) {}
+    ~ScopedCodeAssignerXDomain();
     };
 
 //=======================================================================================

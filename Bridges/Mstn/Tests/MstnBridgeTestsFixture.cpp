@@ -1,8 +1,7 @@
+
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/MstnBridgeTestsFixture.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <windows.h>
@@ -227,6 +226,22 @@ BentleyApi::Dgn::DgnElementId MstnBridgeTestsFixture::DbFileInfo::GetRepositoryL
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void MstnBridgeTestsFixture::DbFileInfo::ClearRepositoryAdmin()
+    {
+    m_host.SetRepositoryAdmin(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void MstnBridgeTestsFixture::DbFileInfo::SetRepositoryAdminFromBriefcaseClient(IModelClientForBridges& client)
+    {
+    m_host.SetRepositoryAdmin(new BriefClientRepositoryAdmin(client));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 int32_t MstnBridgeTestsFixture::DbFileInfo::GetElementCount()
@@ -245,6 +260,15 @@ MstnBridgeTestsFixture::DbFileInfo::DbFileInfo(BentleyApi::BeFileNameCR fileName
     BentleyApi::BeSQLite::DbResult result;
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(BentleyApi::BeSQLite::Db::OpenMode::Readonly));
     BeAssert(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK ==  result);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+MstnBridgeTestsFixture::DbFileInfo::~DbFileInfo()
+    {
+    m_db = nullptr; // TRICKY do this first, before we allow ScopedDgnHost to be destructed. The DgnDb destrurctor releases the last ref to the briefcasemgr, and that dtor will access the host.
+    ClearRepositoryAdmin();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -775,7 +799,7 @@ BentleyApi::BentleyStatus ProcessRunner::Start(size_t waitMs)
     si.cb = sizeof(si);
     PROCESS_INFORMATION pi;
     ZeroMemory(&pi, sizeof(pi));
-    EXPECT_TRUE(::CreateProcessW(nullptr, (LPWSTR)m_cmdline.c_str(), nullptr, nullptr, false, NORMAL_PRIORITY_CLASS, nullptr, nullptr, &si, &pi));
+    EXPECT_TRUE(::CreateProcessW(nullptr, (LPWSTR)m_cmdline.c_str(), nullptr, nullptr, false, NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi));
     
     m_hProcess = pi.hProcess;
     m_hThread = pi.hThread;
@@ -1015,6 +1039,10 @@ void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir,
                                                 BentleyApi::BeFileNameCR refFile, BentleyApi::BeSQLite::BeGuidCR refGuid)
     {
     testDir = GetOutputDir();
+    
+    if (dirName && *dirName)
+        testDir.AppendToPath(dirName);
+
     if (!testDir.DoesPathExist())
         ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
 
@@ -1061,18 +1089,86 @@ void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyApi::BentleyStatus MstnBridgeTestsFixture::DbFileInfo::GetiModelElementByDgnElementId(BentleyApi::Dgn::DgnElementId& elementId, int64_t srcElementId)
+BentleyApi::BentleyStatus MstnBridgeTestsFixture::DbFileInfo::GetiModelElementByDgnElementId(BentleyApi::Dgn::DgnElementId& elementId, uint64_t srcElementId)
     {
     BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
     estmt.Prepare(*m_db, "SELECT xsa.Element.Id FROM "
                   BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g,"
                   BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " AS xsa"
                   " WHERE (xsa.Element.Id=g.ECInstanceId) AND (xsa.Identifier = ?)");
-    estmt.BindText(1, Utf8PrintfString("%lld", srcElementId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+    estmt.BindText(1, SyncInfo::V8ElementExternalSourceAspect::FormatSourceId(srcElementId).c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
     if (BE_SQLITE_ROW != estmt.Step())
         return BentleyApi::BentleyStatus::BSIERROR;
     elementId = estmt.GetValueId<DgnElementId>(0);
     return BentleyApi::BentleyStatus::BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      07/14
+//---------------------------------------------------------------------------------------
+ void MstnBridgeTestsFixture::DbFileInfo::MustFindFileByName(RepositoryLinkId& fileid, BentleyApi::BeFileNameCR v8FileNameIn, int expectedCount)
+    {
+    BentleyApi::Utf8String v8FileName(v8FileNameIn);
+
+    SyncInfo::RepositoryLinkExternalSourceAspectIterator files(*m_db);
+    int count=0;
+    for (SyncInfo::RepositoryLinkExternalSourceAspectIterator::Entry entry = files.begin(); entry != files.end(); ++entry)
+        {
+        if (entry->GetFileName().EqualsI(v8FileName))
+            {
+            fileid = entry->GetRepositoryLinkId();
+            ++count;
+            }
+        }
+    ASSERT_EQ( expectedCount, count );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      07/14
+//---------------------------------------------------------------------------------------
+void MstnBridgeTestsFixture::DbFileInfo::MustFindModelByV8ModelId(DgnModelId& fmid, RepositoryLinkId ffid, DgnV8Api::ModelId v8ModelId, int expectedCount)
+    {
+    auto rlink = m_db->Elements().Get<RepositoryLink>(ffid);
+
+    SyncInfo::V8ModelExternalSourceAspectIteratorByV8Id models(*rlink, v8ModelId);
+    int count=0;
+    for (SyncInfo::V8ModelExternalSourceAspectIterator::Entry entry = models.begin(); entry != models.end(); ++entry)
+        {
+        fmid = entry->GetModelId();
+        ++count;
+        }
+    ASSERT_EQ( expectedCount, count );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      07/14
+//---------------------------------------------------------------------------------------
+void MstnBridgeTestsFixture::DbFileInfo::MustFindElementByV8ElementId(DgnElementId& eid, DgnModelId fmid, DgnV8Api::ElementId v8ElementId, int expectedCount)
+    {
+    //Find the element id from aspect.
+    auto model = m_db->Models().GetModel(fmid);
+    SyncInfo::V8ElementExternalSourceAspectIteratorByV8Id elements(*model, v8ElementId);
+    int count=0;
+    for (SyncInfo::V8ElementExternalSourceAspectIteratorByV8Id::Entry entry = elements.begin(); entry != elements.end(); ++entry) 
+        {
+        ++count;
+        eid = entry->GetElementId();
+        }
+    ASSERT_EQ(expectedCount, count);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      04/2019
+//---------------------------------------------------------------------------------------
+int32_t MstnBridgeTestsFixture::GetDefaultV8ModelId(BentleyApi::BeFileNameCR inputFile)
+    {
+    ScopedDgnv8Host testHost;
+    bool adoptHost = NULL == DgnV8Api::DgnPlatformLib::QueryHost ();
+    if (adoptHost)
+        testHost.Init ();
+    V8FileEditor v8editor;
+    v8editor.Open(inputFile);
+    return v8editor.m_file->GetDefaultModelId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1260,3 +1356,142 @@ void SynchInfoTests::ValidateElementSynchInfo (BentleyApi::BeFileName& dbFile, i
     id = estmt.GetValueId<int64_t> (1);
     ASSERT_TRUE (id == srcId);
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void CodeAssignerXDomain::InitCodeSpec(BentleyApi::Dgn::DgnDbR db)
+    {
+    Utf8PrintfString specName("CodeAssignerXDomain%d", (int)m_scope);
+    m_codeSpecId = db.CodeSpecs().QueryCodeSpecId(specName.c_str());
+    if (!m_codeSpecId.IsValid())
+        {
+        auto scope = (CodeScope::Model == m_scope)? CodeScopeSpec::CreateModelScope(): 
+                     (CodeScope::Related == m_scope)? CodeScopeSpec::CreateRelatedElementScope(): 
+                                                        CodeScopeSpec::CreateRepositoryScope();
+        auto codeSpec = CodeSpec::Create(db, specName.c_str(), scope);
+        BeAssert(codeSpec.IsValid());
+        if (codeSpec.IsValid())
+            {
+            codeSpec->Insert();
+            m_codeSpecId = codeSpec->GetCodeSpecId();
+            }
+        }
+
+    BeAssert(m_codeSpecId.IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CodeAssignerXDomain::GenerateCode(BentleyApi::Dgn::DgnDbR db)
+    {
+    if (!m_codeSpecId.IsValid())
+        InitCodeSpec(db);
+
+    auto codeSpec = db.CodeSpecs().GetCodeSpec(m_codeSpecId);
+    if (!codeSpec.IsValid())
+        {
+        BeAssert(false);
+        return DgnCode();
+        }
+
+    Utf8PrintfString codeValue("%s%d", m_prefix.c_str(), m_lineCount);      // don't use "-" in the code value for now. Wait for fix to imodel-bank.
+    
+    auto scopeElement = db.Elements().GetElement(m_scopeId);
+    if (!scopeElement.IsValid())
+        {
+        BeAssert(false);
+        return DgnCode();
+        }
+
+    return codeSpec->CreateCode(*scopeElement, codeValue.c_str()); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void CodeAssignerXDomain::_DetermineElementParams(DgnClassId&, DgnCode& code, DgnCategoryId&, DgnV8Api::ElementHandle const& v8eh, Converter& cvt, Bentley::ECN::IECInstance const*, ResolvedModelMapping const&)
+    {
+    if (DgnV8Api::LINE_ELM != v8eh.GetElementType())
+        return;
+
+    code = GenerateCode(cvt.GetDgnDb());
+    ++m_lineCount;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::Dgn::SubjectCPtr MstnBridgeTestsFixture::DbFileInfo::GetFirstJobSubject()
+    {
+    EC::ECSqlStatement stmt;
+    stmt.Prepare(*m_db, "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE json_extract(JsonProperties, '$.Subject.Job') is not null");
+    if (BE_SQLITE_ROW != stmt.Step())
+        return nullptr;
+
+    return m_db->Elements().Get<Subject>(stmt.GetValueId<DgnElementId>(0));
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static CodeAssignerXDomain* s_assignCodes;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ScopedCodeAssignerXDomain::ScopedCodeAssignerXDomain(BentleyApi::Dgn::DgnElementId scopeElementId, Utf8CP prefix, CodeScope s)
+    {
+    s_assignCodes = new CodeAssignerXDomain(scopeElementId, prefix, s);
+    XDomain::Register(*s_assignCodes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ScopedCodeAssignerXDomain::~ScopedCodeAssignerXDomain()
+    {
+    XDomain::UnRegister(*s_assignCodes);
+    delete s_assignCodes;
+    s_assignCodes = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::Dgn::DgnCodeInfoSet MstnBridgeTestsFixture::DbFileInfo::GetCodeInfos(DgnCodeSet const& codes, BentleyApi::Dgn::IModelClientForBridges& client)
+    {
+    BentleyApi::Http::HttpClient::Reinitialize(); // In case Unintialize was called prior to this.
+    SetRepositoryAdminFromBriefcaseClient(client);
+    BentleyApi::Dgn::DgnCodeInfoSet codeInfos;
+    auto rc = m_db->BriefcaseManager().QueryCodeStates(codeInfos, codes);
+    BeAssert(RepositoryStatus::Success == rc);
+    return codeInfos;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::BentleyStatus MstnBridgeTestsFixture::DbFileInfo::GetCodeInfo(BentleyApi::Dgn::DgnCodeInfo& codeInfo, BentleyApi::Dgn::DgnCode const& code, BentleyApi::Dgn::IModelClientForBridges& client)
+    {
+    DgnCodeSet codes;
+    codes.insert(code);
+    auto infos = GetCodeInfos(codes, client);
+    if (infos.empty())
+        return BentleyApi::BSIERROR;
+    BeAssert(infos.size() == 1);
+    codeInfo = *infos.begin();
+    return BentleyApi::BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::Dgn::LockLevel MstnBridgeTestsFixture::DbFileInfo::QueryLockLevel(BentleyApi::Dgn::LockableId lockable, BentleyApi::Dgn::IModelClientForBridges& client)
+    {
+    BentleyApi::Http::HttpClient::Reinitialize(); // In case Unintialize was called prior to this.
+    SetRepositoryAdminFromBriefcaseClient(client);
+    return m_db->BriefcaseManager().QueryLockLevel(lockable);
+    }

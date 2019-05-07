@@ -1,13 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/V8FileEditor.h $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include "ConverterInternal.h"
 #include <Bentley/BeTest.h>
+#include "CodeScope.h"
 
 //=======================================================================================
 // @bsiclass                                    Sam.Wilson                      04/15
@@ -33,3 +32,28 @@ struct V8FileEditor
     void AddView (DgnV8Api::ElementId& elementId, Bentley::WStringCR viewName);
     void AddLevel (DgnV8Api::LevelId& levelid, Bentley::WStringCR levelName);
     };
+
+//=======================================================================================
+// @bsistruct                              
+//=======================================================================================
+struct CodeAssignerXDomain : XDomain
+    {
+    enum class Scope {Model, Related, Repository};
+
+    int m_lineCount {};
+    BentleyApi::Dgn::CodeSpecId m_codeSpecId;
+    BentleyApi::Dgn::DgnElementId m_scopeId;
+    CodeScope m_scope;
+    Utf8String m_prefix;
+
+    CodeAssignerXDomain(BentleyApi::Dgn::DgnElementId scopeId, Utf8CP prefix, CodeScope s) : m_scopeId(scopeId), m_scope(s), m_prefix(prefix) {}
+
+    void InitCodeSpec(BentleyApi::Dgn::DgnDbR);
+    BentleyApi::Dgn::DgnCode GenerateCode(BentleyApi::Dgn::DgnDbR);
+
+    void _DetermineElementParams(DgnClassId&, DgnCode&, DgnCategoryId&, DgnV8Api::ElementHandle const&, Converter&, Bentley::ECN::IECInstance const*, ResolvedModelMapping const&) override;
+
+    void _OnBeginConversion(Converter&, DgnV8ModelR rootModel) override {;}
+    void _OnFinishConversion(Converter&) override {;}
+    };
+
