@@ -35,6 +35,10 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_BENTLEY_EC
 
+/* 
+ *  See README-Private.md for Rules to Check in Code Reviews
+ */
+
 #define PROPERTY_ATTRIBUTES static_cast<napi_property_attributes>(napi_enumerable | napi_configurable)
 
 #define REQUIRE_DB_TO_BE_OPEN if (!IsOpen()) return CreateBentleyReturnErrorObject(DgnDbStatus::NotOpen);

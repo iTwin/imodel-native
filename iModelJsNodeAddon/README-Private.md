@@ -67,3 +67,31 @@ Then, rush update and rush build.
 Make sure tests are still passing.
 
 Push.
+
+# Rules to Check in Code Reviews
+
+*	Don’t make N-API calls or JS callbacks during JS GC. 
+    * The only time that our addon is in danger of doing something that it should not while JavaScript GC is in progress is when our native objects are being destroyed.
+    * Every subclass of ObjectWrap that we write must have a destructor, and the first line of the destructor must be this macro: OBJECT_WRAP_DTOR_DISABLE_JS_CALLS. 
+    * Don’t deliberately invoke JS callbacks in a destructor.
+    * A destructor can invoke native logging functions but note that output will be deferred.
+    * If in doubt, call JsInterop::IsJsExecutionDisabled. The will return true (JS is disabled) in the scope of the RAII object created by OBJECT_WRAP_DTOR_DISABLE_JS_CALLS.
+
+* Don’t invoke JS callbacks while JS exceptions are pending.
+    * This can happen only in native code that makes a series of N-API calls or JS callbacks or if it deliberately throws a JS Error.
+    * Code that throws a JS Error should return immediately. The argument-checking macros do this for you.
+    * Code that makes a series of N-API calls or JS callbacks must check JsInterop::IsJsExecutionDisabled before each one.
+    * An Napi::AsyncWorker subclass can assume that the context is valid when its OnOK, OnError, and OnComplete callbacks are invoked by N-API.
+    * If in doubt, call JsInterop::IsJsExecutionDisabled. That will return true (JS is disabled) when a JS exception is pending.
+
+* Don’t invoke JS callbacks or N-API functions in other threads.
+    * This might be a danger if you add Napi calls or JS callbacks to helper classes.
+    * Remember that ASyncWorker::OnExecute is invoked in a background thread. Don’t try to access JS or N-API.
+    * If in doubt, call JsInterop::IsJsExecutionDisabled. That will return true (JS is disabled) for all but the main thread.
+    * We have not vetted and have no experience with the so-called “threadsafe” portion of N-API. If you want to pioneer this, then please do a careful job and write tests to prove that it is safe. Nothing is harder to debug that threading errors.
+
+* Object Lifetime management
+    * If you are just implementing a native method or an ASyncWorker callback, you should not have to worry about handle scopes. N-API manages this for you.
+    * If you write code that is not invoked directly by N-API and that does create JS objects or make callbacks, you must read and understand this:  https://nodejs.org/api/n-api.html#n_api_object_lifetime_management
+    * If you write code that holds JS object references in C++ object member variables or in static globals, you must read and understand this: https://nodejs.org/api/n-api.html#n_api_references_to_objects_with_a_lifespan_longer_than_that_of_the_native_method
+    * See the comment on the SET_CONSTRUCTOR macro.
