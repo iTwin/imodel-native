@@ -8,6 +8,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include "IModelJsNative.h"
 #include <imodeljs-nodeaddonapi.package.version.h>
+#include <ctime>
 
 #ifndef BENTLEYCONFIG_64BIT_HARDWARE
     #error 64-bit builds only 
@@ -50,6 +51,16 @@ void JsInterop::RemoveCrashReportProperty(Utf8StringCR key)
     s_crashReportProperties.erase(key);
     }
     
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  05/19
+//---------------------------------------------------------------------------------------
+void JsInterop::FormatCurrentTime(char* buf, size_t maxbuf)
+    {
+    std::time_t now = std::time(nullptr);
+    std::tm *gmtm = std::gmtime(&now);
+    std::strftime(buf, maxbuf, "%FT%TZ", gmtm);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -98,7 +109,11 @@ bmap<Utf8String,Utf8String> JsInterop::GetCrashReportCustomProperties(CrashRepor
     {
     bmap<Utf8String,Utf8String> props = cfg.m_params;
 
-    props["ver"] = PACKAGE_VERSION;
+    props["iModelJsNativeVersion"] = PACKAGE_VERSION;
+
+    char buf[128];
+    JsInterop::FormatCurrentTime(buf, sizeof(buf));
+    props["LoadTime"] = buf;
 
     return props;
     }

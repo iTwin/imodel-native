@@ -48,6 +48,9 @@ static void writeCustomPropertiesFile(std::map<std::wstring, std::wstring> const
     paramsFile.assign(dumpFileName.c_str());
     paramsFile.append(L".properties.txt");
     FILE* fp = _wfopen(paramsFile.c_str(), L"w+");
+    char tbuf[128];
+    JsInterop::FormatCurrentTime(tbuf, sizeof(tbuf));
+    fprintf(fp, "CrashTime, %s\n", tbuf);
     fprintf(fp, "ExceptionCode, %x\n", s_currentExceptionCode);
     for (auto const& prop : props)
         {

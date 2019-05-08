@@ -237,6 +237,8 @@ public:
     static void StepAsync(Napi::Function& callback, Statement& stmt);
     static void StepAsync(Napi::Function& callback, ECSqlStatement& stmt, bool stepForInsert);
 
+    static void FormatCurrentTime(char* buf, size_t maxbuf);
+
     static void AddCrashReportDgnDb(Dgn::DgnDbR);
     static void RemoveCrashReportDgnDb(Dgn::DgnDbR);
 

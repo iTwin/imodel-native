@@ -33,6 +33,12 @@ static void writeCustomPropertiesToFile(bmap<Utf8String,Utf8String> const& props
     paramsFile.assign(dmpFileName);
     paramsFile.append(".txt");
 
+    char tbuf[128];
+    JsInterop::FormatCurrentTime(tbuf, sizeof(tbuf));
+    sys_write(log_fd, "CrashTime,", 10);
+    sys_write(log_fd, tbuf, strlen(tbuf));
+    sys_write(log_fd, "\n"), 1);
+
     const int kLogOpenFlags = O_CREAT | O_WRONLY | O_APPEND | O_CLOEXEC;
     int log_fd = sys_open(paramsFile.c_str(), kLogOpenFlags, 0600);
     if (log_fd > 0)
@@ -40,7 +46,7 @@ static void writeCustomPropertiesToFile(bmap<Utf8String,Utf8String> const& props
         for (auto const& prop : props)
             {
             sys_write(log_fd, prop.first.c_str(), strlen(prop.first.c_str()));
-            sys_write(log_fd, ","), 1);
+            sys_write(log_fd, ",", 1);
             sys_write(log_fd, prop.second.c_str(), strlen(prop.second.c_str()));
             sys_write(log_fd, "\n"), 1);
             }
