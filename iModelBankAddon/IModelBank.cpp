@@ -283,6 +283,9 @@ static void countChanges(ChangeSetApplyStats &stats, Changes const &changes)
 //---------------------------------------------------------------------------------------
 static DbResult applyChangeSet(ChangeSetApplyStats &stats, Db &db, bvector<BeFileName> const &blockFileNames)
 {
+    if (blockFileNames.empty())
+        return DbResult::BE_SQLITE_EMPTY;
+
     RevisionChangesFileReaderBase changesetReader(blockFileNames, db);
 
     // Apply DDL, if any
