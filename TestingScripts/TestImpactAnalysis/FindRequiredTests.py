@@ -170,7 +170,7 @@ def main():
     if not os.path.exists(logsPath):
         os.mkdir(logsPath)
 
-    comps_tracked = ['BeHttp', 'Bentley', 'BeSecurity', 'BeSQLite', 'DgnPlatform', 'ECDb', 'ECObjects', 'ECPresentation', 'GeomLibs', 'Units', 'Licensing', 'WSClient']
+    comps_tracked = ['BeHttp', 'Bentley', 'BeSecurity', 'BeSQLite', 'DgnPlatform', 'ECDb', 'ECObjects', 'ECPresentation', 'GeomLibs', 'Units', 'Licensing', 'WSClient', 'DgnV8Converter', 'MstnBridge', 'DwgImporter']
     if comp not in comps_tracked: # we don't have Maps for these components
         testExeName = cmp.ExeForComp(comp)
         nnFile = os.path.join(logsPath, testExeName + '_NotNeeded.txt')
