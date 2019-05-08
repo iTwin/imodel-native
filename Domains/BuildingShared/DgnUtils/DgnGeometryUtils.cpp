@@ -867,7 +867,7 @@ Dgn::IBRepEntityPtr tryGetBodyFromSolidPrimitive(Dgn::GeometricPrimitiveCR primi
     return bRepEntity;
 }
 
-CurveVectorPtr tryGetCurveFromExtrusion(Dgn::GeometricPrimitiveCR primitive)
+CurveVectorPtr tryGetZeroSliceFromExtrusion(Dgn::GeometricPrimitiveCR primitive)
     {
     ISolidPrimitivePtr solid = primitive.GetAsISolidPrimitive();
 
@@ -913,7 +913,7 @@ CurveVectorPtr DgnGeometryUtils::GetSliceAtZero(Dgn::GeometricPrimitiveCR primit
 
     // If solid is an extrusion we try to get it's base shape
     // Because of the bug, we don't slice and assume that extrusion is not tilted
-    CurveVectorPtr shapeCurve = tryGetCurveFromExtrusion(primitive);
+    CurveVectorPtr shapeCurve = tryGetZeroSliceFromExtrusion(primitive);
 
     if (shapeCurve.IsNull())
         shapeCurve = primitive.GetAsCurveVector();
