@@ -1057,7 +1057,7 @@ AsyncTaskPtr<CachingDataSource::ObjectsResult> CachingDataSource::GetObjects
 (
 CachedResponseKeyCR responseKey,
 WSQueryCR query,
-DataOrigin origin,
+RetrieveOptions retrieveOptions,
 std::shared_ptr<const ISelectProvider> cachedSelectProvider,
 ICancellationTokenPtr ct
 )
@@ -1067,7 +1067,7 @@ ICancellationTokenPtr ct
 
     ct = CreateCancellationToken(ct);
 
-    return CacheObjects(responseKey, query, origin, GetInitialSkipToken(), 0, ct)
+    return CacheObjects(responseKey, query, retrieveOptions.GetOrigin(), GetInitialSkipToken(), 0, ct)
         ->Then<ObjectsResult>(m_cacheAccessThread, [=] (DataOriginResult& result)
         {
         if (!result.IsSuccess())
@@ -1079,6 +1079,8 @@ ICancellationTokenPtr ct
         if (CacheStatus::OK != status)
             return ObjectsResult::Error(status);
 
+        CacheObjectsInBackgroundIfNeeded(responseKey, query, retrieveOptions, result, ct);
+        
         return ObjectsResult::Success({cachedInstances, result.GetValue().origin});
         });
     }
@@ -1150,7 +1152,6 @@ ICancellationTokenPtr ct
 
         auto txn = StartCacheTransaction();
         auto keys = std::make_shared<ECInstanceKeyMultiMap>();
-
         CacheStatus status = txn.GetCache().ReadResponseInstanceKeys(responseKey, *keys);
         if (CacheStatus::OK != status)
             return KeysResult::Error(status);
