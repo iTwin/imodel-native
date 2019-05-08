@@ -1148,7 +1148,6 @@ ICancellationTokenPtr ct
             return KeysResult::Error(result.GetError());
 
         auto txn = StartCacheTransaction();
-        auto cachedInstances = std::make_shared<Json::Value>();
         auto keys = std::make_shared<ECInstanceKeyMultiMap>();
 
         CacheStatus status = txn.GetCache().ReadResponseInstanceKeys(responseKey, *keys);
