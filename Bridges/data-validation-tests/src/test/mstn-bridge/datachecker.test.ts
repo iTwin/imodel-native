@@ -20,47 +20,41 @@ describe("DataValidationTests", () => {
 
         for (const file of lhsFiles) {
             const fullPath = path.join(dsManager.latestRoot, file);
-            const info = new IModelInfo(fullPath);
-            const ds = dsManager.matchDataset(info);
-            if (ds) {
+            const fp: string[] = file.split("_");
+            if (fp.length > 0) {
                 dataset.push({
-                    name: ds,
+                    name: fp[0],
                     lhsPath: fullPath,
                     rhsPath: "",
                     basePath: "",
                 });
             }
-            info.closeIModel();
         }
         // tslint:disable-next-line:no-console
         console.log("Processing previous bim files.");
         for (const file of rhsFiles) {
             const fullPath = path.join(dsManager.previousRoot, file);
-            const info = new IModelInfo(fullPath);
-            const ds = dsManager.matchDataset(info);
-            if (ds) {
+            const fp: string[] = file.split("_");
+            if (fp.length > 0) {
                 for (const dt of dataset) {
-                    if (dt.name === ds) {
+                    if (dt.name === fp[0]) {
                         dt.rhsPath = fullPath;
                     }
                 }
             }
-            info.closeIModel();
         }
         // tslint:disable-next-line:no-console
         console.log("Processing base bim files.");
         for (const file of baseFiles) {
             const fullPath = path.join(dsManager.baseRoot, file);
-            const info = new IModelInfo(fullPath);
-            const ds = dsManager.matchDataset(info);
-            if (ds) {
+            const fp: string[] = file.split("_");
+            if (fp.length > 0) {
                 for (const dt of dataset) {
-                    if (dt.name === ds) {
+                    if (dt.name === fp[0]) {
                         dt.basePath = fullPath;
                     }
                 }
             }
-            info.closeIModel();
         }
         // tslint:disable-next-line:no-console
         console.log("\n Comparing Latest files with Previous.");
