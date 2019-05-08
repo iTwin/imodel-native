@@ -1075,8 +1075,9 @@ ICancellationTokenPtr ct
 
         auto txn = StartCacheTransaction();
         auto cachedInstances = std::make_shared<Json::Value>();
-        if (CacheStatus::OK != txn.GetCache().ReadResponse(responseKey, *cachedInstances, *cachedSelectProvider))
-            return ObjectsResult::Error(Status::InternalCacheError);
+        CacheStatus status = txn.GetCache().ReadResponse(responseKey, *cachedInstances, *cachedSelectProvider);
+        if (CacheStatus::OK != status)
+            return ObjectsResult::Error(status);
 
         return ObjectsResult::Success({cachedInstances, result.GetValue().origin});
         });
