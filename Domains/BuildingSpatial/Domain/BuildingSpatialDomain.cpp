@@ -8,7 +8,7 @@
 #include <BuildingSpatial/Domain/BuildingSpatialDomain.h>
 #include <BuildingSpatial/Handlers/SpaceHandler.h>
 #include <BuildingSpatial/Handlers/BuildingHandler.h>
-#include <BuildingSpatial/Handlers/ElevationStoryHandler.h>
+#include <BuildingSpatial/Handlers/RegularStoryHandler.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 
@@ -26,7 +26,7 @@ BuildingSpatialDomain::BuildingSpatialDomain () : DgnDomain(BUILDINGSPATIAL_SCHE
     {
     RegisterHandler(SpaceHandler::GetHandler());
     RegisterHandler(BuildingHandler::GetHandler());
-    RegisterHandler(ElevationStoryHandler::GetHandler());
+    RegisterHandler(RegularStoryHandler::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------
@@ -36,7 +36,7 @@ void BuildingSpatialDomain::InsertDomainAuthorities (DgnDbR db) const
     {
     InsertCodeSpec (db, BUILDINGSPATIAL_AUTHORITY_Building);
     InsertCodeSpec (db, BUILDINGSPATIAL_AUTHORITY_Space);
-    InsertCodeSpec (db, BUILDINGSPATIAL_AUTHORITY_ElevationStory);
+    InsertCodeSpec (db, BUILDINGSPATIAL_AUTHORITY_RegularStory);
     }
 
 //---------------------------------------------------------------------------------------
@@ -101,13 +101,13 @@ void BuildingSpatialDomain::_OnSchemaImported(DgnDbR db) const
     insertSubCategory(db, Dgn::SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDINGSPATIAL_CATEGORY_CODE_Space), tmpColorDef, BUILDINGSPATIAL_SUBCATEGORY_CODE_SpatialElementLabels);
 
     tmpColorDef = Dgn::ColorDef::White();
-    Dgn::DgnSubCategory::Appearance elevationStoryAppearance;
-    elevationStoryAppearance.SetColor(tmpColorDef);
-    elevationStoryAppearance.SetWeight(1);
-    Dgn::SpatialCategory elevationStoryCategory(db.GetDictionaryModel(), BUILDINGSPATIAL_CATEGORY_CODE_ElevationStory, Dgn::DgnCategory::Rank::Domain);
-    elevationStoryCategory.Insert(elevationStoryAppearance);
+    Dgn::DgnSubCategory::Appearance regularStoryAppearance;
+    regularStoryAppearance.SetColor(tmpColorDef);
+    regularStoryAppearance.SetWeight(1);
+    Dgn::SpatialCategory regularStoryCategory(db.GetDictionaryModel(), BUILDINGSPATIAL_CATEGORY_CODE_RegularStory, Dgn::DgnCategory::Rank::Domain);
+    regularStoryCategory.Insert(regularStoryAppearance);
     
-    insertSubCategory(db, Dgn::SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDINGSPATIAL_CATEGORY_CODE_ElevationStory), tmpColorDef, BUILDINGSPATIAL_SUBCATEGORY_CODE_SpatialElementLabels);
+    insertSubCategory(db, Dgn::SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDINGSPATIAL_CATEGORY_CODE_RegularStory), tmpColorDef, BUILDINGSPATIAL_SUBCATEGORY_CODE_SpatialElementLabels);
     }
 
 END_BUILDINGSPATIAL_NAMESPACE

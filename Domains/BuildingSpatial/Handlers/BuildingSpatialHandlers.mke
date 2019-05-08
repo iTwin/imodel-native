@@ -29,7 +29,7 @@ $(o)BuildingHandler$(oext) : $(_MakeFilePath)BuildingHandler.cpp ${MultiCompileD
 
 $(o)SpaceHandler$(oext) : $(_MakeFilePath)SpaceHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SpaceHandler.h   
 
-$(o)ElevationStoryHandler$(oext) : $(_MakeFilePath)ElevationStoryHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ElevationStoryHandler.h 
+$(o)RegularStoryHandler$(oext) : $(_MakeFilePath)RegularStoryHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/RegularStoryHandler.h 
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)

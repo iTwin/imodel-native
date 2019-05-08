@@ -17,7 +17,7 @@
 #define BUILDINGSPATIAL_SCHEMA_PATH                          L"ECSchemas/Domain/BuildingSpatial.ecschema.xml"
 
 #define BUILDINGSPATIAL_CLASS_Building                       "Building"
-#define BUILDINGSPATIAL_CLASS_ElevationStory                 "ElevationStory"
+#define BUILDINGSPATIAL_CLASS_RegularStory                   "RegularStory"
 #define BUILDINGSPATIAL_CLASS_Space                          "Space"
 #define BUILDINGSPATIAL_CLASS_Story                          "Story"
 
@@ -26,7 +26,7 @@
 
 #define BUILDINGSPATIAL_AUTHORITY_Building                   BUILDINGSPATIAL_CODESPEC_CODE(BUILDINGSPATIAL_CLASS_Building)
 #define BUILDINGSPATIAL_AUTHORITY_Space                      BUILDINGSPATIAL_CODESPEC_CODE(BUILDINGSPATIAL_CLASS_Space)
-#define BUILDINGSPATIAL_AUTHORITY_ElevationStory             BUILDINGSPATIAL_CODESPEC_CODE(BUILDINGSPATIAL_CLASS_ElevationStory)
+#define BUILDINGSPATIAL_AUTHORITY_RegularStory             BUILDINGSPATIAL_CODESPEC_CODE(BUILDINGSPATIAL_CLASS_RegularStory)
 
 #if defined (__BUILDINGSPATIALELEMENTS_BUILD__)
 #define BUILDINGSPATIAL_EXPORT EXPORT_ATTRIBUTE
@@ -44,7 +44,7 @@
 
 #define BUILDINGSPATIAL_CATEGORY_CODE_Building                  "Building"
 #define BUILDINGSPATIAL_CATEGORY_CODE_Space                     "Space"
-#define BUILDINGSPATIAL_CATEGORY_CODE_ElevationStory            "ElevationStory"
+#define BUILDINGSPATIAL_CATEGORY_CODE_RegularStory              "RegularStory"
 #define BUILDINGSPATIAL_SUBCATEGORY_CODE_SpatialElementLabels   "Labels"
 
 //-----------------------------------------------------------------------------------------

@@ -13,6 +13,6 @@
 #include <BuildingSpatial/Domain/BuildingSpatialMacros.h>
 #include <SpatialComposition/Elements/SpatialCompositionElementsApi.h>
 #include "Building.h"
-#include "ElevationStory.h"
+#include "RegularStory.h"
 #include "Space.h"
 #include "Story.h"
