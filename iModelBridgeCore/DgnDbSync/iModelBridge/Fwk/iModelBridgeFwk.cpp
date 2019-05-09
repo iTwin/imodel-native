@@ -1251,9 +1251,6 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     iModelBridgeSacAdapter::InitCrt(false);
 
-    IBriefcaseManager::SetExclusiveLockOnScopeIsPermanent(true); // TODO: This will change when we get real "Permanent" lock levels.
-    IBriefcaseManager::SetMustReportCodesInLockedScopes(false);
-
     Briefcase_MakeBriefcaseName();
     BeFileName::BeDeleteFile(ComputeReportFileName(m_briefcaseName));  // delete any old issues file hanging round from the previous run
 

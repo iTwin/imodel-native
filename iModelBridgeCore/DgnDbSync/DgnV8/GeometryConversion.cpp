@@ -3374,193 +3374,196 @@ BentleyApi::CurveVectorPtr Converter::ConvertV8Curve(Bentley::CurveVectorCR v8Cu
 // @bsimethod                                                    Vern.Francisco   12/17
 //---------------+---------------+---------------+---------------+---------------+------
 
-void LightWeightConverter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d)
+void LightWeightConverter::InitGeometryParams (Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d)
     {
     // NOTE: Resolve loses information like WEIGHT_BYLEVEL and we may be called multiple times (ex. disjoint brep)...
-    AutoRestore<DgnV8Api::ElemDisplayParams> saveParamsV8(&paramsV8);
+    AutoRestore<DgnV8Api::ElemDisplayParams> saveParamsV8 (&paramsV8);
 
-    UInt32  rawColor = paramsV8.GetLineColor();                                                                                                                  
-    UInt32  rawFill = paramsV8.GetFillColor();
-    UInt32  rawWeight = paramsV8.GetWeight();
-    Int32   rawStyle = paramsV8.GetLineStyle();
+    UInt32  rawColor = paramsV8.GetLineColor ();
+    UInt32  rawFill = paramsV8.GetFillColor ();
+    UInt32  rawWeight = paramsV8.GetWeight ();
+    Int32   rawStyle = paramsV8.GetLineStyle ();
 
     // Apply ignores and resolve effective now that we've saved off the ByLevel information...
-    paramsV8.Resolve(context);
+    paramsV8.Resolve (context);
 
     // NOTE: ElemHeaderOverrides have been pushed but have not been applied to paramsV8...
-    DgnV8Api::LevelId v8Level = (0 == paramsV8.GetLevel() ? DGNV8_LEVEL_DEFAULT_LEVEL_ID : paramsV8.GetLevel());
-    DgnV8Api::ElemHeaderOverrides const* ovr = context.GetHeaderOvr();
+    DgnV8Api::LevelId v8Level = (0 == paramsV8.GetLevel () ? DGNV8_LEVEL_DEFAULT_LEVEL_ID : paramsV8.GetLevel ());
+    DgnV8Api::ElemHeaderOverrides const* ovr = context.GetHeaderOvr ();
 
-    if (nullptr != ovr && ovr->GetFlags().level)
-        v8Level = ovr->AdjustLevel(v8Level, *context.GetCurrentModel());
+    if (nullptr != ovr && ovr->GetFlags ().level)
+        v8Level = ovr->AdjustLevel (v8Level, *context.GetCurrentModel ());
 
-    DgnSubCategoryId subCategoryId = params.GetSubCategoryId(); // see if the caller wants to specify an override SubCategoryId
-    if (!subCategoryId.IsValid()) 
-        subCategoryId = GetSubCategory (v8Level,  is3d ? SyncInfo::LevelExternalSourceAspect::Type::Spatial : SyncInfo::LevelExternalSourceAspect::Type::Drawing);
+    DgnSubCategoryId subCategoryId = params.GetSubCategoryId (); // see if the caller wants to specify an override SubCategoryId
+    if (!subCategoryId.IsValid ())
+        subCategoryId = GetSubCategory (v8Level, is3d ? SyncInfo::LevelExternalSourceAspect::Type::Spatial : SyncInfo::LevelExternalSourceAspect::Type::Drawing);
 
-    DgnCategoryId categoryId = DgnSubCategory::QueryCategoryId(GetDgnDb(), subCategoryId);
+    DgnCategoryId categoryId = DgnSubCategory::QueryCategoryId (GetDgnDb (), subCategoryId);
 
-    params = Render::GeometryParams();
-    params.SetCategoryId(categoryId);
-    params.SetSubCategoryId(subCategoryId);
+    params = Render::GeometryParams ();
+    params.SetCategoryId (categoryId);
+    params.SetSubCategoryId (subCategoryId);
 
     if (!is3d)
         {
-        if (DgnV8Api::DISPLAYPRIORITY_BYCELL != paramsV8.GetElementDisplayPriority())
-            params.SetDisplayPriority(paramsV8.GetElementDisplayPriority());
+        if (DgnV8Api::DISPLAYPRIORITY_BYCELL != paramsV8.GetElementDisplayPriority ())
+            params.SetDisplayPriority (paramsV8.GetElementDisplayPriority ());
         else if (nullptr != ovr)
-            params.SetDisplayPriority(ovr->GetDisplayPriority());
+            params.SetDisplayPriority (ovr->GetDisplayPriority ());
         }
 
-    switch (paramsV8.GetElementClass())
+    switch (paramsV8.GetElementClass ())
         {
-            case DgnV8Api::DgnElementClass::Primary:
-            case DgnV8Api::DgnElementClass::PrimaryRule: // Shouldn't see this normally...
-                params.SetGeometryClass(Render::DgnGeometryClass::Primary);
-                break;
+        case DgnV8Api::DgnElementClass::Primary:
+        case DgnV8Api::DgnElementClass::PrimaryRule: // Shouldn't see this normally...
+            params.SetGeometryClass (Render::DgnGeometryClass::Primary);
+            break;
 
-            case DgnV8Api::DgnElementClass::Construction:
-            case DgnV8Api::DgnElementClass::ConstructionRule: // Shouldn't see this normally...
-                params.SetGeometryClass(Render::DgnGeometryClass::Construction);
-                break;
+        case DgnV8Api::DgnElementClass::Construction:
+        case DgnV8Api::DgnElementClass::ConstructionRule: // Shouldn't see this normally...
+            params.SetGeometryClass (Render::DgnGeometryClass::Construction);
+            break;
 
-            case DgnV8Api::DgnElementClass::Dimension:
-                params.SetGeometryClass(Render::DgnGeometryClass::Dimension);
-                break;
+        case DgnV8Api::DgnElementClass::Dimension:
+            params.SetGeometryClass (Render::DgnGeometryClass::Dimension);
+            break;
 
-            case DgnV8Api::DgnElementClass::PatternComponent:
-                params.SetGeometryClass(Render::DgnGeometryClass::Pattern);
-                break;
+        case DgnV8Api::DgnElementClass::PatternComponent:
+            params.SetGeometryClass (Render::DgnGeometryClass::Pattern);
+            break;
 
-            case DgnV8Api::DgnElementClass::LinearPatterned: // Don't intend to support this anymore...
-            default:
-                params.SetGeometryClass(Render::DgnGeometryClass::Primary);
-                break;
+        case DgnV8Api::DgnElementClass::LinearPatterned: // Don't intend to support this anymore...
+        default:
+            params.SetGeometryClass (Render::DgnGeometryClass::Primary);
+            break;
         }
 
-    if (nullptr != ovr && ovr->GetFlags().color)
+    if (nullptr != ovr && ovr->GetFlags ().color)
         {
-        if (DgnV8Api::COLOR_BYLEVEL != ovr->GetColor())
+        if (DgnV8Api::COLOR_BYLEVEL != ovr->GetColor ())
             {
             DgnV8Api::IntColorDef intColorDef;
 
-            if (SUCCESS == DgnV8Api::DgnColorMap::ExtractElementColorInfo(&intColorDef, nullptr, nullptr, nullptr, nullptr, ovr->GetColor(), *context.GetCurrentModel()->GetDgnFileP()))
-                params.SetLineColor(ColorDef(intColorDef.m_int));
+            if (SUCCESS == DgnV8Api::DgnColorMap::ExtractElementColorInfo (&intColorDef, nullptr, nullptr, nullptr, nullptr, ovr->GetColor (), *context.GetCurrentModel ()->GetDgnFileP ()))
+                params.SetLineColor (ColorDef (intColorDef.m_int));
             }
         }
     else if (DgnV8Api::COLOR_BYLEVEL != rawColor)
         {
-        params.SetLineColor(ColorDef(paramsV8.GetLineColorTBGR()));
+        params.SetLineColor (ColorDef (paramsV8.GetLineColorTBGR ()));
         }
 
-    if (nullptr != ovr && ovr->GetFlags().weight)
+    if (nullptr != ovr && ovr->GetFlags ().weight)
         {
-        if (DgnV8Api::WEIGHT_BYLEVEL != ovr->GetWeight())
-            params.SetWeight(ovr->GetWeight());
+        if (DgnV8Api::WEIGHT_BYLEVEL != ovr->GetWeight ())
+            params.SetWeight (ovr->GetWeight ());
         }
     else if (DgnV8Api::WEIGHT_BYLEVEL != rawWeight)
         {
-        params.SetWeight(paramsV8.GetWeight());
+        params.SetWeight (paramsV8.GetWeight ());
         }
 
     DgnModelRefP styleModelRef;
 
-    if (nullptr != ovr && ovr->GetFlags().style && nullptr != (styleModelRef = (nullptr == ovr->GetLineStyleModelRef()) ? context.GetCurrentModel() : ovr->GetLineStyleModelRef()))
+    if (nullptr != ovr && ovr->GetFlags ().style && nullptr != (styleModelRef = (nullptr == ovr->GetLineStyleModelRef ()) ? context.GetCurrentModel () : ovr->GetLineStyleModelRef ()))
         {
-        if (DgnV8Api::STYLE_BYLEVEL != ovr->GetLineStyle() && ovr->GetLineStyle() != 0)
+        if (DgnV8Api::STYLE_BYLEVEL != ovr->GetLineStyle () && ovr->GetLineStyle () != 0)
             {
-            InitLineStyle(params, *styleModelRef, ovr->GetLineStyle(), ovr->GetLineStyleParams());
+            InitLineStyle (params, *styleModelRef, ovr->GetLineStyle (), ovr->GetLineStyleParams ());
             }
         }
-    else if (paramsV8.GetLineStyle() != 0 && nullptr != (styleModelRef = (nullptr == paramsV8.GetLineStyleModelRef()) ? context.GetCurrentModel() : paramsV8.GetLineStyleModelRef()))
+    else if (paramsV8.GetLineStyle () != 0 && nullptr != (styleModelRef = (nullptr == paramsV8.GetLineStyleModelRef ()) ? context.GetCurrentModel () : paramsV8.GetLineStyleModelRef ()))
         {
-        DgnV8Api::LineStyleParams const* lsParamsV8 = paramsV8.GetLineStyleParams();
+        DgnV8Api::LineStyleParams const* lsParamsV8 = paramsV8.GetLineStyleParams ();
 
         // Ugh...still need modifiers like start/end width for STYLE_BYLEVEL... :(
         if (DgnV8Api::STYLE_BYLEVEL != rawStyle || (lsParamsV8 && 0 != lsParamsV8->modifiers))
-            InitLineStyle(params, *styleModelRef, paramsV8.GetLineStyle(), lsParamsV8);
+            InitLineStyle (params, *styleModelRef, paramsV8.GetLineStyle (), lsParamsV8);
+        }
+    else if (DgnV8Api::STYLE_BYLEVEL != rawStyle)
+        {
+        params.SetLineStyle (nullptr);
         }
 
-    params.SetTransparency(paramsV8.GetTransparency());
+    params.SetTransparency (paramsV8.GetTransparency ());
 
-    if (DgnV8Api::FillDisplay::Never != paramsV8.GetFillDisplay())
+    if (DgnV8Api::FillDisplay::Never != paramsV8.GetFillDisplay ())
         {
-        params.SetFillDisplay((Render::FillDisplay) paramsV8.GetFillDisplay());
+        params.SetFillDisplay ((Render::FillDisplay) paramsV8.GetFillDisplay ());
 
-        if (nullptr != paramsV8.GetGradient())
+        if (nullptr != paramsV8.GetGradient ())
             {
-            DgnV8Api::GradientSymb const& gradient = *paramsV8.GetGradient();
-            Render::GradientSymbPtr gradientPtr = Render::GradientSymb::Create();
+            DgnV8Api::GradientSymb const& gradient = *paramsV8.GetGradient ();
+            Render::GradientSymbPtr gradientPtr = Render::GradientSymb::Create ();
 
-            gradientPtr->SetMode((Render::GradientSymb::Mode) gradient.GetMode());
-            gradientPtr->SetFlags((Render::GradientSymb::Flags) gradient.GetFlags());
-            gradientPtr->SetShift(gradient.GetShift());
-            gradientPtr->SetTint(gradient.GetTint());
-            gradientPtr->SetAngle(gradient.GetAngle());
+            gradientPtr->SetMode ((Render::GradientSymb::Mode) gradient.GetMode ());
+            gradientPtr->SetFlags ((Render::GradientSymb::Flags) gradient.GetFlags ());
+            gradientPtr->SetShift (gradient.GetShift ());
+            gradientPtr->SetTint (gradient.GetTint ());
+            gradientPtr->SetAngle (gradient.GetAngle ());
 
             bvector<ColorDef> keyColors;
             bvector<double>   keyValues;
 
-            for (int i = 0; i < gradient.GetNKeys(); i++)
+            for (int i = 0; i < gradient.GetNKeys (); i++)
                 {
                 double keyValue;
                 Bentley::RgbColorDef keyColor;
 
-                gradient.GetKey(keyColor, keyValue, i);
+                gradient.GetKey (keyColor, keyValue, i);
 
-                DgnDbApi::ColorDef keyColorDef(keyColor.red, keyColor.green, keyColor.blue);
+                DgnDbApi::ColorDef keyColorDef (keyColor.red, keyColor.green, keyColor.blue);
 
-                keyColors.push_back(keyColorDef);
-                keyValues.push_back(keyValue);
+                keyColors.push_back (keyColorDef);
+                keyValues.push_back (keyValue);
                 }
 
-            gradientPtr->SetKeys((uint16_t) keyColors.size(), &keyColors.front(), &keyValues.front());
+            gradientPtr->SetKeys ((uint16_t)keyColors.size (), &keyColors.front (), &keyValues.front ());
 
-            params.SetGradient(gradientPtr.get());
+            params.SetGradient (gradientPtr.get ());
             }
         else
             {
-            if (nullptr != ovr && ovr->GetFlags().color)
+            if (nullptr != ovr && ovr->GetFlags ().color)
                 {
-                if (DgnV8Api::COLOR_BYLEVEL != ovr->GetColor())
+                if (DgnV8Api::COLOR_BYLEVEL != ovr->GetColor ())
                     {
                     DgnV8Api::IntColorDef intColorDef;
 
-                    if (SUCCESS == DgnV8Api::DgnColorMap::ExtractElementColorInfo(&intColorDef, nullptr, nullptr, nullptr, nullptr, ovr->GetColor(), *context.GetCurrentModel()->GetDgnFileP()))
-                        params.SetFillColor(ColorDef(intColorDef.m_int));
+                    if (SUCCESS == DgnV8Api::DgnColorMap::ExtractElementColorInfo (&intColorDef, nullptr, nullptr, nullptr, nullptr, ovr->GetColor (), *context.GetCurrentModel ()->GetDgnFileP ()))
+                        params.SetFillColor (ColorDef (intColorDef.m_int));
                     }
                 }
             else if (DgnV8Api::DgnColorMap::INDEX_Background == rawFill)
                 {
-                params.SetFillColorFromViewBackground(DgnV8Api::DgnColorMap::INDEX_Background != rawColor);
+                params.SetFillColorFromViewBackground (DgnV8Api::DgnColorMap::INDEX_Background != rawColor);
                 }
             else if (DgnV8Api::COLOR_BYLEVEL != rawFill)
                 {
-                params.SetFillColor(ColorDef(paramsV8.GetFillColorTBGR()));
+                params.SetFillColor (ColorDef (paramsV8.GetFillColorTBGR ()));
                 }
             }
         }
 
-    if (paramsV8.IsRenderable())
+    if (paramsV8.IsRenderable ())
         {
-        if (nullptr != paramsV8.GetMaterial())
+        if (nullptr != paramsV8.GetMaterial ())
             {
-            RenderMaterialId materialId = GetRemappedMaterial(paramsV8.GetMaterial());
-            DgnSubCategoryCPtr          dgnDbSubCategory = DgnSubCategory::Get(GetDgnDb(), subCategoryId);
+            RenderMaterialId materialId = GetRemappedMaterial (paramsV8.GetMaterial ());
+            DgnSubCategoryCPtr          dgnDbSubCategory = DgnSubCategory::Get (GetDgnDb (), subCategoryId);
 
-            if (!dgnDbSubCategory.IsValid() || dgnDbSubCategory->GetAppearance().GetRenderMaterial() != materialId)
-                params.SetMaterialId(materialId);
+            if (!dgnDbSubCategory.IsValid () || dgnDbSubCategory->GetAppearance ().GetRenderMaterial () != materialId)
+                params.SetMaterialId (materialId);
 
-            if (nullptr != paramsV8.GetMaterialUVDetailP())
+            if (nullptr != paramsV8.GetMaterialUVDetailP ())
                 {
                 // params.SetMaterialUVDetails();
                 }
             }
         }
 
-    params.Resolve(GetDgnDb()); // Need to be able to check for a stroked linestyle...
+    params.Resolve (GetDgnDb ()); // Need to be able to check for a stroked linestyle...
     }
-
 
 
 
