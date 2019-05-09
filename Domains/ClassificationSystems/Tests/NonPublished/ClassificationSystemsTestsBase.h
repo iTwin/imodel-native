@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include <DgnPlatform\DgnPlatformApi.h>
 #include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 #include <DgnClientFx/TestHelpers/DgnClientFxTests.h>

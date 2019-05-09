@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include <BeXml/BeXml.h>
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/UnitTests/DgnDbTestUtils.h>
