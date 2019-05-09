@@ -1041,6 +1041,9 @@ void ECSchemaHelper::GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bma
     bset<RelatedClass>& usedRelationships, SupportedClassesResolver const& resolver, bset<ECClassId> const& sourceClassIds, int relationshipDirection,
     int depth, ECEntityClassCP targetClass, bool include) const
     {
+    Savepoint txn(m_connection.GetDb(), "ECSchemaHelper::GetPaths");
+    BeAssert(txn.IsActive());
+
     Utf8String query;
     BoundQueryValuesList bindings = CreateRelationshipPathsQuery(query, resolver, sourceClassIds, relationshipDirection, depth, include);
     CachedECSqlStatementPtr stmt = m_statementCache->GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), query.c_str());
@@ -1104,6 +1107,8 @@ void ECSchemaHelper::GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bma
             relatedClassIds.insert(actualRelated->GetId());
             }
         }
+
+    txn.Cancel();
 
     for (BoundQueryValue const* binding : bindings)
         delete binding;
@@ -1289,6 +1294,9 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
         std::transform(relationshipInfos.begin(), relationshipInfos.end(), std::back_inserter(relationships),
             [](SupportedRelationshipClassInfo const& info) { return &info.GetClass(); });
         }
+
+    Savepoint txn(m_connection.GetDb(), "ECSchemaHelper::GetPolymorphicallyRelatedClassesWithInstances");
+    BeAssert(txn.IsActive());
 
     PolymorphicallyRelatedClassesCache::Key key = {&sourceClass, direction, relationships};
     bvector<RelatedClass> const* polymorphicallyRelatedClasses = m_polymorphicallyRelatedClassesCache->Get(key);
@@ -1603,6 +1611,9 @@ DbResult ECInstancesHelper::LoadInstance(IECInstancePtr& instance, IConnectionCR
         return BE_SQLITE_ERROR;
         }
 
+    Savepoint txn(connection.GetDb(), "ECInstancesHelper::LoadInstance");
+    BeAssert(txn.IsActive());
+
     Utf8String ecsql("SELECT * FROM ONLY ");
     ecsql.append(selectClass->GetECSqlName()).append(" WHERE ECInstanceId=?");
     CachedECSqlStatementPtr stmt = GetPreparedStatement(connection, ecsql.c_str());
@@ -1652,6 +1663,9 @@ ECValue ECInstancesHelper::GetValue(IConnectionCR connection, ECInstanceKeyCR ke
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValue ECInstancesHelper::GetValue(IConnectionCR connection, ECClassCR ecClass, ECInstanceId instanceId, ECPropertyCR ecProperty)
     {
+    Savepoint txn(connection.GetDb(), "ECInstancesHelper::GetValue");
+    BeAssert(txn.IsActive());
+
     Utf8String ecsql("SELECT ");
     ecsql.append("[").append(ecProperty.GetName()).append("] ");
     ecsql.append("FROM ONLY ");

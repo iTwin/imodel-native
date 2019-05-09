@@ -1144,6 +1144,37 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode_FromCorrectRuleset)
+    {
+    ECClassCP widgetClass = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
+
+    // create a node with ruleset 1
+    m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id_1", 1, 0, false, "", "", "", false));
+    auto info1 = CacheDataSource(m_connection->GetId(), "ruleset_id_1", "locale", 0);
+    JsonNavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*m_connection, *widgetClass);
+    NavNodeExtendedData(*node1).SetRulesetId(info1.first.GetRulesetId().c_str());
+    FillWithNodes(info1, { node1 });
+
+    // create a node with ruleset 2
+    m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id_2", 1, 0, false, "", "", "", false));
+    auto info2 = CacheDataSource(m_connection->GetId(), "ruleset_id_2", "locale", 0);
+    JsonNavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*m_connection, *widgetClass);
+    NavNodeExtendedData(*node2).SetRulesetId(info2.first.GetRulesetId().c_str());
+    FillWithNodes(info2, { node2 });
+
+    // verify the node is found successfully with valid key
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, "locale", *node1->GetKey());
+    ASSERT_TRUE(locatedNode.IsValid());
+    EXPECT_TRUE(node1->Equals(*locatedNode));
+
+    locatedNode = m_cache->LocateNode(*m_connection, "locale", *node2->GetKey());
+    ASSERT_TRUE(locatedNode.IsValid());
+    EXPECT_TRUE(node2->Equals(*locatedNode));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, LocateNode_LocatesECClassGroupingNode)

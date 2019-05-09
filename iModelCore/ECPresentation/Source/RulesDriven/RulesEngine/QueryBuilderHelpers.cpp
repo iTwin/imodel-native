@@ -292,6 +292,9 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void RecursivelySelectRelatedKeys(bset<ECInstanceId>& result, Utf8StringCR baseQuery, Utf8CP idSelector, bvector<ECInstanceId> const& sourceIds)
         {
+        Savepoint txn(m_connection.GetDb(), "RecursiveQueriesHelper::RecursivelySelectRelatedKeys");
+        BeAssert(txn.IsActive());
+
         IdsFilteringHelper<bvector<ECInstanceId>> filteringHelper(sourceIds);
         Utf8String query(baseQuery);
         query.append("WHERE ").append(filteringHelper.CreateWhereClause(idSelector));
@@ -317,6 +320,8 @@ private:
             result.insert(id);
             tempIds.push_back(id);
             }
+
+        txn.Cancel();
 
         for (BoundQueryValue const* binding : bindings)
             delete binding;
