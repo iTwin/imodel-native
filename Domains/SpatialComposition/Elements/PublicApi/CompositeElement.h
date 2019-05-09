@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #pragma once
 #include <SpatialComposition/Domain/SpatialCompositionMacros.h>
 #include <DgnPlatform/DgnPlatformApi.h>

@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 #include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 #include "PublicApi/CompositeElement.h"
 
