@@ -297,6 +297,14 @@ void    DwgBridge::_CloseSource (BentleyStatus status, iModelBridge::ClosePurpos
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnFontCP   DwgBridge::_TryResolveFont (DgnFontCP font)
+    {
+    return m_importer->ResolveFont(font);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DwgBridge::_DetectDeletedDocuments()

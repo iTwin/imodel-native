@@ -52,6 +52,9 @@ public:
     DWG_EXPORT static Utf8CP           ToUtf8CP (DwgStringCR fromString, bool nullIfEmpty = false);
     DWG_EXPORT static void             ValidateStyleName (Utf8String& out, DwgStringCR in);
     DWG_EXPORT static size_t           ConvertEscapeCodes (TextStringR text, bvector<DSegment3d>* underlines, bvector<DSegment3d>* overlines);
+    DWG_EXPORT static BentleyStatus    CreateUnderOrOverline (TextStringCR text, DSegment3dR line, bool underOrOver);
+    DWG_EXPORT static BentleyStatus    ResetPositionForBackwardAndUpsideDown (Dgn::TextStringR dgnText, bool backward, bool upsidedown);
+    DWG_EXPORT static DgnFontType      GetFontType (DwgFontInfoCR dwgFont);
     DWG_EXPORT static ColorDef         GetColorDefFromACI (int16_t acColorIndex);
     DWG_EXPORT static ColorDef         GetColorDefFromTrueColor (DwgCmEntityColorCR acColor);
     DWG_EXPORT static ColorDef         GetColorDefFromTrueColor (DwgCmColorCR acColor);

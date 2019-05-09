@@ -60,6 +60,9 @@
         <Font type="SHX" name="*">
             <EmbedAction>IfUsed</EmbedAction>
         </Font>
+        <Font type="TrueType" name="*">
+            <EmbedAction>IfUsed</EmbedAction>
+        </Font>
         <Font type="*" name="*">
             <EmbedAction>Never</EmbedAction>
         </Font>

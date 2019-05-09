@@ -1425,7 +1425,7 @@ virtual void    _Shell (size_t nPoints, DPoint3dCP points, size_t nFaceList, int
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   SetText (Dgn::TextStringPtr& dgnText, DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, DwgStringCR string)
+BentleyStatus   SetText (Dgn::TextStringPtr& dgnText, DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, DwgStringCR string, bool* mirrored = nullptr)
     {
     if (!dgnText.IsValid())
         return  BSIERROR;
@@ -1445,14 +1445,17 @@ BentleyStatus   SetText (Dgn::TextStringPtr& dgnText, DPoint3dCR position, DVec3
         return  BSIERROR;
         }
 
-    Utf8String  textString(string.c_str());
-    textString.Trim ();
-    if (textString.empty())
+    Utf8String  testString(string.c_str());
+    testString.Trim ();
+    if (testString.empty())
         {
         Utf8PrintfString    msg ("skipped text containing all white spaces, ID=%ls!", m_entity == nullptr ? L"?" : m_entity->GetObjectId().ToAscii().c_str());
         importer.ReportIssue (DwgImporter::IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::Message(), msg.c_str());
         return  BSIERROR;
         }
+
+    if (mirrored != nullptr)
+        *mirrored = false;
 
     // unmirror text on XY plane
     DVec3d xAxis, zAxis;
@@ -1462,13 +1465,15 @@ BentleyStatus   SetText (Dgn::TextStringPtr& dgnText, DPoint3dCR position, DVec3
         {
         xAxis.Negate ();
         zAxis.Negate ();
+        if (mirrored != nullptr)
+            *mirrored = true;
         }
 
     // get ECS - do not compound it with currTrans - handled in central factory.
     RotMatrix   ecs;
     DwgHelper::ComputeMatrixFromXZ (ecs, xAxis, zAxis);
 
-    dgnText->SetText (textString.c_str());
+    dgnText->SetText (DwgHelper::ToUtf8CP(string));
     dgnText->SetOrigin (position);
     dgnText->SetOrientation (ecs);
     
@@ -1569,8 +1574,9 @@ virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, DwgS
     if (this->DropText(position, normal, xdir, string, raw, giStyle))
         return;
 
+    bool mirrored = false;
     Dgn::TextStringPtr  dgnText = TextString::Create ();
-    if (BSISUCCESS != this->SetText(dgnText, position, normal, xdir, string))
+    if (BSISUCCESS != this->SetText(dgnText, position, normal, xdir, string, &mirrored))
         {
         m_status = BSIERROR;
         return;
@@ -1590,9 +1596,12 @@ virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, DwgS
         }
     else
         {
+        fontType = DwgHelper::GetFontType (fontInfo);
         font = importer.GetDgnFontFor (fontInfo);
         if (nullptr == font)
-            font = fontInfo.GetTypeFace().empty() ? &DgnFontManager::GetLastResortTrueTypeFont() : &DgnFontManager::GetLastResortShxFont();
+            font = fontType==DgnFontType::TrueType ? &DgnFontManager::GetLastResortTrueTypeFont() : &DgnFontManager::GetLastResortShxFont();
+        if (font != nullptr)
+            fontType = font->GetType ();
         }
     if (nullptr == font)
         {
@@ -1617,10 +1626,28 @@ virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, DwgS
     else
         dgnStyle.SetIsItalic (giStyle.GetObliqueAngle() != 0);
 
+    if ((giStyle.IsBackward() && !mirrored) || giStyle.IsUpsideDown())
+        DwgHelper::ResetPositionForBackwardAndUpsideDown(*dgnText, giStyle.IsBackward(), giStyle.IsUpsideDown());
+
     // decode escape codes if the input string is not raw primitives:
     bvector<DSegment3d> underlines, overlines;
     if (!raw)
+        {
         DwgHelper::ConvertEscapeCodes (*dgnText.get(), &underlines, &overlines);
+        }
+    else if (giStyle.IsUnderlined())
+        {
+        // Workaround for Dgn::TextStringStyle::SetIsUnderlined - it does not seem to have an effect!
+        DSegment3d  line;
+        if (DwgHelper::CreateUnderOrOverline(*dgnText.get(), line, true) == BSISUCCESS)
+            underlines.push_back (line);
+        }
+    else if (giStyle.IsOverlined())
+        {
+        DSegment3d  line;
+        if (DwgHelper::CreateUnderOrOverline(*dgnText.get(), line, false) == BSISUCCESS)
+            overlines.push_back (line);
+        }
 
     // get strike through line segment before dgnText may be changed:
     DSegment3d  strikeThrough;

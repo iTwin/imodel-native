@@ -56,6 +56,7 @@ protected:
     DWG_EXPORT BentleyStatus  _DetectDeletedDocuments() override;
     DWG_EXPORT void           _PrintUsage () override;
     iModelBridge::Params&     _GetParams () override { return m_options; }
+    DWG_EXPORT DgnFontCP      _TryResolveFont (DgnFontCP) override;
     DWG_EXPORT CmdLineArgStatus _ParseCommandLineArg (int iArg, int argc, WCharCP argv[]) override;
     DWG_EXPORT void           _Terminate (BentleyStatus convertStatus) override;
 

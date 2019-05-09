@@ -766,7 +766,7 @@ static void     AddLineSegs (bvector<DSegment3d>& linesegs, T_CodeList const& li
             else
                 {
                 // under/overline ends
-                CreateLineSeg (lineseg, origins, startIndex, currIndex, toWorld, shiftY, 0.0);
+                CreateLineSeg (lineseg, origins, startIndex, currIndex, toWorld, shiftY, endWidth);
                 linesegs.push_back (lineseg);
 
                 startIndex = -1;
@@ -818,6 +818,8 @@ size_t          DwgHelper::ConvertEscapeCodes (TextStringR text, bvector<DSegmen
     // First run - convert all %% escape codes expcept for under/overlines:
     WString         decodedString;
     T_CodeList      lineCodes;
+    size_t          charIndex = 0;
+    bool            isStartCode = false;
     WCharCP         pNextChar = wString.c_str ();
     WCharCP         pEndChar = pNextChar + nChars;
 
@@ -826,6 +828,7 @@ size_t          DwgHelper::ConvertEscapeCodes (TextStringR text, bvector<DSegmen
         if (*pNextChar == L'%' && *(pNextChar + 1) == L'%')
             {
             WChar       escapeCode = *(pNextChar + 2);
+            isStartCode = !isStartCode;
             switch (escapeCode)
                 {
                 case L'c':
@@ -844,13 +847,17 @@ size_t          DwgHelper::ConvertEscapeCodes (TextStringR text, bvector<DSegmen
                 case L'U':
                     // no symbol - save escape code for post processing (sequence important!)
                     escapeCode = 0;
-                    lineCodes.push_back (EscapeCode(decodedString.size(), L'U'));
+                    // a start code takes at the position after %%U; an end code remains at current position
+                    charIndex = isStartCode ? decodedString.size() : decodedString.size() - 1;
+                    lineCodes.push_back (EscapeCode(charIndex, L'U'));
                     break;
                 case L'o':
                 case L'O':
                     // no symbol - save escape code for post processing (sequence important!)
                     escapeCode = 0;
-                    lineCodes.push_back (EscapeCode(decodedString.size(), L'O'));
+                    // a start code takes at the position after %%U; an end code remains at current position
+                    charIndex = isStartCode ? decodedString.size() : decodedString.size() - 1;
+                    lineCodes.push_back (EscapeCode(charIndex, L'O'));
                     break;
                 case L'%':
                 default:
@@ -903,6 +910,80 @@ size_t          DwgHelper::ConvertEscapeCodes (TextStringR text, bvector<DSegmen
         }
 
     return  nDecoded;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgHelper::CreateUnderOrOverline (TextStringCR text, DSegment3dR line, bool under)
+    {
+    // create a full under/over line for the input text string
+    DPoint3dCP  origins = text.GetGlyphOrigins ();
+    if (nullptr != origins)
+        {
+        Transform   toWorld = text.ComputeTransform ();
+        DRange2d    range = text.GetRange ();
+        size_t      endIndex = text.GetNumGlyphs() - 1;
+        double      shiftY = under ? (-0.2 * range.YLength()) : (1.2 * range.YLength());
+        double      endCharWidth = range.XLength() - origins[endIndex].x;
+
+        CreateLineSeg (line, origins, 0, endIndex, toWorld, shiftY, endCharWidth);
+        return  BSISUCCESS;
+        }
+    return  BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DwgHelper::ResetPositionForBackwardAndUpsideDown (Dgn::TextStringR dgnText, bool backward, bool upsidedown)
+    {
+    // Dgn::TextString currently supports neither backward nor upside down - reset origin to retain its body position
+    if (!backward && !upsidedown)
+        return  BSIERROR;
+
+    double  moveX = backward ? -dgnText.GetRange().XLength() : 0.0;
+    double  moveY = upsidedown ? -dgnText.GetRange().YLength() : 0.0;
+    DVec3d  moveBy = DVec3d::From (moveX, moveY, 0);
+
+    auto origin = dgnText.GetOrigin();
+    auto rotation = dgnText.GetOrientation();
+    rotation.MultiplyTranspose (origin);
+
+    origin.Add (moveBy);
+    rotation.Multiply (origin);
+
+    dgnText.SetOrigin (origin);
+
+    return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnFontType     DwgHelper::GetFontType (DwgFontInfoCR dwgFont)
+    {
+    /*-----------------------------------------------------------------------------------
+    There seems no sure way of knowing the font type from a font stored in GiTextStyle,
+    so we check font name and type face to come up with a font type.
+    -----------------------------------------------------------------------------------*/
+    auto typeface = dwgFont.GetTypeFace ();
+    auto shxName = dwgFont.GetShxFontName ();
+
+    // should a file extension exist, that tells us the font type:
+    if (shxName.EndsWithI(L".ttf"))
+        return  DgnFontType::TrueType;
+    else if (shxName.EndsWithI(L".shx"))
+        return  DgnFontType::Shx;
+
+    // generally, facetype is used for TTF:
+    DgnFontType fontType = typeface.empty() ? DgnFontType::Shx : DgnFontType::TrueType;
+
+    // occasionally though, shxName also exits, strongly suggests an SHX type
+    if (!shxName.empty())
+        fontType = DgnFontType::Shx;
+
+    return  fontType;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1307,6 +1307,7 @@ public:
     DWG_EXPORT bool             ArePointsValid (DPoint3dCP checkPoints, size_t numPoints, DwgDbEntityCP entity = nullptr) { return _ArePointsValid(checkPoints, numPoints, entity); }
     DgnFontCP                   GetDgnFontFor (DwgFontInfoCR fontInfo);
     DgnFontCP                   GetDefaultFont () const { return m_defaultFont.get(); }
+    DWG_EXPORT DgnFontCP        ResolveFont (DgnFontCP font);
     AnnotationTextStyleId       GetDefaultTextStyleId () const { return m_defaultTextstyleId; }
     bool                        GetFallbackFontPathForShape (BeFileNameR filename) const;
     DWG_EXPORT void             SetFallbackFontPathForShape (BeFileNameCR filename);

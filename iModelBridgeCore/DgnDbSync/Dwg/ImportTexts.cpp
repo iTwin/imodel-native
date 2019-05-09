@@ -141,16 +141,48 @@ DgnElementId    DwgImporter::GetDgnTextStyleFor (DwgDbObjectIdCR tstyleId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnFontCP       DwgImporter::ResolveFont (DgnFontCP font)
+    {
+    /*-----------------------------------------------------------------------------------
+    Above call m_dgndb->Fonts().AcquireId() for textstyle effectively inserts a font into db,
+    but also turns the font's data type from DgnShxFileFontData to DgnShxDbFontData without
+    the face data embedded. Later on when DgnFont::IsResolved is called the first time, 
+    DgnShxDbFontData tries to retrieve face data from embedded list which does not exist yet 
+    as out fonts embedding takes place the end of an import job.  An unresolved font may 
+    result in text or textstyle to be replaced by LastResortShxFont, as a case shown in 
+    VSTS119701.
+
+    This method serves as a callback from font admin (via iModelBridge). It resolves the
+    input font as a db font, but only if it has been embedded (i.e. IsResolved returns true).
+    Otherwise it resolves to loaded file font, which is of DgnShxFileFontData which loads
+    face data from file the first time IsResolved if called.
+    -----------------------------------------------------------------------------------*/
+    if (font == nullptr)
+        return  nullptr;
+
+    // treat loaded fonts as resolved - we will embed fonts at the end of the import job
+    auto type = font->GetType();
+    auto name = font->GetName();
+    auto found = m_dgndb->Fonts().FindFontByTypeAndName(type, name.c_str());
+    if (nullptr == found || !found->IsResolved())
+        found = m_loadedFonts.FindDgnFont(type, name);
+    return  found;    
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnFontCP       DwgImporter::GetDgnFontFor (DwgFontInfoCR dwgFont)
     {
     WString     typeface = dwgFont.GetTypeFace ();
-    DgnFontType fontType = typeface.empty() ? DgnFontType::Shx : DgnFontType::TrueType;
+    DgnFontType fontType = DwgHelper::GetFontType (dwgFont);
     Utf8String  fontName (DgnFontType::TrueType == fontType ? typeface.c_str() : dwgFont.GetShxFontName().c_str());
 
+    // opt for an existing mebdded db font over our loaded file font
     DgnFontCP    dgnFont = m_dgndb->Fonts().FindFontByTypeAndName (fontType, fontName.c_str());
-    if (nullptr == dgnFont)
+    if (nullptr == dgnFont || !dgnFont->IsResolved())
         dgnFont = m_loadedFonts.FindDgnFont (fontType, fontName);
 
     if (nullptr == dgnFont)
