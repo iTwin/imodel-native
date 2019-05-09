@@ -1,8 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/NonPublished/GeometryUtils_Test.cpp $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley\BeTest.h>
