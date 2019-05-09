@@ -156,7 +156,7 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
 
     IMeshSpatialModelP spatialModel = nullptr;
     if (!existingId.IsValid())
-        spatialModel = (ScalableMeshModelHandler::AttachTerrainModel(db, modelName, smFileName, *repositoryLink, true, clipVector.get(), &classifiers));
+        spatialModel = (ScalableMeshModelHandler::AttachTerrainModel(db, modelName, smFileName, *repositoryLink, location, true, clipVector.get(), &classifiers));
     else
         {
         spatialModel = (db.Models().Get<ScalableMeshModel>(DgnModelId(existingId.GetValue()))).get();
@@ -223,20 +223,8 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
         
         converter._GetChangeDetector()._OnElementSeen(converter, modeledElementId);
         }
-    if (((ScalableMeshModel*)spatialModel)->_AllowPublishing())
-        {
         // Schedule reality model tileset creation.
         converter.AddModelRequiringRealityTiles(modelId, smFileName.GetNameUtf8(), converter.GetRepositoryLinkId(*v8el.GetDgnFileP()));
-        }
-    else if (!converter.GetDgnDb().GeoLocation().GetEcefLocation().m_isValid)
-        {
-        // For scalable meshes with in projects with no ECEF we need to record the transform or we have no way to get from tileset (ECEF) to DB.
-        Transform   tilesetToDb, dbToTileset = ((ScalableMeshModel*)spatialModel)->GetUorsToStorage();
-
-        tilesetToDb.InverseOf (dbToTileset);
-        converter.StoreRealityTilesetTransform(*spatialModel, tilesetToDb);
-        spatialModel->Update();
-        }
 
     return Result::SkipElement;
     }
