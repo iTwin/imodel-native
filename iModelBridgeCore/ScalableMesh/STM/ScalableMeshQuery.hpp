@@ -1638,7 +1638,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
             //DRange3d range3D2(_GetContentExtent());
 
            
-            if (clips != nullptr /*&& range3D2.XLength() < 150 && range3D2.YLength() < 150*/)
+            if (clips != nullptr && !clips->empty()/*&& range3D2.XLength() < 150 && range3D2.YLength() < 150*/)
                 {
                 bmap<size_t, uint64_t> idsForPrimitives;
                 for (size_t n = 0; n < clips->size(); n++) idsForPrimitives[n] = n;
