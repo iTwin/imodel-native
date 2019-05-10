@@ -175,8 +175,15 @@ private:
     double                  m_elevation;
     double                  m_thickness;
     bool                    m_isClosed;
+    bool                    m_hasAppliedWidths;
+    bool                    m_hasEcs;
     Transform               m_ecs;
     CurveVector::BoundaryType   m_boundaryType;
+
+    void WidenLineToSides(DSegment3dR rightSeg, DSegment3dR leftSeg, size_t fromIndex, bool useElevation) const;
+    void WidenPointToSides(DPoint3dR rightPoint, DPoint3dR leftPoint, DPoint3dCR origin, DVec3dCR right2Left, double width) const;
+    void IntersectLines(DPoint3dR jointPoint, DSegment3dCR line1, DSegment3dCR line2) const;
+    void ConnectAndChainToPath(bvector<DPoint3d>& path, bvector<DSegment3d>const& right, bvector<DSegment3d>const& left) const;
 
 public:
     PolylineFactory ();
@@ -195,6 +202,9 @@ public:
     void                    TransformData (TransformCR transform);
     // Set desired boundary type - default is BOUNDARY_TYPE_Outer if closed or BOUNDARY_TYPE_Open otherwise.
     void                    SetBoundaryType (CurveVector::BoundaryType type);
+    // Called by CreateCurveVector for non-bulged polyline with variable widths
+    CurveVectorPtr CreateShapeFromVariableWidths (bool useElevation);
+    bool    HasAppliedWidths () const { return  m_hasAppliedWidths; }
 
     static bool     IsValidBulgeFactor (double bulge);
     };  // PolylineFactory

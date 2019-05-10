@@ -1209,10 +1209,10 @@ virtual void    _Pline (DwgDbPolylineCR pline, size_t fromIndex = 0, size_t numS
         {
         auto shape = plineFactory.ApplyConstantWidthTo (curveVector);
         if (shape.IsValid())
-            {
             curveVector = shape;
+
+        if (plineFactory.HasAppliedWidths())
             m_drawParams._SetFillType (DwgGiFillType::Always);
-            }
 
         if (m_isTargetModel2d)
             {
