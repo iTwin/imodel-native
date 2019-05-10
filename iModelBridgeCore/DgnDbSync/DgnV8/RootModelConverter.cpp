@@ -1156,11 +1156,7 @@ void RootModelConverter::ConvertElementsInModel(ResolvedModelMapping const& v8mm
 //---------------------------------------------------------------------------------------
 void RootModelConverter::ConvertElementsInModelWithExceptionHandling(ResolvedModelMapping const& v8mm)
     {
-    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
-        {
-        ConvertElementsInModel(v8mm);
-        }
-    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(ReportFailedModelConversion(v8mm))
+    ConvertElementsInModel(v8mm);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1325,12 +1321,9 @@ void RootModelConverter::UpdateCalculatedProperties()
 //---------------+---------------+---------------+---------------+---------------+-------
 void RootModelConverter::CreatePresentationRulesWithExceptionHandling()
     {
-    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
-        {
-        CreatePresentationRules();
-        }
-    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(ReportFailedPresentationRules())
+    CreatePresentationRules();
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            12/2018
 //---------------+---------------+---------------+---------------+---------------+-------
