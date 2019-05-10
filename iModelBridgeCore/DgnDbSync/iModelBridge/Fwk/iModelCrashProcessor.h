@@ -23,6 +23,6 @@ struct iModelCrashProcessor
         static iModelCrashProcessor& GetInstance();
         void SetClientInfo(BentleyApi::WebServices::ClientInfoPtr clientInfo);
         void SetRunInfo(Utf8StringCR jobRunGuid, Utf8StringCR requestGuid);//requestGuid == ActivityId == X-Correlation-Id
-        BentleyStatus SendCrashReport(Utf8StringCR exceptionString, BeFileName dmpFile);
+        BentleyStatus SendCrashReport(Utf8StringCR exceptionString, WCharCP filename);
 
     };

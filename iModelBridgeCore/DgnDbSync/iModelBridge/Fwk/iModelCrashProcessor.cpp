@@ -35,7 +35,7 @@ BentleyStatus   iModelCrashProcessor::GetCrashReportUrl(Utf8StringR url)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelCrashProcessor::SendCrashReport(Utf8StringCR exceptionString, BeFileName dmpFile)
+BentleyStatus   iModelCrashProcessor::SendCrashReport(Utf8StringCR exceptionString, WCharCP dmpFile)
     {
     if (nullptr == m_clientInfo)//TODO Construct a dummy client Info
         return ERROR;
@@ -55,10 +55,30 @@ BentleyStatus   iModelCrashProcessor::SendCrashReport(Utf8StringCR exceptionStri
     End if
     */
     Utf8PrintfString additionalInfo(R"xml(
-        <CustomerComment></CustomerComment>
+        <CustomerComment>%s</CustomerComment>
         <MessageGUID>%s</MessageGUID>
         <SiteId>%s</SiteId>
-        )xml", m_requestGuid.c_str(), m_jobRunGuid.c_str());
+        )xml", m_requestGuid.c_str(), m_requestGuid.c_str(), m_jobRunGuid.c_str());
+
+    Utf8String dumpStr;
+    BeFile dumpFile;
+    if (BeFileStatus::Success == dumpFile.Open(dmpFile, BeFileAccess::Read))
+        {
+        //size_t fileSize = 0;
+        //dumpFile.GetSize(fileSize);
+        //size_t nEncodedBytes = (size_t)(4.0 * ((fileSize + 2) / 3.0 ));
+        //dumpStr.reserve(nEncodedBytes);
+       /* Byte buffer[1024];
+        uint32_t bytesRead;
+        while (BeFileStatus::Success == dumpFile.Read(buffer, &bytesRead, 1024) && bytesRead > 0)
+            {
+            Base64Utilities::Encode(dumpStr, buffer, bytesRead);
+            }*/
+        bvector<Byte> buffer;
+        dumpFile.ReadEntireFile(buffer);
+        Base64Utilities::Encode(dumpStr, &buffer[0], buffer.size());
+        dumpFile.Close();
+        }
 
     Utf8PrintfString body(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -66,24 +86,31 @@ BentleyStatus   iModelCrashProcessor::SendCrashReport(Utf8StringCR exceptionStri
                                xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
                     <soap:Body>
                         <SubmitLog xmlns="http://tempuri.org/">
-                            <productName>%s</productName>"
-                            <productVersion>%s</productVersion>"
-                            <replyEmailAddress></replyEmailAddress>"
-                            <subject>Crash RequestId: %s</subject>"
-                            <base64MiniDumpFile></base64MiniDumpFile>"
-                            <base64ExceptionLog></base64ExceptionLog>"
-                            <base64AdditionalInfo>
-                            %s
-                            </base64AdditionalInfo>"
-                        </SubmitLog>"
+                            <productName>%s</productName>
+                            <productVersion>%s</productVersion>
+                            <replyEmailAddress></replyEmailAddress>
+                            <subject>%s %s exception</subject>
+                            <base64MiniDumpFile>%s</base64MiniDumpFile>
+                            <base64ExceptionLog>%s</base64ExceptionLog>
+                            <base64AdditionalInfo>%s</base64AdditionalInfo>
+                        </SubmitLog>
                     </soap:Body>
-                </soap:Envelope>)xml", m_clientInfo->GetApplicationName().c_str(), m_clientInfo->GetApplicationVersion().ToString().c_str(), m_requestGuid.c_str(), Base64Utilities::Encode(additionalInfo).c_str());
+                </soap:Envelope>)xml", m_clientInfo->GetApplicationName().c_str(), m_clientInfo->GetApplicationVersion().ToString().c_str(),
+        m_clientInfo->GetApplicationName().c_str(), m_clientInfo->GetApplicationVersion().ToString().c_str(), dumpStr.c_str(), Base64Utilities::Encode(exceptionString).c_str(),
+                                    Base64Utilities::Encode(additionalInfo).c_str());
 
+    T_Utf8StringVector urlParts;
+    BeStringUtilities::Split(crashReportUrl.c_str(), "/", urlParts);
     Http::HttpClient client;
     Http::Request request = client.CreatePostRequest(crashReportUrl);
     request.SetValidateCertificate(true);
     request.SetRequestBody(Http::HttpStringBody::Create(body));
     request.GetHeaders().SetContentType("text/xml; charset=utf-8");
+    //request.GetHeaders().SetValue("Man", "POST /errorreporting/errorreporting.asmx HTTP/1.1");
+    request.GetHeaders().SetValue("SOAPAction", "http://tempuri.org/SubmitLog");
+    request.GetHeaders().SetValue("Host", urlParts[1]);
+//    xmlhttpReport.setRequestHeader "Host", split(urlReport, "/")(2)
+
 
     auto status = request.Perform().then([=] (Http::Response const& response)
                 {

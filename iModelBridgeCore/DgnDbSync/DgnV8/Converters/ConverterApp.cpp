@@ -376,7 +376,7 @@ RootModelConverterApp::RootModelConverterApp()
     m_wasUpdateEmpty = false;
     BeVersion bridgeVersion(REL_V "." MAJ_V "." MIN_V "." SUBMIN_V);
     WebServices::ClientInfoPtr clientInfo = WebServices::ClientInfoPtr(
-        WebServices::ClientInfo::Create("iModelBridge Service - MicroStation", bridgeVersion,
+        WebServices::ClientInfo::Create("iModelBridgeService-MicroStation", bridgeVersion,
             "{DC994E46-3852-45A1-9A5B-5EEE4C6D234F}",
             "2707", GetParamsCR().GetDefaultHeaderProvider()));
 
