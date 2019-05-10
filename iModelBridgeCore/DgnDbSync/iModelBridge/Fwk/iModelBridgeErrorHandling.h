@@ -63,7 +63,19 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 struct iModelBridgeErrorHandling
     {
-    static void Initialize();
+    struct Config
+        {
+        BeFileName m_crashDir;
+        bmap<Utf8String,Utf8String> m_params;
+        size_t m_maxDumpsInDir;
+        bool m_writeDumpsToCrashDir;
+        bool m_wantFullMemory;
+
+        Config();
+        void SetDefaults();
+        };
+
+    static void Initialize(Config const&);
     static int FilterException(EXCEPTION_POINTERS const*);
     };
 

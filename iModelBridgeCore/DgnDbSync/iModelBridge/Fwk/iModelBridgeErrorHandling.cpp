@@ -16,31 +16,29 @@ USING_NAMESPACE_BENTLEY_LOGGING
 #undef LOG
 #define LOG (*LoggingManager::GetLogger(L"iModelBridge"))
 
-struct CrashReportingConfig
-    {
-    BeFileName m_crashDir;
-    bmap<Utf8String,Utf8String> m_params;
-    size_t m_maxDumpsInDir;
-    bool m_writeDumpsToCrashDir;
-    bool m_wantFullMemory;
-    bool m_needsVectorExceptionHandler;
-    };
-
 static bool s_initialized;
-static CrashReportingConfig s_config;
+static iModelBridgeErrorHandling::Config s_config;
 static BeFileName s_logFileName;
 static BeFileName s_dmpFileName;
 
 static void writeMiniDump(EXCEPTION_POINTERS const* exceptionInfoP)
     {
-    /*
-    BeSQLite::BeGuid guid;
-    guid.Create();
-    WString wguid(guid.ToString().c_str(), true);
-    s_dmpFileName.AppendToPath(WPrintfString(L"%ls.dmp", wguid.c_str()).c_str());
+    /* TODO:
+    if (s_config.m_maxDumpsInDir > 0)
+        {
+        BeSQLite::BeGuid guid;
+        guid.Create();
+        WString wguid(guid.ToString().c_str(), true);
+        s_dmpFileName.SetName(s_config.m_crashDir);
+        s_dmpFileName.AppendToPath(L"iModelBridge-");
+        s_dmpFileName.append(wguid);
+        s_dmpFileName.append(L".dmp");
+        }
     */
 
-
+    /* TODO: 
+        s_config.m_params => comment stream in .dmp file? Or part of JSON uploaded to service? 
+    */
 
     win32Tools_generateMiniDump(nullptr, exceptionInfoP, s_dmpFileName.c_str(), &s_config.m_wantFullMemory);
     }
@@ -50,41 +48,61 @@ static void writeMiniDump(EXCEPTION_POINTERS const* exceptionInfoP)
 +---------------+---------------+---------------+---------------+---------------+------*/
 LONG WINAPI reportUnhandledException(struct _EXCEPTION_POINTERS *exceptionInfoP)
     {
+    // this function is invoked only in the case of code executing outside the scope of our IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS/IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS macros
     writeMiniDump(exceptionInfoP);
     return EXCEPTION_CONTINUE_SEARCH;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/18
+* @bsimethod                                    Sam.Wilson                      05/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeErrorHandling::Initialize()
+iModelBridgeErrorHandling::Config::Config()
     {
-    if (s_initialized)
-        return;
-    s_initialized = true;
+    SetDefaults();
+    }
 
-    s_config.m_crashDir.SetNameA(getenv("TEMP"));
-    s_config.m_crashDir.AppendToPath(L"Crash");
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeErrorHandling::Config::SetDefaults()
+    {
+    m_maxDumpsInDir = 0;        // Always upload immediately and then delete.
 
-    s_logFileName.SetName(s_config.m_crashDir);
-    s_logFileName.AppendToPath(L"exception.log");
+    m_crashDir.SetNameA(getenv("TEMP"));
+    m_crashDir.AppendToPath(L"Crash");
 
-    s_dmpFileName.SetName(s_config.m_crashDir);
-    s_dmpFileName.AppendToPath(L"iModelBridge.dmp");
-
-    s_config.m_wantFullMemory = true;
-    s_config.m_writeDumpsToCrashDir = true;
+    m_wantFullMemory = true;
+    m_writeDumpsToCrashDir = true;
 
     auto trap = getenv("IMODEL_BRIDGE_TRAP");
     if (trap != nullptr)
         {
         if (0 == stricmp(trap, "none"))
-            s_config.m_writeDumpsToCrashDir = false;
+            m_writeDumpsToCrashDir = false;
         else if (0 == stricmp(trap, "smalldump"))
-            s_config.m_wantFullMemory = false;
+            m_wantFullMemory = false;
         }
+    }
 
-    SetUnhandledExceptionFilter(reportUnhandledException);  // just in case anyone executes crashing code outside of our TRY/CATCH macros
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeErrorHandling::Initialize(Config const& cfg)
+    {
+    if (s_initialized)
+        return;
+    s_initialized = true;
+
+    s_config = cfg;
+
+    // Set up as much as possible now, to avoid allocating memory when a crash occurs.
+    s_logFileName.SetName(cfg.m_crashDir);
+    s_logFileName.AppendToPath(L"exception.log");
+
+    s_dmpFileName.SetName(cfg.m_crashDir);
+    s_dmpFileName.AppendToPath(L"iModelBridge.dmp");
+
+    SetUnhandledExceptionFilter(reportUnhandledException);  // just in case there is any code executing outside the scope of our IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS/IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS macros
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -93,10 +111,12 @@ void iModelBridgeErrorHandling::Initialize()
 int iModelBridgeErrorHandling::FilterException(EXCEPTION_POINTERS const* ptrs)
     {
     if (!s_initialized || !s_config.m_writeDumpsToCrashDir)
-        return EXCEPTION_CONTINUE_SEARCH;
+        return EXCEPTION_CONTINUE_SEARCH;   // This means that the bridge/fwk WILL crash, and Windows Error Reporting WILL be invoked. The process will then be terminated.
+
+    // NEEDS WORK: Crash processing should be done in another thread or another process. => breakpad
 
     win32Tools_resetFloatingPointExceptions(0);
     writeMiniDump(ptrs);
-    return EXCEPTION_EXECUTE_HANDLER;   // This means that the bridge/fwk will NOT crash and Windows Error Reporting will NOT be invoked. Instead, the code with the TRY/CATCH macros will continue executing.
+    return EXCEPTION_EXECUTE_HANDLER;   // This means that the bridge/fwk will NOT crash, and Windows Error Reporting will NOT be invoked. Instead, the code with the TRY/CATCH macros will continue executing.
     }
 
