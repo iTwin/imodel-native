@@ -319,12 +319,8 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         if (IsUpdating())
             {
             ResolvedModelMapping bimModel = _FindFirstResolvedModelMapping(*sectionedV8Element.GetDgnModelP());
-            if (!bimModel.IsValid())
-                {
-                return DgnDbStatus::BadRequest;
-                }
             IChangeDetector::SearchResults changeInfo;
-            GetChangeDetector()._IsElementChanged(changeInfo, *this, sectionedV8Element, bimModel);
+            GetChangeDetector()._IsElementChanged(changeInfo, *this, sectionedV8Element, bimModel.IsValid() ? bimModel : drawingModelMapping);
             if (IChangeDetector::ChangeType::Insert != changeInfo.m_changeType)
                 isNewElement = false;
             }
