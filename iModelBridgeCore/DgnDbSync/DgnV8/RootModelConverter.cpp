@@ -2088,7 +2088,7 @@ void RootModelConverter::_SetChangeDetector(bool isUpdating)
     BeAssert(isUpdating == IsUpdating());
 
     m_changeDetector.reset(new ChangeDetector);
-    m_skipECContent = false;
+    // m_skipECContent = m_config.GetOptionValueBool("SkipECContent", false); [CGM] - should be no reason to need to change this value
     }
 
 /*---------------------------------------------------------------------------------**//**
