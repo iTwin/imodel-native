@@ -15,13 +15,18 @@
 
 #ifdef _WIN32
 #define IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS  __try
-#define IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS __except(iModelBridgeErrorHandling::ShouldProcessSEH())
+#define IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS __except(iModelBridgeErrorHandling::FilterException(GetExceptionInformation()))
 #else
 #define IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS  try
 #define IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS  catch(...)
 #endif
 
-#define IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(CALLER_CLEAN_UP_CODE) IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS { CALLER_CLEAN_UP_CODE ; ::BentleyApi::Dgn::iModelBridgeErrorHandling::LogStackTrace(); }
+#define IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(CALLER_CLEAN_UP_CODE) IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS { CALLER_CLEAN_UP_CODE ; }
+
+#ifndef _WINNT_
+typedef struct _EXCEPTION_POINTERS EXCEPTION_POINTERS;
+#endif
+
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -57,19 +62,9 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 // @bsiclass                                    BentleySystems 
 //=======================================================================================
 struct iModelBridgeErrorHandling
-{
-    IMODEL_BRIDGE_EXPORT static void Initialize();
-
-    //! Helper function to get the current callstack, for logging exceptions.
-    IMODEL_BRIDGE_EXPORT static Utf8String GetStackTraceDescription(size_t maxFrames, size_t nIgnoreFrames);
-
-    //! Helper function to get the current callstack inside a structured exception block, for logging exceptions.
-    IMODEL_BRIDGE_EXPORT static void GetStackTraceDescriptionFixed(char* buf, size_t bufSize);
-
-    //! Helper function to log the current callstack.
-    IMODEL_BRIDGE_EXPORT static void LogStackTrace();
-
-    IMODEL_BRIDGE_EXPORT static int ShouldProcessSEH();
+    {
+    static void Initialize();
+    static int FilterException(EXCEPTION_POINTERS const*);
     };
 
 END_BENTLEY_DGN_NAMESPACE

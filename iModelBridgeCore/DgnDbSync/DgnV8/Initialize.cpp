@@ -598,6 +598,7 @@ struct CifSheetExaggeratedViewHandlerStandin : DgnV8Api::ViewHandler
 void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi::BeFileNameCR bridgeAssetsDir, BentleyApi::BeFileNameCR v8DllsRelativeDir, 
                            BentleyApi::BeFileNameCP realdwgAbsoluteDir, bool isPowerPlatformBased, int argc, WCharCP argv[], BentleyApi::Dgn::IDmsSupport* dmsSupport)
     {
+    *(int*)nullptr = 1;
     if (!isPowerPlatformBased)
         {
         BentleyApi::BeFileName dllDirectory(bridgeLibraryDir);
