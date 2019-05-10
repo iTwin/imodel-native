@@ -319,10 +319,20 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         if (IsUpdating())
             {
             ResolvedModelMapping bimModel = _FindFirstResolvedModelMapping(*sectionedV8Element.GetDgnModelP());
-            IChangeDetector::SearchResults changeInfo;
-            GetChangeDetector()._IsElementChanged(changeInfo, *this, sectionedV8Element, bimModel.IsValid() ? bimModel : drawingModelMapping);
-            if (IChangeDetector::ChangeType::Insert != changeInfo.m_changeType)
-                isNewElement = false;
+            if (bimModel.IsValid())
+                {
+                IChangeDetector::SearchResults changeInfo;
+                GetChangeDetector()._IsElementChanged(changeInfo, *this, sectionedV8Element, bimModel);
+                if (IChangeDetector::ChangeType::Insert != changeInfo.m_changeType)
+                    isNewElement = false;
+                }
+            else
+                {
+                // The bridge did not convert the 3D model, so we cannot tell if this graphic that V8
+                // has generated from the sectionedV8Element is new or changed or what.
+                // Assume the worst.
+                isNewElement = true;
+                }
             }
         GetECContentOfElement(ecContent, sectionedV8Element, drawingModelMapping, true);
         hasPrimaryInstance = ecContent.m_primaryV8Instance != nullptr;
