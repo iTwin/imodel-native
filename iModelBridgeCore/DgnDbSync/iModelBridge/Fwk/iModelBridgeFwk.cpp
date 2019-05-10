@@ -17,7 +17,6 @@
 #include <Logging/bentleylogging.h>
 #include <iModelBridge/iModelBridgeBimHost.h>
 #include <iModelBridge/iModelBridgeRegistry.h>
-#include <iModelBridge/iModelBridgeErrorHandling.h>
 #include "../iModelBridgeHelpers.h"
 #include <iModelBridge/IModelClientForBridges.h>
 #include <BentleyLog4cxx/log4cxx.h>
@@ -60,6 +59,7 @@ static iModelBridge* s_bridgeForTesting;
 static IModelBridgeRegistry* s_registryForTesting;
 
 static int s_maxWaitForMutex = 60000;
+static iModelBridgeErrorHandling::Config s_crashDumpConfig;
 
 struct IBriefcaseManagerForBridges : RefCounted<iModelBridge::IBriefcaseManager>
 {
@@ -2045,7 +2045,8 @@ int iModelBridgeFwk::Run(int argc, WCharCP argv[])
 
     int res = RETURN_STATUS_UNHANDLED_EXCEPTION;
 
-    iModelBridgeErrorHandling::Initialize();
+    iModelBridgeErrorHandling::Initialize(s_crashDumpConfig);
+    // TODO: s_crashDumpConfig.m_uploadUrl = ...
 
     IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
         {

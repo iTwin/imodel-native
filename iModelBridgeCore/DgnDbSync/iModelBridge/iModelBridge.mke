@@ -27,8 +27,6 @@ $(o)iModelBridge$(oext) : $(_MakeFilePath)iModelBridge.cpp $(iModelBridgeAPISrc)
 
 $(o)iModelBridgeSacAdapter$(oext) : $(_MakeFilePath)iModelBridgeSacAdapter.cpp $(iModelBridgeAPISrc)iModelBridge.h $(iModelBridgeAPISrc)iModelBridgeSacAdapter.h ${MultiCompileDepends}
 
-$(o)iModelBridgeErrorHandling$(oext) : $(_MakeFilePath)iModelBridgeErrorHandling.cpp $(iModelBridgeAPISrc)iModelBridgeErrorHandling.h ${MultiCompileDepends}
-
 $(o)iModelBridgeBimHost$(oext) : $(_MakeFilePath)iModelBridgeBimHost.cpp $(iModelBridgeAPISrc)iModelBridge.h $(iModelBridgeAPISrc)iModelBridgeBimHost.h ${MultiCompileDepends}
 
 $(o)iModelBridgeSyncInfoFile$(oext) : $(_MakeFilePath)iModelBridgeSyncInfoFile.cpp $(iModelBridgeAPISrc)iModelBridge.h $(iModelBridgeAPISrc)iModelBridgeSyncInfoFile.h ${MultiCompileDepends}
@@ -72,7 +70,6 @@ LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
 
 %if $(TARGET_PLATFORM)=="Windows"
-    LINKER_LIBRARIES        + Dbghelp.lib
     LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)ldapi$(libext)
 %endif
 

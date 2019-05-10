@@ -5,6 +5,10 @@
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
 
+// Stub out these macros. We should not suppress exceptions within a bridge. Only fwk s/ do that.
+#define IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+#define IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(REPORTING_CODE)
+
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_DWGDB
