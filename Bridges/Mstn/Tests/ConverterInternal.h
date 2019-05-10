@@ -57,8 +57,6 @@
 #include <VersionedDgnV8Api/DgnPlatform/DgnPlatform.r.h>
 #include <VersionedDgnV8Api/DgnPlatform/CIF/PersistentAppIDs.h>
 
-#include <iModelBridge/iModelBridgeErrorHandling.h>
-
 #define NO_USING_NAMESPACE_BENTLEY 1
 
 #include <Bentley/bmap.h>
