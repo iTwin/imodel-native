@@ -87,6 +87,26 @@ void CustomFunctionTests::TearDownTestCase()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, Registering_DoesNotAttemptToOverrideExistingFunctions)
+    {
+    DbFunction* func;
+    EXPECT_TRUE(GetDb().TryGetSqlFunction(func, FUNCTION_NAME_GetPointAsJsonString, -1));
+
+    // the following injection would fail if it tried to re-register the function when there's
+    // a prepared statement 
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetPointAsJsonString "(1, 2) FROM ECDbMeta.ECClassDef"));
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    CustomFunctionsInjector inject(m_connections, *m_connection);
+    EXPECT_TRUE(GetDb().TryGetSqlFunction(func, FUNCTION_NAME_GetPointAsJsonString, -1));
+
+    stmt.Reset();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesLabelOverride)

@@ -1817,8 +1817,12 @@ void CustomFunctionsInjector::DestroyFunctions()
 void CustomFunctionsInjector::Register(IConnectionCR connection, bool primary)
     {
     BeSQLite::DbCR db = primary ? connection.GetECDb() : connection.GetDb();
+    BeSQLite::DbFunction* funcPtr;
     for (ScalarFunction* func : m_scalarFunctions)
         {
+        if (&db == &connection.GetECDb() && connection.GetECDb().TryGetSqlFunction(funcPtr, func->GetName(), func->GetNumArgs()))
+            continue;
+
         DbResult result = (DbResult)db.AddFunction(*func);
         if (DbResult::BE_SQLITE_OK != result)
             {
@@ -1828,6 +1832,9 @@ void CustomFunctionsInjector::Register(IConnectionCR connection, bool primary)
         }
     for (AggregateFunction* func : m_aggregateFunctions)
         {
+        if (&db == &connection.GetECDb() && connection.GetECDb().TryGetSqlFunction(funcPtr, func->GetName(), func->GetNumArgs()))
+            continue;
+
         DbResult result = (DbResult)db.AddFunction(*func);
         if (DbResult::BE_SQLITE_OK != result)
             {
