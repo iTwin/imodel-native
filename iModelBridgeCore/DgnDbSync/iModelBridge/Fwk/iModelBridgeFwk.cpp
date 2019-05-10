@@ -22,6 +22,7 @@
 #include <iModelBridge/IModelClientForBridges.h>
 #include <BentleyLog4cxx/log4cxx.h>
 #include "../iModelBridgeLdClient.h"
+#include "iModelCrashProcessor.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -1331,6 +1332,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     LogPerformance(iModelHubSignIn, "Logging into iModelHub");
     }
+    iModelCrashProcessor::GetInstance().SetRunInfo(m_jobEnvArgs.m_jobRequestId, m_jobEnvArgs.m_jobRunCorrelationId);
     LOG.tracev(L"Logging into iModel Hub : Done");
 
     // Stage the workspace and input file if  necessary.

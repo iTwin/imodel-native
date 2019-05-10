@@ -13,9 +13,16 @@ struct iModelCrashProcessor
     {
     private:
     BentleyApi::WebServices::IBuddiClientPtr m_buddi;
+    BentleyApi::WebServices::ClientInfoPtr m_clientInfo;
+    Utf8String m_jobRunGuid;
+    Utf8String m_requestGuid;
+
     BentleyStatus GetCrashReportUrl(Utf8StringR url);
+    iModelCrashProcessor();
     public:
-        iModelCrashProcessor();
-        BentleyStatus SendCrashReport(BentleyApi::WebServices::ClientInfoPtr clientInfo, Utf8StringCR requestId);
+        static iModelCrashProcessor& GetInstance();
+        void SetClientInfo(BentleyApi::WebServices::ClientInfoPtr clientInfo);
+        void SetRunInfo(Utf8StringCR jobRunGuid, Utf8StringCR requestGuid);//requestGuid == ActivityId == X-Correlation-Id
+        BentleyStatus SendCrashReport(Utf8StringCR exceptionString, BeFileName dmpFile);
 
     };

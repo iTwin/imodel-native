@@ -10,7 +10,6 @@
 * @bsimethod                                    Abeesh.Basheer                  05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelCrashProcessor::iModelCrashProcessor()
-    :m_buddi (new BentleyApi::WebServices::BuddiClient())
     {
     
     }
@@ -20,6 +19,9 @@ iModelCrashProcessor::iModelCrashProcessor()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   iModelCrashProcessor::GetCrashReportUrl(Utf8StringR url)
     {
+    if (nullptr == m_buddi)
+        m_buddi = BentleyApi::WebServices::IBuddiClientPtr(new BentleyApi::WebServices::BuddiClient());
+
     BentleyApi::WebServices::BuddiUrlResult result = m_buddi->GetUrl("ErrorReporting")->GetResult();
     if (!result.IsSuccess())
         {
@@ -33,8 +35,11 @@ BentleyStatus   iModelCrashProcessor::GetCrashReportUrl(Utf8StringR url)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelCrashProcessor::SendCrashReport(BentleyApi::WebServices::ClientInfoPtr clientInfo, Utf8StringCR requestId)
+BentleyStatus   iModelCrashProcessor::SendCrashReport(Utf8StringCR exceptionString, BeFileName dmpFile)
     {
+    if (nullptr == m_clientInfo)//TODO Construct a dummy client Info
+        return ERROR;
+
     Utf8String crashReportUrl;
     if (SUCCESS != GetCrashReportUrl(crashReportUrl))
         return ERROR;
@@ -43,6 +48,7 @@ BentleyStatus   iModelCrashProcessor::SendCrashReport(BentleyApi::WebServices::C
     if (dom.IsNull())
         return ERROR;*/
     /*
+    TODO: Get the site id.
     Dim sSiteId : sSiteId = "" : sSiteId = g_oWShell.RegRead ("HKEY_LOCAL_MACHINE\SOFTWARE\Bentley\Licensing\1.1\SiteId")
     if (0 = len(sSiteId)) Then
         sSiteId = g_oWShell.RegRead ("HKEY_CURRENT_USER\SOFTWARE\Bentley\Licensing\1.1\SiteId")
@@ -52,7 +58,7 @@ BentleyStatus   iModelCrashProcessor::SendCrashReport(BentleyApi::WebServices::C
         <CustomerComment></CustomerComment>
         <MessageGUID>%s</MessageGUID>
         <SiteId>%s</SiteId>
-        )xml", requestId.c_str(),"Test-iModelBridge");
+        )xml", m_requestGuid.c_str(), m_jobRunGuid.c_str());
 
     Utf8PrintfString body(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -71,7 +77,7 @@ BentleyStatus   iModelCrashProcessor::SendCrashReport(BentleyApi::WebServices::C
                             </base64AdditionalInfo>"
                         </SubmitLog>"
                     </soap:Body>
-                </soap:Envelope>)xml", clientInfo->GetApplicationName().c_str(), clientInfo->GetApplicationVersion().ToString().c_str(), requestId.c_str(), Base64Utilities::Encode(additionalInfo).c_str());
+                </soap:Envelope>)xml", m_clientInfo->GetApplicationName().c_str(), m_clientInfo->GetApplicationVersion().ToString().c_str(), m_requestGuid.c_str(), Base64Utilities::Encode(additionalInfo).c_str());
 
     Http::HttpClient client;
     Http::Request request = client.CreatePostRequest(crashReportUrl);
@@ -90,4 +96,30 @@ BentleyStatus   iModelCrashProcessor::SendCrashReport(BentleyApi::WebServices::C
                 return SUCCESS;
                 });
     return status.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelCrashProcessor& iModelCrashProcessor::GetInstance()
+    {
+    static iModelCrashProcessor s_Instance;
+    return s_Instance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelCrashProcessor::SetClientInfo(BentleyApi::WebServices::ClientInfoPtr clientInfo)
+    {
+    m_clientInfo = clientInfo;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void            iModelCrashProcessor::SetRunInfo(Utf8StringCR jobRunGuid, Utf8StringCR requestGuid)
+    {
+    m_jobRunGuid = jobRunGuid;
+    m_requestGuid = requestGuid;
     }
