@@ -78,13 +78,10 @@ void iModelBridgeErrorHandling::Initialize()
     auto trap = getenv("IMODEL_BRIDGE_TRAP");
     if (trap != nullptr)
         {
-        if ((*trap == '1') || (0 == stricmp(trap, "none")))
+        if (0 == stricmp(trap, "none"))
             s_config.m_writeDumpsToCrashDir = false;
-        else
-            {
-            if (0 == stricmp(trap, "small"))
-                s_config.m_wantFullMemory = false;
-            }
+        else if (0 == stricmp(trap, "smalldump"))
+            s_config.m_wantFullMemory = false;
         }
 
     SetUnhandledExceptionFilter(reportUnhandledException);  // just in case anyone executes crashing code outside of our TRY/CATCH macros
