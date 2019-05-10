@@ -1808,6 +1808,10 @@ void RootModelConverter::_FinishConversion()
             }
 
         // Update syncinfo for all V8 files *** WIP_UPDATER - really only need to update syncinfo for changed files, but we don't keep track of that.
+        /* Bug #124230 - We can't do this update at all! We have no way of knowing (short of asking iModelHub) which bridge created the
+                    the RepositoryLink element for a given file *and therefore holds the lock on it*. 
+                    A file may be assigned to OBD Bridge, but the corresponding RepositoryLink element may have been created by MstnBridge.
+                    (The same is true of the MasterFile Subject element.)
         for (DgnFileP v8File : m_v8Files)
             {
             if (!IsFileAssignedToBridge(*v8File))
@@ -1817,6 +1821,7 @@ void RootModelConverter::_FinishConversion()
             rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File));
             rlinkEd->Update();
             }
+            */
         }
 
     CopyExpirationDate(*m_rootFile);
