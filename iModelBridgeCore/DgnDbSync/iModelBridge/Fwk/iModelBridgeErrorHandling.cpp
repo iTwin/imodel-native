@@ -41,6 +41,8 @@ static void writeMiniDump(EXCEPTION_POINTERS const* exceptionInfoP)
     */
 
     win32Tools_generateMiniDump(nullptr, exceptionInfoP, s_dmpFileName.c_str(), &s_config.m_wantFullMemory);
+
+    // TOOD:    send via HTTP to => s_config.m_uploadUrl
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -101,6 +103,13 @@ void iModelBridgeErrorHandling::Initialize(Config const& cfg)
 
     s_dmpFileName.SetName(cfg.m_crashDir);
     s_dmpFileName.AppendToPath(L"iModelBridge.dmp");
+
+    /* TODO:
+    if (s_config.m_maxDumpsInDir > 0)
+        {
+        ... remove files, so that we have room for at least one more ...
+        }
+    */
 
     SetUnhandledExceptionFilter(reportUnhandledException);  // just in case there is any code executing outside the scope of our IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS/IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS macros
     }

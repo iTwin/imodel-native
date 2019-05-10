@@ -2045,6 +2045,7 @@ int iModelBridgeFwk::Run(int argc, WCharCP argv[])
     int res = RETURN_STATUS_UNHANDLED_EXCEPTION;
 
     iModelBridgeErrorHandling::Initialize(s_crashDumpConfig);
+    // TODO: s_crashDumpConfig.m_uploadUrl = ...
 
     IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
         {

@@ -65,6 +65,7 @@ struct iModelBridgeErrorHandling
     {
     struct Config
         {
+        Utf8String m_uploadUrl;
         BeFileName m_crashDir;
         bmap<Utf8String,Utf8String> m_params;
         size_t m_maxDumpsInDir;
