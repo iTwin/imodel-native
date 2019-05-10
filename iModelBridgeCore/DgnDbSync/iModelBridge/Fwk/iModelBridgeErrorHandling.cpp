@@ -73,7 +73,7 @@ void iModelBridgeErrorHandling::Config::SetDefaults()
     m_crashDir.SetNameA(getenv("TEMP"));
     m_crashDir.AppendToPath(L"Crash");
 
-    m_wantFullMemory = true;
+    m_wantFullMemory = false;
     m_writeDumpsToCrashDir = true;
 
     auto trap = getenv("IMODEL_BRIDGE_TRAP");
@@ -81,8 +81,8 @@ void iModelBridgeErrorHandling::Config::SetDefaults()
         {
         if (0 == stricmp(trap, "none"))
             m_writeDumpsToCrashDir = false;
-        else if (0 == stricmp(trap, "smalldump"))
-            m_wantFullMemory = false;
+        else if (0 == stricmp(trap, "full"))
+            m_wantFullMemory = true;
         }
     }
 
