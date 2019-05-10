@@ -1812,6 +1812,8 @@ void RootModelConverter::_FinishConversion()
             {
             if (!IsFileAssignedToBridge(*v8File))
                 continue;
+            // Note: Bridges do not retain their locks on RepositoryLink elements. So, even if another job created this element,
+            // it is safe for this bridge job to update it.
             auto rlinkEd = GetDgnDb().Elements().GetForEdit<RepositoryLink>(GetRepositoryLinkId(*v8File));
             auto rlinkXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspectForEdit(*rlinkEd);
             rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File));
