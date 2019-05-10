@@ -320,7 +320,7 @@ bvector<bvector<DPoint3d>> &interiorLoops
 
     // the active graph has overlapping areas.
     // get the union of these.  (No need to add connects?)
-    vu_mergeOrUnionLoops(graph, VUUNION_UNION); (graph);
+    vu_mergeOrUnionLoops(graph, VUUNION_UNION);
     vu_windingFloodFromNegativeAreaFaces (graph, offsetFragmentExteriorMask, VU_EXTERIOR_EDGE);
     static int doSubtract = 2;
     VuMask outputExterior = VU_EXTERIOR_EDGE;
