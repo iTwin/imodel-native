@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/RegularStory.h"
-#include "BuildingShared/BuildingSharedApi.h"
+#include "BuildingShared/DgnUtils/BuildingDgnUtilsApi.h"
 
 USING_NAMESPACE_BUILDING_SHARED
 
