@@ -28,7 +28,7 @@ USING_NAMESPACE_DWGDB
 BEGIN_DWG_NAMESPACE
 
 //======================================================================================
-// !A helper class of common utilities useful for DWG conversion
+//! A helper class of common utilities useful for DWG conversion
 //===============+===============+===============+===============+===============+======
 struct DwgHelper : BentleyApi::NonCopyableClass
     {
@@ -82,12 +82,16 @@ public:
     DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbEntityCR entity, CurveVector::BoundaryType type = CurveVector::BOUNDARY_TYPE_Outer, TransformCP transform = nullptr);
     DWG_EXPORT static CurveVectorPtr   CreateCurveVectorFrom (DwgDbObjectId entityId, CurveVector::BoundaryType type = CurveVector::BOUNDARY_TYPE_Outer, TransformCP transform = nullptr);
     DWG_EXPORT static ClipVectorPtr    CreateClipperFromEntity (DwgDbObjectId entityId, double* frontClip = nullptr, double* backClip = nullptr, TransformCP entityToClipper = nullptr, TransformCP clipperToModel = nullptr);
+    //! Try converting version string read from DWG/DXF, i.e. AC1032, to an enumerated DWG version value, e.g. DwgFileVersion::R2018
     DWG_EXPORT static DwgFileVersion   CheckDwgVersionString (Utf8StringCR versionString);
+    //! Convert an enumerated DWG version number to a displayable string
     DWG_EXPORT static Utf8String       GetStringFromDwgVersion (DwgFileVersion dwgVersion);
     DWG_EXPORT static bool             SniffDwgFile (BeFileNameCR dwgName, DwgFileVersion* versionOut = nullptr);
     DWG_EXPORT static bool             SniffDxfFile (BeFileNameCR dxfName, DwgFileVersion* versionOut = nullptr);
     DWG_EXPORT static bool             CanOpenForWrite (BeFileNameCR path);
+    //! Get Toolkit's version number embedded in the DLL's suffix
     DWG_EXPORT static uint32_t         GetDwgImporterVersion ();
+    //! Extract the full 8-digit version number from the DLL
     DWG_EXPORT static BentleyStatus    GetImporterModuleVersion (Utf8StringR versionString);
     DWG_EXPORT static bool             GetTransformForSharedParts (TransformP out, double* uniformScale, TransformCR inTrans);
     DWG_EXPORT static bool             NegateScaleForSharedParts (double& partScale, TransformCR blockTransform);

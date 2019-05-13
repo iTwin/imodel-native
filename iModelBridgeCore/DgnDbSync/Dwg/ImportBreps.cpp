@@ -48,7 +48,8 @@ BentleyStatus   DwgBrepExt::_ConvertToBim (ProtocolExtensionContext& context, Dw
         }
 
     // convert ASM Brep as Parasolid Brep only as an option:
-    if (importer.GetOptions().IsAsmAsParasolid())
+    bool    wantBrep = importer.GetOptions().IsAsmAsParasolid();
+    if (wantBrep)
         {
         DwgImporter::ElementCreateParams  params(inputs.GetTargetModelR());
 
@@ -71,9 +72,20 @@ BentleyStatus   DwgBrepExt::_ConvertToBim (ProtocolExtensionContext& context, Dw
 #endif
         }
 
-    // if Brep conversion fails, always falls back to drawing the entity:
+    // if Brep conversion fails, always fall back to drawing the entity:
     if (status != BSISUCCESS)
+        {
+        // if we get here due to a PSolid creation failure, tell the ASM OE to draw the entity as a mesh instead of wireframe:
+        auto& currOptions = importer._GetCurrentGeometryOptions ();
+        auto savedRegenType = currOptions.GetRegenType ();
+        if (wantBrep)
+            currOptions.SetRegenType (DwgGiRegenType::RenderCommand);
+
         status = importer._ImportEntity (results, inputs);
+
+        if (wantBrep)
+            currOptions.SetRegenType (savedRegenType);
+        }
     
     return  status;
     }

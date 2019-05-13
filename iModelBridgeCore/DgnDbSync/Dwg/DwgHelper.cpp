@@ -1869,8 +1869,8 @@ uint32_t    DwgHelper::GetDwgImporterVersion ()
     {
     uint32_t    toolkitVersion = 0, importerVersion = 0;
 #ifdef DLM_API_NUMBER
-    // parse the DLL suffix "####b#"
-    BeAssert (::sscanf(DLM_API_NUMBER, "%ub%u", &toolkitVersion, &importerVersion) == 2);
+    // parse the DLL suffix "####M#"
+    BeAssert (::sscanf(DLM_API_NUMBER, "%uM%u", &toolkitVersion, &importerVersion) == 2);
 #else
     BeAssert (false && "DLM_API_NUMBER should be passed through the makefile!");
 #endif

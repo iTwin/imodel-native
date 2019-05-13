@@ -145,7 +145,7 @@ BentleyApi::WStringCR ImporterTests::GetDwgBridgeRegistryKey ()
     if (s_dwgBridgeRegistryKey.empty())
         {
         // DwgBridge.dll should reside in the same directory:
-        auto handle = ::LoadLibrary (L"DwgBridge.dll");
+        auto handle = ::LoadLibrary (L"DwgBridgeM02.dll");
         if (nullptr != handle)
             {
             auto getRegistryKey = (bool(*)(wchar_t*,const size_t))::GetProcAddress (handle, "?DwgBridge_getBridgeRegistryKey@@YA_NPEA_W_K@Z");

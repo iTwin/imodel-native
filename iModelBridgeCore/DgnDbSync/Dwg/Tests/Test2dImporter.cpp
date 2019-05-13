@@ -20,7 +20,7 @@ struct Test2dImporter : public DwgImporter
         }
     DgnClassId _GetModelType (DwgDbBlockTableRecordCR block) override
         {
-        if (block.IsLayout())
+        if (block.IsPaperspace())
             return GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel);
         return GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingModel);
         }

@@ -286,9 +286,6 @@ void PolylineFactory::ConnectAndChainToPath(bvector<DPoint3d>& shapePoints, bvec
     // add the last point in the CCW path (i.e. the first segment in left array)
     leftSegs.front().GetEndPoint(previousPoint);
     shapePoints.push_back(previousPoint);
-
-    if (!previousPoint.IsEqual(shapePoints.front()))
-        shapePoints.push_back(shapePoints.front());
     }
 
 /*---------------------------------------------------------------------------------**//**
