@@ -1,0 +1,6 @@
+message SolidBySweptSurface
+{
+required ISurface BaseGeometry = 1;
+required ICurve RailCurve = 2;
+}
+
