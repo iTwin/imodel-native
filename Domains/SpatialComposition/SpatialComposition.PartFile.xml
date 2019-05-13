@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
+    >
+
+    <Part Name="SpatialComposition">
+        <SubPart PartName="SpatialCompositionSchema"/>
+        <SubPart PartName="SpatialCompositionApi"/>
+        <SubPart PartName="SpatialCompositionDomain"/>
+        <SubPart PartName="SpatialCompositionElements"/>
+    </Part>
+
+    <Part Name="SpatialCompositionSchema">
+        <SubPart PartName="SpatialComposition" Repository="BisSchemas" PartFile="BisSchemas" />
+    </Part>
+
+    <Part Name="SpatialCompositionApi" BentleyBuildMakeFile="SpatialCompositionApi.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="SpatialComposition"/>
+        </Bindings>
+    </Part>
+    
+    <Part Name="SpatialCompositionElements" BentleyBuildMakeFile="Elements/SpatialCompositionElements.mke" ApiNumber="B02">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="SpatialCompositionApi"/>
+        <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)SpatialCompositionElements$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)SpatialCompositionElements$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="SpatialCompositionDomain" BentleyBuildMakeFile="Domain/SpatialCompositionDomain.mke" ApiNumber="B02">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="SpatialCompositionSchema" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)SpatialCompositionDomain$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)SpatialCompositionDomain$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+</BuildContext>
