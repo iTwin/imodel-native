@@ -3840,17 +3840,11 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
             smGCS = GeoCoordinates::DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnModel);
 
         assert(smGCS != nullptr); // Error creating SM GCS from GeoRef for reprojection
-        
+
+        computedTransform = Transform::FromProduct(Transform::From(globalOrigin.x, globalOrigin.y, globalOrigin.z), computedTransform);
         if (!targetCS->IsEquivalent(*smGCS))
             {
             smGCS->SetReprojectElevation(true);
-
-            //DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
-            //smGCS->UorsFromCartesian(scale, scale);
-            //scale.DifferenceOf(scale, globalOrigin);            
-            
-            computedTransform = Transform::FromProduct(Transform::From(globalOrigin.x, globalOrigin.y, globalOrigin.z), computedTransform);
-            //computedTransform = Transform::FromProduct(Transform::From(scale.x, scale.y, scale.z), computedTransform);
 
             DRange3d smExtent, smExtentUors;
             this->GetRange(smExtent);
@@ -3865,7 +3859,6 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
             if (0 == status || 1 == status)
                 {
                 computedTransform = Transform::FromProduct(approxTransform, computedTransform);
-                computedTransform = Transform::FromProduct(Transform::From(-globalOrigin.x, -globalOrigin.y, -globalOrigin.z), computedTransform);
                 }
             }
         }
@@ -3937,11 +3930,11 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
 
         assert(smGCS != nullptr); // Error creating SM GCS from GeoRef for reprojection
 
+        computedTransform = Transform::FromProduct(Transform::From(globalOrigin.x, globalOrigin.y, globalOrigin.z), computedTransform);
         if (targetCS != nullptr && !targetCS->IsEquivalent(*smGCS))
             {
             smGCS->SetReprojectElevation(true);
 
-            computedTransform = Transform::FromProduct(Transform::From(globalOrigin.x, globalOrigin.y, globalOrigin.z), computedTransform);
 
             DRange3d smExtent, smExtentUors;
             this->GetRange(smExtent);
@@ -3955,7 +3948,6 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
             if (0 == status || 1 == status || 25 == status)
                 {
                 computedTransform = Transform::FromProduct(approxTransform, computedTransform);
-                computedTransform = Transform::FromProduct(Transform::From(-globalOrigin.x, -globalOrigin.y, -globalOrigin.z), computedTransform);
                 }
             }
         }
