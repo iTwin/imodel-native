@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="PDS_Supplemental_DgnDbConversion" nameSpacePrefix="sappdw" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.07" prefix="bsca" />
+    <ECCustomAttributes>
+        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.07">
+            <PrimarySchemaName>pds</PrimarySchemaName>
+            <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>
+            <PrimarySchemaMinorVersion>0</PrimarySchemaMinorVersion>
+            <Precedence>998</Precedence>
+            <Purpose>DgnProjectImporter hints for the PDS schema. Convert specially marked NamedGroups to assemblies.</Purpose>
+            <IsUserSpecific>False</IsUserSpecific>
+        </SupplementalSchemaMetaData>
+    </ECCustomAttributes>
+    <ECClass typeName="PDS_EQUIP" isStruct="True" isDomainClass="True">
+        <ECCustomAttributes>
+            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.07">
+                <NamedGroupIsAssembly>True</NamedGroupIsAssembly>
+            </ECDbClassHint>
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
+
