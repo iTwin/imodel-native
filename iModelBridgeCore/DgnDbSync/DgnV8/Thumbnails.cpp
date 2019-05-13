@@ -165,11 +165,14 @@ bool Converter::ThumbnailUpdateRequired(ViewDefinition const& view)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::GenerateThumbnailsWithExceptionHandling()
     {
-    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+//  __try    
         {
         GenerateThumbnails();
         }
-    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(ReportFailedThumbnails())
+//    __except(EXCEPTION_EXECUTE_HANDLER)
+//        {
+//        ReportFailedThumbnails();
+//        }
     }
 
 /*---------------------------------------------------------------------------------**//**

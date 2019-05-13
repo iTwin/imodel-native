@@ -1636,7 +1636,7 @@ void getOutlierElementInfo (const bvector<BeInt64Id>& elementOutliers, DgnDbCP d
     for (auto eid : elementOutliers)
     {
         auto outlierElement = db->Elements ().GetElement ((DgnElementId)eid.GetValue ());
-        if (!outlierElement.IsNull ())
+        if (outlierElement.IsValid ())
         {
             BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
             auto status = estmt.Prepare (*db, "SELECT Identifier FROM " BIS_SCHEMA (BIS_CLASS_ExternalSourceAspect) " AS xsa WHERE (xsa.Element.Id=?)");

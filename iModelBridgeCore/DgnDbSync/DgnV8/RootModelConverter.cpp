@@ -1156,11 +1156,7 @@ void RootModelConverter::ConvertElementsInModel(ResolvedModelMapping const& v8mm
 //---------------------------------------------------------------------------------------
 void RootModelConverter::ConvertElementsInModelWithExceptionHandling(ResolvedModelMapping const& v8mm)
     {
-    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
-        {
-        ConvertElementsInModel(v8mm);
-        }
-    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(ReportFailedModelConversion(v8mm))
+    ConvertElementsInModel(v8mm);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1325,12 +1321,9 @@ void RootModelConverter::UpdateCalculatedProperties()
 //---------------+---------------+---------------+---------------+---------------+-------
 void RootModelConverter::CreatePresentationRulesWithExceptionHandling()
     {
-    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
-        {
-        CreatePresentationRules();
-        }
-    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(ReportFailedPresentationRules())
+    CreatePresentationRules();
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            12/2018
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -1819,6 +1812,8 @@ void RootModelConverter::_FinishConversion()
             {
             if (!IsFileAssignedToBridge(*v8File))
                 continue;
+            // Note: Bridges do not retain their locks on RepositoryLink elements. So, even if another job created this element,
+            // it is safe for this bridge job to update it.
             auto rlinkEd = GetDgnDb().Elements().GetForEdit<RepositoryLink>(GetRepositoryLinkId(*v8File));
             auto rlinkXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspectForEdit(*rlinkEd);
             rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File));
@@ -2090,7 +2085,7 @@ void RootModelConverter::_SetChangeDetector(bool isUpdating)
     BeAssert(isUpdating == IsUpdating());
 
     m_changeDetector.reset(new ChangeDetector);
-    m_skipECContent = false;
+    // m_skipECContent = m_config.GetOptionValueBool("SkipECContent", false); [CGM] - should be no reason to need to change this value
     }
 
 /*---------------------------------------------------------------------------------**//**

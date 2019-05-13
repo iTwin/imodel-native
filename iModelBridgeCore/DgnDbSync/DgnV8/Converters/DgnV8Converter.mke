@@ -8,6 +8,36 @@ ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors Vancouver's header files; hope
 
 %include mdl.mki
 
+%if !defined (REL_V)
+    REL_V=1
+    VERSIONMISSING=1
+%endif
+
+%if !defined (MAJ_V)
+    MAJ_V=00
+    VERSIONMISSING=1
+%endif
+
+%if !defined (MIN_V)
+    MIN_V=00
+    VERSIONMISSING=1
+%endif
+
+%if !defined (SUBMIN_V)
+    SUBMIN_V=00
+    VERSIONMISSING=1
+%endif
+
+%if defined(VERSIONMISSING)
+
+    always:
+        |-------------------------------------------------------------------------
+        | FYI : NO VERSION SPECIFIED IN ENVIRONMENT! USING $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+        |-------------------------------------------------------------------------
+
+%endif
+
+
 appName     = DgnV8Converter
 baseDir     = $(_MakeFilePath)
 
@@ -29,6 +59,11 @@ baseDir     = $(_MakeFilePath)
 o = $(OutputRootDir)Build/DgnDbSync/$(appName)/
 always:
     ~mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+# Create prg.h header with build version numbers
+#--------------------------------------------------------------------------------------
+%include $(SharedMki)CreateBuildVersionHeader.mki
 
 DgnDbSyncSyncDir = $(SrcRoot)DgnDbSync/
 DgnV8APISrc = $(DgnDbSyncSyncDir)/PublicAPI/DgnDbSync/DgnV8/
@@ -60,6 +95,7 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)Raster.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJsonCpp.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ThreeMx.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)iModelBridge.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)WebServicesClient.lib
 LINKER_LIBRARIES  + user32.lib
 
 LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/DgnPlatform.lib
