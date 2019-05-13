@@ -1,10 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|     $Source: Handlers/RegularStoryHandler.cpp $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "PublicApi/BuildingHandler.h"
+#include "PublicApi/RegularStoryHandler.h"
 
 USING_NAMESPACE_BUILDINGSPATIAL
 
-HANDLER_DEFINE_MEMBERS (BuildingHandler)
+HANDLER_DEFINE_MEMBERS (RegularStoryHandler)

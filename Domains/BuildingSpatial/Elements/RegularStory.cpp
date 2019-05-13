@@ -1,10 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|     $Source: Elements/RegularStory.cpp $
 |
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "PublicApi/Space.h"
+#include "PublicApi/RegularStory.h"
 #include "BuildingShared/DgnUtils/BuildingDgnUtilsApi.h"
 
 USING_NAMESPACE_BUILDING_SHARED
@@ -14,9 +15,9 @@ BEGIN_BUILDINGSPATIAL_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Elonas.Seviakovas               04/2019
 //---------------+---------------+---------------+---------------+---------------+------
-Dgn::Render::GeometryParams Space::_CreateGeometryParameters()
+Dgn::Render::GeometryParams RegularStory::_CreateGeometryParameters()
     {
-    Dgn::Render::GeometryParams parameters(Dgn::SpatialCategory::QueryCategoryId(GetDgnDb().GetDictionaryModel(), BUILDINGSPATIAL_CATEGORY_CODE_Space));
+    Dgn::Render::GeometryParams parameters(Dgn::SpatialCategory::QueryCategoryId(GetDgnDb().GetDictionaryModel(), BUILDINGSPATIAL_CATEGORY_CODE_RegularStory));
     parameters.SetFillTransparency(0.5);
     parameters.SetLineColor(Dgn::ColorDef::White());
     return parameters;
@@ -25,49 +26,48 @@ Dgn::Render::GeometryParams Space::_CreateGeometryParameters()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Nerijus.Jakeliunas               10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnSubCategoryId Space::_GetLabelSubCategoryId() const
+Dgn::DgnSubCategoryId RegularStory::_GetLabelSubCategoryId() const
     {
-    auto categoryId = Dgn::SpatialCategory::QueryCategoryId(GetDgnDb().GetDictionaryModel(), BUILDINGSPATIAL_CATEGORY_CODE_Space);
+    auto categoryId = Dgn::SpatialCategory::QueryCategoryId(GetDgnDb().GetDictionaryModel(), BUILDINGSPATIAL_CATEGORY_CODE_RegularStory);
     return Dgn::DgnSubCategory::QuerySubCategoryId(GetDgnDb(), Dgn::DgnSubCategory::CreateCode(GetDgnDb(), categoryId, BUILDINGSPATIAL_SUBCATEGORY_CODE_SpatialElementLabels));
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Joana.Smitaite                  11/2018
+* @bsimethod                                    Elonas.Seviakovas               04/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnClassId Space::QueryClassId(Dgn::DgnDbR db)
+Dgn::DgnClassId RegularStory::QueryClassId (Dgn::DgnDbR db)
     {
-    return Dgn::DgnClassId(db.Schemas().GetClassId(BUILDINGSPATIAL_SCHEMA_NAME, BUILDINGSPATIAL_CLASS_Space));
+    return Dgn::DgnClassId(db.Schemas().GetClassId(BUILDINGSPATIAL_SCHEMA_NAME, BUILDINGSPATIAL_CLASS_RegularStory));
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Joana.Smitaite                  11/2018
+* @bsimethod                                    Elonas.Seviakovas               04/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpacePtr Space::Create (Dgn::DgnModelCR model)
+RegularStoryPtr RegularStory::Create (Dgn::DgnModelCR model)
     {
-    Dgn::DictionaryModelR dictionaryModel = model.GetDgnDb ().GetDictionaryModel ();
-    Dgn::DgnCategoryId categoryId = Dgn::SpatialCategory::QueryCategoryId (dictionaryModel, BUILDINGSPATIAL_CATEGORY_CODE_Space);
+    Dgn::DictionaryModelR dictionaryModel = model.GetDgnDb().GetDictionaryModel();
+    Dgn::DgnCategoryId categoryId = Dgn::SpatialCategory::QueryCategoryId (dictionaryModel, BUILDINGSPATIAL_CATEGORY_CODE_RegularStory);
 
-    if (!categoryId.IsValid ())
+    if (!categoryId.IsValid())
         return nullptr;
 
-    Dgn::DgnClassId classId = QueryClassId (model.GetDgnDb ());
-    Dgn::GeometricElement3d::CreateParams createParams (model.GetDgnDb (), model.GetModelId (), classId, categoryId);
+    Dgn::DgnClassId classId = QueryClassId(model.GetDgnDb());
+    Dgn::GeometricElement3d::CreateParams createParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId);
     
-    return new Space (createParams);
+    return new RegularStory(createParams);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Elonas.Seviakovas               03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Space::SetFootprintShape
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas               03/2019
+//---------------+---------------+---------------+---------------+---------------+------
+bool RegularStory::SetFootprintShape
 (
     CurveVectorCPtr curveVector,
     bool updatePlacementOrigin
 )
     {
     Dgn::Render::GeometryParams geometryParameters = _CreateGeometryParameters();
-
     return DgnGeometryUtils::UpdateExtrusionGeometry(*this, &geometryParameters, _GetLabelSubCategoryId(), curveVector, updatePlacementOrigin);
     }
-    
+
 END_BUILDINGSPATIAL_NAMESPACE

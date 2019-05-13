@@ -4,6 +4,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <DgnPlatform/ElementHandler.h>
+#include <BuildingSpatial/Domain/BuildingSpatialMacros.h>
+#include <BuildingSpatial/Elements/Building.h>
 
 BEGIN_BUILDINGSPATIAL_NAMESPACE
 
