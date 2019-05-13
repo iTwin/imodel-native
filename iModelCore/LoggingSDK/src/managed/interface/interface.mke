@@ -1,0 +1,32 @@
+#--------------------------------------------------------------------------------------
+#
+#   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+%include $(SrcRoot)LoggingSdk/mki/LoggingSdkCommon.mki
+
+programName     = Bentley.logging$(DLM_API_NUMBER)
+prodSrc         = $(_MakeFilePath)
+
+always:
+    !~@mkdir $(o)
+
+#-----------------------------------------------------------------------
+#   Compile C# Modules
+#-----------------------------------------------------------------------
+
+ASSEMBLY_DLL = 1
+ASSEMBLY_DESCRIPTION = Logging
+ASSEMBLY_PRODUCT_NAME = Logging
+ASSEMBLY_VERSION = 2.0.0.0
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE = $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_SOURCE_LIST = $(prodSrc)bsilog.cs \
+$(prodSrc)EmptyLogger.cs \
+$(prodSrc)LoggerRegistry.cs \
+$(prodSrc)LoggerConfig.cs
+
+%include $(SharedMki)VersionedPartLinkCSharpAssembly.mki
+
+#-----------------------------------------------------------------------

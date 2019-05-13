@@ -1,0 +1,57 @@
+#--------------------------------------------------------------------------------------
+#
+#   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+
+%include mdl.mki
+%include $(SrcRoot)LoggingSdk/mki/LoggingSdkCommon.mki
+
+programName         = Bentley.Logging.test-2.0
+prodSrc             = $(_MakeFilePath)
+
+ASSEMBLY_REFERENCE           = $(BuildContextDelivery)Bentley.logging-2.0.dll
+%include csrefapnd.mki
+
+ASSEMBLY_REFERENCE           = $(BuildContextDelivery)Bentley.Logging.console-2.0.dll
+%include csrefapnd.mki
+
+ASSEMBLY_REFERENCE           = $(BuildContextDelivery)Bentley.Logging.log4net-2.0.dll
+%include csrefapnd.mki
+
+ASSEMBLY_REFERENCE           = $(BuildContextDelivery)Bentley.Logging.interop-2.0.dll
+%include csrefapnd.mki
+
+
+always:
+    !~@mkdir $(o)
+
+#-----------------------------------------------------------------------
+#   Compile C# Modules
+#-----------------------------------------------------------------------
+
+ASSEMBLY_CONSOLE = 1
+ASSEMBLY_VERSION = 2.0.0.0
+ASSEMBLY_DESCRIPTION = Logging Test App
+ASSEMBLY_PRODUCT_NAME = Logging Test App
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE = $(ASSEMBLY_KEYFILE_DEFAULT)
+
+
+ASSEMBLY_SOURCE_LIST        = $(prodSrc)class1.cs
+ASSEMBLY_TARGET_DIRECTORY   = $(atpDir)
+ASSEMBLY_SYMB_DIR           = $(atpDir)
+
+
+%include $(SharedMki)VersionedPartLinkCSharpAssembly.mki
+
+#-----------------------------------------------------------------------
+#   Copy Supporting Files
+#-----------------------------------------------------------------------
+$(atpDir)example_log4net_configuration.xml : $(prodSrc)example_log4net_configuration.xml
+    $(bcopyCmd) $(stdBcopyOpts)  $(prodSrc)example_log4net_configuration.xml $(atpDir)
+
+$(BuildContextDelivery)example_log4net_configuration.xml :  $(atpDir)example_log4net_configuration.xml
+    $(LinkFirstDepToFirstTarget)
+#-----------------------------------------------------------------------
