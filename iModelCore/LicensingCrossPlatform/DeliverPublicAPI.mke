@@ -1,0 +1,9 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+$(BuildContext)PublicAPI/Licensing : $(_MakeFilePath)PublicAPI/Licensing
+    $(LinkFirstDepToFirstTargetAsDirectory)
