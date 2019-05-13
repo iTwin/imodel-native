@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/Threading/LightThreadPool.h $
 |    $RCSfile: LightThreadPool.h,v $
 |   $Revision: 1.0 $
 |       $Date: 2015/10/29 15:38:13 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

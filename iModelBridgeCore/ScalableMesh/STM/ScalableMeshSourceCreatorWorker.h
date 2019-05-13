@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshSourceCreatorWorker.h $
 |    $RCSfile: ScalableMeshSourceCreator.h,v $
 |   $Revision: 1.45 $
 |       $Date: 2015/07/15 11:02:24 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -51,8 +49,6 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         uint32_t m_nbWorkers;            
         BeDuration m_lockSleeper;  
 
-        HFCPtr<MeshIndexType> m_pDataIndex;
-
         HFCPtr<MeshIndexType> GetDataIndex();
 
         void FreeDataIndex();        
@@ -79,18 +75,25 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
 
         uint32_t GetNbNodesPerTask(size_t nbNodes) const;
 
+        /*
         StatusInt CloseSqlFiles();
 
         StatusInt OpenSqlFiles(bool readOnly, bool needSisterMainLockFile);
-
+        */
 
         
       
     protected:
+
+
     
     public:
-        explicit                            Impl(const WChar*            scmFileName, uint32_t nbWorkers);
-        explicit                            Impl(const IScalableMeshPtr& iDTMFilePtr, uint32_t nbWorkers);
+
+
+        virtual void SetShareable(bool isShareable) override;
+
+        explicit                            Impl(const WChar*            scmFileName, uint32_t nbWorkers, bool isSharable);
+        explicit                            Impl(const IScalableMeshPtr& iDTMFilePtr, uint32_t nbWorkers, bool isSharable);
 
         
 
@@ -116,6 +119,11 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         StatusInt                    ProcessGenerateTask(BeXmlNodeP pXmlTaskNode);  
 
         StatusInt                    ProcessTextureTask(BeXmlNodeP pXmlTaskNode);
+
+
+        StatusInt                    OpenSqlFiles(bool readOnly, bool needSisterMainLockFile);
+
+        StatusInt                    CloseSqlFiles();        
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

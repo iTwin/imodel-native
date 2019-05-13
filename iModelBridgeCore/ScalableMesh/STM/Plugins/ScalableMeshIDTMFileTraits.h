@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/Plugins/ScalableMeshIDTMFileTraits.h $
 |    $RCSfile: ScalableMeshIDTMFileTraits.h,v $
 |   $Revision: 1.8 $
 |       $Date: 2011/08/10 15:10:27 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

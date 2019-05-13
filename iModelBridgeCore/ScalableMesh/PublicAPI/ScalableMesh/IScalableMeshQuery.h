@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: PublicAPI/ScalableMesh/IScalableMeshQuery.h $
 |    $RCSfile: IScalableMeshPointQuery.h,v $
 |   $Revision: 1.17 $
 |       $Date: 2012/11/29 17:30:53 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

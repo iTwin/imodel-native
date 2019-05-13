@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshContentConfigPersistance.cpp $
 |    $RCSfile: ScalableMeshContentConfigPersistance.cpp,v $
 |   $Revision: 1.19 $
 |       $Date: 2012/02/16 22:19:31 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>

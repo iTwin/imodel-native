@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/GTests/ScalableMeshUnitTests.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -12,10 +10,14 @@
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/IScalableMeshSaveAs.h>
 #include <ScalableMesh/IScalableMeshSourceCreator.h>
+#include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 #include <random>
 #include <TerrainModel/Core/IDTM.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/ClipVector.h>
+
+
+
 #include "SMUnitTestDisplayQuery.h"
 #include "../../STM/Edits/ClipUtilities.h"
 #ifndef VANCOUVER_API
@@ -1442,6 +1444,13 @@ TEST_P(ScalableMeshGenerationTestWithParams, FromSourceCreation)
     EXPECT_EQ(status == SUCCESS, true);    
 
     ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_POINT, m_filename.c_str());        
+
+    //Ensure that the source data is always meshed using 2.5D mesher.
+    ScalableMesh::SourceImportConfig& sourceImportConfig = sourceP->EditConfig();
+    ScalableMesh::Import::ScalableMeshData data = sourceImportConfig.GetReplacementSMData();
+    data.SetRepresenting3dData(false);
+    sourceImportConfig.SetReplacementSMData(data);
+
     smCreatorPtr->EditSources().Add(sourceP);
     smCreatorPtr->SaveToFile();
     SMStatus smStatus = smCreatorPtr->Create();

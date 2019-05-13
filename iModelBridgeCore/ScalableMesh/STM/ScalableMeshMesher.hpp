@@ -1,6 +1,5 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: STM/ScalableMeshMesher.hpp $
 //:>    $RCSfile: ScalableMeshQuadTreeBCLIBFilters.hpp,v $
 //:>   $Revision: 1.28 $
 //:>       $Date: 2011/04/27 17:17:56 $
@@ -2139,6 +2138,8 @@ if (stitchedPoints.size() != 0 &&!isColinear)// return false; //nothing to stitc
 //            for (auto& def : node->m_featureDefinitions) if (!def.Discarded()) def.Discard();
             for (auto& polyline : features)
                 {
+                if (polyline.size() == 0) continue;
+
                 DRange3d extent = DRange3d::From(polyline);
 #if 0 
                     {

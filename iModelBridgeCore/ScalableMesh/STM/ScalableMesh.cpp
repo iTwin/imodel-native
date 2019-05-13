@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMesh.cpp $
 |    $RCSfile: ScalableMesh.cpp,v $
 |   $Revision: 1.106 $
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -2178,9 +2176,40 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
             }
         }
 	MergePolygonSets(bounds);
-	current = bounds[0];
+	
+    if (bounds.size() > 0)
+        {
+        //TFS# 1023914 - If multiple bounds try to obtain a boundary from a DTM created withh all points of all bounds.
+        if (bounds.size() > 1)
+            {
+            BcDTMPtr bcDtm(BcDTM::Create());
 
+            for (auto& bound : bounds)
+                {
+                bcDtm->AddPoints(bound);
+                }    
 
+            DTMStatusInt status = bcDtm->Triangulate ();
+
+            if (status == SUCCESS)
+                {        
+                BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPointArray pointArray;
+                status = bcDtm->GetBoundary(pointArray);
+
+                if (status == SUCCESS)
+                    {        
+                    current.clear();
+                    current = pointArray;
+                    }                
+                }        
+            }
+
+        if (current.size() == 0)
+            {
+            current = bounds[0];
+            }
+        }
+        
 	//polyface->Compress();
 	//size_t numOpen = 0, numClosed = 0;
 /*	PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface);
@@ -2825,6 +2854,8 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
     bvector<DPoint3d> clipPolyData;
     m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipPolyData);
+    if (clipPolyData.empty())
+        return true;
 
     DRange3d extent = DRange3d::From(&clipPolyData[0], (int)clipPolyData.size());
 
@@ -3809,17 +3840,11 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
             smGCS = GeoCoordinates::DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnModel);
 
         assert(smGCS != nullptr); // Error creating SM GCS from GeoRef for reprojection
-        
+
+        computedTransform = Transform::FromProduct(Transform::From(globalOrigin.x, globalOrigin.y, globalOrigin.z), computedTransform);
         if (!targetCS->IsEquivalent(*smGCS))
             {
             smGCS->SetReprojectElevation(true);
-
-            //DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
-            //smGCS->UorsFromCartesian(scale, scale);
-            //scale.DifferenceOf(scale, globalOrigin);            
-            
-            computedTransform = Transform::FromProduct(Transform::From(globalOrigin.x, globalOrigin.y, globalOrigin.z), computedTransform);
-            //computedTransform = Transform::FromProduct(Transform::From(scale.x, scale.y, scale.z), computedTransform);
 
             DRange3d smExtent, smExtentUors;
             this->GetRange(smExtent);
@@ -3834,7 +3859,6 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
             if (0 == status || 1 == status)
                 {
                 computedTransform = Transform::FromProduct(approxTransform, computedTransform);
-                computedTransform = Transform::FromProduct(Transform::From(-globalOrigin.x, -globalOrigin.y, -globalOrigin.z), computedTransform);
                 }
             }
         }
@@ -3906,11 +3930,11 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
 
         assert(smGCS != nullptr); // Error creating SM GCS from GeoRef for reprojection
 
+        computedTransform = Transform::FromProduct(Transform::From(globalOrigin.x, globalOrigin.y, globalOrigin.z), computedTransform);
         if (targetCS != nullptr && !targetCS->IsEquivalent(*smGCS))
             {
             smGCS->SetReprojectElevation(true);
 
-            computedTransform = Transform::FromProduct(Transform::From(globalOrigin.x, globalOrigin.y, globalOrigin.z), computedTransform);
 
             DRange3d smExtent, smExtentUors;
             this->GetRange(smExtent);
@@ -3924,7 +3948,6 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
             if (0 == status || 1 == status || 25 == status)
                 {
                 computedTransform = Transform::FromProduct(approxTransform, computedTransform);
-                computedTransform = Transform::FromProduct(Transform::From(-globalOrigin.x, -globalOrigin.y, -globalOrigin.z), computedTransform);
                 }
             }
         }

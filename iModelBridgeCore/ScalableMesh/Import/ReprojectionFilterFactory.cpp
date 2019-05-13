@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: Import/ReprojectionFilterFactory.cpp $
 |    $RCSfile: ReprojectionFilterFactory.cpp,v $
 |   $Revision: 1.9 $
 |       $Date: 2012/02/16 00:36:54 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>

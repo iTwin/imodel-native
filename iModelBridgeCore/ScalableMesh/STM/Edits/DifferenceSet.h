@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/Edits/DifferenceSet.h $
 |    $RCSfile: DifferenceSet.h,v $
 |   $Revision: 1.0 $
 |       $Date: 2015/09/08 10:27:17 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

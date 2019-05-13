@@ -1,8 +1,6 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: ScalableMeshCore_Vancouver.mke $
-#
-#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #----------------------------------------------------------------------------------------
 
@@ -275,6 +273,8 @@ $(o)ScalableMeshProgressiveQuery$(oext) : $(stmDir)ScalableMeshProgressiveQuery.
 $(o)ScalableMeshProgressiveQueryPlanner$(oext) : $(stmDir)ScalableMeshProgressiveQueryPlanner.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)ScalableMeshProgressiveContourQueryPlanner$(oext) : $(stmDir)ScalableMeshProgressiveContourQueryPlanner.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshContourExtractor$(oext) : $(stmDir)ScalableMeshContourExtractor.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)ScalableMeshVolume$(oext) : $(stmDir)ScalableMeshVolume.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 

@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: STM/ScalableMeshLib.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -75,44 +73,6 @@ STMAdmin& ScalableMeshLib::Host::_SupplySTMAdmin()
     return *new STMAdmin();
     }
 #endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Richard.Bois  02/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void InitializeScalableMeshLogging()
-    {
-    // Priority: 1- App  2- Env. Variable  3- default SM logging config file  4- Console
-    if(NativeLogging::LoggingConfig::IsProviderActive())
-        return; // Provider already setup by app
-
-#if _WIN32
-    // Setup logging system
-    BeFileName appDir;
-    WChar smDllFile[MAX_PATH];
-    ::GetModuleFileNameW(NULL, smDllFile, _countof(smDllFile));
-    BeFileName dllDir(BeFileName::DevAndDir, smDllFile);
-    appDir.AssignOrClear(dllDir);
-    BeFileName loggingConfigFile(_wgetenv(L"SCALABLEMESH_LOGGING_CONFIG_FILE"));
-    if(!BeFileName::DoesPathExist(loggingConfigFile))
-        {
-        loggingConfigFile.AssignOrClear(appDir);
-        loggingConfigFile.AppendToPath(s_configFileName);
-        }
-
-    if(BeFileName::DoesPathExist(loggingConfigFile))
-        {
-        NativeLogging::LoggingConfig::SetMaxMessageSize(10000);
-        NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, loggingConfigFile.c_str());
-        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
-        }
-    else
-        {
-#endif
-        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
-#if _WIN32
-        }
-#endif
-    }
 
 #ifndef LINUX_SCALABLEMESH_BUILD
 
@@ -211,7 +171,7 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     Utf8String pemFileName;
 
-#ifdef VANCOUVER_API //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error.
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)  //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error.
     GetCertificateAutoritiesFileUrl(pemFileName);
     curl_easy_setopt(curl, CURLOPT_CAINFO, pemFileName.c_str());
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
@@ -517,9 +477,9 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
 
         if (!pemFileName.empty())
             {
-#ifdef VANCOUVER_API
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
             pCertAutorityAuth->SetCertificateAuthFileUrl(WString(pemFileName.c_str(), true));
-#else	
+#else
             //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error. 
             //pCertAutorityAuth->SetCertificateAuthFileUrl(pemFileName);
 #endif
@@ -601,6 +561,44 @@ void ScalableMeshLib::Host::Initialize()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois  02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScalableMeshLib::Host::InitializeLogging()
+    {
+    // Priority: 1- App  2- Env. Variable  3- default SM logging config file  4- Console
+    if(NativeLogging::LoggingConfig::IsProviderActive())
+        return; // Provider already setup by app
+
+#if _WIN32
+    // Setup logging system
+    BeFileName appDir;
+    WChar smDllFile[MAX_PATH];
+    ::GetModuleFileNameW(NULL, smDllFile, _countof(smDllFile));
+    BeFileName dllDir(BeFileName::DevAndDir, smDllFile);
+    appDir.AssignOrClear(dllDir);
+    BeFileName loggingConfigFile(_wgetenv(L"SCALABLEMESH_LOGGING_CONFIG_FILE"));
+    if(!BeFileName::DoesPathExist(loggingConfigFile))
+        {
+        loggingConfigFile.AssignOrClear(appDir);
+        loggingConfigFile.AppendToPath(s_configFileName);
+        }
+
+    if(BeFileName::DoesPathExist(loggingConfigFile))
+        {
+        NativeLogging::LoggingConfig::SetMaxMessageSize(10000);
+        NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, loggingConfigFile.c_str());
+        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
+        }
+    else
+        {
+#endif
+        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
+#if _WIN32
+        }
+#endif
+
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshLib::Host::Terminate(bool onProgramExit)
@@ -675,8 +673,6 @@ void ScalableMeshLib::Host::RegisterScalableMesh(const WString& path, IScalableM
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     {
-    InitializeScalableMeshLogging();
-
     if (!ImageppLib::IsInitialized())
         {
         t_ippLibHost = new SMImagePPHost();

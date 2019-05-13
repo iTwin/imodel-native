@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: Import/SourcePlugin.h $
 |    $RCSfile: SourcePlugin.h,v $
 |   $Revision: 1.10 $
 |       $Date: 2012/02/16 00:36:46 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

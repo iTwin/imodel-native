@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshQuery.cpp $
 |    $RCSfile: ScalableMeshQuery.cpp,v $
 |   $Revision: 1.41 $
 |       $Date: 2012/11/29 17:30:37 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1279,7 +1277,7 @@ int ScalableMeshMesh::AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFac
                 }
             }*/
 
-            if (m_nbFaceIndexes > 0)
+            if (m_nbFaceIndexes > 0 && m_pUvIndex != nullptr)
             {
                 memcpy(newUvIndex, m_pUvIndex, sizeof(int32_t) * m_nbFaceIndexes);
                 delete[] m_pUvIndex;
