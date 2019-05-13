@@ -1396,7 +1396,7 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV22_ParsesInstanceETagDir
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24SkipTokenSuppliedAndSentBack_IgnoresSkipTokens)
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24SkipTokenSuppliedAndSentBack_RequestSentWithoutSkipToken)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
@@ -1411,14 +1411,14 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24SkipTokenSuppliedAndSe
 
     auto result = client->SendQueryRequest(StubWSQuery(), nullptr, "SomeSkipToken")->GetResult();
     EXPECT_TRUE(result.IsSuccess());
-    EXPECT_TRUE(result.GetValue().IsFinal());
-    EXPECT_EQ("", result.GetValue().GetSkipToken());
+    EXPECT_FALSE(result.GetValue().IsFinal());
+    EXPECT_EQ("ServerSkipToken", result.GetValue().GetSkipToken());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25AndHttpResponseHasSkipTokenButItWasNotSent_DoesNotAddSkipTokenToResponse)
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25AndHttpResponseHasSkipTokenButItWasNotSent_AddSkipTokenToResponse)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
@@ -1428,8 +1428,8 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25AndHttpResponseHasSkip
 
     auto result = client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->GetResult();
     EXPECT_TRUE(result.IsSuccess());
-    EXPECT_TRUE(result.GetValue().IsFinal());
-    EXPECT_EQ("", result.GetValue().GetSkipToken());
+    EXPECT_FALSE(result.GetValue().IsFinal());
+    EXPECT_EQ("ServerSkipToken", result.GetValue().GetSkipToken());
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -229,7 +229,7 @@ struct IWSRepositoryClient
         //! @param query
         //! @param eTag send previous eTag to check if data was modified and avoid sending if not.
         //! @param skipToken allows using paged mechanism if supported by server and repository. Used to "skip" previous response data.
-        //! Supply IWSRepositoryClient::InitialSkipToken to start paged requests. 
+        //! If server needs an initial skip token to start the paged mechanism supply IWSRepositoryClient::InitialSkipToken
         //! For sequental page requests supply previous response skipToken if response was not final.
         //! @param ct
         virtual AsyncTaskPtr<WSObjectsResult> SendQueryRequest
@@ -251,7 +251,7 @@ struct IWSRepositoryClient
         //! @param query
         //! @param eTag send previous eTag to check if data was modified and avoid sending if not.
         //! @param skipToken allows using paged mechanism if supported by server and repository. Used to "skip" previous response data.
-        //! Supply IWSRepositoryClient::InitialSkipToken to start paged requests. 
+        //! If server needs an initial skip token to start the paged mechanism supply IWSRepositoryClient::InitialSkipToken
         //! For sequental page requests supply previous response skipToken if response was not final.
         //! @param options optional request options
         //! @param ct
