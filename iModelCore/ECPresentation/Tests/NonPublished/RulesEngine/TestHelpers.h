@@ -753,7 +753,7 @@ struct TestRulesetCallbacksHandler : IRulesetCallbacksHandler
         if (nullptr != m_onCreatedHandler)
             m_onCreatedHandler(ruleset);
         }
-    virtual void _OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetCR ruleset) override
+    virtual void _OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetR ruleset) override
         {
         if (nullptr != m_onDisposedHandler)
             m_onDisposedHandler(ruleset);

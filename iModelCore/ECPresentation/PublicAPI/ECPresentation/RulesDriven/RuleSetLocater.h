@@ -36,7 +36,7 @@ struct IRulesetCallbacksHandler
     //! Called when a ruleset is about to be disposed.
     //! @param[in] locater Locater that disposed the ruleset.
     //! @param[in] ruleset The ruleset that was created.
-    virtual void _OnRulesetDispose(RuleSetLocaterCR locater, PresentationRuleSetCR ruleset) {}
+    virtual void _OnRulesetDispose(RuleSetLocaterCR locater, PresentationRuleSetR ruleset) {}
     };
 
 //=======================================================================================
@@ -48,7 +48,7 @@ struct IRulesetCallbacksHandler
 struct RuleSetLocater : IRefCounted
 {
 private:
-    IRulesetCallbacksHandler* m_rulesetCallbacksHandler;
+    mutable bset<IRulesetCallbacksHandler*> m_rulesetCallbacksHandlers;
     mutable bvector<PresentationRuleSetPtr> m_createdRulesets;
     mutable BeMutex m_mutex;
 
@@ -86,13 +86,11 @@ protected:
 
 //__PUBLISH_SECTION_END__
 public:
-    ECPRESENTATION_EXPORT void SetRulesetCallbacksHandler(IRulesetCallbacksHandler* handler);
+    ECPRESENTATION_EXPORT void AddRulesetCallbacksHandler(IRulesetCallbacksHandler& handler) const;
+    ECPRESENTATION_EXPORT void RemoveRulesetCallbacksHandler(IRulesetCallbacksHandler& handler) const;
 
 //__PUBLISH_SECTION_START__
 public:
-    //! Constructor.
-    RuleSetLocater() : m_rulesetCallbacksHandler(nullptr) {}
-
     //! Destructor.
     virtual ~RuleSetLocater() {}
 
@@ -185,47 +183,53 @@ public:
 //! ruleset IDs to the lookup ruleset ID.
 // @bsiclass                                   Aidas.Vaiksnoras                05/2017
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SupplementalRuleSetLocater : RefCounted<RuleSetLocater>
+struct EXPORT_VTABLE_ATTRIBUTE SupplementalRuleSetLocater : RefCounted<RuleSetLocater>, IRulesetCallbacksHandler
 {
 private:
     RuleSetLocaterCPtr m_locater;
 
 private:
-    SupplementalRuleSetLocater(RuleSetLocater const& locater) : m_locater(&locater) {}
+    ECPRESENTATION_EXPORT SupplementalRuleSetLocater(RuleSetLocater const& locater);
 
 protected:
     ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
     bvector<Utf8String> _GetRuleSetIds() const override {return m_locater->GetRuleSetIds();}
     void _InvalidateCache(Utf8CP rulesetId) override {const_cast<RuleSetLocater&>(*m_locater).InvalidateCache(rulesetId);}
     int _GetPriority() const override {return m_locater->GetPriority();}
+    void _OnRulesetCreated(RuleSetLocaterCR, PresentationRuleSetR ruleset) override { OnRulesetCreated(ruleset); }
+    void _OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetR ruleset) override { OnRulesetDisposed(ruleset); }
 
 public:
     //! Create a new locater.
     static RefCountedPtr<SupplementalRuleSetLocater> Create(RuleSetLocater const& locater) {return new SupplementalRuleSetLocater(locater);}
+    ECPRESENTATION_EXPORT ~SupplementalRuleSetLocater();
 };
 
 //=======================================================================================
 //! Ruleset locater that wraps another locater and returns only non-supplemental rulesets
 // @bsiclass                                   Haroldas.Vitunskas              11/2018
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE NonSupplementalRuleSetLocater : RefCounted<RuleSetLocater>
-    {
-    private:
-        RuleSetLocaterCPtr m_locater;
+struct EXPORT_VTABLE_ATTRIBUTE NonSupplementalRuleSetLocater : RefCounted<RuleSetLocater>, IRulesetCallbacksHandler
+{
+private:
+    RuleSetLocaterCPtr m_locater;
 
-    private:
-        NonSupplementalRuleSetLocater(RuleSetLocater const& locater) : m_locater(&locater) {}
+private:
+    ECPRESENTATION_EXPORT NonSupplementalRuleSetLocater(RuleSetLocater const& locater);
 
-    protected:
-        ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
-        bvector<Utf8String> _GetRuleSetIds() const override { return m_locater->GetRuleSetIds(); }
-        void _InvalidateCache(Utf8CP rulesetId) override { const_cast<RuleSetLocater&>(*m_locater).InvalidateCache(rulesetId); }
-        int _GetPriority() const override { return m_locater->GetPriority(); }
+protected:
+    ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
+    bvector<Utf8String> _GetRuleSetIds() const override { return m_locater->GetRuleSetIds(); }
+    void _InvalidateCache(Utf8CP rulesetId) override { const_cast<RuleSetLocater&>(*m_locater).InvalidateCache(rulesetId); }
+    int _GetPriority() const override { return m_locater->GetPriority(); }
+    void _OnRulesetCreated(RuleSetLocaterCR, PresentationRuleSetR ruleset) override { OnRulesetCreated(ruleset); }
+    void _OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetR ruleset) override { OnRulesetDisposed(ruleset); }
 
-    public:
-        //! Create a new locater.
-        static RefCountedPtr<NonSupplementalRuleSetLocater> Create(RuleSetLocater const& locater) { return new NonSupplementalRuleSetLocater(locater); }
-    };
+public:
+    //! Create a new locater.
+    static RefCountedPtr<NonSupplementalRuleSetLocater> Create(RuleSetLocater const& locater) { return new NonSupplementalRuleSetLocater(locater); }
+    ECPRESENTATION_EXPORT ~NonSupplementalRuleSetLocater();
+};
 
 //=======================================================================================
 //! Ruleset locater that stores in memory rulesets
@@ -382,7 +386,7 @@ protected:
     ECPRESENTATION_EXPORT bvector<Utf8String> _GetRuleSetIds() const override;
 
     // IRulesetCallbacksHandler
-    ECPRESENTATION_EXPORT void _OnRulesetDispose(RuleSetLocaterCR locater, PresentationRuleSetCR ruleset) override;
+    ECPRESENTATION_EXPORT void _OnRulesetDispose(RuleSetLocaterCR locater, PresentationRuleSetR ruleset) override;
     ECPRESENTATION_EXPORT void _OnRulesetCreated(RuleSetLocaterCR locater, PresentationRuleSetR ruleset) override;
 
 public:

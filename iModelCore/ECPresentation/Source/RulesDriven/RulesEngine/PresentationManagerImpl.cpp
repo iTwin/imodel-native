@@ -607,7 +607,7 @@ void RulesDrivenECPresentationManagerImpl::_OnRulesetCreated(RuleSetLocaterCR, P
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManagerImpl::_OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetCR ruleset)
+void RulesDrivenECPresentationManagerImpl::_OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetR ruleset)
     {
     m_rulesetECExpressionsCache->Clear(ruleset.GetRuleSetId().c_str());
     m_updateHandler->NotifyRulesetDisposed(ruleset);

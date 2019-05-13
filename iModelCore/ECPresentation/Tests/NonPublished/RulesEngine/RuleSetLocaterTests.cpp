@@ -378,7 +378,7 @@ TEST(RuleSetLocater, CallsRulesetCallbacksHandlerWhenHandlerIsSetAfterOnRulesetC
         });
 
     // make sure the handler got called
-    locater->SetRulesetCallbacksHandler(&handler);
+    locater->AddRulesetCallbacksHandler(handler);
     EXPECT_EQ(1, onCreatedCallbackCallCount);
     }
 
@@ -406,7 +406,7 @@ TEST(RuleSetLocater, DoesntCallRulesetCallbacksHandlerWhenHandlerIsSetAfterOnRul
         ++onDisposedCallbackCallCount;
         });
 
-    locater->SetRulesetCallbacksHandler(&handler);
+    locater->AddRulesetCallbacksHandler(handler);
     EXPECT_EQ(0, onCreatedCallbackCallCount);
     EXPECT_EQ(0, onDisposedCallbackCallCount);
     }
@@ -603,7 +603,7 @@ TEST (DirectoryRuleSetLocater, CallsRulesetCallbacksHandlerWhenNecessary)
     handler.SetCreatedHandler([&callbackRuleset](PresentationRuleSetCR ruleset){callbackRuleset = &ruleset;});
 
     RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create(directory.GetNameUtf8().c_str());
-    locater->SetRulesetCallbacksHandler(&handler);
+    locater->AddRulesetCallbacksHandler(handler);
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
     ASSERT_EQ(callbackRuleset, rulesets[0].get());
     }
@@ -638,7 +638,7 @@ TEST (DirectoryRuleSetLocater, DisposesAllCachedRulesetsWhenInvalidateRequestedW
     size_t disposedRulesetsCount = 0;
     TestRulesetCallbacksHandler handler;
     handler.SetDisposedHandler([&disposedRulesetsCount](PresentationRuleSetCR){disposedRulesetsCount++;});
-    locater->SetRulesetCallbacksHandler(&handler);
+    locater->AddRulesetCallbacksHandler(handler);
 
     locater->InvalidateCache();
     EXPECT_EQ(2, disposedRulesetsCount);
@@ -676,7 +676,7 @@ TEST (DirectoryRuleSetLocater, DisposesRulesetWithSpecifiedIdWhenInvalidateReque
     size_t disposedRulesetsCount = 0;
     TestRulesetCallbacksHandler handler;
     handler.SetDisposedHandler([&disposedRulesetsCount](PresentationRuleSetCR){disposedRulesetsCount++;});
-    locater->SetRulesetCallbacksHandler(&handler);
+    locater->AddRulesetCallbacksHandler(handler);
 
     locater->InvalidateCache("Ruleset1");
     EXPECT_EQ(1, disposedRulesetsCount);
@@ -746,7 +746,7 @@ TEST(FileRuleSetLocater, LocateRuleSets_RefreshesRulesetAfterModification)
     handler.SetDisposedHandler([&disposedRuleset](PresentationRuleSetCR ruleset){disposedRuleset = &ruleset;});
 
     RuleSetLocaterPtr locater = FileRuleSetLocater::Create(path);
-    locater->SetRulesetCallbacksHandler(&handler);
+    locater->AddRulesetCallbacksHandler(handler);
 
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
     ASSERT_EQ(1, rulesets.size());
@@ -783,7 +783,7 @@ TEST (FileRuleSetLocater, DisposesCachedRulesetWhenInvalidateRequestedWithNullRu
     size_t disposedRulesetsCount = 0;
     TestRulesetCallbacksHandler handler;
     handler.SetDisposedHandler([&disposedRulesetsCount](PresentationRuleSetCR){disposedRulesetsCount++;});
-    locater->SetRulesetCallbacksHandler(&handler);
+    locater->AddRulesetCallbacksHandler(handler);
 
     locater->InvalidateCache();
     EXPECT_EQ(1, disposedRulesetsCount);
@@ -808,7 +808,7 @@ TEST (FileRuleSetLocater, DisposesCachedRulesetWhenInvalidateRequestedWithMatchi
     size_t disposedRulesetsCount = 0;
     TestRulesetCallbacksHandler handler;
     handler.SetDisposedHandler([&disposedRulesetsCount](PresentationRuleSetCR){disposedRulesetsCount++;});
-    locater->SetRulesetCallbacksHandler(&handler);
+    locater->AddRulesetCallbacksHandler(handler);
     
     locater->InvalidateCache("Ruleset");
     EXPECT_EQ(1, disposedRulesetsCount);
@@ -833,7 +833,7 @@ TEST (FileRuleSetLocater, DoesntDisposeCachedRulesetIfInvalidateRequestedWithNot
     size_t disposedRulesetsCount = 0;
     TestRulesetCallbacksHandler handler;
     handler.SetDisposedHandler([&disposedRulesetsCount](PresentationRuleSetCR){disposedRulesetsCount++;});
-    locater->SetRulesetCallbacksHandler(&handler);
+    locater->AddRulesetCallbacksHandler(handler);
     
     locater->InvalidateCache("SomeNotMatchingId");
     EXPECT_EQ(0, disposedRulesetsCount);
@@ -876,6 +876,29 @@ TEST(SupplementalRuleSetLocater, FindsSupplementalRuleSetsAndSetsProvidedId)
         << "Got: " << rulesets[1]->GetStyleOverrides()[0]->GetForeColor().c_str();
     EXPECT_STREQ("Orange", rulesets[1]->GetStyleOverrides()[0]->GetBackColor().c_str())
         << "Got: " << rulesets[1]->GetStyleOverrides()[0]->GetBackColor().c_str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(SupplementalRuleSetLocater, ForwardsRulesetCreatedAndDisposedCallbacks)
+    {
+    RefCountedPtr<SimpleRuleSetLocater> baseLocater = SimpleRuleSetLocater::Create();
+    RefCountedPtr<SupplementalRuleSetLocater> locater = SupplementalRuleSetLocater::Create(*baseLocater);
+
+    TestRulesetCallbacksHandler handler;
+    int createdRulesetCount = 0;
+    int disposedRulesetCount = 0;
+    handler.SetCreatedHandler([&](PresentationRuleSetCR) { createdRulesetCount++; });
+    handler.SetDisposedHandler([&](PresentationRuleSetCR) { disposedRulesetCount++; });
+    locater->AddRulesetCallbacksHandler(handler);
+
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("ruleset", 1, 0, true, "", "", "", false);
+    baseLocater->AddRuleSet(*ruleset);
+    EXPECT_EQ(1, createdRulesetCount);
+
+    baseLocater->RemoveRuleSet(ruleset->GetRuleSetId());
+    EXPECT_EQ(1, disposedRulesetCount);
     }
 
 #ifdef OldEmbeddedRulesetLocater
@@ -994,7 +1017,7 @@ TEST_F(EmbeddedRuleSetLocaterTests, DisposesAllCachedRulesetsWhenInvalidateReque
     size_t disposedRulesetsCount = 0;
     TestRulesetCallbacksHandler handler;
     handler.SetDisposedHandler([&disposedRulesetsCount](PresentationRuleSetCR) {disposedRulesetsCount++; });
-    locater->SetRulesetCallbacksHandler(&handler);
+    locater->AddRulesetCallbacksHandler(handler);
 
     // check if both rulesets were disposed from cache
     locater->InvalidateCache();
@@ -1028,7 +1051,7 @@ struct SimpleRuleSetLocaterTests : ECPresentationTest
             m_handler = new TestRulesetCallbacksHandler();
             m_handler->SetCreatedHandler([this] (PresentationRuleSetCR) { m_createdRulesetCount++; });
             m_handler->SetDisposedHandler([this] (PresentationRuleSetCR) { m_disposedRulesetCount++; });
-            m_ruleSetLocater->SetRulesetCallbacksHandler(m_handler);
+            m_ruleSetLocater->AddRulesetCallbacksHandler(*m_handler);
             }
 
         void TearDown() override

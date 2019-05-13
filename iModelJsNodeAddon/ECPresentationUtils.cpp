@@ -340,8 +340,8 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
         for (ContentDescriptor::Field const* nestedField : nestedContentTypeDescription.GetNestedContentField().GetFields())
             {
             rapidjson::Value member(rapidjson::kObjectType);
-            member.AddMember("name", rapidjson::StringRef(nestedField->GetName().c_str()), typeDescriptionBaseJson.GetAllocator());
-            member.AddMember("label", rapidjson::StringRef(nestedField->GetLabel().c_str()), typeDescriptionBaseJson.GetAllocator());
+            member.AddMember("name", rapidjson::Value(nestedField->GetName().c_str(), typeDescriptionBaseJson.GetAllocator()), typeDescriptionBaseJson.GetAllocator());
+            member.AddMember("label", rapidjson::Value(nestedField->GetLabel().c_str(), typeDescriptionBaseJson.GetAllocator()), typeDescriptionBaseJson.GetAllocator());
             member.AddMember("type", nestedField->GetTypeDescription().AsJson(&typeDescriptionBaseJson.GetAllocator()), typeDescriptionBaseJson.GetAllocator());
             members.PushBack(member, typeDescriptionBaseJson.GetAllocator());
             }
@@ -368,7 +368,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
         {
         rapidjson::Document json(allocator);
         json.SetObject();
-        json.AddMember("displayType", rapidjson::StringRef(contentDescriptor.GetPreferredDisplayType().c_str()), json.GetAllocator());
+        json.AddMember("displayType", rapidjson::Value(contentDescriptor.GetPreferredDisplayType().c_str(), json.GetAllocator()), json.GetAllocator());
         json.AddMember("selectClasses", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
         for (SelectClassInfo const& selectClass : contentDescriptor.GetSelectClasses())
             {
@@ -388,13 +388,13 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
             json["fields"].PushBack(field->AsJson(&json.GetAllocator()), json.GetAllocator());
         if (-1 != contentDescriptor.GetSortingFieldIndex())
             {
-            json.AddMember("sortingFieldName", rapidjson::StringRef(contentDescriptor.GetSortingField()->GetName().c_str()), json.GetAllocator());
+            json.AddMember("sortingFieldName", rapidjson::Value(contentDescriptor.GetSortingField()->GetName().c_str(), json.GetAllocator()), json.GetAllocator());
             json.AddMember("sortDirection", (int)contentDescriptor.GetSortDirection(), json.GetAllocator());
             }
 
         json.AddMember("contentFlags", contentDescriptor.GetContentFlags(), json.GetAllocator());
-        json.AddMember("connectionId", rapidjson::StringRef(contentDescriptor.GetConnection().GetId().c_str()), json.GetAllocator());
-        json.AddMember("filterExpression", rapidjson::StringRef(contentDescriptor.GetFilterExpression().c_str()), json.GetAllocator());
+        json.AddMember("connectionId", rapidjson::Value(contentDescriptor.GetConnection().GetId().c_str(), json.GetAllocator()), json.GetAllocator());
+        json.AddMember("filterExpression", rapidjson::Value(contentDescriptor.GetFilterExpression().c_str(), json.GetAllocator()), json.GetAllocator());
         json.AddMember("inputKeysHash", rapidjson::Value(contentDescriptor.GetInputNodeKeys().GetHash().c_str(), json.GetAllocator()), json.GetAllocator());
 
         rapidjson::Document options(&json.GetAllocator());
@@ -976,7 +976,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     rapidjson::Value _AsJson(SelectionInfo const& selectionInfo, rapidjson::Document::AllocatorType& allocator) const override
         {
         rapidjson::Value info(rapidjson::kObjectType);
-        info.AddMember("providerName", rapidjson::StringRef(selectionInfo.GetSelectionProviderName().c_str()), allocator);
+        info.AddMember("providerName", rapidjson::Value(selectionInfo.GetSelectionProviderName().c_str(), allocator), allocator);
         info.AddMember("level", selectionInfo.IsSubSelection() ? 1 : 0, allocator);
         return info;
         }

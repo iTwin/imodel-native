@@ -30,7 +30,7 @@ RuleSetLocaterManager::~RuleSetLocaterManager()
 
     BeMutexHolder lock(m_mutex);
     for (RuleSetLocaterPtr const& locater : m_locaters)
-        locater->SetRulesetCallbacksHandler(nullptr);
+        locater->RemoveRulesetCallbacksHandler(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,7 +39,7 @@ RuleSetLocaterManager::~RuleSetLocaterManager()
 void RuleSetLocaterManager::_RegisterLocater(RuleSetLocater& locater)
     {
     BeMutexHolder lock(m_mutex);
-    locater.SetRulesetCallbacksHandler(this);
+    locater.AddRulesetCallbacksHandler(*this);
     m_locaters.push_back(&locater);
     m_rulesetsCache.clear();
     }
@@ -56,7 +56,7 @@ void RuleSetLocaterManager::_UnregisterLocater(RuleSetLocater const& locater)
         BeAssert(false);
         return;
         }
-    (*iter)->SetRulesetCallbacksHandler(nullptr);
+    (*iter)->RemoveRulesetCallbacksHandler(*this);
     m_locaters.erase(iter);
     m_rulesetsCache.clear();
     }
@@ -64,7 +64,7 @@ void RuleSetLocaterManager::_UnregisterLocater(RuleSetLocater const& locater)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RuleSetLocaterManager::_OnRulesetDispose(RuleSetLocaterCR locater, PresentationRuleSetCR ruleset)
+void RuleSetLocaterManager::_OnRulesetDispose(RuleSetLocaterCR locater, PresentationRuleSetR ruleset)
     {
     if (nullptr != GetRulesetCallbacksHandler())
         GetRulesetCallbacksHandler()->_OnRulesetDispose(locater, ruleset);
@@ -269,8 +269,8 @@ void RuleSetLocater::OnRulesetDisposed(PresentationRuleSetR ruleset) const
     if (m_createdRulesets.end() != iter)
         m_createdRulesets.erase(iter);
 
-    if (nullptr != m_rulesetCallbacksHandler)
-        m_rulesetCallbacksHandler->_OnRulesetDispose(*this, ruleset);
+    for (IRulesetCallbacksHandler* handler : m_rulesetCallbacksHandlers)
+        handler->_OnRulesetDispose(*this, ruleset);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -282,24 +282,28 @@ void RuleSetLocater::OnRulesetCreated(PresentationRuleSetR ruleset) const
 
     m_createdRulesets.push_back(&ruleset);
 
-    if (nullptr != m_rulesetCallbacksHandler)
-        m_rulesetCallbacksHandler->_OnRulesetCreated(*this, ruleset);
+    for (IRulesetCallbacksHandler* handler : m_rulesetCallbacksHandlers)
+        handler->_OnRulesetCreated(*this, ruleset);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RuleSetLocater::SetRulesetCallbacksHandler(IRulesetCallbacksHandler* handler)
+void RuleSetLocater::AddRulesetCallbacksHandler(IRulesetCallbacksHandler& handler) const
     {
     BeMutexHolder lock(GetMutex());
+    m_rulesetCallbacksHandlers.insert(&handler);
+    for (RefCountedPtr<PresentationRuleSet> const& ruleset : m_createdRulesets)
+        handler._OnRulesetCreated(*this, *ruleset);
+    }
 
-    m_rulesetCallbacksHandler = handler;
-
-    if (nullptr != m_rulesetCallbacksHandler)
-        {
-        for (RefCountedPtr<PresentationRuleSet> const& ruleset : m_createdRulesets)
-            m_rulesetCallbacksHandler->_OnRulesetCreated(*this, *ruleset);
-        }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void RuleSetLocater::RemoveRulesetCallbacksHandler(IRulesetCallbacksHandler& handler) const
+    {
+    BeMutexHolder lock(GetMutex());
+    m_rulesetCallbacksHandlers.erase(&handler);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -497,6 +501,23 @@ void FileRuleSetLocater::_InvalidateCache(Utf8CP rulesetId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+SupplementalRuleSetLocater::SupplementalRuleSetLocater(RuleSetLocater const& locater)
+    : m_locater(&locater)
+    {
+    m_locater->AddRulesetCallbacksHandler(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+SupplementalRuleSetLocater::~SupplementalRuleSetLocater()
+    {
+    m_locater->RemoveRulesetCallbacksHandler(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationRuleSetPtr> SupplementalRuleSetLocater::_LocateRuleSets(Utf8CP rulesetId) const
@@ -508,6 +529,23 @@ bvector<PresentationRuleSetPtr> SupplementalRuleSetLocater::_LocateRuleSets(Utf8
     for (PresentationRuleSetPtr ruleset : rulesets)
         ruleset->SetRuleSetId(rulesetId);
     return rulesets;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+NonSupplementalRuleSetLocater::NonSupplementalRuleSetLocater(RuleSetLocater const& locater)
+    : m_locater(&locater)
+    {
+    m_locater->AddRulesetCallbacksHandler(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+NonSupplementalRuleSetLocater::~NonSupplementalRuleSetLocater()
+    {
+    m_locater->RemoveRulesetCallbacksHandler(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**

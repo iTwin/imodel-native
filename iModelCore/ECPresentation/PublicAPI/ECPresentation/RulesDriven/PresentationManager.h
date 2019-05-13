@@ -218,19 +218,20 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
     struct TaskNotificationsContext
         {
         private:
-            RulesDrivenECPresentationManager& m_manager;
+            RulesDrivenECPresentationManager* m_manager;
             std::function<void()> m_callbackOnTaskStart;
         public:
             ECPRESENTATION_EXPORT TaskNotificationsContext(RulesDrivenECPresentationManager& manager, std::function<void()> onTaskStart);
             ECPRESENTATION_EXPORT ~TaskNotificationsContext();
             std::function<void()> const& GetOnTaskStartCallback() const { return m_callbackOnTaskStart; }
+            void Reset() { m_manager = nullptr; }
         };
 
 private:
     Impl* m_impl;
     folly::Executor* m_executor;
     CancelableTasksStore* m_cancelableTasks;
-    TaskNotificationsContext const* m_taskNotificationsContext;
+    TaskNotificationsContext* m_taskNotificationsContext;
     ConnectionManagerWrapper* m_connectionsWrapper;
     bvector<ECInstanceChangeEventSourceWrapper*> m_ecInstanceChangeEventSourceWrappers;
 

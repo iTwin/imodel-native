@@ -459,7 +459,7 @@ UserSettings& UserSettingsManager::GetSettings(Utf8StringCR rulesetId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UserSettingsManager::_OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetCR ruleset)
+void UserSettingsManager::_OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetR ruleset)
     {
     BeMutexHolder lock(m_mutex);
     auto iter = m_settings.find(ruleset.GetRuleSetId());

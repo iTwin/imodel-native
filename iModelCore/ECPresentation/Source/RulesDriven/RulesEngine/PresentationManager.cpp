@@ -224,10 +224,10 @@ static std::shared_ptr<CancelablePromise<T>> CreateCancelablePromise(RulesDriven
 * @bsimethod                                    Grigas.Petraitis                03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManager::TaskNotificationsContext::TaskNotificationsContext(RulesDrivenECPresentationManager& manager, std::function<void()> onTaskStart)
-    : m_manager(manager), m_callbackOnTaskStart(onTaskStart)
+    : m_manager(&manager), m_callbackOnTaskStart(onTaskStart)
     {
-    BeAssert(nullptr == m_manager.m_taskNotificationsContext);
-    m_manager.m_taskNotificationsContext = this;
+    BeAssert(nullptr == m_manager->m_taskNotificationsContext);
+    m_manager->m_taskNotificationsContext = this;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -235,8 +235,11 @@ RulesDrivenECPresentationManager::TaskNotificationsContext::TaskNotificationsCon
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManager::TaskNotificationsContext::~TaskNotificationsContext()
     {
-    BeAssert(this == m_manager.m_taskNotificationsContext);
-    m_manager.m_taskNotificationsContext = nullptr;
+    if (nullptr != m_manager)
+        {
+        BeAssert(this == m_manager->m_taskNotificationsContext);
+        m_manager->m_taskNotificationsContext = nullptr;
+        }
     }
 
 /*=================================================================================**//**
@@ -369,11 +372,11 @@ protected:
     bvector<Utf8String> _GetRuleSetIds() const override {return m_wrapped.GetRuleSetIds();}
 
     // IRulesetCallbacksHandler
-    void _OnRulesetDispose(RuleSetLocaterCR locater, PresentationRuleSetCR ruleset) override
+    void _OnRulesetDispose(RuleSetLocaterCR locater, PresentationRuleSetR ruleset) override
         {
         auto context = std::make_shared<RulesDrivenECPresentationManager::TaskExecutionContext>(m_manager);
         m_manager.m_cancelableTasks->CancelByRulesetId(ruleset.GetRuleSetId());
-        folly::via(&m_manager.GetExecutor(), [&, context, ruleset = PresentationRuleSetCPtr(&ruleset)]()
+        folly::via(&m_manager.GetExecutor(), [&, context, ruleset = PresentationRuleSetPtr(&ruleset)]()
             {
             context->OnTaskStart();
             if (nullptr != GetRulesetCallbacksHandler())
@@ -507,9 +510,11 @@ RulesDrivenECPresentationManager::~RulesDrivenECPresentationManager()
 #endif
 
     DELETE_AND_CLEAR(m_connectionsWrapper);
-
     DELETE_AND_CLEAR(m_executor);
     DELETE_AND_CLEAR(m_cancelableTasks);
+
+    if (nullptr != m_taskNotificationsContext)
+        m_taskNotificationsContext->Reset();
     }
 
 /*---------------------------------------------------------------------------------**//**
