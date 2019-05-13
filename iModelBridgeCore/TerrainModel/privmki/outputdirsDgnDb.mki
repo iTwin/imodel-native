@@ -1,0 +1,10 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+BuildDir                        = $(OutputRootDir)build/TerrainModelDgnDb/
+BuildPublicApi                  = $(BuildDir)PublicAPI/
+gensrc                          = $(BuildDir)gensrc/
+
+
