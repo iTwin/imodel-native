@@ -691,6 +691,9 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     m_smPtr->Reproject(projGCS, dgnProject);
 
     m_smToModelUorTransform = m_smPtr->GetReprojectionTransform();
+
+    if (!IsGeoReferenced())
+        m_smToModelUorTransform = Transform::FromProduct(m_properties.m_transform, m_smToModelUorTransform);
         
     bool invertResult = m_modelUorToSmTransform.InverseOf(m_smToModelUorTransform);
     assert(invertResult);
@@ -1348,6 +1351,15 @@ bool ScalableMeshModel::IsTerrain()
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                 Richard.Bois     5/2019
+//----------------------------------------------------------------------------------------
+bool ScalableMeshModel::IsGeoReferenced() const
+    {
+    if(m_smPtr.get() == nullptr) return false;
+    return !m_smPtr->GetGCS().IsNull() && m_smPtr->GetGCS().HasGeoRef();
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     4/2017
 //----------------------------------------------------------------------------------------
 bool ScalableMeshModel::HasTerrain()
@@ -1429,7 +1441,7 @@ void ScalableMeshModel::GetActiveClipSetIds(bset<uint64_t>& allShownIds)
     allShownIds = clips;
     }
 
-IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile, ClipVectorCP clip, ModelSpatialClassifiersCP classifiers)
+IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, const Transform& transform, bool openFile, ClipVectorCP clip, ModelSpatialClassifiersCP classifiers)
     {
     /*
           BeFileName smtFileName;
@@ -1454,6 +1466,8 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8S
 
     if (nullptr != classifiers)
         model->SetClassifiers(*classifiers);
+
+    model->SetTransformProperty(transform);
     
     //After Insert model pointer is handled by DgnModels.
     model->Insert();
@@ -1562,6 +1576,13 @@ void ScalableMeshModel::SetFileNameProperty(BeFileNameCR smFilename)
     m_properties.m_fileId = smFilename.GetNameUtf8();
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  07/2017
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::SetTransformProperty(const Transform& transform)
+    {
+    m_properties.m_transform = transform;
+    }
 
 
 //----------------------------------------------------------------------------------------
@@ -1578,6 +1599,11 @@ void ScalableMeshModel::Properties::ToJson(Json::Value& v) const
 void ScalableMeshModel::Properties::FromJson(Json::Value const& v)
     {
     m_fileId = v.isMember("tilesetUrl") && !v["tilesetUrl"].asString().empty() ? v["tilesetUrl"].asString() : v["FileId"].asString();
+    m_transform = Transform::FromIdentity();
+    if(v.isMember("transform"))
+        {
+        JsonUtils::TransformFromJson(m_transform, v["transform"]);
+        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -1595,6 +1621,11 @@ void ScalableMeshModel::_OnSaveJsonProperties()
         {
         Json::Value tilesetVal = m_properties.m_fileId.c_str();
         SetJsonProperties(json_tilesetUrl(), tilesetVal);
+        }
+
+    if(m_smPtr != 0 && !IsGeoReferenced() && !m_properties.m_transform.IsIdentity())
+        {
+        JsonUtils::TransformToJson(val["transform"], m_properties.m_transform);
         }
 
 #if !defined(ANDROID)
