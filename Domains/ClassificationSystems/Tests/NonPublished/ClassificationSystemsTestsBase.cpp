@@ -73,7 +73,7 @@ void ClassificationSystemsTestsBase::SetUpTestCase()
 //---------------------------------------------------------------------------------------
 ClassificationTablePtr ClassificationSystemsTestsBase::CreateAndInsertTable(Dgn::DgnDbR db)
 {
-    ClassificationSystemPtr system = ClassificationSystem::Create(db, "Test Classification System");
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, "Test Classification System", "#01");
 
     Dgn::DgnDbStatus status;
     system->Insert(&status);

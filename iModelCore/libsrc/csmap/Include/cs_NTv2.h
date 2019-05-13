@@ -373,7 +373,15 @@ struct cs_NTv2_
 									   a malloc'ed array of these things. */
 	char* fileImage;				/* Entire .gsb file copied into memory for
 									   performance. */
+#ifdef GEOCOORD_ENHANCEMENT
+#if _RUN_TIME == _rt_MSWIN64
+    __int64  fileImageSize;			/* Size of the copied .gsb file. */
+#else
+    long32_t fileImageSize;			/* Size of the copied .gsb file. */
+#endif
+#else
 	long32_t fileImageSize;			/* Size of the copied .gsb file. */
+#endif
 	long32_t HdrRecCnt;				/* Number of 16 byte records in the
 									   file header.  In the Australian
 									   version, not all records are 16

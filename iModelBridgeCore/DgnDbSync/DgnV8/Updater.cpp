@@ -333,8 +333,21 @@ void Converter::_DeleteFileAndContents(RepositoryLinkId repositoryLinkId)
     if (!rlink.IsValid())
         return;
     SyncInfo::V8ModelExternalSourceAspectIterator modelsInFile(*rlink);
+    bool isFirstModel = true;
     for (auto wasModel : modelsInFile)
         {
+        if (!IsBimModelAssignedToJobSubject(wasModel.GetModelId()))
+            {
+            if (!isFirstModel)
+                {
+                BeAssert(false && "We don't allow multiple bridges to convert different models in the same file");
+                OnFatalError();
+                }
+            return; // This indicates that this whole file belonged to another bridge, since we don't allow multiple bridges to convert different models in the same file.
+            }
+
+        isFirstModel = false;
+
         auto model = GetDgnDb().Models().GetModel(wasModel.GetModelId());
         if (!model.IsValid())
             {
@@ -352,7 +365,7 @@ void Converter::_DeleteFileAndContents(RepositoryLinkId repositoryLinkId)
         _DeleteModel(*model, wasModel);
         }
 
-    rlink->Delete();
+    // rlink->Delete(); -- can't do this safely. We can't guarantee that the repository link element was created by the bridge to which that file is assigned. It could happen that another bridge saw this repository/file first, while trying to find its own files via reference attachments.
     }
 
 /*---------------------------------------------------------------------------------**//**

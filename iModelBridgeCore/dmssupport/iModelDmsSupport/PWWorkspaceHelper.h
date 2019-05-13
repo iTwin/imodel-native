@@ -17,7 +17,7 @@ struct PWWorkspaceHelper : public IDmsSupport
         bool        m_initDone;
         DmsSession  m_session;
         BeFileName  m_inputFile;
-
+        BeFileName  m_activeWorkspaceDir;
         bool        InitPwApi();
         virtual bool _Initialize() override;
         virtual bool _UnInitialize() override;
@@ -36,6 +36,10 @@ struct PWWorkspaceHelper : public IDmsSupport
         virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pWMoniker, BeFileNameCR workspaceDir, bool isv8i, bvector<WString> const & additonalFilePatterns) override;
         virtual  void SetApplicationResourcePath(BeFileNameCR applicationResourcePath) override;
         virtual Bentley::DgnPlatform::DgnDocumentManager* _GetDgnDocumentManager() override;
+        BeFileName const& GetActiveWorkspaceDir() 
+            {
+            return m_activeWorkspaceDir;
+            }
     };
 
 END_BENTLEY_DGN_NAMESPACE

@@ -231,6 +231,7 @@ protected:
     struct Properties
     {
         Utf8String          m_fileId;
+        Transform           m_transform;
 
         void ToJson(Json::Value&) const;
         void FromJson(Json::Value const&);
@@ -288,6 +289,7 @@ public:
 
     SCALABLEMESH_SCHEMA_EXPORT void CloseFile();
     void SetFileNameProperty(BeFileNameCR smFilename);
+    void SetTransformProperty(const Transform& transform);
     SCALABLEMESH_SCHEMA_EXPORT BentleyStatus UpdateFilename(BeFileNameCR newFilename);
 
     SCALABLEMESH_SCHEMA_EXPORT BentleyStatus UpdateExtractedTerrainLocation(BeFileNameCR oldLocation, BeFileNameCR newLocation);
@@ -329,6 +331,8 @@ public:
     SCALABLEMESH_SCHEMA_EXPORT bool IsTerrain();
 
     SCALABLEMESH_SCHEMA_EXPORT bool HasTerrain();
+
+    SCALABLEMESH_SCHEMA_EXPORT bool IsGeoReferenced() const;
 
     SCALABLEMESH_SCHEMA_EXPORT void SetProgressiveDisplay(bool isProgressiveOn);  
 
@@ -385,7 +389,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler:
     MODELHANDLER_DECLARE_MEMBERS("ScalableMeshModel", ScalableMeshModel, ScalableMeshModelHandler, Dgn::dgn_ModelHandler::Spatial, SCALABLEMESH_SCHEMA_EXPORT)
 public :
     //NEEDS_WORK_SM : Currently for testing only
-    SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(BentleyApi::Dgn::DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile = true, Dgn::ClipVectorCP clip = nullptr, ModelSpatialClassifiersCP classifiers = nullptr);
+    SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(BentleyApi::Dgn::DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, const Transform& transform, bool openFile = true, Dgn::ClipVectorCP clip = nullptr, ModelSpatialClassifiersCP classifiers = nullptr);
 
     virtual void _GetClassParams(Dgn::ECSqlClassParamsR params) override;
 };

@@ -813,7 +813,7 @@ StatusInt RealityDataServicePerformanceTests::DeleteRealityDataTest(timeStats& t
     {
     RawServerResponse response;
   
-    RealityDataDelete deletionRequest(m_newRealityData->GetIdentifier()); 
+    RealityDataDeleteRequest deletionRequest(m_newRealityData->GetIdentifier()); 
     
     int64_t startTime;
     int64_t endTime;

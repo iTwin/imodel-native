@@ -80,6 +80,9 @@ public:
     //! To retrieve many public keys from a JSON fragment 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToPublicKeys(Utf8CP data, bvector<RealityDataPublicKey>& publicKeyObjects);
 
+    //! Converts a public key instance to a JSON fragment appropriate for the RealityData Service
+    REALITYDATAPLATFORM_EXPORT static Utf8String RealityDataPublicKeyToJson(RealityDataPublicKeyCR realityDataPublicKey, bool includeUnsetProps = false, bool includeROProps = false);
+
     //! To retrieve EnterpriseStat from a JSON fragment 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToEnterpriseStat(Utf8CP data, RealityDataEnterpriseStat& statObject);
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToEnterpriseStat(Json::Value properties, RealityDataEnterpriseStat& statObject);

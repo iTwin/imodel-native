@@ -815,6 +815,9 @@ void RealityData::SetCreatorId(Utf8CP creatorId) { m_creatorId = creatorId; }
 uint64_t RealityData::GetTotalSize() const { return m_totalSize; }
 void RealityData::SetTotalSize(uint64_t totalSize) { m_totalSize = totalSize; }
 
+bool RealityData::IsSizeUpToDate() const {return m_sizeUpToDate;}
+void RealityData::SetSizeUpToDate(bool upToDate) {m_sizeUpToDate = upToDate;}
+
 bool RealityData::IsHidden() const { return m_hidden; }
 void RealityData::SetHidden(bool hidden) { m_hidden = hidden; }
 
@@ -832,6 +835,7 @@ RealityData::RealityData()
     m_streamed = true;
     m_listable = true;
     m_totalSize = 0;
+    m_sizeUpToDate = true;
     m_hidden = false;
     m_delegatePermissions = false;
     m_approximateFootprint = false;

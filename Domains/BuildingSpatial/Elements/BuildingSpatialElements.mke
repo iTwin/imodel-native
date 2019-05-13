@@ -27,6 +27,8 @@ $(o)Space$(oext) : $(_MakeFilePath)Space.cpp ${MultiCompileDepends} $(_MakeFileP
 
 $(o)Building$(oext) : $(_MakeFilePath)Building.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/Building.h
 
+$(o)RegularStory$(oext) : $(_MakeFilePath)RegularStory.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/RegularStory.h
+
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
 
@@ -46,6 +48,7 @@ LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)SpatialCompositionElements$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingDgnUtils$(libext)
 
 %include $(sharedMki)linkLibrary.mki
 

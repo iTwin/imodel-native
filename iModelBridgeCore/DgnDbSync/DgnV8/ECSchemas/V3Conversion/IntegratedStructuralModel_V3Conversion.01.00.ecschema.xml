@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="IntegratedStructuralModel_V3Conversion" nameSpacePrefix="ismv3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECClass typeName="DataGroupCatalogInstanceNameProperty" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IsmCustomKeyValuePair" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
+

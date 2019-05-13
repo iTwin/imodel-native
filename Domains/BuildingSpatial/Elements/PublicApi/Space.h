@@ -2,6 +2,7 @@
 |
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
+|
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
@@ -15,13 +16,25 @@ BEGIN_BUILDINGSPATIAL_NAMESPACE
 struct Space : SPATIALCOMPOSITION_NAMESPACE_NAME::CompositeVolume
     {
     DGNELEMENT_DECLARE_MEMBERS(BUILDINGSPATIAL_CLASS_Space, SPATIALCOMPOSITION_NAMESPACE_NAME::CompositeVolume);
-    typedef SPATIALCOMPOSITION_NAMESPACE_NAME::CompositeVolume T_Super;
+
+    protected:
+        friend struct SpaceHandler;
+
+    protected:
+        explicit Space(CreateParams const& params) : T_Super(params) {}
+
+        virtual BUILDINGSPATIAL_EXPORT Dgn::Render::GeometryParams _CreateGeometryParameters() override;
+        virtual BUILDINGSPATIAL_EXPORT Dgn::DgnSubCategoryId _GetLabelSubCategoryId() const;
     public:
-        explicit Space(CreateParams const& params) : SPATIALCOMPOSITION_NAMESPACE_NAME::CompositeVolume(params) {}
-        
         static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db);
         
         BUILDINGSPATIAL_EXPORT static SpacePtr Create (Dgn::DgnModelCR model);
+
+        //! Updates space's shape with given base curve vector
+        //! @param[in] curveVector             new shape curve vector
+        //! @param[in] updatePlacementOrigin   true if origin of this space should be updated
+        //! @return                            true if there were no errors while updating space geometry
+        virtual BUILDINGSPATIAL_EXPORT bool SetFootprintShape(CurveVectorCPtr curveVector, bool updatePlacementOrigin = true) final;
     };
 
 END_BUILDINGSPATIAL_NAMESPACE

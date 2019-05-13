@@ -5,6 +5,10 @@
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
 
+// Stub out these macros. We should not suppress exceptions within a bridge. Only fwk s/ do that.
+#define IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+#define IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(REPORTING_CODE)
+
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_DWGDB
@@ -1559,44 +1563,44 @@ BentleyStatus   DwgImporter::_MakeDefinitionChanges (SubjectCR jobSubject)
     StopWatch timer (true);
 
     timer.Start();
-    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+    //IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
         {
         this->_ImportTextStyleSection ();
         }
-    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Exception(), "failed processing text styles"));
+    //IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Exception(), "failed processing text styles"));
     if (this->WasAborted())
         return BSIERROR;
 
     DwgImportLogging::LogPerformance(timer, "Import Text Styles");
 
     timer.Start();
-    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+    //IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
         {
         this->_ImportLineTypeSection ();
         }
-    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Exception(), "failed processing line types"));
+    //IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Exception(), "failed processing line types"));
     if (this->WasAborted())
         return BSIERROR;
 
     DwgImportLogging::LogPerformance(timer, "Import Linetype Section");
 
     timer.Start();
-    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+    //IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
         {
         this->_ImportMaterialSection ();
         }
-    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Exception(), "failed processing materials"));
+    //IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Exception(), "failed processing materials"));
     if (this->WasAborted())
         return BSIERROR;
 
     DwgImportLogging::LogPerformance(timer, "Import Material Section");
 
     timer.Start();
-    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+    //IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
         {
         this->_ImportLayerSection ();
         }
-    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Exception(), "failed processing layers"));
+    //IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Exception(), "failed processing layers"));
     if (this->WasAborted())
         return BSIERROR;
 
@@ -1631,11 +1635,11 @@ BentleyStatus   DwgImporter::Process ()
     DwgImportLogging::LogPerformance(timer, "Create Spaces");
 
     timer.Start();
-    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+    //IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
         {
         this->_ImportDwgModels ();
         }
-    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Exception(), "failed processing models"));
+    //IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Exception(), "failed processing models"));
     if (this->WasAborted())
         return BSIERROR;
 
@@ -1649,11 +1653,11 @@ BentleyStatus   DwgImporter::Process ()
     DwgImportLogging::LogPerformance(timer, "Import Modelspace Viewports");
 
     timer.Start();
-    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+    //IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
         {
         this->_ImportEntitySection ();
         }
-    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Error(), "failed processing entity section"));
+    //IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Error(), "failed processing entity section"));
     if (this->WasAborted())
         return BSIERROR;
 
@@ -1671,22 +1675,22 @@ BentleyStatus   DwgImporter::Process ()
     DwgImportLogging::LogPerformance(timer, "Import Layouts");
 
     timer.Start();
-    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+    //IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
         {
         this->_ImportGroups ();
         }
-    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Error(), "failed processing groups"));
+    //IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Error(), "failed processing groups"));
     if (this->WasAborted())
         return BSIERROR;
 
     DwgImportLogging::LogPerformance(timer, "Import Groups");
 
     timer.Start ();
-    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+    //IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
         {
         this->_FinishImport ();
         }
-    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Error(), "failed cleaning up the importer"));
+    //IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Error(), "failed cleaning up the importer"));
     if (this->WasAborted())
         return BSIERROR;
 

@@ -29,6 +29,9 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 static std::istream* s_inputSource = nullptr;
 static std::ostream* s_outputDestination = nullptr;
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 static void statusFunc(int index, void *pClient, int ErrorCode, const char* pMsg)
     {
     if (ErrorCode > 0)
@@ -37,6 +40,9 @@ static void statusFunc(int index, void *pClient, int ErrorCode, const char* pMsg
         *s_outputDestination << pMsg << std::endl;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::InterpretCommand(bool emptyDisplayMessage)
     {
     m_lastCommand = Command::Dummy;
@@ -72,6 +78,12 @@ void RealityDataConsole::InterpretCommand(bool emptyDisplayMessage)
         m_lastCommand = Command::DataLocations;
     else if (args[0].EqualsI("publickeys"))
         m_lastCommand = Command::PublicKeys;
+    else if (args[0].EqualsI("createpublickey"))
+        m_lastCommand = Command::CreatePublicKey;
+    else if (args[0].EqualsI("changepublickey"))
+        m_lastCommand = Command::ChangePublicKey;
+    else if (args[0].EqualsI("deletepublickey"))
+        m_lastCommand = Command::DeletePublicKey;
     else if (args[0].EqualsI("stat"))
         m_lastCommand = Command::Stat;
     else if (args[0].EqualsI("allstats"))
@@ -146,6 +158,9 @@ void RealityDataConsole::InterpretCommand(bool emptyDisplayMessage)
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 RealityDataConsole::RealityDataConsole() :
     m_server(WSGServer("", true)),
     m_serverNodes(bvector<NavNode>()),
@@ -164,6 +179,9 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::ChangeDir, &RealityDataConsole::ChangeDir);
     m_functionMap.Insert(Command::DataLocations, &RealityDataConsole::DataLocations);
     m_functionMap.Insert(Command::PublicKeys, &RealityDataConsole::PublicKeys);
+    m_functionMap.Insert(Command::CreatePublicKey, &RealityDataConsole::CreatePublicKey);
+    m_functionMap.Insert(Command::ChangePublicKey, &RealityDataConsole::ChangePublicKey);
+    m_functionMap.Insert(Command::DeletePublicKey, &RealityDataConsole::DeletePublicKey);
     m_functionMap.Insert(Command::Stat, &RealityDataConsole::EnterpriseStat);
     m_functionMap.Insert(Command::AllStats, &RealityDataConsole::AllEnterpriseStats);
     m_functionMap.Insert(Command::AllStatsJson, &RealityDataConsole::AllEnterpriseStatsJson);
@@ -211,6 +229,7 @@ RealityDataConsole::RealityDataConsole() :
     m_realityDataProperties.push_back("Description");
     m_realityDataProperties.push_back("RootDocument");
     //m_realityDataProperties.push_back("Size");
+    //m_realityDataProperties.push_back("SizeUpToDate");
     m_realityDataProperties.push_back("Classification");
     m_realityDataProperties.push_back("Type");
     m_realityDataProperties.push_back("Streamed");
@@ -265,6 +284,9 @@ RealityDataConsole::RealityDataConsole() :
     m_hConsole = GetStdHandle(STD_OUTPUT_HANDLE);       // see the methods Disp...()
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
     {
     PrintResults(options);
@@ -316,6 +338,9 @@ void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
     }
 
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::Run(BeFileName infile, BeFileName outfile)
     {
     if (infile.DoesPathExist())
@@ -346,6 +371,9 @@ void RealityDataConsole::Run(BeFileName infile, BeFileName outfile)
     delete s_outputDestination;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::Run()
     {
     s_inputSource = &std::cin;
@@ -354,6 +382,9 @@ void RealityDataConsole::Run()
     _Run();
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::Run(Utf8String server, Utf8String projectId)
     {
     s_inputSource = &std::cin;
@@ -365,6 +396,9 @@ void RealityDataConsole::Run(Utf8String server, Utf8String projectId)
     _Run();
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::_Run()
     {
     while (m_lastCommand != Command::Quit)
@@ -377,6 +411,9 @@ void RealityDataConsole::_Run()
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::Usage()
     {
     DisplayInfo("  RealityDataConsole tool for RDS V1.0\n\n");
@@ -396,6 +433,9 @@ void RealityDataConsole::Usage()
     DisplayInfo("  Details             show the details for the location\n");
     DisplayInfo("  DataLocations       show available data locations for new reality data\n");
     DisplayInfo("  PublicKeys          show all public keys created by current user.\n");
+    DisplayInfo("  CreatePublicKey     Command to create a public key in the current reality data.\n");
+    DisplayInfo("  ChangePublicKey     Command to change a public key.\n");
+    DisplayInfo("  DeletePublicKey     Command to delete a public key.\n");
     DisplayInfo("  Stat                show enterprise statistics\n");
     DisplayInfo("  AllStats            show statistics for all enterprises , for a given date (requires priviledge access)\n");
     DisplayInfo("  AllStatsJson        show statistics for all enterprises in raw JSON format , for a given date (requires priviledge access)\n");
@@ -419,6 +459,9 @@ void RealityDataConsole::Usage()
     DisplayInfo("The good news is: this is a console problem, not an SDK problem. If you need to interact with those entries, please use a different service\n", DisplayOption::Tip);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::PrintResults(bvector<Utf8String> results)
     {
     std::stringstream index;
@@ -431,6 +474,9 @@ void RealityDataConsole::PrintResults(bvector<Utf8String> results)
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::PrintResults(bvector<pair<Utf8String, Utf8String>> results)
 {
     std::stringstream index;
@@ -451,6 +497,9 @@ void RealityDataConsole::PrintResults(bvector<pair<Utf8String, Utf8String>> resu
 }
 
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::PrintResults(bmap<Utf8String, bvector<Utf8String>> results)
     {
     std::stringstream index;
@@ -470,6 +519,9 @@ void RealityDataConsole::PrintResults(bmap<Utf8String, bvector<Utf8String>> resu
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 Utf8String RealityDataConsole::MakeBuddiCall(int region)
     {
     CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
@@ -544,6 +596,9 @@ Utf8String RealityDataConsole::MakeBuddiCall(int region)
     return returnedString;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::ConfigureServer()
     {
     DisplayInfo("Welcome to the RealityDataService Navigator.\n", DisplayOption::Tip);
@@ -752,6 +807,9 @@ void RealityDataConsole::ConfigureServer()
     DisplayInfo("Server successfully configured, ready for use. Type \"help\" for list of commands\n", DisplayOption::Tip);
     }
     
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::SetProjectId()
     {
     DisplayInfo("Please set project id\n ?", DisplayOption::Question);
@@ -760,6 +818,9 @@ void RealityDataConsole::SetProjectId()
     RealityDataService::SetProjectId(Utf8String(input.c_str()).Trim());
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::List()
     {
     if (m_currentNode != nullptr && m_currentNode->node.GetECClassName() == "Document")
@@ -800,6 +861,9 @@ void RealityDataConsole::List()
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 Utf8String ShortenVisibility(Utf8String visibility)
     {
     if(visibility.EqualsI("PUBLIC"))
@@ -814,6 +878,9 @@ Utf8String ShortenVisibility(Utf8String visibility)
         return "---";
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::ListRoots()
     {
     RealityDataListByUltimateIdPagedRequest ultimateReq = RealityDataListByUltimateIdPagedRequest("", 0, 2500);
@@ -885,6 +952,9 @@ void RealityDataConsole::ListRoots()
     PrintResults(nodes);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::ListAll()
     {
     if (m_currentNode == nullptr)
@@ -940,6 +1010,9 @@ void RealityDataConsole::ListAll()
     DisplayInfo("----------------\nexiting listing\n----------------\n", DisplayOption::Tip);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::ChangeDir()
     {
     if (m_lastInput == "..")
@@ -994,6 +1067,9 @@ void RealityDataConsole::ChangeDir()
         DisplayInfo(Utf8PrintfString("Invalid Selection, selected index not between 1 and %lu\n", m_serverNodes.size()), DisplayOption::Error);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::DisplayDataLocations(const bvector<RealityDataLocation>& locations)
     {
     DisplayInfo(Utf8PrintfString("DataLocations \n"));
@@ -1007,25 +1083,39 @@ void RealityDataConsole::DisplayDataLocations(const bvector<RealityDataLocation>
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    05/2019
+//-------------------------------------------------------------------------------------
+void RealityDataConsole::DisplayPublicKey(const RealityDataPublicKey& publicKey)
+    {
+    DisplayInfo(Utf8PrintfString("   Identifier          : %s\n", publicKey.GetIdentifier().c_str()));
+    DisplayInfo(Utf8PrintfString("   Reality Data Id     : %s\n", publicKey.GetRealityDataId().c_str()));
+    DisplayInfo(Utf8PrintfString("   Ultimate Id         : %s\n", publicKey.GetUltimateId().c_str()));
+    DisplayInfo(Utf8PrintfString("   User Id             : %s\n", publicKey.GetUserId().c_str()));
+    DisplayInfo(Utf8PrintfString("   Description         : %s\n", publicKey.GetDescription().c_str()));
+    DisplayInfo(Utf8PrintfString("   Created timestamp   : %s\n", publicKey.GetCreationDateTime().ToString().c_str()));
+    DisplayInfo(Utf8PrintfString("   Modified timestamp  : %s\n", publicKey.GetModifiedDateTime().ToString().c_str()));
+    DisplayInfo(Utf8PrintfString("   Authorized User Ids : %s\n", publicKey.GetAuthorizedUserIds().c_str()));
+    DisplayInfo(Utf8PrintfString("   Valid Until Date    : %s\n", publicKey.GetValidUntilDate().ToString().c_str()));
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::DisplayPublicKeys(const bvector<RealityDataPublicKey>& publicKeys)
     {
     DisplayInfo(Utf8PrintfString("Public Keys \n"));
     DisplayInfo("======================================================\n");
     for (auto currentKey : publicKeys)
         {
-        DisplayInfo(Utf8PrintfString("   Identifier          : %s\n", currentKey.GetIdentifier().c_str()));
-        DisplayInfo(Utf8PrintfString("   Reality Data Id     : %s\n", currentKey.GetRealityDataId().c_str()));
-        DisplayInfo(Utf8PrintfString("   Ultimate Id         : %s\n", currentKey.GetUltimateId().c_str()));
-        DisplayInfo(Utf8PrintfString("   User Id             : %s\n", currentKey.GetUserId().c_str()));
-        DisplayInfo(Utf8PrintfString("   Description         : %s\n", currentKey.GetDescription().c_str()));
-        DisplayInfo(Utf8PrintfString("   Created timestamp   : %s\n", currentKey.GetCreationDateTime().ToString().c_str()));
-        DisplayInfo(Utf8PrintfString("   Modified timestamp  : %s\n", currentKey.GetModifiedDateTime().ToString().c_str()));
-        DisplayInfo(Utf8PrintfString("   Authorized User Ids : %s\n", currentKey.GetAuthorizedUserIds().c_str()));
-        DisplayInfo(Utf8PrintfString("   Valid Until Date    : %s\n", currentKey.GetValidUntilDate().ToString().c_str()));
+        DisplayPublicKey(currentKey);
         DisplayInfo("======================================================\n");
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::DataLocations()
     {
 
@@ -1039,6 +1129,9 @@ void RealityDataConsole::DataLocations()
 
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::PublicKeys()
     {
 
@@ -1052,6 +1145,9 @@ void RealityDataConsole::PublicKeys()
 
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::EnterpriseStat()
     {
     RawServerResponse rawResponse = RawServerResponse();
@@ -1068,6 +1164,9 @@ void RealityDataConsole::EnterpriseStat()
     }
 
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::DisplayEnterpriseStats(const bvector<RealityDataEnterpriseStat>& stats, const DateTime& curInfoDate)
     {
     DisplayInfo(Utf8PrintfString("Enterprise statistics (%4u-%02u-%02u): \n", curInfoDate.GetYear(),
@@ -1085,15 +1184,24 @@ void RealityDataConsole::DisplayEnterpriseStats(const bvector<RealityDataEnterpr
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::AllEnterpriseStats()
     {
     AllEnterpriseStatsGen(false);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::AllEnterpriseStatsJson()
     {
     AllEnterpriseStatsGen(true);
     }
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::AllEnterpriseStatsGen(bool displayAsJson)
     {
     DisplayInfo("Please enter the date requested\n", DisplayOption::Question);
@@ -1214,7 +1322,10 @@ void RealityDataConsole::AllEnterpriseStatsGen(bool displayAsJson)
             DisplayEnterpriseStats(stats, curInfoDate);
         }
     }
-	
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::ServiceStat()
     {
     RawServerResponse rawResponse = RawServerResponse();
@@ -1236,6 +1347,9 @@ void RealityDataConsole::ServiceStat()
     }
 
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::DisplayServiceStats(const bvector<RealityDataServiceStat>& stats, const DateTime& curInfoDate)
     {
     DisplayInfo(Utf8PrintfString("Service statistics (%4u-%02u-%02u): \n", curInfoDate.GetYear(),
@@ -1248,20 +1362,29 @@ void RealityDataConsole::DisplayServiceStats(const bvector<RealityDataServiceSta
         DisplayInfo(Utf8PrintfString("   TotalSize(KB) : %lu\n", currentStat.GetTotalSizeKB()));
         DisplayInfo(Utf8PrintfString("   UltimateId    : %s\n", currentStat.GetUltimateId().c_str()));
         DisplayInfo(Utf8PrintfString("   ServiceId     : %s\n", currentStat.GetServiceId().c_str()));
-	
+
         DisplayInfo("======================================================\n");
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::AllServiceStats()
     {
     AllServiceStatsGen(false);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::AllServiceStatsJson()
     {
     AllServiceStatsGen(true);
     }
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::AllServiceStatsGen(bool displayAsJson)
     {
     DisplayInfo("Please enter the date requested\n", DisplayOption::Question);
@@ -1384,6 +1507,9 @@ void RealityDataConsole::AllServiceStatsGen(bool displayAsJson)
     }
 		
 	
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::UserStat()
     {
     RawServerResponse rawResponse = RawServerResponse();
@@ -1410,6 +1536,9 @@ void RealityDataConsole::UserStat()
     }
 
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::DisplayUserStats(const bvector<RealityDataUserStat>& stats, const DateTime& curInfoDate)
     {
     DisplayInfo(Utf8PrintfString("User statistics (%4u-%02u-%02u): \n", curInfoDate.GetYear(),
@@ -1429,15 +1558,24 @@ void RealityDataConsole::DisplayUserStats(const bvector<RealityDataUserStat>& st
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::AllUserStats()
     {
     AllUserStatsGen(false);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::AllUserStatsJson()
     {
     AllUserStatsGen(true);
     }
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::AllUserStatsGen(bool displayAsJson)
     {
     DisplayInfo("Please enter the date requested\n", DisplayOption::Question);
@@ -1560,6 +1698,9 @@ void RealityDataConsole::AllUserStatsGen(bool displayAsJson)
     }
 	
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 static void downloadProgressFunc(Utf8String filename, double fileProgress, double repoProgress)
     {
     char progressString[1024];
@@ -1567,6 +1708,9 @@ static void downloadProgressFunc(Utf8String filename, double fileProgress, doubl
     *s_outputDestination << progressString;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 static void uploadProgressFunc(Utf8String filename, double fileProgress, double repoProgress)
     {
     char progressString[1024];
@@ -1575,6 +1719,9 @@ static void uploadProgressFunc(Utf8String filename, double fileProgress, double 
     *s_outputDestination << progressString;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::Download()
     {
     if (m_currentNode == nullptr)
@@ -1614,6 +1761,9 @@ void RealityDataConsole::Download()
         DisplayInfo("Download could not be completed. Please verify you have access to this RealityData, that it still exists and that it has files to download\n", DisplayOption::Error);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::Upload()
     {
     DisplayInfo("Please enter the source folder on the local machine (must be existing folder)\n  ?", DisplayOption::Question);
@@ -1715,6 +1865,9 @@ void RealityDataConsole::Upload()
 		}
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::Details()
     {
     if (m_currentNode == nullptr)
@@ -1786,6 +1939,7 @@ void RealityDataConsole::Details()
         DisplayInfo(Utf8PrintfString(" Description         : %s\n", entity->GetDescription().c_str()));
         DisplayInfo(Utf8PrintfString(" Root document       : %s\n", entity->GetRootDocument().c_str()));
         DisplayInfo(Utf8PrintfString(" Size (kb)           : %lu\n", entity->GetTotalSize()));
+        DisplayInfo(Utf8PrintfString(" Size Up To Date     : %s\n", entity->IsSizeUpToDate() ? "true" : "false"));
         DisplayInfo(Utf8PrintfString(" Classification      : %s\n", entity->GetClassificationTag().c_str()));
         DisplayInfo(Utf8PrintfString(" Type                : %s\n", entity->GetRealityDataType().c_str()));
         DisplayInfo(Utf8PrintfString(" Streamed            : %s\n", entity->IsStreamed() ? "true" : "false"));
@@ -1809,6 +1963,9 @@ void RealityDataConsole::Details()
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::FileAccess()
     {
     if (m_currentNode == nullptr)
@@ -1826,6 +1983,9 @@ void RealityDataConsole::FileAccess()
     delete handshake;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::AzureAddress()
     {
     if (m_currentNode == nullptr)
@@ -1869,6 +2029,9 @@ void RealityDataConsole::AzureAddress()
         DisplayInfo(Utf8PrintfString("%s?%s\n", azureServer.c_str(), azureToken.c_str()));
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::ChangeProps()
     {
     if (m_currentNode == nullptr)
@@ -1932,6 +2095,9 @@ void RealityDataConsole::ChangeProps()
         Details();
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::MassUnlink()
     {
     Utf8StringCR projectId = RealityDataService::GetProjectId();
@@ -1957,6 +2123,9 @@ void RealityDataConsole::MassUnlink()
     DisplayInfo("Mass Unlink Complete\n", DisplayOption::Tip);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::ForceMassUnlink()
     {
     DisplayInfo(Utf8PrintfString("Attempting to unlink all %d entries from all their relationships. Please be extra patient...\n", m_serverNodes.size()), DisplayOption::Tip);
@@ -1988,6 +2157,9 @@ void RealityDataConsole::ForceMassUnlink()
     DisplayInfo("Mass Unlink Complete\n", DisplayOption::Tip);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::MassDelete()
     {
     std::string str, str2;
@@ -2023,13 +2195,13 @@ void RealityDataConsole::MassDelete()
     DisplayInfo(Utf8PrintfString("Deleting all %d entries. Please be patient...\n", m_serverNodes.size()), DisplayOption::Tip);
 
     RawServerResponse rawResponse = RawServerResponse();
-    RealityDataDelete realityDataReq = RealityDataDelete(""); //dummy
+    RealityDataDeleteRequest realityDataReq = RealityDataDeleteRequest(""); //dummy
 
     bvector<Utf8String> errors = bvector<Utf8String>();
 
     for(size_t i = 0; i < m_serverNodes.size(); ++i)
         {
-        realityDataReq = RealityDataDelete(m_serverNodes[i].GetInstanceId());
+        realityDataReq = RealityDataDeleteRequest(m_serverNodes[i].GetInstanceId());
         rawResponse = RealityDataService::BasicRequest(&realityDataReq);
         if (rawResponse.body.Contains("errorMessage"))
             errors.push_back(Utf8PrintfString("%s failed to delete with error:\n%s\n",m_serverNodes[i].GetInstanceId().c_str(), rawResponse.body.c_str()));
@@ -2049,6 +2221,9 @@ void RealityDataConsole::MassDelete()
 
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::Delete()
     {
     if (m_currentNode == nullptr)
@@ -2104,7 +2279,7 @@ void RealityDataConsole::Delete()
         else if (str != "y")
             return;
 
-        RealityDataDelete realityDataReq = RealityDataDelete(instanceId);
+        RealityDataDeleteRequest realityDataReq = RealityDataDeleteRequest(instanceId);
         rawResponse = RealityDataService::BasicRequest(&realityDataReq);
         }
 
@@ -2123,6 +2298,9 @@ void RealityDataConsole::Delete()
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::Filter()
     {
     Utf8String filter = "";
@@ -2177,6 +2355,9 @@ void RealityDataConsole::Filter()
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::Relationships()
     {
     if (m_currentNode == nullptr)
@@ -2212,6 +2393,9 @@ void RealityDataConsole::Relationships()
                           entity->GetCreationDateTime().ToString().c_str()));
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::CreateRD()
     {
     std::string input;
@@ -2274,6 +2458,229 @@ void RealityDataConsole::CreateRD()
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+void RealityDataConsole::CreatePublicKey()
+    {
+    RealityDataPublicKey publicKey;
+
+    if (m_currentNode == nullptr)
+        {
+        DisplayInfo("please navigate to a reality data (with cd) before using this function\n", DisplayOption::Tip);
+        return;
+        }
+
+    Utf8String className = m_currentNode->node.GetECClassName();
+    if (className != "RealityData")
+        {
+        DisplayInfo("please navigate to the root of the reality data (with cd) before using this function\n", DisplayOption::Tip);
+        return;
+        }
+
+    Utf8String instanceId = m_currentNode->node.GetInstanceId();
+    publicKey.SetRealityDataId(instanceId);
+
+    std::string input;
+    bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
+    DisplayInfo("Please input value for Description?\n", DisplayOption::Question);
+    std::getline(*s_inputSource, input);
+    Utf8String description = Utf8String(input.c_str()).Trim();
+    if(description.EqualsI("Quit"))
+        {
+        m_lastCommand = Command::Quit;
+        return;
+        }
+
+    publicKey.SetDescription(description.c_str());
+
+    DisplayInfo("Please input value for Authorized user ids[semi-colon separated list of user GUID] (or empty if everyone)?\n", DisplayOption::Question);
+    std::getline(*s_inputSource, input);
+    Utf8String authorizedUserIds = Utf8String(input.c_str()).Trim();
+
+    publicKey.SetAuthorizedUserIds(authorizedUserIds.c_str());
+
+    DisplayInfo("Please input value for Valid Until Date?\n", DisplayOption::Question);
+    std::getline(*s_inputSource, input);
+    Utf8String stringDate = Utf8String(input.c_str()).Trim();
+    if (stringDate.EqualsI("Quit"))
+        {
+        m_lastCommand = Command::Quit;
+        return;
+        }
+
+    if (stringDate.Trim().size() != 0)
+        {
+        DateTime validUntilDate;
+        DateTime::FromString(validUntilDate, stringDate.c_str());
+    
+        if (!validUntilDate.IsValid())
+            {
+            DisplayInfo("Date is invalid.", DisplayOption::Error);
+            }
+
+        publicKey.SetValidUntilDate(validUntilDate);
+        }
+
+
+
+    RealityDataPublicKeyCreateRequest createRequest = RealityDataPublicKeyCreateRequest(publicKey);
+
+    RawServerResponse createResponse = RawServerResponse();
+    Utf8String response = RealityDataService::Request(createRequest, createResponse);
+
+    Json::Value instance(Json::objectValue);
+    Json::Reader::Parse(createResponse.body, instance);
+    if (createResponse.status == RequestStatus::OK && !instance["changedInstance"].isNull() && !instance["changedInstance"]["instanceAfterChange"].isNull() && !instance["changedInstance"]["instanceAfterChange"]["instanceId"].isNull())
+        {
+        DisplayInfo(Utf8PrintfString("New Public Key created with GUID %s\n", instance["changedInstance"]["instanceAfterChange"]["instanceId"].asString().c_str()), DisplayOption::Info);
+        }
+    else
+        {
+        DisplayInfo("There was an error creating a new Public Key.", DisplayOption::Error);
+        DisplayInfo(Utf8PrintfString("And message %s\n", createResponse.body.c_str()), DisplayOption::Error);
+        }
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+void RealityDataConsole::ChangePublicKey()
+    {
+    RealityDataPublicKey publicKey;
+
+    RawServerResponse rawResponse;
+    Utf8String str;
+    std::string input;
+
+    DisplayInfo("Enter id of Public Key to change (or quit to cancel)?\n", DisplayOption::Question);
+    std::getline(*s_inputSource, input);
+    if(strstr(input.c_str(), "quit"))
+        {      
+        m_lastCommand = Command::Quit;
+        return;
+        }
+    else if (input == "")
+        return;
+
+
+    // Extract current public key
+    RealityDataPublicKeyRequest keyRequest(input.c_str());
+    RealityDataService::Request(keyRequest, publicKey, rawResponse);
+    if (rawResponse.status != RequestStatus::OK)
+        {
+        DisplayInfo("There was an error extracting current Public Key.\n", DisplayOption::Error);
+        DisplayInfo(Utf8PrintfString("And message %s\n", rawResponse.body.c_str()), DisplayOption::Error);
+        return;
+        }
+    DisplayInfo("======================================================\n");
+    DisplayInfo(Utf8PrintfString(" Key: %s (current values)\n", input.c_str()));
+    DisplayInfo("======================================================\n");
+    DisplayPublicKey(publicKey);
+    DisplayInfo("======================================================\n");
+
+
+    bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
+    DisplayInfo("Please new value for Description (or empty for unchanged)?\n", DisplayOption::Question);
+    std::getline(*s_inputSource, input);
+    Utf8String description = Utf8String(input.c_str()).Trim();
+    if(!description.EqualsI(""))
+        publicKey.SetDescription(description.c_str());
+
+    DisplayInfo("Please input new value for Authorized user ids[semi-colon separated list of user GUID] (use 'same' if unchanged or empty for everyone)?\n", DisplayOption::Question);
+    std::getline(*s_inputSource, input);
+    Utf8String authorizedUserIds = Utf8String(input.c_str()).Trim();
+    if (!authorizedUserIds.EqualsI("same"))
+        publicKey.SetAuthorizedUserIds(authorizedUserIds.c_str());
+
+    DisplayInfo("Please input new value for Valid Until Date (or empty for unchanged)?\n", DisplayOption::Question);
+    std::getline(*s_inputSource, input);
+    Utf8String stringDate = Utf8String(input.c_str()).Trim();
+    if (!stringDate.EqualsI(""))
+        {
+        DateTime validUntilDate;
+        DateTime::FromString(validUntilDate, stringDate.c_str());
+    
+        if (!validUntilDate.IsValid())
+            {
+            DisplayInfo("Date is invalid.", DisplayOption::Error);
+            return;
+            }
+
+        publicKey.SetValidUntilDate(validUntilDate);
+        }
+
+
+
+    RealityDataPublicKeyChangeRequest changeRequest(publicKey);
+
+    RawServerResponse createResponse = RawServerResponse();
+    Utf8String response = RealityDataService::Request(changeRequest, createResponse);
+
+    Json::Value instance(Json::objectValue);
+    Json::Reader::Parse(createResponse.body, instance);
+    if (createResponse.status == RequestStatus::OK && !instance["changedInstance"].isNull() && !instance["changedInstance"]["instanceAfterChange"].isNull() && !instance["changedInstance"]["instanceAfterChange"]["instanceId"].isNull())
+        {
+        DisplayInfo(Utf8PrintfString("Public Key modified %s\n", instance["changedInstance"]["instanceAfterChange"]["instanceId"].asString().c_str()), DisplayOption::Info);
+        }
+    else
+        {
+        DisplayInfo("There was an error creating a new Public Key.", DisplayOption::Error);
+        DisplayInfo(Utf8PrintfString("And message %s\n", createResponse.body.c_str()), DisplayOption::Error);
+        }
+
+    RealityDataService::Request(keyRequest, publicKey, rawResponse);
+    if (rawResponse.status != RequestStatus::OK)
+    {
+        DisplayInfo("There was an error extracting current Public Key.\n", DisplayOption::Error);
+        DisplayInfo(Utf8PrintfString("And message %s\n", rawResponse.body.c_str()), DisplayOption::Error);
+        return;
+    }
+    DisplayInfo("======================================================\n");
+    DisplayInfo(Utf8PrintfString("Change Key: %s \n", input.c_str()));
+    DisplayInfo("======================================================\n");
+    DisplayPublicKey(publicKey);
+    DisplayInfo("======================================================\n");
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+void RealityDataConsole::DeletePublicKey()
+    {
+    
+    RawServerResponse rawResponse;
+    std::string input;
+
+    DisplayInfo("Enter id of Public Key to delete (or quit to cancel)?\n", DisplayOption::Question);
+    std::getline(*s_inputSource, input);
+    if(strstr(input.c_str(), "quit"))
+        {      
+        m_lastCommand = Command::Quit;
+        return;
+        }
+    else if (input == "")
+        return;
+
+    RealityDataPublicKeyDeleteRequest deleteReq(input.c_str());
+    rawResponse = RealityDataService::BasicRequest(&deleteReq);
+
+    if (rawResponse.body.Contains("errorMessage"))
+        {
+        Json::Value instances(Json::objectValue);
+        if (Json::Reader::Parse(rawResponse.body, instances) && instances.isMember("errorMessage"))
+            rawResponse.body = instances["errorMessage"].asString();
+        DisplayInfo(Utf8PrintfString("There was an error deleting this item\n%s", rawResponse.body.c_str()), DisplayOption::Error);
+        }
+    else
+        {
+        DisplayInfo("item deleted\n", DisplayOption::Tip);
+        }
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::Link()
     {
     if (m_currentNode == nullptr)
@@ -2302,6 +2709,9 @@ void RealityDataConsole::Link()
         Relationships();
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::Unlink()
     {
     if (m_currentNode == nullptr)
@@ -2331,6 +2741,9 @@ void RealityDataConsole::Unlink()
         Relationships();
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::Migrate()
     {
     DisplayInfo("This Command will give all entries from one user to another\n", DisplayOption::Tip);
@@ -2368,6 +2781,9 @@ void RealityDataConsole::Migrate()
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
 void RealityDataConsole::InputError()
     {
     DisplayInfo("Unrecognized Command. Type \"help\" for usage\n", DisplayOption::Error);

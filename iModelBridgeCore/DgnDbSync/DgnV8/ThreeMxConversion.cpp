@@ -335,14 +335,13 @@ StatusInt   RealityMeshAttachmentConversion::ExtractAttachment (BentleyApi::Utf8
     Bentley::WString monikerString;
     source.get(monikerString);
 
+    Bentley::WString searchPath = v8el.GetDgnFileP()->GetFileName().c_str();
     DgnDocumentMonikerPtr moniker;
     if (0 == version)
-        moniker = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(monikerString.c_str());
+        moniker = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(monikerString.c_str(), searchPath.c_str());
     else
-        moniker = DgnV8Api::DgnDocumentMoniker::Create(monikerString.c_str());
-
-    moniker->SetParentSearchPath(v8el.GetDgnFileP()->GetFileName().c_str());
-
+        moniker = DgnV8Api::DgnDocumentMoniker::Create(monikerString.c_str(), searchPath.c_str());
+    
     rootUrl = attachNameFromMoniker(*moniker);
 
     return SUCCESS;

@@ -308,6 +308,7 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "Description": "Helsinki is the capital and largest city of Finland. It is in the region of Uusimaa, in southern Finland, on the shore of the Gulf of Finland. Helsinki has a population of 629,512,[3] an urban population of 1,214,210,[7] and a metropolitan population of over 1.4 million, making it the most populous municipality and urban area in Finland.",
                     "RootDocument": "Helsinki/Scene/Production_Helsinki_3MX_ok.3mx",
                     "Size": "1036657",
+                    "SizeUpToDate": true,
                     "Classification": "Terrain",
                     "Streamed": false,
                     "Type": "3mx",
@@ -370,6 +371,7 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "Description": "Helsinki222 is the capital and largest city of Finland. It is in the region of Uusimaa, in southern Finland, on the shore of the Gulf of Finland. Helsinki has a population of 629,512,[3] an urban population of 1,214,210,[7] and a metropolitan population of over 1.4 million, making it the most populous municipality and urban area in Finland.",
                     "RootDocument": "Helsinki2/Scene/Production_Helsinki_3MX_ok.3mx",
                     "Size": "1036657",
+                    "SizeUpToDate": true,
                     "Classification": "Terrain",
                     "Streamed": false,
                     "Type": "3mx",
@@ -427,7 +429,7 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
             {
                 "instanceId": "af3c43a9-1797-4765-a7c3-6f1cd6706fa9",
                 "schemaName": "S3MX",
-                "className": "RealityData",
+                "className": "RealityDataExtended",
                 "properties": {
                     "Id": "af3c43a9-1797-4765-a7c3-6f1cd6706fa9",
                     "OrganizationId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
@@ -438,7 +440,8 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "Group": "TestGroup",
                     "Description": "Helsinki is the capital and largest city of Finland. It is in the region of Uusimaa, in southern Finland, on the shore of the Gulf of Finland. Helsinki has a population of 629,512,[3] an urban population of 1,214,210,[7] and a metropolitan population of over 1.4 million, making it the most populous municipality and urban area in Finland.",
                     "RootDocument": "Helsinki/Scene/Production_Helsinki_3MX_ok.3mx",
-                    "FileSize": "1036657",
+                    "Size": "1036657",
+                    "SizeUpToDate": false,
                     "Classification": "Terrain",
                     "Streamed": false,
                     "DataSourceType": "3mx",
@@ -1178,6 +1181,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
     ASSERT_EQ(realityData->GetDescription(), "Helsinki is the capital and largest city of Finland. It is in the region of Uusimaa, in southern Finland, on the shore of the Gulf of Finland. Helsinki has a population of 629,512,[3] an urban population of 1,214,210,[7] and a metropolitan population of over 1.4 million, making it the most populous municipality and urban area in Finland.");
     ASSERT_EQ(realityData->GetRootDocument(), "Helsinki/Scene/Production_Helsinki_3MX_ok.3mx");
     ASSERT_EQ(realityData->GetTotalSize(), 1036657);
+    ASSERT_TRUE(realityData->IsSizeUpToDate());
     ASSERT_EQ(realityData->GetClassification(), RealityDataBase::Classification::TERRAIN);
     ASSERT_EQ(realityData->GetClassificationTag(), "Terrain");
     ASSERT_EQ(realityData->IsStreamed(), false);
@@ -1233,6 +1237,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityDataExtended)
     ASSERT_EQ(realityData->GetDescription(), "Helsinki is the capital and largest city of Finland. It is in the region of Uusimaa, in southern Finland, on the shore of the Gulf of Finland. Helsinki has a population of 629,512,[3] an urban population of 1,214,210,[7] and a metropolitan population of over 1.4 million, making it the most populous municipality and urban area in Finland.");
     ASSERT_EQ(realityData->GetRootDocument(), "Helsinki/Scene/Production_Helsinki_3MX_ok.3mx");
     ASSERT_EQ(realityData->GetTotalSize(), 1036657);
+    ASSERT_FALSE(realityData->IsSizeUpToDate());
     ASSERT_EQ(realityData->GetClassification(), RealityDataBase::Classification::TERRAIN);
     ASSERT_EQ(realityData->GetClassificationTag(), "Terrain");
     ASSERT_EQ(realityData->IsStreamed(), false);

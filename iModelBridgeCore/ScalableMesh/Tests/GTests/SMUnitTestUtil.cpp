@@ -400,6 +400,7 @@ bool ScalableMeshGTestUtil::InitScalableMesh()
         static ScalableMeshModule smApp;
         if (SUCCESS == smApp.Initialize())
             bInitialized = true;
+        smApp.InitializeLogging();
         }
 
     return bInitialized;

@@ -9,8 +9,7 @@
 //===========================================================================================
 
 
-#include <ClassificationSystems/ClassificationSystemsApi.h>
-
+#include "PublicApi/GeneratedInsertsApi.h"
 #include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 
 
@@ -18,9 +17,9 @@ namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
-void ClassificationSystemsDomain::InsertOmniClass34Definitions(Dgn::DgnDbR db) const
+void GeneratedInserts::InsertOmniClass34Definitions(Dgn::DgnDbR db) const
     {
-    ClassificationSystemCPtr omniClassSystem = TryAndGetSystem(db, "OmniClass");
+    ClassificationSystemCPtr omniClassSystem = TryAndGetSystem(db, "OmniClass", "2006-03-28");
     ClassificationTableCPtr omniClassTable = TryAndGetTable(*omniClassSystem , "Table 34 - Oraganizational Roles");
 
     ClassificationPtr subsection0OmniClass;

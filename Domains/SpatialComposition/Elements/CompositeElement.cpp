@@ -3,9 +3,8 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include <SpatialComposition/Elements/SpatialCompositionElementsApi.h>
 #include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
-
+#include "PublicApi/CompositeElement.h"
 
 USING_NAMESPACE_BUILDING_SHARED
 
@@ -200,6 +199,15 @@ Dgn::DgnDbStatus CompositeElement::_OnDelete() const
     return __super::_OnDelete();
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::Render::GeometryParams CompositeElement::_CreateGeometryParameters()
+{
+    return Dgn::Render::GeometryParams();
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -212,21 +220,16 @@ double CompositeElement::GetFootprintArea() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            CompositeElement::CalculateProperties
-(
-)
+void CompositeElement::CalculateProperties()
     {
-    CurveVectorPtr curveVec = DgnGeometryUtils::GetBaseShape(*this);
-    if (!curveVec.IsValid ())
+    CurveVectorPtr curve = DgnGeometryUtils::GetSliceAtZero(*this);
+    if (curve.IsNull())
         {
         SetFootprintArea (0.0);
         return;
         }
-
-    double area;
-    DVec3d normal;
-    DPoint3d centroid;
-    curveVec->CentroidNormalArea (centroid, normal, area);
+        
+    double area = GeometryUtils::GetCurveArea(*curve);
 
     SetFootprintArea(area);
     }

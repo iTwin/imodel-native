@@ -457,7 +457,7 @@ WSUploadResponse WebApiV2::ResolveUploadResponse(Http::Response& response) const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, bool requestHadSkipToken, const ObjectId* objectId) const
+WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, const ObjectId* objectId) const
     {
     HttpStatus status = response.GetHttpStatus();
     if (HttpStatus::OK == status ||
@@ -467,10 +467,7 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, bool 
 
         auto body = response.GetContent()->GetBody();
         auto eTag = response.GetHeaders().GetETag();
-
-        Utf8String skipToken;
-        if (requestHadSkipToken)
-             skipToken = response.GetHeaders().GetValue(HEADER_SkipToken);
+        auto skipToken = response.GetHeaders().GetValue(HEADER_SkipToken);
 
         return WSObjectsResult::Success(WSObjectsResponse(reader, body, status, eTag, skipToken));
         }
@@ -573,7 +570,7 @@ ICancellationTokenPtr ct
 
     return request.PerformAsync()->Then<WSObjectsResult>([this, objectId] (Http::Response& httpResponse)
         {
-        return ResolveObjectsResponse(httpResponse, false, &objectId);
+        return ResolveObjectsResponse(httpResponse, &objectId);
         });
     }
 
@@ -758,13 +755,9 @@ ICancellationTokenPtr ct
             BeAssert(true && WARNING_UrlLengthLimitations);
             }
         }
-        
-    bool requestHasSkipToken = false;
+
     if (GetMaxWebApiVersion() >= BeVersion(2, 5) && !skipToken.empty())
-        {
         request.GetHeaders().SetValue(HEADER_SkipToken, skipToken);
-        requestHasSkipToken = true;
-        }
 
     SetActivityIdToRequest(activityLogger, request);
     request.GetHeaders().SetIfNoneMatch(eTag);
@@ -772,9 +765,9 @@ ICancellationTokenPtr ct
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([this, requestHasSkipToken] (Http::Response& httpResponse)
+    return request.PerformAsync()->Then<WSObjectsResult>([this] (Http::Response& httpResponse)
         {
-        return ResolveObjectsResponse(httpResponse, requestHasSkipToken);
+        return ResolveObjectsResponse(httpResponse);
         });
     }
 

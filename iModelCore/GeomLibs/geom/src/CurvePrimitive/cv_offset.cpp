@@ -532,8 +532,8 @@ CurveVectorR collector
         {
         points[0] = points[4] = segment.point[0];
         points[1] = segment.point[1];
-        points[2] = offsetSegment.FractionToPoint(interval.GetStart ());
-        points[3] = offsetSegment.FractionToPoint(interval.GetEnd ());
+        points[2] = offsetSegment.FractionToPoint(interval.GetEnd());
+        points[3] = offsetSegment.FractionToPoint(interval.GetStart());
         n = 5;
         }
     if (n > 0)

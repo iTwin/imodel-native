@@ -748,7 +748,18 @@
 #define CS_fread   fread
 #define CS_fwrite  fwrite
 #define CS_fclose  fclose
+#ifdef GEOCOORD_ENHANCEMENT 
+#if _RUN_TIME == _rt_MSWIN64
+#define CS_fseek   _fseeki64
+#define CS_ftell64 _ftelli64
+#else
 #define CS_fseek   fseek
+#define CS_ftell64 ftell
+#endif
+#else
+#define CS_fseek   fseek
+#define CS_ftell64 ftell
+#endif
 #define CS_ftell   ftell
 #define CS_fflush  fflush
 #define CS_feof    feof

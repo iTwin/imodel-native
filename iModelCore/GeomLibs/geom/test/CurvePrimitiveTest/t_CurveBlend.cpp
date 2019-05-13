@@ -514,6 +514,25 @@ TEST(AreaOffset, Fractal)
     Check::ClearGeometry("AreaOffset.Fractal");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(AreaOffset, JonasSquare)
+    {
+
+    CurveVectorPtr areaA = CurveVector::CreateLinear({ {5,5,0},{95,5,0},{95,95,0},{5,95,0}, {5,5,0} }, CurveVector::BOUNDARY_TYPE_Outer);
+    Check::SaveTransformed(areaA);
+    for (double offset : {5.0, -5.0})
+        {
+        CurveOffsetOptions opts(offset);
+        Check::Shift (0, 100, 0);
+        CurveVectorPtr offsetA = areaA->AreaOffset(opts);
+        Check::SaveTransformed (offsetA);
+        Check::Shift (200, 0,0);
+        }
+    Check::ClearGeometry("CloneOffset.JonasSquare");
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17

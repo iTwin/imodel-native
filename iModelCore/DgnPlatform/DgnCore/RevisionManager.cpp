@@ -502,13 +502,8 @@ void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedC
         if (oldCode == newCode)
             continue;
 
-        DgnCode& codeToCheck = (dbOpcode == DbOpcode::Insert)? newCode: oldCode;
-
-        if (const_cast<DgnDbR>(dgndb).BriefcaseManager().ShouldReportCode(codeToCheck))
-            {
-            insertCode(discardedCodes, oldCode, assignedCodes);
-            insertCode(assignedCodes, newCode, discardedCodes);
-            }
+        insertCode(discardedCodes, oldCode, assignedCodes);
+        insertCode(assignedCodes, newCode, discardedCodes);
         }
     }
 

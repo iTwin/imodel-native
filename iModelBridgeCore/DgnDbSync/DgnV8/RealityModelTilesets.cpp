@@ -240,6 +240,23 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             return ERROR;
             }
 
+        auto spatialModel = model->ToSpatialModel();
+
+        if(spatialModel != nullptr && !((ScalableMeshModel*)spatialModel)->AllowPublishing())
+            {
+            if(!ecefLocation.m_isValid || !((ScalableMeshModel*)spatialModel)->IsGeoReferenced())
+                {
+                // For scalable meshes with in projects with no ECEF (or that are not georeferenced we need to record the transform or we have no way to get from tileset (ECEF) to DB.
+                Transform   tilesetToDb, dbToTileset = ((ScalableMeshModel*)spatialModel)->GetUorsToStorage();
+
+                tilesetToDb.InverseOf(dbToTileset);
+                tilesetToDb = Transform::FromProduct(tilesetToDb, dbToEcefTransform);
+
+                StoreRealityTilesetTransform(*model, tilesetToDb);
+                model->Update();
+                }
+            }
+
         SyncInfo::UriContentInfo currentInfo;
         currentInfo.GetInfo(fileName);
 
@@ -354,21 +371,35 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             url =  localUrlPrefix + Utf8String(dbFileName).c_str() + "/" + model->GetModelId().ToString() + Utf8String("/TileRoot.json");
             }
     
-        // For scalable meshes with in projects with no ECEF we need to record the transform or we have no way to get from tileset (ECEF) to DB.
-        if (smModel != nullptr && !ecefLocation.m_isValid) 
+        if (smModel != nullptr )
             {
-            // Reload 3sm using new url
-            auto unConstSMModel = const_cast<ScalableMeshModelP>(smModel);
-            unConstSMModel->CloseFile();
-            unConstSMModel->UpdateFilename(BeFileName(WString(url.c_str(), true)));
-            Transform   tilesetToDb, dbToTileset = unConstSMModel->GetUorsToStorage();
+            if(!ecefLocation.m_isValid)
+                {
+                // For scalable meshes with in projects with no ECEF we need to record the transform or we have no way to get from tileset (ECEF) to DB.
+                
+                // First reload 3sm using new url then get its location
+                auto unConstSMModel = const_cast<ScalableMeshModelP>(smModel);
+                unConstSMModel->CloseFile();
+                unConstSMModel->UpdateFilename(BeFileName(WString(url.c_str(), true)));
+                Transform   tilesetToDb, dbToTileset = unConstSMModel->GetUorsToStorage();
 
-            tilesetToDb.InverseOf (dbToTileset);
-            StoreRealityTilesetTransform(*model, tilesetToDb);
+                tilesetToDb.InverseOf(dbToTileset);
+                StoreRealityTilesetTransform(*model, tilesetToDb);
 
-            // Put everything back as it was
-            unConstSMModel->CloseFile();
-            unConstSMModel->UpdateFilename(BeFileName(fileName.c_str(), true));
+                // Put everything back as it was
+                unConstSMModel->CloseFile();
+                unConstSMModel->UpdateFilename(BeFileName(fileName.c_str(), true));
+                }
+            else if(!smModel->IsGeoReferenced())
+                {
+                auto unConstSMModel = const_cast<ScalableMeshModelP>(smModel);
+
+                Transform   tilesetToDb, dbToTileset = unConstSMModel->GetUorsToStorage();
+                tilesetToDb.InverseOf(dbToTileset);
+                tilesetToDb = Transform::FromProduct(tilesetToDb, dbToEcefTransform);
+
+                StoreRealityTilesetTransform(*model, tilesetToDb);
+                }
             }
         model->SetJsonProperties(json_tilesetUrl(), url);
         model->Update();

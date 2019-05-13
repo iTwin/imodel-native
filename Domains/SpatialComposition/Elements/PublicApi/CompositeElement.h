@@ -4,6 +4,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <SpatialComposition/Domain/SpatialCompositionMacros.h>
+#include <DgnPlatform/DgnPlatformApi.h>
+
+SPATIALCOMPOSITION_REFCOUNTED_PTR_AND_TYPEDEFS(CompositeElement)
 
 BEGIN_SPATIALCOMPOSITION_NAMESPACE
 
@@ -24,6 +28,7 @@ struct CompositeElement : Dgn::SpatialLocationElement
         virtual SPATIALCOMPOSITION_EXPORT Dgn::DgnDbStatus _OnInsert () override;
         virtual SPATIALCOMPOSITION_EXPORT Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElementCR original) override;
         virtual SPATIALCOMPOSITION_EXPORT Dgn::DgnDbStatus _OnDelete() const override;
+        virtual SPATIALCOMPOSITION_EXPORT Dgn::Render::GeometryParams _CreateGeometryParameters();
 
     public:
         //---------------------------------------------------------------------------------------

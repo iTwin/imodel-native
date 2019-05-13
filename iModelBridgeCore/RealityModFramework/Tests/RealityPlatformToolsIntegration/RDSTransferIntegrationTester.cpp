@@ -142,7 +142,7 @@ TEST_F(RDSTransferIntegrationFixture, UploadTest)
 
     ASSERT_TRUE(BeFileName::EmptyAndRemoveDirectory(directory.c_str()) == BeFileNameStatus::Success);
 
-    RealityDataDelete del = RealityDataDelete(identifier);
+    RealityDataDeleteRequest del = RealityDataDeleteRequest(identifier);
     RawServerResponse rawResponse = RawServerResponse();
     RealityDataService::Request(del, rawResponse);
 

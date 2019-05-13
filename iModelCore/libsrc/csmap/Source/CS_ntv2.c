@@ -398,7 +398,12 @@ int CSinitNTv2 (struct cs_NTv2_* thisPtr,Const char *filePath,long32_t bufferSiz
 	size_t readCnt;
 	size_t readCntRq;
 	size_t malcCnt;
-	long32_t skipAmount;
+#ifdef GEOCOORD_ENHANCEMENT
+    /* Added support for files over 2 Giga Bytes */
+    ulong32_t skipAmount;
+#else
+    long32_t skipAmount;
+#endif
 
 	char *cp;
 	struct csNTv2SubGrid_* subPtr;
@@ -1037,7 +1042,12 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 
 	csFILE* stream = NULL;
 	size_t readCnt;
+#ifdef GEOCOORD_ENHANCEMENT
+    /* Added support for files over 2 Giga Bytes */
+    ulong32_t filePosition;
+#else
 	long32_t filePosition;
+#endif
 	struct csNTv2SubGrid_ *cvtPtr;
 
 	double wpLL [2];
@@ -1106,7 +1116,12 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 				CS_erpt (cs_IOERR);
 				goto error;
 			}
-			thisPtr->fileImageSize = CS_ftell (stream);
+#ifdef GEOCOORD_ENHANCEMENT
+            /* Added support for files over 2 Giga Bytes */
+			thisPtr->fileImageSize = CS_ftell64 (stream);
+#else
+            thisPtr->fileImageSize = CS_ftell(stream);
+#endif
 			if (thisPtr->fileImageSize < 0L)
 			{
 				CS_stncp (csErrnam,thisPtr->FilePath,MAXPATH);
@@ -1189,7 +1204,16 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 			   Read the data into my record buffer. */
 			filePosition = cvtPtr->FirstRecord + rowNbr * cvtPtr->RowSize + eleNbr * thisPtr->RecSize;
 
+#ifdef GEOCOORD_ENHANCEMENT
+#if _RUN_TIME == _rt_MSWIN64
+            /* Added support for files over 2 Giga Bytes */
+            if ((__int64)(filePosition + sizeof(southEast) + sizeof(southWest)) > thisPtr->fileImageSize)
+#else
 			if ((long32_t)(filePosition + sizeof(southEast) + sizeof(southWest)) > thisPtr->fileImageSize)
+#endif
+#else
+			if ((long32_t)(filePosition + sizeof(southEast) + sizeof(southWest)) > thisPtr->fileImageSize)
+#endif
 			{
 				CS_erpt (cs_INV_FILE);
 				goto error;
@@ -1204,7 +1228,17 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 			/* Read northeast shifts. */
 			filePosition += cvtPtr->RowSize;
 
+#ifdef GEOCOORD_ENHANCEMENT
+#if _RUN_TIME == _rt_MSWIN64
+            /* Added support for files over 2 Giga Bytes */
+            if ((__int64)(filePosition + sizeof(northEast) + sizeof(northWest)) > thisPtr->fileImageSize)
+
+#else
 			if ((long32_t)(filePosition + sizeof(northEast) + sizeof(northWest)) > thisPtr->fileImageSize)
+#endif
+#else
+			if ((long32_t)(filePosition + sizeof(northEast) + sizeof(northWest)) > thisPtr->fileImageSize)
+#endif
 			{
 				CS_erpt (cs_INV_FILE);
 				goto error;
@@ -1245,7 +1279,16 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 			   virtual cell in the Canadian documentation.  */
 			filePosition = cvtPtr->FirstRecord + rowNbr * cvtPtr->RowSize + eleNbr * thisPtr->RecSize;
 
+#ifdef GEOCOORD_ENHANCEMENT
+#if _RUN_TIME == _rt_MSWIN64
+            /* Added support for files over 2 Giga Bytes */
+            if ((__int64)(filePosition + sizeof(southEast) + sizeof(southWest)) > thisPtr->fileImageSize)
+#else
 			if ((long32_t)(filePosition + sizeof(southEast) + sizeof(southWest)) > thisPtr->fileImageSize)
+#endif
+#else
+			if ((long32_t)(filePosition + sizeof(southEast) + sizeof(southWest)) > thisPtr->fileImageSize)
+#endif
 			{
 				CS_erpt (cs_INV_FILE);
 				goto error;
@@ -1287,7 +1330,16 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 			/* Point is on the extreme western edge of the sub-grid. */
 			filePosition = cvtPtr->FirstRecord + rowNbr * cvtPtr->RowSize + eleNbr * thisPtr->RecSize;
 
+#ifdef GEOCOORD_ENHANCEMENT
+#if _RUN_TIME == _rt_MSWIN64
+            /* Added support for files over 2 Giga Bytes */
+            if ((__int64)(filePosition + sizeof(southEast)) > thisPtr->fileImageSize)
+#else
 			if ((long32_t)(filePosition + sizeof(southEast)) > thisPtr->fileImageSize)
+#endif
+#else
+			if ((long32_t)(filePosition + sizeof(southEast)) > thisPtr->fileImageSize)
+#endif
 			{
 				CS_erpt (cs_INV_FILE);
 				goto error;
@@ -1299,7 +1351,16 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 
 			filePosition += cvtPtr->RowSize;
 
+#ifdef GEOCOORD_ENHANCEMENT
+#if _RUN_TIME == _rt_MSWIN64
+            /* Added support for files over 2 Giga Bytes */
+            if ((__int64)(filePosition + sizeof(northEast)) > thisPtr->fileImageSize)
+#else
 			if ((long32_t)(filePosition + sizeof(northEast)) > thisPtr->fileImageSize)
+#endif
+#else
+			if ((long32_t)(filePosition + sizeof(northEast)) > thisPtr->fileImageSize)
+#endif
 			{
 				CS_erpt (cs_INV_FILE);
 				goto error;
@@ -1335,7 +1396,16 @@ int CScalcNTv2 (struct cs_NTv2_* thisPtr,double deltaLL [2],Const double source 
 			/* Point is actually the northwestern corner of the sub-grid. */
 			filePosition = cvtPtr->FirstRecord + rowNbr * cvtPtr->RowSize + eleNbr * thisPtr->RecSize;
 
+#ifdef GEOCOORD_ENHANCEMENT
+#if _RUN_TIME == _rt_MSWIN64
+            /* Added support for files over 2 Giga Bytes */
+            if ((__int64)(filePosition + sizeof(southEast)) > thisPtr->fileImageSize)
+#else
 			if ((long32_t)(filePosition + sizeof(southEast)) > thisPtr->fileImageSize)
+#endif
+#else
+			if ((long32_t)(filePosition + sizeof(southEast)) > thisPtr->fileImageSize)
+#endif
 			{
 				CS_erpt (cs_INV_FILE);
 				goto error;

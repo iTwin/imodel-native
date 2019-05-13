@@ -18,6 +18,16 @@ struct ClassificationTestFixture : public ClassificationSystemsTestsBase
     ~ClassificationTestFixture() {};
     };
 
+int countTableClassifications(ClassificationTableCR table)
+{
+    int counter = 0;
+
+    for (auto classification : table.MakeClassificationIterator())
+        counter++;
+
+    return counter;
+}
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Elonas.Seviakovas               04/2019
 //---------------+---------------+---------------+---------------+---------------+------
@@ -104,17 +114,17 @@ TEST_F(ClassificationTestFixture, GetOrCreateBySystemTableNames_NoElementExists_
     db.BriefcaseManager().StartBulkOperation();
 
     const Utf8String classificationSystemName = "Test System";
-    ClassificationSystemCPtr system = ClassificationSystem::TryGet(db, classificationSystemName.c_str());
+    ClassificationSystemCPtr system = ClassificationSystem::TryGet(db, classificationSystemName, "#01");
     ASSERT_FALSE(system.IsValid()) << "System already exists";
 
     const Utf8String classificationTableName = "Test Table";
     const Utf8String classificationName = "Test Classification";
 
     ClassificationPtr classification = Classification::GetOrCreateBySystemTableNames(
-        db, classificationName.c_str(), "01-00-00", "", classificationSystemName, classificationTableName);
+        db, classificationName, "01-00-00", "", classificationSystemName, "#01", classificationTableName);
     ASSERT_TRUE(classification.IsValid()) << "Classification did not get created";
 
-    system = ClassificationSystem::TryGet(db, classificationSystemName.c_str());
+    system = ClassificationSystem::TryGet(db, classificationSystemName, "#01");
     ASSERT_TRUE(system.IsValid()) << "System did not get created";
 
     ClassificationTableCPtr table = ClassificationTable::TryGet(*system, classificationTableName.c_str());
@@ -136,13 +146,13 @@ TEST_F(ClassificationTestFixture, GetOrCreateBySystemTableNames_HierarchyAlready
     db.BriefcaseManager().StartBulkOperation();
 
     const Utf8String classificationSystemName = "Test System";
-    ClassificationSystemPtr system = ClassificationSystem::Create(db, classificationSystemName.c_str());
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, classificationSystemName, "#01");
     ASSERT_TRUE(system.IsValid()) << "Could not create System";
     system->Insert();
 
     const Utf8String classificationTableName = "Test Table";
     ClassificationTablePtr table = ClassificationTable::Create(*system, classificationTableName.c_str());
-    ASSERT_TRUE(table.IsValid()) << "Couldnot create Table";
+    ASSERT_TRUE(table.IsValid()) << "Could not create Table";
     table->Insert();
 
     const Utf8String classificationName = "Test Classification";
@@ -150,11 +160,52 @@ TEST_F(ClassificationTestFixture, GetOrCreateBySystemTableNames_HierarchyAlready
     ASSERT_TRUE(classification.IsValid()) << "Could not create Classification";
 
     ClassificationPtr queriedClassification = Classification::GetOrCreateBySystemTableNames(
-        db, classificationName.c_str(), "01-01-00", "", classificationSystemName.c_str(), classificationTableName.c_str());
+        db, classificationName, "01-01-00", "", classificationSystemName, "#01", classificationTableName);
 
     ASSERT_EQ(classification->GetElementId(), queriedClassification->GetElementId());
 
     ASSERT_EQ(table->GetElementId(), queriedClassification->GetClassificationTableId());
+
+    db.SaveChanges();
+}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas               04/2019
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassificationTestFixture, GetOrCreateBySystemTableNames_TryDifferentClassificationNames_ReturnsDifferentClassifications)
+{
+    Dgn::DgnDbR db = *DgnClientFx::DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    const Utf8String classificationSystemName = "Test System";
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, classificationSystemName, "#01");
+    ASSERT_TRUE(system.IsValid()) << "Could not create System";
+    system->Insert();
+
+    const Utf8String classificationTableName = "Test Table";
+    ClassificationTablePtr table = ClassificationTable::Create(*system, classificationTableName.c_str());
+    ASSERT_TRUE(table.IsValid()) << "Could not create Table";
+    table->Insert();
+
+    const Utf8String classificationName = "Test Classification";
+    ClassificationPtr classification = Classification::CreateAndInsert(*table, classificationName.c_str(), "01-01-00", "", nullptr, nullptr);
+    ASSERT_TRUE(classification.IsValid()) << "Could not create Classification";
+
+    ClassificationPtr queriedClassification = Classification::GetOrCreateBySystemTableNames(
+        db, classificationName, "01-01-00", "", classificationSystemName, "#01", classificationTableName);
+
+    ASSERT_EQ(classification->GetElementId(), queriedClassification->GetElementId());
+    ASSERT_EQ(table->GetElementId(), queriedClassification->GetClassificationTableId());
+    ASSERT_EQ(1, countTableClassifications(*table));
+
+    const Utf8String classificationName2 = "Different Test Classification";
+    queriedClassification = Classification::GetOrCreateBySystemTableNames(
+        db, classificationName2, "01-02-00", "", classificationSystemName, "#01", classificationTableName);
+
+    ASSERT_FALSE(classification->GetElementId() == queriedClassification->GetElementId());
+    ASSERT_TRUE(classificationName2 == queriedClassification->GetName());
+    ASSERT_EQ(table->GetElementId(), queriedClassification->GetClassificationTableId());
+    ASSERT_EQ(2, countTableClassifications(*table));
 
     db.SaveChanges();
 }
