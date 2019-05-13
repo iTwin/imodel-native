@@ -242,7 +242,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
 
         auto spatialModel = model->ToSpatialModel();
 
-        if(spatialModel != nullptr && !((ScalableMeshModel*)spatialModel)->_AllowPublishing())
+        if(spatialModel != nullptr && !((ScalableMeshModel*)spatialModel)->AllowPublishing())
             {
             if(!ecefLocation.m_isValid || !((ScalableMeshModel*)spatialModel)->IsGeoReferenced())
                 {
