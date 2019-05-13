@@ -58,9 +58,10 @@ WChar   const * const   szDumpFile                              // => Optional
 
 DGNPLATFORM_EXPORT void    win32Tools_generateMiniDump
 (
-FILE                     * const stream,
+BeTextFile*              stream,
 EXCEPTION_POINTERS const * const exceptionInfoP,
-WCharCP                  dmpFilePath
+WCharCP                  dmpFilePath,
+bool*                    wantFullMemoryDump
 );
 
 DGNPLATFORM_EXPORT uint32_t win32Tools_resetFloatingPointExceptions
