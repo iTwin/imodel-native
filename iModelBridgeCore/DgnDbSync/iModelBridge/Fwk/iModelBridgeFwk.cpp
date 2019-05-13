@@ -22,6 +22,7 @@
 #include <BentleyLog4cxx/log4cxx.h>
 #include "../iModelBridgeLdClient.h"
 #include "iModelCrashProcessor.h"
+#include "iModelBridgeErrorHandling.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
