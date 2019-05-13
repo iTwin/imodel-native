@@ -502,9 +502,9 @@ TEST_F(RealityDataServiceFixture, RealityDataRelationshipDelete)
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
-TEST_F(RealityDataServiceFixture, RealityDataDelete)
+TEST_F(RealityDataServiceFixture, RealityDataDeleteRequest)
     {
-    RealityDataDelete requestUT("RealityDataID");
+    RealityDataDeleteRequest requestUT("RealityDataID");
 
     EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData/RealityDataID");
     EXPECT_EQ(requestUT.GetRequestType(), WSGURL::HttpRequestType::DELETE_Request);
@@ -539,7 +539,7 @@ TEST_F(RealityDataServiceFixture, RealityDataDeleteGoodRequest)
             )";
         }));
 
-    RealityDataDelete requestUT("RealityDataID");
+    RealityDataDeleteRequest requestUT("RealityDataID");
     RawServerResponse rawResponse{};
 
     s_realityDataService->Request(requestUT, rawResponse);
@@ -551,13 +551,13 @@ TEST_F(RealityDataServiceFixture, RealityDataDeleteGoodRequest)
 //=====================================================================================
 TEST_F(RealityDataServiceFixture, RealityDataDeleteBadRequest)
     {
-    EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataDelete failed with response"), _)).Times(1);
+    EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataDeleteRequest failed with response"), _)).Times(1);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
         {
         response.status = ::BADREQ;
         }));
 
-    RealityDataDelete requestUT("RealityDataID");
+    RealityDataDeleteRequest requestUT("RealityDataID");
     RawServerResponse rawResponse{};
 
     s_realityDataService->Request(requestUT, rawResponse);
@@ -602,6 +602,104 @@ TEST_F(RealityDataServiceFixture, RealityDataPublicKeyRequestBadRequest)
     EXPECT_EQ(rawResponse.status, ::BADREQ);
     }
 
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              04/2019
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataPublicKeyCreateRequestFromPublicKey)
+    {
+    RealityDataPublicKey realityDataPublicKey;
+    realityDataPublicKey.SetIdentifier("MyIdentifier");
+    RealityDataPublicKeyCreateRequest requestUT(realityDataPublicKey);
+
+    EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/PublicKey");
+    Utf8String expectedPayload = R"({"instance":{"instanceId":"MyIdentifier", "className": "PublicKey","schemaName":"S3MX", "properties": {"Id" : "MyIdentifier"}}})";
+    auto payload = requestUT.GetRequestPayload();
+    EXPECT_STREQ(payload.c_str(), expectedPayload.c_str());
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              04/2019
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataPublicKeyChangeRequestFromRealityData)
+    {
+    RealityDataPublicKey realityDataPublicKey;
+    realityDataPublicKey.SetIdentifier("MyIdentifier");
+    RealityDataPublicKeyChangeRequest requestUT(realityDataPublicKey);
+
+    EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/PublicKey/MyIdentifier");
+    Utf8String expectedPayload = R"({"instance":{"instanceId":"MyIdentifier", "className": "PublicKey","schemaName":"S3MX", "properties": {"Id" : "MyIdentifier"}}})";
+    auto payload = requestUT.GetRequestPayload();
+    EXPECT_STREQ(payload.c_str(), expectedPayload.c_str());
+    }
+
+
+
+
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              04/2019
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataPublicKeyDeleteRequest)
+    {
+    RealityDataPublicKeyDeleteRequest requestUT("RealityDataPublicKeyID");
+
+    EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/PublicKey/RealityDataPublicKeyID");
+    EXPECT_EQ(requestUT.GetRequestType(), WSGURL::HttpRequestType::DELETE_Request);
+
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              04/2019
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataPublicKeyDeleteGoodRequest)
+    {
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
+    ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        response.status = ::OK;
+        response.toolCode = CURLE_OK;
+        response.responseCode = 200;
+        response.body = R"(
+            {
+            "changedInstance": 
+                [
+                    {
+                        "properties": 
+                            {
+                                "Name": "myName",
+                                "Url": "https://redirected.server.com/?myToken&se=2013-03-01T16%3A20%3A00Z"
+                            }
+                    }
+                ]
+            }
+    
+            )";
+        }));
+
+    RealityDataPublicKeyDeleteRequest requestUT("RealityDataPublicKeyID");
+    RawServerResponse rawResponse{};
+
+    s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_EQ(rawResponse.status, ::OK);
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              04/2019
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataPublicKeyDeleteBadRequest)
+    {
+    EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataPublicKeyDeleteRequest failed with response"), _)).Times(1);
+    ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        response.status = ::BADREQ;
+        }));
+
+    RealityDataPublicKeyDeleteRequest requestUT("RealityDataPublicKeyID");
+    RawServerResponse rawResponse{};
+
+    s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_EQ(rawResponse.status, ::BADREQ);
+    
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
@@ -1739,11 +1837,23 @@ public:
 RealityDataService* RealityDataServiceBadComponentsFixture::s_realityDataService = nullptr;
 
 //=====================================================================================
+//! @bsimethod                                   Alain.Robert              04/2019
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataPublicKeyDeleteBadComponents)
+    {
+    RealityDataPublicKeyDeleteRequest requestUT("RealityDataPublicKeyID");
+    RawServerResponse rawResponse{};
+
+    s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
+    }
+
+//=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
 TEST_F(RealityDataServiceBadComponentsFixture, RealityDataDeleteBadComponents)
     {
-    RealityDataDelete requestUT("RealityDataID");
+    RealityDataDeleteRequest requestUT("RealityDataID");
     RawServerResponse rawResponse{};
 
     s_realityDataService->Request(requestUT, rawResponse);

@@ -86,6 +86,22 @@ public:
     REALITYDATAPLATFORM_EXPORT ConnectedRealityDataPublicKey(Utf8String guid);
     REALITYDATAPLATFORM_EXPORT ConnectedRealityDataPublicKey(const ConnectedRealityDataPublicKey& publicKey);
     REALITYDATAPLATFORM_EXPORT ConnectedRealityDataPublicKey(const RealityDataPublicKey& publicKey);
+
+    //! Server request
+    //! Will retrieve all info for the public key 
+    REALITYDATAPLATFORM_EXPORT ConnectedResponse GetInfo();
+
+    //! Server request
+    //! Will update the public key on the server, with the info in the object
+    REALITYDATAPLATFORM_EXPORT ConnectedResponse UpdateInfo();
+
+    //! Server request
+    //! Will create a public key on server
+    REALITYDATAPLATFORM_EXPORT ConnectedResponse CreateOnServer();
+
+    //! Server request
+    //! Will delete the public key at the specified server path (GUID) (if defined)
+    REALITYDATAPLATFORM_EXPORT ConnectedResponse Delete();
 private:
     REALITYDATAPLATFORM_EXPORT void Clone(const RealityDataPublicKey& publicKey);
     REALITYDATAPLATFORM_EXPORT ConnectedRealityDataPublicKey() : RealityDataPublicKey(){}

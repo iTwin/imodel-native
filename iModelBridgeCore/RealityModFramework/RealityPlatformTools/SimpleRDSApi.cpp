@@ -195,6 +195,99 @@ void ConnectedRealityDataPublicKey::Clone(const RealityDataPublicKey& publicKey)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert                04/2019
 //-------------------------------------------------------------------------------------
+ConnectedResponse ConnectedRealityDataPublicKey::CreateOnServer()
+    {
+    ConnectedResponse response = ConnectedResponse();
+    if (m_realityDataId.empty())
+        {
+        response.simpleSuccess = false;
+        response.simpleMessage = "must set properties, first";
+        return response;
+        }
+
+    RealityDataPublicKeyCreateRequest relReq = RealityDataPublicKeyCreateRequest(*this);
+
+    RawServerResponse rawResponse = RawServerResponse();
+    Utf8String simpleMessage = RealityDataService::Request(relReq, rawResponse);
+
+    response.Clone(rawResponse);
+    response.simpleMessage = simpleMessage;
+
+    return response;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                04/2019
+//-------------------------------------------------------------------------------------
+ConnectedResponse ConnectedRealityDataPublicKey::GetInfo()
+    {
+    ConnectedResponse response = ConnectedResponse();
+    if (m_identifier.empty())
+        {
+        response.simpleSuccess = false;
+        response.simpleMessage = "must set id, first";
+        return response;
+        }
+
+    RawServerResponse rawResponse = RawServerResponse();
+
+    RealityDataPublicKeyRequest idReq = RealityDataPublicKeyRequest(m_identifier);
+    RealityDataPublicKey entity;
+    RealityDataService::Request(idReq, entity, rawResponse);
+    
+    Clone(entity);
+    response.Clone(rawResponse);
+
+    return response;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                04/2019
+//-------------------------------------------------------------------------------------
+ConnectedResponse ConnectedRealityDataPublicKey::UpdateInfo()
+    {
+    ConnectedResponse response = ConnectedResponse();
+    if (m_identifier.empty())
+        {
+        response.simpleSuccess = false;
+        response.simpleMessage = "must set ultimate id, first";
+        return response;
+        }
+
+    RawServerResponse rawResponse = RawServerResponse();
+
+    RealityDataPublicKeyChangeRequest changeReq = RealityDataPublicKeyChangeRequest(*this);
+    RealityDataService::Request(changeReq, rawResponse);
+
+    response.Clone(rawResponse);
+
+    return response;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                04/2019
+//-------------------------------------------------------------------------------------
+ConnectedResponse ConnectedRealityDataPublicKey::Delete()
+    {
+    ConnectedResponse response = ConnectedResponse();
+    if (m_identifier.empty())
+        {
+        response.simpleSuccess = false;
+        response.simpleMessage = "must set server path to document (id), first";
+        return response;
+        }
+    RealityDataPublicKeyDeleteRequest realityDataReq = RealityDataPublicKeyDeleteRequest(m_identifier);
+    RawServerResponse rawResponse = RawServerResponse();
+    RealityDataService::Request(realityDataReq, rawResponse);
+
+    response.Clone(rawResponse);
+
+    return response;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                04/2019
+//-------------------------------------------------------------------------------------
 ConnectedResponse ConnectedRealityDataPublicKey::GetPublicKey()
     {
     ConnectedResponse response = ConnectedResponse();
@@ -853,6 +946,7 @@ void ConnectedRealityData::Clone(RealityDataPtr rd)
     m_creatorId = rd->GetCreatorId();
     m_group = rd->GetGroup();
     m_totalSize = rd->GetTotalSize();
+    m_sizeUpToDate = rd->IsSizeUpToDate();
     }
 
 //-------------------------------------------------------------------------------------
@@ -1150,7 +1244,7 @@ ConnectedResponse ConnectedRealityData::Delete()
         response.simpleMessage = "must set server path to document (id), first";
         return response;
         }
-    RealityDataDelete realityDataReq = RealityDataDelete(m_identifier);
+    RealityDataDeleteRequest realityDataReq = RealityDataDeleteRequest(m_identifier);
     RawServerResponse rawResponse = RawServerResponse();
     RealityDataService::Request(realityDataReq, rawResponse);
 

@@ -46,15 +46,18 @@ enum class Command
     ChangeDir,
     DataLocations,
     PublicKeys,
+    CreatePublicKey,
+    ChangePublicKey,
+    DeletePublicKey,
     Stat,
     AllStats,
     AllStatsJson,
     UserStat,
     AllUserStats,
-    AllUserStatsJson,	
+    AllUserStatsJson,
     ServiceStat,
     AllServiceStats,
-    AllServiceStatsJson,		
+    AllServiceStatsJson,
     Download,
     Upload,
     FileAccess,
@@ -104,6 +107,9 @@ private:
     void ServiceStat();
     void DataLocations();
     void PublicKeys();
+    void CreatePublicKey();
+    void ChangePublicKey();
+    void DeletePublicKey();
     void AllEnterpriseStats();
     void AllEnterpriseStatsGen(bool displayAsJson);
     void AllEnterpriseStatsJson();
@@ -134,6 +140,7 @@ private:
     Utf8String MakeBuddiCall(int region = 0);
 
     void DisplayDataLocations(const bvector<RealityDataLocation>& locations);
+    void DisplayPublicKey(const RealityDataPublicKey& publicKey);
     void DisplayPublicKeys(const bvector<RealityDataPublicKey>& publicKeys);
     void DisplayEnterpriseStats(const bvector<RealityDataEnterpriseStat>& stats, const DateTime& curInfoDate);
     void DisplayServiceStats(const bvector<RealityDataServiceStat>& stats, const DateTime& curInfoDate);
