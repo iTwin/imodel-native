@@ -1,0 +1,72 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include CivilBaseGeometry.mki
+
+#--------------------------------------------------------------------------------------
+# This mke assumes the following paths are properly defined:
+# $(appName)
+# $(appPublicApi)
+# $(appSrc)
+# $(o)
+#--------------------------------------------------------------------------------------
+
+CompileOptionsMki = $(_MakeFilePath)CompileOptions.mki
+%include $(CompileOptionsMki)
+
+MultiCompileDepends = $(_MakeFileSpec)
+
+#--------------------------------------------------------------------------------------
+# Pre-compiled header
+#--------------------------------------------------------------------------------------
+PchCompiland = $(appSrc)$(appName)Internal.cpp
+PchOutputDir = $(o)
+PchExplicitDepends = $(MultiCompileDepends)
+
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+#--------------------------------------------------------------------------------------
+# BEGIN Compile
+#------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)StationRange$(oext) :           $(appSrc)StationRange.cpp $(appPublicApi)StationRange.h ${MultiCompileDepends}
+
+$(o)AlignmentPair$(oext) :          $(appSrc)AlignmentPair.cpp $(appPublicApi)AlignmentPair.h ${MultiCompileDepends}
+
+$(o)AlignmentPairEditor$(oext) :    $(appSrc)AlignmentPairEditor.cpp $(appPublicApi)AlignmentPairEditor.h ${MultiCompileDepends}
+
+$(o)GeometryDebug$(oext) :          $(appSrc)GeometryDebug.cpp $(appPublicApi)GeometryDebug.h ${MultiCompileDepends} 
+
+$(o)GeometryHelper$(oext) :         $(appSrc)GeometryHelper.cpp $(appPublicApi)GeometryHelper.h ${MultiCompileDepends} 
+
+%include MultiCppCompileGo.mki
+#------------------------------------------------
+# END Compile
+#--------------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------------
+# Link the DLL.
+#--------------------------------------------------------------------------------------
+DLM_NAME                        = $(appName)
+DLM_DEST                        = $(o)
+DLM_EXPORT_DEST                 = $(o)
+DLM_OBJECT_DEST                 = $(o)
+DLM_OBJECT_FILES                = $(MultiCompileObjectList)
+DLM_OBJECT_PCH                  = $(o)$(appName)Internal$(oext)
+DLM_NOENTRY                     = 1
+DLM_CONTEXT_LOCATION            = $(ContextDeliveryDir)
+DLM_LIB_CONTEXT_LOCATION        = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK     = 1
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
+
+
+%include $(sharedMki)LinkLibrary.mki
