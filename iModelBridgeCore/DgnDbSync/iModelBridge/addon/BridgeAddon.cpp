@@ -41,7 +41,8 @@ static void logMessageToJobUtility(Utf8CP msg)
         return;
         }
 
-    auto msgJS = Napi::String::New(env, msg);
+    // auto msgJS = Napi::String::New(env, msg);   
+    auto msgJS = toJsString(env, msg);
 
     method({ msgJS });
     }
@@ -270,7 +271,11 @@ int RunBridge(Env env, const char* jsonString)
     SET_ARG("fwk_argsJson", L"fwk-argsJson");
     SET_ARG("fwk_max_wait", L"fwk_max-wait");
     SET_ARG("fwk_jobrun_guid", L"fwk-jobrun-guid");
-    SET_ARG("fwk_imodelbank_url", L"fwk-imodelbank-url");    
+
+    SET_ARG("imodel_bank_imodel_id", L"imodel-bank-imodel-id");
+    SET_ARG("imodel_bank_url", L"imodel-bank-url");
+    SET_ARG("imodel_bank_access_token", L"imodel-bank-access-token");
+
     SET_ARG("fwk_jobrequest_guid", L"fwk-jobrequest-guid");  
     SET_ARG("fwk_create_repository_if_necessary", L"fwk-create-repository-if-necessary"); 
 
@@ -286,19 +291,27 @@ int RunBridge(Env env, const char* jsonString)
     }
 
     // [NEEDSWORK] This block just for testing.  Remove b4fore deployment!!!.
-    logMessageToJobUtility("BridgeAddon.cpp: RunBridge() argv[]:");
+    // logMessageToJobUtility("BridgeAddon.cpp: RunBridge() argv[]:");
+    // for(int ii = 0; ii < argc; ++ii) {
+    //     char buffer [MAX_PATH];
+    //     sprintf(buffer, "BridgeAddon.cpp: argv[%d] = %S", ii, argv[ii]);
+    //     logMessageToJobUtility(buffer);
+    // }
+
+    LogTrace("BridgeAddon.cpp: RunBridge() argv[]:"); 
     for(int ii = 0; ii < argc; ++ii) {
         char buffer [MAX_PATH];
         sprintf(buffer, "BridgeAddon.cpp: argv[%d] = %S", ii, argv[ii]);
-        logMessageToJobUtility(buffer);
+        LogTrace(buffer);
     }
-   
+    
     try {
         Dgn::iModelBridgeFwk app;
 
         // Initialze the bridge processor
         if (BentleyApi::BSISUCCESS != app.ParseCommandLine(argc, argv)) {
             logMessageToJobUtility("BridgeAddon.cpp: RunBridge() ParseCommandLine failure");
+            LogError("BridgeAddon.cpp: RunBridge() ParseCommandLine failure"); 
             return status;
         }
 
@@ -317,7 +330,8 @@ int RunBridge(Env env, const char* jsonString)
         {
             char buffer [MAX_PATH];
             sprintf(buffer, "BridgeAddon.cpp: RunBridge() Run completed with status = %d", status);
-            logMessageToJobUtility(buffer);            
+            logMessageToJobUtility(buffer);   
+            LogTrace(buffer);          
         }
 
     } catch (...) {
