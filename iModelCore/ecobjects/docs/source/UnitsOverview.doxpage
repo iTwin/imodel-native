@@ -1,0 +1,25 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+    /**
+
+    @page UnitsOverview Units Overview
+
+    Units represent units of measure such as Meters, Feet and Kilogram and are abreviated as UOM. In EC they are closely related to the concepts of Phenomena and Unit systems. Quantities of a certain unit can be converted to other units of the same phenomenon. For example 1000 Meters can be converted to 1 Kilometer. They can also be catagorized by unit system such as SI or Imperial.
+
+    Here is an example of creating a Unit (also involves the creation of a Phenomenon and a UnitSystem for the unit)
+
+    __PUBLISH_INSERT_FILE__ Overview_Units_CreateUnit.sampleCode
+
+    In addition to Units, there are also Inverted Units and Constants. Inverted units invert the definition of another unit while constants represent a fixed value with a unit. These are created in a similar way to regular units:
+
+    __PUBLISH_INSERT_FILE__ Overview_Units_CreateInvertedUnitAndConstant.sampleCode
+
+    Note that Unit, InvertedUnit and Constant are all described by the same class. There are functions Unit::IsConstant and Unit::IsInvertedUnit that can be used to test for which case you are dealing with.
+
+    Units can also be converted to other units using the Unit::Convert method.
+    */

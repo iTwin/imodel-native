@@ -1,0 +1,31 @@
+R"***(
+SchemaResourceGenerator inputs [-p 9900-9999] [-c cultureName] [-ns] [-r paths] [-o path] [-of name]
+
+Description:
+    Generates resx files with localizable resources from schemas
+    and localization supplemental schemas from resx files
+
+Parameter List:
+   inputs              Specifies the input file path. The file needs to be .xliff or .ecschema.xml.
+   
+   -p    9900-9999     Precedence of schema when the input is a resx file
+                       Default is 9900.
+
+   -c    cultureName   Only supported when converting from resx to supplemental schema
+                       If no culture is provided the culture is determined from the resx filename
+
+   -r    refpaths      Additional paths to look for referenced schemas,
+                       separated by semicolons.
+
+   -o    outpath       Specifies a different output directory.
+                       By default, the same directory as the input file is used.
+
+   /?                  Displays this help message.
+
+Examples:
+    SchemaResourceGenerator "c:\test data\House.01.00.02.ecschema.xml"
+        Outputs: c:\testdata\House.01.00.02.en.xliff
+        
+    SchemaResourceGenerator c:\testdata\House.01.00.00.en.resx -c en-US
+        Outputs: House_Supplemental_Localization_en_US.01.00.00.ecschema.xml
+)***"
