@@ -3277,7 +3277,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GroupInformationElement : InformationReferenceEle
     friend struct dgn_ElementHandler::GroupInformation;
 
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     explicit GroupInformationElement(CreateParams const& params) : T_Super(params) {}
 };
 

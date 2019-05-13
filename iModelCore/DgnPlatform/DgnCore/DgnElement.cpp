@@ -707,14 +707,6 @@ PhysicalPartitionCPtr PhysicalPartition::CreateAndInsert(SubjectCR parentSubject
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GroupInformationElement::_OnInsert()
-    {
-    return GetModel()->IsInformationModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus RoleElement::_OnInsert()
