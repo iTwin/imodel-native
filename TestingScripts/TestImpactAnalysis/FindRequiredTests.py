@@ -30,7 +30,7 @@ def fixPath(path):
 # bsimethod                                     Majd.Uddin    09/2017
 #-------------------------------------------------------------------------------------------
 def getTests(sfName, dll):
-    srcRoot = fixPath(os.path.join(os.getenv('SrcRoot'), 'imodel02', 'iModelCore',))
+    srcRoot = fixPath(os.path.join(os.getenv('SrcRoot'), 'imodel02'))
     if not srcRoot or len(srcRoot) == 0:
         print ("\n %SrcRoot% must be defined. Error.")
         return None
