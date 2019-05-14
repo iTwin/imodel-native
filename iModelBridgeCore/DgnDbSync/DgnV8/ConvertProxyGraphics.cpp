@@ -292,13 +292,13 @@ Converter::V8NamedViewType Converter::GetV8NamedViewTypeOfFirstAttachment(DgnV8M
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping const& drawingModelMapping, 
+DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping const& drawingModelMapping,
                                                          SyncInfo::V8ElementExternalSourceAspect const& sectionedElementXsa, DgnV8Api::ElementHandle& sectionedV8Element,
-                                                         DgnCategoryId categoryId, GeometryBuilder& builder, 
+                                                         DgnCategoryId categoryId, GeometryBuilder& builder,
                                                          Utf8StringCR v8SectionedElementPath, Utf8StringCR attachmentInfo, ResolvedModelMapping const& rootParentModel)
     {
     // "sectionedV8Element" is the 3-D element that was sectioned/projected/rendered
-    
+
     // Note that sectionedElementXsa may be invalid even if sectionedV8Element is valid. That happens if we did not actually convert the 3-D elements but only drawings that reference them.
 
     DgnModelR model = drawingModelMapping.GetDgnModel();
@@ -316,28 +316,27 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
     bool isNewElement = true;
     if (sectionedV8Element.IsValid()) // This is the 3-D element that was sectioned/projected/rendered
         {
-        if (IsUpdating())
+        ResolvedModelMapping bimModel = _FindFirstResolvedModelMapping(*sectionedV8Element.GetDgnModelP());
+        if (bimModel.IsValid())
             {
-            ResolvedModelMapping bimModel = _FindFirstResolvedModelMapping(*sectionedV8Element.GetDgnModelP());
-            if (bimModel.IsValid())
+            if (IsUpdating())
                 {
                 IChangeDetector::SearchResults changeInfo;
                 GetChangeDetector()._IsElementChanged(changeInfo, *this, sectionedV8Element, bimModel);
                 if (IChangeDetector::ChangeType::Insert != changeInfo.m_changeType)
                     isNewElement = false;
                 }
-            else
-                {
-                // The bridge did not convert the 3D model, so we cannot tell if this graphic that V8
-                // has generated from the sectionedV8Element is new or changed or what.
-                // Assume the worst.
-                isNewElement = true;
-                }
+            GetECContentOfElement(ecContent, sectionedV8Element, bimModel, true);
+            hasPrimaryInstance = ecContent.m_primaryV8Instance != nullptr;
+            hasSecondaryInstances = !ecContent.m_secondaryV8Instances.empty();
+            elementClassId = _ComputeElementClass(sectionedV8Element, ecContent, bimModel);
             }
-        GetECContentOfElement(ecContent, sectionedV8Element, drawingModelMapping, true);
-        hasPrimaryInstance = ecContent.m_primaryV8Instance != nullptr;
-        hasSecondaryInstances = !ecContent.m_secondaryV8Instances.empty();
-        elementClassId = _ComputeElementClass(sectionedV8Element, ecContent, drawingModelMapping);
+        // The bridge did not convert the 3D model, so we cannot tell if this graphic that V8
+        // has generated from the sectionedV8Element is new or changed or what.
+        // Assume the worst.
+        else
+            {
+            }
         }
     else
         {
@@ -355,14 +354,12 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
     if (!elementClassId.IsValid())
         elementClassId = GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic);
 
+    // If the ECClass is not a drawing graphic, that means we've already handled the ECContent on the physical element.  No need to do it here.
     if (!GetDgnDb().Schemas().GetClass(elementClassId)->Is(GetDgnDb().Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic)))
         {
         elementClassId = GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic);
-        if (hasPrimaryInstance)
-            {
-            ecContent.m_secondaryV8Instances.push_back(std::make_pair(ecContent.m_primaryV8Instance.get(), BisConversionRule::ToAspectOnly));
-            hasPrimaryInstance = false;
-            }
+        hasPrimaryInstance = false;
+        hasSecondaryInstances = false;
         }
 
     DgnElementPtr drawingGraphic = CreateNewElement(model, elementClassId, categoryId, code);
