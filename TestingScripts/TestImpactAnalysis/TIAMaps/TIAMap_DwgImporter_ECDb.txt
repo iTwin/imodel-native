@@ -62,7 +62,7 @@
 [imodel02\imodelcore\ecdb\ecdb\ecsql\deletestatementexp.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\ecdb\ecdb\ecdbsystemschemahelper.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\ecdb\ecdb\schemareader.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\ecdb\ecdb\profileupgrader.cpp]
@@ -84,7 +84,7 @@
 [imodel02\imodelcore\ecdb\ecdb\policymanager.h]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\ecdb\ecdb\ecsql\ecinstanceecsqlselectadapter.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.Description:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\ecdb\ecdb\schemawriter.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\ecdb\ecdb\featuremanager.cpp]
@@ -161,6 +161,8 @@
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\ecdb\ecdb\ecsql\parser\sqlscan.h]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\schemavalidator.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\ecdb\ecdb\ecdbexpressionsymbolprovider.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\ecdb\ecdb\viewgenerator.h]
@@ -173,8 +175,8 @@
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\ecdb\ecdb\ecsql\optionsexp.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
-[imodel02\imodelcore\ecdb\ecdb\schemavalidator.h]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\ecdb\ecdb\ecsql\iecsqlbinder.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\ecdb\ecdb\lightweightcache.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\ecdb\ecdb\ecsql\parser\sqlnode.h]
@@ -260,8 +262,6 @@
 [imodel02\imodelcore\ecdb\ecdb\ecsql\ecinstanceadapterhelper.h]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\ecdb\ecdb\dbschemapersistencemanager.h]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
-[imodel02\imodelcore\ecdb\ecdb\ecsql\iecsqlbinder.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\ecdb\ecdb\ecsql\parser\sqlparse.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:

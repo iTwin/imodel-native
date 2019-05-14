@@ -80,7 +80,7 @@ Components = {'BeHttp':             {'dll': 'BeHttpM02.dll', 'exe': 'BeHttpTest'
                                      'repo': ['imodel02', 'Bridges', 'Mstn'],
                                      'map_repo': ['imodel02', 'iModelBridgeCore', 'DgnDbSync', 'iModelBridge'],                                     
                                      'special_path': ['MstnBridgeTests']},
-              'DwgImporter':        {'dll': 'DwgBridge.dll', 'exe': 'DwgImporterTests',
+              'DwgImporter':        {'dll': 'DwgImporter2019M02.dll', 'exe': 'DwgImporterTests',
                                      'product': 'DwgImporterTests',
                                      'ignore': ['iModelBridgeCore', 'DgnDbSync', 'Dwg', 'Tests'],                                     
                                      'repo': ['imodel02', 'iModelBridgeCore', 'DgnDbSync', 'Dwg'],
