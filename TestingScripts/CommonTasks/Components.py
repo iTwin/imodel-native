@@ -78,6 +78,7 @@ Components = {'BeHttp':             {'dll': 'BeHttpM02.dll', 'exe': 'BeHttpTest'
                                      'owner': 'Abeesh Basheer',
                                      'product': 'MstnBridgeTests',
                                      'repo': ['imodel02', 'Bridges', 'Mstn'],
+                                     'map_repo': ['imodel02', 'iModelBridgeCore', 'DgnDbSync', 'iModelBridge'],                                     
                                      'special_path': ['MstnBridgeTests']},
               'DwgImporter':        {'dll': 'DwgBridge.dll', 'exe': 'DwgImporterTests',
                                      'product': 'DwgImporterTests',
@@ -231,14 +232,24 @@ def RepoPathForComp(compToFind):
     if repoPath is None:
         if stream == "imodel02":
             repoPath = os.path.join(srcRoot,'imodel02', 'iModelCore' ,compToFind)
-            print "Stream: " + str(stream)
         else:
             repoPath = os.path.join(srcRoot ,compToFind)
-    else:
-        print "Repository Path = " + str(repoPath)
-        print "Stream: " + str(stream)
     return repoPath
-    
+
+def MapPathForComp(compToFind):
+    for comp in Components:
+        if compToFind.lower() in Components[comp]['product'].lower():
+            if 'map_repo' in Components[comp].keys():
+                repo = Components[comp]['map_repo']
+                repoPath = os.getenv('SrcRoot')
+                for path in repo:
+                    repoPath = os.path.join(repoPath, path)
+                return repoPath
+            else:
+                repoPath = RepoPathForComp(compToFind)
+                return repoPath
+
+
 def TiaMapPathForComp(compToFind):
     exeName = ExeForComp(compToFind)
     if exeName is None:

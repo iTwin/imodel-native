@@ -123,17 +123,18 @@ def getTiaMapAll(covRoot, comp, dll=None):
                     sfName = class1.attrib['filename']
                     lineRate = float(class1.attrib['line-rate'])
                     if packName.lower() in dllFilter and packName in tiaMap:
-                        if cmp.CompForDll(packName).lower() in sfName.lower() and lineRate > 0.0:
-                            sfPath =  os.path.join(drive, sfName)
-                            if srcRoot.lower() in sfPath.lower():
-                                sfNtoAdd = sfPath[sfPath.find(srcRoot)+len(srcRoot):]
-                                if sfNtoAdd not in tiaMap:
-                                    tiaMap[packName].setdefault(sfNtoAdd, {})
-                                if testCase not in tiaMap[packName][sfNtoAdd]:
-                                    tiaMap[packName][sfNtoAdd].setdefault(testCase, [])
-                                if testName not in tiaMap[packName][sfNtoAdd][testCase]:
-                                   tiaMap[packName][sfNtoAdd][testCase].append(testName)
-                      
+                        if lineRate > 0.0:
+                            if cmp.CompForDll(packName).lower() in sfName.lower() or cmp.MapPathForComp(cmp.CompForDll(packName)).lower() in os.path.join(drive, sfName).lower():
+                                sfPath =  os.path.join(drive, sfName)
+                                if srcRoot.lower() in sfPath.lower():
+                                    sfNtoAdd = sfPath[sfPath.find(srcRoot)+len(srcRoot):]
+                                    if sfNtoAdd not in tiaMap:
+                                        tiaMap[packName].setdefault(sfNtoAdd, {})
+                                    if testCase not in tiaMap[packName][sfNtoAdd]:
+                                        tiaMap[packName][sfNtoAdd].setdefault(testCase, [])
+                                    if testName not in tiaMap[packName][sfNtoAdd][testCase]:
+                                        tiaMap[packName][sfNtoAdd][testCase].append(testName)
+                
     return tiaMap
 
 #-------------------------------------------------------------------------------------------
@@ -141,6 +142,7 @@ def getTiaMapAll(covRoot, comp, dll=None):
 #-------------------------------------------------------------------------------------------
 def writeMapToFiles(mapDir, tiaMap, comp):
     for dll in tiaMap:
+        print dll
         if len(tiaMap[dll]) > 0: # It has entires
             fileName = os.path.join(mapDir, 'TIAMap_' + comp + '_' + cmp.CompForDll(dll) + '.txt')
             print("\n Writing map for: " + fileName + "\n")

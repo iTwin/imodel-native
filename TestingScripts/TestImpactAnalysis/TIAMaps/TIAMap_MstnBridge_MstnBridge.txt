@@ -1,0 +1,15 @@
+
+[imodel02\imodelbridgecore\dgndbsync\imodelbridge\imodelbridgebimhost.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelbridgecore\dgndbsync\imodelbridge\imodelbridgesyncinfofile.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelbridgecore\dgndbsync\imodelbridge\imodelbridgesacadapter.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelbridgecore\dgndbsync\imodelbridge\imodelbridgehelpers.h]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelbridgecore\dgndbsync\imodelbridge\imodelbridgeerrorhandling.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelbridgecore\dgndbsync\imodelbridge\imodelbridge.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelbridgecore\dgndbsync\imodelbridge\imodelbridgeldclient.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
