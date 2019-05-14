@@ -6,6 +6,8 @@
         <SubProduct ProductName="RealDwgBridge"/>
         <!-- In an effort to reduce CI Pipeline build time, OpenDwgBridge is moved into dev build, until it is needed again -->
         <SubNuGetProduct NuGetProductName="RealDwgBridgeSdkNuget"/>
+        <SubNuGetProduct NuGetProductName="iModelBridgeFwkNuget" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubNuGetProduct NuGetProductName="iModelCoreNuget" PartFile="iModelCore/iModelCore" Repository="imodel02"/>
         <SubPart PartName="RunDwgImporterTests" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter"/>
     </Part>
 

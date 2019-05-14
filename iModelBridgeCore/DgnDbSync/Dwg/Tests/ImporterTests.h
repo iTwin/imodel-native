@@ -8,6 +8,7 @@
 #include "../DwgImportInternal.h"
 #include <Bentley/BeTest.h>
 #include "Tests.h"
+#include <wininet.h>
 
 
 #define ASSERT_PRESENT(fileName)        ASSERT_TRUE ( BentleyApi::BeFileName::DoesPathExist (fileName))<<L"File is not present at location :"<<fileName;

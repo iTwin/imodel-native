@@ -75,7 +75,7 @@ $(o)DwgFileEditor.obj               : $(BEGTEST_INPUT)DwgFileEditor.cpp         
 GUNITTEST_OUT       = $(o)
 GUNITTEST_NAME      = $(programName)
 GUNITTEST_DEST      = $(o)
-GUNITTEST_NTLIBS    = advapi32.lib ole32.lib ws2_32.lib $(DwgImporterLib)
+GUNITTEST_NTLIBS    = advapi32.lib ole32.lib ws2_32.lib Wininet.lib $(DwgImporterLib)
 GUNITTEST_PATH      = $(o)
 GUNITTEST_SYMB      = $(o)
 GTEST_MAIN_IS_SUPPLIED = 1

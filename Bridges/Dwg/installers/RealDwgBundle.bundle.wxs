@@ -5,7 +5,8 @@
     <?include $(var.BBInstallSetDefinitionWxi)?>
 
     <!-- iModel Bridge for DWG has a GPR ID 2706 -->
-    <Bundle Name="$(var.bbVarBundleName)" Version="$(var.INSTALLER_PRODUCT_VERSION)" UpgradeCode="$(var.bbVarBundleUpgradeCode)" Condition="VersionNT64  > v6.1 OR (VersionNT64 > v6.0 AND VersionNT64 &lt; v6.2 AND ServicePackLevel >= 1)" DisableModify="no" Manufacturer="Bentley Systems, Incorporated" HelpUrl="https://communities.bentley.com/products/default.aspx" UpdateUrl="http://www.bentley.com/downloads" AboutUrl="http://apps.bentley.com/bentleyconnect/" Copyright="Copyright © 2019 Bentley Systems, Incorporated. All rights reserved." Tag="BE;SP=0;LCID=$(var.LANGUAGE_LCID);PID=2706;Win64=True">
+    <!-- Replacing $(var.bbVarBundleName) with an explicit string containing desired trademark symbols, which cannot pass through the python parser -->
+    <Bundle Name="iModel Bridge Service- Autodesk&#174; DWG&#8482;" Version="$(var.INSTALLER_PRODUCT_VERSION)" UpgradeCode="$(var.bbVarBundleUpgradeCode)" Condition="VersionNT64  > v6.1 OR (VersionNT64 > v6.0 AND VersionNT64 &lt; v6.2 AND ServicePackLevel >= 1)" DisableModify="no" Manufacturer="Bentley Systems, Incorporated" HelpUrl="https://communities.bentley.com/products/default.aspx" UpdateUrl="http://www.bentley.com/downloads" AboutUrl="http://apps.bentley.com/bentleyconnect/" Copyright="Copyright © 2019 Bentley Systems, Incorporated. All rights reserved." Tag="BE;SP=0;LCID=$(var.LANGUAGE_LCID);PID=2706;Win64=True">
 
         <BootstrapperApplicationRef Id="ManagedBootstrapperApplicationHost">
             <PayloadGroupRef Id="InstallFrameworkManagedBootstrapper"/>
@@ -16,7 +17,7 @@
         
         <Chain ParallelCache="yes">
           <PackageGroupRef Id="PreRequisites"/>
-            <MsiPackage Id="PowerProductPackage" SourceFile="$(var.PowerProductPath)$(var.bbVarProductShortName)$(var.bbVarProductTargetPlatform).msi"  Compressed="yes"  Visible="no" EnableFeatureSelection="yes" ForcePerMachine="yes" Description="iModel Bridge Service - Autodesk(R) DWG(TM)">
+            <MsiPackage Id="PowerProductPackage" SourceFile="$(var.PowerProductPath)$(var.bbVarProductShortName)$(var.bbVarProductTargetPlatform).msi"  Compressed="yes"  Visible="no" EnableFeatureSelection="yes" ForcePerMachine="yes" Description="iModel Bridge Service - Autodesk&#174; DWG&#8482;">
                 <MsiProperty Name="INSTALLDIR" Value="[InstallDirectory]"/>
                 <MsiProperty Name="PACKAGE_HOMEROOT" Value="[ConfigurationDirectory]"/>
                 <MsiProperty Name="FROMLAUNCHSETUP" Value="1"/>

@@ -154,6 +154,8 @@ TEST_F(ImporterAppTests, BudweiserBenchmarks)
 
     BeFileName outFile = GetIBimFileName(inFile);
 
+    bool isConnected = ::InternetCheckConnection(L"http://www.cadstudio.cz/img/bear-foto.jpg", FLAG_ICC_FORCE_CONNECTION, 0);
+
     EXPECT_PRESENT(outFile.c_str())
     EXPECT_PRESENT(inFile.c_str())
 
@@ -222,14 +224,20 @@ TEST_F(ImporterAppTests, BudweiserBenchmarks)
     EXPECT_EQ(5, count) << "Should have 5 sheet models!";
 
     // 1 raster model
-    count = models.MakeIterator(RASTER_SCHEMA(RASTER_CLASSNAME_RasterFileModel)).BuildIdSet().size ();
-    EXPECT_EQ(1, count) << "Should have a raster model!";
+    if (isConnected)
+        {
+        count = models.MakeIterator(RASTER_SCHEMA(RASTER_CLASSNAME_RasterFileModel)).BuildIdSet().size ();
+        EXPECT_EQ(1, count) << "Should have a raster model!";
+        }
 
     // check model ExternalSourceAspects
     count = 0;
     for (auto aspect : DwgSourceAspects::ModelAspectIterator(*db, replinkId))
         count++;
-    EXPECT_EQ(7, count) << "Should have total 7 ExternalSourceAspects of Model kind!";
+    if (isConnected)
+        EXPECT_EQ(7, count) << "Should have total 7 ExternalSourceAspects of Model kind!";
+    else
+        EXPECT_EQ(6, count) << "Should have total 6 ExternalSourceAspects of Model kind!";
 
     // count views
     count = ViewDefinition::QueryCount (*db);
