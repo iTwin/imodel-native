@@ -342,13 +342,13 @@ void ORDBridge::_OnCloseBim(BentleyStatus status, ClosePurpose purpose)
     if (m_converter != nullptr)
         {
         //calling delete on the ORDConverter will result in source files closing, which is important for the unit tests to run properly
-            IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+            __try
             {
                 // TODO: Some CIF object smart pointers are blowing up after deleting 
                 // the converter instance.  Look into this!
                 delete m_converter;
             }
-            IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(;)
+            __except(EXCEPTION_EXECUTE_HANDLER)
             {
             }
             m_converter = nullptr;
