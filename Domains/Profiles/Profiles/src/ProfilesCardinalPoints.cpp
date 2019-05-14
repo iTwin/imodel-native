@@ -43,10 +43,8 @@ Utf8CP StandardCardinalPointToString (StandardCardinalPoint standardCardinalPoin
     {
     uint32_t index = static_cast<uint32_t> (standardCardinalPoint);
     if (index > s_standardCardinalPointCount)
-        {
-        BeAssert (false);
-        return s_standardCardinalPointNames[0];
-        }
+        return "";
+
     return s_standardCardinalPointNames[index];
     }
 

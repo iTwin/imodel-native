@@ -87,7 +87,10 @@ enum class StandardCardinalPoint : uint32_t
     BottomInLineWithShearCenter,        //!< Most bottom point of the profiles geometry thats in-line with @ref ShearCenter
     LeftInLineWithShearCenter,          //!< Most left point of the profiles geometry thats in-line with @ref ShearCenter
     RightInLineWithShearCenter,         //!< Most right point of the profiles geometry thats in-line with @ref ShearCenter
-    TopInLineWithShearCenter            //!< Most top point of the profiles geometry thats in-line with @ref ShearCenter
+    TopInLineWithShearCenter,           //!< Most top point of the profiles geometry thats in-line with @ref ShearCenter
+
+    Unset = 1000,                       //!< Point is not set (used only outside of Profiles Domain)
+    Custom = 1001                       //!< Custom (User defined) point (used only outside of Profiles Domain)
     };
 
 //! Returns string representation of the StandardCardinalPoint enumeration.
