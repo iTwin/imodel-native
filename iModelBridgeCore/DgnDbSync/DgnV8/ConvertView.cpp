@@ -782,10 +782,14 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         }
 
     // If the view exists and the name hasn't changed, use its existing name.  Otherwise, the previous loop will have changed its name thus causing an actual update
-    if (existingViewId.IsValid() && defaultName.EqualsI(v8ViewName))
+    if (existingViewId.IsValid())
         {
-        ViewDefinitionPtr existingDef = GetDgnDb().Elements().GetForEdit<ViewDefinition>(existingViewId);
-        name = existingDef->GetCode().GetValueUtf8();
+        Utf8String qualifiedName = RemapViewName(baseName, *v8Model->GetDgnFileP(), "");
+        if (defaultName.EqualsI(v8ViewName) || qualifiedName.EqualsI(v8ViewName))
+            {
+            ViewDefinitionPtr existingDef = GetDgnDb().Elements().GetForEdit<ViewDefinition>(existingViewId);
+            name = existingDef->GetCode().GetValueUtf8();
+            }
         }
     ViewFactory::ViewDefinitionParams parms(this, name, modelMapping, viewInfo, viewFactory._Is3d());
     parms.m_description = defaultDescription;
