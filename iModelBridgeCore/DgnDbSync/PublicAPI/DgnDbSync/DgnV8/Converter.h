@@ -2596,6 +2596,7 @@ protected:
     DGNDBSYNC_EXPORT virtual void _BeginConversion();
     DGNDBSYNC_EXPORT virtual void _ConvertSpatialViews();
     DGNDBSYNC_EXPORT virtual void _ConvertSpatialLevels();
+    DGNDBSYNC_EXPORT virtual void _ConvertDrawingLevels();
     DGNDBSYNC_EXPORT virtual void _ConvertLineStyles();
     DGNDBSYNC_EXPORT virtual void _ConvertModels();
     DGNDBSYNC_EXPORT virtual void _ConvertSpatialElements();
