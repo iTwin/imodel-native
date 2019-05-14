@@ -447,6 +447,19 @@ TEST_F (ProfileTestCase, GetCardinalPoint_StandardPointEnum_Success)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ProfileTestCase, GetCardinalPoint_SpecialEnumValues_Error)
+    {
+    LShapeProfilePtr profilePtr = CreateProfile ("P");
+    profilePtr->Insert();
+
+    CardinalPoint cardinalPoint;
+    ASSERT_NE (DgnDbStatus::Success, profilePtr->GetCardinalPoint (StandardCardinalPoint::Unset, cardinalPoint));
+    ASSERT_NE (DgnDbStatus::Success, profilePtr->GetCardinalPoint (StandardCardinalPoint::Custom, cardinalPoint));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ProfileTestCase, GetCardinalPoint_ByName_Success)
@@ -558,6 +571,8 @@ TEST_F (ProfileTestCase, StandardCardinalPointToString_StandardCardinalPoint_Str
     EXPECT_STREQ ("LeftInLineWithShearCenter", StandardCardinalPointToString (StandardCardinalPoint::LeftInLineWithShearCenter));
     EXPECT_STREQ ("RightInLineWithShearCenter", StandardCardinalPointToString (StandardCardinalPoint::RightInLineWithShearCenter));
     EXPECT_STREQ ("TopInLineWithShearCenter", StandardCardinalPointToString (StandardCardinalPoint::TopInLineWithShearCenter));
+    EXPECT_STREQ ("", StandardCardinalPointToString(StandardCardinalPoint::Unset));
+    EXPECT_STREQ ("", StandardCardinalPointToString(StandardCardinalPoint::Custom));
     }
 
 /*---------------------------------------------------------------------------------**//**
