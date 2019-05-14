@@ -321,6 +321,11 @@ $(Delivery)DgnPlatformV8Sdk/Dlls/TerrainModelCore.dll : $(DgnV8Sdk)Dlls/TerrainM
     $(LinkFirstDepToFirstTarget)
 %endif
 
+%if exists($(DgnV8Sdk)Dlls/TerrainModelElementHandler.dll)
+$(Delivery)DgnPlatformV8Sdk/Dlls/TerrainModelElementHandler.dll : $(DgnV8Sdk)Dlls/TerrainModelElementHandler.dll
+    $(LinkFirstDepToFirstTarget)
+%endif
+
 $(Delivery)DgnPlatformV8Sdk/Dlls/tridslib.dll : $(DgnV8Sdk)Dlls/tridslib.dll
     $(LinkFirstDepToFirstTarget)
 
@@ -464,6 +469,11 @@ $(Delivery)DgnPlatformV8Sdk/Libs/VisEdgesLib.lib : $(DgnV8Sdk)Libs/VisEdgesLib.l
 
 $(Delivery)DgnPlatformV8Sdk/Libs/TerrainModelFormats.lib : $(DgnV8Sdk)Libs/TerrainModelFormats.lib
     $(LinkFirstDepToFirstTarget)
+
+%if exists($(DgnV8Sdk)Libs/TerrainModelElementHandler.lib)
+$(Delivery)DgnPlatformV8Sdk/Libs/TerrainModelElementHandler.lib : $(DgnV8Sdk)Libs/TerrainModelElementHandler.lib
+    $(LinkFirstDepToFirstTarget)
+%endif
 
 #--- RealDWG Libs follow ----
 

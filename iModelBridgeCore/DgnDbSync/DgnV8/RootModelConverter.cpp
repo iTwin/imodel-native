@@ -951,6 +951,26 @@ void RootModelConverter::_ConvertSpatialLevels()
         }
     }
 
+void RootModelConverter::_ConvertDrawingLevels()
+    {
+    for (auto v8Model : m_nonSpatialModelsInModelIndexOrder)
+        {
+        if (!IsFileAssignedToBridge(*v8Model->GetDgnFileP()))
+            continue;
+        DgnV8Api::PersistentElementRefList* graphicElements = v8Model->GetGraphicElementsP();
+        if (nullptr != graphicElements)
+            {
+            for (DgnV8Api::PersistentElementRef* v8Element : *graphicElements)
+                {
+                DgnV8Api::EditElementHandle v8eh(v8Element);
+                // We must therefore visit complex children and ensure that their levels are converted.
+                ConvertLevels(v8eh);
+                ConvertDrawingLevel(*v8eh.GetDgnFileP(), GetV8Level(v8eh));
+                }
+            }
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2015
 //---------------------------------------------------------------------------------------
@@ -1955,6 +1975,7 @@ BentleyStatus RootModelConverter::MakeDefinitionChanges()
         }
 
     _ConvertSpatialLevels();
+    _ConvertDrawingLevels();
 
     // NB: It is up to ConvertData to call DoEndConversion. Don't do that here!
 
