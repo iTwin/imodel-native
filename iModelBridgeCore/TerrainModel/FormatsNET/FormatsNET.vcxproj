@@ -43,8 +43,8 @@
     <ClCompile Include="Lidar.cpp" />
     <ClCompile Include="MX.cpp" />
     <ClCompile Include="Stdafx.cpp" />
-    <ClCompile Include="TerrainExporter.cpp" />
     <ClCompile Include="TerrainImporter.cpp" />
+    <ClCompile Include="TwelvedXML.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bentley.TerrainModelNET.Formats.h" />
@@ -54,8 +54,8 @@
     <ClInclude Include="Lidar.h" />
     <ClInclude Include="MX.h" />
     <ClInclude Include="Stdafx.h" />
-    <ClInclude Include="TerrainExporter.h" />
     <ClInclude Include="TerrainImporter.h" />
+    <ClInclude Include="TwelvedXML.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="FormatsNET.mke" />

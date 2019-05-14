@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #      $Source: FormatsNET/FormatsNET.mke $
-#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 # 
@@ -79,6 +79,7 @@ $(basedir)Lidar.h \
 $(basedir)Inroads.h \
 $(basedir)ImagePP.h \
 $(basedir)MX.h \
+$(basedir)TwelvedXML.h \
 $(PCHHeaderObject)
 
 #....................................................................................................................................................
@@ -93,6 +94,8 @@ $(o)Inroads$(oext)		: $(basedir)Inroads.cpp $(DependsOnHeaders) ${MultiCompileDe
 $(o)ImagePP$(oext)		: $(basedir)ImagePP.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 $(o)MX$(oext)		: $(basedir)MX.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)TwelvedXML$(oext)		: $(basedir)TwelvedXML.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 $(o)TerrainImporter$(oext)		: $(basedir)TerrainImporter.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
