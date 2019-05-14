@@ -29,45 +29,6 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)ClassificationSystemsDomain$(oext) : $(_MakeFilePath)ClassificationSystemsDomain.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
 
-$(o)GeneratedClassificationStandardInserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedClassificationStandardInserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedUniFormatInserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedUniFormatInserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedMasterFormatInserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedMasterFormatInserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedOmniClass11Inserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedOmniClass11Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedOmniClass12Inserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedOmniClass12Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedOmniClass13_2006Inserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedOmniClass13_2006Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedOmniClass13_2010Inserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedOmniClass13_2010Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedOmniClass14Inserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedOmniClass14Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedOmniClass21Inserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedOmniClass21Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedOmniClass22_2006Inserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedOmniClass22_2006Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedOmniClass22_2010Inserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedOmniClass22_2010Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedOmniClass23Inserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedOmniClass23Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedOmniClass32Inserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedOmniClass32Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedOmniClass33Inserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedOmniClass33Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedOmniClass34Inserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedOmniClass34Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedOmniClass36_04Inserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedOmniClass36_04Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedOmniClass36_24Inserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedOmniClass36_24Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedOmniClass41Inserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedOmniClass41Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-$(o)GeneratedOmniClass49Inserts$(oext) : $(_MakeFilePath)GeneratedInserts\GeneratedOmniClass49Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsDomain.h 
-
-
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
 

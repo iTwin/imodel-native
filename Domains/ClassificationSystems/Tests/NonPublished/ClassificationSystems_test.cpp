@@ -34,27 +34,31 @@ TEST_F(ClassificationSystemsTestFixture, StandardInsertion)
     {
     DgnDbR db = *DgnClientApp::App().Project();
     db.BriefcaseManager().StartBulkOperation();
-    Utf8CP expectedSystemName = "TestSys";
+    Utf8String expectedSystemName = "TestSys";
+    Utf8String expectedSystemEdition = "1.0";
     Utf8CP expectedGroupName = "TestGroup";
     Utf8CP expectedClassificationName = "TestClassification";
     Utf8CP expectedClassificationCode = "TestClassificationCode";
     DgnDbStatus stat;
     DgnCode code;
 
-    ClassificationSystemPtr system = ClassificationSystem::Create(db, expectedSystemName);
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, expectedSystemName, expectedSystemEdition);
     ASSERT_TRUE(system.IsValid()) << "Failed to create system";
 
         
     code = system->GetCode();
-    ASSERT_TRUE(code.GetValue().Equals(expectedSystemName)) << "Code Value was set wrong";
+    ASSERT_TRUE(code.GetValue().Equals((expectedSystemName + expectedSystemEdition).c_str())) << "Code Value was set wrong";
 
     Utf8CP name = system->GetName();
-    ASSERT_TRUE(0 == strcmp(name, expectedSystemName)) << "Failed to get name from Classification System";
+    ASSERT_TRUE(expectedSystemName == name) << "Failed to get name from Classification System";
+
+    Utf8String edition = system->GetEdition();
+    ASSERT_TRUE(expectedSystemEdition == edition) << "Failed to get edition from Classification System";
 
     system->Insert(&stat);
     ASSERT_EQ(DgnDbStatus::Success, stat) << "System failed to be inserted to Db";
 
-    ClassificationSystemCPtr getSystem = ClassificationSystem::TryGet(db, expectedSystemName);
+    ClassificationSystemCPtr getSystem = ClassificationSystem::TryGet(db, expectedSystemName, expectedSystemEdition);
     ASSERT_TRUE(getSystem.IsValid()) << "System was not found in Db";
         
     db.SaveChanges();
@@ -68,7 +72,8 @@ TEST_F(ClassificationSystemsTestFixture, PropertiesAreSetProperly)
     {
     DgnDbR db = *DgnClientApp::App().Project();
     db.BriefcaseManager().StartBulkOperation();
-    Utf8CP expectedSystemName = "ClassificationSystem1";
+    Utf8String expectedSystemName = "ClassificationSystem1";
+    Utf8String expectedSystemEdition = "1.0";
     Utf8CP expectedGroupName = "ClassificationGroup1";
     Utf8CP expectedClassification1Name = "Classification1";
     Utf8CP expectedClassification1Id = "01-00-00";
@@ -82,20 +87,19 @@ TEST_F(ClassificationSystemsTestFixture, PropertiesAreSetProperly)
     DgnDbStatus stat;
     DgnCode code;
 
-    ClassificationSystemPtr system = ClassificationSystem::Create(db, expectedSystemName);
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, expectedSystemName, expectedSystemEdition);
     ASSERT_TRUE(system.IsValid()) << "Failed to create system";
 
-        
     code = system->GetCode();
-    ASSERT_TRUE(code.GetValue().Equals(expectedSystemName)) << "Code Value was set wrong";
+    ASSERT_TRUE(code.GetValue().Equals((expectedSystemName + expectedSystemEdition).c_str())) << "Code Value was set wrong";
 
     Utf8CP name = system->GetName();
-    ASSERT_TRUE(0 == strcmp(name, expectedSystemName)) << "Failed to get name from Classification System";
+    ASSERT_TRUE(expectedSystemName == name) << "Failed to get name from Classification System";
 
     system->Insert(&stat);
     ASSERT_EQ(DgnDbStatus::Success, stat) << "System failed to be inserted to Db";
 
-    ClassificationSystemCPtr getSystem = ClassificationSystem::TryGet(db, expectedSystemName);
+    ClassificationSystemCPtr getSystem = ClassificationSystem::TryGet(db, expectedSystemName, expectedSystemEdition);
     ASSERT_TRUE(getSystem.IsValid()) << "System was not found in Db";
 
     ClassificationTablePtr table = ClassificationTable::Create(*system, "Test Table");
@@ -159,8 +163,9 @@ TEST_F(ClassificationSystemsTestFixture, ECPrpertiesAreSetProperly)
     db.BriefcaseManager().StartBulkOperation();
 
     Utf8String name = "TestSys";
+    Utf8String edition = "1.0";
 
-    ClassificationSystemPtr system = ClassificationSystem::Create(db, name.c_str());
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, name, edition);
     ASSERT_TRUE(system.IsValid()) << "Failed to create system";
 
     system->Insert();
@@ -176,14 +181,14 @@ TEST_F(ClassificationSystemsTestFixture, ECPrpertiesAreSetProperly)
     ASSERT_TRUE(systemSource.Equals(source));
 
     // Edition
-    Utf8String edition = system->GetEdition();
-    ASSERT_TRUE(Utf8String::IsNullOrEmpty(edition.c_str()));
+    Utf8String editionProp = system->GetEdition();
+    ASSERT_TRUE(editionProp == edition);
 
-    Utf8String systemEdition = "Test Edition";
+    Utf8String systemEdition = "1.1";
     system->SetEdition(systemEdition);
 
-    edition = system->GetEdition();
-    ASSERT_TRUE(systemEdition.Equals(edition));
+    editionProp = system->GetEdition();
+    ASSERT_TRUE(systemEdition == editionProp);
 
     // Location
     Utf8String location = system->GetLocation();

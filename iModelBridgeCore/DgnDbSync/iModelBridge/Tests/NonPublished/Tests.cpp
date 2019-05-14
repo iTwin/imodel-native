@@ -613,7 +613,7 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
         EXPECT_EQ(m_expect.findJobSubject, jobId.IsValid());
         return GetDgnDbR().Elements().Get<Subject>(jobId);
         }
-
+     
     SubjectCPtr _InitializeJob() override
         {
         EXPECT_TRUE(!m_expect.findJobSubject);

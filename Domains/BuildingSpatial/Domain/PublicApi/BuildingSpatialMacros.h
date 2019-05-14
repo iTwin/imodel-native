@@ -4,6 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <Bentley/Bentley.h>
 
 #define BUILDINGSPATIAL_NAMESPACE_NAME  BuildingSpatial
 #define BEGIN_BUILDINGSPATIAL_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace BUILDINGSPATIAL_NAMESPACE_NAME {
@@ -14,6 +15,7 @@
 #define BUILDINGSPATIAL_SCHEMA_PATH                          L"ECSchemas/Domain/BuildingSpatial.ecschema.xml"
 
 #define BUILDINGSPATIAL_CLASS_Building                       "Building"
+#define BUILDINGSPATIAL_CLASS_RegularStory                   "RegularStory"
 #define BUILDINGSPATIAL_CLASS_Space                          "Space"
 #define BUILDINGSPATIAL_CLASS_Story                          "Story"
 
@@ -22,6 +24,7 @@
 
 #define BUILDINGSPATIAL_AUTHORITY_Building                   BUILDINGSPATIAL_CODESPEC_CODE(BUILDINGSPATIAL_CLASS_Building)
 #define BUILDINGSPATIAL_AUTHORITY_Space                      BUILDINGSPATIAL_CODESPEC_CODE(BUILDINGSPATIAL_CLASS_Space)
+#define BUILDINGSPATIAL_AUTHORITY_RegularStory             BUILDINGSPATIAL_CODESPEC_CODE(BUILDINGSPATIAL_CLASS_RegularStory)
 
 #if defined (__BUILDINGSPATIALELEMENTS_BUILD__)
 #define BUILDINGSPATIAL_EXPORT EXPORT_ATTRIBUTE
@@ -37,8 +40,10 @@
 
 #define BUILDINGSPATIAL_CODESPEC_CODE(categoryName)          BUILDINGSPATIAL_SCHEMA_NAME "::" categoryName
 
-#define BUILDINGSPATIAL_CATEGORY_CODE_Building               "Building"
-#define BUILDINGSPATIAL_CATEGORY_CODE_Space                  "Space"
+#define BUILDINGSPATIAL_CATEGORY_CODE_Building                  "Building"
+#define BUILDINGSPATIAL_CATEGORY_CODE_Space                     "Space"
+#define BUILDINGSPATIAL_CATEGORY_CODE_RegularStory              "RegularStory"
+#define BUILDINGSPATIAL_SUBCATEGORY_CODE_SpatialElementLabels   "Labels"
 
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types

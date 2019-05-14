@@ -114,6 +114,7 @@
       <SubPart PartName="PrewireForUnitTests"/>
       <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
       <SubPart PartName="ClassificationSystems"/>
+	    <SubPart PartName="ClassificationSystemsDomain-GeneratedInserts"/>
       <Bindings>
         <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ClassificationSystems/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
       </Bindings>
@@ -139,4 +140,14 @@
         </Bindings>
     </Part>
     
+	<Part Name="ClassificationSystemsDomain-GeneratedInserts" BentleyBuildMakeFile="Domain/GeneratedInserts/GeneratedInserts.mke" ApiNumber="M02">
+        <SubPart PartName="ClassificationSystemsDomain"/>
+		<SubPart PartName="BuildingDgnUtils" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
+		<SubPart PartName="CodeGenerators" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)ClassificationSystemsGeneratedInserts$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)ClassificationSystemsGeneratedInserts$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+	
 </BuildContext>

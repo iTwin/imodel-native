@@ -542,6 +542,93 @@ TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridge)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridgeAlternateRegistry)
+    {
+    auto testDir = CreateTestDir();
+    
+    BentleyApi::BeFileName stagingDir(testDir);
+    stagingDir.AppendToPath(L"staging");
+    EXPECT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::CreateNewDirectory(stagingDir.c_str()));
+    
+    BentleyApi::BeFileName registryDir(testDir);
+    registryDir.AppendToPath(L"assignments");
+    EXPECT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::CreateNewDirectory(registryDir.c_str()));
+
+    bvector<WString> args;
+    SetUpBridgeProcessingArgs(args, stagingDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+    args.push_back(_wcsdup(BentleyApi::WPrintfString(L"--registry-dir=%s", registryDir.c_str()).c_str()));
+    
+    BentleyApi::BeFileName inputFile;
+    MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
+    AddLine(inputFile);
+
+    BentleyApi::BeFileName refFile;
+    MakeCopyOfFile(refFile, L"Test3d.dgn", L"-Ref-1");
+    AddLine(refFile);
+
+    args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
+
+    SetupClient();
+    CreateRepository();
+    auto runningServer = StartServer();
+
+    BentleyApi::BeFileName assignDbName(registryDir);
+    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    FakeRegistry testRegistry(registryDir, assignDbName);
+    testRegistry.WriteAssignments();
+
+    BentleyApi::WString mstnbridgeRegSubKey = L"iModelBridgeForMstn";
+
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer,
+        const size_t bufferSize,
+        iModelBridgeAffinityLevel& affinityLevel,
+        BentleyApi::WCharCP affinityLibraryPath,
+            BentleyApi::WCharCP sourceFileName)
+        {
+        wcsncpy(buffer, mstnbridgeRegSubKey.c_str(), mstnbridgeRegSubKey.length());
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        };
+
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, lambda);
+
+    BentleyApi::BeSQLite::BeGuid guid, refGuid;
+    guid.Create();
+    refGuid.Create();
+
+    iModelBridgeDocumentProperties docProps(guid.ToString().c_str(), "wurn1", "durn1", "other1", "");
+    iModelBridgeDocumentProperties refDocProps(refGuid.ToString().c_str(), "wurn2", "durn2", "other2", "");
+    testRegistry.SetDocumentProperties(docProps, inputFile);
+    testRegistry.SetDocumentProperties(refDocProps, refFile);
+    BentleyApi::WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, inputFile, L"");
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, refFile, L"");
+    testRegistry.Save();
+    TerminateHost();
+
+    int modelCount = 0;
+    if (true)
+        {
+        // Ask the framework to run our test bridge to do the initial conversion and create the repo
+        RunTheBridge(args);
+        
+        modelCount = DbFileInfo(m_briefcaseName).GetModelCount();
+        ASSERT_EQ(8, modelCount);
+        }
+
+   
+    AddAttachment(inputFile, refFile, 1, true);
+    AddAttachment(inputFile, refFile, 1, true);
+    if (true)
+        {
+        //We added a new attachment.
+        RunTheBridge(args);
+        ASSERT_EQ(modelCount + 1, DbFileInfo(m_briefcaseName).GetModelCount());
+        }
+
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridge)
     {
     auto testDir = CreateTestDir();
@@ -926,7 +1013,7 @@ TEST_F(MstnBridgeTests, CodeReservation)
         ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
         }
 
-    VerifyLineHasCode(prevCount, bcName, srcId, prefix, false);
+    VerifyLineHasCode(prevCount, bcName, srcId, prefix, true);  // TODO: This should be false -- when we finally control locks and codes, there will be no code reservation in this case.
     ++prevCount;
 
     // Add a line using RELATED-ELEMENT-SCOPED CODES, where the related element is exclusively owned by the bridge.
@@ -942,7 +1029,7 @@ TEST_F(MstnBridgeTests, CodeReservation)
         ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
         }
 
-    VerifyLineHasCode(prevCount, bcName, srcId, prefix, false);
+    VerifyLineHasCode(prevCount, bcName, srcId, prefix, true);  // TODO: This should be false -- when we finally control locks and codes, there will be no code reservation in this case.
     ++prevCount;
 
     // Add a line using RELATED-ELEMENT-SCOPED CODES, where the related is NOT exclusively owned by the bridge.

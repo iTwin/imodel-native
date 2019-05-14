@@ -16,6 +16,7 @@ struct MultiBridgeTestDocumentAccessor : iModelBridge::IDocumentPropertiesAccess
     {
     std::map<BentleyApi::WString, std::vector<BentleyApi::BeFileName>> m_assignments;
     std::map<BentleyApi::BeFileName, iModelBridgeDocumentProperties> m_docProps;
+    std::map<BentleyApi::Utf8String, BentleyApi::BeFileName> m_guids;
 
     bool _IsFileAssignedToBridge(BentleyApi::BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override
         {
@@ -30,6 +31,14 @@ struct MultiBridgeTestDocumentAccessor : iModelBridge::IDocumentPropertiesAccess
         return false;
         }
 
+    void BuildGuidMap()
+        {
+        for (auto const& props : m_docProps)
+            {
+            m_guids[props.second.m_docGuid] = props.first;
+            }
+        }
+
     BentleyApi::BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties& props, BentleyApi::BeFileNameCR fn) override
         {
         auto found = m_docProps.find(fn);
@@ -39,7 +48,14 @@ struct MultiBridgeTestDocumentAccessor : iModelBridge::IDocumentPropertiesAccess
         return BentleyApi::BSISUCCESS;
         }
 
-    BentleyApi::BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BentleyApi::BeFileNameR localFilePath, BentleyApi::BeSQLite::BeGuid const& docGuid) override {BeAssert(false); return BentleyApi::BSIERROR;}
+    BentleyApi::BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BentleyApi::BeFileNameR localFilePath, BentleyApi::BeSQLite::BeGuid const& docGuid) override
+        {
+        auto found = m_guids.find(docGuid.ToString());
+        if (found == m_guids.end())
+            return BentleyApi::BSIERROR;
+        return _GetDocumentProperties(props, found->second);
+        }
+
     BentleyApi::BentleyStatus _AssignFileToBridge(BentleyApi::BeFileNameCR fn, wchar_t const* bridgeRegSubKey, BeGuidCP guid) override {BeAssert(false); return BentleyApi::BSIERROR;}
     };
 
@@ -87,7 +103,8 @@ static void doConvert(DefinitionModelIds& defids,
                       RootModelConverter::RootModelSpatialParams const& paramsIn, 
                       MultiBridgeTestDocumentAccessor& docaccessor,
                       WCharCP bridgeRegSubKey,
-                      bool isUpdate)
+                      bool isUpdate,
+                      bool detectDeletedFiles)
     {
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(paramsIn);
@@ -119,6 +136,9 @@ static void doConvert(DefinitionModelIds& defids,
     converter.ConvertData();
     
     ASSERT_FALSE(converter.WasAborted());
+
+    if (detectDeletedFiles)
+        converter._DetectDeletedDocuments();
 
     defids.m_definitionModelId = converter.GetJobDefinitionModel()->GetModelId();
     defids.m_sheetListModelId = converter.GetSheetListModelId();
@@ -156,14 +176,14 @@ static bool isCodeValueInList(std::vector<DgnElementCPtr> const& elems, BentleyA
 //----------------------------------------------------------------------------------------
 struct MultiBridgeTests : public ConverterTestBaseFixture
     {
-    void RunBridge(DefinitionModelIds&, WCharCP bridgeName, MultiBridgeTestDocumentAccessor&, bool isFirstTime);
+    void RunBridge(DefinitionModelIds&, WCharCP bridgeName, MultiBridgeTestDocumentAccessor&, bool isFirstTime, bool detectDeletedFiles = false);
     void DoMergeDefinitions(bool mergeDefinitions);
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MultiBridgeTests::RunBridge(DefinitionModelIds& defids, WCharCP bridgeName, MultiBridgeTestDocumentAccessor& docaccessor, bool isFirstTime)
+void MultiBridgeTests::RunBridge(DefinitionModelIds& defids, WCharCP bridgeName, MultiBridgeTestDocumentAccessor& docaccessor, bool isFirstTime, bool detectDeletedFiles)
     {
     // Copy m_dgnDbFileName into the bridge's own workdir - that is its briefcase
     BentleyApi::BeFileName briefcaseName = copyFileTo(m_dgnDbFileName, getSubdir(GetOutputDir(), bridgeName, isFirstTime));
@@ -172,7 +192,7 @@ void MultiBridgeTests::RunBridge(DefinitionModelIds& defids, WCharCP bridgeName,
     ASSERT_TRUE(db.IsValid());
 
     // The bridge runs its conversion, writing to its briefcase
-    doConvert(defids, *db, m_v8FileName, m_params, docaccessor, bridgeName, !isFirstTime);
+    doConvert(defids, *db, m_v8FileName, m_params, docaccessor, bridgeName, !isFirstTime, detectDeletedFiles);
     db->SaveChanges();
 
     // Copy the briefcase back to m_dgnDbFileName -- pretend that bridge1 pushed to iModelHub
@@ -482,4 +502,112 @@ TEST_F(MultiBridgeTests, Sandwich)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* This test verifies that a bridge will delete only the models that it created
+* when the master file goes away.
+* @bsimethod                                    Sam.Wilson                      05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MultiBridgeTests, DetectDeletedModels)
+    {
+    LineUpFiles(L"MultiBridgeTest_DetectDeletedModels.bim", L"master3d.dgn", false); 
+    
+    // TRICKY: I will not use "master3d.dgn" as my master file. 
+    //          Instead, I will make a copy of "ref3d.dgn" and call it master.dgn.
+    //          That is because "master3d.dgn" already contains a reference attachment
+    //          and ref3d.dgn does not. I want to start with a clean slate and create
+    //          all of the attachments myself.
+    
+    // Create the sandwich:
+    BentleyApi::BeFileName masterFileName, rRefFileName, mRefFileName;
+    MakeWritableCopyOf(masterFileName, GetInputFileName(L"ref3d.dgn"), L"master.dgn");
+    MakeWritableCopyOf(rRefFileName, GetInputFileName(L"ref3d.dgn"), L"rref.dgn");
+    MakeWritableCopyOf(mRefFileName, GetInputFileName(L"ref3d.dgn"), L"mref.dgn");
 
+    m_v8FileName = masterFileName;  // This is the master file that I want to use as my converter root
+
+    attach(masterFileName, 0, rRefFileName, L"");        // master -> rref
+    attach(rRefFileName,   0, mRefFileName, L"");        //           rref -> mref
+
+    // Put an element in each model
+    addLineTo(masterFileName, 0);
+    addLineTo(rRefFileName, 0);
+    addLineTo(mRefFileName, 0);
+
+    MultiBridgeTestDocumentAccessor docaccessor;
+    // m is assigned to the master file and to mref
+    docaccessor.m_assignments[L"m"].push_back(m_v8FileName);
+    docaccessor.m_assignments[L"m"].push_back(mRefFileName);
+    // r is assigned to rref
+    docaccessor.m_assignments[L"r"].push_back(rRefFileName);
+
+    docaccessor.m_docProps[m_v8FileName] = iModelBridgeDocumentProperties("10000000-0000-0000-0000-000000000001", "wurnm", "durnm", "otherm", "");
+    docaccessor.m_docProps[mRefFileName] = iModelBridgeDocumentProperties("20000000-0000-0000-0000-000000000002", "wurnmr", "durnmr", "othermr", "");
+    docaccessor.m_docProps[rRefFileName] = iModelBridgeDocumentProperties("30000000-0000-0000-0000-000000000003", "wurnrr", "durnrr", "otherrr", "");
+
+    docaccessor.BuildGuidMap();
+
+    //  Run both bridges. 
+    DefinitionModelIds mDefs, rDefs;
+    RunBridge(mDefs, L"m", docaccessor, true);
+    RunBridge(rDefs, L"r", docaccessor, true);
+    RunBridge(mDefs, L"m", docaccessor, false);
+
+    if (true)
+        {
+        // The bridges should have created their respective models.
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+        ASSERT_TRUE(db.IsValid());
+
+        auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(1, masterModels.size());
+        auto rrefModels = getModelsByName(*db, "rref"); ASSERT_EQ(1, rrefModels.size());
+        auto mrefModels = getModelsByName(*db, "mref"); ASSERT_EQ(1, mrefModels.size());
+
+        ASSERT_EQ(2, countElementsInModel(*masterModels[0]));
+        ASSERT_EQ(2, countElementsInModel(*rrefModels[0]));
+        ASSERT_EQ(2, countElementsInModel(*mrefModels[0]));
+        }
+
+    // Delete rref.dgn and mref.dgn and remove them from the registry. 
+    BentleyApi::BeFileName::BeDeleteFile(rRefFileName.c_str());
+    BentleyApi::BeFileName::BeDeleteFile(mRefFileName.c_str());
+    ASSERT_TRUE(!rRefFileName.DoesPathExist());
+    ASSERT_TRUE(!mRefFileName.DoesPathExist());
+    docaccessor.m_docProps.erase(rRefFileName);
+    docaccessor.m_docProps.erase(mRefFileName);
+
+    // Run bridge "r"
+    RunBridge(rDefs, L"r", docaccessor, false, true);
+
+    if (true)
+        {
+        // R should have deleted "rref" and no other model.
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+        ASSERT_TRUE(db.IsValid());
+
+        auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(1, masterModels.size()) << "Master.dgn is still there. No bridge should have deleted its models.";
+        auto rrefModels = getModelsByName(*db, "rref");     ASSERT_EQ(0, rrefModels.size()) << "Bridge R should notice that rref.dgn was deleted and delete the models from it.";
+        auto mrefModels = getModelsByName(*db, "mref");     ASSERT_EQ(1, mrefModels.size()) << "Bridge R should not delete models from files not assigned to it";
+
+        ASSERT_EQ(2, countElementsInModel(*masterModels[0]));
+        // rref is gone
+        ASSERT_EQ(2, countElementsInModel(*mrefModels[0]));
+        }
+
+    // Run bridge "m"
+    RunBridge(rDefs, L"m", docaccessor, false, true);
+
+    if (true)
+        {
+        // M should have deleted "mref"
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+        ASSERT_TRUE(db.IsValid());
+
+        auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(1, masterModels.size()) << "Master.dgn is still there. No bridge should have deleted its models.";
+        auto rrefModels = getModelsByName(*db, "rref");     ASSERT_EQ(0, rrefModels.size());
+        auto mrefModels = getModelsByName(*db, "mref");     ASSERT_EQ(0, mrefModels.size()) << "Bridge M should notice that mref.dgn was deleted and delete the models from it.";
+
+        ASSERT_EQ(2, countElementsInModel(*masterModels[0]));
+        // rref is gone
+        // mref is gone
+        }
+    }

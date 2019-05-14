@@ -541,16 +541,76 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP descIn, bool doPul
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/17
+* @bsimethod                                    Sam.Wilson                      04/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool isLockExclusiveToJob(DgnLockCR lock)
+static bool isRepositoryLinkElement(DgnElementId const& id, DgnDbR db) {return db.Elements().Get<RepositoryLink>(id).IsValid();}
+static DgnElementId elementId(DgnLockCR lock) {return DgnElementId(lock.GetLockableId().GetId().GetValue());}
+static DgnModelId modelId(DgnLockCR lock) {return DgnModelId(lock.GetLockableId().GetId().GetValue());}
+static bool isRepositoryModel(DgnLockCR lock) {return modelId(lock) == DgnModel::RepositoryModelId();}
+#ifndef NDEBUG
+static bool isShareOnlyElement(DgnLockCR lock, DgnDbR db)
     {
-    // Only looking for exclusive locks
-    if (lock.GetLevel() != LockLevel::Exclusive)
-        return false;
+    auto id = elementId(lock);
+    return id == db.Elements().GetRootSubjectId()
+         || id == db.Elements().GetDictionaryPartitionId();
+    }
+static bool isShareOnlyModel(DgnLockCR lock)
+    {
+    auto id = modelId(lock);
+    return id == DgnModel::DictionaryId()
+        || id == DgnModel::RepositoryModelId();
+    }
+#endif
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool shouldBridgeHoldThisLock(DgnLockCR lock, DgnDbR db)
+    {
+    bool isExclusive = (lock.GetLevel() == LockLevel::Exclusive);
 
-    // A job can only "own" models and elements.
-    return lock.GetType() == LockableType::Model || lock.GetType() == LockableType::Element;
+    if (lock.GetType() == LockableType::Element)
+        {
+        // A bridge holds onto locks on the elements that it created
+        // ... except for RepositoryLink elements.(4)
+        BeAssert((!isExclusive || !isShareOnlyElement(lock, db)) && "bridge must never lock a root subject element exclusively");
+        return isExclusive && !isRepositoryLinkElement(elementId(lock), db);
+        }
+
+    if (lock.GetType() == LockableType::Model)
+        {
+        // A bridge holds onto locks on the models that it created.
+        // A bridge must hold onto its shared lock on the repository model.(1)
+        // (A bridge does NOT hold onto the shared lock on the DictionaryModel.(2))
+        BeAssert((!isExclusive || !isShareOnlyModel(lock)) && "bridge must never lock a shared definitions model exclusively");
+        return isExclusive || isRepositoryModel(lock);
+        }
+    
+    if (LockableType::Db == lock.GetType())
+        {
+        // A bridge must hold onto its shared lock on the Db.(3)
+        return true;
+        }
+
+    // A bridge never holds the Schema, CodeSpecs, or other locks that guard the schema channel.
+    return false;
+
+    // (1) The repository model is where the bridge created its JobSubject and its child Subject. 
+    // The bridge must retain its exclusive lock on those Subjects. If we were to release
+    // The bridge's shared lock on that model, that would auto-release locks on all elements in that model.
+
+    // (2) The DictionaryModel contains shared definitions, such as Categories, which are created/contributed
+    // by many bridges. No bridge should hold onto its exclusive lock on any element that it creates in
+    // the DictionaryModel. Releasing the bridge's lock on the DictionaryModel itself will have the effect
+    // of releasing its locks on the elements in it.
+
+    // (3) Releasing the shared lock on the Db itself would have the side-effect of relinquishing *all* my locks.
+
+    // (4) RepositoryLink elements are stored in the repository model and are shared by multiple bridges.
+    // There is no way to predict which bridge will create a RepositoryLink element. A bridge may create
+    // a RepositoryLink that corresponds to a file that is not assigned to that bridge, if that is necessary
+    // in order to traverse references from that file and to create subjects for them. 
+    // Nevertheless. the bridge to which the file is assigned must be able to update the RepositoryLink element.
+    // So, we must keep RepositoryLink elements unlocked.
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -572,17 +632,13 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
         for (auto& iter = *pIter; iter.IsValid(); ++iter)
             {
             DgnLockCR lock = *iter;
-            if (isLockExclusiveToJob(lock))    // I only keep locks on the things that I created
-                continue;
-            if ((lock.GetType() == LockableType::Model) && (lock.GetLockableId().GetId() == DgnModel::RepositoryModelId()))
-                continue;                       // Don't demote/relinquish the shared lock on the RepositoryModel. That is where the bridge created its JobSubject. The bridge must retain its exclusive lock on that element.
-            // Do relinquish the shared lock on the DictionaryModel, along with any locks on elements in that model. These are definitions, such as Categories, which are meant to be shared. 
-            if (LockableType::Db == lock.GetType())
-                continue;                       // Don't demote/relinquish the shared lock on the Db. That would have the side effect of relinquishing *all* my locks.
-            GetLogger().infov("Releasing lock: type=%d level=%d objid=%llx", lock.GetType(), lock.GetLevel(), lock.GetId().GetValue());
-            DgnLock lockReq(lock);
-            lockReq.SetLevel(LockLevel::None);
-            toRelease.insert(lockReq);
+            if (!shouldBridgeHoldThisLock(lock, *m_briefcaseDgnDb))
+                {
+                GetLogger().infov("Releasing lock: type=%d level=%d objid=%llx", lock.GetType(), lock.GetLevel(), lock.GetId().GetValue());
+                DgnLock lockReq(lock);
+                lockReq.SetLevel(LockLevel::None);
+                toRelease.insert(lockReq);
+                }
             }
         }
 
@@ -673,41 +729,6 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
         return BSIERROR;
         }
 
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::Briefcase_AcquireExclusiveLocks()
-    {
-    if (m_modelsInserted.empty())
-        return BSISUCCESS;
-
-    DgnDb::OpenParams openParams(DgnDb::OpenMode::Readonly);
-    auto db = DgnDb::OpenDgnDb(nullptr, m_briefcaseName, openParams);
-    if (!db.IsValid())
-        {
-        GetLogger().errorv(L"iModelBridgeFwk unable to open db %s for Briefcase_AcquireExclusiveLocks.", m_briefcaseName.c_str());
-        return BSIERROR;
-        }
-
-    LockRequest req;
-    for (auto mid : m_modelsInserted)
-        {
-        auto model = db->Models().GetModel(mid);
-        if (!model.IsValid())
-            continue;
-        req.Insert(*model, LockLevel::Exclusive);
-        }
-
-    if (BSISUCCESS != m_client->AcquireLocks(req, *db))
-        {
-        GetLogger().info(m_client->GetLastError().GetMessage().c_str());
-        return BSIERROR;
-        }
-
-    m_modelsInserted.clear();
     return BSISUCCESS;
     }
 

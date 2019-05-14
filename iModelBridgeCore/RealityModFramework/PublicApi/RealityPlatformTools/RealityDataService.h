@@ -119,6 +119,50 @@ private:
     };
 
 //=====================================================================================
+//! @bsiclass                                   Spencer.Mason 02/2017
+//! A class used to create a new reality data public key in the reality data service.
+//=====================================================================================
+struct RealityDataPublicKeyCreateRequest : public RealityDataUrl
+    {
+    REALITYDATAPLATFORM_EXPORT RealityDataPublicKeyCreateRequest(Utf8String properties);
+    REALITYDATAPLATFORM_EXPORT RealityDataPublicKeyCreateRequest(RealityDataPublicKeyCR realityDataPublicKey);
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+    };
+
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason 03/2017
+//! A class used to modify an existing reality data public key in the reality data service.
+//=====================================================================================
+struct RealityDataPublicKeyChangeRequest : public RealityDataUrl
+    {
+    REALITYDATAPLATFORM_EXPORT RealityDataPublicKeyChangeRequest(Utf8String realityDataPublicKeyId, Utf8String properties);
+    REALITYDATAPLATFORM_EXPORT RealityDataPublicKeyChangeRequest(RealityDataPublicKeyCR realityDataPublicKey);
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+    };
+
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason 03/2017
+//! A class used to delete an existing reality data public key in the reality data service.
+//=====================================================================================
+struct RealityDataPublicKeyDeleteRequest : public RealityDataUrl
+    {
+    REALITYDATAPLATFORM_EXPORT RealityDataPublicKeyDeleteRequest(Utf8String realityDataPublicKeyId) 
+        { 
+        m_validRequestString = false; 
+        m_id = realityDataPublicKeyId; 
+        m_requestType = HttpRequestType::DELETE_Request; 
+        }
+    REALITYDATAPLATFORM_EXPORT virtual ~RealityDataPublicKeyDeleteRequest(){}
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    RealityDataPublicKeyDeleteRequest() {}
+    };
+
+//=====================================================================================
 //! @bsiclass                                         Donald.Morissette         03/2017
 //! RealityDataEnterpriseStat
 //! This class returns the size in KB currently used.
@@ -828,20 +872,20 @@ protected:
 //! @bsiclass                                   Spencer.Mason 03/2017
 //! A class used to delete an existing reality data in the reality data service.
 //=====================================================================================
-struct RealityDataDelete : public RealityDataUrl
+struct RealityDataDeleteRequest : public RealityDataUrl
     {
-    REALITYDATAPLATFORM_EXPORT RealityDataDelete(Utf8String realityDataId) 
+    REALITYDATAPLATFORM_EXPORT RealityDataDeleteRequest(Utf8String realityDataId) 
         { 
         m_validRequestString = false; 
         m_id = realityDataId; 
         m_requestType = HttpRequestType::DELETE_Request; 
         }
-    REALITYDATAPLATFORM_EXPORT virtual ~RealityDataDelete(){}
+    REALITYDATAPLATFORM_EXPORT virtual ~RealityDataDeleteRequest(){}
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    RealityDataDelete() {}
+    RealityDataDeleteRequest() {}
     };
 
 //=====================================================================================
@@ -1257,6 +1301,15 @@ public:
     //! Returns the available public keys for the user.
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataPublicKey>  Request(AllRealityDataPublicKeysRequest const& request,  RawServerResponse& rawResponse);
 
+    //! Returns a serverResponse or null if an error occurred
+    REALITYDATAPLATFORM_EXPORT static Utf8String Request(RealityDataPublicKeyChangeRequest const& request, RawServerResponse& rawResponse);
+
+    //! Creates a public key or null if an error occurred
+    REALITYDATAPLATFORM_EXPORT static Utf8String Request(RealityDataPublicKeyCreateRequest const& request, RawServerResponse& rawResponse);
+
+    //! Deletes a Public Key object
+    REALITYDATAPLATFORM_EXPORT static void Request(RealityDataPublicKeyDeleteRequest const& request, RawServerResponse& rawResponse);
+
     //! Returns the size in KB for the specify Enterprise, or the default one.
     REALITYDATAPLATFORM_EXPORT static void Request(RealityDataEnterpriseStatRequest const& request, RealityDataEnterpriseStat& statObject, RawServerResponse& rawResponse);
 
@@ -1278,22 +1331,22 @@ public:
     //! Returns the list of all documents in a repo
     REALITYDATAPLATFORM_EXPORT static bvector<bpair<WString, uint64_t>> Request(AllRealityDataByRootId const& request, RawServerResponse& rawResponse);
 
-    //! Returns the RealityData object requested or null if an error occured
+    //! Returns the RealityData object requested or null if an error occurred
     REALITYDATAPLATFORM_EXPORT static RealityDataPtr Request(RealityDataByIdRequest const& request, RawServerResponse& rawResponse);
 
-    //! Returns the RealityDataExtended object requested or null if an error occured
+    //! Returns the RealityDataExtended object requested or null if an error occurred
     REALITYDATAPLATFORM_EXPORT static RealityDataExtendedPtr Request(RealityDataExtendedByIdRequest const& request, RawServerResponse& rawResponse);
 
     //! Deletes a RealityData object
-    REALITYDATAPLATFORM_EXPORT static void Request(RealityDataDelete const& request, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static void Request(RealityDataDeleteRequest const& request, RawServerResponse& rawResponse);
 
-    //! Returns a RealityDataDocument or null if an error occured
+    //! Returns a RealityDataDocument or null if an error occurred
     REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(RealityDataDocumentByIdRequest const& request, RawServerResponse& rawResponse);
 
     //! Returns the content of a RealityData Service document
     REALITYDATAPLATFORM_EXPORT static void Request(RealityDataDocumentContentByIdRequest& request, BeFile* file, RawServerResponse& rawResponse);
 
-    //! Returns a RealityDataFolder or null if an error occured
+    //! Returns a RealityDataFolder or null if an error occurred
     REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Request(RealityDataFolderByIdRequest const& request, RawServerResponse& rawResponse);
 
     //! DEPRECATED use RealityDataListByUltimateIdPagedRequest
@@ -1322,10 +1375,10 @@ public:
     //! and return on last page with appropriate status.
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataRelationshipPtr> Request(RealityDataRelationshipByRealityDataIdPagedRequest const& request, RawServerResponse& rawResponse);
 
-    //! Returns a serverResponse or null if an error occured
+    //! Returns a serverResponse or null if an error occurred
     REALITYDATAPLATFORM_EXPORT static Utf8String Request(RealityDataChangeRequest const& request, RawServerResponse& rawResponse);
 
-    //! Returns a RealityDataFolder or null if an error occured
+    //! Returns a RealityDataFolder or null if an error occurred
     REALITYDATAPLATFORM_EXPORT static Utf8String Request(RealityDataCreateRequest const& request, RawServerResponse& rawResponse);
 
     //! Creates a relationship between reality data and project

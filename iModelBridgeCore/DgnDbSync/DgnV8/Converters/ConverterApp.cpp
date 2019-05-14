@@ -14,6 +14,7 @@
 #include <DgnPlatform/DgnIModel.h>
 #include <DgnPlatform/WebMercator.h>
 #include <iModelBridge/iModelBridgeSacAdapter.h>
+#include <WebServices/Client/ClientInfo.h>
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"DgnV8Converter"))
 
@@ -357,6 +358,29 @@ BentleyStatus RootModelConverterApp::_Initialize(int argc, WCharCP argv[])
 void ConverterApp::_Terminate(BentleyStatus)
     {
     Converter::Terminate(_GetParams());
+    }
+// Generated header with build version numbers
+#include "prg.h"
+
+// This build version number from generated prg.h
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+RootModelConverterApp::RootModelConverterApp()
+    { 
+    RootModelConverter::RootModelChoice c;
+    c.m_method = RootModelConverter::RootModelChoice::Method::FromActiveViewGroup;
+    m_params.SetRootModelChoice(c);
+        
+    m_wasUpdateEmpty = false;
+    BeVersion bridgeVersion(REL_V "." MAJ_V "." MIN_V "." SUBMIN_V);
+    WebServices::ClientInfoPtr clientInfo = WebServices::ClientInfoPtr(
+        WebServices::ClientInfo::Create("iModelBridgeService-MicroStation", bridgeVersion,
+            "{DC994E46-3852-45A1-9A5B-5EEE4C6D234F}",
+            "2707", GetParamsCR().GetDefaultHeaderProvider()));
+
+    m_params.SetClientInfo(clientInfo);
     }
 
 /*---------------------------------------------------------------------------------**//**

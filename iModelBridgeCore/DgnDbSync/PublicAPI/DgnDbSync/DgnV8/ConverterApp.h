@@ -100,13 +100,7 @@ protected:
     DgnFontCP _TryResolveFont(DgnFontCP font) override {return m_converter->TryResolveFont(font);}
 
 public:
-    RootModelConverterApp()
-        {
-        RootModelConverter::RootModelChoice c;
-        c.m_method = RootModelConverter::RootModelChoice::Method::FromActiveViewGroup;
-        m_params.SetRootModelChoice(c);
-        }
-
+    RootModelConverterApp();
     ~RootModelConverterApp() {BeAssert(nullptr == m_converter.get());}
     
 };

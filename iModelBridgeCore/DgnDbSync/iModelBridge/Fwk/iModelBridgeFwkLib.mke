@@ -51,6 +51,14 @@ $(o)OidcTokenProvider$(oext): $(baseDir)OidcTokenProvider.cpp  $(baseDir)OidcTok
 
 $(o)OidcToken$(oext): $(baseDir)OidcToken.cpp  $(baseDir)OidcToken.h ${MultiCompileDepends}
 
+$(o)iModelBridgeErrorHandling$(oext) : $(_MakeFilePath)iModelBridgeErrorHandling.cpp $(baseDir)iModelBridgeErrorHandling.h ${MultiCompileDepends}
+
+%if $(TARGET_PLATFORM)=="Windows"
+
+$(o)iModelCrashProcessor$(oext) : $(_MakeFilePath)iModelCrashProcessor.cpp $(_MakeFilePath)iModelCrashProcessor.h ${MultiCompileDepends}
+
+%endif
+
 %include MultiCppCompileGo.mki
 
 #--------------------------------------------------------------------------------------
@@ -79,6 +87,7 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)bentleylog4cxx$(stlibext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
 
 %if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT"
 LINKER_LIBRARIES  + Crypt32.lib

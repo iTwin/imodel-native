@@ -64,6 +64,7 @@ StatusInt   PWWorkspaceHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, int
     {
     int statusCodeBefore = aaApi_GetLastErrorId();
     LOG.tracev("Generating workspace configuration file. %d", statusCodeBefore);
+    m_activeWorkspaceDir = destination;
     StatusInt status = SUCCESS;
     wchar_t workspaceFilePath[1024] = {0};
     if (!workspace_GenerateMSConfigurationFile3(0,

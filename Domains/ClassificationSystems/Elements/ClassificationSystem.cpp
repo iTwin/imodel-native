@@ -21,10 +21,11 @@ DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystem)
 Dgn::DgnCode ClassificationSystem::GetSystemCode
 (
     Dgn::DgnDbR db,
-    Utf8CP name
+    Utf8StringCR name, 
+    Utf8StringCR edition
 )
     {
-    return Dgn::DgnCode(db.CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem), db.Elements().GetRootSubjectId(), name);
+    return Dgn::DgnCode(db.CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem), db.Elements().GetRootSubjectId(), name + edition);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Martynas.Saulius               04/2018
@@ -32,11 +33,14 @@ Dgn::DgnCode ClassificationSystem::GetSystemCode
 ClassificationSystem::ClassificationSystem
 (
     CreateParams const& params,
-    Utf8CP name
+    Utf8StringCR name, 
+    Utf8StringCR edition
 ) : T_Super(params)
     {
-        Dgn::DgnCode code = GetSystemCode(params.m_dgndb, name);
+        Dgn::DgnCode code = GetSystemCode(params.m_dgndb, name, edition);
         SetCode(code);
+        SetEdition(edition);
+        SetUserLabel(name.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -75,12 +79,13 @@ void ClassificationSystem::_FormatSerializedProperties
 ClassificationSystemPtr ClassificationSystem::Create
 (
     Dgn::DgnDbR db,
-    Utf8CP name
+    Utf8StringCR name, 
+    Utf8StringCR edition
 )
     {
     Dgn::DgnClassId classId = QueryClassId(db);
     Dgn::DgnElement::CreateParams params(db, BS::BuildingUtils::GetOrCreateDefinitionModel(db, "ClassificationSystems")->GetModelId(), classId);
-    ClassificationSystemPtr system = new ClassificationSystem(params, name);
+    ClassificationSystemPtr system = new ClassificationSystem(params, name, edition);
     return system;
     }
     
@@ -90,10 +95,11 @@ ClassificationSystemPtr ClassificationSystem::Create
 ClassificationSystemCPtr ClassificationSystem::TryGet
 (
     Dgn::DgnDbR db,
-    Utf8CP name
+    Utf8StringCR name,
+    Utf8StringCR edition
 )
     {
-    Dgn::DgnCode code = GetSystemCode(db, name);
+    Dgn::DgnCode code = GetSystemCode(db, name, edition);
     Dgn::DgnElementId id = db.Elements().QueryElementIdByCode(code);
 
     if (id.IsValid())
@@ -108,14 +114,15 @@ ClassificationSystemCPtr ClassificationSystem::TryGet
 ClassificationSystemCPtr ClassificationSystem::GetOrCreateSystemByName
 (
     Dgn::DgnDbR db,
-    Utf8StringCR systemName
+    Utf8StringCR name,
+    Utf8StringCR edition
 )
     {
-    ClassificationSystemCPtr queriedSystem = TryGet(db, systemName.c_str());
+    ClassificationSystemCPtr queriedSystem = TryGet(db, name, edition);
     if (queriedSystem.IsValid())
         return queriedSystem;
 
-    ClassificationSystemPtr system = ClassificationSystem::Create(db, systemName.c_str());
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, name, edition);
     if (system.IsNull())
         return nullptr;
 
@@ -128,7 +135,7 @@ ClassificationSystemCPtr ClassificationSystem::GetOrCreateSystemByName
 //---------------------------------------------------------------------------------------
 Utf8CP ClassificationSystem::GetName() const
     {
-    return GetCode().GetValueUtf8CP();
+    return GetUserLabel();
     }
 
 /*---------------------------------------------------------------------------------**//**

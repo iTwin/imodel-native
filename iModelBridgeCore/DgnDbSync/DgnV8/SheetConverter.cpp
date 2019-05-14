@@ -163,11 +163,14 @@ void Converter::DoConvertDrawingElementsInSheetModel(ResolvedModelMapping const&
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::SheetsConvertModelAndViewsWithExceptionHandling(ResolvedModelMapping const& v8mm, ViewFactory& nvvf)
     {
-    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+//    __try
         {
         SheetsConvertModelAndViews(v8mm, nvvf);
         }
-    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(ReportFailedModelConversion(v8mm))
+//    __except(EXCEPTION_EXECUTE_HANDLER)
+//        {
+//        ReportFailedModelConversion(v8mm);
+//        }
     }
 
 /*---------------------------------------------------------------------------------**//**

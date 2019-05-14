@@ -315,11 +315,12 @@ BeTextFile*                    stream
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mike.Stratoti                   10/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    win32Tools_generateMiniDump
+Public void    win32Tools_generateMiniDump
 (
 BeTextFile*                      stream,
 EXCEPTION_POINTERS const * const exceptionInfoP,
-WCharCP                        dmpFileName
+WCharCP                         dmpFileName,
+bool*                           wantFullMemoryDump
 )
     {
     /*-----------------------------------------------------------------------------------
@@ -418,6 +419,9 @@ WCharCP                        dmpFileName
             FreeLibrary (hDbgHelp);
             return;
             }
+
+        if (wantFullMemoryDump && *wantFullMemoryDump)
+            dumpOpts = (MiniDumpWithFullMemory | MiniDumpWithFullMemoryInfo | MiniDumpWithHandleData | MiniDumpWithUnloadedModules | MiniDumpWithThreadInfo);
         }
     
     HANDLE          hDumpFile = INVALID_HANDLE_VALUE;
@@ -1023,7 +1027,7 @@ int32_t                    const debugLevel
 #endif
 
         __try { win32Tools_displayMemoryStats (stream); }    __except (EXCEPTION_EXECUTE_HANDLER) { ; }
-        __try { win32Tools_generateMiniDump (stream, exceptionInfoP, NULL); }    __except (EXCEPTION_EXECUTE_HANDLER) { ; }
+        __try { win32Tools_generateMiniDump (stream, exceptionInfoP, NULL, NULL); }    __except (EXCEPTION_EXECUTE_HANDLER) { ; }
 
 
 

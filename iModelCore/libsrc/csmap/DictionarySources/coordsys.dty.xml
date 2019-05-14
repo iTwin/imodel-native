@@ -8468,27 +8468,6 @@
                 <Name>Turkey</Name>
                 <Members>
                   <Member>
-                    <KeyName>EPSG:2319</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2320</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2321</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2322</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2323</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2324</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2325</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>ERP50-TK.TM27</KeyName>
                   </Member>
                   <Member>
@@ -8522,37 +8501,37 @@
                     <KeyName>ERP50-TK-UTM38</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK.TM27</KeyName>
+                    <KeyName>ED50TK2.TM27</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK.TM30</KeyName>
+                    <KeyName>ED50TK2.TM30</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK.TM33</KeyName>
+                    <KeyName>ED50TK2.TM33</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK.TM36</KeyName>
+                    <KeyName>ED50TK2.TM36</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK.TM39</KeyName>
+                    <KeyName>ED50TK2.TM39</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK.TM42</KeyName>
+                    <KeyName>ED50TK2.TM42</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK.TM45</KeyName>
+                    <KeyName>ED50TK2.TM45</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK-UTM35</KeyName>
+                    <KeyName>ED50TK2-UTM35</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK-UTM36</KeyName>
+                    <KeyName>ED50TK2-UTM36</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK-UTM37</KeyName>
+                    <KeyName>ED50TK2-UTM37</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50TK-UTM38</KeyName>
+                    <KeyName>ED50TK2-UTM38</KeyName>
                   </Member>
                   <Member>
                     <KeyName>WGS84-TK.TM27</KeyName>
@@ -8588,46 +8567,46 @@
                     <KeyName>WGS84-TK-UTM38</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5253</KeyName>
+                    <KeyName>TUREF.TM27-N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5254</KeyName>
+                    <KeyName>TUREF.TM30-N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5255</KeyName>
+                    <KeyName>TUREF.TM33-N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5256</KeyName>
+                    <KeyName>TUREF.TM36-N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5257</KeyName>
+                    <KeyName>TUREF.TM39-N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5258</KeyName>
+                    <KeyName>TUREF.TM42-N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5259</KeyName>
+                    <KeyName>TUREF.TM45-N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5253-1</KeyName>
+                    <KeyName>TUREF.TM27-I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5254-1</KeyName>
+                    <KeyName>TUREF.TM30-I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5255-1</KeyName>
+                    <KeyName>TUREF.TM33-I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5256-1</KeyName>
+                    <KeyName>TUREF.TM36-I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5257-1</KeyName>
+                    <KeyName>TUREF.TM39-I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5258-1</KeyName>
+                    <KeyName>TUREF.TM42-I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5259-1</KeyName>
+                    <KeyName>TUREF.TM45-I</KeyName>
                   </Member>
                   <Member>
                     <KeyName>TUREF.GK3d-9/N</KeyName>
@@ -9019,10 +8998,15 @@
                   </Member>         
                   <Member>
                     <KeyName>HeathrowAirportGrid2007</KeyName>
-                  </Member>           
+                  </Member>
+                  <Member>
+                    <KeyName>HS2_Snake_2015</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>HS2_Snake_2002</KeyName>
+                  </Member>
                 </Members>
               </Group>
-
               <Group>
                 <Name>UTM-TM-GK Zones</Name>
                 <Groups>
@@ -14464,7 +14448,6 @@
                           <Group>
                             <Name>Maine</Name>
                             <Groups>
-
                               <Group>
                                 <Name>Legacy</Name>
                                 <Members>
@@ -17420,6 +17403,247 @@
                           </Group>
                           <Group>
                             <Name>Oregon</Name>
+                            <Groups>
+                              <Group>
+                                <Name>OCRS</Name>
+                                <Members>
+                                  <Member>
+                                    <KeyName>OCRS-Baker</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Bend-Burns</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Bend-Klamath</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Bend-Redmond</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Burns-Harper  </KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Canyon-Burns</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Canyonville-Grant</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-CoastRangeNorth</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-ColumbRiv-East</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-ColumbiaRiverWest</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-CottageCanyonville</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Dayville-Prairie</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Denio-Burns</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Dufur-Madras</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Eugene</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-GrantsPass-Ashland</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-GreshamWarmSprings</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Halfway</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-LaGrande</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-MedfordDiamondLk</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Mitchell</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-NorthCentral</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-OchocoSummit</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Ontario</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-OregonCoast</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Owyhee</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Pendleton</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Pendleton-LaGrande</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-PilotRock-Ukiah</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Portland</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-PrairieCity-Brogan</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Riley-Lakeview</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Salem</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-SantiamPass</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-SiskiyouPass</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Ukiah-Fox</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Wallowa</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-WarnerHighway</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Willamette</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Baker-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Bend-Burns-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Bend-Klamath-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Bend-Redmond-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Burns-Harper-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Canyon-Burns-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-CanyonvilleGrantIF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-CoastRangeNorth-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-ColumbiaRiv-E-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-ColumbiaRivWest-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-CottageCanyon-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-DayvillePrairie-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Denio-Burns-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Dufur-Madras-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Eugene-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-GrantsAshland-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-GreshamWarmSpngsIF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Halfway-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-LaGrande-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-MedfordDiamondLkIF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Mitchell-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-NorthCentral-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-OchocoSummit-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Ontario-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-OregonCoast-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Owyhee-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Pendleton-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-PendleLaGrandeIF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-PilotRock-Ukiah-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Portland-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Prairie-Brogan-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Riley-Lakeview-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Salem-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-SantiamPass-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-SiskiyouPass-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Ukiah-Fox-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Wallowa-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-WarnerHighway-IF</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>OCRS-Willamette-IF</KeyName>
+                                  </Member>
+                                </Members>
+                              </Group>
+                            </Groups>
                             <Members>
                               <Member>
                                 <KeyName>OR-N</KeyName>
@@ -31782,6 +32006,102 @@
                   <Member>
                     <KeyName>EPSG:5275-1</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>EPSG:2319</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2320</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2321</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2322</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2323</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2324</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2325</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK.TM27</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK.TM30</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK.TM33</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK.TM36</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK.TM39</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK.TM42</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK.TM45</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK-UTM35</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK-UTM36</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK-UTM37</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ED50TK-UTM38</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5253</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5254</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5255</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5256</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5257</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5258</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5259</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5253-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5254-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5255-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5256-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5257-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5258-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5259-1</KeyName>
+                  </Member>
                 </Members>
               </Group>
               <Group>
@@ -35051,10 +35371,10 @@
                     <KeyName>LL-ERP50-TK</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>LL-ED50TK</KeyName>
+                    <KeyName>LL-ED50TK2</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5252</KeyName>
+                    <KeyName>TUREF.LL</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -36693,6 +37013,12 @@
           <Group>
             <Name>Legacy</Name>
             <Members>
+               <Member>
+                 <KeyName>EPSG:5252</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>LL-ED50TK</KeyName>
+               </Member>
                <Member>
                  <KeyName>HongKong80.LL</KeyName>
                </Member>

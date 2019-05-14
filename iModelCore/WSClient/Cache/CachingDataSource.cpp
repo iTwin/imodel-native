@@ -1063,25 +1063,20 @@ ICancellationTokenPtr ct
 )
     {
     if (nullptr == cachedSelectProvider)
-        {
         cachedSelectProvider = std::make_shared<ISelectProvider>();
-        }
+
     ct = CreateCancellationToken(ct);
 
     return CacheObjects(responseKey, query, origin, GetInitialSkipToken(), 0, ct)
         ->Then<ObjectsResult>(m_cacheAccessThread, [=] (DataOriginResult& result)
         {
         if (!result.IsSuccess())
-            {
             return ObjectsResult::Error(result.GetError());
-            }
 
         auto txn = StartCacheTransaction();
         auto cachedInstances = std::make_shared<Json::Value>();
         if (CacheStatus::OK != txn.GetCache().ReadResponse(responseKey, *cachedInstances, *cachedSelectProvider))
-            {
             return ObjectsResult::Error(Status::InternalCacheError);
-            }
 
         return ObjectsResult::Success({cachedInstances, result.GetValue().origin});
         });
@@ -1150,9 +1145,7 @@ ICancellationTokenPtr ct
         ->Then<KeysResult>(m_cacheAccessThread, [=] (DataOriginResult& result)
         {
         if (!result.IsSuccess())
-            {
             return KeysResult::Error(result.GetError());
-            }
 
         auto txn = StartCacheTransaction();
         auto cachedInstances = std::make_shared<Json::Value>();
@@ -1160,9 +1153,7 @@ ICancellationTokenPtr ct
 
         CacheStatus status = txn.GetCache().ReadResponseInstanceKeys(responseKey, *keys);
         if (CacheStatus::OK != status)
-            {
             return KeysResult::Error(status);
-            }
 
         CacheObjectsInBackgroundIfNeeded(responseKey, query, retrieveOptions, result, ct);
 
