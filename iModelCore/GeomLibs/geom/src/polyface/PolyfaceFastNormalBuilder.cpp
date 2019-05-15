@@ -117,5 +117,8 @@ void PolyfaceHeader::BuildNormalsFast (double creaseTolerance, double sizeTolera
             builder->AddNormalIndex(builder->FindOrAddNormal(normal));
             }
         }
+
+    Normal().SetActive(true);
+    NormalIndex().SetActive(true);
     };
 
