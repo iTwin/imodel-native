@@ -185,34 +185,39 @@ SubjectCPtr ORDBridge::_InitializeJob()
         {
         auto& subjectCR = m_converter->GetImportJob().GetSubject();
 
+        SubjectCPtr physicalSubjectCPtr = &subjectCR;
         AlignmentBim::RoadRailAlignmentDomain::GetDomain().SetUpModelHierarchy(subjectCR);
-        auto physicalPartitionIds = RoadRailBim::PhysicalModelUtilities::QueryPhysicalPartitions(subjectCR);
-        if (physicalPartitionIds.empty())
+        for (auto childId : subjectCR.QueryChildren())
             {
-            auto partitionCPtr = RoadRailBim::PhysicalModelUtilities::CreateAndInsertPhysicalPartitionAndModel(
-                subjectCR, RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
-            BeAssert(partitionCPtr.IsValid());
-
-            physicalPartitionIds.insert(partitionCPtr->GetElementId());
+            auto childElmCPtr = subjectCR.GetDgnDb().Elements().GetElement(childId);
+            if (auto childSubjectCP = dynamic_cast<SubjectCP>(childElmCPtr.get()))
+                {
+                if (0 == childSubjectCP->GetCode().GetValueUtf8().CompareTo("Physical"))
+                    {
+                    physicalSubjectCPtr = childSubjectCP;
+                    break;
+                    }
+                }
             }
 
-        auto physicalPartitionCPtr = subjectCR.GetDgnDb().Elements().Get<PhysicalPartition>(*physicalPartitionIds.begin());
+        auto physicalPartitionCPtr = RoadRailBim::PhysicalModelUtilities::CreateAndInsertPhysicalPartitionAndModel(
+            *physicalSubjectCPtr, RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
+        BeAssert(physicalPartitionCPtr.IsValid());
 
-        RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpModelHierarchy(subjectCR,
+        RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpNonPhysicalModelHierarchy(subjectCR);
+
+        RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpPhysicalModelHierarchy(*physicalSubjectCPtr,
             physicalPartitionCPtr->GetCode().GetValueUtf8CP(), RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalNetworkName());
 
         // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
-        auto physicalNetworkModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalNetworkModel(subjectCR,
+        auto physicalNetworkModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalNetworkModel(*physicalSubjectCPtr,
             physicalPartitionCPtr->GetCode().GetValueUtf8CP(), RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalNetworkName());
         m_converter->SetPhysicalNetworkModel(*physicalNetworkModelPtr);
 
         InsertElementHasLinksRelationship(GetDgnDbR(), physicalPartitionCPtr->GetElementId(), m_converter->GetRepositoryLinkId(*m_converter->GetRootV8File()));
 
-        auto designAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(subjectCR, AlignmentBim::RoadRailAlignmentDomain::GetDesignPartitionName());
+        auto designAlignmentModelPtr = AlignmentBim::AlignmentModelUtilities::QueryDesignAlignmentsModel(subjectCR);
         InsertElementHasLinksRelationship(GetDgnDbR(), designAlignmentModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkId(*m_converter->GetRootV8File()));
-
-        auto linearsAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(subjectCR, AlignmentBim::RoadRailAlignmentDomain::Get3DLinearsPartitionName());
-        InsertElementHasLinksRelationship(GetDgnDbR(), linearsAlignmentModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkId(*m_converter->GetRootV8File()));
 
         m_converter->SetUpModelFormatters(subjectCR);
 

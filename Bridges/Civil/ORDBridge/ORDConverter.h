@@ -18,8 +18,11 @@ struct ORDConverter : Dgn::DgnDbSync::DgnV8::RootModelConverter
     DEFINE_T_SUPER(Dgn::DgnDbSync::DgnV8::RootModelConverter)
 
     friend struct ConvertORDElementXDomain;
+    friend struct ORDAlignmentsConverter;
+    friend struct ORDCorridorsConverter;
 
 protected:
+    virtual DgnV8Api::ModelId _GetRootModelId() override;
     virtual void _OnConversionComplete() override;
     virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) override;
     virtual void _OnSheetsConvertViewAttachment(Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) override;
@@ -58,8 +61,8 @@ private:
     bool m_isProcessing;
 
     void CreateRoadRailElements();
-    void CreateAlignments(bset<Dgn::DgnCategoryId>& additionalCategoriesForSelector);
-    void CreatePathways(bset<Dgn::DgnCategoryId>& additionalCategoriesForSelector);
+    void CreateAlignments();
+    void CreatePathways();
     void AssociateGeneratedAlignments();
 
 public:
@@ -87,6 +90,7 @@ public:
     void SetPhysicalNetworkModel(Dgn::PhysicalModelR physicalNetworkModel) { m_physicalNetworkModelPtr = &physicalNetworkModel; }
     void SetUpModelFormatters(Dgn::SubjectCR jobSubject);
     Dgn::UnitSystem GetRootModelUnitSystem();
+    virtual Dgn::DgnClassId _ComputeModelType(DgnV8Api::DgnModel& v8Model) override;
 }; // ORDConverter
 
 struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain
