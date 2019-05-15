@@ -109,6 +109,22 @@ Dgn::DgnElementCR original
     return status;
     }
 
+template <typename A, typename G>
+RefCountedPtr<A> GridAxis::CreateAndInsert(const G& grid)
+    {
+    grid.GetSurfacesModel(); // Create submodel if not created already
+
+    RefCountedPtr<A> thisAxis = A::Create(grid);
+
+    if (thisAxis.IsNull())
+        return nullptr;
+
+    if (!thisAxis->Insert().IsValid())
+        return nullptr;
+
+    return thisAxis;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -128,17 +144,7 @@ OrthogonalAxisXPtr                 OrthogonalAxisX::CreateAndInsert
 OrthogonalGridCR grid
 )
     {
-    grid.GetSurfacesModel(); // Create submodel if not created already
-
-    OrthogonalAxisXPtr thisAxis = OrthogonalAxisX::Create (grid);
-
-    if (thisAxis.IsNull())
-        return nullptr;
-
-    if (!thisAxis->Insert().IsValid ())
-        return nullptr;
-
-    return thisAxis;
+    return T_Super::CreateAndInsert<OrthogonalAxisX, OrthogonalGrid>(grid);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -174,17 +180,7 @@ OrthogonalAxisYPtr                 OrthogonalAxisY::CreateAndInsert
 OrthogonalGridCR grid
 )
     {
-    grid.GetSurfacesModel(); // Create submodel if not created already
-
-    OrthogonalAxisYPtr thisAxis = OrthogonalAxisY::Create (grid);
-
-    if (thisAxis.IsNull())
-        return nullptr;
-
-    if (!thisAxis->Insert().IsValid())
-        return nullptr;
-
-    return thisAxis;
+    return T_Super::CreateAndInsert<OrthogonalAxisY, OrthogonalGrid>(grid);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -220,17 +216,7 @@ CircularAxisPtr                 CircularAxis::CreateAndInsert
 RadialGridCR grid
 )
     {
-    grid.GetSurfacesModel(); // Create submodel if not created already
-
-    CircularAxisPtr thisAxis = CircularAxis::Create (grid);
-
-    if (thisAxis.IsNull())
-        return nullptr;
-
-    if (!thisAxis->Insert().IsValid())
-        return nullptr;
-
-    return thisAxis;
+    return T_Super::CreateAndInsert<CircularAxis, RadialGrid>(grid);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -266,17 +252,7 @@ RadialAxisPtr                 RadialAxis::CreateAndInsert
 RadialGridCR grid
 )
     {
-    grid.GetSurfacesModel(); // Create submodel if not created already
-
-    RadialAxisPtr thisAxis = RadialAxis::Create (grid);
-
-    if (thisAxis.IsNull())
-        return nullptr;
-
-    if (!thisAxis->Insert().IsValid())
-        return nullptr;
-
-    return thisAxis;
+    return T_Super::CreateAndInsert<RadialAxis, RadialGrid>(grid);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -312,17 +288,7 @@ GeneralGridAxisPtr                 GeneralGridAxis::CreateAndInsert
 GridCR grid
 )
     {
-    grid.GetSurfacesModel(); // Create submodel if not created already
-
-    GeneralGridAxisPtr thisAxis = GeneralGridAxis::Create (grid);
-
-    if(thisAxis.IsNull())
-        return nullptr;
-
-    if (!thisAxis->Insert().IsValid())
-        return nullptr;
-
-    return thisAxis;
+    return T_Super::CreateAndInsert<GeneralGridAxis, Grid>(grid);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -336,6 +302,6 @@ GridCR grid
     if (grid.GetSubModel().IsNull())
         return nullptr;
 
-    return new GeneralGridAxis (CreateParams(grid));
+    return new GeneralGridAxis(CreateParams(grid));
     }
 END_GRIDS_NAMESPACE

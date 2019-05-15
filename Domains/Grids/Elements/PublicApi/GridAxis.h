@@ -35,7 +35,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GridAxis : Dgn::GroupInformationElement
 
 
         //! Creates create parameters for grid axis
-        //! @param[in] grid  grid
+        //! @param[in] grid  grid this axis belongs to
         //! @param[in] classId  class id of specifi axis type
         CreateParams(GridCR grid, Dgn::DgnClassId classId);
 
@@ -75,6 +75,11 @@ protected:
     virtual bool _IsRadialAxis() const { return false; }
     virtual bool _IsGeneralGridAxis() const { return false; }
 
+    //! Creates and inserts specified axis
+    //! @param[in] grid  grid that this axis belongs to
+    //! @note A - Axis Type, G - Grid type
+    template <typename A, typename G>
+    static RefCountedPtr<A> CreateAndInsert(const G& grid);
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridAxis, GRIDELEMENTS_EXPORT)
 
@@ -134,7 +139,7 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisX : GridAxis
         DEFINE_T_SUPER(OrthogonalAxisX::T_Super::CreateParams);
 
         //! Creates create parameters for grid axis
-        //! @param[in] grid  grid
+        //! @param[in] grid  grid this axis belongs to
         CreateParams(OrthogonalGridCR grid) :
             T_Super::CreateParams(grid, QueryClassId(grid.GetDgnDb()))
             {
@@ -188,7 +193,7 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisY : GridAxis
         DEFINE_T_SUPER(OrthogonalAxisY::T_Super::CreateParams);
 
         //! Creates create parameters for grid axis
-        //! @param[in] grid  grid
+        //! @param[in] grid  grid this axis belongs to
         CreateParams(OrthogonalGridCR grid) :
             T_Super::CreateParams(grid, QueryClassId(grid.GetDgnDb()))
             {}
@@ -240,7 +245,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CircularAxis : GridAxis
         DEFINE_T_SUPER(CircularAxis::T_Super::CreateParams);
 
         //! Creates create parameters for grid axis
-        //! @param[in] grid  grid
+        //! @param[in] grid  grid this axis belongs to
         CreateParams(RadialGridCR grid) :
             T_Super::CreateParams(grid, QueryClassId(grid.GetDgnDb()))
             {}
@@ -256,13 +261,13 @@ struct EXPORT_VTABLE_ATTRIBUTE CircularAxis : GridAxis
     private:
 
     protected:
-        DECLARE_GRIDS_ELEMENT_BASE_METHODS(CircularAxis, GRIDELEMENTS_EXPORT)
         friend struct CircularAxisHandler;
 
         explicit GRIDELEMENTS_EXPORT CircularAxis(CreateParams const& params);
 
         virtual bool _IsCircularAxis() const { return true; }
     public:
+        DECLARE_GRIDS_ELEMENT_BASE_METHODS(CircularAxis, GRIDELEMENTS_EXPORT)
 
         //---------------------------------------------------------------------------------------
         // Creation
@@ -292,7 +297,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RadialAxis : GridAxis
         DEFINE_T_SUPER(RadialAxis::T_Super::CreateParams);
 
         //! Creates create parameters for grid axis
-        //! @param[in] grid  grid
+        //! @param[in] grid  grid this axis belongs to
         CreateParams(RadialGridCR grid) :
             T_Super::CreateParams(grid, QueryClassId(grid.GetDgnDb()))
             {}
@@ -308,7 +313,6 @@ struct EXPORT_VTABLE_ATTRIBUTE RadialAxis : GridAxis
     private:
 
     protected:
-        DECLARE_GRIDS_ELEMENT_BASE_METHODS(RadialAxis, GRIDELEMENTS_EXPORT)
         friend struct RadialAxisHandler;
 
         explicit GRIDELEMENTS_EXPORT RadialAxis(CreateParams const& params);
@@ -316,6 +320,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RadialAxis : GridAxis
         virtual bool _IsRadialAxis() const { return true; }
 
     public:
+        DECLARE_GRIDS_ELEMENT_BASE_METHODS(RadialAxis, GRIDELEMENTS_EXPORT)
 
         //---------------------------------------------------------------------------------------
         // Creation
@@ -345,7 +350,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeneralGridAxis : GridAxis
         DEFINE_T_SUPER(GeneralGridAxis::T_Super::CreateParams);
 
         //! Creates create parameters for grid axis
-        //! @param[in] grid  grid
+        //! @param[in] grid  grid this axis belongs to
         CreateParams(GridCR grid) :
             T_Super(grid, QueryClassId(grid.GetDgnDb()))
             {}
@@ -361,7 +366,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GeneralGridAxis : GridAxis
     private:
 
     protected:
-        DECLARE_GRIDS_ELEMENT_BASE_METHODS(GeneralGridAxis, GRIDELEMENTS_EXPORT)
         friend struct GeneralGridAxisHandler;
 
         explicit GRIDELEMENTS_EXPORT GeneralGridAxis(CreateParams const& params);
@@ -369,6 +373,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeneralGridAxis : GridAxis
         virtual bool _IsGeneralGridAxis() const { return true; }
 
     public:
+        DECLARE_GRIDS_ELEMENT_BASE_METHODS(GeneralGridAxis, GRIDELEMENTS_EXPORT)
 
         //---------------------------------------------------------------------------------------
         // Creation
