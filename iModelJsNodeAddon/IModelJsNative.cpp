@@ -1202,22 +1202,6 @@ public:
 
     Napi::Value OpenDgnDb(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING(0, accessToken, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(1, appVersion, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(2, projectId, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(3, dbname, Env().Undefined());
-        REQUIRE_ARGUMENT_INTEGER(4, mode, Env().Undefined());
-
-        DgnDbPtr db;
-        DbResult status = JsInterop::OpenDgnDb(db, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
-        if (BE_SQLITE_OK == status)
-            OnDgnDbOpened(*db);
-
-        return Napi::Number::New(Env(), (int)status);
-        }
-
-    Napi::Value OpenDgnDbFile(Napi::CallbackInfo const& info)
-        {
         REQUIRE_ARGUMENT_STRING(0, dbname, Env().Undefined());
         REQUIRE_ARGUMENT_INTEGER(1, mode, Env().Undefined());
 
@@ -1806,12 +1790,23 @@ public:
     Napi::Value SetBriefcaseId(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
-        REQUIRE_ARGUMENT_INTEGER(0, idvalue, Env().Undefined());
+        REQUIRE_ARGUMENT_INTEGER(0, idValue, Env().Undefined());
         BeFileName name(m_dgndb->GetFileName());
 
-        DbResult result = m_dgndb->SetAsBriefcase(BeBriefcaseId(idvalue));
-        if (BE_SQLITE_OK == result)
+        // TODO: This routine has excessive logging to diagnose performance issues with this 
+        // simple operation. The logs must be removed after the issue is addressed. 
+        PERFLOG_START("iModelJsNative", "SetAsBriefcase");
+        DbResult result = m_dgndb->SetAsBriefcase(BeBriefcaseId(idValue));
+        PERFLOG_FINISH("iModelJsNative", "SetAsBriefcase");
+
+        if (BE_SQLITE_OK == result) 
+            {
+            PERFLOG_START("iModelJsNative", "SaveChanges");
             result = m_dgndb->SaveChanges();
+            PERFLOG_FINISH("iModelJsNative", "SaveChanges");
+            }
+
+         // Note: We need to close and reopen the Db to enable change tracking
         if (BE_SQLITE_OK == result)
             m_dgndb->CloseDb();
         if (BE_SQLITE_OK == result)
@@ -1819,7 +1814,9 @@ public:
             SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
             DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
 
+            PERFLOG_START("iModelJsNative", "OpenDgnDb");
             m_dgndb = DgnDb::OpenDgnDb(&result, name, openParams);
+            PERFLOG_FINISH("iModelJsNative", "OpenDgnDb");
             }
 
         return Napi::Number::New(Env(), (int)result);
@@ -2271,7 +2268,6 @@ public:
             InstanceMethod("isUndoPossible", &NativeDgnDb::IsUndoPossible),
             InstanceMethod("logTxnError", &NativeDgnDb::LogTxnError),
             InstanceMethod("openIModel", &NativeDgnDb::OpenDgnDb),
-            InstanceMethod("openIModelFile", &NativeDgnDb::OpenDgnDbFile),
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
             InstanceMethod("queryFirstTxnId", &NativeDgnDb::QueryFirstTxnId),
             InstanceMethod("queryModelExtents", &NativeDgnDb::QueryModelExtents),

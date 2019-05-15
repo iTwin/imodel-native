@@ -520,46 +520,9 @@ DgpLiteralExpressionTests.DgnMiscSymbols
     # kernel32.dll!00007ffb238e1fe4() Unknown
     # ntdll.dll!00007ffb25d8ef91()    Unknown
 
-RevisionTestFixture.MoreWorkflow
-
-    # TFS#868775
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 03/28/2018
-    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
-    # *********************** STACK TRACE ************************
-    # [28] _C_specific_handler (0x7ffe3617bff0)
-    # [27] _chkstk (0x7ffe423f9f60)
-    # [26] RtlLookupFunctionEntry (0x7ffe423691a0)
-    # [25] KiUserExceptionDispatcher (0x7ffe423f90d0)
-    # [24] BentleyB0200::Dgn::DgnElements::LoadElement (0x7ffe2b374c00)
-    # [23] BentleyB0200::Dgn::DgnElements::LoadElement (0x7ffe2b374de0)
-    # [22] BentleyB0200::Dgn::DgnElements::GetElement (0x7ffe2b3741f0)
-    # [21] BentleyB0200::Dgn::dgn_TxnTable::Element::_OnAppliedAdd (0x7ffe2b376c10)
-    # [20] BentleyB0200::Dgn::TxnManager::OnChangesApplied (0x7ffe2b4d7a00)
-    # [19] BentleyB0200::Dgn::TxnManager::ApplyChanges (0x7ffe2b4d4fc0)
-    # [18] BentleyB0200::Dgn::TxnManager::MergeDataChangesInRevision (0x7ffe2b4d7320)
-    # [17] BentleyB0200::Dgn::TxnManager::MergeRevision (0x7ffe2b4d78a0)
-    # [16] BentleyB0200::Dgn::RevisionManager::DoMergeRevision (0x7ffe2b481930)
-    # [15] RevisionTestFixture_MoreWorkflow_Test::TestBody (0x7ff7c982d0c0)
-    # [14] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff7c989ff00)
-    # [13] testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void> (0x7ff7c989fd90)
-    # [12] testing::Test::Run (0x7ff7c98b03d0)
-    # [11] testing::TestInfo::Run (0x7ff7c98b06e0)
-    # [10] testing::TestCase::Run (0x7ff7c98b04f0)
-    # [9] testing::internal::UnitTestImpl::RunAllTests (0x7ff7c98b09a0)
-    # [8] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7c989ffa0)
-    # [7] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7c989fe80)
-    # [6] testing::UnitTest::Run (0x7ff7c98b0880)
-    # [5] <lambda_7a9a7085d3df21961d5208ec67fe5359>::operator() (0x7ff7c95989b0)
-    # [4] std::_LaunchPad<std::unique_ptr<std::tuple<<lambda_7a9a7085d3df21961d5208ec67fe5359> >,std::default_delete<std::tuple<<lambda_7a9a7085d3df21961d5208ec67fe5359> > > > >::_Run (0x7ff7c959a270)
-    # [3] std::_Pad::_Call_func (0x7ff7c9599ad0)
-    # [2] wcstombs_s_l (0x7ffe3ee90490)
-    # [1] BaseThreadInitThunk (0x7ffe41cd2760)
-    # [0] RtlUserThreadStart (0x7ffe423c0d30)
-    # 2018-03-27 23:54:22,765 ERROR [0x000029f0] BeSQLite - Statement not closed: 'SELECT ECClassId,ModelId,CodeSpecId,CodeScopeId,CodeValue,UserLabel,ParentId,ParentRelECClassId,FederationGuid,JsonProperties FROM bis_Element WHERE Id=?'
-    # 2018-03-27 23:54:22,765 ERROR [0x000029f0] BeSQLite - Cannot close database 'c:\build\outA\mds06t_2018-03-27_23-05-38\out\Winx64\Product\DgnPlatform-Gtest\run\Output\RevisionTestFixture\MoreWorkflow.bim'
-    # c:\build\src\mds06t\BeGTest\gtest\BeGTestExe.cpp(263): error: Failed
-    # This test called BeTest::SetFailOnAssert(false) and failed to call it again with true.
-
+RevisionTestFixture.OptimisticConcurrencyConflict
+    # VSTS#125059 (https://bentleycs.visualstudio.com/iModelTechnologies/_workitems/edit/125059)
+    BeAssert - \iModelCore\DgnPlatform\DgnCore\TxnManager.cpp(1123): ASSERTION FAILURE (0): result == BE_SQLITE_OK
 
 DgnElementTests.RelatedElementToJson
 

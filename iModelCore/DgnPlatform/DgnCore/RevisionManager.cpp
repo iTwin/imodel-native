@@ -81,7 +81,7 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
     // Handle some special cases
 
     if (cause == ChangeSet::ConflictCause::ForeignKey)
-        return ChangeSet::ConflictResolution::Skip;
+        return ChangeSet::ConflictResolution::Abort;
 
     if (cause == ChangeSet::ConflictCause::NotFound)
         {
