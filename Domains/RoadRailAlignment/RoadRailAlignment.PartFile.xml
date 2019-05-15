@@ -13,11 +13,9 @@
     </Part>
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="RoadRailAlignment.prewire.mke">
+        <SubPart PartName="RoadRailAlignmentSchema" PartFile="BisSchemas" Repository="BisSchemas"/>
         <Bindings>
             <PublicAPI Domain="RoadRailAlignment"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/RoadRailAlignment*.xml
-            </Files>
         </Bindings>
     </Part>
 

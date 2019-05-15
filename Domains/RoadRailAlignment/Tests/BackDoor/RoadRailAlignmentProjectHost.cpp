@@ -229,23 +229,6 @@ void RoadRailAlignmentTestsFixture::TearDownTestCase()
     m_host = nullptr;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId RoadRailAlignmentTestsFixture::QueryFirstModelIdOfType(DgnDbR db, DgnClassId classId)
-    {
-    ECSqlStatement stmt;
-    stmt.Prepare(db, "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Model) " WHERE ECClassId = ? LIMIT 1;");
-    BeAssert(stmt.IsPrepared());
-
-    stmt.BindId(1, classId);
-
-    if (DbResult::BE_SQLITE_ROW != stmt.Step())
-        return DgnModelId();
-
-    return stmt.GetValueId<DgnModelId>(0);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
