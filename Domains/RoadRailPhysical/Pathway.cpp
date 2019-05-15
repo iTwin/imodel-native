@@ -18,19 +18,20 @@ HANDLER_DEFINE_MEMBERS(RoadwayHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus IMainLinearElementSource::SetMainLinearElement(ILinearElementCP linearElement)
+DgnDbStatus ILinearlyDesignedAssembly::SetDesignAlignment(AlignmentCP alignment)
     {
-    auto& dgnElement = *const_cast<DgnElementP>(&_ILinearElementSourceToDgnElement());
-    if (linearElement)
-        return dgnElement.SetPropertyValue("MainLinearElement", linearElement->ToElement().GetElementId(), linearElement->ToElement().GetElementClassId());
+    auto& dgnElement = *const_cast<DgnElementP>(&_ILinearlyDesignedAssemblyToDgnElement());
+    if (alignment)
+        return dgnElement.SetPropertyValue(BRRP_PROP_ILinearlyDesignedAssembly_DesignAlignment, alignment->GetElementId(), 
+            dgnElement.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_ILinearlyDesignedAssemblyAlongAlignment));
     else
-        return dgnElement.SetPropertyValue("MainLinearElement", DgnElementId(), DgnClassId());
+        return dgnElement.SetPropertyValue(BRRP_PROP_ILinearlyDesignedAssembly_DesignAlignment, DgnElementId(), DgnClassId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIdSet IMainLinearElementSource::QueryLinearElementSourceIds(ILinearElementCR mainLinearElement, DgnClassId filterBaseClassId)
+/*DgnElementIdSet IMainLinearElementSource::QueryLinearElementSourceIds(ILinearElementCR mainLinearElement, DgnClassId filterBaseClassId)
     {
     auto& elmCR = mainLinearElement.ToElement();
 
@@ -61,7 +62,7 @@ DgnElementIdSet IMainLinearElementSource::QueryLinearElementSourceIds(ILinearEle
         retVal.insert(stmt.GetValueId<DgnElementId>(0));
 
     return retVal;
-    }
+    }*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
@@ -103,13 +104,13 @@ DgnDbStatus Corridor::AddRepresentedBy(CorridorCR corridor, GeometrySourceCR rep
 
     Utf8String relClassName;
     if (representedBy.Is2d())
-        relClassName = BRRP_REL_DrawingGraphicRepresentsCorridor;
+        relClassName = BIS_REL_DrawingGraphicRepresentsElement;
     else
-        relClassName = BRRP_REL_GraphicalElement3dRepresentsCorridor;
+        relClassName = "GraphicalElement3dRepresentsElement";
 
     ECInstanceKey insKey;
     if (DbResult::BE_SQLITE_OK != corridor.GetDgnDb().InsertLinkTableRelationship(insKey,
-        *corridor.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, relClassName)->GetRelationshipClassCP(),
+        *corridor.GetDgnDb().Schemas().GetClass(BIS_ECSCHEMA_NAME, relClassName)->GetRelationshipClassCP(),
         ECInstanceId(representedBy.ToElement()->GetElementId().GetValue()), ECInstanceId(corridor.GetElementId().GetValue())))
         return DgnDbStatus::BadElement;
 
@@ -123,12 +124,12 @@ bool Corridor::QueryIsRepresentedBy(GeometrySourceCR geometrySource) const
     {
     Utf8String relClassName;
     if (geometrySource.Is2d())
-        relClassName = BRRP_REL_DrawingGraphicRepresentsCorridor;
+        relClassName = BIS_REL_DrawingGraphicRepresentsElement;
     else
-        relClassName = BRRP_REL_GraphicalElement3dRepresentsCorridor;
+        relClassName = "GraphicalElement3dRepresentsElement";
 
     auto ecsql = Utf8PrintfString("SELECT ECInstanceId FROM %s.%s WHERE SourceECInstanceId = ? AND TargetECInstanceId = ?;", 
-        BRRP_SCHEMA_NAME, relClassName.c_str());
+        BIS_ECSCHEMA_NAME, relClassName.c_str());
     auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement(ecsql.c_str());
     BeAssert(stmtPtr.IsValid());
 
@@ -251,59 +252,4 @@ RailwayPtr Railway::Create(CorridorCR corridor)
     createParams.m_parentRelClassId = corridor.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_CorridorAssemblesPortions);
 
     return new Railway(createParams);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-CorridorPortionElementCPtr ILinearElementUtilities::QueryRelatedCorridorPortion(ILinearElementCR linearElement,
-    DgnElementId& typicalSectionPointDefId)
-    {
-    auto& linearElementCR = linearElement.ToElement();
-    auto stmtPtr = linearElementCR.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId, TypicalSectionPointDef.Id FROM "
-        BRRP_SCHEMA(BRRP_REL_ILinearElementRelatesToCorridorPortion) " WHERE SourceECInstanceId = ?;");
-    BeAssert(stmtPtr.IsValid());
-
-    stmtPtr->BindId(1, linearElementCR.GetElementId());
-    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
-        {
-        typicalSectionPointDefId = stmtPtr->GetValueId<DgnElementId>(1);
-        return CorridorPortionElement::Get(linearElementCR.GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
-        }
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      03/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ILinearElementUtilities::SetRelatedCorridorPortion(ILinearElementCR linearElement, CorridorPortionElementCR corridorPortion,
-    TypicalSectionPointDefinitionCR significantPointDef)
-    {
-    if (!linearElement.ToElement().GetElementId().IsValid() || 
-        !corridorPortion.GetElementId().IsValid() ||
-        !significantPointDef.GetElementId().IsValid())
-        return DgnDbStatus::BadArg;
-
-    auto& linearElementCR = linearElement.ToElement();
-
-    auto stmtPtr = linearElementCR.GetDgnDb().GetPreparedECSqlStatement("SELECT ECClassId, ECInstanceId FROM "
-        BRRP_SCHEMA(BRRP_REL_ILinearElementRelatesToCorridorPortion) " WHERE SourceECInstanceId = ?;");
-    BeAssert(stmtPtr.IsValid());
-
-    stmtPtr->BindId(1, linearElementCR.GetElementId());
-    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
-        linearElementCR.GetDgnDb().DeleteLinkTableRelationship(ECInstanceKey(stmtPtr->GetValueId<ECClassId>(0), stmtPtr->GetValueId<ECInstanceId>(1)));
-
-    auto relClassCP = linearElementCR.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, BRRP_REL_ILinearElementRelatesToCorridorPortion)->GetRelationshipClassCP();
-    auto relEnablerPtr = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClassCP);
-    auto instancePtr = relEnablerPtr->CreateRelationshipInstance();
-    instancePtr->SetValue("TypicalSectionPointDef", ECValue(significantPointDef.GetElementId()));
-
-    ECInstanceKey key;
-    if (DbResult::BE_SQLITE_OK != linearElementCR.GetDgnDb().InsertLinkTableRelationship(key,
-        *relClassCP, linearElementCR.GetElementId(), corridorPortion.GetElementId(), instancePtr.get()))
-            return DgnDbStatus::WriteError;
-
-    return DgnDbStatus::Success;
     }

@@ -24,16 +24,14 @@
     <None Include="RoadRailPhysical.prewire.mke" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="RoadRailPhysical.ecschema.xml">
-      <SubType>Designer</SubType>
-    </Xml>
+    <Xml Include="..\..\BisSchemas\Domains\RoadRailPhysical\RoadRailPhysical.ecschema.xml" />
     <Xml Include="RoadRailPhysical.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="PublicAPI\RoadRailPhysical\DesignSpeed.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\ElementAspects.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\Pathway.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadClass.h" />
-    <ClInclude Include="PublicAPI\RoadRailPhysical\RoadDesignSpeed.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailCategory.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysical.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysicalApi.h" />
@@ -47,10 +45,10 @@
     <ClInclude Include="RoadRailPhysicalInternal.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DesignSpeed.cpp" />
     <ClCompile Include="ElementAspects.cpp" />
     <ClCompile Include="Pathway.cpp" />
     <ClCompile Include="RoadClass.cpp" />
-    <ClCompile Include="RoadDesignSpeed.cpp" />
     <ClCompile Include="RoadRailCategory.cpp" />
     <ClCompile Include="RoadRailPhysicalDomain.cpp" />
     <ClCompile Include="RoadRailPhysicalInternal.cpp" />

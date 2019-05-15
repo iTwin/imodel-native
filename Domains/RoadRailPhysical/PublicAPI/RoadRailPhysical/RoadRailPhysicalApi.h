@@ -14,7 +14,7 @@
 //__PUBLISH_SECTION_END__
 #include "ElementAspects.h"
 #include "RoadClass.h"
-#include "RoadDesignSpeed.h"
+#include "DesignSpeed.h"
 #include "RoadSegment.h"
 #include "TravelwaySegment.h"
 #include "TravelwaySideSegment.h"

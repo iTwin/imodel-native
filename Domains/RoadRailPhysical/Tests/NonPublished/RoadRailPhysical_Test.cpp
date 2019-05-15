@@ -14,23 +14,16 @@ TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
     DgnDbPtr projectPtr = CreateProject(L"BasicCorridorTest.bim");
     ASSERT_TRUE(projectPtr.IsValid());
 
-    RoadwayStandardsModelCPtr standardsModel = RoadwayStandardsModel::Query(*projectPtr->Elements().GetRootSubject());
+    auto subjectCPtr = projectPtr->Elements().GetRootSubject();
+    auto standardsModel = RoadwayStandardsModelUtilities::Query(*subjectCPtr);
     ASSERT_TRUE(standardsModel.IsValid());
-
-    auto clPointDefPtr = GenericTypicalSectionPointDefinition::CreateAndInsert(*standardsModel, "CL", "Center-line");
-    ASSERT_TRUE(clPointDefPtr.IsValid());
-
-    auto alignModelPtr = AlignmentModel::Query(*projectPtr->Elements().GetRootSubject(), RoadRailAlignmentDomain::GetDesignPartitionName());
+    
+    auto alignModelPtr = AlignmentModelUtilities::QueryDesignAlignmentsModel(*subjectCPtr);
 
     // Create Alignment
     auto alignmentPtr = Alignment::Create(*alignModelPtr);
     alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*alignModelPtr, "ALG-1"));
-    auto associatedFacetPtr = AssociatedFacetAspect::Create(AssociatedFacetAspect::AssociatedFacetEnum::Top);
-    AssociatedFacetAspect::Set(*alignmentPtr, *associatedFacetPtr);
     ASSERT_TRUE(alignmentPtr->Insert().IsValid());
-
-    auto associatedFacetCPtr = AssociatedFacetAspect::Get(*alignmentPtr);
-    ASSERT_EQ(AssociatedFacetAspect::AssociatedFacetEnum::Top, associatedFacetCPtr->GetAssociatedFacet());
 
     // Create Horizontal 
     DPoint2d pntsHoriz2d[]{ { 0, 0 },{ 50, 0 },{ 100, 0 },{ 150, 0 } };
@@ -55,12 +48,12 @@ TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
 
     // Create Corridor
     auto corridorPtr = Corridor::Create(*physicalModelPtr);
-    corridorPtr->SetMainLinearElement(alignmentPtr.get());
+    corridorPtr->SetDesignAlignment(alignmentPtr.get());
     auto corridorCPtr = corridorPtr->Insert();
     ASSERT_TRUE(corridorCPtr.IsValid());    
-    ASSERT_EQ(alignmentPtr->GetElementId(), corridorCPtr->GetMainLinearElementId());
+    ASSERT_EQ(alignmentPtr->GetElementId(), corridorCPtr->GetDesignAlignmentId());
 
-    alignmentPtr->SetILinearElementSource(corridorPtr.get());
+    alignmentPtr->SetSource(corridorPtr.get());
     ASSERT_TRUE(alignmentPtr->Update().IsValid());
 
     auto linearElements = corridorPtr->QueryLinearElements();
@@ -68,28 +61,19 @@ TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
     ASSERT_EQ(alignmentPtr->GetElementId(), *linearElements.begin());
 
     auto leftRoadwayPtr = Roadway::Create(*corridorPtr);
-    leftRoadwayPtr->SetMainLinearElement(alignmentPtr.get());
+    leftRoadwayPtr->SetDesignAlignment(alignmentPtr.get());
     ASSERT_TRUE(leftRoadwayPtr->Insert(PathwayElement::Order::LeftMost).IsValid());
-
-    ASSERT_EQ(DgnDbStatus::Success, ILinearElementUtilities::SetRelatedCorridorPortion(*alignmentPtr, *leftRoadwayPtr, *clPointDefPtr));
-
-    DgnElementId typicalSectionPointDefId;
-    auto portionCPtr = ILinearElementUtilities::QueryRelatedCorridorPortion(*alignmentPtr, typicalSectionPointDefId);
-    ASSERT_EQ(portionCPtr->GetElementId(), leftRoadwayPtr->GetElementId());
-    ASSERT_EQ(typicalSectionPointDefId, clPointDefPtr->GetElementId());
 
     auto designSpeedDefPtr = DesignSpeedDefinition::Create(*standardsModel, 50.0, DesignSpeedDefinition::UnitSystem::SI);
     ASSERT_TRUE(designSpeedDefPtr->Insert().IsValid());
 
-    auto designSpeedPtr = DesignSpeed::Create(DesignSpeed::CreateFromToParams(*leftRoadwayPtr, *designSpeedDefPtr, 0, 150));
+    auto designSpeedPtr = DesignSpeed::Create(DesignSpeed::CreateFromToParams(*leftRoadwayPtr, *designSpeedDefPtr, *designSpeedDefPtr, 0, 150));
     auto designSpeedCPtr = designSpeedPtr->Insert();
     ASSERT_TRUE(designSpeedCPtr.IsValid());
 
     auto rightRoadwayPtr = Roadway::Create(*corridorPtr);
-    rightRoadwayPtr->SetMainLinearElement(alignmentPtr.get());
+    rightRoadwayPtr->SetDesignAlignment(alignmentPtr.get());
     ASSERT_TRUE(rightRoadwayPtr->Insert((int32_t)PathwayElement::Order::RightMost).IsValid());
-
-    ASSERT_EQ(DgnDbStatus::Success, ILinearElementUtilities::SetRelatedCorridorPortion(*alignmentPtr, *rightRoadwayPtr, *clPointDefPtr));
 
     auto pathwayIds = corridorCPtr->QueryOrderedPathwayIds();
     ASSERT_EQ(2, pathwayIds.size());

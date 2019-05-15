@@ -18,8 +18,8 @@ struct RoadRailCategory : NonCopyableClass
 {
 //__PUBLISH_SECTION_END__
 private:
-    static Dgn::SpatialCategoryCPtr InsertSpatialCategory(RoadRailAlignment::RoadRailCategoryModelR, Utf8CP, Dgn::ColorDef const&);
-    static Dgn::DrawingCategoryCPtr InsertDrawingCategory(RoadRailAlignment::RoadRailCategoryModelR, Utf8CP, Dgn::ColorDef const&);
+    static Dgn::SpatialCategoryCPtr InsertSpatialCategory(Dgn::DefinitionModelR, Utf8CP, Dgn::ColorDef const&);
+    static Dgn::DrawingCategoryCPtr InsertDrawingCategory(Dgn::DefinitionModelR, Utf8CP, Dgn::ColorDef const&);
     static void InsertSubCategory(Dgn::DgnCategoryCR category, Utf8CP codeValue, Dgn::ColorDef const& color);
     static Dgn::DgnCategoryId QuerySpatialCategoryId(Dgn::DgnDbR, Utf8CP);
     static Dgn::DgnCategoryId QueryDrawingCategoryId(Dgn::DgnDbR, Utf8CP);
@@ -36,6 +36,8 @@ public:
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetRoadway(Dgn::DgnDbR);
     //! Return the DgnCategoryId for the Railway Category
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetRailway(Dgn::DgnDbR);
+    //! Return the DgnCategoryId for the DesignSpeed Category
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetDesignSpeed(Dgn::DgnDbR);
 }; // RoadRailCategory
 
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE

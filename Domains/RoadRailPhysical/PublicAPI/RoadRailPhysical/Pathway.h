@@ -12,19 +12,18 @@
 BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 //=======================================================================================
-//! An ILinearElementSource providing an ILinearElement considered as the main 
-//! linear-referencing axis for Road/Rail purposes.
+//! A Physical Assembly being linearly designed along an Alignment.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct IMainLinearElementSource : LinearReferencing::ILinearElementSource
+struct ILinearlyDesignedAssembly
 {
-    Dgn::DgnElementId GetMainLinearElementId() const { return _ILinearElementSourceToDgnElement().GetPropertyValueId<Dgn::DgnElementId>("MainLinearElement"); }
+protected:
+    virtual Dgn::DgnElementCR _ILinearlyDesignedAssemblyToDgnElement() const = 0;
 
-    template <class T> RefCountedCPtr<T> GetMainLinearElementAs() const { return _ILinearElementSourceToDgnElement().GetDgnDb().Elements().Get<T>(GetMainLinearElementId()); }
-    ROADRAILPHYSICAL_EXPORT Dgn::DgnDbStatus SetMainLinearElement(LinearReferencing::ILinearElementCP linearElement);
-
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnElementIdSet QueryLinearElementSourceIds(LinearReferencing::ILinearElementCR mainLinearElement, Dgn::DgnClassId filterBaseClassId = Dgn::DgnClassId());
-}; // IMainLinearElementSource
+public:
+    Dgn::DgnElementId GetDesignAlignmentId() const { return _ILinearlyDesignedAssemblyToDgnElement().GetPropertyValueId<Dgn::DgnElementId>(BRRP_PROP_ILinearlyDesignedAssembly_DesignAlignment); }
+    ROADRAILPHYSICAL_EXPORT Dgn::DgnDbStatus SetDesignAlignment(RoadRailAlignment::AlignmentCP alignment);
+}; // ILinearlyDesignedAssembly
 
 //=======================================================================================
 //! A long, narrow physical stretch that is designed for one or more modes of transportation 
@@ -32,7 +31,7 @@ struct IMainLinearElementSource : LinearReferencing::ILinearElementSource
 //! assembles one or more Pathways with Pathway Separations in between them.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct Corridor : Dgn::PhysicalElement, IMainLinearElementSource
+struct Corridor : Dgn::PhysicalElement, LinearReferencing::ILinearElementSource, ILinearlyDesignedAssembly
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_Corridor, Dgn::PhysicalElement);
     friend struct CorridorHandler;
@@ -42,6 +41,8 @@ protected:
     explicit Corridor(CreateParams const& params) : T_Super(params) {}
     //! @private
     virtual Dgn::DgnElementCR _ILinearElementSourceToDgnElement() const override { return *this; }
+    //! @private
+    virtual Dgn::DgnElementCR _ILinearlyDesignedAssemblyToDgnElement() const override { return *this; }
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(Corridor)
@@ -69,7 +70,7 @@ public:
 //! Base class for Pathways and Separations between them
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct CorridorPortionElement : Dgn::PhysicalElement, IMainLinearElementSource
+struct CorridorPortionElement : Dgn::PhysicalElement, LinearReferencing::ILinearElementSource, ILinearlyDesignedAssembly
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_CorridorPortionElement, Dgn::PhysicalElement);
     friend struct CorridorPortionElementHandler;
@@ -80,6 +81,8 @@ protected:
 
     //! @private
     virtual Dgn::DgnElementCR _ILinearElementSourceToDgnElement() const override { return *this; }
+    //! @private
+    virtual Dgn::DgnElementCR _ILinearlyDesignedAssemblyToDgnElement() const override { return *this; }
     //! @private
     virtual PathwayElementCP _ToPathway() const { return nullptr; }
     //! @private
@@ -207,27 +210,6 @@ public:
 }; // Railway
 
 //=======================================================================================
-//! Utility class facilitating some operations against ILinearElements in the 
-//! context of the Road/Rail discipline.
-//! @ingroup GROUP_RoadRailPhysical
-//=======================================================================================
-struct ILinearElementUtilities : NonCopyableClass
-{
-private:
-    ILinearElementUtilities() {}
-
-public:
-    //! Query for a CorridorPortionElement associated with a given ILinearElement. It also returns the
-    //! typical section point definition associated with such relationship.
-    ROADRAILPHYSICAL_EXPORT static CorridorPortionElementCPtr QueryRelatedCorridorPortion(LinearReferencing::ILinearElementCR linearElement, 
-        Dgn::DgnElementId& typicalSectionPointDefId);
-
-    //! @private
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetRelatedCorridorPortion(LinearReferencing::ILinearElementCR linearElement, 
-        CorridorPortionElementCR corridorPortion, TypicalSectionPointDefinitionCR typicalSectionPointDef);
-}; // ILinearElementUtilities
-
-//=======================================================================================
 //! Interface providing access to pathway segments.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
@@ -246,7 +228,7 @@ public:
             double fromDistanceFromStart, double toDistanceFromStart):
             m_corridorPortionCPtr(&corridorPortion),
             T_Super(*dynamic_cast<LinearReferencing::ILinearElementCP>(
-                corridorPortion.GetMainLinearElementAs<Dgn::DgnElement>().get()),
+                RoadRailAlignment::Alignment::Get(corridorPortion.GetDgnDb(), corridorPortion.GetDesignAlignmentId()).get()),
                 fromDistanceFromStart, toDistanceFromStart) {}
     }; // CreateFromToParams
 

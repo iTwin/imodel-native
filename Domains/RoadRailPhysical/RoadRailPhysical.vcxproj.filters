@@ -31,7 +31,7 @@
     <Xml Include="RoadRailPhysical.PartFile.xml">
       <Filter>Build Files</Filter>
     </Xml>
-    <Xml Include="RoadRailPhysical.ecschema.xml" />
+    <Xml Include="..\..\BisSchemas\Domains\RoadRailPhysical\RoadRailPhysical.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysicalApi.h">
@@ -47,9 +47,6 @@
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\RoadRailPhysical\ElementAspects.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailPhysical\RoadDesignSpeed.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadSegment.h">
@@ -79,6 +76,9 @@
     <ClInclude Include="PublicAPI\RoadRailPhysical\TravelwayStructureSegment.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailPhysical\DesignSpeed.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RoadRailPhysicalDomain.cpp">
@@ -88,9 +88,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ElementAspects.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="RoadDesignSpeed.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RoadSegment.cpp">
@@ -118,6 +115,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TravelwayStructureSegment.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DesignSpeed.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
