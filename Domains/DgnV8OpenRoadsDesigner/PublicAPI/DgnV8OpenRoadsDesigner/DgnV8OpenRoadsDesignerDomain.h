@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnV8OpenRoadsDesigner/DgnV8OpenRoadsDesignerDomain.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,6 +22,19 @@ DOMAIN_DECLARE_MEMBERS(DgnV8OpenRoadsDesignerDomain, DGNV8OPENROADSDESIGNER_EXPO
 public:
     //! @private
     DgnV8OpenRoadsDesignerDomain();
+
+    //! @private
+    DGNV8OPENROADSDESIGNER_EXPORT static Dgn::DgnDbStatus SetGeometricElementAsBoundingContentForSheet(Dgn::GeometricElementCR boundingElm, Dgn::Sheet::ElementCR sheet);
+
+    //! Get the DgnElementIdSet containing the DgnElementIds of all of the NamedBoundaries that are the bounding elements for drawings in SheetModels
+    //! @param[in] dgnDb The DgnDb to search for bounding elements
+    //! @return DgnElementSet containing boundary DgnElementIds
+    DGNV8OPENROADSDESIGNER_EXPORT static Dgn::DgnElementIdSet QueryElementIdsBoundingContentForSheets(Dgn::DgnDbCR dgnDb);
+
+    //! Get the DgnElementIdSet of any SheetModles that are bounded by the \p boundingElm.  
+    //! @param[in] A geometric element that bounds a SheetModel.  This can be obtained by getting the GeometricElement from the DgnElementIds returned by QueryElementIdsBoundingContentForSheets()
+    //! @return ElementIdSet containing all of the sheets that are physically located within the area defined by \p boundingElm
+    DGNV8OPENROADSDESIGNER_EXPORT static Dgn::DgnElementIdSet QuerySheetIdsBoundedBy(Dgn::GeometricElementCR boundingElm);
 
 private:
     WCharCP _GetSchemaRelativePath() const override { return V8ORD_SCHEMA_PATH; }

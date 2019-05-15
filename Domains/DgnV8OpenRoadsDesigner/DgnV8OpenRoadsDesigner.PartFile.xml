@@ -12,11 +12,9 @@
     </Part>
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="DgnV8OpenRoadsDesigner.prewire.mke">
+        <SubPart PartName="DgnV8OpenRoadsDesignerSchema" PartFile="BisSchemas" Repository="BisSchemas"/>
         <Bindings>
             <PublicAPI Domain="DgnV8OpenRoadsDesigner" />
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/DgnV8OpenRoadsDesigner*.xml
-            </Files>
         </Bindings>
     </Part>
 

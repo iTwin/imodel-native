@@ -121,9 +121,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Xml Include="DgnV8OpenRoadsDesigner.ecschema.xml">
-      <SubType>Designer</SubType>
-    </Xml>
+    <Xml Include="..\..\BisSchemas\Domains\DgnV8OpenRoadsDesigner\DgnV8OpenRoadsDesigner.ecschema.xml" />
     <Xml Include="DgnV8OpenRoadsDesigner.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>

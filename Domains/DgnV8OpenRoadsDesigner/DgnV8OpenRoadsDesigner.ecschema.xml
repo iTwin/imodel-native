@@ -166,4 +166,13 @@
             <Class class="DiscreteQuantityAspect"/>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="GeometricElementBoundsContentForSheet" strength="referencing" modifier="None">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="bounds content for" polymorphic="true">
+            <Class class="bis:GeometricElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="has content bounded by" polymorphic="false">
+            <Class class="bis:Sheet"/>
+        </Target>
+    </ECRelationshipClass>
 </ECSchema>

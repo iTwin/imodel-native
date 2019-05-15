@@ -59,6 +59,7 @@ END_BENTLEY_DGNV8OPENROADSDESIGNER_NAMESPACE
 
 
 // Relationships
+#define V8ORD_REL_GeometricElementBoundsContentForSheet              "GeometricElementBoundsContentForSheet"
 
 
 // Properties
