@@ -532,7 +532,8 @@ bool   m_unusedBool[8];
 double m_unusedDouble[8];
 int    m_bCurvePointsPerKnot;   // When offsetting bspline, number of points requested per knot interval.
 int    m_bCurveMethod;      // 0=default=MX spline fit.  1=greville absisae with current knots.
-int    m_unusedInt[6];
+int    m_outputSelector;        // 0=normal 1=collectShards
+int    m_unusedInt[5];
 public:
 GEOMDLLIMPEXP CurveOffsetOptions (double offsetDistance);  // construct with default options.
 
@@ -542,6 +543,7 @@ GEOMDLLIMPEXP void SetArcAngle (double valueRadians);
 GEOMDLLIMPEXP void SetChamferAngle (double value);
 GEOMDLLIMPEXP void SetForceClosure (bool value);
 GEOMDLLIMPEXP void SetBCurvePointsPerKnot (int n);
+GEOMDLLIMPEXP void SetOutputSelector(int select);   // 0=normal 1=collectShards
 //! Select the method to be used to offset bspline curves in MSBsplineCurve::CreateCopyOffsetXY and ICurvePrimitive::CloneAsSingleOffsetPrimitiveXY
 //!<ul>
 //!<li>1 -- offset with fit points at offsets of the Greville knots.  (Moving averages of (order-1) knots)  This is appropriate (and strongly preferred) when the input curve is smooth.
@@ -556,6 +558,7 @@ GEOMDLLIMPEXP double GetChamferAngle () const;
 GEOMDLLIMPEXP bool  GetForceClosure () const;
 GEOMDLLIMPEXP int GetBCurvePointsPerKnot () const;
 GEOMDLLIMPEXP int GetBCurveMethod () const;
+GEOMDLLIMPEXP int GetOutputSelector() const;
 };
 
 
