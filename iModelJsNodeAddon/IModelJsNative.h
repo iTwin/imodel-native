@@ -73,7 +73,7 @@ END_TILE_NAMESPACE
 
 namespace IModelJsNative {
 
-struct JsInterop
+struct JsInterop    
 {
     static bmap<Utf8String, Utf8String> s_crashReportProperties;
     static bmap<Dgn::DgnDb*, BeFileName> s_openDgnDbFileNames;
@@ -81,14 +81,15 @@ struct JsInterop
     struct CrashReportingConfig
         {
         BeFileName m_crashDir;
+        BeFileName m_dumpProcessorScriptFileName;
         bmap<Utf8String,Utf8String> m_params;
         size_t m_maxDumpsInDir;
-        bool m_writeDumpsToCrashDir;
+        bool m_enableCrashDumps;
         bool m_wantFullMemory;
         bool m_needsVectorExceptionHandler;
         };
 
-    // An indirect reference to an ObjectReference. Keeps the ObjectReference alive. Can be redeemed
+    // An indirect reference to an ObjectReference. Keeps the ObjectReference alive. Can be redeemed.
     //  only on the main thread. Can be copied on other threads.
     struct ObjectReferenceClaimCheck
         {

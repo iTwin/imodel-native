@@ -41,17 +41,39 @@ static const wchar_t s_pipeName[] = L"\\\\.\\pipe\\imodeljs\\crashReporting\\ser
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+static size_t findStartOfBasename(const std::wstring& dumpFileName)
+    {
+    auto iStartBasename = dumpFileName.rfind('/');
+    if (iStartBasename != std::wstring::npos)
+        return 1 + iStartBasename;
+
+    iStartBasename = dumpFileName.rfind('\\');
+    if (iStartBasename != std::wstring::npos)
+        return 1 + iStartBasename;
+
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
 static void writeCustomPropertiesFile(std::map<std::wstring, std::wstring> const& props, const std::wstring& dumpFileName)
     {
     // preallocate space for the longest file name.
     static std::wstring paramsFile(MAX_PATH, L' ');
     paramsFile.assign(dumpFileName.c_str());
     paramsFile.append(L".properties.txt");
+
     FILE* fp = _wfopen(paramsFile.c_str(), L"w+");
+
     char tbuf[128];
     JsInterop::FormatCurrentTime(tbuf, sizeof(tbuf));
     fprintf(fp, "CrashTime, %s\n", tbuf);
+
+    fwprintf(fp, L"DumpFile, %ls\n", dumpFileName.c_str() + findStartOfBasename(dumpFileName));
+
     fprintf(fp, "ExceptionCode, %x\n", s_currentExceptionCode);
+
     for (auto const& prop : props)
         {
         fwprintf(fp, L"%ls, %ls\n", prop.first.c_str(), prop.second.c_str());
@@ -69,6 +91,43 @@ static void writeCustomPropertiesFile(std::map<std::wstring, std::wstring> const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static int safeStrCat(wchar_t* dest, wchar_t const* source, size_t& remainingDestCapacity)
+    {
+    auto slen = wcslen(source);
+    if (slen >= remainingDestCapacity)
+        return -1;
+
+    wcscat(dest, source);
+    remainingDestCapacity -= slen;
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void runScript(wchar_t const* dumpFilename)
+    {
+    if (s_config->m_dumpProcessorScriptFileName.empty())
+        return;
+    
+    static wchar_t cmd[2*MAX_PATH + 7]; // NB: avoid allocating memory
+    size_t canCopy = _countof(cmd);
+    cmd[0] = '\0';
+    if (0 != safeStrCat(cmd, L"node ", canCopy))
+        return;
+    if (0 != safeStrCat(cmd, s_config->m_dumpProcessorScriptFileName.c_str(), canCopy))
+        return;
+    if (0 != safeStrCat(cmd, L" ", canCopy))
+        return;
+    if (0 != safeStrCat(cmd, dumpFilename, canCopy))
+        return;
+
+    _wsystem(cmd);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void writeCustomPropertiesFileAlone()
@@ -78,6 +137,7 @@ static void writeCustomPropertiesFileAlone()
     wchar_t buf[32];
     dmpFileName.append(_itow(++s_nextNativeCrashTxtFileNo, buf, 10));
     writeCustomPropertiesFile(*s_customCrashProperties, dmpFileName.c_str());
+    runScript(dmpFileName.c_str());
     return;
     }
 
@@ -123,6 +183,7 @@ static void onDumpWritten(void* context, const google_breakpad::ClientInfo* clie
         }
 #else
     writeCustomPropertiesFile(*s_customCrashProperties, *dmpFilePath);
+    runScript(dmpFilePath->c_str());
 #endif
     }
 
@@ -196,7 +257,7 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
     
     MaintainCrashDumpDir(s_nextNativeCrashTxtFileNo, cfg);
 
-    if (cfg.m_writeDumpsToCrashDir)
+    if (cfg.m_enableCrashDumps)
         {
         s_crashServer = new google_breakpad::CrashGenerationServer(s_pipeName, nullptr, nullptr, nullptr, onDumpWritten, nullptr, nullptr, nullptr, nullptr, nullptr, true, &s_crashFilesDir);
         if (!s_crashServer->Start())

@@ -5089,7 +5089,8 @@ static void setCrashReporting(Napi::CallbackInfo const& info)
 
     JsInterop::CrashReportingConfig ccfg;
     ccfg.m_crashDir.SetNameA(getOptionalStringProperty(obj, "crashDir", "").c_str());
-    ccfg.m_writeDumpsToCrashDir     = getOptionalBooleanProperty(obj, "writeDumpsToCrashDir", false);
+    ccfg.m_dumpProcessorScriptFileName.SetNameA(getOptionalStringProperty(obj, "dumpProcessorScriptFileName", "").c_str());
+    ccfg.m_enableCrashDumps         = getOptionalBooleanProperty(obj, "enableCrashDumps", false);
     ccfg.m_maxDumpsInDir            = getOptionalIntProperty(obj, "maxDumpsInDir", 50);
     ccfg.m_wantFullMemory           = getOptionalBooleanProperty(obj, "wantFullMemory", false);
     if (obj.Has("params"))
