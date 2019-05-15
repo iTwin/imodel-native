@@ -128,6 +128,7 @@ always:
 # ---------------------------------------------------------------------------------------------------
 always:
     python $(SrcRoot)bsicommon/build/CreateSymLinks.py -f "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies/$(progNameExe)=$(o)$(progNameExe)"
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -m "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(o)/*.pdb"
     python $(SrcRoot)bsicommon/build/CreateSymLinks.py -m "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(collectionProduct)Assemblies/*$(shlibext)"
     python $(SrcRoot)bsicommon/build/CreateSymLinks.py -m "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(BuildContext)SubParts/Assemblies/*$(shlibext)"
     python $(SrcRoot)bsicommon/build/CreateSymLinks.py -f "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies/logging.config.xml=$(baseDir)logging.config.xml"
