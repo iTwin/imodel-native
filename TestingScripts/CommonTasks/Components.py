@@ -70,7 +70,7 @@ Components = {'BeHttp':             {'dll': 'BeHttpM02.dll', 'exe': 'BeHttpTest'
                                      'ignore': ['iModelBridgeCore', 'DgnDbSync', 'DgnV8', 'Tests'],
                                      'owner': 'Carole MacDonald',
                                      'product': 'DgnV8ConverterTests',
-                                     'repo': ['imodel02', 'iModelBridgeCore', 'DgnDbSync'],
+                                     'repo': ['imodel02', 'iModelBridgeCore', 'DgnDbSync', 'DgnV8'],
                                      'special_path': ['DgnV8ConverterTests']},
               'MstnBridge':         {'dll': 'iModelBridgeM02.dll', 'exe': 'MstnBridgeTests',
                                      'pdb': ['MstnBridge', 'MstnBridgeTests'],
