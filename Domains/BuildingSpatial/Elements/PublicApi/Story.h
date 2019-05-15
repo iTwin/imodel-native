@@ -11,9 +11,9 @@
 
 BEGIN_BUILDINGSPATIAL_NAMESPACE
 
-struct Story : SPATIALCOMPOSITION_NAMESPACE_NAME::CompositeVolume
+struct Story : SPATIALCOMPOSITION_NAMESPACE_NAME::CompositeElement, SPATIALCOMPOSITION_NAMESPACE_NAME::ICompositeVolume
     {
-    typedef SPATIALCOMPOSITION_NAMESPACE_NAME::CompositeVolume T_Super;
+    typedef SPATIALCOMPOSITION_NAMESPACE_NAME::CompositeElement T_Super;
     protected:
         explicit Story(CreateParams const& params) : T_Super(params) {}
     };
