@@ -12,5 +12,5 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 
 #include "CompositeElement.h"
-#include "CompositeVolume.h"
-#include "CompositeBoundary.h"
+#include "ICompositeVolume.h"
+#include "ICompositeBoundary.h"
