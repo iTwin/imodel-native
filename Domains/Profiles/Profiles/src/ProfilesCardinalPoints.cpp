@@ -49,6 +49,23 @@ Utf8CP StandardCardinalPointToString (StandardCardinalPoint standardCardinalPoin
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+StandardCardinalPoint ParseStandardCardinalPoint(Utf8CP cardinalPointName)
+    {
+    if (cardinalPointName == nullptr)
+        return StandardCardinalPoint::Unset;
+
+    for (uint32_t i = 0; i < s_standardCardinalPointCount; ++i)
+        {
+        if (0 == strcmp(cardinalPointName, s_standardCardinalPointNames[i]))
+            return static_cast<StandardCardinalPoint>(i);
+        }
+
+    return StandardCardinalPoint::Unset;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Creates a StandaloneECEnabler used for CardinalPoint ECIntance creation.
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/

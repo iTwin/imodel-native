@@ -97,6 +97,10 @@ enum class StandardCardinalPoint : uint32_t
 //! @details This function always returns a valid pointer.
 PROFILES_EXPORT extern Utf8CP StandardCardinalPointToString (StandardCardinalPoint standardCardinalPoint);
 
+//! Parse String to `StandardCardinalPoint`
+//! @return if parse succeded - a valid (not Unset or Custom) `StandarCardinalPoint` otherwise - `StandardCardinalPoint`::Unset.
+PROFILES_EXPORT extern StandardCardinalPoint ParseStandardCardinalPoint (Utf8CP cardinalPointName);
+
 //=======================================================================================
 //! A resource defining one or more 2D areas that may have voids.
 //! @ingroup GROUP_Profiles
