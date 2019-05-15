@@ -22,7 +22,7 @@
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_SpatialZone                  "SpatialZone"
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_Space                        "Space"
 #define BUILDING_SPACEPLANNING_SUBCATEGORY_CODE_SpatialElementLabels      "Labels"
-#define SPATIALCOMPOSITION_CATEGORY_CODE_CompositeVolume                  "CompositeVolume"
+#define SPATIALCOMPOSITION_CATEGORY_CODE_CompositeElement                 "CompositeElement"
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_ConflictVolume               "ConflictVolume"
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_PlanarShape                  "PlanarShape"
 #define BUILDING_SPACEPLANNING_CATEGORY_CODE_Site                         "Site"
@@ -162,7 +162,7 @@ CategorySelectorPtr  BuildingUtils::CreateDefaultCategorySelector (DgnDbR db)
     DgnCategoryIdSet categories;
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Site));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_BuildableVolume));
-    categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), SPATIALCOMPOSITION_CATEGORY_CODE_CompositeVolume));
+    categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), SPATIALCOMPOSITION_CATEGORY_CODE_CompositeElement));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_ConflictVolume));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Story));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Space));
