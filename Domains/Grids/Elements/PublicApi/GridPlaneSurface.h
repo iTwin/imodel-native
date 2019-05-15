@@ -2,11 +2,17 @@
 |
 |     $Source: Grids/Elements/PublicApi/GridPlaneSurface.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
+#include <DgnPlatform/DgnDb.h>
+#include <BuildingShared/BuildingSharedMacros.h>
+#include <BuildingShared/Interfaces.h>
+#include <Grids/Domain/GridsMacros.h>
+#include "ForwardDeclarations.h"
+#include "GridSurface.h"
+#include "GridAxis.h"
 
 BEGIN_GRIDS_NAMESPACE
 

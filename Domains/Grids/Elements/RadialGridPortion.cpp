@@ -60,12 +60,8 @@ RadialGridPtr RadialGrid::CreateAndInsert (CreateParams const& params)
     if (!thisGrid->Insert ().IsValid ())
         return nullptr;
 
-    Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(thisGrid->GetDgnDb());
-
-    RadialAxisPtr planeAxis = RadialAxis::CreateAndInsert (defModel, *thisGrid);
-    CircularAxisPtr arcAxis = CircularAxis::CreateAndInsert (defModel, *thisGrid);
-
-    Dgn::SpatialLocationModelPtr subModel = thisGrid->GetSurfacesModel();
+    RadialAxisPtr planeAxis = RadialAxis::CreateAndInsert (*thisGrid);
+    CircularAxisPtr arcAxis = CircularAxis::CreateAndInsert (*thisGrid);
 
     return thisGrid;
     }
@@ -109,11 +105,10 @@ RadialAxisCPtr        RadialGrid::GetRadialAxis
 (
 ) const
     {
-    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_RadialAxis), "WHERE Grid=?");
-    ECN::ECClassId relClassId = GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridHasAxes);
+    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_RadialAxis), "WHERE Model.Id=?", "ORDER BY ECInstanceId ASC");
     if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement())
         {
-        pStmnt->BindNavigationValue(1, GetElementId(), relClassId);
+        pStmnt->BindId(1, GetSubModelId());
         }
 
     if (iterator == iterator.end())
@@ -129,11 +124,10 @@ CircularAxisCPtr        RadialGrid::GetCircularAxis
 (
 ) const
     {
-    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_CircularAxis), "WHERE Grid=?");
-    ECN::ECClassId relClassId = GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridHasAxes);
+    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_CircularAxis), "WHERE Model.Id=?", "ORDER BY ECInstanceId ASC");
     if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement())
         {
-        pStmnt->BindNavigationValue(1, GetElementId(), relClassId);
+        pStmnt->BindId(1, GetSubModelId());
         }
 
     if (iterator == iterator.end())

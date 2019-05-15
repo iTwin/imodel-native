@@ -2,10 +2,15 @@
 |
 |     $Source: Grids/Elements/PublicApi/GridPortion.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+
+#include <DgnPlatform/DgnDb.h>
+#include <DgnPlatform/DgnElement.h>
+#include <Grids/Domain/GridsMacros.h>
+#include "ForwardDeclarations.h"
 
 BEGIN_GRIDS_NAMESPACE
 

@@ -5,12 +5,11 @@
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Grids/Elements/GridElementsAPI.h>
-#include <DgnPlatform/DgnDb.h>
-#include <DgnPlatform/DgnCategory.h>
-#include <DgnPlatform/ElementGeometry.h>
-#include <DgnPlatform/ViewController.h>
-#include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
+#include "PublicApi/GridPortion.h"
+#include "PublicApi/GridCurveBundle.h"
+#include "PublicApi/GridPlaneSurface.h"
+#include "PublicApi/GridAxis.h"
+#include <BuildingShared/Utils/GeometryUtils.h>
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
@@ -137,15 +136,15 @@ Dgn::SpatialLocationModelPtr    Grid::CreateSubModel
 // @bsimethod                                    Jonas.Valiunas                  10/2017
 //---------------+---------------+---------------+---------------+---------------+------
 Dgn::ElementIterator Grid::MakeAxesIterator () const
+    {    
+    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_GridAxis), "WHERE Model.Id=?", "ORDER BY ECInstanceId ASC");
+    if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement())
     {
-    Dgn::ElementIterator iterator = GetDgnDb ().Elements ().MakeIterator (GRIDS_SCHEMA (GRIDS_CLASS_GridAxis), "WHERE Grid=?", "ORDER BY ECInstanceId ASC");
-    ECN::ECClassId relClassId = GetDgnDb ().Schemas ().GetClassId (GRIDS_SCHEMA_NAME, GRIDS_REL_GridHasAxes);
-    if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement ())
-        {
-        pStmnt->BindNavigationValue (1, GetElementId (), relClassId);
-        }
+        pStmnt->BindId(1, GetSubModelId());
+    }
     return iterator;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  10/17
 //---------------------------------------------------------------------------------------
@@ -332,9 +331,7 @@ CreateParams const& params
     if (!thisGrid->Insert ().IsValid ())
         return nullptr;
 
-    Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(thisGrid->GetDgnDb());
-
-    GeneralGridAxisPtr horizontalAxis = GeneralGridAxis::CreateAndInsert(defModel, *thisGrid);
+    GeneralGridAxisPtr horizontalAxis = GeneralGridAxis::CreateAndInsert(*thisGrid);
 
     return thisGrid;
     }
