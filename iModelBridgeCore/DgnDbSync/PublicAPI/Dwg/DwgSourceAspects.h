@@ -550,12 +550,14 @@ public:
     //! @name Objects
     //! @{
     //! Create a new or update existing ObjectAspect from pre-calculated source data
+    //! @param[in] element Existing element along with its aspect to be updated. If the aspect does not exist, a new one is created from the input source data.
+    //! @param[in] source Source data which will be saved in or updated on the ExternalSourceAspect of the element
     DWG_EXPORT ObjectAspect AddOrUpdateObjectAspect (DgnElementR element, ObjectAspect::SourceDataCR source);
     //! Create a new or update existing ObjectAspect from a source object ID and pre-calculated provenance
     //! @param[in] element Existing element along with its aspect to be updated
     //! @param[in] sourceId A unique ID from the source object, the value is used as Identifier for the ObjectAspect
-    //! @param[in] provenance Pre-calculated provenance for the input object.  Passing nullptr to force re-calculation
-    DWG_EXPORT ObjectAspect AddOrUpdateObjectAspect (DgnElementR element, DwgDbHandleCR sourceId, ObjectProvenanceCR provenance);
+    //! @param[in] sourceProvenance Pre-calculated provenance for the source object
+    DWG_EXPORT ObjectAspect AddOrUpdateObjectAspect (DgnElementR element, DwgDbHandleCR sourceId, ObjectProvenanceCR sourceProvenance);
     //! Create a new or update existing ObjectAspect from a DWG object from which the provenance will be calculated
     //! @param[in] element Existing element along with its aspect to be updated
     //! @param[in] object Source DWG object
