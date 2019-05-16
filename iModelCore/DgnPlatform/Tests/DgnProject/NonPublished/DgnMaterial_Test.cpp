@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct MaterialTest : public DgnDbTestFixture
 {
-    void ExpectParent(DefinitionModelR model, Utf8StringCR childName, Utf8StringCR parentName);
+    void ExpectParent(DefinitionModelR model, Utf8StringCR paletteName, Utf8StringCR childName, Utf8StringCR parentName);
 
     template<typename T, typename U>
     void Compare(T const& a, U const& b)
@@ -56,10 +56,10 @@ TEST_F(MaterialTest, CRUD)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MaterialTest::ExpectParent(DefinitionModelR model, Utf8StringCR childName, Utf8StringCR parentName)
+void MaterialTest::ExpectParent(DefinitionModelR model, Utf8StringCR paletteName, Utf8StringCR childName, Utf8StringCR parentName)
     {
-    RenderMaterialId childId = RenderMaterial::QueryMaterialId(model, childName),
-                  parentId = RenderMaterial::QueryMaterialId(model, parentName);
+    RenderMaterialId childId = RenderMaterial::QueryMaterialId(model, paletteName, childName),
+                  parentId = RenderMaterial::QueryMaterialId(model, paletteName, parentName);
     EXPECT_TRUE(childId.IsValid());
     EXPECT_TRUE(parentId.IsValid());
 
@@ -100,7 +100,7 @@ TEST_F(MaterialTest, ParentChildCycles)
     EXPECT_EQ(DgnDbStatus::Success, child->SetParentId(parentId, parentRelClassId));
     child->Update(&status);
     EXPECT_EQ(DgnDbStatus::Success, status);
-    ExpectParent(dictionary, "Child", "Parent");
+    ExpectParent(dictionary, "Palette", "Child", "Parent");
 
     // Child.parent=Parent && Parent.parent=Child:
     //  Child => Parent => Child => ... - caught in Update()
@@ -114,8 +114,8 @@ TEST_F(MaterialTest, ParentChildCycles)
     RenderMaterial grandchild(dictionary, "Palette", "Grandchild", child->GetMaterialId());
     grandchild.Insert(&status);
     EXPECT_EQ(DgnDbStatus::Success, status);
-    ExpectParent(dictionary, "Grandchild", "Child");
-    ExpectParent(dictionary, "Child", "Parent");
+    ExpectParent(dictionary, "Palette", "Grandchild", "Child");
+    ExpectParent(dictionary, "Palette", "Child", "Parent");
 
     // Grandchild => Child => Parent => Grandchild - caught in Update()
     EXPECT_EQ(DgnDbStatus::Success, parent->SetParentId(grandchild.GetElementId(), parentRelClassId));
@@ -161,10 +161,10 @@ TEST_F(MaterialTest, ParentChildClone)
     DgnElementCPtr clonedGrandchild = grandchildA->Import(nullptr, dictionary2, importer);
     ASSERT_TRUE(clonedGrandchild.IsValid());
 
-    ExpectParent(dictionary2, "GrandchildA", "ChildA");
-    ExpectParent(dictionary2, "ChildA", "Parent");
-    EXPECT_FALSE(RenderMaterial::QueryMaterialId(dictionary2, "ChildB").IsValid());
-    EXPECT_FALSE(RenderMaterial::QueryMaterialId(dictionary2, "GrandchildB").IsValid());
+    ExpectParent(dictionary2, palette, "GrandchildA", "ChildA");
+    ExpectParent(dictionary2, palette, "ChildA", "Parent");
+    EXPECT_FALSE(RenderMaterial::QueryMaterialId(dictionary2, palette, "ChildB").IsValid());
+    EXPECT_FALSE(RenderMaterial::QueryMaterialId(dictionary2, palette, "GrandchildB").IsValid());
 
     // Importing a child when the parent already exists (by Code) associates the child to the existing parent.
     // The version of ChildB in the destination db does not have a parent material.
@@ -175,8 +175,8 @@ TEST_F(MaterialTest, ParentChildClone)
     RenderMaterialCPtr destGrandchildB = dynamic_cast<RenderMaterialCP>(grandchildB->Import(nullptr, dictionary2, importer2).get());
     ASSERT_TRUE(destGrandchildB.IsValid());
 
-    ExpectParent(dictionary2, "GrandchildB", "ChildB");
-    RenderMaterialCPtr destChildB = RenderMaterial::Get(*db2, RenderMaterial::QueryMaterialId(dictionary2, "ChildB"));
+    ExpectParent(dictionary2, palette, "GrandchildB", "ChildB");
+    RenderMaterialCPtr destChildB = RenderMaterial::Get(*db2, RenderMaterial::QueryMaterialId(dictionary2, palette, "ChildB"));
     EXPECT_FALSE(destChildB->GetParentMaterialId().IsValid());
 
     db2->SaveChanges();
@@ -231,7 +231,7 @@ TEST_F(MaterialTest, Iterate)
             EXPECT_STREQ(mat5->GetPaletteName().c_str(), entry.GetPalette());
         }
         else
-            FAIL() << "This material should not exisit";
+            FAIL() << "This material should not exist";
 
             count++;
         }
@@ -273,7 +273,7 @@ TEST_F(MaterialTest, Iterate_WithFilter)
         if (entry.GetId() == mat3->GetMaterialId())
             EXPECT_STREQ(mat3->GetMaterialName().c_str(), entry.GetName());
         else
-            FAIL() << "This material should not exisit";
+            FAIL() << "This material should not exist";
 
         count++;
         }

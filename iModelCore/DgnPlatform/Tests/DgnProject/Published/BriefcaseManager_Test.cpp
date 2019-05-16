@@ -1698,8 +1698,8 @@ TEST_F (FastQueryTest, CacheCodes)
 
     DefinitionModelR dictionaryA = dbA.GetDictionaryModel();
 
-    DgnCode code1 = RenderMaterial::CreateCode(dictionaryA, "One"),
-            code2 = RenderMaterial::CreateCode(dictionaryA, "Two");
+    DgnCode code1 = RenderMaterial::CreateCode(dictionaryA, "Palette", "One"),
+            code2 = RenderMaterial::CreateCode(dictionaryA, "Palette", "Two");
 
     // reserve codes
     DgnCodeSet codes;
@@ -1714,7 +1714,7 @@ TEST_F (FastQueryTest, CacheCodes)
     Request req(ResponseOptions::CodeState);
     ExpectResponsesEqual(req, dbB);
 
-    DgnCode code3 = RenderMaterial::CreateCode(dictionaryA, "Three");
+    DgnCode code3 = RenderMaterial::CreateCode(dictionaryA, "Palette", "Three");
     req.Reset();
     req.SetOptions(ResponseOptions::CodeState);
     req.Codes().insert(code1);  // unavailable
@@ -2169,7 +2169,7 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
     EXPECT_STATUS(Success, mgr.ReserveCodes(req).Result());
 
     // Reserve single code
-    DgnCode code = RenderMaterial::CreateCode(dictionary, "Material");
+    DgnCode code = RenderMaterial::CreateCode(dictionary, "Palette", "Material");
     req.insert(code);
     EXPECT_STATUS(Success, mgr.ReserveCodes(req).Result());
     ExpectState(MakeReserved(code, db), db);
