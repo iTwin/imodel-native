@@ -62,8 +62,8 @@ RegularStoryPtr RegularStory::Create (Dgn::DgnModelCR model)
 //---------------+---------------+---------------+---------------+---------------+------
 bool RegularStory::SetFootprintShape
 (
-    CurveVectorCPtr curveVector,
-    bool updatePlacementOrigin
+CurveVectorCPtr curveVector,
+bool updatePlacementOrigin
 )
     {
     Dgn::Render::GeometryParams geometryParameters = _CreateGeometryParameters();
