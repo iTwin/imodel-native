@@ -86,6 +86,7 @@ extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize,
         {        
         static AffinityHost host;
         threadHost = DgnV8Api::DgnPlatformLib::QueryHost();
+        bool wasThreadHostCreated = (threadHost != nullptr);
         if (nullptr == threadHost)
             DgnV8Api::DgnPlatformLib::Initialize(host, false);
 
@@ -113,8 +114,11 @@ extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize,
             return;
 
         // Initialize Cif SDK
-        DgnPlatformCivilLib::InitializeWithDefaultHost();
-        GeometryModelDgnECDataBinder::GetInstance().Initialize();        
+        if (!wasThreadHostCreated)
+            {
+            DgnPlatformCivilLib::InitializeWithDefaultHost();
+            GeometryModelDgnECDataBinder::GetInstance().Initialize();
+            }
 
         auto cifConnPtr = ConsensusConnection::Create(*rootModelP);
         auto cifModelPtr = ConsensusModel::Create(*cifConnPtr);
@@ -142,9 +146,9 @@ extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize,
         {
         }    
 
-    DgnPlatformCivilLib::Unload();
-    if (nullptr == threadHost)
-        DgnV8Api::DgnPlatformLib::ForgetHost();
+    //DgnPlatformCivilLib::Unload();
+    //if (nullptr == threadHost)
+    //    DgnV8Api::DgnPlatformLib::ForgetHost();
 
     _wputenv(originalPath.c_str());
     }
