@@ -773,7 +773,7 @@ void Converter::ConvertModelMaterials(DgnV8ModelR dgnModel)
         RenderMaterialId materialId;
         if (IsUpdating())
             {
-            materialId = RenderMaterial::QueryMaterialId(*definitionModel, utfMaterialName);
+            materialId = RenderMaterial::QueryMaterialId(*definitionModel, utfPaletteName, utfMaterialName);
             }
 
         if (!materialId.IsValid())
