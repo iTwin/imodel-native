@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Grids/Elements/PublicApi/GridSurface.h $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -155,6 +153,14 @@ public:
     //! Returns an iterator over GridCurveBundles that this surface drives.
     //! @return     ElementIdIterator over GridCurveBundles driven by this surface
     GRIDELEMENTS_EXPORT BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::ElementIdIterator MakeGridCurveBundleIterator() const;
+
+    //! Returns `GridLabel` owned by this `GridSurface`
+    //! @return id of `GridLabel` owned by this `GridSurface`
+    GRIDELEMENTS_EXPORT Dgn::DgnElementId GetGridLabelId() const;
+    
+    //! Returns `GridLabel` owned by this `GridSurface`
+    //! @return id of `GridLabel` owned by this `GridSurface`
+    GRIDELEMENTS_EXPORT GridLabelCPtr GetGridLabel() const;
 };
 
 //=======================================================================================
