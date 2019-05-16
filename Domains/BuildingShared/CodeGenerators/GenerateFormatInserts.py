@@ -5,7 +5,6 @@ import sys
 import xml.etree.ElementTree as ET
 import os.path
 import re
-import string
 import ntpath
 from datetime import datetime
 
@@ -20,9 +19,9 @@ Options:
 
 fileTemplate = """/*--------------------------------------------------------------------------------------+
 |
-|  $Source: CodeGenerators/GenerateFormatInserts.py $
+|  {dollarSign}Source: Domain/GeneratedInserts/{generatedFileName} {dollarSign}
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  {dollarSign}Copyright: (c) {currentYear} Bentley Systems, Incorporated. All rights reserved. {dollarSign}
 |
 +--------------------------------------------------------------------------------------*/
 //===========================================================================================
@@ -84,8 +83,8 @@ def ParseSection(section, level, systemType, classTableVariableName):
         else:
             name = RemoveLF(EscapeChars(subsection.find('Name').text))
             code = RemoveLF(subsection.find('Code').text)
-            for i in range(0, level):
-				codeOutput +="    "
+            for _i in range(0, level):
+    			codeOutput +="    "
             codeOutput += "    subsection"+ str(level) + systemType + " = InsertClassification(*" + classTableVariableName + ", \"" + name + "\", \"" + code + "\", \"\", nullptr, "
 	    
         if level is 0:
@@ -138,7 +137,8 @@ filledTemplate = fileTemplate.format(
     classSystemVariableName = classSystemVariableName,
     classTableVariableName = classTableVariableName,
     tableName = root.find("Name").text,
-    code = codeOutput
+    code = codeOutput,
+    dollarSign = "$" # Needed, because template gets messed up when pushed to remote
 )
 
 f = open(sys.argv[2], 'w')

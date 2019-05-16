@@ -18,9 +18,9 @@ Options:
 
 fileTemplate = '''/*--------------------------------------------------------------------------------------+
 |
-|  $Source: CodeGenerators/GenerateStandardRoomsInserts.py $
+|  {dollarSign}Source: Domain/GeneratedInserts/{generatedFileName} {dollarSign}
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  {dollarSign}Copyright: (c) {currentYear} Bentley Systems, Incorporated. All rights reserved. {dollarSign}
 |
 +--------------------------------------------------------------------------------------*/
 //===========================================================================================
@@ -88,7 +88,8 @@ outputPath = sys.argv[2]
 filledTemplate = fileTemplate.format(
     generatedFileName = os.path.basename(outputPath),
     currentYear = datetime.now().strftime('%Y'),
-    code = code
+    code = code,
+    dollarSign = "$" # Needed, because template gets messed up when pushed to remote
 )
 
 f = open(outputPath, 'w')
