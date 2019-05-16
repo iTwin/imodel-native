@@ -38,9 +38,9 @@ TEST_F(GeneratedTestFixture, InsertMasterFormatDefinitions_InsertsHierarchySucce
 
     GeneratedInserts generatedInserts;
 
-    generatedInserts.InsertMasterFormatDefinitions(db);
+    generatedInserts.InsertMasterFormatDefinitions(db, db.GetDictionaryModel ());
 
-    ClassificationSystemCPtr system = ClassificationSystem::TryGet(db, "MasterFormat", "2010");
+    ClassificationSystemCPtr system = ClassificationSystem::TryGet(db, db.GetDictionaryModel (), "MasterFormat", "2010");
     ASSERT_TRUE(system.IsValid()) << "Failed to create MasterFormat system";
 
     ClassificationTableCPtr table;

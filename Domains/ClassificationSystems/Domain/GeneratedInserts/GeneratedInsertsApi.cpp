@@ -18,29 +18,29 @@ BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 //---------------------------------------------------------------------------------------
 ClassificationSystemCPtr GeneratedInserts::TryAndGetSystem
 (
-    Dgn::DgnDbR db,
-    Utf8StringCR name,
-    Utf8StringCR edition
+Dgn::DgnDbR db,
+Dgn::DgnModelCR model,
+Utf8StringCR name,
+Utf8StringCR edition
 ) const
     {
     //TODO Make this static in elements
-    ClassificationSystemCPtr system = ClassificationSystem::TryGet(db, name, edition);
+    ClassificationSystemCPtr system = ClassificationSystem::TryGet(db, model, name, edition);
     if (system.IsNull())
         {
-        return InsertSystem(db, name, edition);
+        return InsertSystem(db, model, name, edition);
         }
-    else {
+    else 
         return system;
     }
-}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Elonas.Seviakovas             04/2019
 //---------------------------------------------------------------------------------------
 ClassificationTableCPtr GeneratedInserts::TryAndGetTable
 (
-    ClassificationSystemCR system,
-    Utf8CP name
+ClassificationSystemCR system,
+Utf8CP name
 ) const
     {
     ClassificationTableCPtr table = nullptr;
@@ -68,12 +68,13 @@ ClassificationTableCPtr GeneratedInserts::TryAndGetTable
 //---------------------------------------------------------------------------------------
 ClassificationSystemPtr GeneratedInserts::InsertSystem
 (
-    Dgn::DgnDbR db,
-    Utf8StringCR name,
-    Utf8StringCR edition
+Dgn::DgnDbR db,
+Dgn::DgnModelCR model,
+Utf8StringCR name,
+Utf8StringCR edition
 ) const
     {
-    ClassificationSystemPtr classSystem = ClassificationSystem::Create(db, name, edition);
+    ClassificationSystemPtr classSystem = ClassificationSystem::Create(db, model, name, edition);
     classSystem->Insert();
     return classSystem;
     }
@@ -97,8 +98,8 @@ ClassificationTablePtr GeneratedInserts::InsertTable
 //---------------------------------------------------------------------------------------
 ClassificationGroupPtr GeneratedInserts::InsertGroup
 (
-    ClassificationTableCR table,
-    Utf8CP name
+ClassificationTableCR table,
+Utf8CP name
 ) const
     {
     ClassificationGroupPtr classDefinitionGroup = ClassificationGroup::Create(table, name);

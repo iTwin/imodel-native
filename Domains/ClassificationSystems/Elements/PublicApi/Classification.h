@@ -71,6 +71,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification final : Dgn::DefinitionElement
         //! Returns a classification which belongs to System <- Table hierarchy. 
         //! If any of the pieces are missing, they are created and inserted into the database.
         //! @param[in]  db           db that should contain the hierarchy
+        //! @param[in]  model        model which should contain the classificationsystem
         //! @param[in]  name         name of the Classification
         //! @param[in]  id           id for code generation
         //! @param[in]  description  description of the Classification
@@ -78,7 +79,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification final : Dgn::DefinitionElement
         //! @param[in]  tableName    name of the Classification Table that the Classification belongs to
         //! @return     a ptr to created or queried Classification
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationPtr GetOrCreateBySystemTableNames(
-            Dgn::DgnDbR db, Utf8StringCR name, Utf8StringCR id, Utf8StringCR description, Utf8StringCR systemName, Utf8StringCR systemEdition, Utf8StringCR tableName);
+            Dgn::DgnDbR db, Dgn::DgnModelCR model, Utf8StringCR name, Utf8StringCR id, Utf8StringCR description, Utf8StringCR systemName, Utf8StringCR systemEdition, Utf8StringCR tableName);
 
         //!Returns this Classification Name property
         //! @return Name property of the Classification

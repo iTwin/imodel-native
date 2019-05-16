@@ -19,9 +19,9 @@ namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
-void GeneratedInserts::InsertMasterFormatDefinitions(Dgn::DgnDbR db) const
+void GeneratedInserts::InsertMasterFormatDefinitions(Dgn::DgnDbR db, Dgn::DgnModelCR model) const
     {
-    ClassificationSystemCPtr masterFormatSystem = TryAndGetSystem(db, "MasterFormat", "2010");
+    ClassificationSystemCPtr masterFormatSystem = TryAndGetSystem(db, model, "MasterFormat", "2010");
     ClassificationTableCPtr masterFormatTable = TryAndGetTable(*masterFormatSystem , "MasterFormat 2010 Edition - Numbers and Titles");
 
     ClassificationPtr subsection0MasterFormat;

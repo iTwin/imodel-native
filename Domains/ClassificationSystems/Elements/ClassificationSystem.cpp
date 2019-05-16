@@ -22,24 +22,25 @@ DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystem)
 //---------------------------------------------------------------------------------------
 Dgn::DgnCode ClassificationSystem::GetSystemCode
 (
-    Dgn::DgnDbR db,
-    Utf8StringCR name, 
-    Utf8StringCR edition
+Dgn::DgnDbR db,
+Dgn::DgnModelCR model,
+Utf8StringCR name, 
+Utf8StringCR edition
 )
     {
-    return Dgn::DgnCode(db.CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem), db.Elements().GetRootSubjectId(), name + edition);
+    return Dgn::DgnCode(db.CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem), model.GetModeledElementId(), name + edition);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Martynas.Saulius               04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassificationSystem::ClassificationSystem
 (
-    CreateParams const& params,
-    Utf8StringCR name, 
-    Utf8StringCR edition
+CreateParams const& params,
+Utf8StringCR name, 
+Utf8StringCR edition
 ) : T_Super(params)
     {
-        Dgn::DgnCode code = GetSystemCode(params.m_dgndb, name, edition);
+        Dgn::DgnCode code = GetSystemCode(params.m_dgndb, *params.m_dgndb.Models().Get<Dgn::DgnModel>(params.m_modelId), name, edition);
         SetCode(code);
         SetEdition(edition);
         SetUserLabel(name.c_str());
@@ -50,7 +51,7 @@ ClassificationSystem::ClassificationSystem
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClassificationSystem::_SerializeProperties
 (
-    Json::Value& elementData
+Json::Value& elementData
 ) const
     {
     elementData["name"] = GetName();
@@ -69,7 +70,7 @@ Dgn::ElementIterator ClassificationSystem::MakeIterator(Dgn::DgnDbR dgnDbR)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClassificationSystem::_FormatSerializedProperties
 (
-    Json::Value& elementData
+Json::Value& elementData
 ) const
     {
     elementData["name"] = GetName();
@@ -80,13 +81,14 @@ void ClassificationSystem::_FormatSerializedProperties
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassificationSystemPtr ClassificationSystem::Create
 (
-    Dgn::DgnDbR db,
-    Utf8StringCR name, 
-    Utf8StringCR edition
+Dgn::DgnDbR db,
+Dgn::DgnModelCR model,
+Utf8StringCR name, 
+Utf8StringCR edition
 )
     {
     Dgn::DgnClassId classId = QueryClassId(db);
-    Dgn::DgnElement::CreateParams params(db, BS::BuildingUtils::GetOrCreateDefinitionModel(db, "ClassificationSystems")->GetModelId(), classId);
+    Dgn::DgnElement::CreateParams params(db, model.GetModelId(), classId);
     ClassificationSystemPtr system = new ClassificationSystem(params, name, edition);
     return system;
     }
@@ -96,12 +98,13 @@ ClassificationSystemPtr ClassificationSystem::Create
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassificationSystemCPtr ClassificationSystem::TryGet
 (
-    Dgn::DgnDbR db,
-    Utf8StringCR name,
-    Utf8StringCR edition
+Dgn::DgnDbR db,
+Dgn::DgnModelCR model,
+Utf8StringCR name,
+Utf8StringCR edition
 )
     {
-    Dgn::DgnCode code = GetSystemCode(db, name, edition);
+    Dgn::DgnCode code = GetSystemCode(db, model, name, edition);
     Dgn::DgnElementId id = db.Elements().QueryElementIdByCode(code);
 
     if (id.IsValid())
@@ -115,16 +118,17 @@ ClassificationSystemCPtr ClassificationSystem::TryGet
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassificationSystemCPtr ClassificationSystem::GetOrCreateSystemByName
 (
-    Dgn::DgnDbR db,
-    Utf8StringCR name,
-    Utf8StringCR edition
+Dgn::DgnDbR db,
+Dgn::DgnModelCR model,
+Utf8StringCR name,
+Utf8StringCR edition
 )
     {
-    ClassificationSystemCPtr queriedSystem = TryGet(db, name, edition);
+    ClassificationSystemCPtr queriedSystem = TryGet(db, model, name, edition);
     if (queriedSystem.IsValid())
         return queriedSystem;
 
-    ClassificationSystemPtr system = ClassificationSystem::Create(db, name, edition);
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, model, name, edition);
     if (system.IsNull())
         return nullptr;
 
@@ -144,48 +148,48 @@ Utf8CP ClassificationSystem::GetName() const
 * @bsimethod                                    Elonas.Seviakovas               04/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ClassificationSystem::GetSource() const
-{
+    {
     return GetPropertyValueString(prop_Source());
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               04/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClassificationSystem::SetSource(Utf8StringCR source)
-{
+    {
     SetPropertyValue(prop_Source(), source.c_str());
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               04/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ClassificationSystem::GetEdition() const
-{
+    {
     return GetPropertyValueString(prop_Edition());
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               04/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClassificationSystem::SetEdition(Utf8StringCR edition)
-{
+    {
     SetPropertyValue(prop_Edition(), edition.c_str());
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               04/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ClassificationSystem::GetLocation() const
-{
+    {
     return GetPropertyValueString(prop_Location());
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               04/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClassificationSystem::SetLocation(Utf8StringCR location)
-{
+    {
     SetPropertyValue(prop_Location(), location.c_str());
-}
+    }
 
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
