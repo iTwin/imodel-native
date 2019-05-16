@@ -4,6 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
+#include    <VersionHelpers.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
@@ -16,6 +17,9 @@ struct EscapeCode
     EscapeCode (size_t i, WChar c) : m_index(i), m_code(c) {}
     };
 typedef bvector<EscapeCode>     T_CodeList;
+
+typedef BentleyStatus (*ExtractFileVersionFuncPtr)(Utf8StringR, BeFileNameCR);
+static ExtractFileVersionFuncPtr    s_pExtractFileVersion = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
@@ -1884,42 +1888,40 @@ BentleyStatus   DwgHelper::GetImporterModuleVersion (Utf8StringR versionString)
     {
     BentleyStatus   status = BSIERROR;
 #ifdef BENTLEY_WIN32
-    // get DLL file path
-    wchar_t dllPath[MAX_PATH] = {0};
-    if(::GetModuleFileNameW(nullptr, dllPath, MAX_PATH) <= 0)
-        return  status;
-
-    // query the size for DLL version info 
-    ::DWORD dllHandle = 0;
-    ::DWORD versionInfoSize = ::GetFileVersionInfoSizeW(dllPath, &dllHandle);
-    if (versionInfoSize == 0)
-        return  status;
-
-    ::LPBYTE buffer = nullptr;
-    ::LPSTR versionInfoData = static_cast<::LPSTR>(new char[versionInfoSize]);
-    if (versionInfoData == nullptr)
-        return  status;
-
-    // extract version info into a buffer
-    if (::GetFileVersionInfoW(dllPath, dllHandle, versionInfoSize, versionInfoData))
+    // workaround Win7 failure of loading api-ms-win-core-libraryloader-l1-2-0.dll due to use of mincore.dll!
+    if (::IsWindows8OrGreater())
         {
-        // read version info from the extracted buffer
-        ::UINT readSize = 0;
-        if (::VerQueryValueW(versionInfoData, L"\\", reinterpret_cast<VOID FAR* FAR*>(&buffer), &readSize) && readSize > 0)
+        // get our wrapper function pointer from WinVerWrapperM02.dll if not already loaded
+        if (s_pExtractFileVersion == nullptr)
             {
-            // parse version into to output string
-            ::VS_FIXEDFILEINFO* versonInfo = reinterpret_cast<VS_FIXEDFILEINFO*>(buffer);
-            if (versonInfo != nullptr && versonInfo->dwSignature == 0xfeef04bd)
-                {
-                uint32_t majorV = (versonInfo->dwFileVersionMS >> 16) & 0xffff;
-                uint32_t minorV = (versonInfo->dwFileVersionMS >>  0) & 0xffff;
-                uint32_t subV1  = (versonInfo->dwFileVersionLS >> 16) & 0xffff;
-                uint32_t subV2  = (versonInfo->dwFileVersionLS >>  0) & 0xffff;
-                versionString.Sprintf ("%d.%d.%d.%d", majorV, minorV, subV1, subV2);
-                }
+            uint32_t    v1 = 0;
+            char        v2[8] = {0};
+            Utf8String  filterDllName;
+            if (::sscanf(DLM_API_NUMBER, "%u%s", &v1, v2) == 2)
+                filterDllName.Sprintf("WinVerWrapper%s.dll", v2);
+            else
+                filterDllName.assign("WinVerWrapperM02.dll");
+
+            // load WinVerWrapperM02.dll
+            static HMODULE  s_WinVerWrapperDllHandle = ::LoadLibraryA(filterDllName.c_str());
+            if (s_WinVerWrapperDllHandle == nullptr)
+                return  status;
+
+            // get the function pointer from WinVerWrapperM0.dll and call it
+            s_pExtractFileVersion = reinterpret_cast<BentleyStatus(*)(Utf8StringR,BeFileNameCR)>(::GetProcAddress(s_WinVerWrapperDllHandle, "?ExtractFileVersion@@YA?AW4BentleyStatus@BentleyM0200@@AEAUUtf8String@2@AEBUBeFileName@2@@Z"));
+            }
+
+        if (s_pExtractFileVersion != nullptr)
+            {
+            // get the file path of this DLL
+            wchar_t currDllPath[MAX_PATH] = {0};
+            if(::GetModuleFileNameW(nullptr, currDllPath, MAX_PATH) <= 0)
+                return  status;
+            
+            // call our wrapper function
+            status = (*s_pExtractFileVersion)(versionString, BeFileName(currDllPath));
             }
         }
-    delete[] versionInfoData;
 #endif  // BENTLEY_WIN32
     return  status;
     }

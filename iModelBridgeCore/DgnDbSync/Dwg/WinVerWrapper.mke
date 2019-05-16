@@ -1,0 +1,37 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+appName = WinVerWrapper
+baseDir = $(_MakeFilePath)
+o       = $(OutputRootDir)Build/$(appName)/
+
+always:
+    !~@mkdir $(o)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)$(appName)$(oext)   : $(baseDir)$(appName).cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+%undef CPchOpts
+%undef CCPchOpts
+
+DLM_NAME                = $(appName)
+DLM_DEST                = $(o)
+DLM_OBJECT_DEST         = $(o)
+DLM_EXPORT_DEST         = $(o)
+DLM_OBJECT_FILES        = $(o)$(appName)$(oext)
+DLM_NOINITFUNC          = 1
+DLM_NOENTRY             = 1
+
+LINKER_LIBRARIES        = $(ContextSubpartsLibs)Bentley$(libext)
+LINKER_LIBRARIES        + Mincore$(libext)
+
+%include $(sharedMki)LinkLibrary.mki
+

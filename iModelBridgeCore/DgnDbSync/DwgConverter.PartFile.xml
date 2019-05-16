@@ -28,9 +28,9 @@
     <Part Name="DwgResources" BentleyBuildMakeFile="Dwg/DwgResources.mke">
         <!-- include all that produce xliff's needed to go into our L10N db -->
         <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"              Repository="imodel02"/>
-        <SubPart PartName="DgnPlatformDLL"      PartFile="iModelCore/DgnPlatform/DgnPlatform"          Repository="imodel02"/>
-        <SubPart PartName="ImagePP"             PartFile="iModelBridgeCore/Imagepp/ImagePP"              Repository="imodel02"/>
-        <SubPart PartName="Raster"              PartFile="Domains/RealityModeling/RealityModeling"      Repository="imodel02"/>
+        <SubPart PartName="DgnPlatformDLL"      PartFile="iModelCore/DgnPlatform/DgnPlatform"      Repository="imodel02"/>
+        <SubPart PartName="ImagePP"             PartFile="iModelBridgeCore/Imagepp/ImagePP"        Repository="imodel02"/>
+        <SubPart PartName="Raster"              PartFile="Domains/RealityModeling/RealityModeling" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DwgImporter_en.xliff</Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/DwgImporter_en-US.sqlang.db3</Files>
@@ -38,6 +38,15 @@
             <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/DwgImporter.logging.config.xml</Files>
         </Bindings>
     </Part>
+
+    <!-- Build our Windows version filter module to be shared by both importers -->
+    <Part Name="WinVerWrapper" BentleyBuildMakeFile="Dwg/WinVerWrapper.mke" ApiNumber="M02">
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"   Repository="imodel02"/>
+        <Bindings>
+            <Assemblies ProductDirectoryName="Assemblies">Delivery/$(shlibprefix)WinVerWrapper$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
 
     <!-- Build DwgImporter using OpenDWG Toolkit -->
     <Product Name="OpenDwgImporter" SaveProduct="true" AddIn="true">
@@ -76,7 +85,8 @@
         <SubPart PartName="Raster"              PartFile="Domains/RealityModeling/RealityModeling"      Repository="imodel02"/>
         <SubPart PartName="ECPresentation"      PartFile="iModelCore/ECPresentation/ECPresentation"       Repository="imodel02"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
-        <SubPart PartName="OpenDwgDb" />
+        <SubPart PartName="OpenDwgDb"/>
+        <SubPart PartName="WinVerWrapper"/>
         <Bindings>
             <Files ProductDirectoryName="OpenDwgImportAssemblies" SubPartDirectory="Files\OpenDwg">Delivery/OpenDwgImporter/DwgImporter$(ApiNumber)$(shlibext)</Files>
             <Files ProductDirectoryName="OpenDwgDbLibs" SubPartDirectory="Files\OpenDwg" Required="false">Delivery/OpenDwgImporter/$(libprefix)DwgImporter$(libext)</Files>
@@ -146,7 +156,8 @@
         <SubPart PartName="Raster"              PartFile="Domains/RealityModeling/RealityModeling"      Repository="imodel02"/>
         <SubPart PartName="ECPresentation"      PartFile="iModelCore/ECPresentation/ECPresentation"       Repository="imodel02"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
-        <SubPart PartName="RealDwgDb" />
+        <SubPart PartName="RealDwgDb"/>
+        <SubPart PartName="WinVerWrapper"/>
         <Bindings>
             <Files ProductDirectoryName="RealDwgImportAssemblies" SubPartDirectory="Files\RealDwg2019">Delivery/RealDwg2019Importer/$(shlibprefix)DwgImporter$(ApiNumber)$(shlibext)</Files>
             <Files ProductDirectoryName="RealDwgDbLibs" SubPartDirectory="Files\RealDwg2019" Required="false">Delivery/RealDwg2019Importer/$(libprefix)DwgImporter$(libext)</Files>

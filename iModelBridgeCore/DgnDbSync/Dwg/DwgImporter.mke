@@ -157,9 +157,4 @@ LINKER_LIBRARIES_DELAYLOADED + Msi$(libext)
 
 %endif  # DWGTOOLKIT
 
-%if $(TARGET_PLATFORM) == "Windows"
-# Need GetFileVersionInfo to extract DLL version
-LINKER_LIBRARIES_DELAYLOADED + Mincore$(libext)
-%endif
-
 %include $(sharedMki)LinkLibrary.mki
