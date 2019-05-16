@@ -4,16 +4,19 @@
 #
 #--------------------------------------------------------------------------------------
 
-
-COV_REPORTS = $(OutputRootDir)LogFiles/CoverageReports
+%if defined (CovReports)
+    COV_REPORTS = $(CovReports)
+%else
+    COV_REPORTS = $(OutputRootDir)LogFiles/CoverageReports
+%endif
 always:
     !~@mkdir $(COV_REPORTS)
 
 always:
     %if !defined (COMP_NAME)
-        python $(_MakeFilePath)GenerateTIAMap.py --covReports=$(COV_REPORTS) --pushChanges
+        start "Generate TiaMaps All" \/WAIT python $(_MakeFilePath)GenerateTIAMap.py --covReports=$(COV_REPORTS)
     %else
-        python $(_MakeFilePath)GenerateTIAMap.py --covReports=$(COV_REPORTS) --component=$(COMP_NAME)
+        start "Generate TiaMaps $(COMP_NAME)" \/WAIT python $(_MakeFilePath)GenerateTIAMap.py --covReports=$(COV_REPORTS) --component=$(COMP_NAME)
     %endif
 
 %message ..

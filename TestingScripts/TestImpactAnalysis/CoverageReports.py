@@ -114,7 +114,11 @@ def runCoverage(reportPath, comp, forceAll):
             os.mkdir(reportDir)
         cov = CodeCoverage()
         cov.set_ReportPath(reportDir)
-
+        dlls = cmp.AllDlls()
+        modules_filter = ""
+        for dll in dlls:
+            modules_filter = modules_filter + " --modules=" + dll
+        cov.editModules(modules_filter)
         for test in testList:
             i = i + 1
             print printColored('***Running Coverage for Test: ' + str(i) + ' of ' + str(len(testList)), 'cyan', True)

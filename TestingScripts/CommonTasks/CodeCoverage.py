@@ -92,7 +92,7 @@ class CodeCoverage:
             return True
     
     def editModules(self, moduleFilter):
-        self.modules = ' --modules=' + moduleFilter
+        self.modules = moduleFilter
 
     def deleteLogs(self, source):
         logPath = os.path.join(source, 'LastCoverageResults.log')
