@@ -970,7 +970,7 @@ protected:
     bool                m_didDecimate = false;
 
     static double DecimateStrokes(StrokesR strokesOut, StrokesR strokesIn);
-    
+
     MeshBuilderR GetMeshBuilder(MeshBuilderMap::Key const& key);
 
     void AddPolyfaces(PolyfaceList& polyfaces, DgnElementId, double rangePixels, bool isContained);
@@ -1470,6 +1470,112 @@ bool hasSymbologyChanges(GeometryStreamIO::Collection const& geom)
     return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8CP parseId(uint64_t& output, Utf8CP str, Utf8Char terminator)
+    {
+    Utf8String idStr(str);
+    auto terminatorPos = idStr.length();
+    if ('\0' != terminator)
+        {
+        terminatorPos = idStr.find(terminator);
+        if (Utf8String::npos == terminatorPos)
+            return nullptr;
+
+        idStr.erase(terminatorPos);
+        }
+
+    if (!BeInt64Id::IsWellFormedString(idStr))
+        return nullptr;
+
+    output = BeInt64Id::FromString(idStr.c_str()).GetValueUnchecked();
+    return str + terminatorPos;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Parses lower-case hexadecimal unsigned integer up to terminating character.
+* Returns pointer to terminating character, or nullptr if no digits, more digits than will
+* fit in T, or terminator not found, or leading zeroes found.
+* See Tree::Id::FromString() for why we are using hand-rolled parse.
+* @bsimethod                                                    Paul.Connelly   05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static Utf8CP parseHex(T& output, Utf8CP str, Utf8Char terminator)
+    {
+    output = 0;
+
+    // No leading zeroes
+    if ('0' == *str)
+        return (terminator == *(str + 1)) ? str + 1 : nullptr;
+
+    static constexpr size_t maxDigits = sizeof(T) << 1;
+    for (size_t i = 0; i < maxDigits + 1; i++)
+        {
+        auto ch = str[i];
+        if (ch == terminator)
+            return i > 0 ? str + i : nullptr;
+        else if (i == maxDigits)
+            return nullptr;
+
+        T val = 0;
+        if (ch >= '0' && ch <= '9')
+            val = ch - '0';
+        else if (ch >= 'a' && ch <= 'f')
+            val = (ch - 'a') + 10;
+        else
+            break;
+
+        output = (output << 4) | val;
+        }
+
+    // no digits found; or (terminator not found / non-digit found) before max digits exceeded.
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* See Tree::Id::FromString() for why we are using hand-rolled parse.
+* @bsimethod                                                    Paul.Connelly   05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8CP parseExpansion(double& out, Utf8CP str)
+    {
+    if (':' != *str++)
+        return nullptr;
+
+    out = 0.0;
+    bool first = true;
+    do
+        {
+        auto ch = *str++;
+        if ('.' == ch)
+            {
+            if (first)
+                return nullptr;
+            else
+                break;
+            }
+
+        if (ch < '0' || ch > '9')
+            return nullptr;
+
+        out *= 10.0;
+        out += ch - '0';
+        first = false;
+        }
+    while (true);
+
+    for (int i = 0; i < 6; i++)
+        {
+        auto ch = *str++;
+        if (ch < '0' || ch > '9')
+            return nullptr;
+
+        double m = 1.0 / pow(10, i + 1);
+        out += (ch - '0') * m;
+        }
+
+    return '_' == *str ? str + 1 : nullptr;
+    }
+
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -1502,7 +1608,11 @@ Utf8String ContentId::ToString() const
                 m_k,
                 static_cast<uint64_t>(m_mult),
             };
-            return Format(parts, _countof(parts));
+
+            if (m_majorVersion < 4)
+                return Format(parts, _countof(parts));
+            else
+                return Format(parts + 1, _countof(parts) - 1);
         }
     }
 
@@ -1516,7 +1626,7 @@ Utf8String ContentId::Format(uint64_t const* parts, size_t numParts) const
 
     bool isV1 = GetMajorVersion() == 1;
     uint32_t nSeparators = isV1 ? 0 : 1;
-    Utf8Char separator = isV1 ? '/' : '_';
+    Utf8Char separator = isV1 ? '/' : (GetMajorVersion() < 4 ? '_' : '-');
     for (auto i = 0; i < numParts; i++)
         {
         str.append(nSeparators, separator);
@@ -1531,13 +1641,13 @@ Utf8String ContentId::Format(uint64_t const* parts, size_t numParts) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentId::FromString(Utf8CP str)
+bool ContentId::FromString(Utf8CP str, uint16_t inMajorVersion)
     {
     if (Utf8String::IsNullOrEmpty(str))
         return false;
 
     if ('_' != *str)
-        return FromV1String(str);
+        return '-' == *str ? FromV4String(str, inMajorVersion) : FromV1String(str);
 
     uint16_t majorVersion;
     Flags flags;
@@ -1548,7 +1658,7 @@ bool ContentId::FromString(Utf8CP str)
     auto fmt = "_%" SCNx16 "_%" SCNx32 "_%" SCNx8 "_%" SCNx64 "_%" SCNx64 "_%" SCNx64 "_%" SCNx32 ;
     if (7 != BE_STRING_UTILITIES_UTF8_SSCANF(str, fmt, &majorVersion, &flags, &depth, &i, &j, &k, &mult))
         return false;
-    else if (majorVersion <= 1)
+    else if (!Tile::IO::IModelTile::Version::IsKnownMajorVersion(majorVersion))
         return false;
 
     *this = ContentId(depth, i, j, k, mult, majorVersion, flags);
@@ -1567,6 +1677,29 @@ bool ContentId::FromV1String(Utf8CP str)
         return false;
 
     *this = ContentId(depth, i, j, k, mult, 1, Flags::None);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentId::FromV4String(Utf8CP str, uint16_t majorVersion)
+    {
+    if (majorVersion < 4)
+        return false;
+
+    Flags flags;
+    uint64_t i, j, k;
+    uint32_t mult;
+    uint8_t depth;
+
+    auto fmt = "-%" SCNx32 "-%" SCNx8 "-%" SCNx64 "-%" SCNx64 "-%" SCNx64 "-%" SCNx32 ;
+    if (6 != BE_STRING_UTILITIES_UTF8_SSCANF(str, fmt, &flags, &depth, &i, &j, &k, &mult))
+        return false;
+    else if (!Tile::IO::IModelTile::Version::IsKnownMajorVersion(majorVersion))
+        return false;
+
+    *this = ContentId(depth, i, j, k, mult, majorVersion, flags);
     return true;
     }
 
@@ -1869,6 +2002,7 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
         return nullptr;
 
     DRange3d range;
+    DRange3d contentRange = DRange3d::NullRange();
     bool populateRootTile;
     bool rootTileEmpty;
     if (model.Is3dModel())
@@ -1878,15 +2012,24 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
         // - some models contain junk elements in far orbit which blow out the project extents resulting in same problem - constrain that only to those models.
         // Classifiers are applied to all models (currently...) so they use project extents.
         auto projectExtents = model.GetDgnDb().GeoLocation().GetProjectExtents();
+        auto useProjectExtents = id.GetUseProjectExtents();
+        range.IntersectionOf(projectExtents, model.QueryElementsRange());
 
-        if (id.IsVolumeClassifier())
-            range = projectExtents;
-        else
-            range.IntersectionOf(projectExtents, model.QueryElementsRange());
         if(id.IsVolumeClassifier() || id.IsPlanarClassifier() && 0.0 != id.GetClassifierExpansion())
             range.Extend(id.GetClassifierExpansion());
 
         range = scaleSpatialRange(range);
+
+        if (useProjectExtents)
+            {
+            // Actually use the project extents as the tile tree range, but also include the model range as a bounding content range.
+            // This allows us to produce root tiles of appropriate resolution when model range is small relative to project extents, instead
+            // of producing extremely high-resolution tiles inappropriate for display when fitting to project extents.
+            contentRange = range;
+            range = projectExtents;
+            scaleSpatialRange(range);
+            }
+
         uint32_t nElements = 0;
 
         populateRootTile = !range.IsNull() && isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex(), &nElements);
@@ -1921,17 +2064,20 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
         Transform rangeTransform;
         rangeTransform.InverseOf(transform);
         rangeTransform.Multiply(tileRange, range);
+
+        if (!contentRange.IsNull())
+            rangeTransform.Multiply(contentRange, contentRange);
         }
 
-    return new Tree(model, transform, tileRange, system, id, rootTile);
+    return new Tree(model, transform, tileRange, system, id, rootTile, contentRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, RootTile rootTile)
+Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, RootTile rootTile, DRange3dCR contentRange)
     : m_db(model.GetDgnDb()), m_location(location), m_renderSystem(system), m_id(id), m_is3d(model.Is3d()), m_cache(TileCacheAppData::Get(model.GetDgnDb())),
-    m_rootTile(rootTile)
+    m_rootTile(rootTile), m_contentRange(contentRange)
     {
     if (!range.IsNull())
         m_range.Extend(range);
@@ -1960,8 +2106,11 @@ Json::Value Tree::ToJson() const
 
     json["id"] = GetId().ToString();
     json["maxTilesToSkip"] = 1;
-    json["formatVersion"] = Tile::IO::IModelTile::Version::Current().ToUint32();
+    json["formatVersion"] = Tile::IO::IModelTile::Version::FromMajorVersion(GetId().GetMajorVersion()).ToUint32();
     JsonUtils::TransformToJson(json["location"], GetLocation());
+
+    if (!m_contentRange.IsNull())
+        JsonUtils::DRange3dToJson(json["contentRange"], m_contentRange);
 
     json["rootTile"]["isLeaf"] = RootTile::Empty == m_rootTile;
     json["rootTile"]["maximumSize"] = RootTile::Displayable == m_rootTile ? 512 : 0;
@@ -2026,83 +2175,210 @@ ContentCPtr Tree::RequestContent(ContentIdCR contentId, bool useCache)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+uint16_t Tree::Id::GetDefaultMajorVersion()
+    {
+    return Tile::IO::IModelTile::Version::Current().m_major;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Tree::Id::GetUseProjectExtents() const
+    {
+    return Tree::Flags::None != (GetFlags() & Tree::Flags::UseProjectExtents);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Tree::Id::GetPrefixString() const
     {
-    Utf8String      prefix;
+    Utf8String prefix;
 
-    if (IsAnimation())
-        prefix = s_animationIdPrefix + m_animationSourceId.ToHexStr() + "_";
+    // In version 4 we introduced versioning - the ID includes the major version of the tile format plus flags.
+    if (GetMajorVersion() > 3)
+        {
+        Utf8Char buf[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+        BeStringUtilities::FormatUInt64(buf, BeInt64Id::ID_STRINGBUFFER_LENGTH, static_cast<uint64_t>(GetMajorVersion()), HexFormatOptions::None);
+        prefix.append(buf).append(1, '_');
+        BeStringUtilities::FormatUInt64(buf, BeInt64Id::ID_STRINGBUFFER_LENGTH, static_cast<uint64_t>(GetFlags()), HexFormatOptions::None);
+        prefix.append(buf).append(1, '-');
+        }
 
-    if (IsVolumeClassifier())
-        prefix += s_classifierIdPrefix + Utf8PrintfString("%f_", m_classifierExpansion);
-    else if (IsPlanarClassifier())
-        prefix += s_planarClassifierIdPrefix + Utf8PrintfString("%f_", m_classifierExpansion);
+    if (IsClassifier())
+        {
+        prefix.append(IsVolumeClassifier() ? s_classifierIdPrefix : s_planarClassifierIdPrefix);
+        prefix.append(Utf8PrintfString("%.6f_", m_expansion));
+        }
+    else
+        {
+        if (IsAnimation())
+            prefix.append(s_animationIdPrefix + m_animationSourceId.ToHexStr()).append(1, '_');
 
-    if (GetOmitEdges())
-        prefix += s_omitEdgesPrefix + "_";
+        if (GetOmitEdges())
+            prefix.append(s_omitEdgesPrefix).append(1, '_');
+        }
 
     return prefix;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
+* v3.0 and earlier:
+*   Classifiers: "prefix:expansion_modelId"
+*       prefix=CP (planar classifier) or P (volume classifier)
+*       expansion=.6f double-precision floating point value
+*       modelId=hex-formatted BeInt64Id
+*   Others: "[A:animSourceId_][E:0_]modelId" where "[X]" indicates optional component
+*       E:0_ indicates edge data should be omitted from tile data
+*       A:animSourceId_ includes hex-formatted ID of the source of animation data
+*       modelId=hex-formatted BeInt64Id
+* v4.0 and later: "vMaj_flags-v3Id"
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Tree::Id::ToString() const
     {
+    if (!IsValid())
+        return "";
+
     return GetPrefixString()  + m_modelId.ToHexStr();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/18
+* NB: The tree ID string is used as a cache lookup key for both binary tile data and
+* tile tree JSON. The native string must exactly match that produced by the front-end
+* for caching to work correctly.
+* @bsimethod                                                    Paul.Connelly   05/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tree::Id Tree::Id::FromString(Utf8StringCR str)
+Tree::Id Tree::Id::FromString(Utf8StringCR str, DgnDbP db)
     {
-    Utf8String idStr = str;
-    double classifierExpansion = 0.0;
-    DgnElementId animationSourceId;
+    Id invalidId;
+    if (Utf8String::IsNullOrEmpty(str.c_str()))
+        return invalidId;
+
+    // A hyphen delimits the version+flags from the rest of the ID, if they are present.
+    // Absence indicates a pre-v4.0 ID.
+    Utf8CP pCur = str.c_str();
+    uint16_t majorVersion = 3;
+    auto flags = Tree::Flags::None;
+    auto hyphenPos = str.find('-');
+    bool hasFlagsAndMajorVersion = Utf8String::npos != hyphenPos;
+    if (hasFlagsAndMajorVersion)
+        {
+        pCur = parseHex(majorVersion, pCur, '_');
+        if (nullptr == pCur || majorVersion < 4)
+            return invalidId;
+
+        uint32_t uflags;
+        pCur = parseHex(uflags, pCur + 1, '-');
+        if (nullptr == pCur)
+            return invalidId;
+
+        flags = static_cast<Tree::Flags>(uflags);
+        ++pCur;
+        }
+
+    if (!Tile::IO::IModelTile::Version::IsKnownMajorVersion(majorVersion))
+        return invalidId;
+
     auto type = Tree::Type::Model;
+    double expansion = 0.0;
+    uint64_t animationId64 = 0;
     bool omitEdges = false;
-
-
-     if (idStr.StartsWith(s_classifierIdPrefix.c_str())) 
+    switch (*pCur)
         {
-        type = Tree::Type::VolumeClassifier;
-        double      value;
-        size_t      endPrefix = str.find("_");
-        if (1 == sscanf(str.c_str() + s_classifierIdPrefix.size(), "%lf", &value))
-            classifierExpansion = value;
+        case 'C':
+            {
+            omitEdges = true;
+            type = Tree::Type::VolumeClassifier;
+            if ('P' == *(++pCur))
+                {
+                type = Tree::Type::PlanarClassifier;
+                ++pCur;
+                }
 
-        idStr.erase(0, endPrefix+1);
+            pCur = parseExpansion(expansion, pCur);
+            if (nullptr == pCur)
+                return invalidId;
+
+            break;
+            }
+        case '0':
+            break;
+        case 'A':
+            {
+            type = Tree::Type::Animation;
+            if (':' != *(++pCur))
+                return invalidId;
+
+            pCur = parseId(animationId64, ++pCur, '_');
+            if (nullptr == pCur)
+                return invalidId;
+
+            ++pCur;
+            if ('0' == *pCur)
+                break;
+            else if ('E' != *pCur)
+                return invalidId;
+            }
+        // fall-through intentional...
+        case 'E':
+            omitEdges = true;
+            if (':' != *(++pCur) || '0' != *(++pCur) || '_' != *(++pCur))
+                return invalidId;
+
+            ++pCur;
+            break;
+        default:
+            return invalidId;
         }
-    else if (idStr.StartsWith(s_planarClassifierIdPrefix.c_str())) 
-        {
-        type = Tree::Type::PlanarClassifier;
-        double      value;
-        size_t      endPrefix = str.find("_");
-        if (1 == sscanf(str.c_str() + s_planarClassifierIdPrefix.size(), "%lf", &value))
-            classifierExpansion = value;
 
-        idStr.erase(0, endPrefix+1);
+    uint64_t modelId64;
+    if (nullptr == parseId(modelId64, pCur, '\0'))
+        return invalidId;
+
+    DgnModelId modelId(modelId64);
+    if (!modelId.IsValid())
+        return invalidId;
+
+    GeometricModelPtr model;
+    if (nullptr != db)
+        {
+        model = db->Models().Get<GeometricModel>(modelId);
+        if (model.IsNull())
+            return invalidId;
         }
-    else if (idStr.StartsWith(s_animationIdPrefix.c_str()))
+
+    DgnElementId animationId(animationId64);
+
+    switch (type)
         {
-        type = Tree::Type::Animation;
-        size_t      endPrefix = str.find("_");
-        auto        valueStr = str.substr(s_animationIdPrefix.size(), endPrefix - 2);
+        case Tree::Type::VolumeClassifier:
+            if (!hasFlagsAndMajorVersion)
+                flags |= Tree::Flags::UseProjectExtents;
+            else if (Tree::Flags::None == (flags & Tree::Flags::UseProjectExtents))
+                return invalidId;
+            // fall-through intentional
+        case Tree::Type::PlanarClassifier:
+            if (model.IsValid() && !model->Is3d())
+                return invalidId;
+            else
+                return Tree::Id(modelId, flags, majorVersion, expansion, Tree::Type::PlanarClassifier == type);
+        case Tree::Type::Animation:
+            if (!animationId.IsValid())
+                return invalidId;
+            else if (nullptr != db)
+                {
+                auto style = db->Elements().Get<DisplayStyle>(animationId);
+                if (style.IsNull() || style->GetStyle("scheduleScript").isNull())
+                    return invalidId;
+                }
 
-        animationSourceId = DgnElementId(BeInt64Id::FromString(valueStr.c_str()).GetValue());
+            break;
+        }
 
-        idStr.erase(0, endPrefix+1);
-        } 
-
-    if (false != (omitEdges = idStr.StartsWith(s_omitEdgesPrefix.c_str())))
-        idStr.erase(0, idStr.find("_") + 1);
-                                                           
-    DgnModelId modelId(BeInt64Id::FromString(idStr.c_str()).GetValue());
-    return Id(modelId, type, omitEdges, classifierExpansion, animationSourceId);
+    return Tree::Id(modelId, flags, majorVersion, omitEdges, animationId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2486,7 +2762,7 @@ PlanarClassificationLoader::PlanarClassificationLoader(Tree& tree, ContentIdCR c
 +---------------+---------------+---------------+---------------+---------------+------*/
 void VolumeClassificationLoader::Preprocess(PolyfaceList& polyfaces, StrokesList& strokes) const
     {
-    if (0.0 != m_expansion) 
+    if (0.0 != m_expansion)
         {
         for (auto& polyface : polyfaces)
             {
@@ -2600,7 +2876,7 @@ static PolyfaceHeaderPtr polyfaceFromExpandedStrokes(StrokesCR strokes, double e
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void expandClosedPlanarPolyface(PolyfaceHeaderR polyface, DPlane3dCR plane, double expansion)
     {
-    struct Vertex 
+    struct Vertex
         {
         int32_t  m_previousIndex;
         int32_t  m_nextIndex;
@@ -2608,7 +2884,7 @@ static void expandClosedPlanarPolyface(PolyfaceHeaderR polyface, DPlane3dCR plan
         Vertex(int32_t previousIndex, int32_t nextIndex): m_previousIndex(previousIndex), m_nextIndex(nextIndex) { }
         };
     bmap<int32_t, Vertex>       vertexMap;
-    
+
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
         {
         uint32_t numEdges =  visitor->NumEdgesThisFace();
@@ -2623,21 +2899,21 @@ static void expandClosedPlanarPolyface(PolyfaceHeaderR polyface, DPlane3dCR plan
                 auto thisFound = vertexMap.find(thisIndex);
                 if (thisFound == vertexMap.end())
                     vertexMap.Insert(thisIndex, Vertex(-1, nextIndex));
-                else   
+                else
                     thisFound->second.m_nextIndex = nextIndex;
 
                 auto nextFound =  vertexMap.find(nextIndex);
                 if (nextFound == vertexMap.end())
                     vertexMap.Insert(nextIndex, Vertex(thisIndex, -1));
-                else   
+                else
                     nextFound->second.m_previousIndex = thisIndex;
                 }
             }
-        } 
+        }
     bvector<DPoint3d>  pointCopy = polyface.Point();
     DPoint3dCP points = &pointCopy.front();
 
-    for (auto curr:  vertexMap) 
+    for (auto curr:  vertexMap)
         {
         if (curr.second.m_previousIndex < 0 || curr.second.m_nextIndex < 0)
             {
@@ -2645,7 +2921,7 @@ static void expandClosedPlanarPolyface(PolyfaceHeaderR polyface, DPlane3dCR plan
             continue;
             }
         DPoint3dCR thisPoint = points[curr.first];
-        DVec3d  prev = DVec3d::FromStartEnd(points[curr.second.m_previousIndex], thisPoint), 
+        DVec3d  prev = DVec3d::FromStartEnd(points[curr.second.m_previousIndex], thisPoint),
                 next = DVec3d::FromStartEnd(points[curr.second.m_nextIndex], thisPoint);
         double minMagnitude = 1.0E-5;
         bool prevDegenerate = prev.Normalize() < minMagnitude, nextDegenerate = next.Normalize() < minMagnitude;
@@ -2654,20 +2930,20 @@ static void expandClosedPlanarPolyface(PolyfaceHeaderR polyface, DPlane3dCR plan
         double expandDistance = expansion;
         DVec3d expandDirection;
         if (prevDegenerate)
-            expandDirection = DVec3d::FromCrossProduct(prev, plane.normal); 
+            expandDirection = DVec3d::FromCrossProduct(prev, plane.normal);
         else if (nextDegenerate)
             expandDirection = DVec3d::FromCrossProduct(plane.normal, next);
-        else 
+        else
             {
             DVec3d perp =  DVec3d::FromCrossProduct(prev, plane.normal);
             expandDirection = DVec3d::FromSumOf(prev, next);
             if (expandDirection.Normalize() < minMagnitude)
                 expandDirection =  perp;
-            else 
+            else
                 expandDistance = expansion / perp.DotProduct(expandDirection);
             }
         polyface.Point()[curr.first] = DPoint3d::FromSumOf(thisPoint, expandDirection, expandDistance);
-        } 
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2675,7 +2951,7 @@ static void expandClosedPlanarPolyface(PolyfaceHeaderR polyface, DPlane3dCR plan
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PlanarClassificationLoader::Preprocess(PolyfaceList& polyfaces, StrokesList& strokes) const
     {
-    if (0.0 != m_expansion) 
+    if (0.0 != m_expansion)
         {
         for (auto& polyface : polyfaces)
             {
@@ -2683,18 +2959,18 @@ void PlanarClassificationLoader::Preprocess(PolyfaceList& polyfaces, StrokesList
 
             if (polyface.m_polyface->IsClosedPlanarRegion(plane))
                 expandClosedPlanarPolyface(*polyface.m_polyface, plane, m_expansion);
-            }    
-        if (!strokes.empty())   
+            }
+        if (!strokes.empty())
             {
             auto    meshDisplayParams  = strokes.front().m_displayParams->CloneForMeshedLineString();
             for (auto& strokes : strokes) {
                 PolyfaceHeaderPtr   polyface = polyfaceFromExpandedStrokes(strokes, m_expansion);
 
-                if (polyface.IsValid()) 
-                    polyfaces.push_back(Polyface(*meshDisplayParams, *polyface, false, true));   
-                }                    
-            }  
-        strokes.clear();              
+                if (polyface.IsValid())
+                    polyfaces.push_back(Polyface(*meshDisplayParams, *polyface, false, true));
+                }
+            }
+        strokes.clear();
         }
     }
 
@@ -3886,6 +4162,7 @@ void TileContext::AddSharedGeometry(GeometryList& geometryList, ElementMeshGener
     buckets.ProduceMeshes();
     }
 
+// #define CLONE_FOR_ADD_BATCHED
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/19
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3902,7 +4179,11 @@ void InstanceableGeom::AddBatched(ElementMeshGeneratorR meshGen, SubRangesR subR
     DisplayParamsCPtr baseDisplayParams = &GetDisplayParams();
     for (auto const& instance : sharedGeom.GetInstances())
         {
+#if defined(CLONE_FOR_ADD_BATCHED)
+        Transform instanceTransform = instance.GetTransform();
+#else
         Transform instanceTransform = Transform::FromProduct(instance.GetTransform(), invTransform);
+#endif
         invTransform.InverseOf(instance.GetTransform());
 
         DRange3d instanceRange;
@@ -3921,9 +4202,18 @@ void InstanceableGeom::AddBatched(ElementMeshGeneratorR meshGen, SubRangesR subR
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InstanceablePolyface::AddBatched(ElementMeshGeneratorR meshGen, TransformCR transform, DisplayParamsCR displayParams, DgnElementId elemId)
     {
-    m_polyface.Transform(transform);
-    m_polyface.m_displayParams = &displayParams;
-    meshGen.AddPolyface(m_polyface, elemId, 0.0, true, false);
+#if defined(CLONE_FOR_ADD_BATCHED)
+    Polyface pf = m_polyface;
+    pf.m_polyface = pf.m_polyface->Clone();
+    pf.Transform(transform);
+    pf.m_displayParams = &displayParams;
+    meshGen.AddPolyface(pf, elemId, 0.0, true, false);
+#else
+    Polyface pf = m_polyface;
+    pf.Transform(transform);
+    pf.m_displayParams = &displayParams;
+    meshGen.AddPolyface(pf, elemId, 0.0, true, false);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

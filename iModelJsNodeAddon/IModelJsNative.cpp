@@ -4320,11 +4320,11 @@ public:
         if (!db.IsDbOpen())
             return DgnDbStatus::NotOpen;
 
-        treeId = Tile::Tree::Id::FromString(idStr);
+        treeId = Tile::Tree::Id::FromString(idStr, &db);
         if (!treeId.IsValid())
             return DgnDbStatus::InvalidId;
 
-        model = db.Models().Get<GeometricModel>(treeId.m_modelId);
+        model = db.Models().Get<GeometricModel>(treeId.GetModelId());
         return model.IsValid() ? DgnDbStatus::Success : DgnDbStatus::MissingId;
         }
 };
@@ -4451,7 +4451,7 @@ public:
     static DgnDbStatus ParseInputs(GeometricModelPtr& model, Tile::Tree::Id& treeId, Tile::ContentIdR contentId, DgnDbR db, Utf8StringCR treeIdStr, Utf8StringCR contentIdStr)
         {
         auto status = TileWorker::ParseInputs(model, treeId, db, treeIdStr);
-        if (DgnDbStatus::Success == status && !contentId.FromString(contentIdStr.c_str()))
+        if (DgnDbStatus::Success == status && !contentId.FromString(contentIdStr.c_str(), treeId.GetMajorVersion()))
             status = DgnDbStatus::InvalidId;
 
         return status;
@@ -5707,7 +5707,6 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
         Napi::PropertyDescriptor::Function(env, exports, "addReferenceToObjectInVault", &addReferenceToObjectInVault),
         Napi::PropertyDescriptor::Function(env, exports, "getObjectRefCountFromVault", &getObjectRefCountFromVault),
         Napi::PropertyDescriptor::Function(env, exports, "clearLogLevelCache", &clearLogLevelCache),
-        
         });
 
     return exports;

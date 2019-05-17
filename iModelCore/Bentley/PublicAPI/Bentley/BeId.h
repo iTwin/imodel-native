@@ -121,6 +121,9 @@ public:
         id = FromString(idString);
         return id.IsValid() ? SUCCESS : ERROR;
         }
+
+    // Returns true if the input string representation of a BeInt64Id is "well-formed" as described in bentleyjs-core typescript package.
+    BENTLEYDLL_EXPORT static bool IsWellFormedString(Utf8StringCR idString);
     };
 
 #define BEINT64_ID_DECLARE_MEMBERS(classname,superclass) \

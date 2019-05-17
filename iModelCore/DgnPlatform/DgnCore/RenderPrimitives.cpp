@@ -2051,6 +2051,13 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
     {
     // Avoid IPolyfaceConstruction if possible...AddPolyface_matched() does a ton of expensive remapping which is unnecessary for our use case.
     // (Plus we can avoid cloning the input if caller owns it)
+
+// #define REGENERATE_NORMALS
+#if defined(REGENERATE_NORMALS)
+    if (0 != geom.GetNormalCount() && facetOptions.GetNormalsRequired())
+        geom.ClearNormals(true);
+#endif
+
     PolyfaceHeaderPtr polyface(&geom);
     size_t maxPerFace;
     if (geom.GetNumFacet(maxPerFace) > 0 && (int)maxPerFace > facetOptions.GetMaxPerFace())

@@ -122,6 +122,7 @@ private:
 
     Utf8String Format(uint64_t const* parts, size_t numParts) const;
     bool FromV1String(Utf8CP);
+    bool FromV4String(Utf8CP, uint16_t majorVersion);
 public:
     ContentId(NodeIdCR nodeId, uint32_t mult, uint16_t version, Flags flags) : T_Super(nodeId), m_mult(0 == mult ? 1 : mult), m_majorVersion(version), m_flags(flags) { }
     ContentId(uint8_t depth, uint64_t i, uint64_t j, uint64_t k, uint32_t mult, uint16_t version, Flags flags) : ContentId(NodeId(depth, i, j, k), mult, version, flags) { }
@@ -140,7 +141,7 @@ public:
         }
 
     DGNPLATFORM_EXPORT Utf8String ToString() const;
-    DGNPLATFORM_EXPORT bool FromString(Utf8CP str);
+    DGNPLATFORM_EXPORT bool FromString(Utf8CP str, uint16_t version);
 
     double GetSizeMultiplier() const { BeAssert(0 != m_mult); return static_cast<double>(m_mult); }
     uint16_t GetMajorVersion() const { BeAssert(0 < m_majorVersion); return m_majorVersion; }
@@ -333,30 +334,71 @@ struct Tree : RefCountedBase, NonCopyableClass
         Displayable,
     };
 
+    enum class Flags : uint32_t
+    {
+        None = 0,
+        UseProjectExtents = 1 << 0,
+        All = UseProjectExtents,
+    };
+
     struct Id
     {
-        DgnModelId m_modelId;
-        Tree::Type m_type;
-        double m_classifierExpansion;
-        DgnElementId m_animationSourceId;
-        bool m_omitEdges;
+    private:
+        DgnModelId      m_modelId;
+        DgnElementId    m_animationSourceId;
+        double          m_expansion;
+        Tree::Flags     m_flags;
+        uint16_t        m_majorVersion;
+        Tree::Type      m_type;
+        bool            m_omitEdges;
 
-        Id() : m_type(Type::Model), m_classifierExpansion(0.0), m_omitEdges(false) { }
-        Id(DgnModelId modelId, Tree::Type type, bool omitEdges = false, double expansion = 0.0, DgnElementId animationSourceId = DgnElementId()) : m_modelId(modelId), m_type(type), m_omitEdges(omitEdges), m_classifierExpansion(expansion), m_animationSourceId(animationSourceId) { }
+        DGNPLATFORM_EXPORT static uint16_t GetDefaultMajorVersion();
+        Id(DgnModelId modelId, Tree::Type type, Tree::Flags flags, uint16_t majorVersion, bool omitEdges, double expansion, DgnElementId animId)
+            : m_modelId(modelId), m_animationSourceId(animId), m_expansion(expansion), m_flags(flags), m_majorVersion(majorVersion), m_type(type), m_omitEdges(omitEdges) { }
 
-        bool IsValid() const { return m_modelId.IsValid(); }
-        bool IsVolumeClassifier() const { return Tree::Type::VolumeClassifier == m_type; }
-         bool IsPlanarClassifier() const { return Tree::Type::PlanarClassifier == m_type; }
-        bool IsAnimation() const { return Tree::Type::Animation == m_type; }
-        double GetClassifierExpansion() const { BeAssert(IsVolumeClassifier() || IsPlanarClassifier()); return m_classifierExpansion; }
-        DgnElementId GetAnimationSourceId() const { BeAssert(IsAnimation()); return m_animationSourceId; }
+        void Invalidate() { *this = Id(); }
+    public:
+        Id() : Id(DgnModelId(), Tree::Type::Model, Tree::Flags::None, GetDefaultMajorVersion(), true, 0.0, DgnElementId()) { }
+
+        // Create an Id for a classifier tree
+        Id(DgnModelId modelId, Tree::Flags flags, uint16_t majorVersion, double expansion, bool isPlanar)
+            : Id(modelId, isPlanar ? Tree::Type::PlanarClassifier : Tree::Type::VolumeClassifier, flags, majorVersion, true, expansion, DgnElementId()) { }
+
+        // Create an Id for a V3 classifier tree
+        Id(DgnModelId modelId, double expansion, bool isPlanar) : Id(modelId, isPlanar ? Tree::Flags::None : Tree::Flags::UseProjectExtents, 3, expansion, isPlanar) { }
+
+        // Create an Id for a model or animation tree
+        Id(DgnModelId modelId, Tree::Flags flags, uint16_t majorVersion, bool omitEdges, DgnElementId animationSourceId=DgnElementId())
+            : Id(modelId, animationSourceId.IsValid() ? Tree::Type::Animation : Tree::Type::Model, flags, majorVersion, omitEdges, 0.0, animationSourceId) { }
+
+        // Create an Id for a V3 model or animation tree
+        Id(DgnModelId modelId, bool omitEdges, DgnElementId animationSourceId=DgnElementId()) : Id(modelId, Tree::Flags::None, 3, omitEdges, animationSourceId) { }
+
+        bool IsValid() const { return m_modelId.IsValid() && (!IsVolumeClassifier() || GetUseProjectExtents()); }
+
         Tree::Type GetType() const { return m_type; }
-        bool GetOmitEdges() const { return m_omitEdges; }
+        bool IsAnimation() const { return Tree::Type::Animation == GetType(); }
+        bool IsPlanarClassifier() const { return Tree::Type::PlanarClassifier == GetType(); }
+        bool IsVolumeClassifier() const { return Tree::Type::VolumeClassifier == GetType(); }
+        bool IsClassifier() const { return IsPlanarClassifier() || IsVolumeClassifier(); }
 
+        DgnModelId GetModelId() const { return m_modelId; }
+        uint16_t GetMajorVersion() const { return m_majorVersion; }
+        bool GetOmitEdges() const { return m_omitEdges; }
+        double GetClassifierExpansion() const { return m_expansion; }
+        DgnElementId GetAnimationSourceId() const { return m_animationSourceId; }
+
+        Tree::Flags GetFlags() const { return m_flags; }
+        DGNPLATFORM_EXPORT bool GetUseProjectExtents() const;
+
+        // If a DgnDb is supplied, the Id is validated against its contents. e.g., a model Id pointing to a non-existent or non-geometric model is invalid.
+        // Otherwise only basic validation of the Id format itself is performed.
+        // Returns an invalid Id if validation fails.
+        DGNPLATFORM_EXPORT static Id FromString(Utf8StringCR idString, DgnDbP db);
         DGNPLATFORM_EXPORT Utf8String ToString() const;
-        DGNPLATFORM_EXPORT static Id FromString(Utf8StringCR idString);
         DGNPLATFORM_EXPORT Utf8String GetPrefixString() const;
     };
+
 private:
     friend struct LoaderScope;
     struct LoaderScope
@@ -380,8 +422,9 @@ private:
     bool m_is3d;
     RootTile m_rootTile;
     AnimationNodeMap m_nodeMap;
+    DRange3d m_contentRange;
 protected:
-    Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, RootTile rootTile);
+    Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, RootTile rootTile, DRange3dCR contentRange);
 
     DGNPLATFORM_EXPORT LoaderPtr CreateLoader(ContentIdCR contentId, bool useCache);
     void LoadNodeMapFromAnimation();
@@ -390,8 +433,8 @@ public:
 
     DgnDbR GetDgnDb() const { return m_db; }
     std::mutex& GetDbMutex() { return m_dbMutex; }
-    DgnModelId GetModelId() const { return GetId().m_modelId; }
-    Type GetType() const { return GetId().m_type; }
+    DgnModelId GetModelId() const { return GetId().GetModelId(); }
+    Type GetType() const { return GetId().GetType(); }
     bool IsVolumeClassifier() const { return GetId().IsVolumeClassifier(); }
     bool IsPlanarClassifier() const { return GetId().IsPlanarClassifier(); }
     bool GetOmitEdges() const { return GetId().GetOmitEdges(); }
@@ -431,6 +474,8 @@ public:
     DGNPLATFORM_EXPORT static Type TypeFromId(Utf8StringCR treeId);
     DGNPLATFORM_EXPORT static Type ExtractTypeFromid(Utf8StringR treeId);
 };
+
+ENUM_IS_FLAGS(Tree::Flags);
 
 END_TILE_NAMESPACE
 

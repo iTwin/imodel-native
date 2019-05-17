@@ -6,6 +6,7 @@
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <DgnPlatform/Tile.h>
+#include <DgnPlatform/TileIO.h>
 
 USING_NAMESPACE_TILE
 
@@ -221,7 +222,7 @@ TEST(ContentId, ToFromV1String)
     EXPECT_EQ(str, "0/0/0/0/1");
 
     ContentId rtId;
-    EXPECT_TRUE(rtId.FromString(str.c_str()));
+    EXPECT_TRUE(rtId.FromString(str.c_str(), 0));
     EXPECT_EQ(rtId, id);
 
     id = ContentId(1, 0, 0, 0, 5, 1, ContentId::Flags::None);
@@ -230,7 +231,250 @@ TEST(ContentId, ToFromV1String)
 
     str = id.ToString();
     EXPECT_EQ(str, "1/0/0/0/5");
-    EXPECT_TRUE(rtId.FromString(str.c_str()));
+    EXPECT_TRUE(rtId.FromString(str.c_str(), 0));
     EXPECT_EQ(rtId, id);
+    }
+
+using TreeId = Tree::Id;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(IModelTileVersion, DetectIncompleteMajorBump)
+    {
+    // If this test fails, it probably means you changed IModelTile::Version::Current but did not update related code.
+    auto curVersion = Tile::IO::IModelTile::Version::Current();
+    EXPECT_EQ(Tile::IO::IModelTile::Version::FromMajorVersion(curVersion.m_major).m_major, curVersion.m_major);
+
+    // Default constructor uses current major version.
+    TreeId treeId;
+    EXPECT_EQ(treeId.GetMajorVersion(), curVersion.m_major);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void expectEqualStrings(Utf8StringCR lhs, Utf8StringCR rhs)
+    {
+    EXPECT_TRUE(lhs == rhs) << lhs.c_str() << " vs " << rhs.c_str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void expectEqualTreeIds(TreeId const& lhs, TreeId const& rhs)
+    {
+    EXPECT_EQ(lhs.GetModelId(), rhs.GetModelId());
+    EXPECT_EQ(lhs.GetType(), rhs.GetType());
+    EXPECT_EQ(lhs.GetMajorVersion(), rhs.GetMajorVersion());
+    EXPECT_EQ(lhs.GetOmitEdges(), rhs.GetOmitEdges());
+    EXPECT_EQ(lhs.GetFlags(), rhs.GetFlags());
+
+    if (lhs.IsClassifier())
+        EXPECT_TRUE(DoubleOps::WithinTolerance(lhs.GetClassifierExpansion(), rhs.GetClassifierExpansion(), 0.0000009));
+    else if (lhs.IsAnimation())
+        EXPECT_EQ(lhs.GetAnimationSourceId(), rhs.GetAnimationSourceId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void expectInvalidTreeId(Utf8CP str, DgnDbP db = nullptr)
+    {
+    TreeId id = TreeId::FromString(str, db);
+    EXPECT_FALSE(id.IsValid()) << str;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename... Args> static void expectInvalidTreeId(Args&&... args)
+    {
+    TreeId id(std::forward<Args>(args)...);
+    EXPECT_FALSE(id.IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void roundTripTreeId(Utf8CP inputIdStr, DgnDbP db = nullptr)
+    {
+    auto id = TreeId::FromString(inputIdStr, db);
+    EXPECT_TRUE(id.IsValid());
+    Utf8String outputIdStr = id.ToString();
+    expectEqualStrings(outputIdStr, inputIdStr);
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   05/19
+//=======================================================================================
+struct ExpectedId
+{
+    TreeId  m_id;
+    Utf8CP  m_str;
+
+    template<typename... Args> ExpectedId(Utf8CP str, Args&&... args) : m_id(std::forward<Args>(args)...), m_str(str) { }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(TreeId, RoundTrip)
+    {
+    constexpr auto kNone = Tree::Flags::None;
+    constexpr auto kProjExt = Tree::Flags::UseProjectExtents;
+    constexpr auto kLots = static_cast<Tree::Flags>(0xf6000a21);
+    constexpr auto curMaj = Tile::IO::IModelTile::Version::Current().m_major;
+    constexpr uint16_t v4 = 4;
+
+    expectInvalidTreeId();
+    expectInvalidTreeId(DgnModelId(), kNone, curMaj, false);
+    expectInvalidTreeId(DgnModelId(), kNone, curMaj, 1.0, false);
+
+    DgnModelId modelId(uint64_t(0x1c));
+    expectInvalidTreeId(modelId, kNone, v4, 12.0, false); // must specify UseProjectExtents flag for volume classifier
+
+    roundTripTreeId("0x123");
+    roundTripTreeId("0xdef");
+    roundTripTreeId("C:0.123456_0x1c");
+    roundTripTreeId("CP:12345.678900_0x1c");
+    roundTripTreeId("CP:0.000000_0x1c");
+    roundTripTreeId("C:1.000001_0x1c");
+    roundTripTreeId("C:333.333333_0x1c");
+    roundTripTreeId("E:0_0x123");
+    roundTripTreeId("E:0_0xabc02400def0");
+    roundTripTreeId("A:0x123abd_0x420cf");
+    roundTripTreeId("A:0x123abd_E:0_0x420cf");
+    roundTripTreeId("0x10000000001");
+
+    roundTripTreeId("4_0-0x1c");
+    roundTripTreeId("4_1234-0x1c");
+    roundTripTreeId("4_ab-0x1c");
+    roundTripTreeId("4_ffff-0x1c");
+    roundTripTreeId("4_ffffff-0x1c");
+    roundTripTreeId("4_ffffffff-0x1c");
+
+    expectInvalidTreeId("");
+    expectInvalidTreeId("abc");
+    expectInvalidTreeId("P:1.0_0x1c"); // unknown prefix
+    expectInvalidTreeId("E:0_C:1.0_0x1c"); // classifier does not support "omit edges" specifier
+    expectInvalidTreeId("C:1.0_E:0_0x1c");
+    expectInvalidTreeId("E:0_"); // missing model Id
+    expectInvalidTreeId("C:1.0_");
+    expectInvalidTreeId("A:0x123_");
+    expectInvalidTreeId("A:123_0x1c"); // incorrectly-formatted animation Id
+    expectInvalidTreeId("C:-1.0_0x1c"); // negative classifier expansion
+    expectInvalidTreeId("123"); // model Id not in hexadecimal format
+    expectInvalidTreeId("E:0_123");
+    expectInvalidTreeId("0"); // well-formed but invalid model Id
+    expectInvalidTreeId("0x000123"); // leading zeroes
+    expectInvalidTreeId("0x10000000000"); // invalid local Id
+    expectInvalidTreeId("0x112233445566778899aabb"); // too many digits in model Id
+    expectInvalidTreeId("E:0__0x1c"); // duplicate underscore
+    expectInvalidTreeId("P:1.000000__0x1c");
+    expectInvalidTreeId("E:1_0x1c");
+    expectInvalidTreeId("E::0_0x1c");
+    expectInvalidTreeId("A:0x123abd__E:0_0x1c");
+    expectInvalidTreeId("A:0x123abd_E:0__0x1c");
+    expectInvalidTreeId("0x1C"); // casing
+    expectInvalidTreeId("0X1c");
+    expectInvalidTreeId("e:0_0x1c");
+    expectInvalidTreeId("0x1c "); // trailing whitespace
+    expectInvalidTreeId("0x1c_"); // trailing underscore
+    expectInvalidTreeId(" 0x1c"); // leading whitespace
+
+    // major version 4+
+    expectInvalidTreeId("4_0-");
+    expectInvalidTreeId("4_0-abc");
+    expectInvalidTreeId("4_0-P:1.0_0x1c"); // unknown prefix
+    expectInvalidTreeId("4_0-E:0_C:1.0_0x1c"); // classifier does not support "omit edges" specifier
+    expectInvalidTreeId("4_1-C:1.0_E:0_0x1c");
+    expectInvalidTreeId("4_0-E:0_"); // missing model Id
+    expectInvalidTreeId("4_0-C:1.0_");
+    expectInvalidTreeId("4_0-A:0x123_");
+    expectInvalidTreeId("4_0-A:123_0x1c"); // incorrectly-formatted animation Id
+    expectInvalidTreeId("4_0-C:-1.0_0x1c"); // negative classifier expansion
+    expectInvalidTreeId("");
+    expectInvalidTreeId("3_0-0x1c"); // Id with explicit major version+flags only support for version 4+
+    expectInvalidTreeId("10_0-0x1c"); // Unknown major version (at time of writing)
+    expectInvalidTreeId("4-0x1c"); // missing flags
+    expectInvalidTreeId("4_0xabc-0x1c"); // improperly-formatted flags
+    expectInvalidTreeId("4_0-123"); // model Id not in hexadecimal format
+    expectInvalidTreeId("4_0-E:0_123");
+    expectInvalidTreeId("04_0-0x1c"); // leading zero in major version
+    expectInvalidTreeId("12345_0-0x1c"); // too many digits in major version
+    expectInvalidTreeId("4_01-0x1c"); // leading zero in flags
+    expectInvalidTreeId("4_fffffffff-0x1c"); // too many digits in flags
+    expectInvalidTreeId("C:12.340000_0-0x1c"); // must specify UseProjectExtents flag for volume classifier
+
+    DgnElementId animId(uint64_t(0xf7));
+
+    ExpectedId expectedIds[] =
+        {
+            { "0x1c", modelId, false },
+            { "E:0_0x1c", modelId, true },
+            { "A:0xf7_0x1c", modelId, false, animId },
+            { "A:0xf7_E:0_0x1c", modelId, true, animId },
+            { "C:12.345678_0x1c", modelId, 12.345678, false },
+            { "CP:0.000300_0x1c", modelId, 0.0003, true },
+
+            { "4_0-0x1c", modelId, kNone, v4, false },
+            { "4_0-E:0_0x1c", modelId, kNone, v4, true },
+            { "4_0-A:0xf7_0x1c", modelId, kNone, v4, false, animId },
+            { "4_0-A:0xf7_E:0_0x1c", modelId, kNone, v4, true, animId },
+            { "4_0-CP:12.345678_0x1c", modelId, kNone, v4, 12.345678, true },
+
+            { "4_1-0x1c", modelId, kProjExt, v4, false },
+            { "4_1-E:0_0x1c", modelId, kProjExt, v4, true },
+            { "4_1-A:0xf7_0x1c", modelId, kProjExt, v4, false, animId },
+            { "4_1-A:0xf7_E:0_0x1c", modelId, kProjExt, v4, true, animId },
+            { "4_1-C:12.345678_0x1c", modelId, kProjExt, v4, 12.345678, false },
+            { "4_1-CP:0.000300_0x1c", modelId, kProjExt, v4, 0.0003, true },
+
+            { "4_f6000a21-0x1c", modelId, kLots, v4, false },
+            { "4_f6000a21-E:0_0x1c", modelId, kLots, v4, true },
+            { "4_f6000a21-A:0xf7_0x1c", modelId, kLots, v4, false, animId },
+            { "4_f6000a21-A:0xf7_E:0_0x1c", modelId, kLots, v4, true, animId },
+            { "4_f6000a21-C:12.345678_0x1c", modelId, kLots, v4, 12.345678, false },
+            { "4_f6000a21-CP:0.000300_0x1c", modelId, kLots, v4, 0.0003, true },
+        };
+
+    for (auto const& expectedId : expectedIds)
+        {
+        auto const& id = expectedId.m_id;
+        EXPECT_TRUE(id.IsValid());
+        EXPECT_TRUE(id.GetModelId().IsValid());
+        EXPECT_TRUE(Tile::IO::IModelTile::Version::IsKnownMajorVersion(id.GetMajorVersion()));
+        EXPECT_EQ(id.GetAnimationSourceId().IsValid(), id.IsAnimation());
+
+        auto actualStr = id.ToString();
+        expectEqualStrings(actualStr, expectedId.m_str);
+
+        auto roundTripId = TreeId::FromString(expectedId.m_str, nullptr);
+        expectEqualTreeIds(roundTripId, id);
+
+        switch (id.GetType())
+            {
+            case Tree::Type::VolumeClassifier:
+                EXPECT_TRUE(id.GetUseProjectExtents());
+                // fall-through...
+            case Tree::Type::PlanarClassifier:
+                EXPECT_TRUE(id.GetClassifierExpansion() > 0.0);
+                EXPECT_TRUE(id.GetOmitEdges());
+                break;
+            case Tree::Type::Animation:
+            case Tree::Type::Model:
+                EXPECT_EQ(0.0, id.GetClassifierExpansion());
+                break;
+            default:
+                EXPECT_TRUE(false) << "Unkown Tree::Type";
+                break;
+            }
+        }
+
+    // ###TODO Test validation against DgnDb:
+    //  - Model does not exist / is not geometric
+    //  - Animation Id not a valid display style
+    //  - etc...
     }
 

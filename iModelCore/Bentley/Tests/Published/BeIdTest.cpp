@@ -64,3 +64,45 @@ TEST(BeIdTests, ToFromString)
     EXPECT_TRUE(received.IsValid());
     EXPECT_TRUE(received == hexId);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* From iModel.js Id.test.ts (bentleyjs-core)
+* @bsimethod                                                    Paul.Connelly   05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BeIdTests, IsWellFormed)
+    {
+    Utf8String goodIds[] =
+        {
+        "0",
+        "0x12345678ab",
+        "0xcdef987654",
+        "0x1",
+        "0xa",
+        "0xa000000000",
+        "0x10000000001",
+        "0x11000000000",
+        "0xfffffe0000000001",
+        };
+
+    for (auto const& goodId : goodIds)
+        EXPECT_TRUE(BeInt64Id::IsWellFormedString(goodId));
+
+    Utf8String badIds[] =
+        {
+        "0x0",
+        "0x01",
+        "0X1",
+        "0xg",
+        "0x12345678AB",
+        "0xCDEF987654",
+        "0xffffff0000000000",
+        "0xffffffD000000000",
+        "0xh0000000001",
+        "0xh000000000000001",
+        "0x1h00000000000000",
+        "0x100000000000000h",
+        };
+
+    for (auto const& badId : badIds)
+        EXPECT_FALSE(BeInt64Id::IsWellFormedString(badId));
+    }

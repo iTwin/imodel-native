@@ -639,11 +639,11 @@ Tile::PollResult Tile::AppData::PollContent(ICancellationTokenPtr cancel, DgnDbR
         return PollResult(DgnDbStatus::NotOpen);
 
     ContentId contentId;
-    auto treeId = Tree::Id::FromString(treeIdStr);
-    if (!treeId.IsValid() || !contentId.FromString(contentIdStr.c_str()))
+    auto treeId = Tree::Id::FromString(treeIdStr, &db);
+    if (!treeId.IsValid() || !contentId.FromString(contentIdStr.c_str(), treeId.GetMajorVersion()))
         return PollResult(DgnDbStatus::InvalidId);
 
-    auto model = db.Models().Get<GeometricModel>(treeId.m_modelId);
+    auto model = db.Models().Get<GeometricModel>(treeId.GetModelId());
     if (model.IsNull())
         return PollResult(DgnDbStatus::MissingId);
 

@@ -51,6 +51,7 @@
 #include <Bentley/ScopedArray.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeThread.h>
+#include <Bentley/BeId.h>
 #include "strfunc.h"
 
 #include "utf8.h"
@@ -3035,4 +3036,74 @@ bool BeStringUtilities::IsInvalidUtf8Sequence(Utf8CP str)
     UErrorCode icuError = U_ZERO_ERROR;
     u_strFromUTF8(NULL, 0, NULL, str, (int32_t)strlen(str), &icuError);
     return (U_INVALID_CHAR_FOUND == icuError);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BeInt64Id::IsWellFormedString(Utf8StringCR id)
+    {
+    auto len = id.length();
+    if (0 == len || 18 < len || '0' != id[0])
+        return false;
+
+    // Normalized invalid Id: "0"
+    if (1 == len)
+        return true;
+
+    // Valid Ids begin with "0x" followed by at least one lower-case hexadecimal digit.
+    if (2 == len || 'x' != id[1])
+        return false;
+
+    auto isValidHexString = [](Utf8StringCR str, size_t startIndex, size_t len)
+        {
+        auto isHexDigit = [](Utf8StringCR str, size_t index, bool allowZero)
+            {
+            auto ch = str[index];
+            if (ch >= 'a' && ch <= 'f')
+                return true;
+
+            auto minDigit = allowZero ? '0' : '1';
+            return ch >= minDigit && ch <= '9';
+            };
+
+        if (0 == len)
+            return false;
+
+        // No leading zeroes...
+        if (!isHexDigit(str, startIndex, false))
+            return false;
+
+        // ...followed by len-1 lowercase hexadecimal digits.
+        for (size_t i = 1; i < len; i++)
+            if (!isHexDigit(str, startIndex + i, true))
+                return false;
+
+        return true;
+        };
+
+    // If briefcase Id is present, it occupies at least one digit, followed by 10 digits for local Id
+    size_t localIdStart = 2;
+    if (len > 12)
+        {
+        localIdStart = len - 10;
+
+        // Verify briefcase Id
+        if (!isValidHexString(id, 2, localIdStart - 2))
+            return false;
+
+        // Skip leading zeroes in local Id
+        for (size_t i = localIdStart; i < len; i++)
+            {
+            if ('0' != id[i])
+                break;
+            else
+                ++localIdStart;
+            }
+
+        if (localIdStart >= len)
+            return false;
+        }
+
+    return isValidHexString(id, localIdStart, len - localIdStart);
     }

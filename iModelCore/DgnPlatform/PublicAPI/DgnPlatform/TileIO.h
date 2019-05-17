@@ -353,6 +353,8 @@ ENUM_IS_FLAGS(DgnTile::Flags);
 //      3.0: Introduction of major version 3:
 //          Improved instancing heuristic.
 //          Decimation of polylines.
+//      4.0: Introduction of major version 4:
+//          Versioning of TileTree JSON. Changes format of Tree::Id to "_vMaj_flags-..." where "..." is unchanged from Id format used by previous versions.
 // @bsistruct                                                   Paul.Connelly   09/18
 //=======================================================================================
 struct IModelTile
@@ -377,16 +379,17 @@ struct IModelTile
         static constexpr Version V1() { return Version(1, 4); }
         static constexpr Version V2() { return Version(2, 1); }
         static constexpr Version V3() { return Version(3, 0); }
+        static constexpr Version V4() { return Version(4, 0); }
 
         // !!! IMPORTANT !!! If you change the major version you must update IModelTile::Version::FromMajorVersion !!!
-        static constexpr Version Current() { return V3(); }
+        static constexpr Version Current() { return V4(); }
 
-        static Version FromMajorVersion(uint16_t major);
+        DGNPLATFORM_EXPORT static Version FromMajorVersion(uint16_t major);
 
         constexpr bool IsValid() const { return 0 != m_major; }
         constexpr bool IsKnownMajorVersion() const { return IsKnownMajorVersion(m_major); }
         constexpr bool IsKnown() const { return IsKnownMajorVersion() && m_minor <= Current().m_minor; }
-        static constexpr bool IsKnownMajorVersion(uint16_t major) { return major <= Current().m_major; }
+        static constexpr bool IsKnownMajorVersion(uint16_t major) { return 0 < major && major <= Current().m_major; }
     };
 
     enum class WriteStatus { Success, Error, Aborted };

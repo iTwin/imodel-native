@@ -1881,6 +1881,7 @@ IModelTile::Version IModelTile::Version::FromMajorVersion(uint16_t major)
         case 1: return V1();
         case 2: return V2();
         case 3: return V3();
+        case 4: return V4();
         default: return Invalid();
         }
     }
