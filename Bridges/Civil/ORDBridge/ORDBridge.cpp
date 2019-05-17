@@ -10,6 +10,9 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"ORDBridge"))
+#define DefaultPhysicalPartitionName    "Physical"
+#define DefaultRoadRailNetworkName      "Road/Rail Network"
+#define DomainModelsPrivate             true
 
 BEGIN_ORDBRIDGE_NAMESPACE
 
@@ -107,6 +110,7 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
     DgnPlatformCivilLib::InitializeWithDefaultHost();
     GeometryModelDgnECDataBinder::GetInstance().Initialize();
 
+    m_params.SetConsiderNormal2dModelsSpatial(true);
     m_params.SetProcessAffected(true);
     m_params.SetConvertViewsOfAllDrawings(true);
 
@@ -186,13 +190,13 @@ SubjectCPtr ORDBridge::_InitializeJob()
         auto& subjectCR = m_converter->GetImportJob().GetSubject();
 
         SubjectCPtr physicalSubjectCPtr = &subjectCR;
-        AlignmentBim::RoadRailAlignmentDomain::GetDomain().SetUpModelHierarchy(subjectCR);
+        AlignmentBim::RoadRailAlignmentDomain::GetDomain().SetUpDefinitionPartitions(subjectCR);
         for (auto childId : subjectCR.QueryChildren())
             {
             auto childElmCPtr = subjectCR.GetDgnDb().Elements().GetElement(childId);
             if (auto childSubjectCP = dynamic_cast<SubjectCP>(childElmCPtr.get()))
                 {
-                if (0 == childSubjectCP->GetCode().GetValueUtf8().CompareTo("Physical"))
+                if (0 == childSubjectCP->GetCode().GetValueUtf8().CompareTo(DefaultPhysicalPartitionName))
                     {
                     physicalSubjectCPtr = childSubjectCP;
                     break;
@@ -200,26 +204,40 @@ SubjectCPtr ORDBridge::_InitializeJob()
                 }
             }
 
+        RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpDefinitionPartitions(subjectCR);
+
         auto physicalPartitionCPtr = RoadRailBim::PhysicalModelUtilities::CreateAndInsertPhysicalPartitionAndModel(
-            *physicalSubjectCPtr, RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
+            *physicalSubjectCPtr, DefaultPhysicalPartitionName);
         BeAssert(physicalPartitionCPtr.IsValid());
 
-        RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpNonPhysicalModelHierarchy(subjectCR);
-
-        RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpPhysicalModelHierarchy(*physicalSubjectCPtr,
-            physicalPartitionCPtr->GetCode().GetValueUtf8CP(), RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalNetworkName());
+        auto roadRailNetworkCPtr = RoadRailBim::RoadRailNetwork::Insert(*physicalPartitionCPtr->GetSubModel()->ToPhysicalModelP(), DefaultRoadRailNetworkName);
 
         // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
-        auto physicalNetworkModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalNetworkModel(*physicalSubjectCPtr,
-            physicalPartitionCPtr->GetCode().GetValueUtf8CP(), RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalNetworkName());
-        m_converter->SetPhysicalNetworkModel(*physicalNetworkModelPtr);
+        m_converter->SetRoadRailNetwork(*roadRailNetworkCPtr);
 
         InsertElementHasLinksRelationship(GetDgnDbR(), physicalPartitionCPtr->GetElementId(), m_converter->GetRepositoryLinkId(*m_converter->GetRootV8File()));
 
-        auto designAlignmentModelPtr = AlignmentBim::AlignmentModelUtilities::QueryDesignAlignmentsModel(subjectCR);
+        auto designAlignmentsCPtr = AlignmentBim::DesignAlignments::Query(*roadRailNetworkCPtr->GetNetworkModel());
+        auto designAlignmentModelPtr = designAlignmentsCPtr->GetAlignmentModel();
         InsertElementHasLinksRelationship(GetDgnDbR(), designAlignmentModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkId(*m_converter->GetRootV8File()));
 
-        m_converter->SetUpModelFormatters(subjectCR);
+        if (DomainModelsPrivate)
+            {
+            physicalPartitionCPtr->GetSubModel()->SetIsPrivate(true);
+            physicalPartitionCPtr->GetSubModel()->Update();
+
+            roadRailNetworkCPtr->GetNetworkModel()->SetIsPrivate(true);
+            roadRailNetworkCPtr->GetNetworkModel()->Update();
+
+            designAlignmentModelPtr->SetIsPrivate(true);
+            designAlignmentModelPtr->Update();
+
+            auto horizontalAlignmentsCPtr = AlignmentBim::HorizontalAlignments::Query(*designAlignmentModelPtr);
+            horizontalAlignmentsCPtr->GetHorizontalModel()->SetIsPrivate(true);
+            horizontalAlignmentsCPtr->GetHorizontalModel()->Update();
+            }
+
+        m_converter->SetUpModelFormatters();
 
         return &subjectCR;
         }
@@ -235,15 +253,12 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     // This if statement's work is also done in _InitializeJob(), but when the bridge goes off for a second time (an update),
     // _InitializeJob() is not called. It's possible that this work can (should?) be just done here and NOT in _InitializeJob(),
     // but I'm not sure yet.
-    if (!m_converter->IsPhysicalNetworkModelSet())
+    if (!m_converter->GetRoadRailNetwork())
         {
-        auto physicalPartitionIds = RoadRailBim::PhysicalModelUtilities::QueryPhysicalPartitions(jobSubject);
-        auto physicalPartitionCPtr = jobSubject.GetDgnDb().Elements().Get<PhysicalPartition>(*physicalPartitionIds.begin());
-
         // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
         auto physicalNetworkModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalNetworkModel(jobSubject,
-            physicalPartitionCPtr->GetCode().GetValueUtf8CP(), RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalNetworkName());
-        m_converter->SetPhysicalNetworkModel(*physicalNetworkModelPtr);
+            DefaultPhysicalPartitionName, DefaultRoadRailNetworkName);
+        m_converter->SetRoadRailNetwork(*dynamic_cast<RoadRailBim::RoadRailNetworkCP>(physicalNetworkModelPtr->GetModeledElement().get()));
         }
 
     auto changeDetectorPtr = GetSyncInfo().GetChangeDetectorFor(*this);
@@ -254,6 +269,8 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
 
     // IMODELBRIDGE REQUIREMENT: Note job transform and react when it changes
     ORDConverter::Params params(_GetParams(), jobSubject, *changeDetectorPtr, fileScopeId, m_converter->GetRootModelUnitSystem(), GetSyncInfo());
+    params.domainModelsPrivate = DomainModelsPrivate;
+
     Transform _old, _new;
     params.spatialDataTransformHasChanged = DetectSpatialDataTransformChange(_new, _old, *changeDetectorPtr, fileScopeId, "JobTrans", "JobTrans");
     params.isCreatingNewDgnDb = IsCreatingNewDgnDb();

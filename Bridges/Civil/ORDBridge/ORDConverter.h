@@ -22,7 +22,6 @@ struct ORDConverter : Dgn::DgnDbSync::DgnV8::RootModelConverter
     friend struct ORDCorridorsConverter;
 
 protected:
-    virtual DgnV8Api::ModelId _GetRootModelId() override;
     virtual void _OnConversionComplete() override;
     virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) override;
     virtual void _OnSheetsConvertViewAttachment(Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) override;
@@ -33,7 +32,7 @@ public:
         Params(Dgn::iModelBridge::Params const& iModelBridgeParams, Dgn::SubjectCR subject, Dgn::iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, 
             Dgn::iModelBridgeSyncInfoFile::ROWID fileScopeId, Dgn::UnitSystem rootModelUnitSystem, Dgn::iModelBridgeSyncInfoFile& syncInfo) :
             iModelBridgeParamsCP(&iModelBridgeParams), subjectCPtr(&subject), changeDetectorP(&changeDetector), fileScopeId(fileScopeId), 
-            spatialDataTransformHasChanged(false), rootModelUnitSystem(rootModelUnitSystem), syncInfo(syncInfo)
+            spatialDataTransformHasChanged(false), rootModelUnitSystem(rootModelUnitSystem), syncInfo(syncInfo), domainModelsPrivate(true)
             {}
 
         Dgn::iModelBridge::Params const* iModelBridgeParamsCP;
@@ -45,11 +44,12 @@ public:
         bool isUpdating;
         Dgn::UnitSystem rootModelUnitSystem;
         Dgn::iModelBridgeSyncInfoFile& syncInfo;
+        bool domainModelsPrivate;
         };
 
 private:
     Params* m_ordParams;
-    Dgn::PhysicalModelPtr m_physicalNetworkModelPtr;
+    RoadRailPhysical::RoadRailNetworkCPtr m_roadRailNetworkCPtr;
     bmap<Bentley::ElementRefP, Dgn::DgnElementPtr> m_v8ToBimElmMap;
 
     typedef bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment>, Bentley::ElementRefP> CifAlignmentV8RefPair;
@@ -63,6 +63,7 @@ private:
     void CreateRoadRailElements();
     void CreateAlignments();
     void CreatePathways();
+    void SetCorridorDesignAlignments();
     void AssociateGeneratedAlignments();
 
 public:
@@ -85,12 +86,10 @@ public:
     void SetORDParams(Params* ordParams) { m_ordParams = ordParams; }
     void SetIsProcessing(bool newVal) { m_isProcessing = newVal; }
 
-    bool IsPhysicalNetworkModelSet() const { return m_physicalNetworkModelPtr.IsValid(); }
-    Dgn::PhysicalModelR GetPhysicalNetworkModel() const { return *m_physicalNetworkModelPtr; }
-    void SetPhysicalNetworkModel(Dgn::PhysicalModelR physicalNetworkModel) { m_physicalNetworkModelPtr = &physicalNetworkModel; }
-    void SetUpModelFormatters(Dgn::SubjectCR jobSubject);
+    RoadRailPhysical::RoadRailNetworkCP GetRoadRailNetwork() const { return m_roadRailNetworkCPtr.get(); }
+    void SetRoadRailNetwork(RoadRailPhysical::RoadRailNetworkCR network) { m_roadRailNetworkCPtr = &network; }
+    void SetUpModelFormatters();
     Dgn::UnitSystem GetRootModelUnitSystem();
-    virtual Dgn::DgnClassId _ComputeModelType(DgnV8Api::DgnModel& v8Model) override;
 }; // ORDConverter
 
 struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain
