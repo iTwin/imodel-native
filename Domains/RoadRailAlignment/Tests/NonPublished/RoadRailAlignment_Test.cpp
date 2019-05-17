@@ -17,7 +17,9 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     auto configurationModelPtr = RoadRailAlignmentDomain::QueryConfigurationModel(*subjectCPtr);
     ASSERT_TRUE(configurationModelPtr.IsValid());
 
-    auto alignModelPtr = AlignmentModelUtilities::QueryDesignAlignmentsModel(*subjectCPtr);
+    auto physicalModelPtr = SetUpPhysicalPartition(*subjectCPtr);
+    auto alignmentsCPtr = DesignAlignments::Query(*physicalModelPtr);
+    auto alignModelPtr = alignmentsCPtr->GetAlignmentModel();
 
     // Create Alignment
     auto alignmentPtr = Alignment::Create(*alignModelPtr);
@@ -42,7 +44,7 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
 
     DPoint2d pntsVert2d[]{ { 0, 0 },{ 150, 0 } };
     CurveVectorPtr vertAlignVecPtr = CurveVector::CreateLinear(pntsVert2d, 2);
-    auto verticalAlignmPtr = VerticalAlignment::Create(*verticalModelPtr, *vertAlignVecPtr);
+    auto verticalAlignmPtr = VerticalAlignment::Create(*alignmentPtr, *vertAlignVecPtr);
     ASSERT_TRUE(verticalAlignmPtr->InsertAsMainVertical().IsValid());
 
     auto alignmentCPtr = Alignment::Get(*projectPtr, alignmentPtr->GetElementId());
@@ -146,7 +148,9 @@ TEST_F(RoadRailAlignmentTests, AlignmentPairEditorTest)
     ASSERT_TRUE(projectPtr.IsValid());
 
     auto subjectCPtr = projectPtr->Elements().GetRootSubject();
-    auto alignModelPtr = AlignmentModelUtilities::QueryDesignAlignmentsModel(*subjectCPtr);
+    auto physicalModelPtr = SetUpPhysicalPartition(*subjectCPtr);
+    auto alignmentsCPtr = DesignAlignments::Query(*physicalModelPtr);
+    auto alignModelPtr = alignmentsCPtr->GetAlignmentModel();
 
     // Create Horizontal 
     DPoint2d pntsHoriz2d[]{ { 0, 0 },{ 50, 0 },{ 100, 0 },{ 150, 0 } };
@@ -189,7 +193,9 @@ TEST_F(RoadRailAlignmentTests, AlignmentSegmentationTest)
     ASSERT_TRUE(projectPtr.IsValid());
 
     auto subjectCPtr = projectPtr->Elements().GetRootSubject();
-    auto alignModelPtr = AlignmentModelUtilities::QueryDesignAlignmentsModel(*subjectCPtr);
+    auto physicalModelPtr = SetUpPhysicalPartition(*subjectCPtr);
+    auto alignmentsCPtr = DesignAlignments::Query(*physicalModelPtr);
+    auto alignModelPtr = alignmentsCPtr->GetAlignmentModel();
 
     // Create Alignment
     auto alignmentPtr = Alignment::Create(*alignModelPtr);

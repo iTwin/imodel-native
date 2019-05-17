@@ -63,6 +63,7 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
 // Elements
 #define BRRA_CLASS_Alignment                                        "Alignment"
+#define BRRA_CLASS_DesignAlignments                                 "DesignAlignments"
 //#define BRRA_CLASS_AlignmentProfileViewDefinition                   "AlignmentProfileViewDefinition"
 #define BRRA_CLASS_LinearlyLocatedReferentElement                   "LinearlyLocatedReferentElement"
 #define BRRA_CLASS_AlignmentStation                                 "AlignmentStation"
@@ -142,6 +143,7 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 // Define typedefs and Ptrs in the RoadRailAlignment namespace
 //-----------------------------------------------------------------------------------------
 ROADRAILALIGNMENT_TYPEDEFS(Alignment)
+ROADRAILALIGNMENT_TYPEDEFS(DesignAlignments)
 //ROADRAILALIGNMENT_TYPEDEFS(AlignmentProfileViewDefinition)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentStation)
 //ROADRAILALIGNMENT_TYPEDEFS(ClipPlanesViewDefinition)
@@ -151,6 +153,7 @@ ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignment)
 ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignmentModel)
 
 ROADRAILALIGNMENT_REFCOUNTED_PTR(Alignment)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(DesignAlignments)
 //ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentProfileViewDefinition)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentStation)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentStationingTranslator)

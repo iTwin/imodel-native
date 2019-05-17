@@ -147,7 +147,46 @@ public:
 }; // Alignment
 
 //=======================================================================================
-//! Information Content Element representing all the horizontal alignments in
+//! SpatialLocationElement representing design alignments in a Physical model.
+//! @ingroup GROUP_RoadRailAlignment
+//=======================================================================================
+struct DesignAlignments : Dgn::SpatialLocationElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_DesignAlignments, Dgn::SpatialLocationElement);
+    friend struct DesignAlignmentsHandler;
+
+private:
+    static Dgn::DgnCode CreateCodeBasic(Dgn::DgnElementCR element);
+
+protected:
+    //! @private
+    explicit DesignAlignments(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(DesignAlignments)
+    //! Get a DesignAlignmentsCPtr from the DgnElementId in the DgnDb.
+    //! @param db The project database.
+    //! @param id The DgnElementId of the DesignAlignments.
+    //! @return The DesignAlignmentsCPtr with the given id, or nullptr.
+    ROADRAILALIGNMENT_EXPORT static DesignAlignmentsCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get<DesignAlignments>(id); }
+
+    //! Query for the elementId representing all of the Design Alignments for a parent Spatial Model
+    ROADRAILALIGNMENT_EXPORT static Dgn::DgnElementId QueryId(Dgn::SpatialModelCR parentSpatialModel);
+
+    //! Query for the element representing all of the Design Alignments for a parent Spatial Model
+    static DesignAlignmentsCPtr Query(Dgn::SpatialModelCR parentSpatialModel) { return Get(parentSpatialModel.GetDgnDb(), QueryId(parentSpatialModel)); }
+    //__PUBLISH_SECTION_END__
+    //! @privatesection
+    ROADRAILALIGNMENT_EXPORT static DesignAlignmentsCPtr Insert(Dgn::SpatialModelCR model);
+    static Dgn::DgnCode CreateCode(Dgn::SpatialElementCR spatialElement) { return CreateCodeBasic(spatialElement); }
+    //! @publicsection
+    //__PUBLISH_SECTION_START__
+    //! Gets the SpatialLocationModel that is modeling this element
+    Dgn::SpatialLocationModelPtr GetAlignmentModel() const { return GetSub<Dgn::SpatialLocationModel>(); }
+}; // DesignAlignments
+
+//=======================================================================================
+//! SpatialLocationElement representing all the horizontal alignments in
 //! an Alignments model.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
@@ -167,12 +206,18 @@ public:
     //! @param id The DgnElementId of the HorizontalAlignments.
     //! @return The HorizontalAlignmentsCPtr with the given id, or nullptr.
     ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentsCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get<HorizontalAlignments>(id); }
+
+    //! Query for the element representing all of the HorizontalAlignments for an AlignmentModel
+    ROADRAILALIGNMENT_EXPORT static Dgn::DgnElementId QueryId(Dgn::SpatialModelCR alignmentModel);
+    static HorizontalAlignmentsCPtr Query(Dgn::SpatialModelCR alignmentModel) { return Get(alignmentModel.GetDgnDb(), QueryId(alignmentModel)); }
     //__PUBLISH_SECTION_END__
     //! @privatesection
     ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentsCPtr Insert(Dgn::SpatialModelCR model);
-    ROADRAILALIGNMENT_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnElementCR alignmentPartition, Utf8StringCR name);
+    ROADRAILALIGNMENT_EXPORT static Dgn::DgnCode CreateCode(Dgn::SpatialElementCR spatialElement);
     //! @publicsection
     //__PUBLISH_SECTION_START__
+    //! Gets the SpatialLocationModel that is modeling this element
+    Dgn::SpatialLocationModelPtr GetHorizontalModel() const { return GetSub<Dgn::SpatialLocationModel>(); }
 }; // HorizontalAlignments
 
 //=======================================================================================
@@ -259,7 +304,7 @@ public:
 
     //__PUBLISH_SECTION_END__
     //! @privatesection
-    ROADRAILALIGNMENT_EXPORT static VerticalAlignmentPtr Create(VerticalAlignmentModelCR model, CurveVectorCR verticalGeometry);
+    ROADRAILALIGNMENT_EXPORT static VerticalAlignmentPtr Create(AlignmentCR alignment, CurveVectorCR verticalGeometry);
     ROADRAILALIGNMENT_EXPORT VerticalAlignmentCPtr InsertAsMainVertical(Dgn::DgnDbStatus* stat = nullptr);
     ROADRAILALIGNMENT_EXPORT void SetGeometry(CurveVectorCR);
     ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus GenerateElementGeom();
@@ -278,6 +323,15 @@ struct EXPORT_VTABLE_ATTRIBUTE AlignmentHandler : Dgn::dgn_ElementHandler::Spati
 {
 ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_Alignment, Alignment, AlignmentHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
 }; //AlignmentHandler
+
+//=================================================================================
+//! ElementHandler for DesignAlignments Element
+//! @ingroup GROUP_RoadRailAlignment
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DesignAlignmentsHandler : Dgn::dgn_ElementHandler::SpatialLocation
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_DesignAlignments, DesignAlignments, DesignAlignmentsHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
+}; // DesignAlignmentsHandler
 
 //=================================================================================
 //! ElementHandler for HorizontalAlignments Element

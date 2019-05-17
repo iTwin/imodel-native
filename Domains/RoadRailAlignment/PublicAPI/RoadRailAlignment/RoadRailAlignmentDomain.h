@@ -38,19 +38,19 @@ public:
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnModelCR scopeModel, Utf8StringCR value);
 
     //! @private
-    ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::SubjectCR subject);    
+    ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetUpDefinitionPartitions(Dgn::SubjectCR subject);
 
     //! Returns the partition name used for the general configuration model for Road/Rail elements
     static Utf8CP GetConfigurationPartitionName() { return "Road/Rail Configuration"; }
-
-    //! Returns the partition name used for the AlignmentModel containing Design Alignments
-    static Utf8CP GetDesignPartitionName() { return "Road/Rail Design Alignments"; }
 
     //! Returns the partition name used for the DefinitionModel containing Domain Categories
     static Utf8CP GetDomainCategoriesPartitionName() { return "Road/Rail Domain Categories"; }
 
     //! Returns the code value used for the HorizontalAlignments element in Alignment models
-    static Utf8CP GetHorizontalAlignmentsSuffixCodeVal() { return "Horizontal"; }
+    static Utf8CP GetDesignAlignmentsCodeName() { return "Design Alignments"; }
+
+    //! Returns the code value used for the HorizontalAlignments element in Alignment models
+    static Utf8CP GetHorizontalAlignmentsCodeName() { return "Horizontal Alignments"; }
 
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnModelId QueryConfigurationModelId(Dgn::SubjectCR subject);
     ROADRAILALIGNMENT_EXPORT static Dgn::DefinitionModelPtr QueryConfigurationModel(Dgn::SubjectCR subject);

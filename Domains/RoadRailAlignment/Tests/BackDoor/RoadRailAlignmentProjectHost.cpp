@@ -160,7 +160,7 @@ DgnDbPtr RoadRailAlignmentProjectHost::CreateProject(WCharCP baseName)
         return nullptr;
 
     BeAssert(BentleyStatus::SUCCESS == projectPtr->Schemas().CreateClassViewsInDb());
-    RoadRailAlignmentDomain::SetUpModelHierarchy(*projectPtr->Elements().GetRootSubject());
+    RoadRailAlignmentDomain::SetUpDefinitionPartitions(*projectPtr->Elements().GetRootSubject());
 
     return projectPtr;
     }
@@ -180,6 +180,24 @@ DgnDbPtr RoadRailAlignmentProjectHost::OpenProject(WCharCP baseName)
     return projectPtr;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalModelPtr RoadRailAlignmentTestsFixture::SetUpPhysicalPartition(SubjectCR subject)
+    {
+    auto physicalPartitionPtr = PhysicalPartition::Create(subject, "Physical");
+    if (physicalPartitionPtr->Insert().IsNull())
+        return nullptr;
+
+    auto physicalModelPtr = PhysicalModel::Create(*physicalPartitionPtr);
+    if (DgnDbStatus::Success != physicalModelPtr->Insert())
+        return nullptr;
+
+    if (DesignAlignments::Insert(*physicalModelPtr).IsNull())
+        return nullptr;
+
+    return physicalModelPtr;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    11/2014

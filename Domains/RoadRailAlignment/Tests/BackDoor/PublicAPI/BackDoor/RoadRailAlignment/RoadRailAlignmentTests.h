@@ -84,6 +84,7 @@ public:
     static Dgn::DgnDbPtr CreateProject(WCharCP, bool needsSetBriefcase = false);
     //! Uses private static variable to hold the last opened project in memory.
     static Dgn::DgnDbPtr OpenProject(WCharCP, bool needsSetBriefcase = false);
+    static Dgn::PhysicalModelPtr SetUpPhysicalPartition(Dgn::SubjectCR subject);
 };
 
 typedef RoadRailAlignmentTestsFixture RoadRailAlignmentTests;

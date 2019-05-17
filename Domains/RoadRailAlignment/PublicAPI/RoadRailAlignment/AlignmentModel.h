@@ -19,27 +19,9 @@ private:
     AlignmentModelUtilities() {}
 
 public:
-    //! Query for the element representing all of the HorizontalAlignments for an AlignmentModel
-    ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentsCPtr QueryHorizontalPartition(Dgn::SpatialModelCR alignmentModel);
-    
     //! Query for DgnElementSet containing all of the AlignmentIds in this AlignmentModel
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnElementIdSet QueryAlignmentIds(Dgn::SpatialModelCR alignmentModel);
-
-    //! Query the AlignmentModel associated with a particular subject and partition name
-    ROADRAILALIGNMENT_EXPORT static Dgn::SpatialLocationModelPtr QueryDesignAlignmentsModel(Dgn::SubjectCR parentSubject);
 }; // AlignmentModelUtilities
-
-//=======================================================================================
-//! Utility class for models containing HorizontalAlignment elements
-//=======================================================================================
-struct HorizontalAlignmentModelUtilities
-{
-private:
-    HorizontalAlignmentModelUtilities() {}
-
-public:
-    ROADRAILALIGNMENT_EXPORT static Dgn::DgnModelId QueryBreakDownModelId(Dgn::SpatialModelCR alignmentModel);
-}; // HorizontalAlignmentModelUtilities
 
 //=======================================================================================
 //! Model to contain and manage Vertical Alignment elements for a particular Alignment
