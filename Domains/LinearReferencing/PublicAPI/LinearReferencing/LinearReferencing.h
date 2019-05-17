@@ -70,7 +70,7 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 #define BLR_REL_ILinearElementProvidedBySource                      "ILinearElementProvidedBySource"
 #define BLR_REL_ILinearLocationLocatesElement                       "ILinearLocationLocatesElement"
 #define BLR_REL_ILinearlyLocatedAlongILinearElement                 "ILinearlyLocatedAlongILinearElement"
-#define BLR_REL_ILinearElementSourceOwnsAttributions                "ILinearElementSourceOwnsAttributions"
+#define BLR_REL_ILinearlyLocatedAttributesElement                   "ILinearlyLocatedAttributesElement"
 
 
 //-----------------------------------------------------------------------------------------
@@ -80,6 +80,7 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 #define BLR_PROP_ILinearElement_Source                              "LinearElementSource"
 #define BLR_PROP_ILinearElement_StartValue                          "StartValue"
 #define BLR_PROP_ILinearlyLocated_LocatedElement                    "LocatedElement"
+#define BLR_PROP_ILinearlyLocatedAttribution_AttributedElement      "AttributedElement"
 #define BLR_PROP_IReferent_ReferencedElement                        "ReferencedElement"
 
 

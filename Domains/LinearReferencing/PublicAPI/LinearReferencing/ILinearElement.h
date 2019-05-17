@@ -260,6 +260,16 @@ struct EXPORT_VTABLE_ATTRIBUTE ILinearlyLocatedAttribution : virtual ILinearlyLo
 
 protected:
     LINEARREFERENCING_EXPORT ILinearlyLocatedAttribution();
+
+public:
+    //! Returns the Attributed Element Id
+    Dgn::DgnElementId GetAttributedElement() const { 
+        return _ILinearlyLocatedToDgnElement().GetPropertyValueId<Dgn::DgnElementId>(BLR_PROP_ILinearlyLocatedAttribution_AttributedElement); }
+
+    //__PUBLISH_SECTION_END__
+
+    LINEARREFERENCING_EXPORT void SetAttributedElement(ILinearElementSourceCP attributedElement);
+    //__PUBLISH_SECTION_START__
 }; // ILinearlyLocatedAttribution
 
 //=======================================================================================

@@ -645,6 +645,20 @@ ILinearlyLocatedAttribution::ILinearlyLocatedAttribution()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ILinearlyLocatedAttribution::SetAttributedElement(ILinearElementSourceCP attributedElement)
+    {
+    if (attributedElement)
+        const_cast<DgnElementP>(&_ILinearlyLocatedToDgnElement())->SetPropertyValue(BLR_PROP_ILinearlyLocatedAttribution_AttributedElement,
+            attributedElement->ToElement().GetElementId(),
+            _ILinearlyLocatedToDgnElement().GetDgnDb().Schemas().GetClassId(BLR_SCHEMA_NAME, BLR_REL_ILinearlyLocatedAttributesElement));
+    else
+        const_cast<DgnElementP>(&_ILinearlyLocatedToDgnElement())->SetPropertyValue(BLR_PROP_ILinearlyLocatedAttribution_AttributedElement,
+            DgnElementId(), DgnClassId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ILinearLocationElement::ILinearLocationElement()
