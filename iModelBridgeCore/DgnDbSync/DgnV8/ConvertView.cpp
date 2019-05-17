@@ -805,10 +805,11 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     parms.m_dstyle->SetBackgroundColor(bgColor);
 
     auto v8displayStyle = parms.m_viewInfo.GetDisplayStyleCP();
+    DisplayStyleCPtr existingStyle;
     if (v8displayStyle)
         {
         Utf8String styleName = Utf8String(v8displayStyle->GetName().c_str());   
-        auto existingStyle = m_dgndb->Elements().Get<DisplayStyle>(m_dgndb->Elements().QueryElementIdByCode(DisplayStyle::CreateCode(*definitionModel, styleName)));
+        existingStyle = m_dgndb->Elements().Get<DisplayStyle>(m_dgndb->Elements().QueryElementIdByCode(DisplayStyle::CreateCode(*definitionModel, styleName)));
         if (existingStyle.IsValid() && (existingStyle->Is3d() == parms.m_dstyle->Is3d())) // only share display styles if the same dimension (V8 doesn't care)
             parms.m_dstyle = existingStyle->MakeCopy<DisplayStyle>();
         else
@@ -904,6 +905,13 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
             auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::CreateAspect(externalSourceAspectScope, name, viewInfo, GetDgnDb());
             if (aspect.IsValid())
                 aspect.AddAspect(*view);
+            }
+
+        if (existingStyle.IsValid())
+            {
+            DisplayStyle *nonConst = const_cast<DisplayStyleP>(existingStyle.get());
+            if (nonConst->EqualState(view->GetDisplayStyle()))
+                view->GetDisplayStyle().Update();
             }
 
         if (!view->Insert().IsValid())
