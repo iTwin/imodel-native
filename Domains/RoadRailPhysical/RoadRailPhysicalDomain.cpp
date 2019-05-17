@@ -5,17 +5,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailPhysicalInternal.h"
 #include <RoadRailPhysical/RoadRailPhysicalDomain.h>
-#include <RoadRailPhysical/ElementAspects.h>
-#include <RoadRailPhysical/Pathway.h>
-#include <RoadRailPhysical/RoadClass.h>
+#include <RoadRailPhysical/Corridor.h>
 #include <RoadRailPhysical/DesignSpeed.h>
 #include <RoadRailPhysical/RoadRailCategory.h>
-#include <RoadRailPhysical/RoadSegment.h>
-#include <RoadRailPhysical/TravelwaySegment.h>
-#include <RoadRailPhysical/TravelwaySideSegment.h>
-#include <RoadRailPhysical/TravelwayStructureSegment.h>
-#include <RoadRailPhysical/TypicalSection.h>
-#include <RoadRailPhysical/TypicalSectionPoint.h>
 
 #define INSERT_CODESPEC(x) \
     { auto codeSpecPtr = x; \
@@ -37,14 +29,16 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     {    
     RegisterHandler(RoadRailNetworkHandler::GetHandler());
     RegisterHandler(CorridorHandler::GetHandler());    
-
-    RegisterHandler(DesignSpeedDefinitionHandler::GetHandler());
-    RegisterHandler(DesignSpeedHandler::GetHandler());
+    RegisterHandler(CorridorPortionsHandler::GetHandler());
 
     RegisterHandler(CorridorPortionElementHandler::GetHandler());
     RegisterHandler(PathwayElementHandler::GetHandler());
     RegisterHandler(RailwayHandler::GetHandler());
     RegisterHandler(RoadwayHandler::GetHandler());    
+
+    RegisterHandler(PathwayDesignCriteriaHandler::GetHandler());
+    RegisterHandler(DesignSpeedDefinitionHandler::GetHandler());
+    RegisterHandler(DesignSpeedHandler::GetHandler());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -88,44 +82,13 @@ DgnDbStatus createRailwayStandardsPartition(SubjectCR subject)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RoadRailPhysicalDomain::SetUpNonPhysicalModelHierarchy(SubjectCR subject)
+DgnDbStatus RoadRailPhysicalDomain::SetUpDefinitionPartitions(SubjectCR subject)
     {
     DgnDbStatus status;
     if (DgnDbStatus::Success != (status = createRailwayStandardsPartition(subject)))
         return status;
 
     if (DgnDbStatus::Success != (status = createRoadwayStandardsPartition(subject)))
-        return status;
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RoadRailPhysicalDomain::SetUpPhysicalModelHierarchy(SubjectCR subject, Utf8CP physicalPartitionName, Utf8CP networkName)
-    {
-    auto physicalPartitionId = subject.GetDgnDb().Elements().QueryElementIdByCode(PhysicalPartition::CreateCode(subject, physicalPartitionName));
-    if (!physicalPartitionId.IsValid())
-        return DgnDbStatus::BadArg;
-
-    auto physicalPartitionCPtr = subject.GetDgnDb().Elements().Get<PhysicalPartition>(physicalPartitionId);
-    auto physicalModelP = physicalPartitionCPtr->GetSubModel()->ToPhysicalModelP();
-    if (!physicalModelP)
-        return DgnDbStatus::BadModel;
-    
-    DgnDbStatus status;
-    PhysicalModelPtr breakDownModelPtr;
-    if (RoadRailNetwork::Insert(*physicalModelP, RoadRailNetwork::CreateCode(*physicalModelP, networkName), breakDownModelPtr).IsNull() ||
-        breakDownModelPtr.IsNull())
-        return DgnDbStatus::WriteError;
-
-    auto horizontalPartitionCPtr = HorizontalAlignments::Insert(*breakDownModelPtr);
-    if (horizontalPartitionCPtr.IsNull())
-        return DgnDbStatus::BadModel;
-
-    auto horizontalBreakDownModelPtr = SpatialLocationModel::Create(*horizontalPartitionCPtr);
-    if (DgnDbStatus::Success != (status = horizontalBreakDownModelPtr->Insert()))
         return status;
 
     return status;
@@ -338,29 +301,30 @@ DgnCode RoadRailNetwork::CreateCode(PhysicalModelCR scopeModel, Utf8StringCR net
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadRailNetworkCPtr RoadRailNetwork::Insert(PhysicalModelR parentModel, DgnCodeCR networkCode, PhysicalModelPtr& breakDownModelPtr)
+RoadRailNetworkCPtr RoadRailNetwork::Insert(PhysicalModelR parentModel, Utf8StringCR networkName)
     {
     if (!parentModel.GetModelId().IsValid())
         return nullptr;
 
     CreateParams createParams(parentModel.GetDgnDb(), parentModel.GetModelId(), QueryClassId(parentModel.GetDgnDb()),
-        RoadRailCategory::GetCorridor(parentModel.GetDgnDb()));
-    createParams.m_code = networkCode;
+        RoadRailCategory::GetNetwork(parentModel.GetDgnDb()));
+    createParams.m_code = CreateCode(parentModel, networkName);
 
     RoadRailNetworkPtr newPtr(new RoadRailNetwork(createParams));
     auto networkCPtr = parentModel.GetDgnDb().Elements().Insert<RoadRailNetwork>(*newPtr);
     if (networkCPtr.IsNull())
         return nullptr;
 
-    auto& physicalModelHandlerR = dgn_ModelHandler::Physical::GetHandler();
-    auto newDgnModelPtr = physicalModelHandlerR.Create(DgnModel::CreateParams(parentModel.GetDgnDb(), parentModel.GetDgnDb().Domains().GetClassId(physicalModelHandlerR),
-        networkCPtr->GetElementId()));
-
-    if (newDgnModelPtr.IsValid())
+    auto networkPhysicalModelPtr = PhysicalModel::Create(*networkCPtr);
+    if (networkPhysicalModelPtr.IsValid())
         {
-        if (DgnDbStatus::Success == newDgnModelPtr->Insert())
-            breakDownModelPtr = newDgnModelPtr->ToPhysicalModelP();
+        if (DgnDbStatus::Success != networkPhysicalModelPtr->Insert())
+            return nullptr;
         }
+
+    auto designAlignmentsCPtr = DesignAlignments::Insert(*networkPhysicalModelPtr);
+    if (designAlignmentsCPtr.IsNull())
+        return nullptr;
 
     return networkCPtr;
     }

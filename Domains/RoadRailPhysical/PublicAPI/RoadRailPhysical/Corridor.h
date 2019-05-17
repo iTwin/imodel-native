@@ -12,18 +12,18 @@
 BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 //=======================================================================================
-//! A Physical Assembly being linearly designed along an Alignment.
+//! A Physical Element being linearly designed along an Alignment.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct ILinearlyDesignedAssembly
+struct ILinearlyDesignedElement
 {
 protected:
-    virtual Dgn::DgnElementCR _ILinearlyDesignedAssemblyToDgnElement() const = 0;
+    virtual Dgn::DgnElementCR _ILinearlyDesignedElementToDgnElement() const = 0;
 
 public:
-    Dgn::DgnElementId GetDesignAlignmentId() const { return _ILinearlyDesignedAssemblyToDgnElement().GetPropertyValueId<Dgn::DgnElementId>(BRRP_PROP_ILinearlyDesignedAssembly_DesignAlignment); }
+    Dgn::DgnElementId GetDesignAlignmentId() const { return _ILinearlyDesignedElementToDgnElement().GetPropertyValueId<Dgn::DgnElementId>(BRRP_PROP_ILinearlyDesignedElement_DesignAlignment); }
     ROADRAILPHYSICAL_EXPORT Dgn::DgnDbStatus SetDesignAlignment(RoadRailAlignment::AlignmentCP alignment);
-}; // ILinearlyDesignedAssembly
+}; // ILinearlyDesignedElement
 
 //=======================================================================================
 //! A long, narrow physical stretch that is designed for one or more modes of transportation 
@@ -31,7 +31,7 @@ public:
 //! assembles one or more Pathways with Pathway Separations in between them.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct Corridor : Dgn::PhysicalElement, LinearReferencing::ILinearElementSource, ILinearlyDesignedAssembly
+struct Corridor : Dgn::PhysicalElement, LinearReferencing::ILinearElementSource, ILinearlyDesignedElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_Corridor, Dgn::PhysicalElement);
     friend struct CorridorHandler;
@@ -42,35 +42,72 @@ protected:
     //! @private
     virtual Dgn::DgnElementCR _ILinearElementSourceToDgnElement() const override { return *this; }
     //! @private
-    virtual Dgn::DgnElementCR _ILinearlyDesignedAssemblyToDgnElement() const override { return *this; }
+    virtual Dgn::DgnElementCR _ILinearlyDesignedElementToDgnElement() const override { return *this; }
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(Corridor)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(Corridor)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(Corridor)
 
     //! @private
     ROADRAILPHYSICAL_EXPORT static Dgn::CodeSpecId QueryCodeSpecId(Dgn::DgnDbCR dgndb);
     //! @private
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::PhysicalModelCR scope, Utf8StringCR value);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(RoadRailNetworkCR scope, Utf8StringCR value);
     //! @private
-    ROADRAILPHYSICAL_EXPORT static CorridorCPtr QueryByCode(Dgn::PhysicalModelCR model, Utf8StringCR code);    
+    ROADRAILPHYSICAL_EXPORT static CorridorCPtr QueryByCode(RoadRailNetworkCR scope, Utf8StringCR code);
     //! @private
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus AddRepresentedBy(CorridorCR corridor, Dgn::GeometrySourceCR representedBy);
     //! @private
     ROADRAILPHYSICAL_EXPORT bool QueryIsRepresentedBy(Dgn::GeometrySourceCR) const;
 
-    //! Query for Pathways assembled by this Corridor in left-to-right order
-    ROADRAILPHYSICAL_EXPORT bvector<Dgn::DgnElementId> QueryOrderedPathwayIds() const;
+    //! @private
+    ROADRAILPHYSICAL_EXPORT static CorridorPtr Create(RoadRailNetworkCR network);
 
     //! @private
-    ROADRAILPHYSICAL_EXPORT static CorridorPtr Create(Dgn::PhysicalModelR model);
+    CorridorCPtr Update(Dgn::DgnDbStatus* status = nullptr) { return GetDgnDb().Elements().Update<Corridor>(*this, status); }
+    ROADRAILPHYSICAL_EXPORT CorridorCPtr Insert(Dgn::DgnDbStatus* status = nullptr);
 }; // Corridor
+
+//=======================================================================================
+//! Physical element representing corridor portions in a Corridor model.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct CorridorPortions : Dgn::PhysicalElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_CorridorPortions, Dgn::PhysicalElement);
+    friend struct CorridorPortionsHandler;
+
+protected:
+    //! @private
+    explicit CorridorPortions(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(CorridorPortions)
+    //! Get a CorridorPortionsCPtr from the DgnElementId in the DgnDb.
+    //! @param db The project database.
+    //! @param id The DgnElementId of the CorridorPortions.
+    //! @return The CorridorPortionsCPtr with the given id, or nullptr.
+    ROADRAILPHYSICAL_EXPORT static CorridorPortionsCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get<CorridorPortions>(id); }
+
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnElementId QueryId(CorridorCR corridor);
+    ROADRAILPHYSICAL_EXPORT static CorridorPortionsCPtr Query(CorridorCR corridor) { return Get(corridor.GetDgnDb(), QueryId(corridor)); }
+
+    //! Query for Pathways on this Corridor in left-to-right order
+    ROADRAILPHYSICAL_EXPORT bvector<Dgn::DgnElementId> QueryOrderedPathwayIds() const;
+    //__PUBLISH_SECTION_END__
+    //! @privatesection
+    ROADRAILPHYSICAL_EXPORT static CorridorPortionsCPtr Insert(CorridorCR corridor);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(CorridorCR corridor);
+    //! @publicsection
+    //__PUBLISH_SECTION_START__
+    //! Gets the PhysicalModel that is modeling this element
+    Dgn::PhysicalModelPtr GetCorridorPortionsModel() const { return GetSub<Dgn::PhysicalModel>(); }
+}; // CorridorPortions
 
 //=======================================================================================
 //! Base class for Pathways and Separations between them
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct CorridorPortionElement : Dgn::PhysicalElement, LinearReferencing::ILinearElementSource, ILinearlyDesignedAssembly
+struct CorridorPortionElement : Dgn::PhysicalElement, LinearReferencing::ILinearElementSource, ILinearlyDesignedElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_CorridorPortionElement, Dgn::PhysicalElement);
     friend struct CorridorPortionElementHandler;
@@ -82,7 +119,7 @@ protected:
     //! @private
     virtual Dgn::DgnElementCR _ILinearElementSourceToDgnElement() const override { return *this; }
     //! @private
-    virtual Dgn::DgnElementCR _ILinearlyDesignedAssemblyToDgnElement() const override { return *this; }
+    virtual Dgn::DgnElementCR _ILinearlyDesignedElementToDgnElement() const override { return *this; }
     //! @private
     virtual PathwayElementCP _ToPathway() const { return nullptr; }
     //! @private
@@ -129,7 +166,7 @@ public:
         Order() : m_order(Invalid) {}
         Order(int32_t order) : m_order(order) {}
 
-        operator int32_t() { return m_order; }
+        operator int32_t() const { return m_order; }
         bool operator< (Order const& right) const { return m_order < right.m_order; }
 
         bool IsValid() { return m_order >= LeftMost && m_order <= RightMost; }
@@ -137,10 +174,10 @@ public:
         static const int32_t LeftMost = 0;
         static const int32_t RightMost = 1000;
         static const int32_t Invalid = LeftMost - 1;
-    };
+    }; // Order
 
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwayElement)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(PathwayElement)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(PathwayElement)
 
     //! @private
     ROADRAILPHYSICAL_EXPORT static Dgn::CodeSpecId QueryCodeSpecId(Dgn::DgnDbCR dgndb);
@@ -159,8 +196,44 @@ public:
     //! @return A Roadway or nullptr if this Pathway is not a Roadway
     RoadwayCP ToRoadway() const { return _ToRoadway(); }
 
-    ROADRAILPHYSICAL_EXPORT PathwayElementCPtr Insert(Order order, Dgn::DgnDbStatus* status = nullptr);
+    //! @private
+    Order GetOrder() const { return GetPropertyValueInt32(BRRP_PROP_PathwayElement_Order); }
+    //! @private
+    void SetOrder(Order const& order) { SetPropertyValue(BRRP_PROP_PathwayElement_Order, order); }
 }; // PathwayElement
+
+//=======================================================================================
+//! Element representing design criteria for a Pathway.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct PathwayDesignCriteria : Dgn::SpatialLocationElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_PathwayDesignCriteria, Dgn::SpatialLocationElement);
+    friend struct PathwayDesignCriteriaHandler;
+
+protected:
+    //! @private
+    explicit PathwayDesignCriteria(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwayDesignCriteria)
+    //! Get a PathwayDesignCriteriaCPtr from the DgnElementId in the DgnDb.
+    //! @param db The project database.
+    //! @param id The DgnElementId of the PathwayDesignCriteria.
+    //! @return The PathwayDesignCriteriaCPtr with the given id, or nullptr.
+    ROADRAILPHYSICAL_EXPORT static PathwayDesignCriteriaCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get<PathwayDesignCriteria>(id); }
+
+    //! Get Owning Pathway element
+    PathwayElementCPtr GetPathway() const { return PathwayElement::Get(GetDgnDb(), GetParentId()); }
+    //__PUBLISH_SECTION_END__
+    //! @privatesection
+    ROADRAILPHYSICAL_EXPORT static PathwayDesignCriteriaCPtr Insert(PathwayElementCR pathway);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(PathwayElementCR pathway);
+    //! @publicsection
+    //__PUBLISH_SECTION_START__
+    //! Gets the SpatialLocationModel that is modeling this element
+    Dgn::SpatialLocationModelPtr GetDesignCriteriaModel() const { return GetSub<Dgn::SpatialLocationModel>(); }
+}; // PathwayDesignCriteria
 
 //=======================================================================================
 //! Physical range over a Road that can be segmented.
@@ -175,6 +248,8 @@ protected:
     //! @private
     explicit Roadway(CreateParams const& params) : T_Super(params) {}
     //! @private
+    explicit Roadway(CreateParams const& params, Order const& order);
+    //! @private
     virtual RoadwayCP _ToRoadway() const override { return this; }
 
 public:
@@ -182,7 +257,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(Roadway)
 
     //! @private
-    ROADRAILPHYSICAL_EXPORT static RoadwayPtr Create(CorridorCR corridor);
+    ROADRAILPHYSICAL_EXPORT static RoadwayPtr Create(CorridorPortionsCR corridorPortions, PathwayElement::Order const& order);
 }; // Roadway
 
 //=======================================================================================
@@ -197,6 +272,8 @@ struct Railway : PathwayElement
 protected:
     //! @private
     explicit Railway(CreateParams const& params) : T_Super(params) {}
+    //! @private
+    explicit Railway(CreateParams const& params, Order const& order);
 
     //! @private
     virtual RailwayCP _ToRailway() const override { return this; }
@@ -206,42 +283,8 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(Railway)
 
     //! @private
-    ROADRAILPHYSICAL_EXPORT static RailwayPtr Create(CorridorCR corridor);    
+    ROADRAILPHYSICAL_EXPORT static RailwayPtr Create(CorridorPortionsCR corridorPortions, PathwayElement::Order const& order);
 }; // Railway
-
-//=======================================================================================
-//! Interface providing access to pathway segments.
-//! @ingroup GROUP_RoadRailPhysical
-//=======================================================================================
-struct ICorridorPortionSingleFromTo : LinearReferencing::ILinearlyLocatedSingleFromTo
-{
-    DEFINE_T_SUPER(LinearReferencing::ILinearlyLocatedSingleFromTo)
-
-public:
-    struct CreateFromToParams : LinearReferencing::ILinearlyLocatedSingleFromTo::CreateFromToParams
-    {
-        DEFINE_T_SUPER(LinearReferencing::ILinearlyLocatedSingleFromTo::CreateFromToParams)
-
-        CorridorPortionElementCPtr m_corridorPortionCPtr;
-
-        CreateFromToParams(CorridorPortionElementCR corridorPortion, 
-            double fromDistanceFromStart, double toDistanceFromStart):
-            m_corridorPortionCPtr(&corridorPortion),
-            T_Super(*dynamic_cast<LinearReferencing::ILinearElementCP>(
-                RoadRailAlignment::Alignment::Get(corridorPortion.GetDgnDb(), corridorPortion.GetDesignAlignmentId()).get()),
-                fromDistanceFromStart, toDistanceFromStart) {}
-    }; // CreateFromToParams
-
-    Dgn::DgnElementId GetCorridorPortionId() const { return dynamic_cast<Dgn::DgnElementCP>(this)->GetParentId(); }
-
-protected:
-    ICorridorPortionSingleFromTo() {}
-    ICorridorPortionSingleFromTo(CreateFromToParams const& params) : T_Super(params) {}
-
-    static bool ValidateParams(CreateFromToParams const& params) 
-        { if (!T_Super::ValidateParams(params)) return false; return params.m_corridorPortionCPtr.IsValid() && params.m_corridorPortionCPtr->GetElementId().IsValid(); }
-    virtual void _OnCreate(CreateFromToParams const& params) { _SetLinearElement(params.m_linearElementCPtr->GetElementId()); }
-}; // ICorridorPortionSingleFromTo
 
 
 //__PUBLISH_SECTION_END__
@@ -253,6 +296,15 @@ struct EXPORT_VTABLE_ATTRIBUTE CorridorHandler : Dgn::dgn_ElementHandler::Physic
 {
 ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_Corridor, Corridor, CorridorHandler, Dgn::dgn_ElementHandler::Physical, ROADRAILPHYSICAL_EXPORT)
 }; // CorridorHandler
+
+//=================================================================================
+//! ElementHandler for CorridorPortions Elements
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE CorridorPortionsHandler : Dgn::dgn_ElementHandler::Physical
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_CorridorPortions, CorridorPortions, CorridorPortionsHandler, Dgn::dgn_ElementHandler::Physical, ROADRAILPHYSICAL_EXPORT)
+}; // CorridorPortionsHandler
 
 //=================================================================================
 //! ElementHandler for Corridor Portion Elements
@@ -271,6 +323,15 @@ struct EXPORT_VTABLE_ATTRIBUTE PathwayElementHandler : CorridorPortionElementHan
 {
 ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_PathwayElement, PathwayElement, PathwayElementHandler, CorridorPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
 }; // PathwayElementHandler
+
+//=================================================================================
+//! ElementHandler for Corridor Portion Elements
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE PathwayDesignCriteriaHandler : Dgn::dgn_ElementHandler::SpatialLocation
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_PathwayDesignCriteria, PathwayDesignCriteria, PathwayDesignCriteriaHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILPHYSICAL_EXPORT)
+}; // PathwayDesignCriteriaHandler
 
 //=================================================================================
 //! ElementHandler for Roadway Elements

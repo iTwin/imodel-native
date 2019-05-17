@@ -86,8 +86,10 @@ DesignSpeed::DesignSpeed(CreateParams const& params):
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DesignSpeed::DesignSpeed(CreateParams const& params, CreateFromToParams const& fromToParams) :
-    T_Super(params), ICorridorPortionSingleFromTo(fromToParams)
+    T_Super(params), ILinearlyLocatedSingleFromTo(fromToParams)
     {
+    _SetLinearElement(fromToParams.m_linearElementCPtr->GetElementId());
+    SetAttributedElement(fromToParams.m_designCriteriaCPtr->GetPathway().get());
     SetStartDefinition(*fromToParams.m_startDesignSpeedDefCPtr);
     SetEndDefinition(*fromToParams.m_endDesignSpeedDefCPtr);
     _AddLinearlyReferencedLocation(*_GetUnpersistedFromToLocation());    
@@ -119,13 +121,9 @@ DesignSpeedPtr DesignSpeed::Create(CreateFromToParams const& linearParams)
     if (!ValidateParams(linearParams)) 
         return nullptr; 
 
-    auto& dgnDbR = linearParams.m_corridorPortionCPtr->GetDgnDb();
-    CreateParams params(dgnDbR, linearParams.m_corridorPortionCPtr->GetModelId(), QueryClassId(dgnDbR),
+    auto& dgnDbR = linearParams.m_designCriteriaCPtr->GetDgnDb();
+    CreateParams params(dgnDbR, linearParams.m_designCriteriaCPtr->GetSubModelId(), QueryClassId(dgnDbR),
         RoadRailCategory::GetDesignSpeed(dgnDbR));
-    params.SetParentId(linearParams.m_corridorPortionCPtr->GetElementId(),
-        DgnClassId(dgnDbR.Schemas().GetClassId(BLR_SCHEMA_NAME, BLR_REL_ILinearElementSourceOwnsAttributions)));
     
-    auto retVal = new DesignSpeed(params, linearParams);
-    retVal->_OnCreate(linearParams); 
-    return retVal; 
+    return new DesignSpeed(params, linearParams);
     }

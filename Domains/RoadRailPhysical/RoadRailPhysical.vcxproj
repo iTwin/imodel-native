@@ -28,36 +28,20 @@
     <Xml Include="RoadRailPhysical.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="PublicAPI\RoadRailPhysical\Corridor.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\DesignSpeed.h" />
-    <ClInclude Include="PublicAPI\RoadRailPhysical\ElementAspects.h" />
-    <ClInclude Include="PublicAPI\RoadRailPhysical\Pathway.h" />
-    <ClInclude Include="PublicAPI\RoadRailPhysical\RoadClass.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailCategory.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysical.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysicalApi.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysicalDomain.h" />
-    <ClInclude Include="PublicAPI\RoadRailPhysical\RoadSegment.h" />
-    <ClInclude Include="PublicAPI\RoadRailPhysical\TravelwaySegment.h" />
-    <ClInclude Include="PublicAPI\RoadRailPhysical\TravelwaySideSegment.h" />
-    <ClInclude Include="PublicAPI\RoadRailPhysical\TravelwayStructureSegment.h" />
-    <ClInclude Include="PublicAPI\RoadRailPhysical\TypicalSection.h" />
-    <ClInclude Include="PublicAPI\RoadRailPhysical\TypicalSectionPoint.h" />
     <ClInclude Include="RoadRailPhysicalInternal.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Corridor.cpp" />
     <ClCompile Include="DesignSpeed.cpp" />
-    <ClCompile Include="ElementAspects.cpp" />
-    <ClCompile Include="Pathway.cpp" />
-    <ClCompile Include="RoadClass.cpp" />
     <ClCompile Include="RoadRailCategory.cpp" />
     <ClCompile Include="RoadRailPhysicalDomain.cpp" />
     <ClCompile Include="RoadRailPhysicalInternal.cpp" />
-    <ClCompile Include="RoadSegment.cpp" />
-    <ClCompile Include="TravelwaySegment.cpp" />
-    <ClCompile Include="TravelwaySideSegment.cpp" />
-    <ClCompile Include="TravelwayStructureSegment.cpp" />
-    <ClCompile Include="TypicalSection.cpp" />
-    <ClCompile Include="TypicalSectionPoint.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{FB423497-691B-4A7C-8793-BAA0AC67EC55}</ProjectGuid>

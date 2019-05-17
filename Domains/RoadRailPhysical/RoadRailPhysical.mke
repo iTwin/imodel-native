@@ -41,29 +41,13 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 #--------------------------------------------------------------------------------------
 %include MultiCppCompileRule.mki
 
+$(o)Corridor$(oext) : $(_MakeFilePath)Corridor.cpp ${MultiCompileDepends} $(appPublicApi)Corridor.h
+
 $(o)DesignSpeed$(oext) : $(_MakeFilePath)DesignSpeed.cpp ${MultiCompileDepends} $(appPublicApi)DesignSpeed.h
-
-$(o)ElementAspects$(oext) : $(_MakeFilePath)ElementAspects.cpp ${MultiCompileDepends} $(appPublicApi)ElementAspects.h
-
-$(o)Pathway$(oext) : $(_MakeFilePath)Pathway.cpp ${MultiCompileDepends} $(appPublicApi)Pathway.h
-
-$(o)RoadClass$(oext) : $(_MakeFilePath)RoadClass.cpp ${MultiCompileDepends} $(appPublicApi)RoadClass.h
 
 $(o)RoadRailCategory$(oext) : $(_MakeFilePath)RoadRailCategory.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailCategory.h
 
 $(o)RoadRailPhysicalDomain$(oext) : $(_MakeFilePath)RoadRailPhysicalDomain.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailPhysicalDomain.h
-
-$(o)RoadSegment$(oext) : $(_MakeFilePath)RoadSegment.cpp ${MultiCompileDepends} $(appPublicApi)RoadSegment.h
-
-$(o)TravelwaySegment$(oext) : $(_MakeFilePath)TravelwaySegment.cpp ${MultiCompileDepends} $(appPublicApi)TravelwaySegment.h
-
-$(o)TravelwaySideSegment$(oext) : $(_MakeFilePath)TravelwaySideSegment.cpp ${MultiCompileDepends} $(appPublicApi)TravelwaySideSegment.h
-
-$(o)TravelwayStructureSegment$(oext) : $(_MakeFilePath)TravelwayStructureSegment.cpp ${MultiCompileDepends} $(appPublicApi)TravelwayStructureSegment.h
-
-$(o)TypicalSection$(oext) : $(_MakeFilePath)TypicalSection.cpp ${MultiCompileDepends} $(appPublicApi)TypicalSection.h
-
-$(o)TypicalSectionPoint$(oext) : $(_MakeFilePath)TypicalSectionPoint.cpp ${MultiCompileDepends} $(appPublicApi)TypicalSectionPoint.h
 
 %include MultiCppCompileGo.mki
 

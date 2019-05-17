@@ -7,7 +7,7 @@
 
 //__PUBLISH_SECTION_START__
 #include "RoadRailPhysical.h"
-#include "Pathway.h"
+#include "Corridor.h"
 
 BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
@@ -45,7 +45,7 @@ public:
 //! Linearly-located attribution on a Pathway whose value is its design-speed.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DesignSpeed : LinearReferencing::LinearlyLocatedAttribution, ICorridorPortionSingleFromTo
+struct EXPORT_VTABLE_ATTRIBUTE DesignSpeed : LinearReferencing::LinearlyLocatedAttribution, LinearReferencing::ILinearlyLocatedSingleFromTo
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_DesignSpeed, LinearReferencing::LinearlyLocatedAttribution);
     friend struct DesignSpeedHandler;
@@ -54,16 +54,19 @@ protected:
     virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const override { return *this; }
 
 public:
-    struct CreateFromToParams : ICorridorPortionSingleFromTo::CreateFromToParams
+    struct CreateFromToParams : LinearReferencing::ILinearlyLocatedSingleFromTo::CreateFromToParams
     {
-    DEFINE_T_SUPER(ICorridorPortionSingleFromTo::CreateFromToParams)
+    DEFINE_T_SUPER(LinearReferencing::ILinearlyLocatedSingleFromTo::CreateFromToParams)
 
     DesignSpeedDefinitionCPtr m_startDesignSpeedDefCPtr, m_endDesignSpeedDefCPtr;
+    PathwayDesignCriteriaCPtr m_designCriteriaCPtr;
 
-    CreateFromToParams(PathwayElementCR pathway, DesignSpeedDefinitionCR startDesignSpeedDef,
+    CreateFromToParams(PathwayDesignCriteriaCR designCriteria, LinearReferencing::ILinearElementCR linearElement, 
+        DesignSpeedDefinitionCR startDesignSpeedDef,
         DesignSpeedDefinitionCR endDesignSpeedDef, double fromDistanceFromStart, double toDistanceFromStart) :
+        m_designCriteriaCPtr(&designCriteria),
         m_startDesignSpeedDefCPtr(&startDesignSpeedDef), m_endDesignSpeedDefCPtr(&endDesignSpeedDef),
-        T_Super(pathway, fromDistanceFromStart, toDistanceFromStart)
+        T_Super(linearElement, fromDistanceFromStart, toDistanceFromStart)
         {
         }
     }; // CreateFromToParams
@@ -77,10 +80,8 @@ protected:
 
     static bool ValidateParams(CreateFromToParams const& params)
         {
-        if (!ICorridorPortionSingleFromTo::ValidateParams(params)) 
-            return false; 
-        
-        return params.m_startDesignSpeedDefCPtr.IsValid() && params.m_startDesignSpeedDefCPtr->GetElementId().IsValid() &&
+        return params.m_designCriteriaCPtr.IsValid() && params.m_designCriteriaCPtr->GetSubModelId().IsValid() &&
+            params.m_startDesignSpeedDefCPtr.IsValid() && params.m_startDesignSpeedDefCPtr->GetElementId().IsValid() &&
             params.m_endDesignSpeedDefCPtr.IsValid() && params.m_endDesignSpeedDefCPtr->GetElementId().IsValid();
         }
 

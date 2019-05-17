@@ -27,25 +27,22 @@ public:
     RoadRailPhysicalDomain();
 
     //! @private
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpNonPhysicalModelHierarchy(Dgn::SubjectCR subject);
-
-    //! @private
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpPhysicalModelHierarchy(Dgn::SubjectCR physicalSubject, Utf8CP physicalPartitionName, Utf8CP networkName);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpDefinitionPartitions(Dgn::SubjectCR subject);
 
     //! @private
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnViewId SetUpDefaultViews(Dgn::SubjectCR, Dgn::PhysicalModelR physicalNetworkModel, bvector<Dgn::DgnCategoryId> const* additionalCategoriesForSelector = nullptr);
-
-    //! The name of the default Physical partition
-    static Utf8CP GetDefaultPhysicalPartitionName() { return "Physical"; }
-
-    //! The name of the default Physical network partition
-    static Utf8CP GetDefaultPhysicalNetworkName() { return "Road/Rail Physical Network"; }
 
     //! The name of the RailwayStandards Partition
     static Utf8CP GetRailwayStandardsPartitionName() { return "Railway Standards"; }
 
     //! The name of the RoadwayStandards Partition
-    static Utf8CP GetRoadwayStandardsPartitionName() { return "Roadway Standards"; }    
+    static Utf8CP GetRoadwayStandardsPartitionName() { return "Roadway Standards"; }
+
+    //! The code name of the CorridorPortions element
+    static Utf8CP GetCorridorPortionsCodeName() { return "Corridor Portions"; }
+
+    //! The code name of the PathwayDesignCriteria element
+    static Utf8CP GetPathwayDesignCriteriaCodeName() { return "Design Criteria"; }
 
 private:
     WCharCP _GetSchemaRelativePath() const override { return BRRP_SCHEMA_PATH; }
@@ -71,11 +68,15 @@ public:
 
     //! @private
     ROADRAILPHYSICAL_EXPORT static RoadRailNetworkCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get<RoadRailNetwork>(id); }
+    //! @private
+    ROADRAILPHYSICAL_EXPORT static RoadRailNetworkCPtr Query(Dgn::DgnDbR db, Dgn::DgnCodeCR code) { return Get(db, db.Elements().QueryElementIdByCode(code)); }
 
     //! @private
-    ROADRAILPHYSICAL_EXPORT static RoadRailNetworkCPtr Insert(Dgn::PhysicalModelR parentModel, Dgn::DgnCodeCR networkCode, Dgn::PhysicalModelPtr& breakDownModel);
+    ROADRAILPHYSICAL_EXPORT static RoadRailNetworkCPtr Insert(Dgn::PhysicalModelR parentModel, Utf8StringCR networkName);
     //! @private
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::PhysicalModelCR scopeModel, Utf8StringCR networkCode);
+
+    Dgn::PhysicalModelPtr GetNetworkModel() const { return GetSub<Dgn::PhysicalModel>(); }
 }; // RoadRailNetwork
 
 //=======================================================================================

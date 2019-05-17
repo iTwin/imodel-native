@@ -30,8 +30,12 @@ public:
 
 //__PUBLISH_SECTION_START__
 public:
+    //! Return the DgnCategoryId for the Network Category
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetNetwork(Dgn::DgnDbR);
     //! Return the DgnCategoryId for the Corridor Category
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetCorridor(Dgn::DgnDbR);
+    //! Return the DgnCategoryId for the Corridor Portions Category
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetCorridorPortions(Dgn::DgnDbR);
     //! Return the DgnCategoryId for the Roadway Category
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetRoadway(Dgn::DgnDbR);
     //! Return the DgnCategoryId for the Railway Category

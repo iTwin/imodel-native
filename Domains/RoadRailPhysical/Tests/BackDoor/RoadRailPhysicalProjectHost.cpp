@@ -162,13 +162,13 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
     BeAssert(BentleyStatus::SUCCESS == projectPtr->Schemas().CreateClassViewsInDb());
 
     auto subjectCPtr = projectPtr->Elements().GetRootSubject();
-    RoadRailAlignmentDomain::SetUpModelHierarchy(*subjectCPtr);
-    auto physicalPartitionCPtr = PhysicalModelUtilities::CreateAndInsertPhysicalPartitionAndModel(
-        *subjectCPtr, RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
-    BeAssert(physicalPartitionCPtr.IsValid());
+    RoadRailAlignmentDomain::SetUpDefinitionPartitions(*subjectCPtr);
+    RoadRailPhysicalDomain::SetUpDefinitionPartitions(*subjectCPtr);
 
-    RoadRailPhysicalDomain::SetUpModelHierarchy(*subjectCPtr, RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName(), 
-        RoadRailPhysicalDomain::GetDefaultPhysicalNetworkName());
+    auto physicalPartitionCPtr = PhysicalModelUtilities::CreateAndInsertPhysicalPartitionAndModel(*subjectCPtr, "Physical");
+
+    auto roadNetworkCPtr = RoadRailNetwork::Insert(*physicalPartitionCPtr->GetSubModel()->ToPhysicalModelP(), 
+        "Road Network");
 
     return projectPtr;
     }

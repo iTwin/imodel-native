@@ -47,9 +47,11 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Elements
 #define BRRP_CLASS_Corridor                                         "Corridor"
+#define BRRP_CLASS_CorridorPortions                                 "CorridorPortions"
 #define BRRP_CLASS_CorridorPortionElement                           "CorridorPortionElement"
 #define BRRP_CLASS_DesignSpeed                                      "DesignSpeed"
 #define BRRP_CLASS_DesignSpeedDefinition                            "DesignSpeedDefinition"
+#define BRRP_CLASS_PathwayDesignCriteria                            "PathwayDesignCriteria"
 #define BRRP_CLASS_PathwayElement                                   "PathwayElement"
 #define BRRP_CLASS_Railway                                          "Railway"
 #define BRRP_CLASS_RoadRailNetwork                                  "RoadRailNetwork"
@@ -60,27 +62,29 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 
 // Relationships
-#define BRRP_REL_CorridorAssemblesPortions                          "CorridorAssemblesPortions"
-#define BRRP_REL_CorridorRefersToOrderedPathways                    "CorridorRefersToOrderedPathways"
+#define BRRP_REL_CorridorPortionOwnsAlignments                      "CorridorPortionOwnsAlignments"
 #define BRRP_REL_DesignSpeedRefersToEndDefinition                   "DesignSpeedRefersToEndDefinition"
 #define BRRP_REL_DesignSpeedRefersToStartDefinition                 "DesignSpeedRefersToStartDefinition"
-#define BRRP_REL_ILinearlyDesignedAssemblyAlongAlignment            "ILinearlyDesignedAssemblyAlongAlignment"
-#define BRRP_REL_PathwayAssemblesElements                           "PathwayAssemblesElements"
+#define BRRP_REL_ILinearlyDesignedElementAlongAlignment             "ILinearlyDesignedElementAlongAlignment"
+#define BRRP_REL_PathwayOwnsDesignCriteria                          "PathwayOwnsDesignCriteria"
 
 
 // Properties
-#define BRRP_PROP_ILinearlyDesignedAssembly_DesignAlignment         "DesignAlignment"
+#define BRRP_PROP_ILinearlyDesignedElement_DesignAlignment          "DesignAlignment"
 #define BRRP_PROP_DesignSpeed_EndDefinition                         "EndDefinition"
 #define BRRP_PROP_DesignSpeed_StartDefinition                       "StartDefinition"
 #define BRRP_PROP_DesignSpeedDefinition_DesignSpeed                 "DesignSpeed"
 #define BRRP_PROP_DesignSpeedDefinition_UnitSystem                  "UnitSystem"
+#define BRRP_PROP_PathwayElement_Order                              "Order"
 
 
 //-----------------------------------------------------------------------------------------
 // Category names
 //-----------------------------------------------------------------------------------------
 #define BRRP_CATEGORY_Corridor                                      "Corridor"
+#define BRRP_CATEGORY_CorridorPortions                              "CorridorPortions"
 #define BRRP_CATEGORY_DesignSpeed                                   "DesignSpeed"
+#define BRRP_CATEGORY_Network                                       "Network"
 #define BRRP_CATEGORY_Railway                                       "Railway"
 #define BRRP_CATEGORY_Roadway                                       "Roadway"
 
@@ -148,9 +152,11 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Road & Rail shared
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(Corridor)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CorridorPortions)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CorridorPortionElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeed)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedDefinition)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayDesignCriteria)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRailNetwork)
 
