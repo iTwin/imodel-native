@@ -2306,8 +2306,7 @@ TEST_F(GridsTestFixture, SketchGrid_CreatedAndDeleted)
     /////////////////////////////////////////////////////////////
     ASSERT_EQ(0, sketchGrid->MakeAxesIterator().BuildIdList<DgnElementId>().size()) << "new sketch grid should contain no elements";
 
-    Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(db);
-    Grids::GeneralGridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert(defModel, *sketchGrid);
+    Grids::GeneralGridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert(*sketchGrid);
 
     ASSERT_TRUE(gridAxis.IsValid()) << "Failed to create sketch grid axis";
 
@@ -2480,7 +2479,7 @@ TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
     DgnElementPtr element = handler.Create (params);
     element->Insert ();
 
-    ASSERT_TRUE (!element->GetElementId ().IsValid ()) << "should fail to insert axis created via handler";
+    ASSERT_TRUE(!element->GetElementId().IsValid()) << "should fail to insert axis created via handler";
     }
     db.SaveChanges ();
     }
@@ -2495,7 +2494,7 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
 
     SketchGridPtr grid = SketchGrid::Create (*m_model, m_model->GetModeledElementId(), "SketchGrid-1", 0.0, 10.0);
     grid->Insert ();
-    GeneralGridAxisPtr axis1 = GeneralGridAxis::CreateAndInsert (BuildingUtils::GetGroupInformationModel(db), *grid);
+    GeneralGridAxisPtr axis1 = GeneralGridAxis::CreateAndInsert (*grid);
 
     /////////////////////////////////////////////////////////////
     // Check if invalid grid plane surfaces can't be added to sketch grid
@@ -2987,8 +2986,7 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     db.SaveChanges();
     db.BriefcaseManager().StartBulkOperation();
 
-    Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(db);
-    Grids::GridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert(defModel, *sketchGrid);
+    Grids::GridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert(*sketchGrid);
 
     ASSERT_TRUE(gridAxis.IsValid()) << "Failed to create sketch grid axis";
     db.SaveChanges();
@@ -3276,6 +3274,25 @@ TEST_F(GridsTestFixture, GridSpline_Created)
 //---------------------------------------------------------------------------------------
 // @betest                                      Haroldas.Vitunskas              12/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, GridAxis_GridHasNoSubmodel_CreateReturnsNullptr)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    SketchGridPtr grid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "Grid", 0.0, 10.0);
+
+    ASSERT_TRUE(grid->Insert().IsValid()) << "Failed to insert grid";
+
+    Grids::GridAxisPtr gridAxis = GeneralGridAxis::Create(*grid);
+
+    ASSERT_TRUE(gridAxis.IsNull()) << "Failed to create grid axis";
+
+    db.SaveChanges();
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              12/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
 TEST_F(GridsTestFixture, GridAxis_Created)
     {
     DgnDbR db = *DgnClientApp::App().Project();
@@ -3284,12 +3301,13 @@ TEST_F(GridsTestFixture, GridAxis_Created)
     SketchGridPtr grid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "Grid", 0.0, 10.0);
 
     ASSERT_TRUE(grid->Insert().IsValid()) << "Failed to insert grid";
-    
+    grid->GetSurfacesModel();
+
     /////////////////////////////////////////////////////////////
     // Use Create method to create grid axis
     /////////////////////////////////////////////////////////////
-    Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(db);
-    Grids::GridAxisPtr gridAxis0 = GeneralGridAxis::Create(defModel, *grid);
+
+    Grids::GridAxisPtr gridAxis0 = GeneralGridAxis::Create(*grid);
 
     ASSERT_TRUE(gridAxis0.IsValid()) << "Failed to create grid axis";
     ASSERT_FALSE(gridAxis0->GetElementId().IsValid()) << "Grid axis should not have been inserted yet";
@@ -3305,32 +3323,12 @@ TEST_F(GridsTestFixture, GridAxis_Created)
     /////////////////////////////////////////////////////////////
     // Use CreateAndInsert method to create grid axis
     /////////////////////////////////////////////////////////////
-    Grids::GridAxisPtr gridAxis1 = GeneralGridAxis::CreateAndInsert(defModel, *grid);
+    Grids::GridAxisPtr gridAxis1 = GeneralGridAxis::CreateAndInsert(*grid);
     ASSERT_TRUE(gridAxis1.IsValid()) << "Failed to create and insert grid axis";
     ASSERT_TRUE(gridAxis1->GetElementId().IsValid()) << "Inserted grid axis' id should be valid";
 
     ASSERT_EQ(grid->GetElementId(), gridAxis1->GetGridId()) << "Grid axis' grid id is incorrect";
 
-    db.SaveChanges();
-    db.BriefcaseManager().StartBulkOperation();
-
-    /////////////////////////////////////////////////////////////
-    // Try setting grid id to a grid axis
-    /////////////////////////////////////////////////////////////
-    SketchGridPtr otherGrid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "Other Grid", 0.0, 10.0);
-
-    ASSERT_TRUE(otherGrid->Insert().IsValid()) << "Failed to insert grid";
-
-    gridAxis0->SetGridId(otherGrid->GetElementId());
-
-    ASSERT_TRUE(gridAxis0->Update().IsValid()) << "Failed to update grid axis with other grid's id";
-    ASSERT_EQ(otherGrid->GetElementId(), gridAxis0->GetGridId()) << "Grid axis' grid id is incorrect";
-
-
-    gridAxis0->SetGridId(DgnElementId());
-
-    ASSERT_TRUE(gridAxis0->Update().IsNull()) << "Should not be able to update grid axis with invalid grid id";
-    
     db.SaveChanges();
     db.BriefcaseManager().StartBulkOperation();
 
@@ -3413,8 +3411,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
 
     ASSERT_TRUE(grid->Insert().IsValid()) << "Failed to insert grid";
 
-    Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(db);
-    Grids::GeneralGridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert(defModel, *grid);
+    Grids::GeneralGridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert(*grid);
     ASSERT_TRUE(gridAxis.IsValid()) << "Failed to create and insert grid axis";
 
     SketchLineGridSurface::CreateParams lineSurfParams(*grid->GetSurfacesModel(), *gridAxis, 0.0, 20, { 0, 0 }, { 10, 0 });
@@ -3680,21 +3677,13 @@ TEST_F(GridsTestFixture, TryCreateOrthogonalGridAndSurfaceInSingleRequest)
     ASSERT_TRUE(thisGrid.IsValid());
     ASSERT_TRUE(thisGrid->Insert().IsValid());
 
-    Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(thisGrid->GetDgnDb());
-
-    OrthogonalAxisXPtr horizontalAxis = OrthogonalAxisX::Create(defModel, *thisGrid);
-    OrthogonalAxisYPtr verticalAxis = OrthogonalAxisY::Create(defModel, *thisGrid);
+    OrthogonalAxisXPtr horizontalAxis = OrthogonalAxisX::CreateAndInsert(*thisGrid);
+    OrthogonalAxisYPtr verticalAxis = OrthogonalAxisY::CreateAndInsert(*thisGrid);
     ASSERT_TRUE(horizontalAxis.IsValid());
     ASSERT_TRUE(verticalAxis.IsValid());
-    ASSERT_TRUE(horizontalAxis->Insert().IsValid());
-    ASSERT_TRUE(verticalAxis->Insert().IsValid());
-
-    Dgn::SpatialLocationModelPtr subModel = SpatialLocationModel::Create (*thisGrid);
-    ASSERT_TRUE(subModel.IsValid());
-    ASSERT_EQ(DgnDbStatus::Success, subModel->Insert());
 
     //now try to create the gridSurface
-    PlanCartesianGridSurface::CreateParams surfParams(*subModel, *horizontalAxis, 0.0, 0.0, 10.0, 0.0, 15.0);
+    PlanCartesianGridSurface::CreateParams surfParams(*thisGrid->GetSurfacesModel(), *horizontalAxis, 0.0, 0.0, 10.0, 0.0, 15.0);
     PlanCartesianGridSurfacePtr surface = PlanCartesianGridSurface::Create(surfParams);
     ASSERT_TRUE(surface.IsValid());
     ASSERT_TRUE(surface->Insert().IsValid());

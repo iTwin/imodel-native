@@ -611,8 +611,7 @@ bvector <GridCurvePtr> GeometryTests::InsertIntersectionCurves ( ElevationGridCR
     GridCurvesSetPtr curvesPortion = GridCurvesSet::Create (GetModel());
     curvesPortion->Insert();
 
-    for (DgnElementId const& elevationSurfaceId : elevationGrid.
-                                                  GetSurfacesModel()->MakeIterator().BuildIdList <DgnElementId>())
+    for (DgnElementId const& elevationSurfaceId : elevationGrid.MakeIterator().BuildIdList <DgnElementId>())
         {
         GridPlanarSurfaceCPtr floorGridSurface = GridPlanarSurface::Get (GetDb(), elevationSurfaceId);
         BeAssert (BentleyStatus::SUCCESS == otherGrid.IntersectGridSurface (floorGridSurface.get(), *curvesPortion));
@@ -957,7 +956,7 @@ TEST_F (GeometryTests, CreateGridsGeometry)
         sketchGrid->Insert();
 
         DgnModelCR defModel = BuildingUtils::GetGroupInformationModel (GetDb());
-        GeneralGridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert (defModel, *sketchGrid);
+        GeneralGridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert (*sketchGrid);
 
         SketchLineGridSurface::CreateParams params (*sketchGrid->GetSurfacesModel().get(),
                                                     *gridAxis,

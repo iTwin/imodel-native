@@ -4,7 +4,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
+#include <DgnPlatform/DgnDb.h>
+#include <BuildingShared/BuildingSharedMacros.h>
+#include <BuildingShared/Interfaces.h>
+#include <Grids/Domain/GridsMacros.h>
+#include "ForwardDeclarations.h"
+#include "GridSurface.h"
+#include "GridAxis.h"
 
 BEGIN_GRIDS_NAMESPACE
 
