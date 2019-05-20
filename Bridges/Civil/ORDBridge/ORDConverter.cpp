@@ -1703,7 +1703,7 @@ void ORDConverter::SetCorridorDesignAlignments()
 
         AlignmentBim::AlignmentPtr bimMainAlignmentPtr;
         auto cifAlignmentPtr = cifCorridorPtr->GetCorridorAlignment();
-        if (cifAlignmentPtr.IsValid() && cifAlignmentPtr->IsFinalElement())
+        if (cifAlignmentPtr.IsValid())
             {
             ORDAlignmentsConverter::CifAlignmentSourceItem alignmentItem(*cifAlignmentPtr);
 

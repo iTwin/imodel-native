@@ -250,24 +250,17 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedElements(Utf8CP
 
     ECSqlStatement stmt;
     stmt.Prepare(*dgnDbPtr, "SELECT COUNT(*) FROM "
-        BRRA_SCHEMA(BRRA_CLASS_Alignment) " a," BIS_SCHEMA(BIS_CLASS_Model) " m, " BIS_SCHEMA(BIS_CLASS_SpatialLocationPartition) " p "
-        "WHERE p.CodeValue=? AND p.ECInstanceId = m.ModeledElement.Id AND a.Model.Id = m.ECInstanceId "
-        "GROUP BY a.Model.Id");
+        BRRA_SCHEMA(BRRA_CLASS_Alignment) " a," BIS_SCHEMA(BIS_CLASS_Model) " m, " BRRA_SCHEMA(BRRA_CLASS_DesignAlignments) " d "
+        "WHERE m.ModeledElement.Id = d.ECInstanceId AND a.Model.Id = m.ECInstanceId ");
     BeAssert(stmt.IsPrepared());
-    auto partitionName = RoadRailAlignmentDomain::GetDesignPartitionName();
-    stmt.BindText(1, RoadRailAlignmentDomain::GetDesignPartitionName(), IECSqlBinder::MakeCopy::Yes);
     BeAssert(DbResult::BE_SQLITE_ROW == stmt.Step());
     BeAssert(alignmentCount == stmt.GetValueInt(0));
     
     stmt.Finalize();
 
     stmt.Prepare(*dgnDbPtr, "SELECT COUNT(*) FROM "
-        BRRP_SCHEMA(BRRP_CLASS_Corridor) " r," BIS_SCHEMA(BIS_CLASS_Model) " m, " BIS_SCHEMA(BIS_CLASS_PhysicalPartition) " p "
-        "WHERE p.CodeValue=? AND p.ECInstanceId = m.ParentModel.Id AND r.Model.Id = m.ECInstanceId "
-        "GROUP BY r.Model.Id");
+        BRRP_SCHEMA(BRRP_CLASS_Corridor) " c ");
     BeAssert(stmt.IsPrepared());
-    partitionName = RoadRailPhysical::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName();
-    stmt.BindText(1, RoadRailPhysical::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName(), IECSqlBinder::MakeCopy::Yes);
 
     if (corridorCount == 0)
         BeAssert(DbResult::BE_SQLITE_DONE == stmt.Step());
