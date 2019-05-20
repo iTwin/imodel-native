@@ -1,0 +1,10 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+
+$(BuildContext)PublicAPI/ThreeMx : $(_MakeFilePath)../PublicAPI/ThreeMx
+    $(LinkFirstDepToFirstTargetAsDirectory)
