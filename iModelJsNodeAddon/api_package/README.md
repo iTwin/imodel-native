@@ -1,6 +1,6 @@
-# The iModel.js Native Platform API
+# @bentley/imodeljs-native
 
-Copyright © Bentley Systems, Inc. 2018
+Copyright © 2019 Bentley Systems, Incorporated. All rights reserved.
 
 ## Description
 
