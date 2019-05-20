@@ -33,8 +33,8 @@ UserSettingsGroup::UserSettingsGroup (Utf8StringCR categoryLabel)
 UserSettingsGroup::UserSettingsGroup(UserSettingsGroupCR other)
     : PresentationKey(other)
     {
-    CommonToolsInternal::CopyRules(m_nestedSettings, other.m_nestedSettings);
-    CommonToolsInternal::CopyRules(m_settingsItems, other.m_settingsItems);
+    CommonToolsInternal::CopyRules(m_nestedSettings, other.m_nestedSettings, this);
+    CommonToolsInternal::CopyRules(m_settingsItems, other.m_settingsItems, this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -65,8 +65,8 @@ bool UserSettingsGroup::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_categoryLabel, USER_SETTINGS_XML_ATTRIBUTE_CATEGORY_LABEL))
         m_categoryLabel = "";
 
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<UserSettingsItem, UserSettingsItemList> (xmlNode, m_settingsItems, USER_SETTINGS_ITEM_XML_NODE_NAME);
-    CommonToolsInternal::LoadRulesFromXmlNode<UserSettingsGroup, UserSettingsGroupList> (xmlNode, m_nestedSettings, USER_SETTINGS_XML_NODE_NAME);
+    CommonToolsInternal::LoadSpecificationsFromXmlNode<UserSettingsItem, UserSettingsItemList> (xmlNode, m_settingsItems, USER_SETTINGS_ITEM_XML_NODE_NAME, this);
+    CommonToolsInternal::LoadRulesFromXmlNode<UserSettingsGroup, UserSettingsGroupList> (xmlNode, m_nestedSettings, USER_SETTINGS_XML_NODE_NAME, this);
 
     return true;
     }
@@ -99,8 +99,8 @@ bool UserSettingsGroup::_ReadJson(JsonValueCR json)
         return false;
 
     m_categoryLabel = json[USER_SETTINGS_JSON_ATTRIBUTE_CATEGORY_LABEL].asCString("");
-    CommonToolsInternal::LoadFromJson(json[USER_SETTINGS_JSON_ATTRIBUTE_SETTINGS_ITEMS], m_settingsItems, CommonToolsInternal::LoadRuleFromJson<UserSettingsItem>);
-    CommonToolsInternal::LoadFromJsonByPriority(json[USER_SETTINGS_JSON_ATTRIBUTE_NESTED_SETTINGS], m_nestedSettings, CommonToolsInternal::LoadRuleFromJson<UserSettingsGroup>);
+    CommonToolsInternal::LoadFromJson(json[USER_SETTINGS_JSON_ATTRIBUTE_SETTINGS_ITEMS], m_settingsItems, CommonToolsInternal::LoadRuleFromJson<UserSettingsItem>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(json[USER_SETTINGS_JSON_ATTRIBUTE_NESTED_SETTINGS], m_nestedSettings, CommonToolsInternal::LoadRuleFromJson<UserSettingsGroup>, this);
     return true;
     }
 

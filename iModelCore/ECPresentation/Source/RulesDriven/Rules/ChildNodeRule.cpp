@@ -28,8 +28,8 @@ SubCondition::SubCondition(Utf8StringCR condition) : m_condition(condition) {}
 SubCondition::SubCondition(SubConditionCR other)
     : m_condition(other.m_condition)
     {
-    CommonToolsInternal::CopyRules(m_subConditions, other.m_subConditions);
-    CommonToolsInternal::CloneRules(m_specifications, other.m_specifications);
+    CommonToolsInternal::CopyRules(m_subConditions, other.m_subConditions, this);
+    CommonToolsInternal::CloneRules(m_specifications, other.m_specifications, this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -49,22 +49,22 @@ bool SubCondition::ReadXml(BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue(m_condition, PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION))
         m_condition = "";
 
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<SubCondition, SubConditionList>(xmlNode, m_subConditions, SUB_CONDITION_XML_NODE_NAME);
+    CommonToolsInternal::LoadSpecificationsFromXmlNode<SubCondition, SubConditionList>(xmlNode, m_subConditions, SUB_CONDITION_XML_NODE_NAME, this);
 
     for (BeXmlNodeP child = xmlNode->GetFirstChild(BEXMLNODE_Element); NULL != child; child = child->GetNextSibling(BEXMLNODE_Element))
         {
         if (0 == BeStringUtilities::Stricmp(child->GetName(), ALL_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<AllInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<AllInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), ALL_RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<AllRelatedInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<AllRelatedInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), CUSTOM_NODE_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<CustomNodeSpecification, ChildNodeSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<CustomNodeSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<InstanceNodesOfSpecificClassesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<InstanceNodesOfSpecificClassesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<RelatedInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<RelatedInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<SearchResultInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<SearchResultInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
         }
 
     return true;
@@ -89,8 +89,8 @@ void SubCondition::WriteXml(BeXmlNodeP xmlNode) const
 bool SubCondition::ReadJson(JsonValueCR json)
     {
     m_condition = json[PRESENTATION_RULE_JSON_ATTRIBUTE_CONDITION].asCString("");
-    CommonToolsInternal::LoadFromJson(json[SUB_CONDITION_JSON_ATTRIBUTE_SUBCONDITIONS], m_subConditions, CommonToolsInternal::LoadRuleFromJson<SubCondition>);
-    CommonToolsInternal::LoadFromJsonByPriority(json[SUB_CONDITION_JSON_ATTRIBUTE_SPECIFICATIONS], m_specifications, ChildNodeSpecification::Create);
+    CommonToolsInternal::LoadFromJson(json[SUB_CONDITION_JSON_ATTRIBUTE_SUBCONDITIONS], m_subConditions, CommonToolsInternal::LoadRuleFromJson<SubCondition>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(json[SUB_CONDITION_JSON_ATTRIBUTE_SPECIFICATIONS], m_specifications, ChildNodeSpecification::Create, this);
     return true;
     }
 
@@ -188,9 +188,9 @@ ChildNodeRule::ChildNodeRule(Utf8StringCR condition, int priority, bool onlyIfNo
 ChildNodeRule::ChildNodeRule(ChildNodeRuleCR other)
     : ConditionalPresentationRule(other), m_targetTree(other.m_targetTree), m_stopFurtherProcessing(other.m_stopFurtherProcessing)
     {
-    CommonToolsInternal::CopyRules(m_subConditions, other.m_subConditions);
-    CommonToolsInternal::CloneRules(m_specifications, other.m_specifications);
-    CommonToolsInternal::CloneRules(m_customizationRules, other.m_customizationRules);
+    CommonToolsInternal::CopyRules(m_subConditions, other.m_subConditions, this);
+    CommonToolsInternal::CloneRules(m_specifications, other.m_specifications, this);
+    CommonToolsInternal::CloneRules(m_customizationRules, other.m_customizationRules, this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -227,34 +227,34 @@ bool ChildNodeRule::_ReadXml(BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_stopFurtherProcessing, COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING))
         m_stopFurtherProcessing = false;
 
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<SubCondition, SubConditionList>(xmlNode, m_subConditions, SUB_CONDITION_XML_NODE_NAME);
+    CommonToolsInternal::LoadSpecificationsFromXmlNode<SubCondition, SubConditionList>(xmlNode, m_subConditions, SUB_CONDITION_XML_NODE_NAME, this);
 
     for (BeXmlNodeP child = xmlNode->GetFirstChild(BEXMLNODE_Element); NULL != child; child = child->GetNextSibling(BEXMLNODE_Element))
         {
         if (0 == BeStringUtilities::Stricmp(child->GetName(), ALL_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<AllInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<AllInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), ALL_RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<AllRelatedInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<AllRelatedInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), CUSTOM_NODE_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<CustomNodeSpecification, ChildNodeSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<CustomNodeSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<InstanceNodesOfSpecificClassesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<InstanceNodesOfSpecificClassesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<RelatedInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<RelatedInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<SearchResultInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<SearchResultInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), GROUPING_RULE_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<GroupingRule, ChildNodeCustomizationRuleList>(child, m_customizationRules);
+            CommonToolsInternal::LoadRuleFromXmlNode<GroupingRule, ChildNodeCustomizationRuleList>(child, m_customizationRules, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), CHECKBOX_RULE_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<CheckBoxRule, ChildNodeCustomizationRuleList>(child, m_customizationRules);
+            CommonToolsInternal::LoadRuleFromXmlNode<CheckBoxRule, ChildNodeCustomizationRuleList>(child, m_customizationRules, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), STYLE_OVERRIDE_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<StyleOverride, ChildNodeCustomizationRuleList>(child, m_customizationRules);
+            CommonToolsInternal::LoadRuleFromXmlNode<StyleOverride, ChildNodeCustomizationRuleList>(child, m_customizationRules, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), LABEL_OVERRIDE_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<LabelOverride, ChildNodeCustomizationRuleList>(child, m_customizationRules);
+            CommonToolsInternal::LoadRuleFromXmlNode<LabelOverride, ChildNodeCustomizationRuleList>(child, m_customizationRules, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), SORTING_RULE_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<SortingRule, ChildNodeCustomizationRuleList>(child, m_customizationRules);
+            CommonToolsInternal::LoadRuleFromXmlNode<SortingRule, ChildNodeCustomizationRuleList>(child, m_customizationRules, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), IMAGE_ID_OVERRIDE_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<ImageIdOverride, ChildNodeCustomizationRuleList>(child, m_customizationRules);
+            CommonToolsInternal::LoadRuleFromXmlNode<ImageIdOverride, ChildNodeCustomizationRuleList>(child, m_customizationRules, this);
         }
 
     return true;
@@ -293,9 +293,9 @@ bool ChildNodeRule::_ReadJson(JsonValueCR json)
         return false;
 
     m_stopFurtherProcessing = json[COMMON_JSON_ATTRIBUTE_STOPFURTHERPROCESSING].asBool(false);
-    CommonToolsInternal::LoadFromJson(json[CHILD_NODE_RULE_JSON_ATTRIBUTE_SUBCONDITIONS], m_subConditions, CommonToolsInternal::LoadRuleFromJson<SubCondition>);
-    CommonToolsInternal::LoadFromJsonByPriority(json[CHILD_NODE_RULE_JSON_ATTRIBUTE_SPECIFICATIONS], m_specifications, ChildNodeSpecification::Create);
-    CommonToolsInternal::LoadFromJsonByPriority(json[CHILD_NODE_RULE_JSON_ATTRIBUTE_CUSTOMIZATIONRULES], m_customizationRules, CustomizationRule::Create);
+    CommonToolsInternal::LoadFromJson(json[CHILD_NODE_RULE_JSON_ATTRIBUTE_SUBCONDITIONS], m_subConditions, CommonToolsInternal::LoadRuleFromJson<SubCondition>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(json[CHILD_NODE_RULE_JSON_ATTRIBUTE_SPECIFICATIONS], m_specifications, ChildNodeSpecification::Create, this);
+    CommonToolsInternal::LoadFromJsonByPriority(json[CHILD_NODE_RULE_JSON_ATTRIBUTE_CUSTOMIZATIONRULES], m_customizationRules, CustomizationRule::Create, this);
     return true;
     }
 

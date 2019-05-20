@@ -12,6 +12,8 @@
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_SQLITE_EC
+
 /*---------------------------------------------------------------------------------**//**
 Helper class for commonly used functions
 * @bsiclass                                     Eligijus.Mauragas               10/2012
@@ -21,12 +23,15 @@ struct CommonTools
 private:
     CommonTools() {}
 
-public:    
-    //! Combines class name with element Id of Base36 format.
-    ECPRESENTATION_EXPORT static Utf8String GetDefaultDisplayLabel(Utf8StringCR className, uint64_t id);
+public:
+    //! Converts a given integer to base36
+    ECPRESENTATION_EXPORT static Utf8String ToBase36String(uint64_t i);
 
-    //! Combines class name with element Id of Base36 format.
-    ECPRESENTATION_EXPORT static Utf8String GetDefaultDisplayLabel(ECN::IECInstanceCR);
+    //! Extracts briefcase ID from the given ECInstance ID
+    ECPRESENTATION_EXPORT static uint64_t GetBriefcaseId(ECInstanceId id);
+
+    //! Extracts local ID from the given ECInstance ID
+    ECPRESENTATION_EXPORT static uint64_t GetLocalId(ECInstanceId id);
 
     //! Adds an element to the specified list sorted by elements priority
     template<typename ElementType, typename ListType> static void AddToListByPriority(ListType& list, ElementType& element)

@@ -487,7 +487,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         Utf8CP queryName = "AllInstanceNodes_InstanceLabelOverride_AppliedByPriority";
         ECClassCR class1 = *GetECClass(queryName, "Class1");
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(&class1, bvector<RelatedClass>(), {class1.GetPropertyP("Description"), class1.GetPropertyP("Code")});   
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(&class1, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("Description"), new InstanceLabelOverridePropertyValueSpecification("Code")});   
         ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
         query->SelectContract(*contract, "this");
         query->From(class1, true, "this");
@@ -504,7 +504,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         Utf8CP queryName = "AllInstanceNodes_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels";
         ECClassCR class1 = *GetECClass(queryName, "Class1");
-        NavigationQueryContractPtr class1Contract = ECInstanceNodesQueryContract::Create(&class1, bvector<RelatedClass>(), {class1.GetPropertyP("Description"), class1.GetPropertyP("Code")});   
+        NavigationQueryContractPtr class1Contract = ECInstanceNodesQueryContract::Create(&class1, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("Description"), new InstanceLabelOverridePropertyValueSpecification("Code")});
         ComplexNavigationQueryPtr class1Query = ComplexNavigationQuery::Create();
         class1Query->SelectContract(*class1Contract, "this");
         class1Query->From(class1, true, "this");
@@ -656,7 +656,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // AllRelatedInstanceNodes_InstanceLabelOverride_AppliedByPriority
         {
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(&ret_Gadget, bvector<RelatedClass>(), {ret_Widget.GetPropertyP("Description"), ret_Widget.GetPropertyP("MyID")});
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(&ret_Gadget, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("Description"), new InstanceLabelOverridePropertyValueSpecification("MyID")});
         
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*contract, "this");
@@ -720,12 +720,12 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery4->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery5 = ComplexNavigationQuery::Create();
-        nestedQuery5->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Sprocket, bvector<RelatedClass>(), {ret_Sprocket.GetPropertyP("MyID")}), "this");
+        nestedQuery5->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Sprocket, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("MyID")}), "this");
         nestedQuery5->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0",  true, false));
         nestedQuery5->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
     
         ComplexNavigationQueryPtr nestedQuery6 = ComplexNavigationQuery::Create();
-        nestedQuery6->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Sprocket, bvector<RelatedClass>(), {ret_Sprocket.GetPropertyP("MyID")}), "this");
+        nestedQuery6->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Sprocket, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("MyID")}), "this");
         nestedQuery6->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         nestedQuery6->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
@@ -1785,7 +1785,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     // RelatedInstanceNodes_InstanceLabelOverride_AppliedByPriority
         {    
         ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
-        query->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget, bvector<RelatedClass>(), {ret_Widget.GetPropertyP("Description"), ret_Widget.GetPropertyP("MyID")}), "this");
+        query->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("Description"), new InstanceLabelOverridePropertyValueSpecification("MyID")}), "this");
         query->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", true, false));
         query->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
@@ -1804,7 +1804,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     // RelatedInstanceNodes_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels
         {    
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
-        nestedQuery1->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget, bvector<RelatedClass>(), {ret_Widget.GetPropertyP("MyID")}), "this");
+        nestedQuery1->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("MyID")}), "this");
         nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
@@ -2083,7 +2083,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         gadgetQuery->SelectContract(*gadgetContract, "this");
         gadgetQuery->From(ret_Gadget, false, "this");
 
-        NavigationQueryContractPtr widgetContract = ECInstanceNodesQueryContract::Create(&ret_Widget, bvector<RelatedClass>(), {ret_Widget.GetPropertyP("MyID")});   
+        NavigationQueryContractPtr widgetContract = ECInstanceNodesQueryContract::Create(&ret_Widget, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("MyID")});   
         ComplexNavigationQueryPtr widgetQuery = ComplexNavigationQuery::Create();
         widgetQuery->SelectContract(*widgetContract, "this");
         widgetQuery->From(ret_Widget, false, "this");
@@ -2098,7 +2098,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
     // InstancesOfSpecificClasses_InstanceLabelOverride_AppliedByPriority
         {
-        NavigationQueryContractPtr widgetContract = ECInstanceNodesQueryContract::Create(&ret_Widget, bvector<RelatedClass>(), {ret_Widget.GetPropertyP("Description"), ret_Widget.GetPropertyP("MyID")});   
+        NavigationQueryContractPtr widgetContract = ECInstanceNodesQueryContract::Create(&ret_Widget, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("Description"), new InstanceLabelOverridePropertyValueSpecification("MyID")});   
         ComplexNavigationQueryPtr widgetQuery = ComplexNavigationQuery::Create();
         widgetQuery->SelectContract(*widgetContract, "this");
         widgetQuery->From(ret_Widget, false, "this");
@@ -2295,7 +2295,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         StringNavigationQueryPtr searchQuery = StringNavigationQuery::Create(SEARCH_NODE_QUERY_PROCESSED);
 
-        RefCountedPtr<DisplayLabelGroupingNodesQueryContract> contract = DisplayLabelGroupingNodesQueryContract::Create(&ret_Widget, true, bvector<RelatedClass>(), {ret_Widget.GetPropertyP("IntProperty"), ret_Widget.GetPropertyP("MyID")});
+        RefCountedPtr<DisplayLabelGroupingNodesQueryContract> contract = DisplayLabelGroupingNodesQueryContract::Create(&ret_Widget, true, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("IntProperty"), new InstanceLabelOverridePropertyValueSpecification("MyID")});
         contract->SetECClassIdFieldName(SEARCH_QUERY_FIELD_ECClassId);
         contract->SetECInstanceIdFieldName(SEARCH_QUERY_FIELD_ECInstanceId);
 
@@ -2318,7 +2318,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         StringNavigationQueryPtr widgetSearchQuery = StringNavigationQuery::Create(SEARCH_NODE_QUERY_PROCESSED);
 
-        RefCountedPtr<DisplayLabelGroupingNodesQueryContract> widgetContract = DisplayLabelGroupingNodesQueryContract::Create(&ret_Widget, true, bvector<RelatedClass>(), {ret_Widget.GetPropertyP("MyID")});
+        RefCountedPtr<DisplayLabelGroupingNodesQueryContract> widgetContract = DisplayLabelGroupingNodesQueryContract::Create(&ret_Widget, true, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("MyID")});
         widgetContract->SetECClassIdFieldName(SEARCH_QUERY_FIELD_ECClassId);
         widgetContract->SetECInstanceIdFieldName(SEARCH_QUERY_FIELD_ECInstanceId);
         ComplexNavigationQueryPtr widgetInstancesQuery = ComplexNavigationQuery::Create();
@@ -4173,9 +4173,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
-        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
-        labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("Description"), ret_Widget.GetPropertyP("MyID")});
-        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Widget, { new InstanceLabelOverridePropertyValueSpecification("Description"), new InstanceLabelOverridePropertyValueSpecification("MyID") });
+        displayLabelField->SetOverrideValueSpecs(labelOverrideMap);
         descriptor->AddField(displayLabelField);
         AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
@@ -4197,9 +4197,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
-        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
-        labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("MyID")});
-        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Widget, {new InstanceLabelOverridePropertyValueSpecification("MyID")});
+        displayLabelField->SetOverrideValueSpecs(labelOverrideMap);
         descriptor->AddField(displayLabelField);        
 
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
@@ -4230,9 +4230,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
-        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
-        labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("MyID")});
-        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Widget, {new InstanceLabelOverridePropertyValueSpecification("MyID")});
+        displayLabelField->SetOverrideValueSpecs(labelOverrideMap);
         descriptor->AddField(displayLabelField);
 
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
@@ -4644,9 +4644,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
-        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
-        labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("Description"), ret_Widget.GetPropertyP("MyID")});
-        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Widget, {new InstanceLabelOverridePropertyValueSpecification("Description"), new InstanceLabelOverridePropertyValueSpecification("MyID")});
+        displayLabelField->SetOverrideValueSpecs(labelOverrideMap);
         descriptor->AddField(displayLabelField);
         AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
@@ -4666,9 +4666,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
-        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
-        labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("MyID")});
-        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Widget, {new InstanceLabelOverridePropertyValueSpecification("MyID")});
+        displayLabelField->SetOverrideValueSpecs(labelOverrideMap);
         descriptor->AddField(displayLabelField);
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         descriptor->GetAllFields().back()->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
@@ -4694,9 +4694,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
-        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
-        labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("MyID")});
-        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Widget, {new InstanceLabelOverridePropertyValueSpecification("MyID")});
+        displayLabelField->SetOverrideValueSpecs(labelOverrideMap);
         descriptor->AddField(displayLabelField);
         field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
         descriptor->GetAllFields().back()->AsPropertiesField()->AddProperty(ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));
@@ -5487,9 +5487,9 @@ void ExpectedQueries::RegisterExpectedQueries()
             });
         
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
-        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
-        labelOverrideMap.Insert(&ret_Sprocket, {ret_Sprocket.GetPropertyP("Description"), ret_Sprocket.GetPropertyP("MyID")});
-        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Sprocket, {new InstanceLabelOverridePropertyValueSpecification("Description"), new InstanceLabelOverridePropertyValueSpecification("MyID")});
+        displayLabelField->SetOverrideValueSpecs(labelOverrideMap);
         descriptor->AddField(displayLabelField);
         AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
         AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
@@ -5530,9 +5530,9 @@ void ExpectedQueries::RegisterExpectedQueries()
             });
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
-        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
-        labelOverrideMap.Insert(&ret_Gadget, {ret_Gadget.GetPropertyP("MyID")});
-        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Gadget, {new InstanceLabelOverridePropertyValueSpecification("MyID")});
+        displayLabelField->SetOverrideValueSpecs(labelOverrideMap);
         descriptor->AddField(displayLabelField);
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("MyID")));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("nav_RET_Gadget_0", ret_Sprocket, *ret_Sprocket.GetPropertyP("Gadget")));
@@ -5942,9 +5942,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField("", 1000);
-        bmap<ECClassCP, bvector<ECPropertyCP>> labelOverrideMap;
-        labelOverrideMap.Insert(&ret_Widget, {ret_Widget.GetPropertyP("Description"), ret_Widget.GetPropertyP("MyID")});
-        displayLabelField->SetPropertiesMap(labelOverrideMap);
+        bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverrideMap;
+        labelOverrideMap.Insert(&ret_Widget, {new InstanceLabelOverridePropertyValueSpecification("Description"), new InstanceLabelOverridePropertyValueSpecification("MyID")});
+        displayLabelField->SetOverrideValueSpecs(labelOverrideMap);
         descriptor->AddField(displayLabelField);
         AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("Description")));
         AddField(*descriptor, ret_Widget, ContentDescriptor::Property("this", ret_Widget, *ret_Widget.GetPropertyP("MyID")));

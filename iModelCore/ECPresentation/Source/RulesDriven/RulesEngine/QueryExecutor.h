@@ -151,4 +151,19 @@ public:
     ECPRESENTATION_EXPORT size_t GetResult() const;
 };
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                05/2019
++===============+===============+===============+===============+===============+======*/
+struct EXPORT_VTABLE_ATTRIBUTE GenericQueryExecutor : QueryExecutor
+{
+private:
+    std::function<void(ECSqlStatement&)> m_reader;
+protected:
+    void _ReadRecord(ECSqlStatement& stmt) override { m_reader(stmt); }
+public:
+    GenericQueryExecutor(IConnectionCR connection, ECSqlStatementCache const& statementCache, PresentationQueryBase const& query, std::function<void(ECSqlStatement&)> reader)
+        : QueryExecutor(connection, statementCache, query), m_reader(reader)
+        {}
+};
+
 END_BENTLEY_ECPRESENTATION_NAMESPACE

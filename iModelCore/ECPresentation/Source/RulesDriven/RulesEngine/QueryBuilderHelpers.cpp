@@ -30,7 +30,7 @@ template void QueryBuilderHelpers::SetOrUnion<GenericQuery>(GenericQueryPtr&, Ge
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> 
+template<typename T>
 void QueryBuilderHelpers::Where(RefCountedPtr<T>& query, Utf8CP clause, BoundQueryValuesListCR bindings)
     {
     if (nullptr != query->AsComplexQuery())
@@ -171,7 +171,7 @@ bool CheckQueryForAliases(Utf8CP queryString, bvector<Utf8CP> const& aliases)
     // In case aliases aren't specified, check if alias is alphanumeric or _
     if (aliases.empty())
         return true;
-    
+
     // Else check if alias matches any given alias
     for (Utf8CP aliasCase : aliases)
         {
@@ -196,7 +196,7 @@ bool QueryBuilderHelpers::NeedsNestingToUseAlias(T const& query, bvector<Utf8CP>
 
     if (nullptr != query.AsStringQuery())
         return true;
-    
+
     if (nullptr != query.AsUnionQuery())
         {
         UnionPresentationQuery<T> const& unionQuery = *query.AsUnionQuery();
@@ -210,7 +210,7 @@ bool QueryBuilderHelpers::NeedsNestingToUseAlias(T const& query, bvector<Utf8CP>
         if (NeedsNestingToUseAlias(*exceptQuery.GetBase(), aliases) || NeedsNestingToUseAlias(*exceptQuery.GetExcept(), aliases))
             return true;
         }
-    
+
     if (nullptr != query.AsComplexQuery() && CheckQueryForAliases(query.AsComplexQuery()->GetClause(CLAUSE_Select).c_str(), aliases))
         return true;
 
@@ -269,7 +269,7 @@ private:
             BeAssert(false);
             return true;
             }
-    
+
         return !selectInfo.GetPathToPrimaryClass().back().IsForwardRelationship(); // invert direction
         }
 
@@ -286,7 +286,7 @@ private:
             }
         return true;
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                03/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -329,7 +329,7 @@ private:
         if (!tempIds.empty())
             RecursivelySelectRelatedKeys(result, baseQuery, idSelector, tempIds);
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                02/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -362,7 +362,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    RecursiveQueriesHelper(IConnectionCR connection, InstanceFilteringParams::RecursiveQueryInfo const& recursiveQueryInfo) 
+    RecursiveQueriesHelper(IConnectionCR connection, InstanceFilteringParams::RecursiveQueryInfo const& recursiveQueryInfo)
         : m_connection(connection), m_recursiveQueryInfo(recursiveQueryInfo)
         {}
     /*---------------------------------------------------------------------------------**//**
@@ -427,7 +427,7 @@ void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query
                 }
             }
         }
-    
+
     if (!relatedClassPath.empty())
         query.Join(relatedClassPath, false);
 
@@ -487,7 +487,7 @@ void QueryBuilderHelpers::ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& 
         query = CreateNestedQueryIfNecessary(*query, sortingFieldNames);
         Order(*query, orderByClause.c_str());
         }
-        
+
     // filtering
     if (!ovr.GetFilterExpression().empty())
         {
@@ -507,7 +507,7 @@ void QueryBuilderHelpers::ApplyPagingOptions(RefCountedPtr<ContentQuery>& query,
     {
     if (0 == opts.GetPageSize() && 0 == opts.GetPageStart())
         return;
-    
+
     QueryBuilderHelpers::Limit<ContentQuery>(*query, opts.GetPageSize(), opts.GetPageStart());
     }
 
@@ -545,7 +545,7 @@ void QueryBuilderHelpers::ApplyDefaultContentFlags(ContentDescriptorR descriptor
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                    Tautvydas.Zinys                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryBuilderHelpers::AddCalculatedFields(ContentDescriptorR descriptor, CalculatedPropertiesSpecificationList const& calculatedProperties, 
+void QueryBuilderHelpers::AddCalculatedFields(ContentDescriptorR descriptor, CalculatedPropertiesSpecificationList const& calculatedProperties,
     ILocalizationProvider const* localizationProvider, Utf8StringCR locale, PresentationRuleSetCR ruleSet, ECClassCP ecClass)
     {
     for (size_t i = 0; i < calculatedProperties.size(); i++)
@@ -605,6 +605,120 @@ ContentQueryPtr QueryBuilderHelpers::CreateMergedResultsQuery(ContentQueryR quer
     descriptor.RemoveContentFlag(ContentFlags::MergeResults);
 
     return outerQuery;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                     Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+struct InstanceLabelOverrideSelectFieldsBuilder : InstanceLabelOverrideValueSpecificationVisitor
+    {
+    private:
+        bvector<PresentationQueryContractFieldCPtr> m_fields;
+    protected:
+        void _Visit(InstanceLabelOverrideCompositeValueSpecification const& spec) override
+            {
+            bvector<PresentationQueryContractFieldCPtr> functionParameters;
+            functionParameters.push_back(PresentationQueryContractSimpleField::Create("", Utf8PrintfString("'%s'", spec.GetSeparator().c_str()).c_str()));
+            for (auto valuePart : spec.GetValueParts())
+                {
+                InstanceLabelOverrideSelectFieldsBuilder builder;
+                valuePart->GetSpecification()->Accept(builder);
+                BeAssert(1 == builder.GetSelectFields().size());
+                functionParameters.push_back(builder.GetSelectFields().front());
+                functionParameters.push_back(PresentationQueryContractSimpleField::Create("", valuePart->IsRequired() ? "TRUE" : "FALSE"));
+                }
+            m_fields.push_back(PresentationQueryContractFunctionField::Create("/CombinedValue/", FUNCTION_NAME_JoinOptionallyRequired, functionParameters));
+            }
+        void _Visit(InstanceLabelOverridePropertyValueSpecification const& spec) override
+            {
+            m_fields.push_back(PresentationQueryContractSimpleField::Create("/PropertyValue/", spec.GetPropertyName().c_str()));
+            }
+        void _Visit(InstanceLabelOverrideClassNameValueSpecification const& spec) override
+            {
+            m_fields.push_back(PresentationQueryContractFunctionField::Create("/ClassName/", FUNCTION_NAME_GetECClassName, 
+                {
+                PresentationQueryContractSimpleField::Create("/ClassId/", "ECClassId"),
+                PresentationQueryContractSimpleField::Create("/Full/", spec.ShouldUseFullName() ? "TRUE" : "FALSE")
+                }));
+            }
+        void _Visit(InstanceLabelOverrideClassLabelValueSpecification const&) override
+            {
+            m_fields.push_back(PresentationQueryContractFunctionField::Create("/ClassLabel/", FUNCTION_NAME_GetECClassLabel,
+                {
+                PresentationQueryContractSimpleField::Create("/ClassId/", "ECClassId"),
+                }));
+            }
+        void _Visit(InstanceLabelOverrideBriefcaseIdValueSpecification const&) override
+            {
+            // WIP: the clause can be replaced with the following when ECSQL start supporting bitwise operators
+            // FUNCTION_NAME_ToBase36 "(ECInstanceId >> 40)"
+            m_fields.push_back(PresentationQueryContractFunctionField::Create("/Base36BriefcaseId/", FUNCTION_NAME_ToBase36,
+                {
+                PresentationQueryContractFunctionField::Create("/BriefcaseId/", FUNCTION_NAME_ParseBriefcaseId,
+                    {
+                    PresentationQueryContractSimpleField::Create("/InstanceId/", "ECInstanceId"),
+                    })
+                }));
+            }
+        void _Visit(InstanceLabelOverrideLocalIdValueSpecification const&) override
+            {
+            // WIP: the clause can be replaced with the following when ECSQL start supporting bitwise operators
+            // FUNCTION_NAME_ToBase36 "(ECInstanceId & ((1 << 40) - 1))"
+            m_fields.push_back(PresentationQueryContractFunctionField::Create("/Base36LocalId/", FUNCTION_NAME_ToBase36,
+                {
+                PresentationQueryContractFunctionField::Create("/LocalId/", FUNCTION_NAME_ParseLocalId,
+                    {
+                    PresentationQueryContractSimpleField::Create("/InstanceId/", "ECInstanceId"),
+                    })
+                }));
+            }
+    public:
+        bvector<PresentationQueryContractFieldCPtr> const& GetSelectFields() const { return m_fields; }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationQueryContractFieldPtr QueryBuilderHelpers::CreateInstanceLabelField(Utf8CP name, bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs, 
+    PresentationQueryContractField const* fallback)
+    {
+    InstanceLabelOverrideSelectFieldsBuilder builder;
+    for (InstanceLabelOverrideValueSpecification const* spec : labelOverrideValueSpecs)
+        spec->Accept(builder);
+
+    RefCountedPtr<PresentationQueryContractFunctionField> labelField = PresentationQueryContractFunctionField::Create(name,
+        "COALESCE", builder.GetSelectFields());
+    if (nullptr != fallback)
+        labelField->GetFunctionParameters().push_back(fallback);
+    return labelField;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+GenericQueryPtr QueryBuilderHelpers::CreateInstanceLabelQuery(ECClassInstanceKeyCR key, bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs)
+    {
+    ECPropertyCP defaultLabelProperty = (nullptr != key.GetClass()) ? key.GetClass()->GetInstanceLabelProperty() : nullptr;
+    Utf8CP defaultLabelClause = (nullptr != defaultLabelProperty) ? defaultLabelProperty->GetName().c_str() : "''";
+    RefCountedPtr<PresentationQueryContractSimpleField> defaultLabelField = PresentationQueryContractSimpleField::Create(nullptr, defaultLabelClause);
+    PresentationQueryContractFieldPtr fallbackLabelField = PresentationQueryContractFunctionField::Create("/FallbackDisplayLabel/", FUNCTION_NAME_GetECInstanceDisplayLabel,
+        {
+        PresentationQueryContractSimpleField::Create("/ECClassId/", "ECClassId"),
+        PresentationQueryContractSimpleField::Create("/ECInstanceId/", "ECInstanceId"),
+        defaultLabelField,
+        PresentationQueryContractSimpleField::Create("/RelatedInstanceInfo/", "NULL"),
+        });
+    PresentationQueryContractFieldPtr labelField = (labelOverrideValueSpecs.size() > 0) ? CreateInstanceLabelField("/DisplayLabel/", labelOverrideValueSpecs, fallbackLabelField.get()) : fallbackLabelField;
+
+    RefCountedPtr<SimpleQueryContract> contract = SimpleQueryContract::Create();
+    contract->AddField(*labelField);
+
+    ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
+    query->SelectContract(*contract);
+    query->From(*key.GetClass(), false);
+    query->Where("ECInstanceId = ?", { new BoundQueryId(key.GetId()) });
+
+    return query;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -676,10 +790,10 @@ void RelatedClassPath::Reverse(Utf8CP firstTargetClassAlias, bool isFirstTargetP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bmap<ECClassCP, bvector<ECPropertyCP>> QueryBuilderHelpers::GetMappedLabelOverridingProperties(ECSchemaHelper const& helper, InstanceLabelOverrideList labelOverrides)
+bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> QueryBuilderHelpers::GetLabelOverrideValuesMap(ECSchemaHelper const& helper, InstanceLabelOverrideList labelOverrides)
     {
-    std::sort(labelOverrides.begin(),labelOverrides.end(), [](InstanceLabelOverrideCP a, InstanceLabelOverrideCP b) {return a->GetPriority() > b->GetPriority();});
-    bmap<ECClassCP, bvector<ECPropertyCP>> mappedProperties;
+    std::sort(labelOverrides.begin(), labelOverrides.end(), [](InstanceLabelOverrideCP a, InstanceLabelOverrideCP b) {return a->GetPriority() > b->GetPriority();});
+    bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> mappedFields;
     for (InstanceLabelOverrideP labelOverride : labelOverrides)
         {
         ECClassCP ecClass = helper.GetECClass(labelOverride->GetClassName().c_str());
@@ -688,23 +802,13 @@ bmap<ECClassCP, bvector<ECPropertyCP>> QueryBuilderHelpers::GetMappedLabelOverri
             BeAssert(false && "Invalid class name");
             continue;
             }
-        auto iter = mappedProperties.find(ecClass);
-        if (iter == mappedProperties.end())
-            iter = mappedProperties.Insert(ecClass, bvector<ECPropertyCP>()).first;
+        auto iter = mappedFields.find(ecClass);
+        if (iter == mappedFields.end())
+            iter = mappedFields.Insert(ecClass, bvector<InstanceLabelOverrideValueSpecification const*>()).first;
 
-        bvector<ECPropertyCP> properties;
-        for (Utf8StringCR propertyName : labelOverride->GetPropertyNames())
-            {
-            ECPropertyCP ecProperty = ecClass->GetPropertyP(propertyName);
-            if (nullptr == ecProperty)
-                {
-                BeAssert(false && "Invalid property name");
-                continue;
-                }
-            iter->second.push_back(ecProperty);
-            }
+        iter->second.insert(iter->second.end(), labelOverride->GetValueSpeficications().begin(), labelOverride->GetValueSpeficications().end());
         }
-    return mappedProperties;
+    return mappedFields;
     }
 
 /*---------------------------------------------------------------------------------**//**

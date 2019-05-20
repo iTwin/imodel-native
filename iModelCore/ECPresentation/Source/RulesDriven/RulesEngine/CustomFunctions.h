@@ -21,6 +21,8 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define FUNCTION_NAME_GetRangeImageId               "GetRangeImageId"
 #define FUNCTION_NAME_IsOfClass                     "IsOfClass"
 #define FUNCTION_NAME_GetECClassId                  "RulesEngine_GetECClassId"
+#define FUNCTION_NAME_GetECClassName                "RulesEngine_GetECClassName"
+#define FUNCTION_NAME_GetECClassLabel               "RulesEngine_GetECClassLabel"
 #define FUNCTION_NAME_GetGroupedInstanceKeys        "GetGroupedInstanceKeys"
 #define FUNCTION_NAME_GetInstanceKey                "GetInstanceKey"
 #define FUNCTION_NAME_GetMergedValue                "GetMergedValue"
@@ -39,6 +41,10 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define FUNCTION_NAME_AreDoublesEqualByValue        "AreDoublesEqualByValue"
 #define FUNCTION_NAME_GetPropertyDisplayValue       "GetPropertyDisplayValue"
 #define FUNCTION_NAME_GetRelatedDisplayLabel        "GetRelatedDisplayLabel"
+#define FUNCTION_NAME_ToBase36                      "ToBase36"
+#define FUNCTION_NAME_ParseBriefcaseId              "ParseBriefcaseId"
+#define FUNCTION_NAME_ParseLocalId                  "ParseLocalId"
+#define FUNCTION_NAME_JoinOptionallyRequired        "JoinOptionallyRequired"
 
 struct JsonNavNodesFactory;
 struct ILocalizationProvider;

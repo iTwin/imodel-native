@@ -31,6 +31,8 @@ struct RulesDrivenECPresentationManagerTests : ECPresentationTest
     virtual void SetUp() override;
     virtual void TearDown() override;
 
+    void SetUpDefaultLabelRule(PresentationRuleSetR rules);
+
     ECSchemaCP GetSchema();
     ECClassCP GetClass(Utf8CP name);
     ECClassCP GetClass(Utf8CP schemaName, Utf8CP className);
@@ -38,6 +40,8 @@ struct RulesDrivenECPresentationManagerTests : ECPresentationTest
     ECRelationshipClassCP GetRelationshipClass(Utf8CP schemaName, Utf8CP className);
     Utf8String GetClassNamesList(bvector<ECClassCP> const& classes);
     Utf8String GetDisplayLabel(IECInstanceCR instance);
+
+    Utf8String GetDefaultDisplayLabel(IECInstanceCR instance);
     };
 
 #define DEFINE_SCHEMA(name, schema_xml) DEFINE_REGISTRY_SCHEMA(RulesDrivenECPresentationManagerTests, name, schema_xml)

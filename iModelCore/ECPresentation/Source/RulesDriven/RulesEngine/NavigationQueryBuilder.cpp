@@ -196,12 +196,12 @@ struct SelectQueryInfo
         bool m_selectPolymorphically;
         bvector<RelatedClass> m_relatedClasses;
         SelectionPurpose m_flag;
-        bvector<ECPropertyCP> m_labelOverridingProperties;
+        bvector<InstanceLabelOverrideValueSpecification const*> m_labelOverrideValueSpecs;
     public:
         SelectQueryInfo() : m_selectClass(nullptr) {}
         SelectQueryInfo(ChildNodeSpecificationCR spec, ECClassCR selectClass, bool selectPolymorphically,
-            SelectionPurpose flag = SelectionPurpose::Include, bvector<RelatedClass> relatedClasses = bvector<RelatedClass>(), bvector<ECPropertyCP> const& labelOverrides = bvector<ECPropertyCP>())
-            : m_specification(&spec), m_selectClass(&selectClass), m_selectPolymorphically(selectPolymorphically), m_flag(flag), m_relatedClasses(relatedClasses), m_labelOverridingProperties(labelOverrides)
+            SelectionPurpose flag = SelectionPurpose::Include, bvector<RelatedClass> relatedClasses = bvector<RelatedClass>())
+            : m_specification(&spec), m_selectClass(&selectClass), m_selectPolymorphically(selectPolymorphically), m_flag(flag), m_relatedClasses(relatedClasses)
             {}
         ChildNodeSpecificationCP GetSpecification() const {return m_specification;}
         void SetSpecification(ChildNodeSpecificationCR spec) {m_specification = &spec;}
@@ -231,8 +231,8 @@ struct SelectQueryInfo
             return list;
             }
 
-        bvector<ECPropertyCP> const& GetLabelOverrides() const {return m_labelOverridingProperties;}
-        void SetLabelOverrides(bvector<ECPropertyCP> const& overrides) {m_labelOverridingProperties = overrides;}
+        bvector<InstanceLabelOverrideValueSpecification const*> const& GetLabelOverrideValueSpecs() const { return m_labelOverrideValueSpecs; }
+        void SetLabelOverrideValueSpecs(bvector<InstanceLabelOverrideValueSpecification const*> const& overrides) { m_labelOverrideValueSpecs = overrides; }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -425,7 +425,7 @@ protected:
     GroupingType _GetType() const override {return GroupingType::DisplayLabel;}
     NavigationQueryContractPtr _GetContract(SelectQueryInfo const& selectInfo) const override
         {
-        return DisplayLabelGroupingNodesQueryContract::Create(selectInfo.GetSelectClass(), true, selectInfo.GetRelatedClasses(), selectInfo.GetLabelOverrides());
+        return DisplayLabelGroupingNodesQueryContract::Create(selectInfo.GetSelectClass(), true, selectInfo.GetRelatedClasses(), selectInfo.GetLabelOverrideValueSpecs());
         }
     bool _AppliesForClass(ECClassCR, bool) const override {return true;}
     bool _IsAppliedTo(NavNodeCR node) const override {return node.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode);}
@@ -983,8 +983,8 @@ protected:
     NavigationQueryContractPtr _GetContract(SelectQueryInfo const& selectInfo) const override
         {
         if (m_groupingContract.IsNull())
-            m_groupingContract = DisplayLabelGroupingNodesQueryContract::Create(selectInfo.GetSelectClass(), false, selectInfo.GetRelatedClasses(), selectInfo.GetLabelOverrides());
-        return ECInstanceNodesQueryContract::Create(selectInfo.GetSelectClass(), selectInfo.GetRelatedClasses(), selectInfo.GetLabelOverrides());
+            m_groupingContract = DisplayLabelGroupingNodesQueryContract::Create(selectInfo.GetSelectClass(), false, selectInfo.GetRelatedClasses(), selectInfo.GetLabelOverrideValueSpecs());
+        return ECInstanceNodesQueryContract::Create(selectInfo.GetSelectClass(), selectInfo.GetRelatedClasses(), selectInfo.GetLabelOverrideValueSpecs());
         }
     bool _IsAppliedTo(NavNodeCR node) const override {return false;}
 
@@ -1553,7 +1553,7 @@ protected:
         {}
     NavigationQueryContractPtr _GetContract(SelectQueryInfo const& selectInfo) const override
         {
-        return ECInstanceNodesQueryContract::Create(selectInfo.GetSelectClass(), selectInfo.GetRelatedClasses(), selectInfo.GetLabelOverrides());
+        return ECInstanceNodesQueryContract::Create(selectInfo.GetSelectClass(), selectInfo.GetRelatedClasses(), selectInfo.GetLabelOverrideValueSpecs());
         }
 };
 
@@ -2642,33 +2642,14 @@ static ComplexNavigationQueryPtr CreateQuery(NavigationQueryContract& contract, 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                01/2018
+* @bsimethod                                    Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void GetLabelOverridesForClass(bvector<ECPropertyCP>& labelProperties, ECClassCR ecClass, bmap<ECClassCP, bvector<ECPropertyCP>> const& propertiesMap)
+template<typename TKey, typename TValue>
+static bvector<TKey> GetMapKeys(bmap<TKey, TValue> const& map)
     {
-    auto iter = propertiesMap.find(&ecClass);
-    if (iter != propertiesMap.end())
-        labelProperties.insert(labelProperties.end(), iter->second.begin(), iter->second.end());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void GetLabelOverridesForClassPolymorphically(bvector<ECPropertyCP>& labelProperties, ECClassCR ecClass, bmap<ECClassCP, bvector<ECPropertyCP>> const& propertiesMap)
-    {
-    GetLabelOverridesForClass(labelProperties, ecClass, propertiesMap);
-    for (ECClassCP baseClass : ecClass.GetBaseClasses())
-        GetLabelOverridesForClassPolymorphically(labelProperties, *baseClass, propertiesMap);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void SetLabelOverrides(SelectQueryInfo& info, bmap<ECClassCP, bvector<ECPropertyCP>> const& labelOverridingProperties)
-    {
-    bvector<ECPropertyCP> properties;
-    GetLabelOverridesForClassPolymorphically(properties, *info.GetSelectClass(), labelOverridingProperties);
-    info.SetLabelOverrides(properties);
+    bvector<TKey> keys;
+    std::transform(map.begin(), map.end(), std::back_inserter(keys), [](bpair<TKey, TValue> const& entry) {return entry.first;});
+    return keys;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2727,11 +2708,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
         return bvector<NavigationQueryPtr>();
 
     // determine instance label overrides
-    bmap<ECClassCP, bvector<ECPropertyCP>> labelOverridingProperties = QueryBuilderHelpers::GetMappedLabelOverridingProperties(m_params.GetSchemaHelper(),
+    bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverridingProperties = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
         m_params.GetRuleset().GetInstanceLabelOverrides());
-    bvector<ECClassCP> instanceLabelOverrideClasses;
-    std::transform(labelOverridingProperties.begin(), labelOverridingProperties.end(),
-        std::back_inserter(instanceLabelOverrideClasses), [](bpair<ECClassCP, bvector<ECPropertyCP>> const& entry){return entry.first;});
 
     // determine additional related joins
     for (SelectQueryInfo& info : selectInfos)
@@ -2742,12 +2720,13 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
 
     // may need to split some base classes into their derived classes if there are customization rules that only apply for
     // derived classes.
-    ProcessQueryClassesBasedOnCustomizationRules(selectInfos, groupingResolver, instanceLabelOverrideClasses, groupingResolver.GetParentInstanceNode(), m_params);
+    ProcessQueryClassesBasedOnCustomizationRules(selectInfos, groupingResolver, GetMapKeys(labelOverridingProperties),
+        groupingResolver.GetParentInstanceNode(), m_params);
 
     // create a query for each class
     for (SelectQueryInfo& info : selectInfos)
         {
-        SetLabelOverrides(info, labelOverridingProperties);
+        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::SerializeECClassMapPolymorphically(labelOverridingProperties, *info.GetSelectClass()));
 
         NavigationQueryContractCPtr contract = queryContext->GetContract(info);
         if (contract.IsNull())
@@ -2799,11 +2778,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
         }
 
     // determine instance label overrides
-    bmap<ECClassCP, bvector<ECPropertyCP>> labelOverridingProperties = QueryBuilderHelpers::GetMappedLabelOverridingProperties(m_params.GetSchemaHelper(),
+    bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverridingProperties = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
         m_params.GetRuleset().GetInstanceLabelOverrides());
-    bvector<ECClassCP> instanceLabelOverrideClasses;
-    std::transform(labelOverridingProperties.begin(), labelOverridingProperties.end(),
-        std::back_inserter(instanceLabelOverrideClasses), [](bpair<ECClassCP, bvector<ECPropertyCP>> const& entry){return entry.first;});
 
     if (groupingResolver.IsGroupedByRelationship())
         {
@@ -2819,7 +2795,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
             path.push_back(RelatedClass(*rootClass, *relationshipEnd, *groupingRelationship, isForwardJoin, nullptr, relationshipAlias.c_str()));
             SelectQueryInfo selectInfo = CreateSelectInfo(m_params.GetSchemaHelper(), *queryContext,
                 *rootClass->GetEntityClassCP(), path, SelectionPurpose::Include, specification);
-            SetLabelOverrides(selectInfo, labelOverridingProperties);
+            selectInfo.SetLabelOverrideValueSpecs(QueryBuilderHelpers::SerializeECClassMapPolymorphically(labelOverridingProperties, *selectInfo.GetSelectClass()));
 
             NavigationQueryContractPtr contract = queryContext->GetContract(selectInfo);
             if (contract.IsNull())
@@ -2866,12 +2842,13 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
 
         // may need to split some base classes into their derived classes if there are customization rules that only apply for
         // derived classes.
-        ProcessQueryClassesBasedOnCustomizationRules(selectInfos, groupingResolver, instanceLabelOverrideClasses, groupingResolver.GetParentInstanceNode(), m_params);
+        ProcessQueryClassesBasedOnCustomizationRules(selectInfos, groupingResolver, GetMapKeys(labelOverridingProperties),
+            groupingResolver.GetParentInstanceNode(), m_params);
 
         // union everything
         for (SelectQueryInfo& info : selectInfos)
             {
-            SetLabelOverrides(info, labelOverridingProperties);
+            info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::SerializeECClassMapPolymorphically(labelOverridingProperties, *info.GetSelectClass()));
             NavigationQueryContractPtr contract = queryContext->GetContract(info);
             if (contract.IsValid())
                 {
@@ -2916,11 +2893,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
         return bvector<NavigationQueryPtr>();
 
     // determine instance label overrides
-    bmap<ECClassCP, bvector<ECPropertyCP>> labelOverridingProperties = QueryBuilderHelpers::GetMappedLabelOverridingProperties(m_params.GetSchemaHelper(),
+    bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverridingProperties = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
         m_params.GetRuleset().GetInstanceLabelOverrides());
-    bvector<ECClassCP> instanceLabelOverrideClasses;
-    std::transform(labelOverridingProperties.begin(), labelOverridingProperties.end(),
-        std::back_inserter(instanceLabelOverrideClasses), [](bpair<ECClassCP, bvector<ECPropertyCP>> const& entry){return entry.first;});
 
     // determine additional related joins
     for (SelectQueryInfo& info : selectInfos)
@@ -2931,12 +2905,13 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
 
     // may need to split some base classes into their derived classes if there are customization rules that only apply for
     // derived classes.
-    ProcessQueryClassesBasedOnCustomizationRules(selectInfos, groupingResolver, instanceLabelOverrideClasses, groupingResolver.GetParentInstanceNode(), m_params);
+    ProcessQueryClassesBasedOnCustomizationRules(selectInfos, groupingResolver, GetMapKeys(labelOverridingProperties),
+        groupingResolver.GetParentInstanceNode(), m_params);
 
     // union everything
     for (SelectQueryInfo& info : selectInfos)
         {
-        SetLabelOverrides(info, labelOverridingProperties);
+        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::SerializeECClassMapPolymorphically(labelOverridingProperties, *info.GetSelectClass()));
         NavigationQueryContractCPtr contract = queryContext->GetContract(info);
         if (contract.IsNull())
             continue;
@@ -3068,11 +3043,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
     MultiQueryContextPtr queryContext = CreateQueryContext(groupingResolver, true);
 
     // determine instance label overrides
-    bmap<ECClassCP, bvector<ECPropertyCP>> labelOverridingProperties = QueryBuilderHelpers::GetMappedLabelOverridingProperties(m_params.GetSchemaHelper(),
+    bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverridingProperties = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
         m_params.GetRuleset().GetInstanceLabelOverrides());
-    bvector<ECClassCP> instanceLabelOverrideClasses;
-    std::transform(labelOverridingProperties.begin(), labelOverridingProperties.end(),
-        std::back_inserter(instanceLabelOverrideClasses), [](bpair<ECClassCP, bvector<ECPropertyCP>> const& entry){return entry.first;});
 
     // create a query for each class
     for (QuerySpecification* querySpecification : specification.GetQuerySpecifications())
@@ -3104,11 +3076,12 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
         // derived classes.
         bvector<SelectQueryInfo> selectInfos;
         selectInfos.push_back(std::move(selectInfo));
-        ProcessQueryClassesBasedOnCustomizationRules(selectInfos, groupingResolver, instanceLabelOverrideClasses, groupingResolver.GetParentInstanceNode(), m_params);
+        ProcessQueryClassesBasedOnCustomizationRules(selectInfos, groupingResolver, GetMapKeys(labelOverridingProperties), 
+            groupingResolver.GetParentInstanceNode(), m_params);
 
         for (SelectQueryInfo& info : selectInfos)
             {
-            SetLabelOverrides(info, labelOverridingProperties);
+            info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::SerializeECClassMapPolymorphically(labelOverridingProperties, *info.GetSelectClass()));
             NavigationQueryContractCPtr contract = queryContext->GetContract(info);
             if (contract.IsNull())
                 continue;

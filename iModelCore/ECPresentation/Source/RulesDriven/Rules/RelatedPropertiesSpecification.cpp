@@ -48,7 +48,7 @@ RelatedPropertiesSpecification::RelatedPropertiesSpecification(RelatedProperties
     m_relatedClassNames(other.m_relatedClassNames), m_propertyNames(other.m_propertyNames), 
     m_relationshipMeaning(other.m_relationshipMeaning), m_polymorphic(other.m_polymorphic)
     {
-    CommonToolsInternal::CopyRules(m_nestedRelatedPropertiesSpecification, other.m_nestedRelatedPropertiesSpecification);
+    CommonToolsInternal::CopyRules(m_nestedRelatedPropertiesSpecification, other.m_nestedRelatedPropertiesSpecification, this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -56,7 +56,7 @@ RelatedPropertiesSpecification::RelatedPropertiesSpecification(RelatedProperties
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedPropertiesSpecification::~RelatedPropertiesSpecification ()
     {
-    CommonToolsInternal::FreePresentationRules (m_nestedRelatedPropertiesSpecification);
+    CommonToolsInternal::FreePresentationRules(m_nestedRelatedPropertiesSpecification);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -88,7 +88,7 @@ bool RelatedPropertiesSpecification::ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_polymorphic, COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC))
         m_polymorphic = false;
 
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_nestedRelatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+    CommonToolsInternal::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_nestedRelatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME, this);
 
     return true;
     }
@@ -137,7 +137,7 @@ bool RelatedPropertiesSpecification::ReadJson(JsonValueCR json)
         }
 
     CommonToolsInternal::LoadFromJson(json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRELATEDPROPERTIES], 
-        m_nestedRelatedPropertiesSpecification, CommonToolsInternal::LoadRuleFromJson<RelatedPropertiesSpecification>);
+        m_nestedRelatedPropertiesSpecification, CommonToolsInternal::LoadRuleFromJson<RelatedPropertiesSpecification>, this);
     
     return true;
     }

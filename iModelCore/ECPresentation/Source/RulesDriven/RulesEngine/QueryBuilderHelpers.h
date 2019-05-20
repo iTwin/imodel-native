@@ -69,6 +69,20 @@ public:
     
     template<typename T> static void ApplyInstanceFilter(ComplexPresentationQuery<T>&, InstanceFilteringParams const&, RelatedClassPath);
     
+    template<typename T> static bvector<T> SerializeECClassMapPolymorphically(bmap<ECClassCP, bvector<T>> const& map, ECClassCR ecClass)
+        {
+        bvector<T> list;
+        auto iter = map.find(&ecClass);
+        if (iter != map.end())
+            list.insert(list.end(), iter->second.begin(), iter->second.end());
+        for (ECClassCP baseClass : ecClass.GetBaseClasses())
+            {
+            bvector<T> baseList = SerializeECClassMapPolymorphically(map, *baseClass);
+            std::move(baseList.begin(), baseList.end(), std::back_inserter(list));
+            }
+        return list;
+        }
+    
     static void ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& query, ContentDescriptorCR ovr, ECExpressionsCache&);
     static void ApplyPagingOptions(RefCountedPtr<ContentQuery>& query, PageOptionsCR opts);
     static void ApplyDefaultContentFlags(ContentDescriptorR descriptor, Utf8CP displayType, ContentSpecificationCR);
@@ -76,7 +90,10 @@ public:
     static void Aggregate(ContentDescriptorPtr& aggregateDescriptor, ContentDescriptorR inputDescriptor);
     static ContentQueryPtr CreateMergedResultsQuery(ContentQueryR, ContentDescriptorR);
 
-    static bmap<ECClassCP, bvector<ECPropertyCP>> GetMappedLabelOverridingProperties(ECSchemaHelper const& helper, InstanceLabelOverrideList labelOverrides);
+    static bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> GetLabelOverrideValuesMap(ECSchemaHelper const& helper, InstanceLabelOverrideList labelOverrides);
+    static PresentationQueryContractFieldPtr CreateInstanceLabelField(Utf8CP name, bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs, PresentationQueryContractField const* fallback = nullptr);
+    static GenericQueryPtr CreateInstanceLabelQuery(ECClassInstanceKeyCR key, bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs);
+
     static bvector<RelatedClass> GetRelatedInstanceClasses(ECSchemaHelper const& schemaHelper, ECClassCR selectClass, RelatedInstanceSpecificationList const& relatedInstanceSpecs, bmap<ECRelationshipClassCP, int>& relationshipUsedCount);
 
     static IdSet<BeInt64Id> CreateIdSetFromJsonArray(RapidJsonValueCR);

@@ -10,6 +10,7 @@
 #include "CustomFunctions.h"
 #include "NavigationQuery.h"
 #include "ECExpressionContextsProvider.h"
+#include "QueryBuilderHelpers.h"
 
 Utf8CP PresentationQueryContract::RelatedInstanceInfoFieldName = "/RelatedInstanceInfo/";
 /*---------------------------------------------------------------------------------**//**
@@ -148,9 +149,29 @@ static Utf8String CreateRelatedInstanceInfoClause(bvector<RelatedClass> const& r
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<PresentationQueryContractSimpleField> PresentationQueryContract::CreateRelatedInstanceInfoField(bvector<RelatedClass> const& relatedClasses)
+PresentationQueryContractFieldPtr PresentationQueryContract::CreateRelatedInstanceInfoField(bvector<RelatedClass> const& relatedClasses)
     {
     return PresentationQueryContractSimpleField::Create(RelatedInstanceInfoFieldName, CreateRelatedInstanceInfoClause(relatedClasses).c_str(), false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationQueryContractFieldPtr PresentationQueryContract::CreateDisplayLabelField(Utf8CP name, PresentationQueryContractFieldCR classIdField,
+    PresentationQueryContractFieldCR instanceIdField, ECClassCP ecClass, bvector<RelatedClass> const& relatedClasses,
+    bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs) 
+    {
+    ECPropertyCP labelProperty = nullptr != ecClass ? ecClass->GetInstanceLabelProperty() : nullptr;
+    Utf8CP labelClause = nullptr != labelProperty ? labelProperty->GetName().c_str() : "''";
+    RefCountedPtr<PresentationQueryContractSimpleField> defaultPropertyValueField = PresentationQueryContractSimpleField::Create(nullptr, labelClause);
+
+    PresentationQueryContractFieldPtr labelField = PresentationQueryContractFunctionField::Create(name, FUNCTION_NAME_GetECInstanceDisplayLabel,
+        { &classIdField, &instanceIdField, defaultPropertyValueField, CreateRelatedInstanceInfoField(relatedClasses) });
+
+    if (!labelOverrideValueSpecs.empty())
+        labelField = QueryBuilderHelpers::CreateInstanceLabelField(name, labelOverrideValueSpecs, labelField.get());
+
+    return labelField;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -269,17 +290,6 @@ static bvector<RefCountedPtr<PresentationQueryContractField const>> CreateFields
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<RefCountedPtr<PresentationQueryContractField const>> CreateFieldsListFromECProperties(bvector<ECPropertyCP> const& properties)
-    {
-    bvector<RefCountedPtr<PresentationQueryContractField const>> fieldsList;
-    for (ECPropertyCP ecProperty : properties)
-        fieldsList.push_back(PresentationQueryContractSimpleField::Create(ecProperty->GetName().c_str(), ecProperty->GetName().c_str()));
-    return fieldsList;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Utf8String GetPrefixedClause(Utf8String clause, Utf8CP prefix)
@@ -360,12 +370,12 @@ Utf8CP ECInstanceNodesQueryContract::DisplayLabelFieldName = "/DisplayLabel/";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceNodesQueryContract::ECInstanceNodesQueryContract(ECClassCP ecClass, bvector<RelatedClass> const& relatedClasses, bvector<ECPropertyCP> const& labelOverrides)
+ECInstanceNodesQueryContract::ECInstanceNodesQueryContract(ECClassCP ecClass, bvector<RelatedClass> const& relatedClasses, bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs)
     {
     m_ecInstanceIdField = PresentationQueryContractSimpleField::Create(ECInstanceIdFieldName, "ECInstanceId", true, false);
     m_ecClassIdField = PresentationQueryContractSimpleField::Create(ECClassIdFieldName, "ECClassId");
     m_relatedInstanceInfoField = CreateRelatedInstanceInfoField(relatedClasses);
-    m_displayLabelField = CreateDisplayLabelField(ecClass, relatedClasses, labelOverrides);
+    m_displayLabelField = CreateDisplayLabelField(DisplayLabelFieldName, *m_ecClassIdField, *m_ecInstanceIdField, ecClass, relatedClasses, labelOverrideValueSpecs);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
@@ -383,28 +393,6 @@ void ECInstanceNodesQueryContract::_SetECClassIdFieldName(Utf8CP name)
     m_ecClassIdField->SetClause(name);
     m_ecClassIdField->SetName(name);
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<PresentationQueryContractFunctionField> ECInstanceNodesQueryContract::CreateDisplayLabelField(ECClassCP ecClass, bvector<RelatedClass> const& relatedClasses, bvector<ECPropertyCP> const& labelOverrides) const
-    {
-    ECPropertyCP labelProperty = nullptr != ecClass ? ecClass->GetInstanceLabelProperty() : nullptr;
-    Utf8CP labelClause = nullptr != labelProperty ? labelProperty->GetName().c_str() : "''";
-    RefCountedPtr<PresentationQueryContractSimpleField> defaultPropertyValueField = PresentationQueryContractSimpleField::Create(nullptr, labelClause);
-
-    RefCountedPtr<PresentationQueryContractFunctionField> labelField = PresentationQueryContractFunctionField::Create(DisplayLabelFieldName, FUNCTION_NAME_GetECInstanceDisplayLabel,
-        {m_ecClassIdField, m_ecInstanceIdField, defaultPropertyValueField, m_relatedInstanceInfoField});
-   
-    if (!labelOverrides.empty())
-        {
-        RefCountedPtr<PresentationQueryContractFunctionField> nestedField = labelField;
-        labelField = PresentationQueryContractFunctionField::Create(DisplayLabelFieldName, "COALESCE", CreateFieldsListFromECProperties(labelOverrides));
-        labelField->GetFunctionParameters().push_back(nestedField);
-        }
-
-    return labelField;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -486,7 +474,8 @@ Utf8CP DisplayLabelGroupingNodesQueryContract::GroupedInstanceIdsFieldName = "/G
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayLabelGroupingNodesQueryContract::DisplayLabelGroupingNodesQueryContract(ECClassCP ecClass, bool includeGroupedInstanceIdsField, bvector<RelatedClass> const& relatedClasses, bvector<ECPropertyCP> const& labelOverrides)
+DisplayLabelGroupingNodesQueryContract::DisplayLabelGroupingNodesQueryContract(ECClassCP ecClass, bool includeGroupedInstanceIdsField, bvector<RelatedClass> const& relatedClasses, 
+    bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs)
     {
     m_ecClassIdField = PresentationQueryContractSimpleField::Create(ECClassIdFieldName, "ECClassId", true, false, FieldVisibility::Inner);
     m_ecInstanceIdField = PresentationQueryContractSimpleField::Create(ECInstanceIdFieldName, "ECInstanceId", true, false, FieldVisibility::Inner);
@@ -495,7 +484,7 @@ DisplayLabelGroupingNodesQueryContract::DisplayLabelGroupingNodesQueryContract(E
         m_groupedInstanceIdsField = PresentationQueryContractFunctionField::Create(GroupedInstanceIdsFieldName,
             FUNCTION_NAME_GetGroupedInstanceKeys, {m_ecClassIdField, m_ecInstanceIdField}, false, true);
         }
-    m_displayLabelField = CreateDisplayLabelField(ecClass, relatedClasses, labelOverrides);
+    m_displayLabelField = CreateDisplayLabelField(DisplayLabelFieldName, *m_ecClassIdField, *m_ecInstanceIdField, ecClass, relatedClasses, labelOverrideValueSpecs);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
@@ -512,27 +501,6 @@ void DisplayLabelGroupingNodesQueryContract::_SetECClassIdFieldName(Utf8CP name)
     {
     m_ecClassIdField->SetClause(name);
     m_ecClassIdField->SetName(name);
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<PresentationQueryContractFunctionField> DisplayLabelGroupingNodesQueryContract::CreateDisplayLabelField(ECClassCP ecClass, bvector<RelatedClass> const& relatedClasses, bvector<ECPropertyCP> const& labelOverrides) const
-    {
-    ECPropertyCP labelProperty = nullptr != ecClass ? ecClass->GetInstanceLabelProperty() : nullptr;
-    Utf8CP labelClause = nullptr != labelProperty ? labelProperty->GetName().c_str() : "''";
-    RefCountedPtr<PresentationQueryContractSimpleField> defaultPropertyValueField = PresentationQueryContractSimpleField::Create(nullptr, labelClause);
-
-    RefCountedPtr<PresentationQueryContractFunctionField> labelField = PresentationQueryContractFunctionField::Create(DisplayLabelFieldName, FUNCTION_NAME_GetECInstanceDisplayLabel,
-        {m_ecClassIdField, m_ecInstanceIdField, defaultPropertyValueField, CreateRelatedInstanceInfoField(relatedClasses)});
-
-    if (!labelOverrides.empty())
-        {
-        RefCountedPtr<PresentationQueryContractFunctionField> nestedField = labelField;
-        labelField = PresentationQueryContractFunctionField::Create(DisplayLabelFieldName, "COALESCE", CreateFieldsListFromECProperties(labelOverrides));
-        labelField->GetFunctionParameters().push_back(nestedField);
-        }
-
-    return labelField;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
@@ -779,23 +747,6 @@ bvector<PresentationQueryContractFieldCPtr> ECPropertyGroupingNodesQueryContract
     return fields;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool ProcessLabelOverridesPolymorpically(bvector<ECPropertyCP>& properties, ECClassCR ecClass, ContentDescriptor::DisplayLabelField const& field)
-    {
-    for (ECClassCP baseClass : ecClass.GetBaseClasses())
-        {
-        bvector<ECPropertyCP> propertiesToAppend = field.GetPropertiesForClass(baseClass);
-        if (!propertiesToAppend.empty())
-            properties.insert(properties.end(), propertiesToAppend.begin(), propertiesToAppend.end());
-
-        if (!ProcessLabelOverridesPolymorpically(properties, *baseClass, field))
-            return true;
-        }
-    return false;
-    }
-
 Utf8CP ContentQueryContract::ContractIdFieldName = "/ContractId/";
 Utf8CP ContentQueryContract::ECInstanceKeysFieldName = "/ECInstanceKeys/";
 /*---------------------------------------------------------------------------------**//**
@@ -807,31 +758,16 @@ ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR desc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryContractFunctionField const& ContentQueryContract::GetDisplayLabelField(ContentDescriptor::DisplayLabelField const& field) const
+PresentationQueryContractField const& ContentQueryContract::GetDisplayLabelField(ContentDescriptor::DisplayLabelField const& field) const
     {
     if (m_displayLabelField.IsNull())
         {
-        ECPropertyCP labelProperty = nullptr;
-        if (nullptr != m_class)
-            labelProperty = m_class->GetInstanceLabelProperty();
-
-        Utf8CP labelClause = nullptr != labelProperty ? labelProperty->GetName().c_str() : "''";
-        m_displayLabelField = PresentationQueryContractFunctionField::Create(field.GetName().c_str(), FUNCTION_NAME_GetECInstanceDisplayLabel,
-            CreateFieldsList("ECClassId", "ECInstanceId", labelClause, CreateRelatedInstanceInfoClause(m_relatedClasses)), true);
-
-        if (m_class)
-            {
-            bvector<ECPropertyCP> properties = field.GetPropertiesForClass(m_class);
-            ProcessLabelOverridesPolymorpically(properties, *m_class, field);
-            if (!properties.empty())
-                {
-                RefCountedPtr<PresentationQueryContractFunctionField> nestedParameter = m_displayLabelField;
-                m_displayLabelField = PresentationQueryContractFunctionField::Create(field.GetName().c_str(), "COALESCE", CreateFieldsListFromECProperties(properties), true);
-                m_displayLabelField->GetFunctionParameters().push_back(nestedParameter);
-                }
-            }
+        PresentationQueryContractFieldCPtr classIdField = PresentationQueryContractSimpleField::Create("ECClassId", "ECClassId");
+        PresentationQueryContractFieldCPtr instanceIdField = PresentationQueryContractSimpleField::Create("ECInstanceId", "ECInstanceId");
+        bvector<InstanceLabelOverrideValueSpecification const*> labelOverrideValuesList = 
+            m_class ? QueryBuilderHelpers::SerializeECClassMapPolymorphically(field.GetOverrideValueSpecs(), *m_class) : bvector<InstanceLabelOverrideValueSpecification const*>();
+        m_displayLabelField = CreateDisplayLabelField(field.GetName().c_str(), *classIdField, *instanceIdField, m_class, m_relatedClasses, labelOverrideValuesList);
         }
-
     return *m_displayLabelField;
     }
 
@@ -928,8 +864,8 @@ static Utf8String PropertyValueSelectStringClause(Utf8CP prefix, Utf8CP property
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP fieldName, Utf8CP prefix, Utf8CP propertyAccessString, ECPropertyCR prop, 
-    bool isGroupingField, bvector<ECPropertyCP> labelOverridingPropertyNames = bvector<ECPropertyCP>())
+static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP fieldName, Utf8CP prefix, Utf8CP propertyAccessString, 
+    ECPropertyCR prop, bool isGroupingField)
     {
     if (prop.GetIsPrimitive())
         {
@@ -1056,31 +992,6 @@ static PresentationQueryContractFieldCPtr GetNavigationInstanceIdField(Utf8Strin
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ECClassCP GetPropertyRelatedClassName(ECPropertyCR ecProperty)
-    {
-    ECClassCP className = nullptr;
-    if (ecProperty.GetIsNavigation())
-        {
-        switch (ecProperty.GetAsNavigationProperty()->GetDirection())
-            {
-            case ECRelatedInstanceDirection::Backward:
-                {
-                className = ecProperty.GetAsNavigationProperty()->GetRelationshipClass()->GetSource().GetAbstractConstraint();
-                break;
-                }
-            case ECRelatedInstanceDirection::Forward:
-                {
-                className = ecProperty.GetAsNavigationProperty()->GetRelationshipClass()->GetTarget().GetAbstractConstraint();
-                break;
-                }
-            }
-        }
-    return className;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() const
@@ -1121,9 +1032,8 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
                         {
                         Utf8String propertyAccessor = GetPropertySelectClauseFromAccessString(fieldPropertyForThisContract->GetProperty().GetName());
                         ECPropertyCR ecProperty = fieldPropertyForThisContract->GetProperty();
-                        bvector<ECPropertyCP> labelOverrides = m_descriptor->GetDisplayLabelField() ? m_descriptor->GetDisplayLabelField()->GetPropertiesForClass(GetPropertyRelatedClassName(ecProperty)) : bvector<ECPropertyCP>();
-                        contractField = CreatePropertySelectField(propertiesField.GetName().c_str(),
-                            fieldPropertyForThisContract->GetPrefix(), propertyAccessor.c_str(), ecProperty, m_descriptor->OnlyDistinctValues(), labelOverrides);
+                        contractField = CreatePropertySelectField(propertiesField.GetName().c_str(), fieldPropertyForThisContract->GetPrefix(), 
+                            propertyAccessor.c_str(), ecProperty, m_descriptor->OnlyDistinctValues());
                         }
                     else
                         {

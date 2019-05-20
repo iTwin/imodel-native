@@ -726,11 +726,10 @@ TEST_F(PresentationRuleSetTests, TestCustomizationRuleLoadingFromXml)
     EXPECT_EQ(1000, imageIdOverride->GetPriority());
 
     ASSERT_EQ(1, ruleSet->GetInstanceLabelOverrides().size());
-    InstanceLabelOverride* instnceLabelOverride = dynamic_cast<InstanceLabelOverride*>(ruleSet->GetInstanceLabelOverrides()[0]);
-    EXPECT_STREQ("testClass", instnceLabelOverride->GetClassName().c_str());
-    ASSERT_EQ(1, instnceLabelOverride->GetPropertyNames().size());
-    EXPECT_STREQ("testProperties", instnceLabelOverride->GetPropertyNames()[0].c_str());
-    EXPECT_EQ(1000, instnceLabelOverride->GetPriority());
+    InstanceLabelOverride* instanceLabelOverride = dynamic_cast<InstanceLabelOverride*>(ruleSet->GetInstanceLabelOverrides()[0]);
+    EXPECT_STREQ("testClass", instanceLabelOverride->GetClassName().c_str());
+    ASSERT_EQ(1, instanceLabelOverride->GetValueSpeficications().size());
+    EXPECT_EQ(1000, instanceLabelOverride->GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**

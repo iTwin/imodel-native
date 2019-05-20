@@ -155,7 +155,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesDefaultInstanceDisplay
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ(CommonTools::GetDefaultDisplayLabel(*m_widgetInstance).c_str(), stmt.GetValueText(0));
+    EXPECT_STREQ(RULESENGINE_LOCALIZEDSTRING_NotSpecified.c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -767,14 +767,45 @@ TEST_F(CustomFunctionTests, GetECClassId)
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT RulesEngine_GetECClassId('Widget', 'RulesEngineTest') FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetECClassId "('Widget', 'RulesEngineTest') FROM RET.Widget"));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_EQ(widgetClass->GetId().GetValue(), stmt.GetValueInt64(0));
     
     stmt.Finalize();
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT RulesEngine_GetECClassId('DoesNotExist', 'RulesEngineTest') FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetECClassId "('DoesNotExist', 'RulesEngineTest') FROM RET.Widget"));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_EQ(0, stmt.GetValueInt64(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, GetECClassName)
+    {
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
+
+    ECSqlStatement stmt;
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), Utf8PrintfString("SELECT " FUNCTION_NAME_GetECClassName "(%" PRIu64 ", FALSE) FROM RET.Widget", s_widgetClass->GetId().GetValue()).c_str()));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_STREQ(s_widgetClass->GetName().c_str(), stmt.GetValueText(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), Utf8PrintfString("SELECT " FUNCTION_NAME_GetECClassName "(%" PRIu64 ", TRUE) FROM RET.Widget", s_widgetClass->GetId().GetValue()).c_str()));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_STREQ(s_widgetClass->GetFullName(), stmt.GetValueText(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, GetECClassLabel)
+    {
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
+
+    ECSqlStatement stmt;
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), Utf8PrintfString("SELECT " FUNCTION_NAME_GetECClassLabel "(%" PRIu64 ") FROM RET.Widget", s_widgetClass->GetId().GetValue()).c_str()));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_STREQ(s_widgetClass->GetDisplayLabel().c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1282,13 +1313,34 @@ TEST_F(CustomFunctionTests, GetNavigationPropertyLabel_UsesInstanceLabelOverride
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, widgetInstanceID));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ("WidgetID", stmt.GetValueText(0));
+    EXPECT_STREQ("WidgetID", stmt.GetValueText(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, GetNavigationPropertyLabel_UsesLabelOverride)
+    {
+    m_ruleset->AddPresentationRule(*new LabelOverride("", 1, "this.MyID", ""));
+
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *s_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("WidgetID")); });
+
+    ECInstanceId widgetInstanceID;
+    ECInstanceId::FromString(widgetInstanceID, widgetInstance->GetInstanceId().c_str());
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
+
+    ECSqlStatement stmt;
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetNavigationPropertyLabel "(?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, widgetInstanceID));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_STREQ("WidgetID", stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, GetNavigationPropertyLabel_UsesClassDisplayLabelAsDefault)
+TEST_F(CustomFunctionTests, GetNavigationPropertyLabel_ReturnsNotSpecifiedIfLabelOverridesDoNotApply)
     {
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
@@ -1297,7 +1349,7 @@ TEST_F(CustomFunctionTests, GetNavigationPropertyLabel_UsesClassDisplayLabelAsDe
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ(CommonTools::GetDefaultDisplayLabel(s_widgetClass->GetDisplayLabel(), m_widgetInstanceId.GetValue()).c_str(), stmt.GetValueText(0));
+    EXPECT_STREQ(RULESENGINE_LOCALIZEDSTRING_NotSpecified.c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1318,7 +1370,7 @@ TEST_F(CustomFunctionTests, GetRelatedDisplayLabel_UsesInstanceLabelOverride)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, widgetInstanceID));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ("WidgetID", stmt.GetValueText(0));
+    EXPECT_STREQ("WidgetID", stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1339,13 +1391,13 @@ TEST_F(CustomFunctionTests, GetRelatedDisplayLabel_UsesLabelOverride)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, widgetInstanceID));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ("WidgetID", stmt.GetValueText(0));
+    EXPECT_STREQ("WidgetID", stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Mantas.Kontrimas                05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, GetRelatedDisplayLabel_NoRule_DefaultStringReturned)
+TEST_F(CustomFunctionTests, GetRelatedDisplayLabel_NoRule_NotSpecifiedStringReturned)
     {
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
@@ -1354,5 +1406,67 @@ TEST_F(CustomFunctionTests, GetRelatedDisplayLabel_NoRule_DefaultStringReturned)
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ(CommonTools::GetDefaultDisplayLabel(*m_widgetInstance).c_str(), stmt.GetValueText(0));
+    EXPECT_STREQ(RULESENGINE_LOCALIZEDSTRING_NotSpecified.c_str(), stmt.GetValueText(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, ToBase36)
+    {
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
+
+    ECSqlStatement stmt;
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_ToBase36 "(?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt64(1, 13368));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_STREQ("ABC", stmt.GetValueText(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, JoinOptionallyRequired)
+    {
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
+
+    ECSqlStatement stmt;
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_JoinOptionallyRequired "('-') FROM RET.Widget"));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_TRUE(stmt.IsValueNull(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_JoinOptionallyRequired "(' ', 'a', FALSE, 'b', FALSE, 'c', FALSE) FROM RET.Widget"));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_STREQ("a b c", stmt.GetValueText(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_JoinOptionallyRequired "('/', '', FALSE, 'b', FALSE, 'c', FALSE) FROM RET.Widget"));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_STREQ("b/c", stmt.GetValueText(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_JoinOptionallyRequired "('_', 'a', FALSE, 'b', FALSE, '', FALSE) FROM RET.Widget"));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_STREQ("a_b", stmt.GetValueText(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_JoinOptionallyRequired "('', 'a', FALSE, '', FALSE, 'c', FALSE) FROM RET.Widget"));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_STREQ("ac", stmt.GetValueText(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_JoinOptionallyRequired "('-', 'a', TRUE, 'b', TRUE, 'c', TRUE) FROM RET.Widget"));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_STREQ("a-b-c", stmt.GetValueText(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_JoinOptionallyRequired "('-', '', TRUE, 'b', TRUE, 'c', TRUE) FROM RET.Widget"));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_TRUE(stmt.IsValueNull(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_JoinOptionallyRequired "('-', 'a', FALSE, '', TRUE, 'c', FALSE) FROM RET.Widget"));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_TRUE(stmt.IsValueNull(0));
     }

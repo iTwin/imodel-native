@@ -263,12 +263,12 @@ TEST_F (NavigationQueryExecutorTests, GetDisplayLabelGroupingNodes)
     classes[m_widgetClass] = true;
     classes[m_gadgetClass] = true;
 
-    RefCountedPtr<DisplayLabelGroupingNodesQueryContract> gadgetContract = DisplayLabelGroupingNodesQueryContract::Create(m_gadgetClass, true, bvector<RelatedClass>(), {m_gadgetClass->GetPropertyP("MyID")});
+    RefCountedPtr<DisplayLabelGroupingNodesQueryContract> gadgetContract = DisplayLabelGroupingNodesQueryContract::Create(m_gadgetClass, true, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("MyID")});
     ComplexNavigationQueryPtr gadgetInstancesQuery = ComplexNavigationQuery::Create();
     gadgetInstancesQuery->SelectContract(*gadgetContract, "this");
     gadgetInstancesQuery->From(*m_gadgetClass, false, "this");
 
-    RefCountedPtr<DisplayLabelGroupingNodesQueryContract> widgetContract = DisplayLabelGroupingNodesQueryContract::Create(m_widgetClass, true, bvector<RelatedClass>(), {m_widgetClass->GetPropertyP("MyID")});
+    RefCountedPtr<DisplayLabelGroupingNodesQueryContract> widgetContract = DisplayLabelGroupingNodesQueryContract::Create(m_widgetClass, true, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("MyID")});
     ComplexNavigationQueryPtr widgetInstancesQuery = ComplexNavigationQuery::Create();
     widgetInstancesQuery->SelectContract(*widgetContract, "this");
     widgetInstancesQuery->From(*m_widgetClass, false, "this");
@@ -340,7 +340,7 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfDisplayLabelGroupingNode_In
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("AAA"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("BBB"));});
 
-    NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass, bvector<RelatedClass>(), {m_widgetClass->GetPropertyP("MyID")});
+    NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("MyID")});
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectAll();
     query->From(ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false));
@@ -405,7 +405,7 @@ TEST_F (NavigationQueryExecutorTests, GetChildNodesOfClassGroupingNode_GroupedBy
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR widget){widget.SetValue("MyID", ECValue("WidgetID"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR widget){widget.SetValue("MyID", ECValue("WidgetID"));});
         
-    RefCountedPtr<DisplayLabelGroupingNodesQueryContract> contract = DisplayLabelGroupingNodesQueryContract::Create(m_widgetClass, true, bvector<RelatedClass>(), {m_widgetClass->GetPropertyP("MyID")});
+    RefCountedPtr<DisplayLabelGroupingNodesQueryContract> contract = DisplayLabelGroupingNodesQueryContract::Create(m_widgetClass, true, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("MyID")});
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectAll();
     query->From(ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false));
@@ -507,7 +507,7 @@ TEST_F (NavigationQueryExecutorTests, InstanceNodesSortedAlphanumerically)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryExecutorTests, InstanceNodesSortedAlphanumerically_InstanceLabelOverride)
     {
-    NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass, bvector<RelatedClass>(), {m_widgetClass->GetPropertyP("MyID")});
+    NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("MyID")});
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectContract(*contract);
     query->From(*m_widgetClass, false);
@@ -1270,7 +1270,7 @@ TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForDisplayLabelGroup
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
     IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});    
 
-    NavigationQueryContractPtr contract = DisplayLabelGroupingNodesQueryContract::Create(m_widgetClass, true, bvector<RelatedClass>(), {m_widgetClass->GetPropertyP("MyID")});
+    NavigationQueryContractPtr contract = DisplayLabelGroupingNodesQueryContract::Create(m_widgetClass, true, bvector<RelatedClass>(), {new InstanceLabelOverridePropertyValueSpecification("MyID")});
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectAll();
     query->From(ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, true));

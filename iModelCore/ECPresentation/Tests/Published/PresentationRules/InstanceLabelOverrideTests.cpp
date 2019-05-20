@@ -17,14 +17,40 @@ struct InstanceLabelOverrideTests : PresentationRulesTests
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @betest                                   Aidas.Kilinskas                		04/2018
+* @bsimethod                                    Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceLabelOverrideTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
         "ruleType": "InstanceLabelOverride",
         "class": {"schemaName": "TestSchema", "className": "TestClass"},
-        "propertyNames": [ "prop1", "prop2" ]
+        "values": [{
+            "specType": "Composite",
+            "separator": "-",
+            "parts": [{
+                "spec": {
+                    "specType": "Property",
+                    "propertyName": "prop1"
+                }
+            }, {
+                "spec": {
+                    "specType": "BriefcaseId"
+                },
+                "isRequired": true
+            }]
+        }, {
+            "specType": "Property",
+            "propertyName": "prop2"
+        }, {
+            "specType": "ClassName",
+            "full": true
+        }, {
+            "specType": "ClassLabel"
+        }, {
+            "specType": "BriefcaseId"
+        }, {
+            "specType": "LocalId"
+        }]
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     ASSERT_FALSE(json.isNull());
@@ -33,141 +59,141 @@ TEST_F(InstanceLabelOverrideTests, LoadsFromJson)
 
     ASSERT_TRUE(rule.ReadJson(json));
     EXPECT_STREQ("TestSchema:TestClass", rule.GetClassName().c_str());
-    ASSERT_EQ(2, rule.GetPropertyNames().size());
-    EXPECT_STREQ("prop1", rule.GetPropertyNames()[0].c_str());
-    EXPECT_STREQ("prop2", rule.GetPropertyNames()[1].c_str());
+    ASSERT_EQ(6, rule.GetValueSpeficications().size());
+
+    InstanceLabelOverrideCompositeValueSpecification* s1 = dynamic_cast<InstanceLabelOverrideCompositeValueSpecification*>(rule.GetValueSpeficications()[0]);
+    ASSERT_TRUE(nullptr != s1);
+    EXPECT_STREQ("-", s1->GetSeparator().c_str());
+    ASSERT_EQ(2, s1->GetValueParts().size());
+    EXPECT_TRUE(nullptr != dynamic_cast<InstanceLabelOverridePropertyValueSpecification*>(s1->GetValueParts()[0]->GetSpecification()));
+    EXPECT_FALSE(s1->GetValueParts()[0]->IsRequired());
+    EXPECT_TRUE(nullptr != dynamic_cast<InstanceLabelOverrideBriefcaseIdValueSpecification*>(s1->GetValueParts()[1]->GetSpecification()));
+    EXPECT_TRUE(s1->GetValueParts()[1]->IsRequired());
+
+    InstanceLabelOverridePropertyValueSpecification* s2 = dynamic_cast<InstanceLabelOverridePropertyValueSpecification*>(rule.GetValueSpeficications()[1]);
+    ASSERT_TRUE(nullptr != s2);
+    EXPECT_STREQ("prop2", s2->GetPropertyName().c_str());
+
+    InstanceLabelOverrideClassNameValueSpecification* s3 = dynamic_cast<InstanceLabelOverrideClassNameValueSpecification*>(rule.GetValueSpeficications()[2]);
+    ASSERT_TRUE(nullptr != s3);
+    EXPECT_TRUE(s3->ShouldUseFullName());
+
+    ASSERT_TRUE(nullptr != dynamic_cast<InstanceLabelOverrideClassLabelValueSpecification*>(rule.GetValueSpeficications()[3]));
+
+    ASSERT_TRUE(nullptr != dynamic_cast<InstanceLabelOverrideBriefcaseIdValueSpecification*>(rule.GetValueSpeficications()[4]));
+
+    ASSERT_TRUE(nullptr != dynamic_cast<InstanceLabelOverrideLocalIdValueSpecification*>(rule.GetValueSpeficications()[5]));
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @betest                                   Aidas.Kilinskas                		04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(InstanceLabelOverrideTests, LoadsFromJson_TrimsEmptySpacesAroundPropertyNames)
-    {
-    static Utf8CP jsonString = R"({
-        "ruleType": "InstanceLabelOverride",
-        "class": {"schemaName": "TestSchema", "className": "TestClass"},
-        "propertyNames": [" prop1   ", "   prop2  "]
-    })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
-    ASSERT_FALSE(json.isNull());
-
-    InstanceLabelOverride rule;
-
-    ASSERT_TRUE(rule.ReadJson(json));
-    EXPECT_STREQ("TestSchema:TestClass", rule.GetClassName().c_str());
-    ASSERT_EQ(2, rule.GetPropertyNames().size());
-    EXPECT_STREQ("prop1", rule.GetPropertyNames()[0].c_str());
-    EXPECT_STREQ("prop2", rule.GetPropertyNames()[1].c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                   Aidas.Kilinskas                		04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(InstanceLabelOverrideTests, LoadsFromJsonWithDefaultValues)
-    {
-    static Utf8CP jsonString = R"({
-        "ruleType": "InstanceLabelOverride",
-        "class": {"schemaName": "TestSchema", "className": "TestClass"},
-        "propertyNames": ["test"]
-    })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
-    ASSERT_FALSE(json.isNull());
-
-    InstanceLabelOverride rule;    
-    ASSERT_TRUE(rule.ReadJson(json));
-    EXPECT_STREQ("TestSchema:TestClass", rule.GetClassName().c_str());
-    ASSERT_EQ(1, rule.GetPropertyNames().size());
-    ASSERT_STREQ("test", rule.GetPropertyNames()[0].c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2018
+* @bsimethod                                    Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceLabelOverrideTests, WriteToJson)
     {
-    InstanceLabelOverride rule(123, true, "s:c", "p1,p2");
+    bvector<InstanceLabelOverrideValueSpecification*> specs;
+    specs.push_back(new InstanceLabelOverrideCompositeValueSpecification(
+        {
+        new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverridePropertyValueSpecification("prop1")),
+        new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideLocalIdValueSpecification(), true),
+        }, ","));
+    specs.push_back(new InstanceLabelOverridePropertyValueSpecification(" prop2   "));
+    specs.push_back(new InstanceLabelOverrideClassNameValueSpecification(true));
+    specs.push_back(new InstanceLabelOverrideClassLabelValueSpecification());
+    specs.push_back(new InstanceLabelOverrideBriefcaseIdValueSpecification());
+    specs.push_back(new InstanceLabelOverrideLocalIdValueSpecification());
+    InstanceLabelOverride rule(123, true, "s:c", specs);
+
     Json::Value json = rule.WriteJson();
     Json::Value expected = Json::Reader::DoParse(R"({
         "ruleType": "InstanceLabelOverride",
         "priority": 123,
         "onlyIfNotHandled": true,
         "class": {"schemaName": "s", "className": "c"},
-        "propertyNames": ["p1", "p2"]
+        "values": [{
+            "specType": "Composite",
+            "separator": ",",
+            "parts": [{
+                "spec": {
+                    "specType": "Property",
+                    "propertyName": "prop1"
+                }
+            }, {
+                "spec": {
+                    "specType": "LocalId"
+                },
+                "isRequired": true
+            }]
+        }, {
+            "specType": "Property",
+            "propertyName": "prop2"
+        }, {
+            "specType": "ClassName",
+            "full": true
+        }, {
+            "specType": "ClassLabel"
+        }, {
+            "specType": "BriefcaseId"
+        }, {
+            "specType": "LocalId"
+        }]
     })");
     EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras               12/2017
+* @bsimethod                                    Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceLabelOverrideTests, LoadsFromXml)
     {
     static Utf8CP xmlString = R"(
-        <InstanceLabelOverride ClassName="TestClass" PropertyNames="prop1,prop2"/>
+        <InstanceLabelOverride ClassName="TestClass" PropertyNames="prop1,   prop2"/>
         )";
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
     ASSERT_EQ(BEXML_Success, xmlStatus);
-    InstanceLabelOverride override;
-    EXPECT_TRUE(override.ReadXml(xml->GetRootElement()));
-    EXPECT_STREQ("TestClass", override.GetClassName().c_str());
-    ASSERT_EQ(2, override.GetPropertyNames().size());
-    EXPECT_STREQ("prop1", override.GetPropertyNames()[0].c_str());
-    EXPECT_STREQ("prop2", override.GetPropertyNames()[1].c_str());
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras               12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(InstanceLabelOverrideTests, LoadsFromXml_TrimsEmptySpacesAroundPropertyNames)
-    {
-    static Utf8CP xmlString = R"(
-        <InstanceLabelOverride ClassName="TestClass" PropertyNames="  prop1 ,   prop2  "/>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-    InstanceLabelOverride override;
-    EXPECT_TRUE(override.ReadXml(xml->GetRootElement()));
-    EXPECT_STREQ("TestClass", override.GetClassName().c_str());
-    ASSERT_EQ(2, override.GetPropertyNames().size());
-    EXPECT_STREQ("prop1", override.GetPropertyNames()[0].c_str());
-    EXPECT_STREQ("prop2", override.GetPropertyNames()[1].c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras               12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(InstanceLabelOverrideTests, LoadsFromXmlWithDefaultValues)
-    {
-    static Utf8CP xmlString = "<InstanceLabelOverride ClassName=\"schema:class\" PropertyNames=\"Test\" />";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-    
     InstanceLabelOverride rule;
-    
-    ASSERT_TRUE(rule.ReadXml(xml->GetRootElement()));
-    EXPECT_STREQ("schema:class", rule.GetClassName().c_str());
-    ASSERT_EQ(1, rule.GetPropertyNames().size());
-    EXPECT_STREQ("Test", rule.GetPropertyNames()[0].c_str());
+    EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
+
+    EXPECT_STREQ("TestClass", rule.GetClassName().c_str());
+
+    ASSERT_EQ(2, rule.GetValueSpeficications().size());
+
+    InstanceLabelOverridePropertyValueSpecification* s1 = dynamic_cast<InstanceLabelOverridePropertyValueSpecification*>(rule.GetValueSpeficications()[0]);
+    ASSERT_TRUE(nullptr != s1);
+    EXPECT_STREQ("prop1", s1->GetPropertyName().c_str());
+
+    InstanceLabelOverridePropertyValueSpecification* s2 = dynamic_cast<InstanceLabelOverridePropertyValueSpecification*>(rule.GetValueSpeficications()[1]);
+    ASSERT_TRUE(nullptr != s2);
+    EXPECT_STREQ("prop2", s2->GetPropertyName().c_str());
     }
 
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Aidas.Vaiksnoras               12/2017
-//+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceLabelOverrideTests, WriteToXml)
     {
+    bvector<InstanceLabelOverrideValueSpecification*> specs;
+    specs.push_back(new InstanceLabelOverrideCompositeValueSpecification(
+        {
+        new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverridePropertyValueSpecification("prop1")),
+        new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideLocalIdValueSpecification(), true),
+        }, ","));
+    specs.push_back(new InstanceLabelOverridePropertyValueSpecification(" prop2   "));
+    specs.push_back(new InstanceLabelOverrideClassNameValueSpecification(true));
+    specs.push_back(new InstanceLabelOverrideClassLabelValueSpecification());
+    specs.push_back(new InstanceLabelOverrideBriefcaseIdValueSpecification());
+    specs.push_back(new InstanceLabelOverrideLocalIdValueSpecification());
+    InstanceLabelOverride rule(123, true, "s:c", specs);
+
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
     xml->AddNewElement("Root", nullptr, nullptr);
-
-    InstanceLabelOverride override(100, true, "TestClassName", "TestProperties");
-    override.WriteXml(xml->GetRootElement());
+    rule.WriteXml(xml->GetRootElement());
 
     static Utf8CP expected = ""
         "<Root>"
-            R"(<InstanceLabelOverride Priority="100" OnlyIfNotHandled="true" ClassName="TestClassName" PropertyNames="TestProperties"/>)"
+            R"(<InstanceLabelOverride Priority="123" OnlyIfNotHandled="true" ClassName="s:c" PropertyNames="prop2"/>)"
         "</Root>";
     EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
     }

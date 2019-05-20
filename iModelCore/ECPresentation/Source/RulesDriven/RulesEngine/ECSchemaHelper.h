@@ -122,6 +122,7 @@ public:
     ECPRESENTATION_EXPORT ~ECSchemaHelper();
     IConnectionCR GetConnection() const {return m_connection;}
     ECExpressionsCache& GetECExpressionsCache() const {return *m_ecexpressionsCache;}
+    ECSqlStatementCache const& GetStatementCache() const { return *m_statementCache; }
 
     ECPRESENTATION_EXPORT ECSchemaCP GetSchema(Utf8CP schemaName) const;
     ECPRESENTATION_EXPORT ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className, bool isFullSchemaName = false) const;

@@ -56,18 +56,26 @@ public:
 
     //! Copies the rules in source vector into the target vector.
     template<typename T> 
-    static void CopyRules(bvector<T*>& target, bvector<T*> const& source)
+    static void CopyRules(bvector<T*>& target, bvector<T*> const& source, HashableBase* parentHashable)
         {
         for (T* rule : source)
-            target.push_back(new T(*rule));
+            {
+            T* copy = new T(*rule);
+            copy->SetParent(parentHashable);
+            target.push_back(copy);
+            }
         }
     
     //! Clones the rules in source vector into the target vector.
     template<typename T> 
-    static void CloneRules(bvector<T*>& target, bvector<T*> const& source)
+    static void CloneRules(bvector<T*>& target, bvector<T*> const& source, HashableBase* parentHashable)
         {
         for (T const* rule : source)
-            target.push_back(rule->Clone());
+            {
+            T* clone = rule->Clone();
+            clone->SetParent(parentHashable);
+            target.push_back(clone);
+            }
         }
 
     //! Frees and clears given list of objects
@@ -81,46 +89,52 @@ public:
 
     //! Load rule from XmlNode and adds to collection
     template<typename RuleType, typename RuleCollectionType>
-    static void LoadRuleFromXmlNode(BeXmlNodeP ruleNode, RuleCollectionType& rulesCollection)
+    static void LoadRuleFromXmlNode(BeXmlNodeP ruleNode, RuleCollectionType& rulesCollection, HashableBase* parentHashable)
         {
         RuleType* rule = new RuleType ();
         if (rule->ReadXml(ruleNode))
+            {
+            rule->SetParent(parentHashable);
             CommonTools::AddToListByPriority(rulesCollection, *rule);
+            }
         else
             delete rule;
         }
 
     //! Load rules from parent XmlNode and adds to collection
     template<typename RuleType, typename RuleCollectionType>
-    static void LoadRulesFromXmlNode(BeXmlNodeP xmlNode, RuleCollectionType& rulesCollection, char const* ruleXmlElementName)
+    static void LoadRulesFromXmlNode(BeXmlNodeP xmlNode, RuleCollectionType& rulesCollection, char const* ruleXmlElementName, HashableBase* parentHashable)
         {
         BeXmlDom::IterableNodeSet ruleNodes;
         xmlNode->SelectChildNodes (ruleNodes, ruleXmlElementName);
 
         for (BeXmlNodeP& ruleNode: ruleNodes)
-            LoadRuleFromXmlNode<RuleType, RuleCollectionType> (ruleNode, rulesCollection);
+            LoadRuleFromXmlNode<RuleType, RuleCollectionType> (ruleNode, rulesCollection, parentHashable);
         }
 
     //! Load specification from XmlNode and adds to collection
     template<typename SpecificationType, typename SpecificationsCollectionType>
-    static void LoadSpecificationFromXmlNode (BeXmlNodeP specificationNode, SpecificationsCollectionType& specificationsCollection)
+    static void LoadSpecificationFromXmlNode (BeXmlNodeP specificationNode, SpecificationsCollectionType& specificationsCollection, HashableBase* parentHashable)
         {
         SpecificationType* specification = new SpecificationType();
-        if (specification->ReadXml (specificationNode))
+        if (specification->ReadXml(specificationNode))
+            {
+            specification->SetParent(parentHashable);
             specificationsCollection.push_back(specification);
+            }
         else
             delete specification;
         }
 
     //! Load specifications from parent XmlNode and adds to collection
     template<typename SpecificationType, typename SpecificationsCollectionType>
-    static void LoadSpecificationsFromXmlNode (BeXmlNodeP xmlNode, SpecificationsCollectionType& specificationsCollection, char const* specificationXmlElementName)
+    static void LoadSpecificationsFromXmlNode (BeXmlNodeP xmlNode, SpecificationsCollectionType& specificationsCollection, char const* specificationXmlElementName, HashableBase* parentHashable)
         {
         BeXmlDom::IterableNodeSet specificationNodes;
         xmlNode->SelectChildNodes (specificationNodes, specificationXmlElementName);
 
         for (BeXmlNodeP& specificationNode: specificationNodes)
-            LoadSpecificationFromXmlNode<SpecificationType, SpecificationsCollectionType> (specificationNode, specificationsCollection);
+            LoadSpecificationFromXmlNode<SpecificationType, SpecificationsCollectionType> (specificationNode, specificationsCollection, parentHashable);
         }
 
     //! Write rules to XmlNode
@@ -157,18 +171,28 @@ public:
 
     //! Load rules from json array and add them to collection
     template<typename TRule>
-    static void LoadFromJson(JsonValueCR json, bvector<TRule*>& collection, TRule*(*factory)(JsonValueCR))
+    static void LoadFromJson(JsonValueCR json, bvector<TRule*>& collection, TRule*(*factory)(JsonValueCR), HashableBase* parentHashable)
         {
         for (Json::ArrayIndex i = 0; i < json.size(); i++)
-            AddToCollection(collection, factory(json[i]));
+            {
+            TRule* rule = factory(json[i]);
+            if (nullptr != rule)
+                rule->SetParent(parentHashable);
+            AddToCollection(collection, rule);
+            }
         }
 
     //! Load rules from json array and add them to collection by priority
     template<typename TRule>
-    static void LoadFromJsonByPriority(JsonValueCR json, bvector<TRule*>& collection, TRule*(*factory)(JsonValueCR))
+    static void LoadFromJsonByPriority(JsonValueCR json, bvector<TRule*>& collection, TRule*(*factory)(JsonValueCR), HashableBase* parentHashable)
         {
         for (Json::ArrayIndex i = 0; i < json.size(); i++)
-            AddToCollectionByPriority(collection, factory(json[i]));
+            {
+            TRule* rule = factory(json[i]);
+            if (nullptr != rule)
+                rule->SetParent(parentHashable);
+            AddToCollectionByPriority(collection, rule);
+            }
         }
 
     //! Write rules to json

@@ -302,6 +302,8 @@ protected:
             context.AddSymbol(*ValueSymbol::Create("SchemaMajorVersion", ECValue(0)));
             context.AddSymbol(*ValueSymbol::Create("SchemaMinorVersion", ECValue(0)));
             context.AddSymbol(*ValueSymbol::Create("InstanceId", ECValue("", false)));
+            context.AddSymbol(*ValueSymbol::Create("BriefcaseId", ECValue("", false)));
+            context.AddSymbol(*ValueSymbol::Create("LocalId", ECValue("", false)));
             context.AddSymbol(*ValueSymbol::Create("IsInstanceNode", ECValue(false)));
             context.AddSymbol(*ValueSymbol::Create("IsClassNode", ECValue(false)));
             context.AddSymbol(*ValueSymbol::Create("IsRelationshipClassNode", ECValue(false)));
@@ -360,13 +362,18 @@ protected:
             if (node.GetType().Equals(NAVNODE_TYPE_ECInstanceNode))
                 {
                 BeAssert(nullptr != node.GetKey()->AsECInstanceNodeKey());
-                context.AddSymbol(*ValueSymbol::Create("InstanceId", ECValue(node.GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str())));
+                ECClassInstanceKeyCR key = node.GetKey()->AsECInstanceNodeKey()->GetClassInstanceKey();
+                context.AddSymbol(*ValueSymbol::Create("InstanceId", ECValue(key.GetId().ToString().c_str())));
+                context.AddSymbol(*ValueSymbol::Create("BriefcaseId", ECValue(CommonTools::ToBase36String(CommonTools::GetBriefcaseId(key.GetId())).c_str(), false)));
+                context.AddSymbol(*ValueSymbol::Create("LocalId", ECValue(CommonTools::ToBase36String(CommonTools::GetLocalId(key.GetId())).c_str(), false)));
                 context.AddSymbol(*ValueSymbol::Create("IsInstanceNode", ECValue(true)));
                 context.AddSymbol(*PropertySymbol::Create("ECInstance", *NodeECInstanceContextEvaluator::Create(m_context.m_connection, node)));
                 }
             else
                 {
                 context.AddSymbol(*ValueSymbol::Create("InstanceId", ECValue()));
+                context.AddSymbol(*ValueSymbol::Create("BriefcaseId", ECValue()));
+                context.AddSymbol(*ValueSymbol::Create("LocalId", ECValue()));
                 context.AddSymbol(*ValueSymbol::Create("IsInstanceNode", ECValue(false)));
                 context.AddSymbol(*ValueSymbol::Create("ECInstance", ECValue()));
                 }

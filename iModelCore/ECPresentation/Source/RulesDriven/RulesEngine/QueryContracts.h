@@ -187,7 +187,10 @@ protected:
     virtual bvector<PresentationQueryContractFieldCPtr> _GetFields() const = 0;
     virtual void _SetECInstanceIdFieldName(Utf8CP name){}
     virtual void _SetECClassIdFieldName(Utf8CP name){}
-    static RefCountedPtr<PresentationQueryContractSimpleField> CreateRelatedInstanceInfoField(bvector<RelatedClass> const&);
+    static PresentationQueryContractFieldPtr CreateRelatedInstanceInfoField(bvector<RelatedClass> const&);
+    static PresentationQueryContractFieldPtr CreateDisplayLabelField(Utf8CP name, PresentationQueryContractFieldCR classIdField,
+        PresentationQueryContractFieldCR instanceIdField, ECClassCP, bvector<RelatedClass> const&, 
+        bvector<InstanceLabelOverrideValueSpecification const*> const&);
 
 public:
     uint64_t GetId() const {return m_id;}
@@ -239,13 +242,12 @@ public:
 
 private:
     RefCountedPtr<PresentationQueryContractSimpleField> m_ecInstanceIdField;
-    RefCountedPtr<PresentationQueryContractFunctionField> m_displayLabelField;
     RefCountedPtr<PresentationQueryContractSimpleField> m_ecClassIdField;
-    RefCountedPtr<PresentationQueryContractSimpleField> m_relatedInstanceInfoField;
+    PresentationQueryContractFieldPtr m_displayLabelField;
+    PresentationQueryContractFieldPtr m_relatedInstanceInfoField;
     
 private:
-    ECPRESENTATION_EXPORT ECInstanceNodesQueryContract(ECClassCP, bvector<RelatedClass> const&, bvector<ECPropertyCP> const&);
-    RefCountedPtr<PresentationQueryContractFunctionField> CreateDisplayLabelField(ECClassCP, bvector<RelatedClass> const&, bvector<ECPropertyCP> const&) const;
+    ECPRESENTATION_EXPORT ECInstanceNodesQueryContract(ECClassCP, bvector<RelatedClass> const&, bvector<InstanceLabelOverrideValueSpecification const*> const&);
 
 protected:
     NavigationQueryResultType _GetResultType() const override {return NavigationQueryResultType::ECInstanceNodes;}
@@ -254,9 +256,10 @@ protected:
     ECPRESENTATION_EXPORT void _SetECInstanceIdFieldName(Utf8CP name) override;
 
 public:
-    static RefCountedPtr<ECInstanceNodesQueryContract> Create(ECClassCP ecClass, bvector<RelatedClass> const& relatedClasses = bvector<RelatedClass>(), bvector<ECPropertyCP> const& labelOverrides = bvector<ECPropertyCP>())
+    static RefCountedPtr<ECInstanceNodesQueryContract> Create(ECClassCP ecClass, bvector<RelatedClass> const& relatedClasses = bvector<RelatedClass>(),
+        bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs = bvector<InstanceLabelOverrideValueSpecification const*>())
         {
-        return new ECInstanceNodesQueryContract(ecClass, relatedClasses, labelOverrides);
+        return new ECInstanceNodesQueryContract(ecClass, relatedClasses, labelOverrideValueSpecs);
         }
 };
 
@@ -327,12 +330,11 @@ public:
 private:
     RefCountedPtr<PresentationQueryContractSimpleField> m_ecInstanceIdField;
     RefCountedPtr<PresentationQueryContractSimpleField> m_ecClassIdField;
-    RefCountedPtr<PresentationQueryContractFunctionField> m_displayLabelField;
+    PresentationQueryContractFieldPtr m_displayLabelField;
     RefCountedPtr<PresentationQueryContractFunctionField> m_groupedInstanceIdsField;
 
 private:
-    ECPRESENTATION_EXPORT DisplayLabelGroupingNodesQueryContract(ECClassCP, bool, bvector<RelatedClass> const&, bvector<ECPropertyCP> const&);
-    RefCountedPtr<PresentationQueryContractFunctionField> CreateDisplayLabelField(ECClassCP, bvector<RelatedClass> const&, bvector<ECPropertyCP> const&) const;
+    ECPRESENTATION_EXPORT DisplayLabelGroupingNodesQueryContract(ECClassCP, bool, bvector<RelatedClass> const&, bvector<InstanceLabelOverrideValueSpecification const*> const&);
 
 protected:
     NavigationQueryResultType _GetResultType() const override {return NavigationQueryResultType::DisplayLabelGroupingNodes;}
@@ -342,9 +344,10 @@ protected:
 
 public:
     static RefCountedPtr<DisplayLabelGroupingNodesQueryContract> Create(ECClassCP ecClass, 
-        bool includeGroupedInstanceIdsField = true, bvector<RelatedClass> const& relatedClasses = bvector<RelatedClass>(), bvector<ECPropertyCP> const& labelOverrides = bvector<ECPropertyCP>())
+        bool includeGroupedInstanceIdsField = true, bvector<RelatedClass> const& relatedClasses = bvector<RelatedClass>(),
+        bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs = bvector<InstanceLabelOverrideValueSpecification const*>())
         {
-        return new DisplayLabelGroupingNodesQueryContract(ecClass, includeGroupedInstanceIdsField, relatedClasses, labelOverrides);
+        return new DisplayLabelGroupingNodesQueryContract(ecClass, includeGroupedInstanceIdsField, relatedClasses, labelOverrideValueSpecs);
         }
 };
 
@@ -472,7 +475,7 @@ public:
 
 private:
     PresentationQueryContractFieldPtr m_ecInstanceKeysField;
-    mutable RefCountedPtr<PresentationQueryContractFunctionField> m_displayLabelField;
+    mutable PresentationQueryContractFieldPtr m_displayLabelField;
     ContentDescriptorCPtr m_descriptor;
     ECClassCP m_class;
     IQueryInfoProvider const& m_queryInfo;
@@ -481,7 +484,7 @@ private:
 
 private:
     ECPRESENTATION_EXPORT ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const&, bvector<RelatedClass> const&, bool);
-    PresentationQueryContractFunctionField const& GetDisplayLabelField(ContentDescriptor::DisplayLabelField const& field) const;
+    PresentationQueryContractField const& GetDisplayLabelField(ContentDescriptor::DisplayLabelField const& field) const;
     PresentationQueryContractFieldCPtr GetCalculatedPropertyField(Utf8String const&, Utf8String const&, bool) const;
     PresentationQueryContractFieldCPtr CreateInstanceKeyField(Utf8CP fieldName, Utf8CP alias, ECClassId defaultClassId, bool isMerging) const;
     PresentationQueryContractFieldCPtr CreateInstanceKeyField(ContentDescriptor::ECInstanceKeyField const&, bool isMerging) const;

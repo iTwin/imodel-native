@@ -1539,6 +1539,8 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName=\"Widget\"", 1, "\"Widget-\" & ThisNode.InstanceId", ""));
+
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rules->AddPresentationRule(*rule);
 
@@ -4744,13 +4746,11 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     rules->AddPresentationRule(*rule);
     rules->AddPresentationRule(*new LabelOverride("1 = GetSettingIntValue(\"test\")", 1, "\"test\"", "\"test\""));
 
-    Utf8String defaultLabel = CommonTools::GetDefaultDisplayLabel(m_widgetClass->GetDisplayLabel(), widgetId.GetValue());
-
     // request for root nodes
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
     DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ(defaultLabel.c_str(), rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), rootNodes[0]->GetLabel().c_str());
 
     for (int i = 1; i <= 2; ++i)
         {
@@ -4764,7 +4764,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
         ASSERT_EQ(1, rootNodes.GetSize());
 
         // verify label
-        EXPECT_STREQ(shouldLabelChange ? "test" : defaultLabel.c_str(), rootNodes[0]->GetLabel().c_str());
+        EXPECT_STREQ(shouldLabelChange ? "test" : RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), rootNodes[0]->GetLabel().c_str());
 
         // expect 1 update record
         ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());

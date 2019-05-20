@@ -1,0 +1,250 @@
+{
+  "$schema": "../../../../../../imodeljs/imodeljs-1/presentation/common/Ruleset.schema.json",
+  "id": "BisCore",
+  "supplementationInfo": {
+    "supplementationPurpose": "BisCore specific customization rules"
+  },
+  "supportedSchemas": {
+    "schemaNames": [
+      "BisCore"
+    ]
+  },
+  "rules": [
+    {
+      "ruleType": "InstanceLabelOverride",
+      "onlyIfNotHandled": true,
+      "class": {
+        "schemaName": "BisCore",
+        "className": "Element"
+      },
+      "values": [
+        {
+          "specType": "Property",
+          "propertyName": "CodeValue"
+        },
+        {
+          "specType": "Composite",
+          "separator": "-",
+          "parts": [
+            {
+              "spec": {
+                "specType": "Property",
+                "propertyName": "UserLabel"
+              },
+              "isRequired": true
+            },
+            {
+              "spec": {
+                "specType": "BriefcaseId"
+              }
+            },
+            {
+              "spec": {
+                "specType": "LocalId"
+              }
+            }
+          ]
+        },
+        {
+          "specType": "Composite",
+          "separator": "-",
+          "parts": [
+            {
+              "spec": {
+                "specType": "ClassLabel"
+              },
+              "isRequired": true
+            },
+            {
+              "spec": {
+                "specType": "BriefcaseId"
+              }
+            },
+            {
+              "spec": {
+                "specType": "LocalId"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ruleType": "LabelOverride",
+      "onlyIfNotHandled": true,
+      "condition": "ThisNode.IsInstanceNode ANDALSO this.IsOfClass(\"Model\", \"BisCore\")",
+      "label": "this.GetRelatedDisplayLabel(\"BisCore:ModelModelsElement\", \"Forward\", \"BisCore:Element\")"
+    },
+    {
+      "ruleType": "ContentModifier",
+      "class": {
+        "schemaName": "BisCore",
+        "className": "Element"
+      },
+      "relatedProperties": [
+        {
+          "relationships": {
+            "schemaName": "BisCore",
+            "classNames": [
+              "ElementOwnsUniqueAspect"
+            ]
+          },
+          "relatedClasses": {
+            "schemaName": "BisCore",
+            "classNames": [
+              "ElementUniqueAspect"
+            ]
+          },
+          "requiredDirection": "Forward",
+          "isPolymorphic": true
+        },
+        {
+          "relationships": {
+            "schemaName": "BisCore",
+            "classNames": [
+              "ElementOwnsMultiAspects"
+            ]
+          },
+          "relatedClasses": {
+            "schemaName": "BisCore",
+            "classNames": [
+              "ElementMultiAspect"
+            ]
+          },
+          "requiredDirection": "Forward",
+          "isPolymorphic": true
+        }
+      ]
+    },
+    {
+      "ruleType": "ContentModifier",
+      "class": {
+        "schemaName": "BisCore",
+        "className": "PhysicalElement"
+      },
+      "relatedProperties": [
+        {
+          "relationships": {
+            "schemaName": "BisCore",
+            "classNames": [
+              "PhysicalElementIsOfType"
+            ]
+          },
+          "relatedClasses": {
+            "schemaName": "BisCore",
+            "classNames": [
+              "PhysicalType"
+            ]
+          },
+          "requiredDirection": "Forward",
+          "isPolymorphic": true
+        }
+      ]
+    },
+    {
+      "ruleType": "ContentModifier",
+      "class": {
+        "schemaName": "BisCore",
+        "className": "SpatialLocationElement"
+      },
+      "relatedProperties": [
+        {
+          "relationships": {
+            "schemaName": "BisCore",
+            "classNames": [
+              "SpatialLocationIsOfType"
+            ]
+          },
+          "relatedClasses": {
+            "schemaName": "BisCore",
+            "classNames": [
+              "SpatialLocationType"
+            ]
+          },
+          "requiredDirection": "Forward",
+          "isPolymorphic": true
+        }
+      ]
+    },
+    {
+      "ruleType": "ContentModifier",
+      "class": {
+        "schemaName": "BisCore",
+        "className": "DrawingGraphic"
+      },
+      "relatedProperties": [
+        {
+          "relationships": {
+            "schemaName": "BisCore",
+            "classNames": [
+              "DrawingGraphicRepresentsElement"
+            ]
+          },
+          "relatedClasses": {
+            "schemaName": "BisCore",
+            "classNames": [
+              "Element"
+            ]
+          },
+          "requiredDirection": "Forward",
+          "isPolymorphic": true
+        }
+      ]
+    },
+    {
+      "ruleType": "ContentModifier",
+      "class": {
+        "schemaName": "BisCore",
+        "className": "GraphicalElement3d"
+      },
+      "relatedProperties": [
+        {
+          "relationships": {
+            "schemaName": "BisCore",
+            "classNames": [
+              "GraphicalElement3dRepresentsElement"
+            ]
+          },
+          "relatedClasses": {
+            "schemaName": "BisCore",
+            "classNames": [
+              "Element"
+            ]
+          },
+          "requiredDirection": "Forward",
+          "isPolymorphic": true
+        }
+      ]
+    },
+    {
+      "ruleType": "ContentModifier",
+      "class": {
+        "schemaName": "BisCore",
+        "className": "PhysicalType"
+      },
+      "propertiesDisplay": [
+        {
+          "propertyNames": [
+            "*"
+          ],
+          "isDisplayed": false
+        }
+      ]
+    },
+    {
+      "ruleType": "ContentModifier",
+      "class": {
+        "schemaName": "BisCore",
+        "className": "SpatialLocationType"
+      },
+      "propertiesDisplay": [
+        {
+          "propertyNames": [
+            "*"
+          ],
+          "isDisplayed": false
+        }
+      ]
+    }
+  ]
+}

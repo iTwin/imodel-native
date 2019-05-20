@@ -33,7 +33,7 @@ GroupingRule::GroupingRule(GroupingRuleCR other)
     : ConditionalCustomizationRule(other), m_schemaName(other.m_schemaName), m_className(other.m_className), m_contextMenuCondition(other.m_contextMenuCondition),
     m_contextMenuLabel(other.m_contextMenuLabel), m_settingsId(other.m_settingsId)
     {
-    CommonToolsInternal::CloneRules(m_groups, other.m_groups);
+    CommonToolsInternal::CloneRules(m_groups, other.m_groups, this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -41,7 +41,7 @@ GroupingRule::GroupingRule(GroupingRuleCR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 GroupingRule::~GroupingRule (void)
     {
-    CommonToolsInternal::FreePresentationRules (m_groups);
+    CommonToolsInternal::FreePresentationRules(m_groups);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -87,11 +87,11 @@ bool GroupingRule::_ReadXml (BeXmlNodeP xmlNode)
     for (BeXmlNodeP child = xmlNode->GetFirstChild (BEXMLNODE_Element); NULL != child; child = child->GetNextSibling (BEXMLNODE_Element))
         {
         if (0 == BeStringUtilities::Stricmp (child->GetName (), CLASS_GROUP_XML_NODE_NAME))
-            CommonToolsInternal::LoadSpecificationFromXmlNode<ClassGroup, GroupList> (child, m_groups);
+            CommonToolsInternal::LoadSpecificationFromXmlNode<ClassGroup, GroupList> (child, m_groups, this);
         else if (0 == BeStringUtilities::Stricmp (child->GetName (), PROPERTY_GROUP_XML_NODE_NAME))
-            CommonToolsInternal::LoadSpecificationFromXmlNode<PropertyGroup, GroupList> (child, m_groups);
+            CommonToolsInternal::LoadSpecificationFromXmlNode<PropertyGroup, GroupList> (child, m_groups, this);
         else if (0 == BeStringUtilities::Stricmp (child->GetName (), SAME_LABEL_INSTANCE_GROUP_XML_NODE_NAME))
-            CommonToolsInternal::LoadSpecificationFromXmlNode<SameLabelInstanceGroup, GroupList> (child, m_groups);
+            CommonToolsInternal::LoadSpecificationFromXmlNode<SameLabelInstanceGroup, GroupList> (child, m_groups, this);
         }
 
     return true;
@@ -136,7 +136,7 @@ bool GroupingRule::_ReadJson(JsonValueCR json)
         }
 
     //Optional
-    CommonToolsInternal::LoadFromJson(json[GROUPING_RULE_JSON_ATTRIBUTE_GROUPS], m_groups, GroupSpecification::Create);
+    CommonToolsInternal::LoadFromJson(json[GROUPING_RULE_JSON_ATTRIBUTE_GROUPS], m_groups, GroupSpecification::Create, this);
 
     return true;
     }
@@ -534,7 +534,7 @@ PropertyGroup::PropertyGroup(PropertyGroupCR other)
     m_createGroupForUnspecifiedValues(other.m_createGroupForUnspecifiedValues), m_propertyName(other.m_propertyName), 
     m_groupingValue(other.m_groupingValue), m_sortingValue(other.m_sortingValue)
     {
-    CommonToolsInternal::CopyRules(m_ranges, other.m_ranges);
+    CommonToolsInternal::CopyRules(m_ranges, other.m_ranges, this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -542,7 +542,7 @@ PropertyGroup::PropertyGroup(PropertyGroupCR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyGroup::~PropertyGroup (void)
     {
-    CommonToolsInternal::FreePresentationRules (m_ranges);
+    CommonToolsInternal::FreePresentationRules(m_ranges);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -620,7 +620,7 @@ bool PropertyGroup::_ReadXml (BeXmlNodeP xmlNode)
         m_sortingValue = GetPropertyGroupingValueFromString(sortingValueStr);
 
     //Load Ranges
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<PropertyRangeGroupSpecification, PropertyRangeGroupList> (xmlNode, m_ranges, PROPERTY_RANGE_GROUP_XML_NODE_NAME);
+    CommonToolsInternal::LoadSpecificationsFromXmlNode<PropertyRangeGroupSpecification, PropertyRangeGroupList> (xmlNode, m_ranges, PROPERTY_RANGE_GROUP_XML_NODE_NAME, this);
 
     return true;
     }
@@ -672,7 +672,7 @@ bool PropertyGroup::_ReadJson (JsonValueCR json)
         m_groupingValue = GetPropertyGroupingValueFromString(json[PROPERTY_GROUP_JSON_ATTRIBUTE_GROUPINGVALUE].asCString());
     if (json.isMember(PROPERTY_GROUP_JSON_ATTRIBUTE_SORTINGVALUE))
         m_sortingValue = GetPropertyGroupingValueFromString(json[PROPERTY_GROUP_JSON_ATTRIBUTE_SORTINGVALUE].asCString());
-    CommonToolsInternal::LoadFromJson(json[PROPERTY_GROUP_JSON_ATTRIBUTE_RANGES], m_ranges, CommonToolsInternal::LoadRuleFromJson<PropertyRangeGroupSpecification>);
+    CommonToolsInternal::LoadFromJson(json[PROPERTY_GROUP_JSON_ATTRIBUTE_RANGES], m_ranges, CommonToolsInternal::LoadRuleFromJson<PropertyRangeGroupSpecification>, this);
 
     return true;
     }

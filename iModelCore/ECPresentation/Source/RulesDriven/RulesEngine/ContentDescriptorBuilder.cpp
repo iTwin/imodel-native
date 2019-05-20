@@ -557,7 +557,7 @@ public:
             ContentDescriptor::DisplayLabelField* field = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()));
             ApplyFieldLocalization(*field, GetContext());
             m_descriptor->AddField(field);
-            m_descriptor->GetDisplayLabelField()->SetPropertiesMap(QueryBuilderHelpers::GetMappedLabelOverridingProperties(GetContext().GetSchemaHelper(), GetContext().GetRuleset().GetInstanceLabelOverrides()));
+            m_descriptor->GetDisplayLabelField()->SetOverrideValueSpecs(QueryBuilderHelpers::GetLabelOverrideValuesMap(GetContext().GetSchemaHelper(), GetContext().GetRuleset().GetInstanceLabelOverrides()));
             }
         }
         

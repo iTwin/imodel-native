@@ -11,6 +11,7 @@
 #include <ECPresentation/ExtendedData.h>
 #include <ECPresentation/KeySet.h>
 #include <ECPresentation/RulesDriven/Rules/RelatedPropertiesSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/InstanceLabelOverride.h>
 
 #include <ECDb/ECInstanceId.h>
 
@@ -594,7 +595,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
 
     private:
         int m_priority;
-        bmap<ECClassCP, bvector<ECPropertyCP>> m_labelProperties;
+        bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> m_labelOverrideValueSpecs;
 
     protected:
         DisplayLabelField* _AsDisplayLabelField() override {return this;}
@@ -616,17 +617,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! Set the priority for this field.
         void SetPriority(int priority) {m_priority = priority;}
 
-        //! Get names of properties whose values should be used as display label
-        bvector<ECPropertyCP> const GetPropertiesForClass(ECClassCP ecClass) const
-            {
-            if (nullptr == ecClass  || m_labelProperties.empty())
-                return bvector<ECPropertyCP>();
-            auto iter = m_labelProperties.find(ecClass);
-            return iter != m_labelProperties.end() ? iter->second : bvector<ECPropertyCP>();
-            }
+        //! Get a map of label override value specifications
+        bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> const& GetOverrideValueSpecs() const {return m_labelOverrideValueSpecs;}
 
-        //! Set names of properties whose values should be used as display label
-        void SetPropertiesMap(bmap<ECClassCP, bvector<ECPropertyCP>> labelProperties) {m_labelProperties = labelProperties;}
+        //! Set label override value specifications' map
+        void SetOverrideValueSpecs(bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> specs) {m_labelOverrideValueSpecs = specs;}
     };
 
     //===================================================================================

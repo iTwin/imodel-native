@@ -200,6 +200,38 @@ Utf8String RulesDrivenECPresentationManagerTests::GetDisplayLabel(IECInstanceCR 
     return instance.GetClass().GetDisplayLabel();
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String GetDefaultDisplayLabel(Utf8StringCR className, ECInstanceId id)
+    {
+    Utf8String label = className;
+    label.append("-");
+    label.append(CommonTools::ToBase36String(CommonTools::GetBriefcaseId(id)));
+    label.append("-");
+    label.append(CommonTools::ToBase36String(CommonTools::GetLocalId(id)));
+    return label;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String RulesDrivenECPresentationManagerTests::GetDefaultDisplayLabel(IECInstanceCR instance)
+    {
+    ECInstanceId id;
+    ECInstanceId::FromString(id, instance.GetInstanceId().c_str());
+    return ::GetDefaultDisplayLabel(instance.GetClass().GetDisplayLabel(), id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManagerTests::SetUpDefaultLabelRule(PresentationRuleSetR rules)
+    {
+    rules.AddPresentationRule(*new LabelOverride("", -9999, "ThisNode.ClassName & \"-\" & ThisNode.BriefcaseId & \"-\" & ThisNode.LocalId", ""));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

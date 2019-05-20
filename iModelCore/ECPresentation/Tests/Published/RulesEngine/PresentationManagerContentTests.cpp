@@ -2576,14 +2576,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesRelatedInstanceInLabelO
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsDisplayLabelPropertyInstanceLabelOverride)
+TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsDisplayLabelProperty)
     {
     // set up the dataset
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
         [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Custom label"));});
 
     // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceLabelOverride_SetsDisplayLabelPropertyInstanceLabelOverride", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -2617,7 +2617,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsD
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhenMergingRecordsAndLabelsAreEqual)
+TEST_F(RulesDrivenECPresentationManagerContentTests, LabelOverride_SetsDisplayLabelPropertyWhenMergingRecordsAndLabelsAreEqual)
     {
     // set up the dataset
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
@@ -2705,7 +2705,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsD
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhenMergingRecordsAndLabelsAreDifferent)
+TEST_F(RulesDrivenECPresentationManagerContentTests, LabelOverride_SetsDisplayLabelPropertyWhenMergingRecordsAndLabelsAreDifferent)
     {
     // set up the dataset
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
@@ -2802,6 +2802,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    SetUpDefaultLabelRule(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
     rules->AddPresentationRule(*rule);
@@ -3020,7 +3021,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RecordFromDifferrentSpecifi
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, DisplayLabelFieldsGetCreatedForRecordsfromDifferentSpecifications)
+TEST_F(RulesDrivenECPresentationManagerContentTests, LabelOverride_DisplayLabelFieldsGetCreatedForRecordsfromDifferentSpecifications)
     {
     // set up the dataset
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
@@ -3064,7 +3065,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DisplayLabelFieldsGetCreate
 
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR values2 = recordJson2["Values"];
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*gadget).c_str(), values2[content->GetDescriptor().GetVisibleFields()[0]->GetName().c_str()].GetString());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), values2[content->GetDescriptor().GetVisibleFields()[0]->GetName().c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3078,7 +3079,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Displ
         [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test Widget"));});
 
     // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceLabelOverride_DisplayLabelFieldsGetCreatedForRecordsFromDifferentSpecifications", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -3112,10 +3113,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Displ
     RapidJsonValueCR values1 = recordJson["Values"];
     EXPECT_STREQ("Test Widget", values1[content->GetDescriptor().GetVisibleFields()[0]->GetName().c_str()].GetString());
 
-
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR values2 = recordJson2["Values"];
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*gadget).c_str(), values2[content->GetDescriptor().GetVisibleFields()[0]->GetName().c_str()].GetString());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), values2[content->GetDescriptor().GetVisibleFields()[0]->GetName().c_str()].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4933,6 +4933,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetNavigationPropertyValueW
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    SetUpDefaultLabelRule(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
@@ -4954,7 +4955,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetNavigationPropertyValueW
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*modelInstance).c_str(), displayValues["Element_Model"].GetString());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*modelInstance).c_str(), displayValues["Element_Model"].GetString());
     EXPECT_STREQ("Test", displayValues["Element_Model_Id"].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
@@ -5029,6 +5030,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetOne
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    SetUpDefaultLabelRule(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
@@ -5050,13 +5052,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetOne
     
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA).c_str(), displayValues["ClassB_ClassC_A"].GetString());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA).c_str(), displayValues["ClassB_ClassC_A"].GetString());
     RapidJsonValueCR values = recordJson["Values"];
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetId().GetValue(), values["ClassB_ClassC_A"].GetInt64());
 
     rapidjson::Document recordJson1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR displayValues1 = recordJson1["DisplayValues"];
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA).c_str(), displayValues1["ClassB_ClassC_A"].GetString());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA).c_str(), displayValues1["ClassB_ClassC_A"].GetString());
     RapidJsonValueCR values1 = recordJson1["Values"];
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetId().GetValue(), values1["ClassB_ClassC_A"].GetInt64());
     }
@@ -5081,6 +5083,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    SetUpDefaultLabelRule(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
@@ -5102,7 +5105,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
     
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*widgetInstance).c_str(), displayValues["Gadget_Widget"].GetString());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*widgetInstance).c_str(), displayValues["Gadget_Widget"].GetString());
     EXPECT_TRUE(displayValues["Sprocket_Gadget"].IsNull());
     RapidJsonValueCR values = recordJson["Values"];
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widgetInstance).GetId().GetValue(), values["Gadget_Widget"].GetInt64());
@@ -5110,7 +5113,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
 
     rapidjson::Document recordJson1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR displayValues1 = recordJson1["DisplayValues"];
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*gadgetInstance).c_str(), displayValues1["Sprocket_Gadget"].GetString());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*gadgetInstance).c_str(), displayValues1["Sprocket_Gadget"].GetString());
     EXPECT_TRUE(displayValues1["Gadget_Widget"].IsNull());
     RapidJsonValueCR values1 = recordJson1["Values"];
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadgetInstance).GetId().GetValue(), values1["Sprocket_Gadget"].GetInt64());
@@ -5147,6 +5150,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    SetUpDefaultLabelRule(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
@@ -5169,13 +5173,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA).c_str(), displayValues["ClassB_ClassB2_A"].GetString());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA).c_str(), displayValues["ClassB_ClassB2_A"].GetString());
     RapidJsonValueCR values = recordJson["Values"];
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetId().GetValue(), values["ClassB_ClassB2_A"].GetInt64());
 
     rapidjson::Document recordJson1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR displayValues1 = recordJson1["DisplayValues"];
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA2Base).c_str(), displayValues1["ClassB_ClassB2_A"].GetString());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA2Base).c_str(), displayValues1["ClassB_ClassB2_A"].GetString());
     RapidJsonValueCR values1 = recordJson1["Values"];
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA2Base).GetId().GetValue(), values1["ClassB_ClassB2_A"].GetInt64());
     }
@@ -5198,6 +5202,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDer
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    SetUpDefaultLabelRule(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
@@ -5220,7 +5225,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDer
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA2).c_str(), displayValues["ClassB2_A"].GetString());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instanceA2).c_str(), displayValues["ClassB2_A"].GetString());
     RapidJsonValueCR values = recordJson["Values"];
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA2).GetId().GetValue(), values["ClassB2_A"].GetInt64());
     }
@@ -5426,6 +5431,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDerivedClassNavigationPr
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    SetUpDefaultLabelRule(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "",
@@ -5452,7 +5458,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDerivedClassNavigationPr
 
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*relatedInstance).GetId().GetValue(), recordJson2["Values"]["ClassG_D"].GetUint64());
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*relatedInstance).c_str(), recordJson2["DisplayValues"]["ClassG_D"].GetString());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*relatedInstance).c_str(), recordJson2["DisplayValues"]["ClassG_D"].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -10281,6 +10287,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Overr
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceLabelOverrideSetsDisplayLabelProperty", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    SetUpDefaultLabelRule(*rules);
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID,Description"));
 
     ContentRuleP rule = new ContentRule("", 1, false);
@@ -10307,7 +10314,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Overr
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*gadget).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*gadget).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
     EXPECT_STREQ("WidgetID", contentSet.Get(1)->GetDisplayLabel().c_str());
     }
 
@@ -10324,6 +10331,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Overr
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceLabelOverrideSetsDisplayLabelProperty", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    SetUpDefaultLabelRule(*rules);
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID,Description"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "Description,MyID"));
 
@@ -10353,7 +10361,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Overr
     ASSERT_EQ(3, contentSet.GetSize());
     EXPECT_STREQ("GadgetDescription", contentSet.Get(0)->GetDisplayLabel().c_str());
     EXPECT_STREQ("WidgetID", contentSet.Get(1)->GetDisplayLabel().c_str());
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*sprocket).c_str(), contentSet.Get(2)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*sprocket).c_str(), contentSet.Get(2)->GetDisplayLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -10404,7 +10412,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Appli
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_WhenNoPropertiesSpecified_OverrideAs_ClassName_BriefcaseId_LocalId)
+TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_WhenNoPropertiesSpecified_FallsBackToLabelOverrides)
     {
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
@@ -10412,6 +10420,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_WhenN
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceLabelOverrideSetsDisplayLabelProperty", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("", 1, "\"LabelOverride\"", ""));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", ""));
 
     ContentRuleP rule = new ContentRule("", 1, false);
@@ -10438,13 +10447,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_WhenN
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*widget).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("LabelOverride", contentSet.Get(0)->GetDisplayLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_AssertsWhenNoClasesSpecified_OverrideAsECInstanceDisplaylabel)
+TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_AssertsWhenNoClasesSpecified_FallsBackToLabelOverrides)
     {
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
@@ -10452,6 +10461,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Asser
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceLabelOverrideSetsDisplayLabelProperty", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
+    rules->AddPresentationRule(*new LabelOverride("", 1, "\"LabelOverride\"", ""));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "", ""));
 
     ContentRuleP rule = new ContentRule("", 1, false);
@@ -10478,36 +10488,74 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Asser
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*widget).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("LabelOverride", contentSet.Get(0)->GetDisplayLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Aidas.Vaiksnoras                01/2018
+* @bsitest                                      Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_OverridesInstanceLabelAsFirstNotEmptyParameter)
+DEFINE_SCHEMA(InstanceLabelOverride_HandlesDefaultBisRulesCorrectly, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="CodeValue" typeName="string" />
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="CustomElement" displayLabel="Custom Element">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_HandlesDefaultBisRulesCorrectly)
     {
-    // set up the dataset
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
-        [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
+    // set up data set
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP customElementClass = GetClass("CustomElement");
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customElementClass, [](IECInstanceR instance)
+        {
+        instance.SetValue("CodeValue", ECValue("CodeValue"));
+        });
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customElementClass, [](IECInstanceR instance)
+        {
+        instance.SetValue("UserLabel", ECValue("UserLabel"));
+        });
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customElementClass);
 
     // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceLabelOverride_OverridesInstanceLabelAsFirstNotEmptyParameter", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
-    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "Description,MyID"));
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, elementClass->GetFullName(),
+        {
+        new InstanceLabelOverridePropertyValueSpecification("CodeValue"),
+        new InstanceLabelOverrideCompositeValueSpecification(
+            {
+            new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverridePropertyValueSpecification("UserLabel"), true),
+            new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideBriefcaseIdValueSpecification()),
+            new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideLocalIdValueSpecification()),
+            }, "-"),
+        new InstanceLabelOverrideCompositeValueSpecification(
+            {
+            new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideClassLabelValueSpecification(), true),
+            new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideBriefcaseIdValueSpecification()),
+            new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideLocalIdValueSpecification()),
+            }, "-"),
+        }));
 
     ContentRuleP rule = new ContentRule("", 1, false);
     rules->AddPresentationRule(*rule);
 
-    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
+    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", elementClass->GetFullName(), true);
     rule->AddSpecification(*spec);
-    
+
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    
+
     // set the "show labels" flag
     ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
@@ -10518,48 +10566,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Overr
 
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
-    ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ("WidgetID", contentSet.Get(0)->GetDisplayLabel().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Aidas.Vaiksnoras                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsDisplayLabelPropertyByDefaultAsECInstanceDisplaylabel)
-    {
-    // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("InstanceLabelOverride_SetsDisplayLabelPropertyByDefaultAsECInstanceDisplaylabel", 1, 0, false, "", "", "", false);
-    m_locater->AddRuleSet(*rules);
-    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "Description,MyID"));
-
-    ContentRuleP rule = new ContentRule("", 1, false);
-    rules->AddPresentationRule(*rule);
-
-    ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    rule->AddSpecification(*spec);
-    
-    // options
-    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-
-    // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
-    ASSERT_TRUE(descriptor.IsValid());
-    
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-
-    // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
-    ASSERT_TRUE(content.IsValid());
-
-    // validate content set
-    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
-    ASSERT_EQ(1, contentSet.GetSize());
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*widget).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
+    ASSERT_EQ(3, contentSet.GetSize());
+    EXPECT_STREQ("CodeValue", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("UserLabel-0-2", contentSet.Get(1)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Custom Element-0-3", contentSet.Get(2)->GetDisplayLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -10686,7 +10696,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingBaseClassPolymorph
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(2, contentSet.GetSize());
 
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
     EXPECT_STREQ("ClassB_StringProperty", contentSet.Get(1)->GetDisplayLabel().c_str());
     }
 
@@ -11279,7 +11289,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Mantas.Kontrimas                05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(SelectingClassInstanceLabelUsingGetRelatedInstanceLabelExpression_NoRelatedLabelOverrideRulesFound, R"*(
+DEFINE_SCHEMA(SelectingClassInstanceLabelUsingGetRelatedInstanceLabelExpression_NoRelatedLabelOverrideRulesFound_ReturnsNotSpecifiedString, R"*(
     <ECEntityClass typeName="ClassA">
         <ECProperty propertyName="UserLabel" typeName="string" />
     </ECEntityClass>
@@ -11295,7 +11305,7 @@ DEFINE_SCHEMA(SelectingClassInstanceLabelUsingGetRelatedInstanceLabelExpression_
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabelUsingGetRelatedInstanceLabelExpression_NoRelatedLabelOverrideRulesFound)
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabelUsingGetRelatedInstanceLabelExpression_NoRelatedLabelOverrideRulesFound_ReturnsNotSpecifiedString)
     {
     // set up data set
     ECClassCP classA = GetClass("ClassA");
@@ -11335,14 +11345,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    // Expecting default label
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceB).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
+    // Expecting "Not specified" label
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Mantas.Kontrimas                05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(SelectingClassInstanceLabelUsingGetRelatedInstanceLabelExpression_NoRelatedInstanceFound, R"*(
+DEFINE_SCHEMA(SelectingClassInstanceLabelUsingGetRelatedInstanceLabelExpression_NoRelatedInstanceFound_ReturnsNotSpecifiedString, R"*(
     <ECEntityClass typeName="ClassA">
         <ECProperty propertyName="UserLabel" typeName="string" />
     </ECEntityClass>
@@ -11358,7 +11368,7 @@ DEFINE_SCHEMA(SelectingClassInstanceLabelUsingGetRelatedInstanceLabelExpression_
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabelUsingGetRelatedInstanceLabelExpression_NoRelatedInstanceFound)
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabelUsingGetRelatedInstanceLabelExpression_NoRelatedInstanceFound_ReturnsNotSpecifiedString)
     {
     // set up data set
     ECClassCP classA = GetClass("ClassA");
@@ -11398,7 +11408,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), contentSet.Get(0)->GetDisplayLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -13614,13 +13624,17 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesForMu
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(ReturnsDisplayLabelOfSingleInstance, R"*(
     <ECEntityClass typeName="Element">
+        <ECProperty propertyName="DisplayLabel" typeName="string" />
     </ECEntityClass>
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsDisplayLabelOfSingleInstance)
     {
     // set up data set
     ECClassCP elementClass = GetClass("Element");
-    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance)
+        {
+        instance.SetValue("DisplayLabel", ECValue("abc"));
+        });
     
     // create key
     ECInstanceKey key(elementClass->GetId(), RulesEngineTestHelpers::GetInstanceKey(*element).GetId());
@@ -13629,7 +13643,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsDisplayLabelOfSingle
     Utf8String label = IECPresentationManager::GetManager().GetDisplayLabel(s_project->GetECDb(), key).get();
 
     // verify
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*element).c_str(), label.c_str());
+    EXPECT_STREQ("abc", label.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -13637,14 +13651,21 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsDisplayLabelOfSingle
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(ReturnsDisplayLabelOfMultipleInstances, R"*(
     <ECEntityClass typeName="Element">
+        <ECProperty propertyName="DisplayLabel" typeName="string" />
     </ECEntityClass>
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsDisplayLabelOfMultipleInstances)
     {
     // set up data set
     ECClassCP elementClass = GetClass("Element");
-    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
-    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance)
+        {
+        instance.SetValue("DisplayLabel", ECValue("abc"));
+        });
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance)
+        {
+        instance.SetValue("DisplayLabel", ECValue("def"));
+        });
     
     // create keys
     KeySetPtr keys = KeySet::Create(
@@ -13657,8 +13678,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsDisplayLabelOfMultip
     Utf8String label = IECPresentationManager::GetManager().GetDisplayLabel(s_project->GetECDb(), *keys).get();
 
     // verify
-    Utf8String expected = RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_MultipleInstances());
-    EXPECT_STREQ(expected.c_str(), label.c_str());
+    EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_MultipleInstances()).c_str(), label.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

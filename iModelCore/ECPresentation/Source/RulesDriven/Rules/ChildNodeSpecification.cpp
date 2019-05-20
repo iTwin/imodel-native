@@ -59,8 +59,8 @@ ChildNodeSpecification::ChildNodeSpecification(ChildNodeSpecificationCR other)
     m_hideNodesInHierarchy(other.m_hideNodesInHierarchy), m_hideIfNoChildren(other.m_hideIfNoChildren),
     m_doNotSort(other.m_doNotSort), m_extendedData(other.m_extendedData)
     {
-    CommonToolsInternal::CopyRules(m_relatedInstances, other.m_relatedInstances);
-    CommonToolsInternal::CopyRules(m_nestedRules, other.m_nestedRules);
+    CommonToolsInternal::CopyRules(m_relatedInstances, other.m_relatedInstances, this);
+    CommonToolsInternal::CopyRules(m_nestedRules, other.m_nestedRules, this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -130,8 +130,8 @@ bool ChildNodeSpecification::_ReadXml(BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_doNotSort, SORTING_RULE_XML_ATTRIBUTE_DONOTSORT))
         m_doNotSort = false;
 
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<RelatedInstanceSpecification, RelatedInstanceSpecificationList> (xmlNode, m_relatedInstances, RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME);
-    CommonToolsInternal::LoadRulesFromXmlNode<ChildNodeRule, ChildNodeRuleList>(xmlNode, m_nestedRules, CHILD_NODE_RULE_XML_NODE_NAME);
+    CommonToolsInternal::LoadSpecificationsFromXmlNode<RelatedInstanceSpecification, RelatedInstanceSpecificationList> (xmlNode, m_relatedInstances, RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME, this);
+    CommonToolsInternal::LoadRulesFromXmlNode<ChildNodeRule, ChildNodeRuleList>(xmlNode, m_nestedRules, CHILD_NODE_RULE_XML_NODE_NAME, this);
     return true;
     }
 
@@ -167,8 +167,8 @@ bool ChildNodeSpecification::_ReadJson(JsonValueCR json)
     m_hideNodesInHierarchy = json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDENODESINHIERARCHY].asBool(false);
     m_hideIfNoChildren = json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDEIFNOCHILDREN].asBool(false);
     m_doNotSort = json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_DONOTSORT].asBool(false);
-    CommonToolsInternal::LoadFromJson(json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCES], m_relatedInstances, CommonToolsInternal::LoadRuleFromJson<RelatedInstanceSpecification>);
-    CommonToolsInternal::LoadFromJsonByPriority(json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRULES], m_nestedRules, CommonToolsInternal::LoadRuleFromJson<ChildNodeRule>);
+    CommonToolsInternal::LoadFromJson(json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCES], m_relatedInstances, CommonToolsInternal::LoadRuleFromJson<RelatedInstanceSpecification>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRULES], m_nestedRules, CommonToolsInternal::LoadRuleFromJson<ChildNodeRule>, this);
     return true;
     } 
 

@@ -44,19 +44,19 @@ bool         isSearchEnabled
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRuleSet::~PresentationRuleSet ()
     {
-    CommonToolsInternal::FreePresentationRules (m_rootNodesRules);
-    CommonToolsInternal::FreePresentationRules (m_childNodesRules);
-    CommonToolsInternal::FreePresentationRules (m_contentRules);
-    CommonToolsInternal::FreePresentationRules (m_imageIdRules);
-    CommonToolsInternal::FreePresentationRules (m_labelOverrides);
-    CommonToolsInternal::FreePresentationRules (m_styleOverrides);
-    CommonToolsInternal::FreePresentationRules (m_groupingRules);
-    CommonToolsInternal::FreePresentationRules (m_localizationResourceKeyDefinitions);
-    CommonToolsInternal::FreePresentationRules (m_userSettings);
-    CommonToolsInternal::FreePresentationRules (m_checkBoxRules);
-    CommonToolsInternal::FreePresentationRules (m_sortingRules);
-    CommonToolsInternal::FreePresentationRules (m_contentModifiers);
-    CommonToolsInternal::FreePresentationRules (m_instanceLabelOverrides);
+    CommonToolsInternal::FreePresentationRules(m_rootNodesRules);
+    CommonToolsInternal::FreePresentationRules(m_childNodesRules);
+    CommonToolsInternal::FreePresentationRules(m_contentRules);
+    CommonToolsInternal::FreePresentationRules(m_imageIdRules);
+    CommonToolsInternal::FreePresentationRules(m_labelOverrides);
+    CommonToolsInternal::FreePresentationRules(m_styleOverrides);
+    CommonToolsInternal::FreePresentationRules(m_groupingRules);
+    CommonToolsInternal::FreePresentationRules(m_localizationResourceKeyDefinitions);
+    CommonToolsInternal::FreePresentationRules(m_userSettings);
+    CommonToolsInternal::FreePresentationRules(m_checkBoxRules);
+    CommonToolsInternal::FreePresentationRules(m_sortingRules);
+    CommonToolsInternal::FreePresentationRules(m_contentModifiers);
+    CommonToolsInternal::FreePresentationRules(m_instanceLabelOverrides);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -168,19 +168,19 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
     if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_extendedData, PRESENTATION_RULE_SET_XML_ATTRIBUTE_EXTENDEDDATA))
         m_extendedData = "";
 
-    CommonToolsInternal::LoadRulesFromXmlNode <RootNodeRule>      (ruleSetNode, m_rootNodesRules,   ROOT_NODE_RULE_XML_NODE_NAME);
-    CommonToolsInternal::LoadRulesFromXmlNode <ChildNodeRule>     (ruleSetNode, m_childNodesRules,  CHILD_NODE_RULE_XML_NODE_NAME);
-    CommonToolsInternal::LoadRulesFromXmlNode <ContentRule>       (ruleSetNode, m_contentRules,     CONTENT_RULE_XML_NODE_NAME);
-    CommonToolsInternal::LoadRulesFromXmlNode <ImageIdOverride>   (ruleSetNode, m_imageIdRules,     IMAGE_ID_OVERRIDE_XML_NODE_NAME);
-    CommonToolsInternal::LoadRulesFromXmlNode <LabelOverride>     (ruleSetNode, m_labelOverrides,   LABEL_OVERRIDE_XML_NODE_NAME);
-    CommonToolsInternal::LoadRulesFromXmlNode <StyleOverride>     (ruleSetNode, m_styleOverrides,   STYLE_OVERRIDE_XML_NODE_NAME);
-    CommonToolsInternal::LoadRulesFromXmlNode <GroupingRule>      (ruleSetNode, m_groupingRules,    GROUPING_RULE_XML_NODE_NAME);
-    CommonToolsInternal::LoadRulesFromXmlNode <LocalizationResourceKeyDefinition> (ruleSetNode, m_localizationResourceKeyDefinitions, LOCALIZATION_DEFINITION_XML_NODE_NAME);
-    CommonToolsInternal::LoadRulesFromXmlNode <UserSettingsGroup> (ruleSetNode, m_userSettings,     USER_SETTINGS_XML_NODE_NAME);
-    CommonToolsInternal::LoadRulesFromXmlNode <CheckBoxRule>      (ruleSetNode, m_checkBoxRules,    CHECKBOX_RULE_XML_NODE_NAME);
-    CommonToolsInternal::LoadRulesFromXmlNode <SortingRule>       (ruleSetNode, m_sortingRules,     SORTING_RULE_XML_NODE_NAME);
-    CommonToolsInternal::LoadRulesFromXmlNode <ContentModifier>   (ruleSetNode, m_contentModifiers, CONTENTMODIEFIER_XML_NODE_NAME);
-    CommonToolsInternal::LoadRulesFromXmlNode <InstanceLabelOverride> (ruleSetNode, m_instanceLabelOverrides, INSTANCE_LABEL_OVERRIDE_XML_NODE_NAME);
+    CommonToolsInternal::LoadRulesFromXmlNode <RootNodeRule>      (ruleSetNode, m_rootNodesRules,   ROOT_NODE_RULE_XML_NODE_NAME, this);
+    CommonToolsInternal::LoadRulesFromXmlNode <ChildNodeRule>     (ruleSetNode, m_childNodesRules,  CHILD_NODE_RULE_XML_NODE_NAME, this);
+    CommonToolsInternal::LoadRulesFromXmlNode <ContentRule>       (ruleSetNode, m_contentRules,     CONTENT_RULE_XML_NODE_NAME, this);
+    CommonToolsInternal::LoadRulesFromXmlNode <ImageIdOverride>   (ruleSetNode, m_imageIdRules,     IMAGE_ID_OVERRIDE_XML_NODE_NAME, this);
+    CommonToolsInternal::LoadRulesFromXmlNode <LabelOverride>     (ruleSetNode, m_labelOverrides,   LABEL_OVERRIDE_XML_NODE_NAME, this);
+    CommonToolsInternal::LoadRulesFromXmlNode <StyleOverride>     (ruleSetNode, m_styleOverrides,   STYLE_OVERRIDE_XML_NODE_NAME, this);
+    CommonToolsInternal::LoadRulesFromXmlNode <GroupingRule>      (ruleSetNode, m_groupingRules,    GROUPING_RULE_XML_NODE_NAME, this);
+    CommonToolsInternal::LoadRulesFromXmlNode <LocalizationResourceKeyDefinition> (ruleSetNode, m_localizationResourceKeyDefinitions, LOCALIZATION_DEFINITION_XML_NODE_NAME, this);
+    CommonToolsInternal::LoadRulesFromXmlNode <UserSettingsGroup> (ruleSetNode, m_userSettings,     USER_SETTINGS_XML_NODE_NAME, this);
+    CommonToolsInternal::LoadRulesFromXmlNode <CheckBoxRule>      (ruleSetNode, m_checkBoxRules,    CHECKBOX_RULE_XML_NODE_NAME, this);
+    CommonToolsInternal::LoadRulesFromXmlNode <SortingRule>       (ruleSetNode, m_sortingRules,     SORTING_RULE_XML_NODE_NAME, this);
+    CommonToolsInternal::LoadRulesFromXmlNode <ContentModifier>   (ruleSetNode, m_contentModifiers, CONTENTMODIEFIER_XML_NODE_NAME, this);
+    CommonToolsInternal::LoadRulesFromXmlNode <InstanceLabelOverride> (ruleSetNode, m_instanceLabelOverrides, INSTANCE_LABEL_OVERRIDE_XML_NODE_NAME, this);
     
     return true;
     }
@@ -315,18 +315,18 @@ bool PresentationRuleSet::ReadJson(JsonValueCR json)
         }
 
     JsonValueCR rulesJson = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES];
-    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_childNodesRules, CommonToolsInternal::LoadRuleFromJson<ChildNodeRule>);
-    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_rootNodesRules, CommonToolsInternal::LoadRuleFromJson<RootNodeRule>);
-    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_contentRules, CommonToolsInternal::LoadRuleFromJson<ContentRule>);
-    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_contentModifiers, CommonToolsInternal::LoadRuleFromJson<ContentModifier>);
-    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_checkBoxRules, CommonToolsInternal::LoadRuleFromJson<CheckBoxRule>);
-    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_groupingRules, CommonToolsInternal::LoadRuleFromJson<GroupingRule>);
-    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_imageIdRules, CommonToolsInternal::LoadRuleFromJson<ImageIdOverride>);
-    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_labelOverrides, CommonToolsInternal::LoadRuleFromJson<LabelOverride>);
-    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_sortingRules, CommonToolsInternal::LoadRuleFromJson<SortingRule>);
-    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_styleOverrides, CommonToolsInternal::LoadRuleFromJson<StyleOverride>);
-    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_instanceLabelOverrides, CommonToolsInternal::LoadRuleFromJson<InstanceLabelOverride>);
-    CommonToolsInternal::LoadFromJsonByPriority(json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_USERSETTINGS], m_userSettings, CommonToolsInternal::LoadRuleFromJson<UserSettingsGroup>);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_childNodesRules, CommonToolsInternal::LoadRuleFromJson<ChildNodeRule>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_rootNodesRules, CommonToolsInternal::LoadRuleFromJson<RootNodeRule>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_contentRules, CommonToolsInternal::LoadRuleFromJson<ContentRule>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_contentModifiers, CommonToolsInternal::LoadRuleFromJson<ContentModifier>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_checkBoxRules, CommonToolsInternal::LoadRuleFromJson<CheckBoxRule>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_groupingRules, CommonToolsInternal::LoadRuleFromJson<GroupingRule>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_imageIdRules, CommonToolsInternal::LoadRuleFromJson<ImageIdOverride>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_labelOverrides, CommonToolsInternal::LoadRuleFromJson<LabelOverride>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_sortingRules, CommonToolsInternal::LoadRuleFromJson<SortingRule>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_styleOverrides, CommonToolsInternal::LoadRuleFromJson<StyleOverride>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_instanceLabelOverrides, CommonToolsInternal::LoadRuleFromJson<InstanceLabelOverride>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_USERSETTINGS], m_userSettings, CommonToolsInternal::LoadRuleFromJson<UserSettingsGroup>, this);
     return true;
     }
 

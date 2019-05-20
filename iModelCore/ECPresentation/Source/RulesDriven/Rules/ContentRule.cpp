@@ -31,7 +31,7 @@ ContentRule::ContentRule (Utf8StringCR condition, int priority, bool onlyIfNotHa
 ContentRule::ContentRule(ContentRuleCR other)
     : ConditionalPresentationRule(other), m_customControl(other.m_customControl)
     {
-    CommonToolsInternal::CloneRules(m_specifications, other.m_specifications);
+    CommonToolsInternal::CloneRules(m_specifications, other.m_specifications, this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,7 +39,7 @@ ContentRule::ContentRule(ContentRuleCR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentRule::~ContentRule ()
     {
-    CommonToolsInternal::FreePresentationRules (m_specifications);
+    CommonToolsInternal::FreePresentationRules(m_specifications);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -61,11 +61,11 @@ bool ContentRule::_ReadXml (BeXmlNodeP xmlNode)
     for (BeXmlNodeP child = xmlNode->GetFirstChild (BEXMLNODE_Element); NULL != child; child = child->GetNextSibling (BEXMLNODE_Element))
         {
         if (0 == BeStringUtilities::Stricmp(child->GetName(), CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<ContentInstancesOfSpecificClassesSpecification, ContentSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<ContentInstancesOfSpecificClassesSpecification, ContentSpecificationList>(child, m_specifications, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), CONTENT_RELATED_INSTANCES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<ContentRelatedInstancesSpecification, ContentSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<ContentRelatedInstancesSpecification, ContentSpecificationList>(child, m_specifications, this);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), SELECTED_NODE_INSTANCES_SPECIFICATION_XML_NODE_NAME))
-            CommonToolsInternal::LoadRuleFromXmlNode<SelectedNodeInstancesSpecification, ContentSpecificationList>(child, m_specifications);
+            CommonToolsInternal::LoadRuleFromXmlNode<SelectedNodeInstancesSpecification, ContentSpecificationList>(child, m_specifications, this);
         }
 
     return ConditionalPresentationRule::_ReadXml (xmlNode);
@@ -99,7 +99,7 @@ bool ContentRule::_ReadJson(JsonValueCR json)
     if (!ConditionalPresentationRule::_ReadJson(json))
         return false;
 
-    CommonToolsInternal::LoadFromJsonByPriority(json[CONTENT_RULE_JSON_ATTRIBUTE_SPECIFICATIONS], m_specifications, ContentSpecification::Create);
+    CommonToolsInternal::LoadFromJsonByPriority(json[CONTENT_RULE_JSON_ATTRIBUTE_SPECIFICATIONS], m_specifications, ContentSpecification::Create, this);
     return true;
     }
 
@@ -150,7 +150,7 @@ MD5 ContentRule::_ComputeHash(Utf8CP parentHash) const
     Utf8String currentHash = md5.GetHashString();
     for (ContentSpecificationP spec : m_specifications)
         {
-        Utf8StringCR specHash = spec->GetHash(parentHash);
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
         md5.Add(specHash.c_str(), specHash.size());
         }
     return md5;

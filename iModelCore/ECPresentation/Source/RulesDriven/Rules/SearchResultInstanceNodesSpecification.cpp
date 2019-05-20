@@ -44,8 +44,7 @@ SearchResultInstanceNodesSpecification::SearchResultInstanceNodesSpecification(i
 SearchResultInstanceNodesSpecification::SearchResultInstanceNodesSpecification(SearchResultInstanceNodesSpecification const& other)
     : ChildNodeSpecification(other), m_groupByClass(other.m_groupByClass), m_groupByLabel(other.m_groupByLabel)
     {
-    for (QuerySpecificationP spec : other.GetQuerySpecifications())
-        m_querySpecifications.push_back(spec->Clone());
+    CommonToolsInternal::CloneRules(m_querySpecifications, other.m_querySpecifications, this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -53,8 +52,7 @@ SearchResultInstanceNodesSpecification::SearchResultInstanceNodesSpecification(S
 +---------------+---------------+---------------+---------------+---------------+------*/
 SearchResultInstanceNodesSpecification::~SearchResultInstanceNodesSpecification()
     {
-    for (QuerySpecification* spec : m_querySpecifications)
-        delete spec;
+    CommonToolsInternal::FreePresentationRules(m_querySpecifications);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -84,8 +82,8 @@ bool SearchResultInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByLabel, COMMON_XML_ATTRIBUTE_GROUPBYLABEL))
         m_groupByLabel = true;
 
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<StringQuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications, STRING_QUERY_SPECIFICATION_XML_NODE_NAME);
-    CommonToolsInternal::LoadSpecificationsFromXmlNode<ECPropertyValueQuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications, ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_NODE_NAME);
+    CommonToolsInternal::LoadSpecificationsFromXmlNode<StringQuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications, STRING_QUERY_SPECIFICATION_XML_NODE_NAME, this);
+    CommonToolsInternal::LoadSpecificationsFromXmlNode<ECPropertyValueQuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications, ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_NODE_NAME, this);
     return true;
     }
 
@@ -118,7 +116,7 @@ bool SearchResultInstanceNodesSpecification::_ReadJson(JsonValueCR json)
 
     m_groupByClass = json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS].asBool(true);
     m_groupByLabel = json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL].asBool(true);
-    CommonToolsInternal::LoadFromJson(json[SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_JSON_ATTRIBUTE_QUERIES], m_querySpecifications, QuerySpecification::Create);
+    CommonToolsInternal::LoadFromJson(json[SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_JSON_ATTRIBUTE_QUERIES], m_querySpecifications, QuerySpecification::Create, this);
     return true;
     }
 
