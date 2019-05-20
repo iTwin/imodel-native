@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Policies" nameSpacePrefix="rest_pol" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECClass typeName="PolicyAssertion" displayLabel="Policy Assertion" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PolicyAppliesTo" isDomainClass="False">
+        <ECCustomAttributes>
+            <!-- ECv3 does not support AnyClass relationships -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
