@@ -1626,7 +1626,12 @@ public:
             ByteStreamCR geometry = result.m_content->GetBytes();
             auto blob = Napi::Uint8Array::New(Env(), geometry.size());
             memcpy(blob.Data(), geometry.data(), geometry.size());
-            return CreateBentleyReturnSuccessObject(blob);
+
+            Napi::Object jsTileContent = Napi::Object::New(Env());
+            jsTileContent.Set(Napi::String::New(Env(), "content"), blob);
+            jsTileContent.Set(Napi::String::New(Env(), "elapsedSeconds"), Napi::Number::New(Env(), result.m_elapsedSeconds));
+
+            return CreateBentleyReturnSuccessObject(jsTileContent);
             }
         }
 

@@ -49,6 +49,7 @@ enum class State : uint8_t
 struct Result
 {
     ContentCPtr m_content;
+    double      m_elapsedSeconds = 0.0;
     DgnDbStatus m_status = DgnDbStatus::BadRequest;
 };
 

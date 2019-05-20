@@ -404,9 +404,10 @@ private:
         //
         }
 
-    void SetResult(DgnDbStatus status, ContentCP content)
+    void SetResult(DgnDbStatus status, ContentCP content, double elapsedSeconds)
         {
         m_result.m_content = content;
+        m_result.m_elapsedSeconds = elapsedSeconds;
         m_result.m_status = status;
         SetState(State::Completed);
         BeAssert((nullptr == content) == (DgnDbStatus::Success != status));
@@ -430,8 +431,8 @@ public:
     bool IsCompleted() const { return State::Completed == GetState(); }
     bool IsCanceled() const { return nullptr != m_cancellationToken && m_cancellationToken->IsCanceled(); }
 
-    void SetContent(ContentCR content) { SetResult(DgnDbStatus::Success, &content); }
-    void SetStatus(DgnDbStatus status) { SetResult(status, nullptr); }
+    void SetContent(ContentCR content, double elapsedSeconds) { SetResult(DgnDbStatus::Success, &content, elapsedSeconds); }
+    void SetStatus(DgnDbStatus status) { SetResult(status, nullptr, 0.0); }
 
     ResultCR GetResult() const { return m_result; }
     PollResult Poll() const;
@@ -578,10 +579,16 @@ void Tile::Request::Process()
 
     SetState(State::Loading);
 
+    StopWatch timer;
+
     auto tree = JsInterop::GetTileTree(*m_model, m_treeId, true);
+    timer.Start();
     auto content = tree.IsValid() ? tree->RequestContent(m_contentId, JsInterop::GetUseTileCache()) : nullptr;
+    timer.Stop();
     if (content.IsValid())
-        SetContent(*content);
+        {
+        SetContent(*content, timer.GetElapsedSeconds());
+        }
     else
         SetStatus(DgnDbStatus::NotFound);
     }
