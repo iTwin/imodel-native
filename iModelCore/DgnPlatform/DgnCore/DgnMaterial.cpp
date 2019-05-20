@@ -116,7 +116,7 @@ RenderMaterialId RenderMaterial::ImportMaterial(RenderMaterialId srcMaterialId, 
         return RenderMaterialId(); // ERROR: didn't find the destination model
 
     //  See if we already have a material with the same name in the destination DefinitionModel. If so, we'll map the source material to it.
-    RenderMaterialId destMaterialId = QueryMaterialId(*destModel, srcMaterial->GetMaterialName());
+    RenderMaterialId destMaterialId = QueryMaterialId(*destModel, srcMaterial->GetPaletteName(), srcMaterial->GetMaterialName());
     if (destMaterialId.IsValid())
         {
         //  *** TBD: Check if the material definitions match. If not, rename and remap
