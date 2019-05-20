@@ -1,0 +1,47 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  
+#----------------------------------------------------------------------
+
+%include mdl.mki
+
+appName             = CrawlerLibExample
+baseDir             = $(_MakeFilePath)
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+#----------------------------------------------------------------------
+#   Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#    Append compiler options
+#----------------------------------------------------------------------
+nameToDefine = UNICODE
+%include cdefapnd.mki
+
+nameToDefine = _UNICODE
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+#   Build source files
+#----------------------------------------------------------------------
+$(o)CrawlerLibExample$(oext) : $(baseDir)CrawlerLibExample.cpp
+
+#----------------------------------------------------------------------
+#   DLL/LIB creation
+#----------------------------------------------------------------------
+EXE_UNICODE  = 1
+EXE_DEST     = $(o)
+EXE_NAME     = $(appName)
+EXE_OBJS     = $(o)CrawlerLibExample$(oext)
+EXE_UNICODE  = 1
+
+LINKER_LIBRARIES = $(ContextSubpartsLibs)CrawlerLib.lib \
+                   $(ContextSubpartsLibs)Bentley.lib
+
+%include $(SharedMki)linktool.mki
+
