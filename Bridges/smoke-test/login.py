@@ -14,14 +14,12 @@ import sys
 loginPass=sys.argv[1]
 version=sys.argv[2]
 
-url=r'https://qa-connect-imodelhubwebsite.bentley.com/Project/0b048e3d-9699-4a6c-82b8-68f79824c810'
+url=r'https://qa-connect-imodelhubwebsite.bentley.com/Project/9303f305-8e48-416c-88a3-f3384d80f89a'
 driver = webdriver.Chrome("C:\\bridge\\chromedriver.exe")
 driver.set_page_load_timeout(150)
 driver.get(url)
 time.sleep(20)
 driver.find_element_by_name('EmailAddress').send_keys('Saddam.khattak@bentley.com')
-#driver.find_element_by_name('Password').send_keys('Hkbridges124@')
-#driver.find_element_by_id('submitLogon').click()
 driver.find_element_by_name('Password').click()
 driver.find_element_by_name('loginfmt').send_keys('Saddam.khattak@bentley.com')
 driver.find_element_by_id('idSIButton9').click()
@@ -30,8 +28,7 @@ driver.find_element_by_id('passwordInput').send_keys(loginPass)
 driver.find_element_by_id('submitButton').click()
 driver.find_element_by_id('idSIButton9').click()
 time.sleep(10)
-#if driver.find_element_by_class_name('menu-button'):
-imodelList=['MS_'+version,'VM_'+version , 'HYB_'+version, 'IFC_'+version ,'BB24_'+version,'FNT_'+version, 'PRN_'+version, 'OFF_'+version, '2D_'+version, 'LVL_'+version, 'SAV_'+version, '3SM_'+version]
+imodelList=['MS_'+version,'VM_'+version , 'HYB_'+version, 'IFC_'+version ,'BB24_'+version,'FNT_'+version, 'PRN_'+version, 'OFF_'+version, '2D_'+version, 'LVL_'+version, 'SAV_'+version, '3SM_'+version,'CS_'+version,'Multi_'+version]
 for index,imodel in enumerate(imodelList):
    time.sleep(10)
    driver.find_element_by_class_name('create-button').click()
