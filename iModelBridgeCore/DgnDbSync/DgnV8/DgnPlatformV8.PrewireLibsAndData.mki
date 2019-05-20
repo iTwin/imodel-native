@@ -1,0 +1,552 @@
+#----------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#----------------------------------------------------------------------
+
+# Developers may use a PP build containing a different version of RealDWG
+%if exists ($(DgnV8Sdk)Dlls/DwgDgnIO2019.dll)
+    RDVersion = 2019
+    RDVSuffix = 23
+%else
+    RDVersion = 2018
+    RDVSuffix = 22
+%endif
+
+#--------------------------------------------------------------------------------------------------
+# DLLs
+#--------------------------------------------------------------------------------------------------
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/3dsfileioImp.dll : $(DgnV8Sdk)Dlls/3dsfileioImp.dll
+    $(LinkFirstDepToFirstTarget)
+
+%if exists($(DgnV8Sdk)Dlls/acute3dio1.dll)
+$(Delivery)DgnPlatformV8Sdk/Dlls/acute3dio1.dll : $(DgnV8Sdk)Dlls/acute3dio1.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/AutomaticGroundDetection.dll : $(DgnV8Sdk)Dlls/AutomaticGroundDetection.dll
+    $(LinkFirstDepToFirstTarget)
+%endif
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/BaseGeoCoord2.dll : $(DgnV8Sdk)Dlls/BaseGeoCoord2.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/BeCurl.dll : $(DgnV8Sdk)Dlls/BeCurl.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/BeLibxml2.dll : $(DgnV8Sdk)Dlls/BeLibxml2.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/Bentley5.dll : $(DgnV8Sdk)Dlls/Bentley5.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/BentleyAllocator.dll : $(DgnV8Sdk)Dlls/BentleyAllocator.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/BentleyGeom5.dll : $(DgnV8Sdk)Dlls/BentleyGeom5.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/BentleyGeomSerialization5.dll : $(DgnV8Sdk)Dlls/BentleyGeomSerialization5.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/BeOpenSSL.dll : $(DgnV8Sdk)Dlls/BeOpenSSL.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/BeSQLite2.dll : $(DgnV8Sdk)Dlls/BeSQLite2.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/BeXml1.dll : $(DgnV8Sdk)Dlls/BeXml1.dll
+    $(LinkFirstDepToFirstTarget)
+
+%if exists($(DgnV8Sdk)Dlls/CGAL.dll)
+$(Delivery)DgnPlatformV8Sdk/Dlls/CGAL.dll : $(DgnV8Sdk)Dlls/CGAL.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/CloudDataSource.dll : $(DgnV8Sdk)Dlls/CloudDataSource.dll
+    $(LinkFirstDepToFirstTarget)
+%endif
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/bsiexcept-1.1.dll : $(DgnV8Sdk)Dlls/bsiexcept-1.1.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/DgnGeoCoord2.dll : $(DgnV8Sdk)Dlls/DgnGeoCoord2.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/DgnPlatform5.dll : $(DgnV8Sdk)Dlls/DgnPlatform5.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/DgnView2.dll : $(DgnV8Sdk)Dlls/DgnView2.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/DwgDgnIO$(RDVersion).dll : $(DgnV8Sdk)Dlls/DwgDgnIO$(RDVersion).dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/ECObjects6.dll : $(DgnV8Sdk)Dlls/ECObjects6.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/fbxfileioImp.dll : $(DgnV8Sdk)Dlls/fbxfileioImp.dll
+    $(LinkFirstDepToFirstTarget)
+
+%if exists($(DgnV8Sdk)Dlls/icudt38.dll)
+    $(Delivery)DgnPlatformV8Sdk/Dlls/icudt38.dll : $(DgnV8Sdk)Dlls/icudt38.dll
+        $(LinkFirstDepToFirstTarget)
+%endif
+
+%if exists($(DgnV8Sdk)Dlls/icudt40.dll)
+    $(Delivery)DgnPlatformV8Sdk/Dlls/icudt40.dll : $(DgnV8Sdk)Dlls/icudt40.dll
+        $(LinkFirstDepToFirstTarget)
+%endif
+
+%if exists($(DgnV8Sdk)Dlls/icudt54.dll)
+    $(Delivery)DgnPlatformV8Sdk/Dlls/icudt54.dll : $(DgnV8Sdk)Dlls/icudt54.dll
+        $(LinkFirstDepToFirstTarget)
+%endif
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/IfcFileIO.dll : $(DgnV8Sdk)Dlls/IfcFileIO.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/IfcFileIO.log.xml : $(DgnV8Sdk)Dlls/IfcFileIO.log.xml
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/ImageLib2.dll : $(DgnV8Sdk)Dlls/ImageLib2.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/IppGraLibs3.dll : $(DgnV8Sdk)Dlls/IppGraLibs3.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/IppImaging3.dll : $(DgnV8Sdk)Dlls/IppImaging3.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/IppUtlLibs3.dll : $(DgnV8Sdk)Dlls/IppUtlLibs3.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/libfbxsdk.dll : $(DgnV8Sdk)Dlls/libfbxsdk.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/lti_dsdk.dll : $(DgnV8Sdk)Dlls/lti_dsdk_9.5.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/lti_dsdk_cdll.dll : $(DgnV8Sdk)Dlls/lti_dsdk_cdll_9.5.dll
+    $(LinkFirstDepToFirstTarget)
+
+%if exists($(DgnV8Sdk)Dlls/MrMeshFileIO.dll)
+$(Delivery)DgnPlatformV8Sdk/Dlls/MrMeshFileIO.dll : $(DgnV8Sdk)Dlls/MrMeshFileIO.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/MrMeshLib2.dll : $(DgnV8Sdk)Dlls/MrMeshLib2.dll
+    $(LinkFirstDepToFirstTarget)
+%endif
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/mstntoolsubs.dll : $(DgnV8Sdk)Dlls/mstntoolsubs.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/objfileioImp.dll : $(DgnV8Sdk)Dlls/objfileioImp.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/objLib.dll : $(DgnV8Sdk)Dlls/objLib.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/opennurbs.dll : $(DgnV8Sdk)Dlls/opennurbs.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/PdfLibInitializer1.dll : $(DgnV8Sdk)Dlls/PdfLibInitializer1.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/PSKernel.dll : $(DgnV8Sdk)Dlls/PSKernel.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/PSKernel_net.dll : $(DgnV8Sdk)Dlls/PSKernel_net.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/PSolidAcisInterop2.dll : $(DgnV8Sdk)Dlls/PSolidAcisInterop2.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/PSolidCore2.dll : $(DgnV8Sdk)Dlls/PSolidCore2.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/qvision.dll : $(DgnV8Sdk)Dlls/qvision.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/RasterCore2.dll : $(DgnV8Sdk)Dlls/RasterCore2.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/RealDwg : $(DgnV8Sdk)Dlls/RealDwg
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/rhinolib.dll : $(DgnV8Sdk)Dlls/rhinolib.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/RmgrTools3.dll : $(DgnV8Sdk)Dlls/RmgrTools3.dll
+    $(LinkFirstDepToFirstTarget)
+
+%if exists($(DgnV8Sdk)Dlls/ScalableMesh.dll)
+$(Delivery)DgnPlatformV8Sdk/Dlls/ScalableMesh.dll : $(DgnV8Sdk)Dlls/ScalableMesh.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/ScalableMeshElement.dll : $(DgnV8Sdk)Dlls/ScalableMeshElement.dll
+    $(LinkFirstDepToFirstTarget)
+%endif
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/sdaidlm.dll : $(DgnV8Sdk)Dlls/sdaidlm.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SketchUpAPI.dll : $(DgnV8Sdk)Dlls/SketchUpAPI.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/skpfileioImp.dll : $(DgnV8Sdk)Dlls/skpfileioImp.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SpaACIS.dll : $(DgnV8Sdk)Dlls/SpaACIS.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAAcisDs.dll : $(DgnV8Sdk)Dlls/SPAAcisDs.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAIAcis.dll : $(DgnV8Sdk)Dlls/SPAIAcis.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAIInterop.dll : $(DgnV8Sdk)Dlls/SPAIInterop.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAIInteropC.dll : $(DgnV8Sdk)Dlls/SPAIInteropC.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAIop.dll : $(DgnV8Sdk)Dlls/SPAIop.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAIopAcis.dll : $(DgnV8Sdk)Dlls/SPAIopAcis.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAIopAcisC.dll : $(DgnV8Sdk)Dlls/SPAIopAcisC.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAIopC.dll : $(DgnV8Sdk)Dlls/SPAIopC.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAIopParasolid.dll : $(DgnV8Sdk)Dlls/SPAIopParasolid.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAIopParasolidC.dll : $(DgnV8Sdk)Dlls/SPAIopParasolidC.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAIParasolid.dll : $(DgnV8Sdk)Dlls/SPAIParasolid.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAIParasolidKernel.dll : $(DgnV8Sdk)Dlls/SPAIParasolidKernel.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXAcis.dll : $(DgnV8Sdk)Dlls/SPAXAcis.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXAcisBase.dll : $(DgnV8Sdk)Dlls/SPAXAcisBase.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXAcisKernel.dll : $(DgnV8Sdk)Dlls/SPAXAcisKernel.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXAcisManufacturingImporter.dll : $(DgnV8Sdk)Dlls/SPAXAcisManufacturingImporter.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXAcisMeshDS.dll : $(DgnV8Sdk)Dlls/SPAXAcisMeshDS.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXAcisPMIEntitiesDS.dll : $(DgnV8Sdk)Dlls/SPAXAcisPMIEntitiesDS.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXAcisPMIImporter.dll : $(DgnV8Sdk)Dlls/SPAXAcisPMIImporter.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXAssemblyRep.dll : $(DgnV8Sdk)Dlls/SPAXAssemblyRep.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXBase.dll : $(DgnV8Sdk)Dlls/SPAXBase.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXBoundaryRep.dll : $(DgnV8Sdk)Dlls/SPAXBoundaryRep.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXCommon.dll : $(DgnV8Sdk)Dlls/SPAXCommon.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXGeometryRepresentation.dll : $(DgnV8Sdk)Dlls/SPAXGeometryRepresentation.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXicuC.dll : $(DgnV8Sdk)Dlls/SPAXicuC.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXicuuc54.dll : $(DgnV8Sdk)Dlls/SPAXicuuc54.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXInterop.dll : $(DgnV8Sdk)Dlls/SPAXInterop.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXIop.dll : $(DgnV8Sdk)Dlls/SPAXIop.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXIopAcis.dll : $(DgnV8Sdk)Dlls/SPAXIopAcis.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXIopParasolid.dll : $(DgnV8Sdk)Dlls/SPAXIopParasolid.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXManufacturingRep.dll : $(DgnV8Sdk)Dlls/SPAXManufacturingRep.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXMil.dll : $(DgnV8Sdk)Dlls/SPAXMil.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXParasolid.dll : $(DgnV8Sdk)Dlls/SPAXParasolid.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXParasolidManufacturingImporter.dll : $(DgnV8Sdk)Dlls/SPAXParasolidManufacturingImporter.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXParasolidPMIImporter.dll : $(DgnV8Sdk)Dlls/SPAXParasolidPMIImporter.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXPMIRep.dll : $(DgnV8Sdk)Dlls/SPAXPMIRep.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXVisualizationAsm.dll : $(DgnV8Sdk)Dlls/SPAXVisualizationAsm.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXVisualizationRep.dll : $(DgnV8Sdk)Dlls/SPAXVisualizationRep.dll
+    $(LinkFirstDepToFirstTarget)
+
+%if exists($(DgnV8Sdk)Dlls/SketchUpCommonPreferences.dll)
+$(Delivery)DgnPlatformV8Sdk/Dlls/SketchUpCommonPreferences.dll : $(DgnV8Sdk)Dlls/SketchUpCommonPreferences.dll
+    $(LinkFirstDepToFirstTarget)
+%endif
+
+%if exists($(DgnV8Sdk)Dlls/TerrainModelCore.dll)
+$(Delivery)DgnPlatformV8Sdk/Dlls/TerrainModelCore.dll : $(DgnV8Sdk)Dlls/TerrainModelCore.dll
+    $(LinkFirstDepToFirstTarget)
+%endif
+
+%if exists($(DgnV8Sdk)Dlls/TerrainModelElementHandler.dll)
+$(Delivery)DgnPlatformV8Sdk/Dlls/TerrainModelElementHandler.dll : $(DgnV8Sdk)Dlls/TerrainModelElementHandler.dll
+    $(LinkFirstDepToFirstTarget)
+%endif
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/tridslib.dll : $(DgnV8Sdk)Dlls/tridslib.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/VisEdgesLib2.dll : $(DgnV8Sdk)Dlls/VisEdgesLib2.dll
+    $(LinkFirstDepToFirstTarget)
+
+
+
+#--------------------------------------------------------------------------------------------------
+# LIBs
+#--------------------------------------------------------------------------------------------------
+
+$(Delivery)DgnPlatformV8Sdk/Libs/BaseGeoCoord.lib : $(DgnV8Sdk)Libs/BaseGeoCoord.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/BeCsmap.lib : $(DgnV8Sdk)Libs/BeCsmap.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/BeCurl.lib : $(DgnV8Sdk)Libs/BeCurl.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/BeLibxml2.lib : $(DgnV8Sdk)Libs/BeLibxml2.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/Bentley.lib : $(DgnV8Sdk)Libs/Bentley.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/BentleyAllocator.lib : $(DgnV8Sdk)Libs/BentleyAllocator.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/BentleyGeom.lib : $(DgnV8Sdk)Libs/BentleyGeom.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/BentleyGeomSerialization.lib : $(DgnV8Sdk)Libs/BentleyGeomSerialization.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/bentleylog4cxx.lib : $(DgnV8Sdk)Libs/bentleylog4cxx.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/BeOpenSSL.lib : $(DgnV8Sdk)Libs/BeOpenSSL.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/BeSQLite.lib : $(DgnV8Sdk)Libs/BeSQLite.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/BeXml.lib : $(DgnV8Sdk)Libs/BeXml.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/bsiexcept.lib : $(DgnV8Sdk)Libs/bsiexcept.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/DgnGeoCoord.lib : $(DgnV8Sdk)Libs/DgnGeoCoord.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/DgnPlatform.lib : $(DgnV8Sdk)Libs/DgnPlatform.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/ECObjects.lib : $(DgnV8Sdk)Libs/ECObjects.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/pskernel.lib : $(DgnV8Sdk)Libs/pskernel.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/PSolidAcisInterop.lib : $(DgnV8Sdk)Libs/PSolidAcisInterop.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/PSolidCore.lib : $(DgnV8Sdk)Libs/PSolidCore.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/RmgrTools.lib : $(DgnV8Sdk)Libs/RmgrTools.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/SpaACIS.lib : $(DgnV8Sdk)Libs/SpaACIS.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/SPAIAcis.lib : $(DgnV8Sdk)Libs/SPAIAcis.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/SPAIInterop.lib : $(DgnV8Sdk)Libs/SPAIInterop.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/SPAIop.lib : $(DgnV8Sdk)Libs/SPAIop.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/SPAIopAcis.lib : $(DgnV8Sdk)Libs/SPAIopAcis.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/SPAIopAcisC.lib : $(DgnV8Sdk)Libs/SPAIopAcisC.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/SPAIopC.lib : $(DgnV8Sdk)Libs/SPAIopC.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/SPAIopParasolid.lib : $(DgnV8Sdk)Libs/SPAIopParasolid.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/SPAIopParasolidC.lib : $(DgnV8Sdk)Libs/SPAIopParasolidC.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/SPAIParasolid.lib : $(DgnV8Sdk)Libs/SPAIParasolid.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/SPAIParasolidKernel.lib : $(DgnV8Sdk)Libs/SPAIParasolidKernel.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/SPAXAcisMesh.lib : $(DgnV8Sdk)Libs/SPAXAcisMesh.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/SPAXAcisPMIEntities.lib : $(DgnV8Sdk)Libs/SPAXAcisPMIEntities.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/RasterCore.lib : $(DgnV8Sdk)Libs/RasterCore.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/DgnView.lib : $(DgnV8Sdk)Libs/DgnView.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/IppGraLibs.lib : $(DgnV8Sdk)Libs/IppGraLibs.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/IppImaging.lib : $(DgnV8Sdk)Libs/IppImaging.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/IppUtlLibs.lib : $(DgnV8Sdk)Libs/IppUtlLibs.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/lti_dsdk.lib : $(DgnV8Sdk)Libs/lti_dsdk.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/lti_dsdk_cdll.lib : $(DgnV8Sdk)Libs/lti_dsdk_cdll.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/PdfLibInitializer.lib : $(DgnV8Sdk)Libs/PdfLibInitializer.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/qvision.lib : $(DgnV8Sdk)Libs/qvision.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/VisEdgesLib.lib : $(DgnV8Sdk)Libs/VisEdgesLib.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/TerrainModelFormats.lib : $(DgnV8Sdk)Libs/TerrainModelFormats.lib
+    $(LinkFirstDepToFirstTarget)
+
+%if exists($(DgnV8Sdk)Libs/TerrainModelElementHandler.lib)
+$(Delivery)DgnPlatformV8Sdk/Libs/TerrainModelElementHandler.lib : $(DgnV8Sdk)Libs/TerrainModelElementHandler.lib
+    $(LinkFirstDepToFirstTarget)
+%endif
+
+#--- RealDWG Libs follow ----
+
+$(Delivery)DgnPlatformV8Sdk/Libs/DwgDgnIO.lib : $(DgnV8Sdk)Libs/DwgDgnIO.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/ac1st$(RDVSuffix).lib : $(DgnV8Sdk)Libs/ac1st$(RDVSuffix).lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/acdb$(RDVSuffix).lib : $(DgnV8Sdk)Libs/acdb$(RDVSuffix).lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/acdbmgd.lib : $(DgnV8Sdk)Libs/acdbmgd.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/AcDbPointCloudObj.lib : $(DgnV8Sdk)Libs/AcDbPointCloudObj.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/acge$(RDVSuffix).lib : $(DgnV8Sdk)Libs/acge$(RDVSuffix).lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/AcGeolocationObj.lib : $(DgnV8Sdk)Libs/AcGeolocationObj.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/acgiapi.lib : $(DgnV8Sdk)Libs/acgiapi.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/acismobj$(RDVSuffix).lib : $(DgnV8Sdk)Libs/acismobj$(RDVSuffix).lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/acModelDocObj.lib : $(DgnV8Sdk)Libs/acModelDocObj.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/AcMPolygonObj.lib : $(DgnV8Sdk)Libs/AcMPolygonObj.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/AcPal.lib : $(DgnV8Sdk)Libs/AcPal.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/AcSceneOE.lib : $(DgnV8Sdk)Libs/AcSceneOE.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/axdb.lib : $(DgnV8Sdk)Libs/axdb.lib
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Libs/rxapi.lib : $(DgnV8Sdk)Libs/rxapi.lib
+    $(LinkFirstDepToFirstTarget)
+
+#--------------------------------------------------------------------------------------------------
+# Data
+#--------------------------------------------------------------------------------------------------
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/ECSchemas : $(DgnV8Sdk)Dlls/ECSchemas
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/Fonts : $(DgnV8Sdk)Dlls/Fonts
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/schema : $(DgnV8Sdk)Dlls/schema
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/Symb : $(DgnV8Sdk)Dlls/Symb
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/Seed : $(DgnV8Sdk)Dlls/Seed
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+
+# HACK
+# Developer builds produce an 'en' sub-directory. Further, developer builds typically have asserts enabled, and lack of MUI files can trigger asserts.
+# PRG LKGs do not provide the 'en' sub-directory. I have e-mails out to figure out what the long-term solution is.
+# For now, for developers, bind the 'en' sub-directory if it exists to prevent asserts, but ignore for PRG-based builds and they'll work as well as they ever did.
+%if exists ($(DgnV8Sdk)Dlls/en)
+    $(Delivery)DgnPlatformV8Sdk/Dlls/en : $(DgnV8Sdk)Dlls/en
+        $(LinkFirstDepToFirstTargetAsDirectory)
+%endif

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Bentley_Civil__Model_Geometry_DgnDbSync" nameSpacePrefix="bcmgsync" version="4.9" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="DgnDbSyncV8" version="01.00" prefix="syncv8" />
+    <ECRelationshipClass typeName="ApplyTemplateCorridorRule__LinearTemplateDesignStage" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="BaseCorridorRule__BaseLinEnt3dRule" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="BaseCorridorRule__CorridorDrop" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="BaseCorridorElement__LinElemToLinElemStartEndDistanceRule_Partial" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="BaseCorridorRule__ECXMLFragment_TargetAliases" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="BaseCorridorRule__ParametricConstraint" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="BaseCorridorRule__PointControl" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="BaseCorridorRule__TargetAliasNameSet" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="CorridorRule__CorridorDesignStage" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="CorridorRule__CurveWidening" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="CorridorRule__EndConditionExceptions" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="CorridorRule__KeyStation" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="CorridorRule__SecondaryAlignment" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="GeometricContainer__FeaturizedEntityNameSet" isDomainClass="True" strength="embedding" strengthDirection="backward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="GeometricContainer__GeometricComponentNameSet" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="GeometricContainer__LinearEntityNameSet" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="GeometricContainer__PointEntityNameSet" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="GeometricContainer__SolidEntityNameSet" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="GeometricContainer__SurfaceEntityNameSet" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ImportedEntities__ImportedEntity" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="TransitionRule__IntervalMarkerDefinitionRuleInterest_Ahead" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="TransitionRule__IntervalMarkerDefinitionRuleInterest_Back" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForceIgnoreRelationshipBISBaseClass xmlns="DgnDbSyncV8.01.00.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+
+</ECSchema>
+

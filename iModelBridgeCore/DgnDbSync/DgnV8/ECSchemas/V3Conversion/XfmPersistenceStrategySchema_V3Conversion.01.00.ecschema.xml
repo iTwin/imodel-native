@@ -1,0 +1,635 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="XfmPersistenceStrategySchema_V3Conversion" nameSpacePrefix="xfmv3" version="1.07" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECClass typeName="BoundaryText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_ANODETEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_BONDJUNCTIONTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_BONDWIRETEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_CASINGTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_CONTROLLABLEFITTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_DISTRIBUTIONAREATEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_DRIPTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_FEEDSTATIONTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_FIELDOPERATIONSRECTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_FITTINGCONNECTTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_FITTINGCROSSTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_FITTINGENDCAPTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_FITTINGREDUCERTEXT" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_FITTINGTRANSITIONTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_FLOWCONTROLLERTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_LINEHEATERTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_MAINTENANCEAREATEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_MAINTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_MEASUREPOINTTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_METERTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_ODORIZERTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_PIPELINEMARKERTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_PRESSUREMONITORTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_PRESSUREREDVALVETEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_RECTIFERTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_REGULATORTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_RELIEFVALVETEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_SCRUBBERTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_SERVICETEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_STRAINERTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_SUPPLYSTATIONTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_TESTPOINTTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_VALVETEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDMISC_DESIGNWORKLOCATIONTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BuildingText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ChangeLog" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="clineText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_ADDRESSARROW" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_ADDRESSLEADERLINE" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_ADDRESSUSRFIELD" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_AMPLIFIERBLOCK" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_AMPLIFIERNAME" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_BASEBUILDINGNAME" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_BOUNDARYNAME" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_BUILDINGINFO" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_BUILDINGNAME" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_CABINETINFO" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_CABINETNAME" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_COPPERLOADCOILINFO" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_COPPERLOADCOILNAME" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_COPPERSHEATHINFO" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_COPPERSPANDISTANCE" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_COPPERSPANINFO" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_COPPERSPLICEENCLOSUREINFO" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_COPPERSPLICEENCLOSURENAME" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_COPPERSPLITTERLEADERLINE" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_COPPERTERMINALINFO" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_DUCTENCLOSURENAME" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_DUCTENCLOSUREUSRFIELD" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_DUCTDISTANCE" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_DUCTNAME" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_DUCTUSRFIELD" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_FIBERDEVICEINFOARROW" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_FIBERDEVICEINFOLEADERLINE" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_FIBERNODEINFO" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_FIBERNODENAME" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_FIBERSHEATHINFO" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_FIBERSPANDISTANCE" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_FIBERSPANINFO" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_FIBERSPLICEENCLOSUREINFO" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_FIBERSPLICEENCLOSURENAME" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_FTTPBOUNDARYHSCOUNT" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_HEADENDINFO" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_HEADENDNAME" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_NODEBOUNDARYBLOCK" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_OVERHEADGUY" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_PAVEMENTEDGE" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_POLEPEDNUMBER" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_POLEPEDSUPPORT" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_POLEPEDUSRFIELD" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_POWERSUPPLYBLOCK" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_RACKNAME" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_RAILROADNAME" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_RIGHTOFWAY" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_RISER" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_ROADCENTERLINE" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_ROADNAME" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_STRANDDISTANCE" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_STRANDUSRFIELD" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_TAPENDOFLINEBLOCK" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_TERMINATORENDOFLINEBLOCK" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_UTILITYCODE" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMMSTOWNSPATIAL_WATERLINENAME" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ConstructionNoteText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ContourText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="creekText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EquipmentStub" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EquipmentText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="Forest_CollectionText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GasMainText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GasValveText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HydrantText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="KANTA_KiintopistePisteNumero" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="KANTA_RajamerkkiPisteNumero" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="KANTA_RajamerkkiPisteNumero" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="KANTA_YleisetAlueetTekstiSymboli" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="KorkeuspisteTekstiAlku" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="KorkeuspisteTekstiLoppu" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="Lake_CollectionText" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LakeText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="lot_shapesText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MerkintaTeksti" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MyPointSub" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MySub" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RiverText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="StateBoundaryText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="Stub" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SurveyMonText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TelcoCableAnno" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TreeLineText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="treeText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="Tunnus" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="water_mainText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WaterMainText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ZoningText" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
+
