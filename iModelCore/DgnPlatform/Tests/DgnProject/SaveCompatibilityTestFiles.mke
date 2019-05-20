@@ -1,0 +1,41 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+TestOutputDir = $(OutputRootDir)Product/DgnPlatform-Gtest/run/Output/CompatibilityTests/
+TestOutputDir2 = $(OutputRootDir)Product/DgnPlatform-Gtest/run/Output/ECInstancesCompatibility/
+CacheDir = $(OutBuildDir)CompatibilityTestSeed/
+ContextDir = $(BuildContext)CompatibilityTestFiles/
+
+# Tests only write their side effects into the Product/ directory structure.
+# Further, test runner parts do not re-run tests of a log file is cached in the build/ directory structure.
+# We must thus make a hard copy of the output we need to survive a <bb b -r>.
+
+%if exists($(TestOutputDir)CompatibilityTestSeed.bim)
+    $(CacheDir)CompatibilityTestSeed.bim : $(TestOutputDir)CompatibilityTestSeed.bim
+        $(CopyFirstDepToFirstTarget)
+%endif
+
+%if !exists($(CacheDir)CompatibilityTestSeed.bim)
+    %error This part must be run at least once after a full execution of the DgnPlatform GTest suite.
+%endif
+
+$(ContextDir)CompatibilityTestSeed.bim : $(CacheDir)CompatibilityTestSeed.bim
+    $(LinkFirstDepToFirstTarget)
+
+# Saves the Bim produced by the ECInstancesCompatibility
+
+%if exists($(TestOutputDir2)InstancesCompatibilitySeed.bim)
+    $(CacheDir)InstancesCompatibilitySeed.bim : $(TestOutputDir2)InstancesCompatibilitySeed.bim
+        $(CopyFirstDepToFirstTarget)
+%endif
+
+%if !exists($(CacheDir)InstancesCompatibilitySeed.bim)
+    %error This part must be run at least once after a full execution of the DgnPlatform GTest suite.
+%endif
+
+$(ContextDir)InstancesCompatibilitySeed.bim : $(CacheDir)InstancesCompatibilitySeed.bim
+    $(LinkFirstDepToFirstTarget)

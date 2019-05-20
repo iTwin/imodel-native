@@ -1,0 +1,1768 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+#include <DgnPlatform/DgnPlatformApi.h>
+#include <Bentley/BeTest.h>
+#include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
+#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
+#include "../TestFixture/GenericDgnModelTestFixture.h"
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnElementHelpers.h"
+#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnDbUtilities.h"
+#include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
+#include <DgnPlatform/DgnPlatformLib.h>
+#include <Bentley/BeTimeUtilities.h>
+#include <DgnPlatform/DgnElementDependency.h>
+#include "../TestFixture/DgnDbTestFixtures.h"
+
+#define GROUP_SUBDIR L"ElementDependencyGraph"
+#define GROUP_SEED_FILENAME GROUP_SUBDIR L"/Test.bim"
+#define DEFAULT_MODEL_NAME "Default"
+#define DEFAULT_CATEGORY_NAME "DefaultCat"
+#define DEFAULT_VIEW_NAME "DefaultView"
+
+USING_NAMESPACE_BENTLEY_DGN
+USING_DGNDB_UNIT_TESTS_NAMESPACE
+USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_DPTEST
+
+BEGIN_UNNAMED_NAMESPACE
+
+typedef Dgn::dgn_TxnTable::ElementDep::DepRelData T_DepRelData;
+
+/*=================================================================================**//**
+* @bsiclass                                                     Sam.Wilson      01/15
++===============+===============+===============+===============+===============+======*/
+struct TxnMonitorVerifier : TxnMonitor
+    {
+    bool m_OnTxnClosedCalled;
+    bool m_OnTxnAppliedCalled;
+    bset<BeInt64Id> m_adds, m_deletes, m_mods;
+
+    TxnMonitorVerifier();
+    ~TxnMonitorVerifier();
+    void Clear();
+    void _OnCommit(TxnManager&) override;
+    void _OnAppliedChanges(TxnManager&) override {m_OnTxnAppliedCalled = true;}
+    };
+
+/*=================================================================================**//**
+* @bsiclass                                                     Sam.Wilson      01/15
++===============+===============+===============+===============+===============+======*/
+struct TestElementDrivesElementHandlerShouldFail
+    {
+    TestElementDrivesElementHandlerShouldFail() {TestElementDrivesElementHandler::SetShouldFail(true);}
+    ~TestElementDrivesElementHandlerShouldFail() {TestElementDrivesElementHandler::SetShouldFail(false);}
+    };
+
+//=======================================================================================
+// @bsiclass                                               Mindaugas.Butkus      08/18
+//=======================================================================================
+struct TestElementDrivesElementHandlerShouldFailFatal
+    {
+    TestElementDrivesElementHandlerShouldFailFatal() { TestElementDrivesElementHandler::SetShouldFailFatal(true); }
+    ~TestElementDrivesElementHandlerShouldFailFatal() { TestElementDrivesElementHandler::SetShouldFailFatal(false); }
+    };
+
+//=======================================================================================
+// @bsiclass                                               Mindaugas.Butkus      04/18
+//=======================================================================================
+struct CallbackSequenceRecorder
+    {
+    enum class EntryType
+        {
+        RelationshipHandlerCallback = 0,
+        AllInputsHandledCallback = 1,
+        BeforeOutputsHandledCallback = 2,
+        DeletedDependencyHandledCallback = 3
+        };
+
+    typedef bpair<BeInt64Id, EntryType> SequenceEntry;
+    bvector<SequenceEntry> m_sequence;
+
+    //=======================================================================================
+    // @bsiclass                                               Mindaugas.Butkus      04/18
+    //=======================================================================================
+    struct EDERelationshipCallback : TestElementDrivesElementHandler::Callback
+        {
+        private:
+            CallbackSequenceRecorder& m_recorder;
+
+        protected:
+            virtual void _OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
+            virtual void _ProcessDeletedDependency(Dgn::DgnDbR db, T_DepRelData const& relData) override;
+
+        public:
+            EDERelationshipCallback(CallbackSequenceRecorder& recorder) : m_recorder(recorder) {}
+        };
+
+    //=======================================================================================
+    // @bsiclass                                               Mindaugas.Butkus      04/18
+    //=======================================================================================
+    struct EDENodeCallback : TestDriverBundle::Callback
+        {
+        private:
+            CallbackSequenceRecorder& m_recorder;
+
+        protected:
+            virtual void _OnAllInputsHandled(Dgn::DgnElementId) override;
+            virtual void _OnBeforeOutputsHandled(Dgn::DgnElementId) override;
+
+        public:
+            EDENodeCallback(CallbackSequenceRecorder& recorder) : m_recorder(recorder) {}
+        };
+    };
+
+//=======================================================================================
+// @bsiclass                                               Mindaugas.Butkus      04/18
+//=======================================================================================
+struct EDECallbackSequenceMonitor
+    {
+    private:
+        CallbackSequenceRecorder m_recorder;
+        CallbackSequenceRecorder::EDERelationshipCallback m_relationshipCallback;
+        CallbackSequenceRecorder::EDENodeCallback m_nodeCallback;
+
+    public:
+        EDECallbackSequenceMonitor();
+        ~EDECallbackSequenceMonitor();
+
+        CallbackSequenceRecorder const& GetRecorder() { return m_recorder; }
+    };
+
+//=======================================================================================
+// @bsiclass                                               Mindaugas.Butkus      08/18
+// Callback that updates source and target of the relationship.
+//=======================================================================================
+struct ScopedEDEUpdaterCallback
+    {
+    private:
+        //=======================================================================================
+        // @bsiclass                                               Mindaugas.Butkus      08/18
+        //=======================================================================================
+        struct EDERelationshipCallback : TestElementDrivesElementHandler::Callback
+            {
+            virtual void _OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
+            virtual void _ProcessDeletedDependency(Dgn::DgnDbR db, T_DepRelData const& relData) override {}
+            };
+
+    private:
+        EDERelationshipCallback m_relationshipCallback;
+
+    public:
+        ScopedEDEUpdaterCallback();
+        ~ScopedEDEUpdaterCallback();
+    };
+
+//=======================================================================================
+// @bsiclass                                               Mindaugas.Butkus      08/18
+// Callback that inserts a new element and an EDE relationship.
+// Inserted relationship's source is the target of handled relationship and the target
+// is the new element.
+//=======================================================================================
+struct ScopedEDEInserterCallback
+    {
+    private:
+    //=======================================================================================
+    // @bsiclass                                               Mindaugas.Butkus      08/18
+    //=======================================================================================
+        struct EDERelationshipCallback : TestElementDrivesElementHandler::Callback
+            {
+            virtual void _OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
+            virtual void _ProcessDeletedDependency(Dgn::DgnDbR db, T_DepRelData const& relData) override {}
+            };
+
+    private:
+        EDERelationshipCallback m_relationshipCallback;
+
+    public:
+        ScopedEDEInserterCallback();
+        ~ScopedEDEInserterCallback();
+    };
+
+//=======================================================================================
+// @bsiclass                                               Mindaugas.Butkus      08/18
+// Callback that deletes the target element of an EDE relationship.
+//=======================================================================================
+struct ScopedEDEDeleterCallback
+    {
+    private:
+        //=======================================================================================
+        // @bsiclass                                               Mindaugas.Butkus      08/18
+        //=======================================================================================
+        struct EDERelationshipCallback : TestElementDrivesElementHandler::Callback
+            {
+            virtual void _OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
+            virtual void _ProcessDeletedDependency(Dgn::DgnDbR db, T_DepRelData const& relData) override {}
+            };
+
+    private:
+        EDERelationshipCallback m_relationshipCallback;
+
+    public:
+        ScopedEDEDeleterCallback();
+        ~ScopedEDEDeleterCallback();
+    };
+
+/*=================================================================================**//**
+* @bsiclass                                                     Sam.Wilson      01/15
++===============+===============+===============+===============+===============+======*/
+struct ElementDependencyGraph : DgnDbTestFixture
+{
+        public: static void TearDownTestCase();
+
+    enum class ElementDrivesElementColumn {TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status};
+
+    struct ElementsAndRelationships
+        {
+        DgnElementCPtr e99, e3, e31, e2, e1;
+        ECInstanceKey r99_3, r99_31, r3_2, r31_2, r2_1;
+        };
+
+    ElementDependencyGraph();
+    ~ElementDependencyGraph();
+    void CloseDb() {m_db->CloseDb();}
+    DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
+    DgnElementCPtr InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
+    void TwiddleTime(DgnElementCPtr);
+
+    DriverBundleElementCPtr InsertBundle();
+    
+    WString GetTestFileName(WCharCP testname);
+    ECN::ECClassCR GetElementDrivesElementClass();
+
+    CachedECSqlStatementPtr GetSelectElementDrivesElementById();
+    CachedECSqlStatementPtr GetSelectElementDrivesElementBySourceAndTarget();
+    void SetUpForRelationshipTests();
+    ECInstanceKey InsertElementDrivesElementRelationship(DgnElementCPtr root, DgnElementCPtr dependent);
+    DbResult DeleteElementDrivesElementRelationship(ECInstanceKeyCR key);
+
+    void TestTPS(DgnElementCPtr e1, DgnElementCPtr e2, size_t ntimes);
+    void TestOverlappingOrder(DgnElementCPtr r1, ECInstanceKeyCR r1_d3, ECInstanceKeyCR r2_d3, bool r1First);
+    void TestRelationships(DgnDb& db, ElementsAndRelationships const&);
+};
+
+END_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ScopedEDEUpdaterCallback::ScopedEDEUpdaterCallback()
+    {
+    TestElementDrivesElementHandler::GetHandler().SetCallback(&m_relationshipCallback);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ScopedEDEUpdaterCallback::~ScopedEDEUpdaterCallback()
+    {
+    TestElementDrivesElementHandler::GetHandler().SetCallback(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScopedEDEUpdaterCallback::EDERelationshipCallback::_OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target)
+    {
+    Dgn::DgnElementPtr sourceElem = db.Elements().GetForEdit<Dgn::DgnElement>(source);
+    if (sourceElem.IsValid())
+        sourceElem->Update();
+
+    Dgn::DgnElementPtr targetElem = db.Elements().GetForEdit<Dgn::DgnElement>(target);
+    if (targetElem.IsValid())
+        targetElem->Update();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ScopedEDEInserterCallback::ScopedEDEInserterCallback()
+    {
+    TestElementDrivesElementHandler::GetHandler().SetCallback(&m_relationshipCallback);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ScopedEDEInserterCallback::~ScopedEDEInserterCallback()
+    {
+    TestElementDrivesElementHandler::GetHandler().SetCallback(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScopedEDEInserterCallback::EDERelationshipCallback::_OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target)
+    {
+    Dgn::DgnElementPtr targetElem = db.Elements().GetForEdit<Dgn::DgnElement>(target);
+    if (targetElem.IsValid())
+        {
+        Dgn::DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), DgnDbTestFixture::s_seedFileInfo.categoryName);
+        Dgn::DgnElementPtr newElem = TestElement::Create(db, targetElem->GetModelId(), categoryId);
+        db.Elements().Insert(*newElem);
+
+        TestElementDrivesElementHandler::Insert(db, targetElem->GetElementId(), newElem->GetElementId());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ScopedEDEDeleterCallback::ScopedEDEDeleterCallback()
+    {
+    TestElementDrivesElementHandler::GetHandler().SetCallback(&m_relationshipCallback);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ScopedEDEDeleterCallback::~ScopedEDEDeleterCallback()
+    {
+    TestElementDrivesElementHandler::GetHandler().SetCallback(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScopedEDEDeleterCallback::EDERelationshipCallback::_OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target)
+    {
+    Dgn::DgnElementPtr targetElem = db.Elements().GetForEdit<Dgn::DgnElement>(target);
+    if (targetElem.IsValid())
+        targetElem->Delete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+EDECallbackSequenceMonitor::EDECallbackSequenceMonitor()
+    : m_relationshipCallback(m_recorder)
+    , m_nodeCallback(m_recorder)
+    {
+    TestDriverBundle::SetCallback(&m_nodeCallback);
+    TestElementDrivesElementHandler::GetHandler().SetCallback(&m_relationshipCallback);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+EDECallbackSequenceMonitor::~EDECallbackSequenceMonitor()
+    {
+    TestDriverBundle::SetCallback(nullptr);
+    TestElementDrivesElementHandler::GetHandler().SetCallback(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void CallbackSequenceRecorder::EDERelationshipCallback::_OnRootChanged
+(
+    Dgn::DgnDbR db,
+    ECInstanceId relationshipId,
+    Dgn::DgnElementId source,
+    Dgn::DgnElementId target
+)
+    {
+    m_recorder.m_sequence.push_back({relationshipId, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void CallbackSequenceRecorder::EDERelationshipCallback::_ProcessDeletedDependency
+(
+    Dgn::DgnDbR db, 
+    T_DepRelData const& relData
+)
+    {
+    m_recorder.m_sequence.push_back({relData.m_relKey.GetInstanceId(), CallbackSequenceRecorder::EntryType::DeletedDependencyHandledCallback});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void CallbackSequenceRecorder::EDENodeCallback::_OnAllInputsHandled
+(
+    Dgn::DgnElementId nodeId
+)
+    {
+    m_recorder.m_sequence.push_back({nodeId, CallbackSequenceRecorder::EntryType::AllInputsHandledCallback});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void CallbackSequenceRecorder::EDENodeCallback::_OnBeforeOutputsHandled
+(
+    Dgn::DgnElementId nodeId
+)
+    {
+    m_recorder.m_sequence.push_back({nodeId, CallbackSequenceRecorder::EntryType::BeforeOutputsHandledCallback});
+    }
+
+//---------------------------------------------------------------------------------------
+// Clean up what I did in my one-time setup
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+void ElementDependencyGraph::TearDownTestCase()
+    {
+    // Note: leave your subdirectory in place. Don't remove it. That allows the 
+    // base class to detect and throw an error if two groups try to use a directory of the same name.
+    // Don't worry about stale data. The test runner will clean out everything at the start of the program.
+    // You can empty the directory, if you want to save space.
+    DgnPlatformSeedManager::EmptySubDirectory(GROUP_SUBDIR);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TxnMonitorVerifier::TxnMonitorVerifier()
+    {
+    DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor(*this);
+    Clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TxnMonitorVerifier::~TxnMonitorVerifier()
+    {
+    DgnPlatformLib::GetHost().GetTxnAdmin().DropTxnMonitor(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnMonitorVerifier::Clear()
+    {
+    m_OnTxnClosedCalled = m_OnTxnAppliedCalled = false;
+    m_adds.clear(); m_deletes.clear(); m_mods.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnMonitorVerifier::_OnCommit(TxnManager& txnMgr)
+    {
+    m_OnTxnClosedCalled = true;
+
+    for (auto it : txnMgr.Elements().MakeIterator())
+        {
+        DgnElementId eid =  it.GetElementId();
+        switch (it.GetChangeType())
+            {
+            case TxnTable::ChangeType::Insert: m_adds.insert(eid); break;
+            case TxnTable::ChangeType::Delete: m_deletes.insert(eid); break;
+            case TxnTable::ChangeType::Update: m_mods.insert(eid); break;
+            default:
+                FAIL();
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+static bvector<ECInstanceId>::const_iterator findRelId(bvector<ECInstanceId> const& rels, ECInstanceKey relid)
+    {
+    return std::find(rels.begin(), rels.end(), relid.GetInstanceId());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+static bvector<T_DepRelData>::const_iterator findRelId(bvector<T_DepRelData> const& rels, ECInstanceKey relid)
+    {
+    return std::find_if(rels.begin(), rels.end(), [&](T_DepRelData const& dep) {return dep.m_relKey == relid;});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementDependencyGraph::ElementDependencyGraph()
+    {
+    // Must register my domain whenever I initialize a host
+    DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementDependencyGraph::~ElementDependencyGraph()
+    {
+    if (m_db.IsValid())
+        m_db->SaveChanges();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCPtr ElementDependencyGraph::InsertElement(Utf8CP elementCode, DgnModelId mid, DgnCategoryId categoryId )
+    {
+    if (!mid.IsValid())
+        mid = m_defaultModelId;
+
+    if (!categoryId.IsValid())
+        categoryId = m_defaultCategoryId;
+
+    TestElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
+    return m_db->Elements().Insert(*el);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DriverBundleElementCPtr ElementDependencyGraph::InsertBundle()
+    {
+    TestDriverBundlePtr bundle = TestDriverBundle::Create(*m_db, m_defaultModelId);
+    return dynamic_cast<TestDriverBundleCP>(m_db->Elements().Insert(*bundle).get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementDependencyGraph::TwiddleTime(DgnElementCPtr el)
+    {
+    BeThreadUtilities::BeSleep(1); // make sure the new timestamp is after the one that's on the Element now
+    DgnElementPtr mod = el->CopyForEdit();
+    mod->Update();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+WString ElementDependencyGraph::GetTestFileName(WCharCP testname)
+    {
+    return WPrintfString(L"%ls.ibim",testname);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::ECClassCR ElementDependencyGraph::GetElementDrivesElementClass()
+    {
+    return TestElementDrivesElementHandler::GetECClass(*m_db);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementById()
+    {
+    Utf8String ecsql("SELECT TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status FROM ONLY ");
+    ecsql.append(GetElementDrivesElementClass().GetECSqlName()).append(" WHERE ECInstanceId=?");
+    return m_db->GetPreparedECSqlStatement(ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementBySourceAndTarget()
+    {
+    Utf8String ecsql("SELECT TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status FROM ONLY ");
+    ecsql.append(GetElementDrivesElementClass().GetECSqlName()).append(" WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
+    return m_db->GetPreparedECSqlStatement(ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementDependencyGraph::SetUpForRelationshipTests()
+    {
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
+    ASSERT_TRUE(m_db->IsBriefcase());
+    ASSERT_TRUE(m_db->Txns().IsTracking());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceKey ElementDependencyGraph::InsertElementDrivesElementRelationship(DgnElementCPtr root, DgnElementCPtr dependent)
+    {
+    return TestElementDrivesElementHandler::Insert(*m_db, root->GetElementId(), dependent->GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ElementDependencyGraph::DeleteElementDrivesElementRelationship(ECInstanceKeyCR key)
+    {
+    return TestElementDrivesElementHandler::Delete(*m_db, key);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationships const& g)
+    {
+    db.SaveChanges();
+
+    TxnMonitorVerifier monitor;
+
+    //  ----------------
+    //     o->e31-o
+    //    /        \
+    // e99          ->e2-o->e1
+    //    \        /
+    //     o->e3-o
+    //
+    // (The little "o"s represent the ECRelationships.)
+    //  ----------------
+
+    //  ----------------
+    //  change e99 =>
+    //  first   next    last
+    //  r99_3   r3_2    r2_1
+    //  r99_31  r31_2
+    //  Note that, since r99_3 and r99_31 don't depend on each other, they could be scheduled in either order. Ditto for r3_2 and r31_2.
+    //  ----------------
+    TwiddleTime(g.e99);
+
+    monitor.Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();
+    if (true)
+        {
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ( rels.size() ,5 );
+        auto i99_3  = findRelId(rels, g.r99_3);    ASSERT_NE(i99_3 , rels.end());
+        auto i99_31 = findRelId(rels, g.r99_31);   ASSERT_NE(i99_31, rels.end());
+        auto i3_2   = findRelId(rels, g.r3_2);     ASSERT_NE(i3_2  , rels.end());
+        auto i31_2  = findRelId(rels, g.r31_2);    ASSERT_NE(i31_2 , rels.end());
+        auto i2_1   = findRelId(rels, g.r2_1);     ASSERT_NE(i2_1  , rels.end());
+
+        ASSERT_LT(i99_3  , i3_2);
+        ASSERT_LT(i99_31 , i31_2);
+        ASSERT_LT(i3_2   , i2_1);
+        ASSERT_LT(i31_2  , i2_1);
+        }
+
+    //  ----------------
+    //  change e99, e2 => same as above
+    //  ----------------
+    TwiddleTime(g.e99);
+    TwiddleTime(g.e2);
+
+    monitor.Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
+    if (true)
+        {
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ( rels.size() , 5 );
+        auto i99_3  = findRelId(rels, g.r99_3);    ASSERT_NE(i99_3 , rels.end());
+        auto i99_31 = findRelId(rels, g.r99_31);   ASSERT_NE(i99_31, rels.end());
+        auto i3_2   = findRelId(rels, g.r3_2);     ASSERT_NE(i3_2  , rels.end());
+        auto i31_2  = findRelId(rels, g.r31_2);    ASSERT_NE(i31_2 , rels.end());
+        auto i2_1   = findRelId(rels, g.r2_1);     ASSERT_NE(i2_1  , rels.end());
+
+        ASSERT_LT(i99_3  , i3_2);
+        ASSERT_LT(i99_31 , i31_2);
+        ASSERT_LT(i3_2   , i2_1);
+        ASSERT_LT(i31_2  , i2_1);
+        }
+
+    //  ----------------
+    //  change e31 =>
+    //  r99_31 r31_2    r2_1
+    //  ----------------
+    TwiddleTime(g.e31);
+
+    monitor.Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
+    if (true)
+        {
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ( rels.size() , 3 );
+        auto i99_31 = findRelId(rels, g.r99_31);   ASSERT_NE(i99_31  , rels.end());
+        auto i31_2  = findRelId(rels, g.r31_2);    ASSERT_NE(i31_2  , rels.end());
+        auto i2_1   = findRelId(rels, g.r2_1);     ASSERT_NE(i2_1  , rels.end());
+
+        ASSERT_LT(i99_31 , i31_2);
+        ASSERT_LT(i31_2 , i2_1);
+        }
+
+    //  ----------------
+    //  change e31,e3 =>
+    //  r99_3   r3_2
+    //  r99_31  r31_2    r2_1
+    //  ----------------
+    TwiddleTime(g.e3);
+    TwiddleTime(g.e31);
+
+    monitor.Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
+    if (true)
+        {
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ( rels.size() , 5 );
+        auto i99_3  = findRelId(rels, g.r99_3);        ASSERT_NE(i99_3  , rels.end());
+        auto i99_31 = findRelId(rels, g.r99_31);       ASSERT_NE(i99_31  , rels.end());
+        auto i3_2   = findRelId(rels, g.r3_2);         ASSERT_NE(i3_2  , rels.end());
+        auto i31_2  = findRelId(rels, g.r31_2);        ASSERT_NE(i31_2  , rels.end());
+        auto i2_1   = findRelId(rels, g.r2_1);         ASSERT_NE(i2_1  , rels.end());
+
+        ASSERT_LT(i99_3  , i3_2);
+        ASSERT_LT(i99_31 , i31_2);
+        ASSERT_LT(i3_2  , i2_1);
+        }
+
+    //  ----------------
+    //  change e2 =>
+    //  r3_2    r2_1
+    //  r31_2
+    //  ----------------
+    TwiddleTime(g.e2);
+
+    monitor.Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
+    if (true)
+        {
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ( rels.size() , 3);
+        auto i3_2   = findRelId(rels, g.r3_2);     ASSERT_NE(i3_2  , rels.end());
+        auto i31_2  = findRelId(rels, g.r31_2);    ASSERT_NE(i31_2 , rels.end());
+        auto i2_1   = findRelId(rels, g.r2_1);     ASSERT_NE(i2_1  , rels.end());
+
+        ASSERT_LT(i3_2  , i2_1);
+        ASSERT_LT(i31_2 , i2_1);
+        }
+
+    //  ----------------
+    //  change e1 =>
+    //  r2_1 should get a "check" callback
+    //  ----------------
+    TwiddleTime(g.e1);
+
+    monitor.Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
+    if (true)
+        {
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ( rels.size() , 1);
+        auto i2_1   = findRelId(rels, g.r2_1);      ASSERT_NE(i2_1  , rels.end());
+        }
+
+    //  ----------------
+    //  delete e31 =>
+    //  ----------------
+    //     X->e31-X
+    //    /        \     *
+    // e99          ->e2-o->e1
+    //    \        /
+    //     o->e3-o
+    //
+    // (The little "o"s represent the ECRelationships and the X's represent the deleted relationships. * marks a handler that should be fired.)
+    ASSERT_EQ(DgnDbStatus::Success, g.e31->Delete());
+
+    monitor.Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
+    if (true)
+        {
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ( rels.size() , 1);
+        auto i2_1   = findRelId(rels, g.r2_1);               ASSERT_NE(i2_1, rels.end());
+
+        auto const& deletedRels = TestElementDrivesElementHandler::GetHandler().m_deletedRels;
+        ASSERT_EQ( deletedRels.size() , 2 );
+        auto i99_31 = findRelId(deletedRels, g.r99_31);       ASSERT_NE(i99_31, deletedRels.end());
+        auto i31_2  = findRelId(deletedRels, g.r31_2);        ASSERT_NE(i31_2, deletedRels.end());
+
+        ASSERT_LT(i99_31, i31_2);
+        }
+
+    // Make sure deletedRels was cleared. To check that, make some change, and verify that only the
+    // change comes through, not the prior deletions.
+    TwiddleTime(g.e1);
+    monitor.Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
+    ASSERT_EQ( 0, TestElementDrivesElementHandler::GetHandler().m_deletedRels.size() );
+    ASSERT_EQ( 1, TestElementDrivesElementHandler::GetHandler().m_relIds.size() );
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, DeleteSource)
+    {
+    SetUpForRelationshipTests();
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
+
+    auto e1 = InsertElement("E1");
+    auto e2 = InsertElement("E2");
+    auto r1  = InsertElementDrivesElementRelationship(e1, e2);
+    ASSERT_TRUE(e1.IsValid() && e2.IsValid() && r1.IsValid());
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+
+    ASSERT_EQ(1, TestElementDrivesElementHandler::GetHandler().m_relIds.size());
+    
+    TestElementDrivesElementHandler::GetHandler().Clear();
+
+    ASSERT_EQ(DgnDbStatus::Success, e1->Delete());
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
+
+    ASSERT_EQ(0, TestElementDrivesElementHandler::GetHandler().m_relIds.size());
+    ASSERT_EQ(1, TestElementDrivesElementHandler::GetHandler().m_deletedRels.size());
+    ASSERT_EQ(r1, TestElementDrivesElementHandler::GetHandler().m_deletedRels[0].m_relKey);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, DiamondTest1)
+    {
+    SetUpForRelationshipTests();
+
+    ElementsAndRelationships g;
+    g.e99 = InsertElement("E99");
+    g.e3  = InsertElement("E3");
+    g.e31 = InsertElement("E31");
+    g.e2  = InsertElement("E2");
+    g.e1  = InsertElement("E1");
+
+    g.r99_3  = InsertElementDrivesElementRelationship(g.e99, g.e3);
+    g.r99_31 = InsertElementDrivesElementRelationship(g.e99, g.e31);
+    g.r3_2   = InsertElementDrivesElementRelationship(g.e3,  g.e2);
+    g.r31_2  = InsertElementDrivesElementRelationship(g.e31, g.e2);
+    g.r2_1   = InsertElementDrivesElementRelationship(g.e2,  g.e1);
+
+    TestRelationships(*m_db, g);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, DiamondTest2)
+    {
+    SetUpForRelationshipTests();
+
+    // This is the same as DiamondTest1, except that we create the elements and relationships in a different order.
+    //  The hope is to catch things that only happen to work because of the order of the rows in the tables.
+
+    ElementsAndRelationships g;
+    g.e1  = InsertElement("E1");
+    g.e31 = InsertElement("E31");
+    g.e2  = InsertElement("E2");
+    g.e3  = InsertElement("E3");
+    g.e99 = InsertElement("E99");
+
+    g.r99_31 = InsertElementDrivesElementRelationship(g.e99, g.e31);
+    g.r31_2  = InsertElementDrivesElementRelationship(g.e31, g.e2);
+    g.r3_2   = InsertElementDrivesElementRelationship(g.e3,  g.e2);
+    g.r2_1   = InsertElementDrivesElementRelationship(g.e2,  g.e1);
+    g.r99_3  = InsertElementDrivesElementRelationship(g.e99, g.e3);
+
+    TestRelationships(*m_db, g);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, NonDependencyOrderTest)
+    {
+    SetUpForRelationshipTests();
+    auto w1 = InsertElement("w1");
+    auto c1 = InsertElement("c1");
+    auto w2 = InsertElement("w2");
+    auto w3 = InsertElement("w3");
+
+    //  w2 --> c1 <--- w3
+    //          |
+    //          v
+    //          w1
+    auto w2_c1 = InsertElementDrivesElementRelationship(w2, c1);
+    auto w3_c1 = InsertElementDrivesElementRelationship(w3, c1);
+    auto c1_w1 = InsertElementDrivesElementRelationship(c1, w1);
+
+    m_db->SaveChanges();
+
+    if (true)
+        {
+        TwiddleTime(w2);
+        TwiddleTime(w3);
+
+        TestElementDrivesElementHandler::GetHandler().Clear();
+        m_db->SaveChanges();
+
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+
+        //  w3_c1 and w2_c1 are fired first. Then c1_w1 is fired.
+        ASSERT_EQ( rels.size() , 3);
+        auto iw2_c1    = findRelId(rels, w2_c1);     ASSERT_NE( iw2_c1,  rels.end() );
+        auto iw3_c1    = findRelId(rels, w3_c1);     ASSERT_NE( iw3_c1,  rels.end() );
+        auto ic1_w1    = findRelId(rels, c1_w1);     ASSERT_NE( ic1_w1,  rels.end() );
+        ASSERT_LT( iw2_c1, ic1_w1 );
+        ASSERT_LT( iw3_c1, ic1_w1 );
+
+        // w2_c1 is fired before w3_c1, because w2_c1 was created first
+        ASSERT_LT( iw2_c1   ,   iw3_c1 );
+        }
+
+    // Add a direct w2->w1 edge
+    //
+    //  w2 --> c1 <--- w3
+    //   |      |
+    //   |      v
+    //   +--->  w1
+    auto w2_w1 = InsertElementDrivesElementRelationship(w2, w1);
+
+    m_db->SaveChanges();
+
+    if (true)
+        {
+        TwiddleTime(w2);
+
+        TestElementDrivesElementHandler::GetHandler().Clear();
+        m_db->SaveChanges();
+
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+
+        ASSERT_EQ( rels.size() , 3);
+        auto iw2_c1    = findRelId(rels, w2_c1);     ASSERT_NE( iw2_c1,  rels.end() );
+        auto iw2_w1    = findRelId(rels, w2_w1);     ASSERT_NE( iw2_w1,  rels.end() );
+        auto ic1_w1    = findRelId(rels, c1_w1);     ASSERT_NE( ic1_w1,  rels.end() );
+
+        //  w2_c1 preceeds c1_w1 because of the explicit dependency
+        ASSERT_LT( iw2_c1   ,   ic1_w1 );
+
+        // c1_w1 is fired before w2_w1, because c1_c1 was created first.
+        ASSERT_LT( ic1_w1   ,   iw2_w1 );
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementDependencyGraph::TestOverlappingOrder(DgnElementCPtr r1, ECInstanceKeyCR r1_d3, ECInstanceKeyCR r2_d3, bool r1First)
+    {
+    m_db->SaveChanges();
+
+    TwiddleTime(r1);
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    m_db->SaveChanges();
+
+    auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+    ASSERT_EQ( rels.size(), 1 );
+    auto ir1_d3 = findRelId(rels, r1_d3);       ASSERT_NE( ir1_d3, rels.end() );
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, OverlappingOutputOrderTest1)
+    {
+    SetUpForRelationshipTests();
+
+    auto r1 = InsertElement("r1");
+    auto r2 = InsertElement("r2");
+    auto d3 = InsertElement("d2");
+
+    // r1->d3 comes first
+    auto r1_d3 = InsertElementDrivesElementRelationship(r1, d3);
+    auto r2_d3 = InsertElementDrivesElementRelationship(r2, d3);
+
+    TestOverlappingOrder(r1, r1_d3, r2_d3, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, OverlappingOutputOrderTest2)
+    {
+    SetUpForRelationshipTests();
+
+    auto r1 = InsertElement("r1");
+    auto r2 = InsertElement("r2");
+    auto d3 = InsertElement("d2");
+
+    // r2->d3 comes first
+    auto r2_d3 = InsertElementDrivesElementRelationship(r2, d3);
+    auto r1_d3 = InsertElementDrivesElementRelationship(r1, d3);
+
+    TestOverlappingOrder(r1, r1_d3, r2_d3, false);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, FailureTest1)
+    {
+    SetUpForRelationshipTests();
+
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+    ECInstanceKey e1_e2 = InsertElementDrivesElementRelationship(e1, e2);
+
+    CachedECSqlStatementPtr selectDepRel = GetSelectElementDrivesElementById();
+    selectDepRel->BindId(1, e1_e2.GetInstanceId());
+
+    m_db->SaveChanges();
+
+    ASSERT_EQ( selectDepRel->Step(), BE_SQLITE_ROW );
+    ASSERT_EQ( selectDepRel->GetValueInt((int)ElementDrivesElementColumn::Status),(int)DgnElementDependencyGraph::EdgeStatus::EDGESTATUS_Satisfied );
+
+    TestElementDrivesElementHandlerShouldFail fail;
+    TwiddleTime(e1);
+    m_db->SaveChanges();
+
+    selectDepRel->Reset();
+    ASSERT_EQ( selectDepRel->Step(), BE_SQLITE_ROW );
+    ASSERT_EQ( selectDepRel->GetValueInt((int)ElementDrivesElementColumn::Status),(int)DgnElementDependencyGraph::EdgeStatus::EDGESTATUS_Failed );
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, CycleTest1)
+    {
+    SetUpForRelationshipTests();
+
+    //  Two Elements
+    auto e1 = InsertElement("E1");
+    auto e2 = InsertElement("E2");
+
+    //  Forward dependency relationship
+    auto e1_e2 = InsertElementDrivesElementRelationship(e1, e2);
+    ASSERT_TRUE( e1_e2.IsValid() );
+
+    m_db->SaveChanges();
+
+    if (true)
+        {
+        // Attempt to create backward relationship, which would cause a cycle.
+        auto e2_e1 = InsertElementDrivesElementRelationship(e2, e1);
+        ASSERT_TRUE( e2_e1.IsValid() );
+
+        // Trigger graph evaluation, which will detect the cycle.
+        TwiddleTime(e1);
+
+        TestElementDrivesElementHandler::GetHandler().Clear();
+        m_db->SaveChanges();
+
+// It's still undecided as to whether handlers should be called or not.
+//        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+//        ASSERT_EQ( rels.size() , 0) << L" my dependency handler should not have been called, because of the graph-building error";
+
+
+        // Verify that the txn was rolled back. If so, my insert of e2_e1 should have been cancelled, and e2_e1 should not exist.
+        Utf8String ecsql("SELECT * FROM ");
+        ecsql.append(m_db->Schemas().GetClass(e2_e1.GetClassId())->GetECSqlName()).append(" WHERE ECInstanceId=?");
+        ECSqlStatement s;
+        s.Prepare(*m_db, ecsql.c_str());
+        s.BindId(1, e2_e1.GetInstanceId());
+        ASSERT_EQ( s.Step() , BE_SQLITE_DONE );
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, CycleTest2)
+    {
+    SetUpForRelationshipTests();
+
+    //  Two Elements
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+    DgnElementCPtr e3 = InsertElement("E3");
+    DgnElementCPtr e4 = InsertElement("E4");
+
+    //  Forward dependency relationship
+    InsertElementDrivesElementRelationship(e1, e2);
+    InsertElementDrivesElementRelationship(e2, e3);
+    InsertElementDrivesElementRelationship(e3, e4);
+
+    m_db->SaveChanges();
+
+    if (true)
+        {
+        // Attempt to create backward relationship, which would cause a cycle.
+        ECInstanceKey e4_e2 = InsertElementDrivesElementRelationship(e4, e2);
+
+        // Trigger graph evaluation, which will detect the cycle.
+        TwiddleTime(e1);
+
+        TestElementDrivesElementHandler::GetHandler().Clear();
+        m_db->SaveChanges();
+
+        // Verify that the txn was rolled back. If so, my insert of e2_e1 should have been cancelled, and e2_e1 should not exist.
+        CachedECSqlStatementPtr getRelDep = GetSelectElementDrivesElementById();
+        getRelDep->BindId(1, e4_e2.GetInstanceId());
+        ASSERT_EQ( getRelDep->Step() , BE_SQLITE_DONE );
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, PersistentHandlerTest)
+    {
+    SetUpForRelationshipTests();
+
+    {
+    auto e1 = InsertElement("E1");
+    auto e2 = InsertElement("E2");
+
+    auto rel = InsertElementDrivesElementRelationship(e1, e2);
+    m_db->SaveChanges();
+    }
+
+    BeFileName theFile = m_db->GetFileName();
+
+    CloseDb();
+
+    // Make sure that we can reopen the file. Opening the file entails checking that all registered handlers are supplied.
+    DbResult result;
+    m_db = DgnDb::OpenDgnDb(&result, theFile, DgnDb::OpenParams(Db::OpenMode::Readonly));
+    ASSERT_TRUE( m_db.IsValid() );
+    ASSERT_EQ( result, BE_SQLITE_OK );
+
+    //  Make sure that the handler is still registered
+    auto abcHandlerInternalId = m_db->Domains().GetClassId(TestElementDrivesElementHandler::GetHandler());
+    ASSERT_EQ( DgnElementDependencyHandler::GetHandler().FindHandler(*m_db, abcHandlerInternalId) , &TestElementDrivesElementHandler::GetHandler() );
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, ChangeDepTest)
+    {
+    SetUpForRelationshipTests();
+
+    //  Create elements in first txn
+    auto e1 = InsertElement("E1");
+    auto e2 = InsertElement("E2");
+
+    m_db->SaveChanges();
+
+    //  Create dependency relationship in a separate txn
+    auto rel = InsertElementDrivesElementRelationship(e1, e2);
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    m_db->SaveChanges();
+
+    // TestElementDrivesElement should have gotten a callback, because it was created, even though neither of its targets was changed.
+    ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1 );
+
+    //  Modify a property of the dependency relationship itself
+    TestElementDrivesElementHandler::UpdateProperty1(*m_db, rel);
+
+    // Commit this change.
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    m_db->SaveChanges();
+
+    // TestElementDrivesElement should have gotten a callback, because it was changed, even though neither of its targets was changed.
+    ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1 );
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct TestEdgeProcessor : DgnElementDependencyGraph::IEdgeProcessor
+    {
+    bool m_hadError;
+    bvector<ECInstanceId> m_relIds;
+
+    TestEdgeProcessor() : m_hadError(false) {;}
+
+    void Clear() {m_hadError=false; m_relIds.clear();}
+
+    void _ProcessEdge(DgnElementDependencyGraph::Edge const& edge, DgnElementDependencyHandler* handler) override;
+    void _ProcessEdgeForValidation(DgnElementDependencyGraph::Edge const& edge, DgnElementDependencyHandler* handler) override;
+    void _OnValidationError(TxnManager::ValidationError const& error, DgnElementDependencyGraph::Edge const* edge) override;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestEdgeProcessor::_ProcessEdge(DgnElementDependencyGraph::Edge const& edge, DgnElementDependencyHandler* handler)
+    {
+    m_relIds.push_back(edge.GetECRelationshipId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestEdgeProcessor::_ProcessEdgeForValidation(DgnElementDependencyGraph::Edge const& edge, DgnElementDependencyHandler* handler)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestEdgeProcessor::_OnValidationError(TxnManager::ValidationError const& error, DgnElementDependencyGraph::Edge const* edge)
+    {
+    m_hadError = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, WhatIfTest1)
+    {
+    SetUpForRelationshipTests();
+
+    auto e1 = InsertElement("E1");
+    auto e2 = InsertElement("E2");
+    auto rel = InsertElementDrivesElementRelationship(e1, e2);
+
+    m_db->SaveChanges();
+
+    // Prepare the list of elements for what-if
+    bvector<DgnElementId> changedEntities;
+    bvector<ECInstanceId> changedDepRels;
+    changedEntities.push_back(e1->GetElementId());
+
+    e1=nullptr; // can't keep these after we close the file.
+    e2=nullptr;
+
+    // Check that WhatIfChanged finds this edge and invokes processor on it
+    TestElementDrivesElementHandler::GetHandler().Clear();
+        {
+        TestEdgeProcessor proc;
+        DgnElementDependencyGraph graph(m_db->Txns());
+        ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
+
+        ASSERT_EQ( proc.m_hadError , false );
+        ASSERT_EQ( proc.m_relIds.size() , 1 );
+        ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";
+        }
+    // Repeat the test, but show that we can do WhatIfChanged without writing to anything.
+    BeFileName theFile = m_db->GetFileName();
+    CloseDb();
+    DbResult result;
+    m_db = DgnDb::OpenDgnDb(&result, theFile, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_TRUE( m_db.IsValid() );
+    ASSERT_EQ( result, BE_SQLITE_OK );
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
+        {
+        TestEdgeProcessor proc;
+        DgnElementDependencyGraph graph(m_db->Txns());
+        ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
+
+        ASSERT_EQ( proc.m_hadError , false );
+        ASSERT_EQ( proc.m_relIds.size() , 1 );
+        ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, TestPriority)
+    {
+    SetUpForRelationshipTests();
+
+    DgnElementCPtr e11 = InsertElement("E11");
+    ASSERT_TRUE(e11 != nullptr);
+    DgnElementCPtr e12 = InsertElement("E12");
+    ASSERT_TRUE(e12 != nullptr);
+    DgnElementCPtr e2 = InsertElement("E2");
+    ASSERT_TRUE(e2 != nullptr);
+    ECInstanceKey e11_e2 = InsertElementDrivesElementRelationship(e11, e2);
+    ASSERT_TRUE(e11_e2.IsValid());
+    ECInstanceKey e12_e2 = InsertElementDrivesElementRelationship(e12, e2);
+    ASSERT_TRUE(e12_e2.IsValid());
+
+    m_db->SaveChanges();
+
+    // Prepare the list of elements for what-if
+    bvector<DgnElementId> changedEntities;
+    bvector<ECInstanceId> changedDepRels;
+    changedEntities.push_back(e2->GetElementId());
+
+    // Check that we get e11_e2, then e12_e2
+    TestElementDrivesElementHandler::GetHandler().Clear();
+        {
+        TestEdgeProcessor proc;
+        DgnElementDependencyGraph graph(m_db->Txns());
+        ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
+
+        ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";
+        ASSERT_EQ( proc.m_hadError , false );
+        auto rels = proc.m_relIds;
+        ASSERT_EQ( rels.size() , 2 );
+        auto ie11_e2 = findRelId(rels, e11_e2);    ASSERT_TRUE( ie11_e2 != rels.end() );
+        auto ie12_e2 = findRelId(rels, e12_e2);    ASSERT_TRUE( ie12_e2 != rels.end() );
+        ASSERT_LT( ie11_e2, ie12_e2 ) << L"default priority should put e11_e2 first";
+        }
+
+    // Change the priority of e12_e2 to be greater. Now, it should be called first.
+        {
+        DgnElementDependencyGraph graph(m_db->Txns());
+        DgnElementDependencyGraph::Edge edge_e12_e2 = graph.QueryEdgeByRelationshipId(e12_e2.GetInstanceId());
+        ASSERT_TRUE( edge_e12_e2.GetECRelationshipId().IsValid() );
+        ASSERT_TRUE( edge_e12_e2.GetECRelationshipId() == e12_e2.GetInstanceId() );
+        int64_t priority = edge_e12_e2.GetPriority();
+        ASSERT_EQ( graph.SetElementDrivesElementPriority(edge_e12_e2.GetECRelationshipId(), priority + 100), BSISUCCESS );
+        }
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
+        {
+        TestEdgeProcessor proc;
+        DgnElementDependencyGraph graph(m_db->Txns());
+        ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
+
+        ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";
+        ASSERT_EQ( proc.m_hadError , false );
+        auto rels = proc.m_relIds;
+        ASSERT_EQ( rels.size() , 2 );
+        auto ie11_e2 = findRelId(rels, e11_e2);    ASSERT_TRUE( ie11_e2 != rels.end() );
+        auto ie12_e2 = findRelId(rels, e12_e2);    ASSERT_TRUE( ie12_e2 != rels.end() );
+        ASSERT_LT( ie12_e2, ie11_e2 ) << L"new priority should put e12_e2 first";
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, DriverBundleGroupsMultipleEDERelationships)
+    {
+    SetUpForRelationshipTests();
+
+    //  ----------------
+    //     o->e1-o      o->e3
+    //    /       \    /
+    //  b1         ->b2
+    //    \       /    \
+    //     o->e2-o      o->e4
+    //
+    // (The little "o"s represent the ECRelationships, e* - elements, b* - driver bundles)
+    //  ----------------
+
+    DriverBundleElementCPtr b1 = InsertBundle();
+
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+    DgnElementCPtr e3 = InsertElement("E3");
+    DgnElementCPtr e4 = InsertElement("E4");
+
+    DriverBundleElementCPtr b2 = InsertBundle();
+
+    ECInstanceId b1_e1 = InsertElementDrivesElementRelationship(b1, e1).GetInstanceId();
+    ECInstanceId b1_e2 = InsertElementDrivesElementRelationship(b1, e2).GetInstanceId();
+    ECInstanceId e1_b2 = InsertElementDrivesElementRelationship(e1, b2).GetInstanceId();
+    ECInstanceId e2_b2 = InsertElementDrivesElementRelationship(e2, b2).GetInstanceId();
+    ECInstanceId b2_e3 = InsertElementDrivesElementRelationship(b2, e3).GetInstanceId();
+    ECInstanceId b2_e4 = InsertElementDrivesElementRelationship(b2, e4).GetInstanceId();
+
+    m_db->SaveChanges();
+
+    if (true)
+        {
+        EDECallbackSequenceMonitor monitor;
+        CallbackSequenceRecorder const& recorder = monitor.GetRecorder();
+
+        TwiddleTime(b1);
+        m_db->SaveChanges();
+
+        // b1 was updated. Expected handler call sequence:
+        //   0. b1 (before outputs handled)
+        // 1-2. b1_e1 and b1_e2
+        // 3-4. e1_b2 and e2_b2
+        //   5. b2 (all inputs handled)
+        // 6-7. b2_e3 and b2_e4
+
+        ASSERT_EQ(8, recorder.m_sequence.size());
+        ASSERT_EQ(recorder.m_sequence[0].second, CallbackSequenceRecorder::EntryType::BeforeOutputsHandledCallback);
+        ASSERT_EQ(recorder.m_sequence[1].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+        ASSERT_EQ(recorder.m_sequence[2].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+        ASSERT_EQ(recorder.m_sequence[3].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+        ASSERT_EQ(recorder.m_sequence[4].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+        ASSERT_EQ(recorder.m_sequence[5].second, CallbackSequenceRecorder::EntryType::AllInputsHandledCallback);
+        ASSERT_EQ(recorder.m_sequence[6].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+        ASSERT_EQ(recorder.m_sequence[7].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+
+        ASSERT_EQ(recorder.m_sequence[0].first, b1->GetElementId());
+        ASSERT_TRUE(b1_e1 == recorder.m_sequence[1].first || b1_e2 == recorder.m_sequence[1].first);
+        ASSERT_TRUE(b1_e1 == recorder.m_sequence[2].first || b1_e2 == recorder.m_sequence[2].first);
+        ASSERT_TRUE(e1_b2 == recorder.m_sequence[3].first || e2_b2 == recorder.m_sequence[3].first);
+        ASSERT_TRUE(e1_b2 == recorder.m_sequence[4].first || e2_b2 == recorder.m_sequence[4].first);
+        ASSERT_EQ(recorder.m_sequence[5].first, b2->GetElementId());
+        ASSERT_TRUE(b2_e3 == recorder.m_sequence[6].first || b2_e4 == recorder.m_sequence[6].first);
+        ASSERT_TRUE(b2_e3 == recorder.m_sequence[7].first || b2_e4 == recorder.m_sequence[7].first);
+        }
+
+    if (true)
+        {
+        EDECallbackSequenceMonitor monitor;
+        CallbackSequenceRecorder const& recorder = monitor.GetRecorder();
+
+        TwiddleTime(e3);
+        TwiddleTime(e4);
+        m_db->SaveChanges();
+
+        // e3 and e4 were updated. Expected handler call sequence:
+        //   0. b2 (dependents changed)
+        // 1-2. b2_e3 and b2_e4
+
+        ASSERT_EQ(3, recorder.m_sequence.size());
+        ASSERT_EQ(recorder.m_sequence[0].second, CallbackSequenceRecorder::EntryType::BeforeOutputsHandledCallback);
+        ASSERT_EQ(recorder.m_sequence[1].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+        ASSERT_EQ(recorder.m_sequence[2].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+
+        ASSERT_EQ(recorder.m_sequence[0].first, b2->GetElementId());
+        ASSERT_TRUE(b2_e3 == recorder.m_sequence[1].first || b2_e4 == recorder.m_sequence[1].first);
+        ASSERT_TRUE(b2_e3 == recorder.m_sequence[2].first || b2_e4 == recorder.m_sequence[2].first);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, DeleteDependent_OnBeforeOutputsHandledCalled)
+    {
+    SetUpForRelationshipTests();
+
+    //  ----------------
+    //     o->e1-o      o->e3
+    //    /       \    /
+    //  b1         ->b2
+    //    \       /    \
+    //     o->e2-o      o->e4
+    //
+    // (The little "o"s represent the ECRelationships, e* - elements, b* - driver bundles)
+    //  ----------------
+
+    DriverBundleElementCPtr b1 = InsertBundle();
+
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+    DgnElementCPtr e3 = InsertElement("E3");
+    DgnElementCPtr e4 = InsertElement("E4");
+
+    DriverBundleElementCPtr b2 = InsertBundle();
+
+    ECInstanceId b1_e1 = InsertElementDrivesElementRelationship(b1, e1).GetInstanceId();
+    ECInstanceId b1_e2 = InsertElementDrivesElementRelationship(b1, e2).GetInstanceId();
+    ECInstanceId e1_b2 = InsertElementDrivesElementRelationship(e1, b2).GetInstanceId();
+    ECInstanceId e2_b2 = InsertElementDrivesElementRelationship(e2, b2).GetInstanceId();
+    ECInstanceId b2_e3 = InsertElementDrivesElementRelationship(b2, e3).GetInstanceId();
+    ECInstanceId b2_e4 = InsertElementDrivesElementRelationship(b2, e4).GetInstanceId();
+
+    m_db->SaveChanges();
+
+    if (true)
+        {
+        EDECallbackSequenceMonitor monitor;
+        CallbackSequenceRecorder const& recorder = monitor.GetRecorder();
+
+        ASSERT_EQ(DgnDbStatus::Success, e1->Delete());
+        m_db->SaveChanges();
+
+        // e1 was deleted. Expected handler call sequence:
+        //   0. b1 (before outputs handled)
+        //   1. b1_e1 (deleted dependency)
+        //   2. e1_b2 (deleted dependency)
+        //   3. b2 (all inputs handled)
+        // 4-5. b2_e3 and b2_e4
+
+        ASSERT_EQ(6, recorder.m_sequence.size());
+        ASSERT_EQ(recorder.m_sequence[0].second, CallbackSequenceRecorder::EntryType::BeforeOutputsHandledCallback);
+        ASSERT_EQ(recorder.m_sequence[1].second, CallbackSequenceRecorder::EntryType::DeletedDependencyHandledCallback);
+        ASSERT_EQ(recorder.m_sequence[2].second, CallbackSequenceRecorder::EntryType::DeletedDependencyHandledCallback);
+        ASSERT_EQ(recorder.m_sequence[3].second, CallbackSequenceRecorder::EntryType::AllInputsHandledCallback);
+        ASSERT_EQ(recorder.m_sequence[4].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+        ASSERT_EQ(recorder.m_sequence[5].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+
+        ASSERT_EQ(recorder.m_sequence[0].first, b1->GetElementId());
+        ASSERT_EQ(recorder.m_sequence[1].first, b1_e1);
+        ASSERT_EQ(recorder.m_sequence[2].first, e1_b2);
+        ASSERT_EQ(recorder.m_sequence[3].first, b2->GetElementId());
+        ASSERT_TRUE(b2_e3 == recorder.m_sequence[4].first || b2_e4 == recorder.m_sequence[4].first);
+        ASSERT_TRUE(b2_e3 == recorder.m_sequence[5].first || b2_e4 == recorder.m_sequence[5].first);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Mindaugas.Butkus                07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, ReverseDependency)
+    {
+    SetUpForRelationshipTests();
+
+    //---
+    // e1-o->e2
+    //---
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+
+    ECInstanceKey e1_e2_Key = InsertElementDrivesElementRelationship(e1, e2);
+    m_db->SaveChanges();
+
+    CachedECSqlStatementPtr selectDepRel = GetSelectElementDrivesElementById();
+    selectDepRel->BindId(1, e1_e2_Key.GetInstanceId());
+    ASSERT_EQ(selectDepRel->Step(), BE_SQLITE_ROW);
+
+    EDECallbackSequenceMonitor monitor;
+    monitor.GetRecorder();
+
+    //---
+    // e1<-o-e2
+    //---
+    ASSERT_EQ(DeleteElementDrivesElementRelationship(e1_e2_Key), BE_SQLITE_DONE);
+    ECInstanceKey e2_e1_Key = InsertElementDrivesElementRelationship(e2, e1);
+    ASSERT_TRUE(e2_e1_Key.IsValid());
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    m_db->SaveChanges();
+    if (true)
+        {
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ(rels.size(), 1);
+        auto i_e2_e1 = findRelId(rels, e2_e1_Key); ASSERT_NE(i_e2_e1, rels.end());
+        }
+
+    selectDepRel->Reset();
+    selectDepRel->ClearBindings();
+    selectDepRel->BindId(1, e2_e1_Key.GetInstanceId());
+    ASSERT_EQ(selectDepRel->Step(), BE_SQLITE_ROW);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Mindaugas.Butkus                07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, ReverseDependency2)
+    {
+    SetUpForRelationshipTests();
+
+    //---
+    //      ->e1
+    //     /
+    // b1-o
+    //     \
+    //      ->e2
+    //---
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+    DgnElementCPtr b1 = InsertBundle();
+
+    ECInstanceKey b1_e1_Key = InsertElementDrivesElementRelationship(b1, e1);
+    ECInstanceKey b1_e2_Key = InsertElementDrivesElementRelationship(b1, e2);
+
+    m_db->SaveChanges();
+
+    //---
+    // e2-o->b1-o->e1
+    //---
+    ASSERT_EQ(DeleteElementDrivesElementRelationship(b1_e2_Key), BE_SQLITE_DONE);
+    ECInstanceKey e2_b1_Key = InsertElementDrivesElementRelationship(e2, b1);
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    m_db->SaveChanges();
+    if (true)
+        {
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ(rels.size(), 2);
+        auto i_e2_b1 = findRelId(rels, e2_b1_Key); ASSERT_NE(i_e2_b1, rels.end());
+        auto i_b1_e1 = findRelId(rels, b1_e1_Key); ASSERT_NE(i_b1_e1, rels.end());
+        }
+
+    CachedECSqlStatementPtr selectDepRel = GetSelectElementDrivesElementById();
+    selectDepRel->BindId(1, e2_b1_Key.GetInstanceId());
+    ASSERT_EQ(selectDepRel->Step(), BE_SQLITE_ROW);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Mindaugas.Butkus                07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, ReverseDependency3_DownstreamDependenciesAreHandled)
+    {
+    SetUpForRelationshipTests();
+
+    //---
+    //                *
+    // e1-o->e2-o->e3-o->e4-o->e5-o->e6
+    //---
+
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+    DgnElementCPtr e3 = InsertElement("E3");
+    DgnElementCPtr e4 = InsertElement("E4");
+    DgnElementCPtr e5 = InsertElement("E5");
+    DgnElementCPtr e6 = InsertElement("E6");
+
+    ECInstanceKey e1_e2_Key = InsertElementDrivesElementRelationship(e1, e2);
+    ECInstanceKey e2_e3_Key = InsertElementDrivesElementRelationship(e2, e3);
+    ECInstanceKey e3_e4_Key = InsertElementDrivesElementRelationship(e3, e4);
+    ECInstanceKey e4_e5_Key = InsertElementDrivesElementRelationship(e4, e5);
+    ECInstanceKey e5_e6_Key = InsertElementDrivesElementRelationship(e5, e6);
+    
+    m_db->SaveChanges();
+
+    //---
+    //                 *
+    // e1-o->e2-o->e3<-o-e4-o->e5-o->e6
+    //---
+    ASSERT_EQ(DeleteElementDrivesElementRelationship(e3_e4_Key), BE_SQLITE_DONE);
+    ECInstanceKey e4_e3_Key = InsertElementDrivesElementRelationship(e4, e3);
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    m_db->SaveChanges();
+    if (true)
+        {
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ(rels.size(), 3);
+        auto i_e4_e3 = findRelId(rels, e4_e3_Key); ASSERT_NE(i_e4_e3, rels.end());
+        auto i_e4_e5 = findRelId(rels, e4_e5_Key); ASSERT_NE(i_e4_e5, rels.end());
+        auto i_e5_e6 = findRelId(rels, e5_e6_Key); ASSERT_NE(i_e5_e6, rels.end());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Mindaugas.Butkus                07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, ReverseDependencyAndUpdateRoot)
+    {
+    SetUpForRelationshipTests();
+
+    //---
+    // e1-o->e2-o->e3-o->e4
+    //---
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+    DgnElementCPtr e3 = InsertElement("E3");
+    DgnElementCPtr e4 = InsertElement("E4");
+
+    ECInstanceKey e1_e2_Key = InsertElementDrivesElementRelationship(e1, e2);
+    ECInstanceKey e2_e3_Key = InsertElementDrivesElementRelationship(e2, e3);
+    ECInstanceKey e3_e4_Key = InsertElementDrivesElementRelationship(e3, e4);
+    m_db->SaveChanges();
+
+    //---
+    // Reverse e3_e4 and update e1
+    //  *              *
+    // e1-o->e2-o->e3<-o-e4
+    //---
+    ASSERT_EQ(DeleteElementDrivesElementRelationship(e3_e4_Key), BE_SQLITE_DONE);
+    ECInstanceKey e4_e3_Key = InsertElementDrivesElementRelationship(e4, e3);
+    TwiddleTime(e1);
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    m_db->SaveChanges();
+    if (true)
+        {
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ(rels.size(), 3);
+        auto i_e1_e2 = findRelId(rels, e1_e2_Key); ASSERT_NE(i_e1_e2, rels.end());
+        auto i_e2_e3 = findRelId(rels, e2_e3_Key); ASSERT_NE(i_e2_e3, rels.end());
+        auto i_e4_e3 = findRelId(rels, e4_e3_Key); ASSERT_NE(i_e4_e3, rels.end());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Mindaugas.Butkus                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, IndirectChangesAreTrackedInTxnMonitor)
+    {
+    SetUpForRelationshipTests();
+
+    //---
+    // e1-o->e2
+    //---
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+
+    ECInstanceKey e1_e2_Key = InsertElementDrivesElementRelationship(e1, e2);
+    m_db->SaveChanges();
+
+    if (true)
+        {
+        ScopedEDEUpdaterCallback edeCallback;
+        TxnMonitorVerifier monitor;
+        TwiddleTime(e1);
+        m_db->SaveChanges();
+
+        ASSERT_EQ(2, monitor.m_mods.size());
+        auto ie1_mod = monitor.m_mods.find(e1->GetElementId());
+        ASSERT_TRUE(ie1_mod != monitor.m_mods.end());
+        auto ie2_mod = monitor.m_mods.find(e2->GetElementId());
+        ASSERT_TRUE(ie2_mod != monitor.m_mods.end());
+        }
+
+    DgnElementCPtr e3 = nullptr;
+    if (true)
+        {
+        ScopedEDEInserterCallback edeCallback;
+        TxnMonitorVerifier monitor;
+        TwiddleTime(e1);
+        m_db->SaveChanges();
+
+        ASSERT_EQ(1, monitor.m_adds.size());
+        Dgn::DgnElementId e3Id((*monitor.m_adds.begin()).GetValueUnchecked());
+        ASSERT_NE(e3Id, e1->GetElementId());
+        ASSERT_NE(e3Id, e2->GetElementId());
+        e3 = m_db->Elements().Get<DgnElement>(e3Id);
+        ASSERT_TRUE(e3.IsValid());
+
+        CachedECSqlStatementPtr selectBySourceAndTarget = GetSelectElementDrivesElementBySourceAndTarget();
+        selectBySourceAndTarget->BindId(1, e2->GetElementId());
+        selectBySourceAndTarget->BindId(2, e3->GetElementId());
+        ASSERT_EQ(selectBySourceAndTarget->Step(), BE_SQLITE_ROW);
+        }
+    ASSERT_TRUE(e3.IsValid());
+    
+    //---
+    // e1-o->e2->e3
+    //---
+    if (true)
+        {
+        ScopedEDEDeleterCallback edeCallback;
+        TxnMonitorVerifier monitor;
+        TwiddleTime(e1);
+        m_db->SaveChanges();
+
+        ASSERT_EQ(2, monitor.m_deletes.size());
+        auto ie2_del = monitor.m_deletes.find(e2->GetElementId());
+        ASSERT_TRUE(ie2_del != monitor.m_deletes.end());
+        auto ie3_del = monitor.m_deletes.find(e3->GetElementId());
+        ASSERT_TRUE(ie3_del != monitor.m_deletes.end());
+        }
+
+    if (true) // insert new element and update it in the EDE relationship handler
+        {
+        ScopedEDEUpdaterCallback edeCallback;
+        TxnMonitorVerifier monitor;
+        e2 = InsertElement("E2");
+        e1_e2_Key = InsertElementDrivesElementRelationship(e1, e2);
+        m_db->SaveChanges();
+
+        ASSERT_EQ(1, monitor.m_adds.size());
+        auto ie2_add = monitor.m_adds.find(e2->GetElementId());
+        ASSERT_TRUE(ie2_add != monitor.m_adds.end());
+        }
+
+    ECInstanceKey e2_e3_Key;
+    if (true) // insert EDE relatinship that fails during the same transaction
+        {
+        TestElementDrivesElementHandlerShouldFailFatal fail;
+        TxnMonitorVerifier monitor;
+        e3 = InsertElement("E3");
+        e2_e3_Key = InsertElementDrivesElementRelationship(e2, e3);
+        m_db->SaveChanges();
+
+        CachedECSqlStatementPtr selectBySourceAndTarget = GetSelectElementDrivesElementBySourceAndTarget();
+        selectBySourceAndTarget->BindId(1, e2->GetElementId());
+        selectBySourceAndTarget->BindId(2, e3->GetElementId());
+        ASSERT_EQ(selectBySourceAndTarget->Step(), BE_SQLITE_DONE);
+
+        ASSERT_TRUE(m_db->Elements().Get<Dgn::DgnElement>(e3->GetElementId()).IsNull());
+
+        ASSERT_TRUE(monitor.m_adds.empty());
+        ASSERT_TRUE(monitor.m_deletes.empty());
+        ASSERT_TRUE(monitor.m_mods.empty());
+        }
+    }

@@ -1,0 +1,42 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+SrcDgnPlatform              = $(SrcRoot)DgnPlatform/
+DgnPlatformPublicAPISrc     = $(SrcDgnPlatform)PublicAPI/
+DgnPlatformAPISrc           = $(DgnPlatformPublicAPISrc)DgnPlatform/
+baseDir                     = $(_makeFilePath)
+
+$(BuildContext)Delivery/UnitTests/ECSchemas : $(baseDir)ECSchemas
+    $(LinkFirstDepToFirstTargetAsDirectory)
+	
+$(BuildContext)Delivery/UnitTests/PerformanceTestData : $(baseDir)PerformanceTestData
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/ScopedDgnHost.h : $(DgnPlatformAPISrc)UnitTests/ScopedDgnHost.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/DgnDbTestUtils.h : $(DgnPlatformAPISrc)UnitTests/DgnDbTestUtils.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/DgnPlatformTestDomain.h : $(DgnPlatformAPISrc)UnitTests/DgnPlatformTestDomain.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/PerfTestDomain.h : $(DgnPlatformAPISrc)UnitTests/PerfTestDomain.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/RepositoryManagerUtil.h : $(DgnPlatformAPISrc)UnitTests/RepositoryManagerUtil.h
+    $(LinkFirstDepToFirstTarget)
+
+#------------------------------------------------------------------------------------------
+#   Deliver CompatibilityTestFiles for use by unit tests
+#------------------------------------------------------------------------------------------
+$(BuildContext)Delivery/UnitTests/CompatibilityTestFiles/2-0-1-60/ : $(SrcRoot)CompatibilityTestFiles/2-0-1-60/
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
