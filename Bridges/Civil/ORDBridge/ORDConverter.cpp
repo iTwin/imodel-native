@@ -470,40 +470,19 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
 
     DgnCode bimCode;
     
-    // Identifying alignments appearing more than once in a single bridge-run.
-    // For unnamed alignments, SyncId is used to differentiate them.
-    // For named alignments, if a name (code) is already used, differentiate them with full file-name + modelname.
     if (Utf8String::IsNullOrEmpty(cifAlignmentName.c_str()))
         {        
-        auto existingCPtr = bimAlignmentModelPtr->GetDgnDb().Elements().QueryElementByFederationGuid(bimGuid);
-        if (existingCPtr.IsValid())
-            return BentleyStatus::ERROR;
-        cifAlignmentName = Utf8String(cifSyncId.c_str());
+        if (!WString::IsNullOrEmpty(cifAlignment.GetFeatureName().c_str()))
+            cifAlignmentName = Utf8String(cifAlignment.GetFeatureName().c_str());
+        else if (cifAlignment.GetFeatureDefinition().IsValid() &&
+            !WString::IsNullOrEmpty(cifAlignment.GetFeatureDefinition()->GetName().c_str()))
+            cifAlignmentName = Utf8String(cifAlignment.GetFeatureDefinition()->GetName().c_str());
+        else
+            cifAlignmentName = Utf8String(cifSyncId.c_str());
         }    
 
     Utf8String bimAlignmentName = cifAlignmentName;
     bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(*bimAlignmentModelPtr, bimAlignmentName);
-
-    int32_t suffix = 0;
-    DgnElementId existingId;
-
-    do
-        {
-        BeFileName fileName(cifAlignment.GetDgnModelP()->GetDgnFileP()->GetFileName().c_str());
-        bimAlignmentName = Utf8String(fileName.GetFileNameAndExtension().c_str());
-        bimAlignmentName += "\\";
-        bimAlignmentName += Utf8String(cifAlignment.GetDgnModelP()->GetModelName());
-        bimAlignmentName += "\\";
-        bimAlignmentName += cifAlignmentName;
-
-        if (suffix > 0)
-            bimAlignmentName += Utf8PrintfString("-%d", suffix).c_str();
-
-        bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(*bimAlignmentModelPtr, bimAlignmentName);
-        suffix++;
-
-        existingId = bimAlignmentModelPtr->GetDgnDb().Elements().QueryElementIdByCode(bimCode);
-        } while (existingId.IsValid());    
 
     // Create Alignment
     auto bimAlignmentPtr = AlignmentBim::Alignment::Create(*bimAlignmentModelPtr);
@@ -1139,30 +1118,36 @@ ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(Dg
         auto cifLinearEntity3dPtr = LinearEntity3d::CreateFromElementHandle(v8el);
         if (cifLinearEntity3dPtr.IsValid())
             {
-            if (cifLinearEntity3dPtr->GetAlignment().IsValid())
+            cifAlignmentPtr = cifLinearEntity3dPtr->GetAlignment();
+            cifCorridorPtr = cifLinearEntity3dPtr->GetCorridor();
+            if (cifAlignmentPtr.IsValid())
                 m_converter.m_cifGeneratedLinear3ds.push_back(cifLinearEntity3dPtr);
             }
-        }
-
-    if (!cifAlignmentPtr.IsValid())
-        {
-        if (cifCorridorPtr.IsNull())
-            cifCorridorPtr = Corridor::CreateFromElementHandle(v8el);
-
-        if (cifCorridorPtr.IsValid())
+        else
             {
-            m_corridorV8RefSet.insert(v8el.GetElementRef());
-            m_converter.m_cifCorridors.push_back({ cifCorridorPtr, v8el.GetElementRef() });
+            cifCorridorPtr = Corridor::CreateFromElementHandle(v8el);
             }
-
-        return Result::Proceed;
         }
 
-    /*if (cifAlignmentPtr->IsFinalElement())
-        {*/
-        m_alignmentV8RefSet.insert(v8el.GetElementRef());
-        m_converter.m_cifAlignments.push_back({ cifAlignmentPtr, v8el.GetElementRef() });
-        //}
+    if (cifAlignmentPtr.IsValid())
+        {
+        auto elmRefP = cifAlignmentPtr->GetElementHandle()->GetElementRef();
+        if (m_alignmentV8RefSet.end() == m_alignmentV8RefSet.find(elmRefP))
+            {
+            m_alignmentV8RefSet.insert(elmRefP);
+            m_converter.m_cifAlignments.push_back(cifAlignmentPtr);
+            }
+        }
+
+    if (cifCorridorPtr.IsValid())
+        {
+        auto elmRefP = cifCorridorPtr->GetElementHandle()->GetElementRef();
+        if (m_corridorV8RefSet.end() == m_corridorV8RefSet.find(elmRefP))
+            {
+            m_corridorV8RefSet.insert(elmRefP);
+            m_converter.m_cifCorridors.push_back(cifCorridorPtr);
+            }
+        }
 
     return Result::Proceed;
     }
@@ -1578,16 +1563,17 @@ void ORDConverter::CreateAlignments()
     // CifAlignments are the same. Also, in some cases, some duplicate CifAlignments have
     // a blank name, so leaving the one with a name in front during sorting - that will be the
     // one processed later - the other duplicates will be ignored.
-    std::sort(m_cifAlignments.begin(), m_cifAlignments.end(), [](CifAlignmentV8RefPair const& a, CifAlignmentV8RefPair const& b)
+    std::sort(m_cifAlignments.begin(), m_cifAlignments.end(), 
+        [](Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment> const& a, Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment> const& b)
         {
-        auto aSyncId = a.first->GetSyncId();        
-        auto bSyncId = b.first->GetSyncId();
+        auto aSyncId = a->GetSyncId();        
+        auto bSyncId = b->GetSyncId();
         auto equal = aSyncId.CompareTo(bSyncId);
 
         if (0 == equal)
             {
-            auto aCifName = a.first->GetName();
-            auto bCifName = b.first->GetName();
+            auto aCifName = a->GetName();
+            auto bCifName = b->GetName();
             equal = aCifName.CompareTo(bCifName);
             }
 
@@ -1600,9 +1586,8 @@ void ORDConverter::CreateAlignments()
     bmap<DgnCategoryId, DgnCategoryId> drawingToSpatialCategoryMap;
 
     auto alignmentsConverterPtr = ORDAlignmentsConverter::Create(*this);
-    for (auto& cifAlignmentEntry : m_cifAlignments)
+    for (auto& cifAlignmentPtr : m_cifAlignments)
         {
-        auto& cifAlignmentPtr = cifAlignmentEntry.first;
         if (lastAlignmentRefP == cifAlignmentPtr->GetElementHandle()->GetElementRef())
             continue;
 
@@ -1623,8 +1608,9 @@ void ORDConverter::CreatePathways()
     if (m_cifCorridors.empty())
         return;
 
-    std::sort(m_cifCorridors.begin(), m_cifCorridors.end(), [](CifCorridorV8RefPair const& a, CifCorridorV8RefPair const& b)
-        { return a.first->GetElementHandle()->GetElementRef() > b.first->GetElementHandle()->GetElementRef(); });
+    std::sort(m_cifCorridors.begin(), m_cifCorridors.end(), 
+        [](Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Corridor> const& a, Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Corridor> const& b)
+        { return a->GetElementHandle()->GetElementRef() > b->GetElementHandle()->GetElementRef(); });
 
     // The following query will get all element ids that have an "IsRail" property.
     auto& dgndb = GetDgnDb();
@@ -1660,12 +1646,11 @@ void ORDConverter::CreatePathways()
     RoadRailBim::CorridorCPtr corridorElmCPtr;
     bmap<DgnCategoryId, DgnCategoryId> drawingToSpatialCategoryMap;
 
-    for (auto& cifCorridorEntry : m_cifCorridors)
+    for (auto& cifCorridorPtr : m_cifCorridors)
         {
-        auto& cifCorridorPtr = cifCorridorEntry.first;
         if (corridorsConverterPtr.IsNull() || modelIdForConverter != cifCorridorPtr->GetDgnModelP()->GetModelId())
             {
-            corridorsConverterPtr = ORDCorridorsConverter::Create(*this, ComputeUnitsScaleTransform(*cifCorridorEntry.first->GetDgnModelP()));
+            corridorsConverterPtr = ORDCorridorsConverter::Create(*this, ComputeUnitsScaleTransform(*cifCorridorPtr->GetDgnModelP()));
             modelIdForConverter = cifCorridorPtr->GetDgnModelP()->GetModelId();
             }
 
@@ -1673,7 +1658,7 @@ void ORDConverter::CreatePathways()
             continue;
 
         DgnElementPtr bimElmPtr;
-        auto v8Iter = m_v8ToBimElmMap.find(cifCorridorEntry.second);
+        auto v8Iter = m_v8ToBimElmMap.find(cifCorridorPtr->GetElementHandle()->GetElementRef());
         if (v8Iter != m_v8ToBimElmMap.end())
             bimElmPtr = v8Iter->second;
 
@@ -1702,10 +1687,8 @@ void ORDConverter::SetCorridorDesignAlignments()
         return;
 
     ORDCorridorsConverterPtr corridorConverterPtr;
-    for (auto& cifCorridorPair : m_cifCorridors)
+    for (auto& cifCorridorPtr : m_cifCorridors)
         {
-        auto cifCorridorPtr = cifCorridorPair.first;
-
         ORDCorridorsConverter::CifCorridorSourceItem corridorItem(*cifCorridorPtr);
 
         RoadRailBim::CorridorCPtr corridorCPtr;

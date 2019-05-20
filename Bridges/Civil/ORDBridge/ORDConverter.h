@@ -52,11 +52,8 @@ private:
     RoadRailPhysical::RoadRailNetworkCPtr m_roadRailNetworkCPtr;
     bmap<Bentley::ElementRefP, Dgn::DgnElementPtr> m_v8ToBimElmMap;
 
-    typedef bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment>, Bentley::ElementRefP> CifAlignmentV8RefPair;
-    typedef bpair<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Corridor>, Bentley::ElementRefP> CifCorridorV8RefPair;
-
-    bvector<CifAlignmentV8RefPair> m_cifAlignments;
-    bvector<CifCorridorV8RefPair> m_cifCorridors;
+    bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Corridor>> m_cifCorridors;
+    bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment>> m_cifAlignments;    
     bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::LinearEntity3d>> m_cifGeneratedLinear3ds;
     bool m_isProcessing;
 
