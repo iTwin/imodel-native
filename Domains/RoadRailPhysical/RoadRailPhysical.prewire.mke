@@ -1,0 +1,12 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+$(BuildContext)PublicAPI/RoadRailPhysical : $(_MakeFilePath)PublicAPI/RoadRailPhysical
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)ECSchemas/Domain/RoadRailPhysical.ecschema.xml : $(_MakeFilePath)RoadRailPhysical.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
