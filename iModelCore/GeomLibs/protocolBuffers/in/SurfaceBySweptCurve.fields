@@ -1,0 +1,14 @@
+PRIMITIVE SurfaceBySweptCurve
+
+<def name=SUMMARY>A sweep operation involving base curve and a trace curve.
+</def>
+
+<def name=Interface_BaseList>IGeometry, ISurface</def>
+
+
+
+<def name=MEMBERS><child ItemType=ICurve ItemTagName=BaseGeometry ItemSemanticName=BaseGeometry ItemParamName=baseGeometry ItemMemberName=mBaseGeometry ItemDescription="Curve being swept." ScaleMode=Container/>
+<child ItemType=ICurve ItemTagName=RailCurve ItemSemanticName=RailCurve ItemParamName=railCurve ItemMemberName=mRailCurve ItemDescription="Curve definining sweep path." ScaleMode=Container/>
+</def>
+
+END_PRIMITIVE

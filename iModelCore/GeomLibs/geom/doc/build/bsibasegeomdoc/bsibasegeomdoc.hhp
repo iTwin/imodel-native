@@ -1,0 +1,19 @@
+[OPTIONS]
+Auto Index=Yes
+Binary Index=Yes
+Compatibility=1.1 or later
+Compiled file=..\..\..\delivery\basegeom\doc\bsibasegeomdoc.chm
+Contents file=bsibasegeomdoc.hhc
+Default Window=TriPane
+Default topic=includehtml\bsibasegeomdoc_intro.htm
+Display compile progress=No
+Enhanced decompilation=Yes
+Full-text search=Yes
+Index file=bsibasegeomdoc.hhk
+Language=0x409
+Title=The Bentley Base Geometry Library
+
+[WINDOWS]
+TriPane=,"bsibasegeomdoc.hhc","bsibasegeomdoc.hhk","includehtml\bsibasegeomdoc_intro.htm","includehtml\bsibasegeomdoc_intro.htm",,,,,0x63520,,0x380e,,,,,,,,0
+
+

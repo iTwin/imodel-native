@@ -1,0 +1,354 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\StructsTest">
+      <UniqueIdentifier>{4c4a6a43-2345-42f2-91be-0958cc7251be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\BezierTest">
+      <UniqueIdentifier>{9b005b09-790c-4b63-a454-98e99d8724ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\PolyfaceTest">
+      <UniqueIdentifier>{77d19dc9-6bb7-45c2-a026-9dc403b5b975}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\MTGTest">
+      <UniqueIdentifier>{6ad29d65-d017-4c12-a174-f5e3616eccd2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\BezierTest">
+      <UniqueIdentifier>{f44785cb-5996-49b1-8c65-3bd96104ad6e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\MTGTest">
+      <UniqueIdentifier>{361d5dec-adc6-45cd-a128-250b35bffeba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\PolyfaceTest">
+      <UniqueIdentifier>{5708d59e-1009-4b82-b05d-2d64b1630092}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\StructsTest">
+      <UniqueIdentifier>{5189cf71-e4ba-4d33-9971-770d82c47ade}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\CurvePrimitiveTest">
+      <UniqueIdentifier>{7d3730fe-3d32-4131-97bf-3722deb4ecb3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\CurvePrimitiveTest">
+      <UniqueIdentifier>{1f6aaf6f-5bbb-40c9-b62e-2049eda3cfd9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\PerformanceTest">
+      <UniqueIdentifier>{f18998da-5cc7-41ab-bdd7-894e380fcfe2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\PerformanceTest">
+      <UniqueIdentifier>{77b3ed9c-b9b1-4054-94fa-87c139df9429}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\BsplineTest">
+      <UniqueIdentifier>{c3e1bc94-1a41-4de1-bf25-dc8db485794c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\EigenTest">
+      <UniqueIdentifier>{82598e4c-8949-4327-8a2a-46e020ddc0c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\PolylineOpsTest">
+      <UniqueIdentifier>{be8db37f-9cc7-40d4-89a9-6d68221a8c78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\RootTest">
+      <UniqueIdentifier>{419a9bb2-ab97-4a32-a978-c4a4c7ead5fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\SerializationTest">
+      <UniqueIdentifier>{94cb53b9-d9f4-4b50-af29-e7019afded69}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\SampleGeometry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CGWriter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\checkers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CommonExport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\StackExaminer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\StackExaminerGtestHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\StopWatch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="bezierTest\tests\BezierTriangle.h">
+      <Filter>Header Files\BezierTest</Filter>
+    </ClInclude>
+    <ClInclude Include="bezierTest\tests\GenericNewtonSolver.h">
+      <Filter>Header Files\BezierTest</Filter>
+    </ClInclude>
+    <ClInclude Include="bezierTest\tests\testHarness.h">
+      <Filter>Header Files\BezierTest</Filter>
+    </ClInclude>
+    <ClInclude Include="CurvePrimitiveTest\tests\frustumClipper.h">
+      <Filter>Header Files\CurvePrimitiveTest</Filter>
+    </ClInclude>
+    <ClInclude Include="CurvePrimitiveTest\tests\SampleGeometryCreator.h">
+      <Filter>Header Files\CurvePrimitiveTest</Filter>
+    </ClInclude>
+    <ClInclude Include="CurvePrimitiveTest\tests\testHarness.h">
+      <Filter>Header Files\CurvePrimitiveTest</Filter>
+    </ClInclude>
+    <ClInclude Include="MTGTest\tests\testHarness.h">
+      <Filter>Header Files\MTGTest</Filter>
+    </ClInclude>
+    <ClInclude Include="PolyfaceTest\tests\testHarness.h">
+      <Filter>Header Files\PolyfaceTest</Filter>
+    </ClInclude>
+    <ClInclude Include="structsTest\tests\testHarness.h">
+      <Filter>Header Files\StructsTest</Filter>
+    </ClInclude>
+    <ClInclude Include="structsTest\tests\TMatrixOriginal.h">
+      <Filter>Header Files\StructsTest</Filter>
+    </ClInclude>
+    <ClInclude Include="PerformanceTest\PerformanceTestFixture.h">
+      <Filter>Header Files\PerformanceTest</Filter>
+    </ClInclude>
+    <ClInclude Include="PerformanceTest\DataReader.h">
+      <Filter>Header Files\PerformanceTest</Filter>
+    </ClInclude>
+    <ClInclude Include="PerformanceTest\DbLogHelper.h">
+      <Filter>Header Files\PerformanceTest</Filter>
+    </ClInclude>
+    <ClInclude Include="PerformanceTest\GeomLibsTests.h">
+      <Filter>Header Files\PerformanceTest</Filter>
+    </ClInclude>
+    <ClInclude Include="src\GeomTestFixture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SerializationTest\CGSerializationTestPCH.h">
+      <Filter>Source Files\SerializationTest</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\CGWriter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\checkers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SampleGeometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\StackExaminer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\StackExaminerGtestHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\StopWatch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PerformanceTest\SerializationTests.cpp">
+      <Filter>Source Files\PerformanceTest</Filter>
+    </ClCompile>
+    <ClCompile Include="PerformanceTest\PerformanceTestFixture.cpp">
+      <Filter>Source Files\PerformanceTest</Filter>
+    </ClCompile>
+    <ClCompile Include="PerformanceTest\DataReader.cpp">
+      <Filter>Source Files\PerformanceTest</Filter>
+    </ClCompile>
+    <ClCompile Include="PerformanceTest\DbLogHelper.cpp">
+      <Filter>Source Files\PerformanceTest</Filter>
+    </ClCompile>
+    <ClCompile Include="bezierTest\t_analyticRoots.cpp">
+      <Filter>Source Files\BezierTest</Filter>
+    </ClCompile>
+    <ClCompile Include="bezierTest\t_bezroot.cpp">
+      <Filter>Source Files\BezierTest</Filter>
+    </ClCompile>
+    <ClCompile Include="bezierTest\t_bspline1d.cpp">
+      <Filter>Source Files\BezierTest</Filter>
+    </ClCompile>
+    <ClCompile Include="bezierTest\t_ruledSurface.cpp">
+      <Filter>Source Files\BezierTest</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePrimitiveTest\t_AreaBoolean.cpp">
+      <Filter>Source Files\CurvePrimitiveTest</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePrimitiveTest\t_catenary.cpp">
+      <Filter>Source Files\CurvePrimitiveTest</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePrimitiveTest\t_cci.cpp">
+      <Filter>Source Files\CurvePrimitiveTest</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePrimitiveTest\t_CurveBlend.cpp">
+      <Filter>Source Files\CurvePrimitiveTest</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePrimitiveTest\t_CurvePrimitive.cpp">
+      <Filter>Source Files\CurvePrimitiveTest</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePrimitiveTest\t_frustum.cpp">
+      <Filter>Source Files\CurvePrimitiveTest</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePrimitiveTest\t_gapCleanup.cpp">
+      <Filter>Source Files\CurvePrimitiveTest</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePrimitiveTest\t_IGeometry.cpp">
+      <Filter>Source Files\CurvePrimitiveTest</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePrimitiveTest\t_linearAlgebra.cpp">
+      <Filter>Source Files\CurvePrimitiveTest</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePrimitiveTest\t_MinDist.cpp">
+      <Filter>Source Files\CurvePrimitiveTest</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePrimitiveTest\t_MTGFragmentSorter.cpp">
+      <Filter>Source Files\CurvePrimitiveTest</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePrimitiveTest\t_mtgGraph.cpp">
+      <Filter>Source Files\CurvePrimitiveTest</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePrimitiveTest\t_MTGLoopDetector.cpp">
+      <Filter>Source Files\CurvePrimitiveTest</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePrimitiveTest\t_PathLocationDetail.cpp">
+      <Filter>Source Files\CurvePrimitiveTest</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePrimitiveTest\t_polyfaceIntersection.cpp">
+      <Filter>Source Files\CurvePrimitiveTest</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePrimitiveTest\t_SolidPrimitive.cpp">
+      <Filter>Source Files\CurvePrimitiveTest</Filter>
+    </ClCompile>
+    <ClCompile Include="PolyfaceTest\t_localCoordinates.cpp">
+      <Filter>Source Files\PolyfaceTest</Filter>
+    </ClCompile>
+    <ClCompile Include="PolyfaceTest\t_normals.cpp">
+      <Filter>Source Files\PolyfaceTest</Filter>
+    </ClCompile>
+    <ClCompile Include="PolyfaceTest\t_pierce.cpp">
+      <Filter>Source Files\PolyfaceTest</Filter>
+    </ClCompile>
+    <ClCompile Include="PolyfaceTest\t_polyface.cpp">
+      <Filter>Source Files\PolyfaceTest</Filter>
+    </ClCompile>
+    <ClCompile Include="PolyfaceTest\t_rangeTree.cpp">
+      <Filter>Source Files\PolyfaceTest</Filter>
+    </ClCompile>
+    <ClCompile Include="PolyfaceTest\t_section.cpp">
+      <Filter>Source Files\PolyfaceTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_Angle.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_DEllipse3d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_DPlane3d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_DPoint2d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_DPoint3d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_DRange3d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_DRay3d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_DSegment3d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_DVec2d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_dvec3d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_irishPolygons.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_operators.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_Polynomial.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_RotMatrix.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_Transform.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="BsplineTest\t_accessors.cpp">
+      <Filter>Source Files\BsplineTest</Filter>
+    </ClCompile>
+    <ClCompile Include="BsplineTest\t_bsp.cpp">
+      <Filter>Source Files\BsplineTest</Filter>
+    </ClCompile>
+    <ClCompile Include="BsplineTest\t_bsp1.cpp">
+      <Filter>Source Files\BsplineTest</Filter>
+    </ClCompile>
+    <ClCompile Include="BsplineTest\t_bspline.cpp">
+      <Filter>Source Files\BsplineTest</Filter>
+    </ClCompile>
+    <ClCompile Include="EigenTest\t_eigenLibrary.cpp">
+      <Filter>Source Files\EigenTest</Filter>
+    </ClCompile>
+    <ClCompile Include="PolylineOpsTest\t_PolygonOps.cpp">
+      <Filter>Source Files\PolylineOpsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="PolylineOpsTest\t_PolylineOps.cpp">
+      <Filter>Source Files\PolylineOpsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="RootTest\polygonAccelerator.cpp">
+      <Filter>Source Files\RootTest</Filter>
+    </ClCompile>
+    <ClCompile Include="RootTest\t_GaussKronrod.cpp">
+      <Filter>Source Files\RootTest</Filter>
+    </ClCompile>
+    <ClCompile Include="RootTest\univariateRoots_test.cpp">
+      <Filter>Source Files\RootTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_DPoint4d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_DRange1d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="SerializationTest\CGBinarySerializationTests.cpp">
+      <Filter>Source Files\SerializationTest</Filter>
+    </ClCompile>
+    <ClCompile Include="SerializationTest\CGSerializationTests.cpp">
+      <Filter>Source Files\SerializationTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_DRange2d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_dMatrix4d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_DMap4d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_FPoint3d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_FVec3d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+    <ClCompile Include="structsTest\t_fRange3d.cpp">
+      <Filter>Source Files\StructsTest</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
