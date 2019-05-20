@@ -300,19 +300,28 @@ void ClientImpl::LogPostingHeartbeat(int64_t currentTime)
     {
     LOG.debug("ClientImpl::LogPostingHeartbeat");
 
+    // first call of LogPostingHeartbeat
     if (m_startLogPostingHeartbeat)
         {
         m_lastRunningLogPostingheartbeatStartTime = currentTime;
         m_startLogPostingHeartbeat = false;
+
+        // post logs if there are any left over from a previous session that didn't get posted
+        if (m_licensingDb->GetUsageRecordCount() > 0)
+            m_ulasProvider->PostUsageLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy);
+
+        if (m_licensingDb->GetFeatureRecordCount() > 0)
+            m_ulasProvider->PostFeatureLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy);
         }
 
     m_delayedExecutor->Delayed(HEARTBEAT_THREAD_DELAY_MS).then([this, currentTime]
         {
-        int64_t logsPostingInterval = m_policy->GetTimeToKeepUnSentLogs(m_clientInfo->GetApplicationProductId(), m_featureString);
+        int64_t policyLogsPostingInterval = m_policy->GetTimeToKeepUnSentLogs(m_clientInfo->GetApplicationProductId(), m_featureString);
 
         int64_t time_elapsed = currentTime - m_lastRunningLogPostingheartbeatStartTime;
 
-        if (time_elapsed >= logsPostingInterval)
+        // post when the shorter of the two log posting intervals elapses
+        if (time_elapsed >= policyLogsPostingInterval || time_elapsed >= m_logsPostingInterval)
             {
             m_ulasProvider->PostUsageLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy);
             m_ulasProvider->PostFeatureLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy);
