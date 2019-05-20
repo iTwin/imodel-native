@@ -1,0 +1,67 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------------
+# Directories
+#--------------------------------------------------------------------------------------
+RulesEngineSourceDirectory      = $(RulesDrivenSourceDirectory)RulesEngine/
+RulesEnginePublicApiDirectory   = $(RulesDrivenPublicApiDirectory)
+RulesEngineOutputDirectory      = $(OutputDirectory)RulesEngine/
+
+#--------------------------------------------------------------------------------------
+# Dependencies
+#--------------------------------------------------------------------------------------
+RulesEnginePublicHeaders      = $(RulesEnginePublicApiDirectory)PresentationManager.h               \
+                                $(RulesEnginePublicApiDirectory)IRulesPreprocessor.h                \
+                                $(RulesEnginePublicApiDirectory)RuleSetLocater.h                    \
+                                $(RulesEnginePublicApiDirectory)UserSettings.h                      \
+                                $(RulesEnginePublicApiDirectory)ECInstanceChangeEvents.h            \
+                                $(RulesEnginePublicApiDirectory)ECInstanceChangeHandlers.h          \
+                                $(RulesEnginePublicApiDirectory)RuleSetEmbedder.h                   \
+                                $(RulesEnginePublicApiDirectory)SelectionSyncHandler.h              
+
+RulesEngineInternalHeaders    = $(RulesEngineSourceDirectory)RulesEngineTypes.h                     \
+                                $(RulesEngineSourceDirectory)RulesPreprocessor.h                    \
+                                $(RulesEngineSourceDirectory)ECExpressionContextsProvider.h         \
+                                $(RulesEngineSourceDirectory)NavigationQuery.h                      \
+                                $(RulesEngineSourceDirectory)NavNodeProviders.h                     \
+                                $(RulesEngineSourceDirectory)QueryExecutor.h                        \
+                                $(RulesEngineSourceDirectory)JsonNavNode.h                          \
+                                $(RulesEngineSourceDirectory)ExtendedData.h                         \
+                                $(RulesEngineSourceDirectory)QueryContracts.h                       \
+                                $(RulesEngineSourceDirectory)CustomFunctions.h                      \
+                                $(RulesEngineSourceDirectory)ECSchemaHelper.h                       \
+                                $(RulesEngineSourceDirectory)LocalizationHelper.h                   \
+                                $(RulesEngineSourceDirectory)NavNodesDataSource.h                   \
+                                $(RulesEngineSourceDirectory)NavNodesCache.h                        \
+                                $(RulesEngineSourceDirectory)ContentCache.h                         \
+                                $(RulesEngineSourceDirectory)LoggingHelper.h                        \
+                                $(RulesEngineSourceDirectory)ImageHelper.h                          \
+                                $(RulesEngineSourceDirectory)CustomizationHelper.h                  \
+                                $(RulesEngineSourceDirectory)QueryBuilder.h                         \
+                                $(RulesEngineSourceDirectory)QueryBuilderHelpers.h                  \
+                                $(RulesEngineSourceDirectory)UpdateHandler.h                        \
+                                $(RulesEngineSourceDirectory)ContentProviders.h                     \
+                                $(RulesEngineSourceDirectory)RulesDrivenProviderContext.h           \
+                                $(RulesEngineSourceDirectory)ECInstanceChangesDirector.h            \
+                                $(RulesEngineSourceDirectory)DataSourceInfo.h                       \
+                                $(RulesEngineSourceDirectory)ContentClassesLocater.h                \
+                                $(RulesEngineSourceDirectory)ContentSpecificationsHandler.h         \
+                                $(RulesEngineSourceDirectory)PropertyInfoStore.h                    \
+                                $(RulesEngineSourceDirectory)ECExpressionOptimizer.h                \
+                                $(RulesEngineSourceDirectory)UsedClassesListener.h                  \
+                                $(RulesEngineSourceDirectory)PresentationManagerImpl.h              \
+                                $(RulesEngineSourceDirectory)SingleThreadQueueExecutor.h
+
+RulesEngineXliffHeaders       = $(XliffsDirectory)RulesEngine.xliff.h
+
+RulesEngineHeaders            = $(RulesEnginePublicHeaders) $(RulesEngineInternalHeaders) $(RulesEngineXliffHeaders) $(RulesDrivenECPresentationHeaders)
+
+RulesEngineMkis               = $(RulesEngineSourceDirectory)Dependencies.mki $(RulesEngineSourceDirectory)RulesEngine.mki
+
+RulesEngineDependencies       = $(RulesEngineHeaders) $(RulesEngineMkis) $(RulesDrivenECPresentationDependencies)
+
+ECPresentationMakefiles       + $(RulesEngineMkis)
