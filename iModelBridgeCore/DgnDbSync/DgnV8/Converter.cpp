@@ -1807,7 +1807,7 @@ void Converter::GetOrCreateJobPartitions()
     InitDrawingListModel();
     InitSheetListModel();
 
-    InitUncategorizedCategory(); // Create the "uncategorized" category for elements that can't be categorized without application/domain help
+    InitUncategorizedCategory(); // Create the "Default" category for elements that can't be categorized without application/domain help
     InitUncategorizedDrawingCategory();
     InitBusinessKeyCodeSpec();
     }
