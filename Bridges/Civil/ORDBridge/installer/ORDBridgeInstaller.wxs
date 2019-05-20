@@ -20,7 +20,7 @@
       <DirectoryRef Id="INSTALLDIR">
         <Directory Id="ORDBridgeRegistryEntriesDir">
             <Component Id="ORDBridgeRegistryEntries" Guid="{98813C07-7C4A-4152-AC7B-F1517B333274}" Win64="$(var.COMPONENT_WIN64)" Feature="DefaultFeature">
-              <RegistryKey Root="HKLM" Key="Software\Bentley\iModelBridges\OpenRoadsDesignerBridge" >
+              <RegistryKey Root="HKLM" Key="Software\Bentley\iModelBridges\OpenRoadsDesigner" >
                 <RegistryValue Name="AffinityLibraryPath" Type="string" Value="[INSTALLDIR]ORDBridge.dll"/>
                 <RegistryValue Name="BridgeAssetsDir" Type="string" Value="[INSTALLDIR]Assets"/>
                 <RegistryValue Name="BridgeLibraryPath" Type="string" Value="[INSTALLDIR]ORDBridge.dll" KeyPath="yes"/>

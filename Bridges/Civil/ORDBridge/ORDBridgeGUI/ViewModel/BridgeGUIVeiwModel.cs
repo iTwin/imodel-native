@@ -21,7 +21,7 @@ namespace ORDBridgeGUI.ViewModel
         private const string OPENROADS  = @"SOFTWARE\Bentley\OpenRoadsDesigner\{D11A86DD-FF26-4139-9C79-C1ABB4C8B5BF}";
         private const string OPENRAIL   = @"SOFTWARE\Bentley\OpenRailDesigner\{718972C7-007F-4F72-8AD5-5B0B750E2493}";
         private const string OPENBRIDGE = @"SOFTWARE\Bentley\OpenBridgeModeler\{81969A98-EDF7-4B21-9D23-7A15482E543F}";
-        private const string ORDBRIDGE  = @"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesignerBridge";
+        private const string ORDBRIDGE  = @"SOFTWARE\Bentley\iModelBridges\OpenRoadsDesigner";
 
         private PublisherType m_selectedPublisher;
 
