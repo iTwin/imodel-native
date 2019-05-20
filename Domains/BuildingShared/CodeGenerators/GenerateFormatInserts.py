@@ -37,9 +37,9 @@ namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
-void GeneratedInserts::{functionName}(Dgn::DgnDbR db) const
+void GeneratedInserts::{functionName}(Dgn::DgnDbR db, Dgn::DgnModelCR model) const
     {{
-    ClassificationSystemCPtr {classSystemVariableName} = TryAndGetSystem(db, "{systemType}", "{systemEdition}");
+    ClassificationSystemCPtr {classSystemVariableName} = TryAndGetSystem(db, model, "{systemType}", "{systemEdition}");
     ClassificationTableCPtr {classTableVariableName} = TryAndGetTable(*{classSystemVariableName} , "{tableName}");
 
 {code}

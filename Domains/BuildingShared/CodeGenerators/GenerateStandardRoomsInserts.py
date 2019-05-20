@@ -37,7 +37,7 @@ namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
-void GeneratedInserts::InsertStandardDefinitionSystems(Dgn::DgnDbR db) const
+void GeneratedInserts::InsertStandardDefinitionSystems(Dgn::DgnDbR db, Dgn::DgnModelCR model) const
     {{
     ClassificationSystemPtr system;
     ClassificationTablePtr table;
@@ -74,7 +74,7 @@ for standardRoom in root.find('List').findall('StandardRoom'):
 
 for standard in roomDict:
     edition = standard[6:] if standard.startswith("ASHRAE") else ""
-    code += '    system = InsertSystem(db, "{standard}", "{edition}");\n'.format(standard=standard, edition=edition)
+    code += '    system = InsertSystem(db, model, "{standard}", "{edition}");\n'.format(standard=standard, edition=edition)
     code += '    table = InsertTable(*system, "{standard} Table");\n'.format(standard=standard)
 
     for category in roomDict[standard]:
