@@ -693,6 +693,19 @@ public:
                                                                        Http::Request::ProgressCallbackCR callback = nullptr, 
                                                                        ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Download ChangeSets between two specified ChangeSets.
+    //! @param[in] firstChangeSetId Specifies last ChangeSet that user has. ChangeSet with this Id will be excluded from the results. If empty downloads all changeSets before secondChangeSetId.
+    //! @param[in] secondChangeSetId If empty downloads all changeSets before firstChangeSetId.
+    //! @param[in] fileId Id of the seed file changeSets belong to.
+    //! @param[in] callback Download callback.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the collection of changeSets as the result.
+    //! @note This is used to download the files in order to revert or inspect them. To update a briefcase Briefcase methods should be used.
+    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr DownloadChangeSetsBetween(Utf8StringCR firstChangeSetId, Utf8StringCR secondChangeSetId,
+        BeSQLite::BeGuidCR fileId = BeSQLite::BeGuid(false),
+        Http::Request::ProgressCallbackCR callback = nullptr,
+        ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Verify the access to the change set on the server.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that results in error if connection or authentication fails and success otherwise.

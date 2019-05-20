@@ -255,7 +255,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CachingDataSource :
             (
             CachedResponseKeyCR responseKey,
             WSQueryCR query,
-            DataOrigin origin,
+            RetrieveOptions retrieveOptions,
             std::shared_ptr<const ISelectProvider> cachedSelectProvider = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) override;

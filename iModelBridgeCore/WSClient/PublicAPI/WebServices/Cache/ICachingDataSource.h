@@ -174,10 +174,15 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! NOTE: use GetNavigationChildren for getting children and use this only for specific cases
         virtual CachedResponseKey GetNavigationResponseKey(CacheTransactionCR txn, ObjectIdCR parentId) = 0;
         virtual CachedResponseKey GetNavigationResponseKey(CacheTransactionCR txn, ECInstanceKeyCR parentKey) = 0;
+
         //! Get NavigationQuery for any server version.
         //! Specify select provider to fill WSG 1.x navigation query properties parameter or WSG 2.0 select.
         virtual WSQueryPtr GetNavigationQuery(CacheTransactionCR txn, ObjectIdCR parentId, ISelectProviderPtr selectProvider = nullptr) = 0;
 
+        //! Do query on one object and cache it if needed.
+        //! @param[in] objectId - object identifier on server.
+        //! @param[in] retrieveOptions - specify what data to try returning and force additional background check if needed
+        //! @param[in] ct - (optional)
         virtual AsyncTaskPtr<ObjectsResult> GetObject
             (
             ObjectIdCR objectId,
@@ -188,14 +193,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! Do objects query to server or cache (depending on DataOrigin) and cache results with responseKey. Return flat list of instances cached.
         //! @param[in] responseKey - identifier for holding cached data
         //! @param[in] query - server query
-        //! @param[in] origin - specify what data to try returning
+        //! @param[in] retrieveOptions - specify what data to try returning and force additional background check if needed
         //! @param[in] cachedSelectProvider - (optional) provider for reading instances from cache. Note that query parameter specifies property selection from server.
         //! @param[in] ct - (optional)
         virtual AsyncTaskPtr<ObjectsResult> GetObjects
             (
             CachedResponseKeyCR responseKey,
             WSQueryCR query,
-            DataOrigin origin,
+            RetrieveOptions retrieveOptions,
             std::shared_ptr<const ISelectProvider> cachedSelectProvider = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) = 0;
@@ -203,7 +208,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! Do objects query to server or cache (depending on DataOrigin) and cache results with responseKey. Return ECInstanceKeys of instances cached.
         //! @param[in] responseKey - identifier for holding cached data
         //! @param[in] query - server query
-        //! @param[in] retrieveOptions - specify what data to try returning
+        //! @param[in] retrieveOptions - specify what data to try returning and force additional background check if needed
         //! @param[in] ct - (optional)
         virtual AsyncTaskPtr<KeysResult> GetObjectsKeys
             (
