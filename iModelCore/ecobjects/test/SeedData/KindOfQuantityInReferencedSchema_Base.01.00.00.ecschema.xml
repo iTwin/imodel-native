@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="KindOfQuantityInReferencedSchema_Base" nameSpacePrefix="koqb" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here" 
+        displayLabel="best quantity of all times" persistenceUnit="CM(real)" relativeError="10e-5" 
+        presentationUnits="FT(real4);IN(DefaultReal);MILLIINCH(real)"/>
+</ECSchema>
