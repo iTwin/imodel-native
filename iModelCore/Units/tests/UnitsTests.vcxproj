@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BuildTests.mke" />
+    <None Include="ConversionData.prewire.mke" />
+    <None Include="ConversionData\complex.csv" />
+    <None Include="ConversionData\ConversionsBetweenAllOldUnits.csv" />
+    <None Include="ConversionData\NeededUnits.csv" />
+    <None Include="ConversionData\unitcomparisondata.csv" />
+    <None Include="Prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Published\CompositeValueTests.cpp" />
+    <ClCompile Include="Published\FormatTests.cpp" />
+    <ClCompile Include="Published\FormattingTests.cpp" />
+    <ClCompile Include="Published\LocaleTests.cpp" />
+    <ClCompile Include="Published\NumericFormatSpecTests.cpp" />
+    <ClCompile Include="Published\MappingTests.cpp" />
+    <ClCompile Include="Published\UnitConversionTests.cpp" />
+    <ClCompile Include="Published\UnitNameMappingsTests.cpp" />
+    <ClCompile Include="Published\UnitRegistryTests.cpp" />
+    <ClCompile Include="TestFixture\FormattingTestFixture.cpp" />
+    <ClCompile Include="TestFixture\QuantityTestFixture.cpp" />
+    <ClCompile Include="Published\QuantityTests.cpp" />
+    <ClCompile Include="Published\UnitsTests.cpp" />
+    <ClCompile Include="Performance\UnitsPerformanceTests.cpp" />
+    <ClCompile Include="TestFixture\UnitsTestFixture.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="FormattingTestsPch.h" />
+    <ClInclude Include="TestFixture\FormattingTestFixture.h" />
+    <ClInclude Include="TestFixture\QuantityTestFixture.h" />
+    <ClInclude Include="TestFixture\UnitsTestFixture.h" />
+    <ClInclude Include="TestFixture\UnitsTests.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{0F533B32-AC1E-480A-BDC3-5B1B664D7843}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakeOutput>$(OutRoot)Winx64\Product\Units-Gtest\UnitsTest.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions);WIN32;_DEBUG</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir)\..\PrivateAPI\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\Units\PublicAPI\;$(OutRoot)Winx64\BuildContexts\Units\VendorAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\VendorAPI\;$(SrcRoot)\Bentley\PublicAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeReBuildCommandLine>bb re Units:TestFixture Units:PerformanceTests Units:PublishedTests Units:Gtest</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb re Units:TestFixture Units:PerformanceTests Units:PublishedTests Units:Gtest -c</NMakeCleanCommandLine>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeOutput>UnitsTests.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions);WIN32;NDEBUG</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir)\..\PrivateAPI\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\Units\PublicAPI\;$(OutRoot)Winx64\BuildContexts\Units\VendorAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\VendorAPI\;$(SrcRoot)\Bentley\PublicAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
