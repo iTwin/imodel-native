@@ -303,3 +303,30 @@ TEST_F(ElementGroupTests, ElementGroupsMembersHelper)
     DgnElementIdSet allGroups = ElementGroupsMembers::QueryGroups(*member1);
     EXPECT_EQ(2, allGroups.size());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementGroupTests, GroupInformationElementInPhysicalModel)
+    {
+    SetupSeedProject();
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
+
+    PhysicalElementPtr member1 = CreateAndInsertElement(*model);
+    PhysicalElementPtr member2 = CreateAndInsertElement(*model);
+    PhysicalElementPtr member3 = CreateAndInsertElement(*model);
+    ASSERT_TRUE(member1.IsValid());
+    ASSERT_TRUE(member2.IsValid());
+    ASSERT_TRUE(member3.IsValid());
+
+    // Note: GroupInformationElements normally go into a separate GroupInformationModel, but being in other model types is also allowed.
+    GenericGroupPtr group = GenericGroup::Create(*model); 
+    DgnElementCPtr groupElement = group->Insert();
+    ASSERT_TRUE(groupElement.IsValid());
+
+    // Insert Members
+    ASSERT_EQ(DgnDbStatus::Success, ElementGroupsMembers::Insert(*groupElement, *member1, 1));
+    ASSERT_EQ(DgnDbStatus::Success, ElementGroupsMembers::Insert(*groupElement, *member2, 2));
+    ASSERT_EQ(DgnDbStatus::Success, ElementGroupsMembers::Insert(*groupElement, *member3, 3));
+    EXPECT_EQ(3, ElementGroupsMembers::QueryMembers(*groupElement).size());
+    }

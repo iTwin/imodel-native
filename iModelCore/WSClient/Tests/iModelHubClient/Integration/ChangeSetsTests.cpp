@@ -170,6 +170,15 @@ TEST_F(ChangeSetsTests, ChangeSetsInfo)
     ASSERT_SUCCESS(changeSetsResult);
     EXPECT_EQ(3, changeSetsResult.GetValue().size());
 
+    ChangeSetsResult downloadedChangeSets = m_briefcase->GetiModelConnection().DownloadChangeSetsBetween("", lastChangeSetId)->GetResult();
+    ASSERT_SUCCESS(downloadedChangeSets);
+    EXPECT_EQ(3, downloadedChangeSets.GetValue().size());
+
+    auto firstChangeSet = *changeSetsResult.GetValue().begin();
+    downloadedChangeSets = m_briefcase->GetiModelConnection().DownloadChangeSetsBetween(firstChangeSet->GetId(), lastChangeSetId)->GetResult();
+    ASSERT_SUCCESS(downloadedChangeSets);
+    EXPECT_EQ(2, downloadedChangeSets.GetValue().size());
+
     ChangeSetInfoPtr lastChangeSet = changeSetsResult.GetValue().back();
     EXPECT_EQ(lastChangeSetId, lastChangeSet->GetId());
     EXPECT_NE("", lastChangeSet->GetDbGuid());

@@ -84,7 +84,7 @@ struct CodesPerformanceTest : BriefcasePerformanceTest
         DgnCode GetNextCode()
             {
             Utf8PrintfString name("%i-%i", m_codeValueBatch, m_codeValueIndex++);
-            return RenderMaterial::CreateCode(m_db->GetDictionaryModel(), name);
+            return RenderMaterial::CreateCode(m_db->GetDictionaryModel(), name, name);
             }
 
         DgnCodeSet PopulateCodeSet(uint32_t numCodes);

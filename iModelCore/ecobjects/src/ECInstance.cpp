@@ -2804,7 +2804,7 @@ struct  InstanceXmlReader
                 // if property not found, ReadPropertyValue warns, so just continue..
                 if (InstanceReadStatus::PropertyNotFound == propertyStatus)
                     continue;
-                else if (InstanceReadStatus::TypeMismatch == propertyStatus)
+                else if (InstanceReadStatus::TypeMismatch == propertyStatus || InstanceReadStatus::BadNavigationValue == propertyStatus)
                     continue;
                 else if (InstanceReadStatus::Success != propertyStatus)
                     return propertyStatus;

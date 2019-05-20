@@ -65,12 +65,8 @@ CreateParams const& params
     if (!thisGrid->Insert().IsValid())
         return nullptr;
 
-    Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(thisGrid->GetDgnDb());
-
-    OrthogonalAxisXPtr horizontalAxis = OrthogonalAxisX::CreateAndInsert(defModel, *thisGrid);
-    OrthogonalAxisYPtr verticalAxis = OrthogonalAxisY::CreateAndInsert(defModel, *thisGrid);
-
-    Dgn::SpatialLocationModelPtr subModel = thisGrid->GetSurfacesModel();
+    OrthogonalAxisXPtr horizontalAxis = OrthogonalAxisX::CreateAndInsert(*thisGrid);
+    OrthogonalAxisYPtr verticalAxis = OrthogonalAxisY::CreateAndInsert(*thisGrid);
 
     return thisGrid;
     }
@@ -116,11 +112,10 @@ OrthogonalAxisXCPtr        OrthogonalGrid::GetXAxis
 (
 ) const
     {
-    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_OrthogonalAxisX), "WHERE Grid=?");
-    ECN::ECClassId relClassId = GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridHasAxes);
+    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_OrthogonalAxisX), "WHERE Model.Id=?", "ORDER BY ECInstanceId ASC");
     if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement())
         {
-        pStmnt->BindNavigationValue(1, GetElementId(), relClassId);
+        pStmnt->BindId(1, GetSubModelId());
         }
 
     if (iterator == iterator.end())
@@ -136,11 +131,10 @@ OrthogonalAxisYCPtr        OrthogonalGrid::GetYAxis
 (
 ) const
     {
-    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_OrthogonalAxisY), "WHERE Grid=?");
-    ECN::ECClassId relClassId = GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridHasAxes);
+    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_OrthogonalAxisY), "WHERE Model.Id=?", "ORDER BY ECInstanceId ASC");
     if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement())
         {
-        pStmnt->BindNavigationValue(1, GetElementId(), relClassId);
+        pStmnt->BindId(1, GetSubModelId());
         }
 
     if (iterator == iterator.end())

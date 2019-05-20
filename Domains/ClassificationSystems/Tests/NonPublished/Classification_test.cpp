@@ -114,17 +114,17 @@ TEST_F(ClassificationTestFixture, GetOrCreateBySystemTableNames_NoElementExists_
     db.BriefcaseManager().StartBulkOperation();
 
     const Utf8String classificationSystemName = "Test System";
-    ClassificationSystemCPtr system = ClassificationSystem::TryGet(db, classificationSystemName, "#01");
+    ClassificationSystemCPtr system = ClassificationSystem::TryGet(db, db.GetDictionaryModel (), classificationSystemName, "#01");
     ASSERT_FALSE(system.IsValid()) << "System already exists";
 
     const Utf8String classificationTableName = "Test Table";
     const Utf8String classificationName = "Test Classification";
 
     ClassificationPtr classification = Classification::GetOrCreateBySystemTableNames(
-        db, classificationName, "01-00-00", "", classificationSystemName, "#01", classificationTableName);
+        db, db.GetDictionaryModel (), classificationName, "01-00-00", "", classificationSystemName, "#01", classificationTableName);
     ASSERT_TRUE(classification.IsValid()) << "Classification did not get created";
 
-    system = ClassificationSystem::TryGet(db, classificationSystemName, "#01");
+    system = ClassificationSystem::TryGet(db, db.GetDictionaryModel (), classificationSystemName, "#01");
     ASSERT_TRUE(system.IsValid()) << "System did not get created";
 
     ClassificationTableCPtr table = ClassificationTable::TryGet(*system, classificationTableName.c_str());
@@ -146,7 +146,7 @@ TEST_F(ClassificationTestFixture, GetOrCreateBySystemTableNames_HierarchyAlready
     db.BriefcaseManager().StartBulkOperation();
 
     const Utf8String classificationSystemName = "Test System";
-    ClassificationSystemPtr system = ClassificationSystem::Create(db, classificationSystemName, "#01");
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, db.GetDictionaryModel (), classificationSystemName, "#01");
     ASSERT_TRUE(system.IsValid()) << "Could not create System";
     system->Insert();
 
@@ -160,7 +160,7 @@ TEST_F(ClassificationTestFixture, GetOrCreateBySystemTableNames_HierarchyAlready
     ASSERT_TRUE(classification.IsValid()) << "Could not create Classification";
 
     ClassificationPtr queriedClassification = Classification::GetOrCreateBySystemTableNames(
-        db, classificationName, "01-01-00", "", classificationSystemName, "#01", classificationTableName);
+        db, db.GetDictionaryModel (), classificationName, "01-01-00", "", classificationSystemName, "#01", classificationTableName);
 
     ASSERT_EQ(classification->GetElementId(), queriedClassification->GetElementId());
 
@@ -178,7 +178,7 @@ TEST_F(ClassificationTestFixture, GetOrCreateBySystemTableNames_TryDifferentClas
     db.BriefcaseManager().StartBulkOperation();
 
     const Utf8String classificationSystemName = "Test System";
-    ClassificationSystemPtr system = ClassificationSystem::Create(db, classificationSystemName, "#01");
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, db.GetDictionaryModel (), classificationSystemName, "#01");
     ASSERT_TRUE(system.IsValid()) << "Could not create System";
     system->Insert();
 
@@ -192,7 +192,7 @@ TEST_F(ClassificationTestFixture, GetOrCreateBySystemTableNames_TryDifferentClas
     ASSERT_TRUE(classification.IsValid()) << "Could not create Classification";
 
     ClassificationPtr queriedClassification = Classification::GetOrCreateBySystemTableNames(
-        db, classificationName, "01-01-00", "", classificationSystemName, "#01", classificationTableName);
+        db, db.GetDictionaryModel (), classificationName, "01-01-00", "", classificationSystemName, "#01", classificationTableName);
 
     ASSERT_EQ(classification->GetElementId(), queriedClassification->GetElementId());
     ASSERT_EQ(table->GetElementId(), queriedClassification->GetClassificationTableId());
@@ -200,7 +200,7 @@ TEST_F(ClassificationTestFixture, GetOrCreateBySystemTableNames_TryDifferentClas
 
     const Utf8String classificationName2 = "Different Test Classification";
     queriedClassification = Classification::GetOrCreateBySystemTableNames(
-        db, classificationName2, "01-02-00", "", classificationSystemName, "#01", classificationTableName);
+        db, db.GetDictionaryModel (), classificationName2, "01-02-00", "", classificationSystemName, "#01", classificationTableName);
 
     ASSERT_FALSE(classification->GetElementId() == queriedClassification->GetElementId());
     ASSERT_TRUE(classificationName2 == queriedClassification->GetName());

@@ -42,7 +42,7 @@ TEST_F(ClassificationSystemsTestFixture, StandardInsertion)
     DgnDbStatus stat;
     DgnCode code;
 
-    ClassificationSystemPtr system = ClassificationSystem::Create(db, expectedSystemName, expectedSystemEdition);
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, db.GetDictionaryModel (), expectedSystemName, expectedSystemEdition);
     ASSERT_TRUE(system.IsValid()) << "Failed to create system";
 
         
@@ -58,7 +58,7 @@ TEST_F(ClassificationSystemsTestFixture, StandardInsertion)
     system->Insert(&stat);
     ASSERT_EQ(DgnDbStatus::Success, stat) << "System failed to be inserted to Db";
 
-    ClassificationSystemCPtr getSystem = ClassificationSystem::TryGet(db, expectedSystemName, expectedSystemEdition);
+    ClassificationSystemCPtr getSystem = ClassificationSystem::TryGet(db, db.GetDictionaryModel (), expectedSystemName, expectedSystemEdition);
     ASSERT_TRUE(getSystem.IsValid()) << "System was not found in Db";
         
     db.SaveChanges();
@@ -87,7 +87,7 @@ TEST_F(ClassificationSystemsTestFixture, PropertiesAreSetProperly)
     DgnDbStatus stat;
     DgnCode code;
 
-    ClassificationSystemPtr system = ClassificationSystem::Create(db, expectedSystemName, expectedSystemEdition);
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, db.GetDictionaryModel (), expectedSystemName, expectedSystemEdition);
     ASSERT_TRUE(system.IsValid()) << "Failed to create system";
 
     code = system->GetCode();
@@ -99,7 +99,7 @@ TEST_F(ClassificationSystemsTestFixture, PropertiesAreSetProperly)
     system->Insert(&stat);
     ASSERT_EQ(DgnDbStatus::Success, stat) << "System failed to be inserted to Db";
 
-    ClassificationSystemCPtr getSystem = ClassificationSystem::TryGet(db, expectedSystemName, expectedSystemEdition);
+    ClassificationSystemCPtr getSystem = ClassificationSystem::TryGet(db, db.GetDictionaryModel (), expectedSystemName, expectedSystemEdition);
     ASSERT_TRUE(getSystem.IsValid()) << "System was not found in Db";
 
     ClassificationTablePtr table = ClassificationTable::Create(*system, "Test Table");
@@ -165,7 +165,7 @@ TEST_F(ClassificationSystemsTestFixture, ECPrpertiesAreSetProperly)
     Utf8String name = "TestSys";
     Utf8String edition = "1.0";
 
-    ClassificationSystemPtr system = ClassificationSystem::Create(db, name, edition);
+    ClassificationSystemPtr system = ClassificationSystem::Create(db, db.GetDictionaryModel (), name, edition);
     ASSERT_TRUE(system.IsValid()) << "Failed to create system";
 
     system->Insert();

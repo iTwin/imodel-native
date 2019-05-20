@@ -100,9 +100,9 @@ ClassificationPtr Classification::CreateAndInsert
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassificationCPtr Classification::TryGet
 (
-    Dgn::DgnDbR db,
-    Utf8StringCR classificationId,
-    Dgn::DgnElementId tableId
+Dgn::DgnDbR db,
+Utf8StringCR classificationId,
+Dgn::DgnElementId tableId
 )
     {
     Dgn::DgnCode code = Classification::GetClassificationCode(db, classificationId, tableId);
@@ -119,16 +119,17 @@ ClassificationCPtr Classification::TryGet
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassificationPtr Classification::GetOrCreateBySystemTableNames
 (
-    Dgn::DgnDbR db,
-    Utf8StringCR name,
-    Utf8StringCR id,
-    Utf8StringCR description,
-    Utf8StringCR systemName,
-    Utf8StringCR systemEdition,
-    Utf8StringCR tableName
+Dgn::DgnDbR db,
+Dgn::DgnModelCR model,
+Utf8StringCR name,
+Utf8StringCR id,
+Utf8StringCR description,
+Utf8StringCR systemName,
+Utf8StringCR systemEdition,
+Utf8StringCR tableName
 )
     {
-    ClassificationSystemCPtr system = ClassificationSystem::GetOrCreateSystemByName(db, systemName, systemEdition);
+    ClassificationSystemCPtr system = ClassificationSystem::GetOrCreateSystemByName(db, model, systemName, systemEdition);
     if (system.IsNull())
         {
         BeAssert(!"Could not get or create system");

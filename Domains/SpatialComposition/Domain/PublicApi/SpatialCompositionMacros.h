@@ -13,11 +13,9 @@
 #define USING_NAMESPACE_SPATIALCOMPOSITION using namespace BENTLEY_NAMESPACE_NAME::SPATIALCOMPOSITION_NAMESPACE_NAME;
 
 #define SPATIALCOMPOSITION_SCHEMA_NAME                          "SpatialComposition"
-#define SPATIALCOMPOSITION_CLASS_CompositeBoundary              "CompositeBoundary"
-#define SPATIALCOMPOSITION_CLASS_CompositeVolume                "CompositeVolume"
 #define SPATIALCOMPOSITION_CLASS_CompositeElement               "CompositeElement"
 
-#define SPATIALCOMPOSITION_CATEGORY_CODE_CompositeVolume        "CompositeVolume"
+#define SPATIALCOMPOSITION_CATEGORY_CODE_CompositeElement        "CompositeElement"
 
 #define SPATIALCOMPOSITION_REL_CompositeComposesSubComposites   "CompositeComposesSubComposites"
 #define SPATIALCOMPOSITION_REL_CompositeOverlapsSpatialElements "CompositeOverlapsSpatialElements"
@@ -31,7 +29,7 @@
 #endif
 
 #define SPATIALCOMPOSITION_CODESPEC_CODE(categoryName)          SPATIALCOMPOSITION_SCHEMA_NAME "::" categoryName
-#define SPATIALCOMPOSITION_AUTHORITY_CompositeVolume        SPATIALCOMPOSITION_CODESPEC_CODE(SPATIALCOMPOSITION_CLASS_CompositeVolume)
+#define SPATIALCOMPOSITION_AUTHORITY_CompositeElement       SPATIALCOMPOSITION_CODESPEC_CODE(SPATIALCOMPOSITION_CLASS_CompositeElement)
 
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types

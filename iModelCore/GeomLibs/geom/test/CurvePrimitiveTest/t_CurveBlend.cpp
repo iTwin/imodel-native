@@ -533,6 +533,63 @@ TEST(AreaOffset, JonasSquare)
     Check::ClearGeometry("CloneOffset.JonasSquare");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(AreaOffset, PinchedAngles)
+    {
+    bvector<DPoint3d> basePoints{
+            {0,0,0},
+            {20,0,0},
+            {10,10,0},
+        };
+    DPoint3d pointA = DPoint3d::FromInterpolate(basePoints[0], 0.5, basePoints[1]);
+    DPoint3d pointB = DPoint3d::FromInterpolate(basePoints[1], 0.5, basePoints[2]);
+    DPoint3d pointC = DPoint3d::FromInterpolate(basePoints[2], 0.8, basePoints[0]);
+
+    bvector<double> fractions {0.0, -0.1, 0.1, -0.2, 0.2, -0.4, 0.4, -0.6, 0.6};
+    for (double fBA : fractions)
+        {
+        for (double fCA : fractions)
+            {
+            SaveAndRestoreCheckTransform shifter (50,0,0);
+            bvector<DPoint3d> loop {
+                basePoints[0],
+                basePoints[1],
+                DPoint3d::FromInterpolate (pointB, fBA, pointA),
+                basePoints[2],
+                DPoint3d::FromInterpolate(pointC, fCA, pointA),
+                basePoints[0]
+                };
+            CurveVectorPtr areaA = CurveVector::CreateLinear(loop, CurveVector::BOUNDARY_TYPE_Outer);
+            Check::SaveTransformed(areaA);
+            Check::Shift (0,20,0);
+            for (double offset : {1.0, -1.0, 2.0, -2.0, 4.0, -4.0})
+                {
+                SaveAndRestoreCheckTransform shifter(0, 80,0);
+                CurveOffsetOptions opts(offset);
+                CurveVectorPtr offsetA = areaA->AreaOffset(opts);
+                Check::SaveTransformed(offsetA);
+                Check::SaveTransformed(loop);
+                Check::Shift (0, 25,0);
+                opts.SetOutputSelector (1);
+                CurveVectorPtr shards = areaA->AreaOffset(opts);
+                Check::SaveTransformed(loop);
+                Check::SaveTransformed(shards);
+                }
+            for (double offset : {0.5, 1.0, 2.0, 3.0})
+                {
+                SaveAndRestoreCheckTransform shifter(0, 80, 0);
+                CurveOffsetOptions opts(offset);
+                CurveVectorPtr offsetA = CurveVector::ThickenXYPathToArea(areaA, offset, 0.5 * offset);
+                Check::SaveTransformed(offsetA);
+                Check::SaveTransformed(loop);
+                }
+
+            }
+        }
+    Check::ClearGeometry("CloneOffset.PinchedAngles");
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
@@ -3330,73 +3387,11 @@ TEST(Train,Envelope)
 
     Check::ClearGeometry ("Train.Envelope");
     }
-CurveVectorPtr  ThickenPathToRegion(CurveVectorPtr const& plineCurve, double halfWidth)
-    {
-
-    double  pointTolerance = 0.01 * halfWidth;
-
-    // move the curve towards left by half width
-    CurveOffsetOptions  offsetOptions(halfWidth);
-    offsetOptions.SetTolerance(pointTolerance);
-
-    auto left = plineCurve->CloneOffsetCurvesXY(offsetOptions);
-    if (!left.IsValid())
-        return  nullptr;
-
-    // move the curve towards right by half width
-    offsetOptions.SetOffsetDistance(-halfWidth);
-
-    auto right = plineCurve->CloneOffsetCurvesXY(offsetOptions);
-    if (!right.IsValid())
-        return  nullptr;
-    if (plineCurve->IsClosedPath())
-        {
-        auto parityRegion = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
-        parityRegion->Add(right);
-        parityRegion->Add(left);
-        parityRegion->FixupXYOuterInner(false);
-        return parityRegion;
-        }
-    else
-        {
-        auto shape = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
-
-        ICurvePrimitivePtr  top, bottom;
-        // get start and end points
-        DPoint3d    starts[2], ends[2];
-        if (!left->GetStartEnd(starts[0], ends[0]) || !right->GetStartEnd(starts[1], ends[1]))
-            return  nullptr;
-
-        // bottom cap to connect left->right
-        bottom = ICurvePrimitive::CreateLine(DSegment3d::From(ends[0], ends[1]));
-        if (!bottom.IsValid())
-            return  nullptr;
-
-        // top cap to connect right->left
-        top = ICurvePrimitive::CreateLine(DSegment3d::From(starts[1], starts[0]));
-        if (!top.IsValid())
-            return  nullptr;
-
-        // reverse the right curve
-        right->ReverseCurvesInPlace();
-
-        // add and orient them to complete a loop:
-        shape->AddPrimitives(*left);
-        shape->Add(bottom);
-        shape->AddPrimitives(*right);
-        shape->Add(top);
-        if (shape->IsClosedPath())
-            return  shape;
-
-        CurveGapOptions gapOptions(pointTolerance, 1.0e-4, 1.0e-4);
-        return shape->CloneWithGapsClosed(gapOptions);
-        }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ThickenPathToRegion, openPolylines)
+TEST(PathToRegion, openPolylines)
     {
     bvector<bvector<DPoint3d>> paths{
         {

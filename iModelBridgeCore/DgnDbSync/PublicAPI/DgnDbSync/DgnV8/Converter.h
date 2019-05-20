@@ -26,7 +26,7 @@
 
 namespace DgnDbApi = BentleyApi::Dgn;
 
-#define CATEGORY_NAME_Uncategorized     "Uncategorized"
+#define CATEGORY_NAME_Uncategorized     "Default"
 #define CATEGORY_NAME_Attachments       "Attachments"       // *** WIP_SHEET - category names
 #define CATEGORY_NAME_ExtractedGraphics "ExtractedGraphics" // *** WIP_CONVERT_CVE - category names
 #define CATEGORY_NAME_Section           "Section"           // *** WIP_CONVERT_CVE - category names
@@ -2596,6 +2596,7 @@ protected:
     DGNDBSYNC_EXPORT virtual void _BeginConversion();
     DGNDBSYNC_EXPORT virtual void _ConvertSpatialViews();
     DGNDBSYNC_EXPORT virtual void _ConvertSpatialLevels();
+    DGNDBSYNC_EXPORT virtual void _ConvertDrawingLevels();
     DGNDBSYNC_EXPORT virtual void _ConvertLineStyles();
     DGNDBSYNC_EXPORT virtual void _ConvertModels();
     DGNDBSYNC_EXPORT virtual void _ConvertSpatialElements();

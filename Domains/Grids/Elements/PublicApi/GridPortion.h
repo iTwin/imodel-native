@@ -5,6 +5,11 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <DgnPlatform/DgnDb.h>
+#include <DgnPlatform/DgnElement.h>
+#include <Grids/Domain/GridsMacros.h>
+#include "ForwardDeclarations.h"
+
 BEGIN_GRIDS_NAMESPACE
 
 #define GRIDLINE_LENGTH_COEFF 0.1

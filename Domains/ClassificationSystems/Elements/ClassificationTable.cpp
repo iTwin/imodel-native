@@ -51,7 +51,7 @@ ClassificationTablePtr ClassificationTable::Create
     {
     Dgn::DgnDbR db = system.GetDgnDb();
     Dgn::DgnClassId classId = QueryClassId(db);
-    Dgn::DgnElement::CreateParams params(db, Building::Shared::BuildingUtils::GetOrCreateDefinitionModel(db, "ClassificationSystems")->GetModelId(), classId);
+    Dgn::DgnElement::CreateParams params(db, system.GetModelId(), classId);
 
     return new ClassificationTable(params, system, name);
     }

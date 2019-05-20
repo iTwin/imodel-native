@@ -447,6 +447,19 @@ TEST_F (ProfileTestCase, GetCardinalPoint_StandardPointEnum_Success)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ProfileTestCase, GetCardinalPoint_SpecialEnumValues_Error)
+    {
+    LShapeProfilePtr profilePtr = CreateProfile ("P");
+    profilePtr->Insert();
+
+    CardinalPoint cardinalPoint;
+    ASSERT_NE (DgnDbStatus::Success, profilePtr->GetCardinalPoint (StandardCardinalPoint::Unset, cardinalPoint));
+    ASSERT_NE (DgnDbStatus::Success, profilePtr->GetCardinalPoint (StandardCardinalPoint::Custom, cardinalPoint));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ProfileTestCase, GetCardinalPoint_ByName_Success)
@@ -558,6 +571,46 @@ TEST_F (ProfileTestCase, StandardCardinalPointToString_StandardCardinalPoint_Str
     EXPECT_STREQ ("LeftInLineWithShearCenter", StandardCardinalPointToString (StandardCardinalPoint::LeftInLineWithShearCenter));
     EXPECT_STREQ ("RightInLineWithShearCenter", StandardCardinalPointToString (StandardCardinalPoint::RightInLineWithShearCenter));
     EXPECT_STREQ ("TopInLineWithShearCenter", StandardCardinalPointToString (StandardCardinalPoint::TopInLineWithShearCenter));
+    EXPECT_STREQ ("", StandardCardinalPointToString(StandardCardinalPoint::Unset));
+    EXPECT_STREQ ("", StandardCardinalPointToString(StandardCardinalPoint::Custom));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ProfileTestCase, ParseStandardCardinalPoint_String_CorrectEnum)
+    {
+    EXPECT_EQ(StandardCardinalPoint::BottomLeft, ParseStandardCardinalPoint("BottomLeft"));
+    EXPECT_EQ(StandardCardinalPoint::BottomCenter, ParseStandardCardinalPoint("BottomCenter"));
+    EXPECT_EQ(StandardCardinalPoint::BottomRight, ParseStandardCardinalPoint("BottomRight"));
+    EXPECT_EQ(StandardCardinalPoint::MidDepthLeft, ParseStandardCardinalPoint("MidDepthLeft"));
+    EXPECT_EQ(StandardCardinalPoint::MidDepthCenter, ParseStandardCardinalPoint("MidDepthCenter"));
+    EXPECT_EQ(StandardCardinalPoint::MidDepthRight, ParseStandardCardinalPoint("MidDepthRight"));
+    EXPECT_EQ(StandardCardinalPoint::TopLeft, ParseStandardCardinalPoint("TopLeft"));
+    EXPECT_EQ(StandardCardinalPoint::TopCenter, ParseStandardCardinalPoint("TopCenter"));
+    EXPECT_EQ(StandardCardinalPoint::TopRight, ParseStandardCardinalPoint("TopRight"));
+    EXPECT_EQ(StandardCardinalPoint::GeometricCentroid, ParseStandardCardinalPoint("GeometricCentroid"));
+    EXPECT_EQ(StandardCardinalPoint::BottomInLineWithGeometricCentroid, ParseStandardCardinalPoint("BottomInLineWithGeometricCentroid"));
+    EXPECT_EQ(StandardCardinalPoint::LeftInLineWithGeometricCentroid, ParseStandardCardinalPoint("LeftInLineWithGeometricCentroid"));
+    EXPECT_EQ(StandardCardinalPoint::RightInLineWithGeometricCentroid, ParseStandardCardinalPoint("RightInLineWithGeometricCentroid"));
+    EXPECT_EQ(StandardCardinalPoint::TopInLineWithGeometricCentroid, ParseStandardCardinalPoint("TopInLineWithGeometricCentroid"));
+    EXPECT_EQ(StandardCardinalPoint::ShearCenter, ParseStandardCardinalPoint("ShearCenter"));
+    EXPECT_EQ(StandardCardinalPoint::BottomInLineWithShearCenter, ParseStandardCardinalPoint("BottomInLineWithShearCenter"));
+    EXPECT_EQ(StandardCardinalPoint::LeftInLineWithShearCenter, ParseStandardCardinalPoint("LeftInLineWithShearCenter"));
+    EXPECT_EQ(StandardCardinalPoint::RightInLineWithShearCenter, ParseStandardCardinalPoint("RightInLineWithShearCenter"));
+    EXPECT_EQ(StandardCardinalPoint::TopInLineWithShearCenter, ParseStandardCardinalPoint("TopInLineWithShearCenter"));
+    EXPECT_EQ(StandardCardinalPoint::Unset, ParseStandardCardinalPoint("Custom")) << "'Custom' should be parsed to Unset, since it is not a standard cardinal point";
+    EXPECT_EQ(StandardCardinalPoint::Unset, ParseStandardCardinalPoint("Unset"));
+    EXPECT_EQ(StandardCardinalPoint::Unset, ParseStandardCardinalPoint(""));
+    EXPECT_EQ(StandardCardinalPoint::Unset, ParseStandardCardinalPoint("NonStandardName")) << "'NonStandardName' is not a Standard Cardinal Point.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ProfileTestCase, ParseStandardCardinalPoint_Null_Unset)
+    {
+    EXPECT_EQ(StandardCardinalPoint::Unset, ParseStandardCardinalPoint(nullptr));
     }
 
 /*---------------------------------------------------------------------------------**//**

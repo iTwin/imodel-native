@@ -128,6 +128,7 @@ always:
 # ---------------------------------------------------------------------------------------------------
 always:
     ~linkfile "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies/$(progNameExe)=$(o)$(progNameExe)"
+    ~linkmultifiles "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(o)/*.pdb"
 %if !defined (CREATE_STATIC_LIBRARIES)
     ~linkmultifiles "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(collectionProduct)Assemblies/*$(shlibext)"
     ~linkmultifiles "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(BuildContext)SubParts/Assemblies/*$(shlibext)"

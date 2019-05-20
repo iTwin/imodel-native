@@ -5,13 +5,16 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-//__PUBLISH_SECTION_START__
-
-#include <DgnPlatform/DgnPlatformApi.h>
 #include <BuildingSpatial/Domain/BuildingSpatialMacros.h>
-#include <SpatialComposition/Elements/SpatialCompositionElementsApi.h>
-#include "Building.h"
-#include "ElevationStory.h"
-#include "RegularStory.h"
-#include "Space.h"
 #include "Story.h"
+
+BEGIN_BUILDINGSPATIAL_NAMESPACE
+
+struct ElevationStory : Story
+    {
+    typedef Story T_Super;
+    protected:
+        explicit ElevationStory(CreateParams const& params) : T_Super(params) {}
+    };
+
+END_BUILDINGSPATIAL_NAMESPACE
