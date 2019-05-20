@@ -1531,7 +1531,7 @@ void SheetCompositionTests::CheckExtractedDrawingGraphics(
          }
 
 #ifdef WIP_DRAWING_CONVERTER // Can't explain results. Seem like converter should create two DrawingGraphics, each in a different Category:
-                             // one shape in Category "ClipShape" and all the rest in Category "Uncategorized". 
+                             // one shape in Category "ClipShape" and all the rest in Category "Default". 
                              // Instead, it creates only one DrawingGraphic, puts it in "ClipShape" ... and the DrawingGraphic is not displayed!
     // Change the level of a 3-D element and then update
    if (true)
