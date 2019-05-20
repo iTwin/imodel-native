@@ -318,10 +318,10 @@ void MultiBridgeTests::DoMergeDefinitions(bool mergeDefinitions)
     EXPECT_EQ(false,             isCodeValueInList(m2Categories, "ReferenceLevel"));
     EXPECT_EQ(!mergeDefinitions, isCodeValueInList(r2Categories, "ReferenceLevel"));
     EXPECT_EQ(false,             isCodeValueInList(m1Categories, "ReferenceLevel"));
-    EXPECT_TRUE (isCodeValueInList(m1Categories, "Default")) << "Each bridge creates its own private Uncategorized Category";
-    EXPECT_TRUE (isCodeValueInList(r1Categories, "Default")) << "Each bridge creates its own private Uncategorized Category";
-    EXPECT_TRUE (isCodeValueInList(m2Categories, "Default")) << "Each bridge creates its own private Uncategorized Category";
-    EXPECT_TRUE (isCodeValueInList(r2Categories, "Default")) << "Each bridge creates its own private Uncategorized Category";
+    EXPECT_TRUE (isCodeValueInList(m1Categories, "Default")) << "Each bridge creates its own private Default Category";
+    EXPECT_TRUE (isCodeValueInList(r1Categories, "Default")) << "Each bridge creates its own private Default Category";
+    EXPECT_TRUE (isCodeValueInList(m2Categories, "Default")) << "Each bridge creates its own private Default Category";
+    EXPECT_TRUE (isCodeValueInList(r2Categories, "Default")) << "Each bridge creates its own private Default Category";
     }
 
 /*---------------------------------------------------------------------------------**//**
