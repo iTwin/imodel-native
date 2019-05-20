@@ -317,7 +317,7 @@ AnnotationTextStylePtr AnnotationTextStyle::CreateEffectiveStyle(
     BeAssert(&docStyle.GetDgnDb() == &parStyle.GetDgnDb());
     BeAssert(&docStyle.GetDgnDb() == &runStyle.GetDgnDb());
 
-    AnnotationTextStylePtr effectiveStyle = AnnotationTextStyle::Create(docStyle.GetDgnDb());
+    AnnotationTextStylePtr effectiveStyle = AnnotationTextStyle::Create(docStyle.GetDgnDb().GetDictionaryModel());
 
     // Document
     effectiveStyle->SetHeight(docOverrides.HasProperty(AnnotationTextStyleProperty::Height) ? docOverrides.GetRealProperty(AnnotationTextStyleProperty::Height) : docStyle.GetHeight());
