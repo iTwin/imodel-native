@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
+    >
+
+    <Part Name="QuantityTakeoffsAspects">
+        <SubPart PartName="QuantityTakeoffsAspectsDomain"/>
+        <SubPart PartName="QuantityTakeoffsAspectsElements"/>
+    </Part>
+
+    <Part Name="QuantityTakeoffsAspectsSchema">
+        <SubPart PartName="QuantityTakeoffsAspects" Repository="BisSchemas" PartFile="BisSchemas" />
+    </Part>
+
+    <Part Name="QuantityTakeoffsAspectsApi" BentleyBuildMakeFile="QuantityTakeoffsAspectsApi.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="QuantityTakeoffsAspects"/>
+        </Bindings>
+    </Part>
+    
+    <Part Name="QuantityTakeoffsAspectsElements" BentleyBuildMakeFile="Elements/QuantityTakeoffsAspectsElements.mke" ApiNumber="B02">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="QuantityTakeoffsAspectsApi"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)QuantityTakeoffsAspectsElements$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)QuantityTakeoffsAspectsElements$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="QuantityTakeoffsAspectsDomain" BentleyBuildMakeFile="Domain/QuantityTakeoffsAspectsDomain.mke" ApiNumber="B02">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="QuantityTakeoffsAspectsSchema" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)QuantityTakeoffsAspectsDomain$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)QuantityTakeoffsAspectsDomain$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+</BuildContext>

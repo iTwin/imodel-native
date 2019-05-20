@@ -1,0 +1,12 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+$(BuildContext)PublicAPI/QuantityTakeoffsAspects/Domain : $(_MakeFilePath)Domain/PublicApi
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/QuantityTakeoffsAspects/Elements : $(_MakeFilePath)Elements/PublicApi
+    $(LinkFirstDepToFirstTargetAsDirectory)
