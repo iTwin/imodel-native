@@ -228,7 +228,7 @@ CorridorPortionsCPtr CorridorPortions::Insert(CorridorCR corridor)
         return nullptr;
 
     CreateParams createParams(corridor.GetDgnDb(), corridor.GetSubModelId(), QueryClassId(corridor.GetDgnDb()),
-        RoadRailCategory::GetCorridorPortions(corridor.GetDgnDb()));
+        RoadRailCategory::GetCorridor(corridor.GetDgnDb()));
     createParams.m_code = CreateCode(corridor);
 
     CorridorPortionsPtr newPtr(new CorridorPortions(createParams));

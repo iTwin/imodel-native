@@ -82,9 +82,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // Category names
 //-----------------------------------------------------------------------------------------
 #define BRRP_CATEGORY_Corridor                                      "Corridor"
-#define BRRP_CATEGORY_CorridorPortions                              "CorridorPortions"
 #define BRRP_CATEGORY_DesignSpeed                                   "DesignSpeed"
-#define BRRP_CATEGORY_Network                                       "Network"
 #define BRRP_CATEGORY_Railway                                       "Railway"
 #define BRRP_CATEGORY_Roadway                                       "Roadway"
 

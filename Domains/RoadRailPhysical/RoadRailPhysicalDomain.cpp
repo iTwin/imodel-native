@@ -307,7 +307,7 @@ RoadRailNetworkCPtr RoadRailNetwork::Insert(PhysicalModelR parentModel, Utf8Stri
         return nullptr;
 
     CreateParams createParams(parentModel.GetDgnDb(), parentModel.GetModelId(), QueryClassId(parentModel.GetDgnDb()),
-        RoadRailCategory::GetNetwork(parentModel.GetDgnDb()));
+        RoadRailCategory::GetCorridor(parentModel.GetDgnDb()));
     createParams.m_code = CreateCode(parentModel, networkName);
 
     RoadRailNetworkPtr newPtr(new RoadRailNetwork(createParams));
