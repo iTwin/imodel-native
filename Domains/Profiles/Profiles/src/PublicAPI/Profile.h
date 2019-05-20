@@ -87,12 +87,19 @@ enum class StandardCardinalPoint : uint32_t
     BottomInLineWithShearCenter,        //!< Most bottom point of the profiles geometry thats in-line with @ref ShearCenter
     LeftInLineWithShearCenter,          //!< Most left point of the profiles geometry thats in-line with @ref ShearCenter
     RightInLineWithShearCenter,         //!< Most right point of the profiles geometry thats in-line with @ref ShearCenter
-    TopInLineWithShearCenter            //!< Most top point of the profiles geometry thats in-line with @ref ShearCenter
+    TopInLineWithShearCenter,           //!< Most top point of the profiles geometry thats in-line with @ref ShearCenter
+
+    Unset = 1000,                       //!< Point is not set (used only outside of Profiles Domain)
+    Custom = 1001                       //!< Custom (User defined) point (used only outside of Profiles Domain)
     };
 
 //! Returns string representation of the StandardCardinalPoint enumeration.
 //! @details This function always returns a valid pointer.
 PROFILES_EXPORT extern Utf8CP StandardCardinalPointToString (StandardCardinalPoint standardCardinalPoint);
+
+//! Parse String to `StandardCardinalPoint`
+//! @return if parse succeded - a valid (not Unset or Custom) `StandarCardinalPoint` otherwise - `StandardCardinalPoint`::Unset.
+PROFILES_EXPORT extern StandardCardinalPoint ParseStandardCardinalPoint (Utf8CP cardinalPointName);
 
 //=======================================================================================
 //! A resource defining one or more 2D areas that may have voids.
