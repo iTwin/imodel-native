@@ -52,15 +52,30 @@ BentleyStatus UlasProvider::PostUsageLogs(ClientInfoPtr clientInfo, BeFileNameCR
     LogFileHelper lfh;
     logFiles = lfh.GetLogFiles(Utf8String(logPath.GetDirectoryName()));
 
+    bvector<Utf8String> failedLogs; // keep track of logfiles that fail to post
     if (!logFiles.empty())
         {
         for (auto const& logFile : logFiles)
             {
-            SendUsageLogs(clientInfo, BeFileName(logFile), ultimateId).wait();
+            try
+                {
+                SendUsageLogs(clientInfo, BeFileName(logFile), ultimateId).get(); // .get() waits and then return the value or throws the exception
+                }
+            catch (...)
+                {
+                failedLogs.push_back(Utf8String(logFile));
+                }
             }
         }
 
-    return SUCCESS;
+    if (failedLogs.empty())
+        {
+        return BentleyStatus::SUCCESS;
+        }
+
+    // TODO: log logFile names that failed?
+    LOG.errorv("UlasProvider::PostFeatureLogs ERROR: %d logs failed to post.", failedLogs.size());
+    return BentleyStatus::ERROR;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -82,7 +97,10 @@ folly::Future<folly::Unit> UlasProvider::SendUsageLogs(ClientInfoPtr clientInfo,
         [=](Response response)
         {
         if (!response.IsSuccess())
+            {
+            LOG.errorv("UlasProvider::SendUsageLogs ERROR: Unable to obtain location url. Message: %s. %s", HttpError(response).GetMessage().c_str(), HttpError(response).GetDescription().c_str());
             throw HttpError(response);
+            }
 
         Json::Value jsonBody = Json::Value::From(response.GetBody().AsString());
         auto status = jsonBody["status"].asString();
@@ -137,15 +155,30 @@ BentleyStatus UlasProvider::PostFeatureLogs(ClientInfoPtr clientInfo, BeFileName
     LogFileHelper lfh;
     logFiles = lfh.GetLogFiles(Utf8String(featureLogPath.GetDirectoryName()));
 
+    bvector<Utf8String> failedLogs; // keep track of logfiles that fail to post
     if (!logFiles.empty())
         {
         for (auto const& logFile : logFiles)
             {
-            SendFeatureLogs(clientInfo, BeFileName(logFile), ultimateId).wait();
+            try
+                {
+                SendFeatureLogs(clientInfo, BeFileName(logFile), ultimateId).get(); // .get() waits and then return the value or throws the exception
+                }
+            catch (...)
+                {
+                failedLogs.push_back(Utf8String(logFile));
+                }
             }
         }
 
-    return SUCCESS;
+    if (failedLogs.empty())
+        {
+        return BentleyStatus::SUCCESS;
+        }
+
+    // TODO: log logFile names that failed?
+    LOG.errorv("UlasProvider::PostFeatureLogs ERROR: %d logs failed to post.", failedLogs.size());
+    return BentleyStatus::ERROR;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -167,7 +200,10 @@ folly::Future<folly::Unit> UlasProvider::SendFeatureLogs(ClientInfoPtr clientInf
         [=](Response response)
         {
         if (!response.IsSuccess())
+            {
+            LOG.errorv("UlasProvider::SendUsageLogs ERROR: Unable to obtain location url. Message: %s. %s", HttpError(response).GetMessage().c_str(), HttpError(response).GetDescription().c_str());
             throw HttpError(response);
+            }
 
         Json::Value jsonBody = Json::Value::From(response.GetBody().AsString());
         auto status = jsonBody["status"].asString();
@@ -308,4 +344,3 @@ folly::Future<Json::Value> UlasProvider::GetAccessKeyInfo(ClientInfoPtr clientIn
         return Json::Value::From(response.GetBody().AsString());
         });
     }
-
