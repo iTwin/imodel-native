@@ -98,7 +98,7 @@ void ViewAttachmentTest::AddTextToModel(TextAnnotation2dCPtr& annoElemOut, DgnMo
     auto& db = GetDgnDb();
     if (!m_textStyleId.IsValid())
         {
-        AnnotationTextStyle style(db);
+        AnnotationTextStyle style(db.GetDictionaryModel());
         style.SetName("MyTextStyle");
         style.SetFontId(db.Fonts().AcquireId(DgnFontManager::GetLastResortTrueTypeFont()));
         style.SetHeight(1.0);

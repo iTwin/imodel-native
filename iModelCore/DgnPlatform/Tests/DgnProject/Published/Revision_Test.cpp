@@ -72,7 +72,7 @@ protected:
 
     AnnotationTextStyleCPtr CreateTextStyle(Utf8CP name)
         {
-        AnnotationTextStyle style(*m_db);
+        AnnotationTextStyle style(m_db->GetDictionaryModel());
         style.SetName(name);
         auto pStyle = style.Insert();
         EXPECT_TRUE(pStyle.IsValid());

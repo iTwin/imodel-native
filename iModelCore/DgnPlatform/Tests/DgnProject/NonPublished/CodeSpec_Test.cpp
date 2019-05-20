@@ -112,14 +112,14 @@ TEST_F(DgnCodeSpecsTest, IterateCodes)
 
     EXPECT_TRUE(CodeExists(db.Elements().GetElement(db.Elements().GetDictionaryPartitionId())->GetCode()));
 
-    AnnotationTextStyle style(db);
+    AnnotationTextStyle style(db.GetDictionaryModel());
     style.SetName("MyStyle");
     DgnCode originalStyleCode = style.GetCode();
     EXPECT_TRUE(style.Insert().IsValid());
 
     EXPECT_TRUE(CodeExists(originalStyleCode));
 
-    AnnotationTextStylePtr pStyle = AnnotationTextStyle::Get(db, "MyStyle")->CreateCopy();
+    AnnotationTextStylePtr pStyle = AnnotationTextStyle::Get(db.GetDictionaryModel(), "MyStyle")->CreateCopy();
     pStyle->SetName("RenamedStyle");
     EXPECT_TRUE(pStyle->Update().IsValid());
 
