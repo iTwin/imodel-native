@@ -40,3 +40,7 @@ nameToDefine = __DGNDBSYNC_BUILD__
     %endif
     cDefs + -DRealDwgVersion=$(RealDwgVersion)
 %endif
+
+%if exists(${BuildContext}/SubParts/VersionedDgnV8Libs/TerrainModelElementHandler.lib)
+cDefs + -DUSE_TERRAIN_ELEMENT_HANDLER=1
+%endif

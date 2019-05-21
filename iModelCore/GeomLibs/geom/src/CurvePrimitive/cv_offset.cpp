@@ -23,6 +23,7 @@ CurveOffsetOptions::CurveOffsetOptions (double offsetDistance)
     m_offsetDistance = offsetDistance;
     SetTolerance (s_defaultRelTol * fabs (offsetDistance));
     SetBCurvePointsPerKnot (2);
+    m_outputSelector = 0;
     for (int i = 0; i < _countof (m_unusedDouble); i++)
         m_unusedDouble[i] = 0.0;
     for (int i = 0; i < _countof (m_unusedInt); i++)
@@ -54,6 +55,7 @@ void CurveOffsetOptions::SetChamferAngle (double radians)
 void CurveOffsetOptions::SetForceClosure (bool value)       {m_forceClosure = value;}
 void CurveOffsetOptions::SetBCurvePointsPerKnot (int  value)       {m_bCurvePointsPerKnot = value;}
 void CurveOffsetOptions::SetBCurveMethod (int  value)       {m_bCurveMethod = value;}
+void CurveOffsetOptions::SetOutputSelector(int  value) { m_outputSelector = value; }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      12/2012
@@ -65,7 +67,7 @@ double CurveOffsetOptions::GetChamferAngle () const    {return m_chamferAngle;}
  bool  CurveOffsetOptions::GetForceClosure () const    {return m_forceClosure;}
 int    CurveOffsetOptions::GetBCurvePointsPerKnot () const {return m_bCurvePointsPerKnot;}
 int    CurveOffsetOptions::GetBCurveMethod () const {return m_bCurveMethod;}
-
+int    CurveOffsetOptions::GetOutputSelector() const { return m_outputSelector; }
 
 
 struct OffsetItem
@@ -476,8 +478,14 @@ CurveVectorPtr CurveVector::CloneOffsetCurvesXY (CurveOffsetOptionsCR options) c
 
 static void TrimSegment (DSegment3dCR segment, DSegment1dR interval, DRay3dCR ray, bool headTrim)
     {
-    double dot0 = segment.point[0].DotDifference (ray.origin, ray.direction);
-    double dot1 = segment.point[1].DotDifference(ray.origin, ray.direction);
+    auto unitA = DVec3d::FromStartEndNormalize (segment.point[0], segment.point[1]);
+    auto unitB = ray.direction; unitB.Normalize();
+    if (unitA.DotProduct(unitB) < -0.95)
+        return;
+    auto bisector = 0.5 * (unitA + unitB);
+    bisector.Normalize ();
+    double dot0 = segment.point[0].DotDifference (ray.origin, bisector);
+    double dot1 = segment.point[1].DotDifference(ray.origin, bisector);
     if (headTrim && dot0 > 1.0 && dot1 > 1.0)
         return;
     if (!headTrim && dot0 < 0.0 && dot1 < 0.0)
@@ -896,6 +904,8 @@ CurveVectorPtr CurveVector::AreaOffset (CurveOffsetOptionsCR options) const
     {
     CurveVectorPtr offsetCollection = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
     CollectOffsetAreas (*this, options, *offsetCollection);
+    if (options.GetOutputSelector () == 1)
+        return offsetCollection;
     CurveVectorPtr result;
     if (options.GetOffsetDistance () > 0.0)
         result = AreaUnion (*this, *offsetCollection);

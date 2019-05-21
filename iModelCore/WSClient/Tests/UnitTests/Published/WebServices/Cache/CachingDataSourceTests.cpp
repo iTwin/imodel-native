@@ -2452,6 +2452,123 @@ TEST_F(CachingDataSourceTests, GetObjects_QueryIncludesPartialInstancesThatAreIn
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CachingDataSourceTests, GetObjects_CachedDataAndQueryResponseNotCachedBackgroundSync_ErrorDoesNotSyncInBackground)
+    {
+    auto ds = GetTestDataSourceV2();
+
+    CachedResponseKey key = CreateTestResponseKey(ds);
+    WSQuery query("TestSchema", "TestClass");
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObjects(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync))->GetResult();
+
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::Status::DataNotCached, result.GetError().GetStatus());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, backgroundSyncResult.GetValue());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CachingDataSourceTests, GetObjects_CachedDataAndQueryResponseCachedBackgroundSync_BackgroundSyncUpdatesInstance)
+    {
+    auto ds = GetTestDataSourceV2();
+
+    CachedResponseKey key = CreateTestResponseKey(ds);
+    WSQuery query("TestSchema", "TestClass");
+
+    StubInstances instances;
+    instances.Add({ "TestSchema.TestClass", "Foo" });
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .Times(1)
+        .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
+
+    auto backgroundSync = SyncNotifier::Create();
+
+    auto result = ds->GetObjects(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync))->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::Synced, backgroundSyncResult.GetValue());
+
+    auto cachedInstanceKey = ds->StartCacheTransaction().GetCache().FindInstance({ "TestSchema.TestClass", "Foo" });
+    EXPECT_TRUE(cachedInstanceKey.IsValid());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CachingDataSourceTests, GetObjects_CachedDataAndQueryResponseCachedBackgroundSyncNotChanged_BackgroundSyncReturnsNotModified)
+    {
+    auto ds = GetTestDataSourceV2();
+
+    CachedResponseKey key = CreateTestResponseKey(ds);
+    WSQuery query("TestSchema", "TestClass");
+
+    StubInstances instances;
+    instances.Add({ "TestSchema.TestClass", "Foo" });
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .Times(1)
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(StubWSObjectsResponseNotModified()))));
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObjects(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync))->GetResult();
+
+    ASSERT_TRUE(result.IsSuccess());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_TRUE(backgroundSyncResult.IsSuccess());
+    EXPECT_EQ(ICachingDataSource::SyncStatus::NotModified, backgroundSyncResult.GetValue());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CachingDataSourceTests, GetObjects_CachedDataAndQueryResponseCachedBackgroundSyncError_BackgroundSyncReturnsError)
+    {
+    auto ds = GetTestDataSourceV2();
+
+    CachedResponseKey key = CreateTestResponseKey(ds);
+    WSQuery query("TestSchema", "TestClass");
+
+    StubInstances instances;
+    instances.Add({ "TestSchema.TestClass", "Foo" });
+
+    auto txn = ds->StartCacheTransaction();
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .Times(1)
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
+
+    auto backgroundSync = SyncNotifier::Create();
+    auto result = ds->GetObjects(key, query, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync))->GetResult();
+    
+    ASSERT_TRUE(result.IsSuccess());
+
+    auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
+    ASSERT_FALSE(backgroundSyncResult.IsSuccess());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedDataAndQueryResponseNotCached_ReturnsError)
     {
     auto ds = GetTestDataSourceV2();

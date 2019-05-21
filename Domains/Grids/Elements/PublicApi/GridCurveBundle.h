@@ -4,6 +4,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <DgnPlatform/DgnDb.h>
+#include <BuildingShared/BuildingSharedMacros.h>
+#include <BuildingShared/DgnUtils/BuildingUtils.h>
+#include "ForwardDeclarations.h"
 
 BEGIN_GRIDS_NAMESPACE
 

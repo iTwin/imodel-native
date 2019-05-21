@@ -15,6 +15,7 @@
 #define BUILDINGSPATIAL_SCHEMA_PATH                          L"ECSchemas/Domain/BuildingSpatial.ecschema.xml"
 
 #define BUILDINGSPATIAL_CLASS_Building                       "Building"
+#define BUILDINGSPATIAL_CLASS_ElevationStory                 "ElevationStory"
 #define BUILDINGSPATIAL_CLASS_RegularStory                   "RegularStory"
 #define BUILDINGSPATIAL_CLASS_Space                          "Space"
 #define BUILDINGSPATIAL_CLASS_Story                          "Story"

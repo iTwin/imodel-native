@@ -117,7 +117,7 @@ GridCurveBundleCPtr GridCurvesTest::InsertOrthogonalGridCurves() const
     GridCurvesSetPtr curvesPortion = GridCurvesSet::Create (*m_model);
     curvesPortion->Insert();
 
-    DgnElementId firstElevationSurfaceId = elevationGrid->GetSurfacesModel()->MakeIterator().BuildIdList<DgnElementId>().front();
+    DgnElementId firstElevationSurfaceId = elevationGrid->MakeIterator().BuildIdList<DgnElementId>().front();
     GridPlanarSurfaceCPtr floorGridSurface = db.Elements().Get<GridPlanarSurface> (firstElevationSurfaceId);
     orthogonalGrid->IntersectGridSurface (floorGridSurface.get(), *curvesPortion);
 

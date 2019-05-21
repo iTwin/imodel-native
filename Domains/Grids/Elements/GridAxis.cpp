@@ -4,8 +4,14 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <Grids/Elements/GridElementsAPI.h>
-#include <DgnPlatform/DgnDb.h>
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Grids/Elements/GridAxis.cpp $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include "PublicApi/GridAxis.h"
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
@@ -28,8 +34,17 @@ DEFINE_GRIDS_ELEMENT_BASE_METHODS(GeneralGridAxis)
 +---------------+---------------+---------------+---------------+---------------+------*/
 GridAxis::GridAxis
 (
-CreateParams const& params
+    CreateParams const& params
 ) : T_Super(params) 
+    {
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+GridAxis::CreateParams::CreateParams(GridCR grid, Dgn::DgnClassId classId) :
+    T_Super::CreateParams(grid.GetDgnDb(), grid.GetSubModelId(), classId), m_gridId(grid.GetElementId())
     {
 
     }
@@ -55,7 +70,14 @@ Dgn::DgnDbStatus      GridAxis::_Validate
 (
 ) const
     {
-    if (!GetGridId().IsValid()) //grid must be set
+    DgnElementId id = GetGridId();
+
+    if (!id.IsValid()) //grid must be set
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+    GridCPtr grid = Grid::Get(GetDgnDb(), id);
+
+    if (grid.IsNull())
         return Dgn::DgnDbStatus::ValidationFailed;
 
     return Dgn::DgnDbStatus::Success;
@@ -92,6 +114,22 @@ Dgn::DgnElementCR original
     return status;
     }
 
+template <typename A, typename G>
+RefCountedPtr<A> GridAxis::CreateAndInsert(const G& grid)
+    {
+    grid.GetSurfacesModel(); // Create submodel if not created already
+
+    RefCountedPtr<A> thisAxis = A::Create(grid);
+
+    if (thisAxis.IsNull())
+        return nullptr;
+
+    if (!thisAxis->Insert().IsValid())
+        return nullptr;
+
+    return thisAxis;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -108,16 +146,10 @@ CreateParams const& params
 +---------------+---------------+---------------+---------------+---------------+------*/
 OrthogonalAxisXPtr                 OrthogonalAxisX::CreateAndInsert
 (
-Dgn::DgnModelCR model,
 OrthogonalGridCR grid
 )
     {
-    OrthogonalAxisXPtr thisAxis = OrthogonalAxisX::Create (model, grid);
-
-    if (!thisAxis->Insert().IsValid ())
-        return nullptr;
-
-    return thisAxis;
+    return T_Super::CreateAndInsert<OrthogonalAxisX, OrthogonalGrid>(grid);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -125,15 +157,13 @@ OrthogonalGridCR grid
 +---------------+---------------+---------------+---------------+---------------+------*/
 OrthogonalAxisXPtr                 OrthogonalAxisX::Create
 (
-Dgn::DgnModelCR model,
 OrthogonalGridCR grid
 )
     {
-    OrthogonalAxisXPtr thisAxis = new OrthogonalAxisX (CreateParams(model, grid));
+    if(grid.GetSubModel().IsNull())
+        return nullptr;
 
-    thisAxis->SetGridId (grid.GetElementId ());
-
-    return thisAxis;
+    return new OrthogonalAxisX (CreateParams(grid));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -152,16 +182,10 @@ CreateParams const& params
 +---------------+---------------+---------------+---------------+---------------+------*/
 OrthogonalAxisYPtr                 OrthogonalAxisY::CreateAndInsert
 (
-Dgn::DgnModelCR model,
 OrthogonalGridCR grid
 )
     {
-    OrthogonalAxisYPtr thisAxis = OrthogonalAxisY::Create (model, grid);
-
-    if (!thisAxis->Insert().IsValid())
-        return nullptr;
-
-    return thisAxis;
+    return T_Super::CreateAndInsert<OrthogonalAxisY, OrthogonalGrid>(grid);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -169,15 +193,13 @@ OrthogonalGridCR grid
 +---------------+---------------+---------------+---------------+---------------+------*/
 OrthogonalAxisYPtr                 OrthogonalAxisY::Create
 (
-Dgn::DgnModelCR model,
 OrthogonalGridCR grid
 )
     {
-    OrthogonalAxisYPtr thisAxis = new OrthogonalAxisY (CreateParams(model, grid));
+    if (grid.GetSubModel().IsNull())
+        return nullptr;
 
-    thisAxis->SetGridId (grid.GetElementId ());
-
-    return thisAxis;
+    return new OrthogonalAxisY (CreateParams(grid));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -196,16 +218,10 @@ CreateParams const& params
 +---------------+---------------+---------------+---------------+---------------+------*/
 CircularAxisPtr                 CircularAxis::CreateAndInsert
 (
-Dgn::DgnModelCR model,
 RadialGridCR grid
 )
     {
-    CircularAxisPtr thisAxis = CircularAxis::Create (model, grid);
-
-    if (!thisAxis->Insert().IsValid())
-        return nullptr;
-
-    return thisAxis;
+    return T_Super::CreateAndInsert<CircularAxis, RadialGrid>(grid);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -213,15 +229,13 @@ RadialGridCR grid
 +---------------+---------------+---------------+---------------+---------------+------*/
 CircularAxisPtr                 CircularAxis::Create
 (
-Dgn::DgnModelCR model,
 RadialGridCR grid
 )
     {
-    CircularAxisPtr thisAxis = new CircularAxis (CreateParams(model, grid));
+    if (grid.GetSubModel().IsNull())
+        return nullptr;
 
-    thisAxis->SetGridId (grid.GetElementId ());
-
-    return thisAxis;
+    return new CircularAxis (CreateParams(grid));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -240,16 +254,10 @@ CreateParams const& params
 +---------------+---------------+---------------+---------------+---------------+------*/
 RadialAxisPtr                 RadialAxis::CreateAndInsert
 (
-Dgn::DgnModelCR model,
 RadialGridCR grid
 )
     {
-    RadialAxisPtr thisAxis = RadialAxis::Create (model, grid);
-
-    if (!thisAxis->Insert().IsValid())
-        return nullptr;
-
-    return thisAxis;
+    return T_Super::CreateAndInsert<RadialAxis, RadialGrid>(grid);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -257,15 +265,13 @@ RadialGridCR grid
 +---------------+---------------+---------------+---------------+---------------+------*/
 RadialAxisPtr                 RadialAxis::Create
 (
-Dgn::DgnModelCR model,
 RadialGridCR grid
 )
     {
-    RadialAxisPtr thisAxis = new RadialAxis (CreateParams(model, grid));
+    if (grid.GetSubModel().IsNull())
+        return nullptr;
 
-    thisAxis->SetGridId (grid.GetElementId ());
-
-    return thisAxis;
+    return new RadialAxis (CreateParams(grid));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -284,16 +290,10 @@ CreateParams const& params
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeneralGridAxisPtr                 GeneralGridAxis::CreateAndInsert
 (
-Dgn::DgnModelCR model,
 GridCR grid
 )
     {
-    GeneralGridAxisPtr thisAxis = GeneralGridAxis::Create (model, grid);
-
-    if (!thisAxis->Insert().IsValid())
-        return nullptr;
-
-    return thisAxis;
+    return T_Super::CreateAndInsert<GeneralGridAxis, Grid>(grid);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -301,14 +301,12 @@ GridCR grid
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeneralGridAxisPtr                 GeneralGridAxis::Create
 (
-Dgn::DgnModelCR model,
 GridCR grid
 )
     {
-    GeneralGridAxisPtr thisAxis = new GeneralGridAxis (CreateParams(model, grid));
+    if (grid.GetSubModel().IsNull())
+        return nullptr;
 
-    thisAxis->SetGridId (grid.GetElementId ());
-
-    return thisAxis;
+    return new GeneralGridAxis(CreateParams(grid));
     }
 END_GRIDS_NAMESPACE

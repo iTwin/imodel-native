@@ -935,7 +935,7 @@ BentleyStatus   DwgImporter::_ImportMaterialSection ()
             }
 
         // if found the material in db, update it (i.e. share with other apps)
-        auto dgnMaterialId = RenderMaterial::QueryMaterialId (*model, materialName);
+        auto dgnMaterialId = RenderMaterial::QueryMaterialId (*model, paletteName, materialName);
         if (dgnMaterialId.IsValid())
             {
             auto element = this->GetDgnDb().Elements().GetForEdit<RenderMaterial>(dgnMaterialId);

@@ -17,9 +17,9 @@ namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
-void GeneratedInserts::InsertOmniClass22_2010Definitions(Dgn::DgnDbR db) const
+void GeneratedInserts::InsertOmniClass22_2010Definitions(Dgn::DgnDbR db, Dgn::DgnModelCR model) const
     {
-    ClassificationSystemCPtr omniClassSystem = TryAndGetSystem(db, "OmniClass", "2011-04-11");
+    ClassificationSystemCPtr omniClassSystem = TryAndGetSystem(db, model, "OmniClass", "2011-04-11");
     ClassificationTableCPtr omniClassTable = TryAndGetTable(*omniClassSystem , "Table 22 - Work Results");
 
     ClassificationPtr subsection0OmniClass;

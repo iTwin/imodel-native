@@ -1,22 +1,20 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Elements/PublicApi/RegularStory.h $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <BuildingSpatial/Domain/BuildingSpatialMacros.h>
-#include "Story.h"
+#include "ElevationStory.h"
 
 BUILDINGSPATIAL_REFCOUNTED_PTR_AND_TYPEDEFS(RegularStory)
 
 BEGIN_BUILDINGSPATIAL_NAMESPACE
 
-struct RegularStory : Story
+struct RegularStory : ElevationStory
     {
-    DGNELEMENT_DECLARE_MEMBERS(BUILDINGSPATIAL_CLASS_RegularStory, Story);
+    DGNELEMENT_DECLARE_MEMBERS(BUILDINGSPATIAL_CLASS_RegularStory, ElevationStory);
 
     protected:
         friend struct RegularStoryHandler;

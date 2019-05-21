@@ -4,6 +4,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <DgnPlatform/DgnDb.h>
+#include <Grids/Domain/GridsMacros.h>
+#include "ForwardDeclarations.h"
+#include "GridPortion.h"
+#include "OrthogonalGridPortion.h"
+#include "RadialGridPortion.h"
 
 BEGIN_GRIDS_NAMESPACE
 
@@ -25,6 +31,12 @@ struct EXPORT_VTABLE_ATTRIBUTE GridAxis : Dgn::GroupInformationElement
             T_Super::CreateParams(model.GetDgnDb(), model.GetModelId(), classId), m_gridId(gridId)
             {}
 
+
+        //! Creates create parameters for grid axis
+        //! @param[in] grid  grid this axis belongs to
+        //! @param[in] classId  class id of specifi axis type
+        CreateParams(GridCR grid, Dgn::DgnClassId classId);
+
         //! Constructor from base params. Chiefly for internal use.
         //! @param[in]      params   The base element parameters
         //! @return 
@@ -37,7 +49,6 @@ protected:
     explicit GRIDELEMENTS_EXPORT GridAxis (CreateParams const& params);
     friend struct GridAxisHandler;
 
-    BE_PROP_NAME(Grid)
     BE_PROP_NAME(Name)
 
     virtual Dgn::DgnDbStatus _Validate () const;
@@ -62,19 +73,20 @@ protected:
     virtual bool _IsRadialAxis() const { return false; }
     virtual bool _IsGeneralGridAxis() const { return false; }
 
+    //! Creates and inserts specified axis
+    //! @param[in] grid  grid that this axis belongs to
+    //! @note A - Axis Type, G - Grid type
+    template <typename A, typename G>
+    static RefCountedPtr<A> CreateAndInsert(const G& grid);
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridAxis, GRIDELEMENTS_EXPORT)
 
     //---------------------------------------------------------------------------------------
     // Getters and setters
     //---------------------------------------------------------------------------------------
-    //! Sets gridAxis grid Id value
-    //! @param gridId a value to set
-    void SetGridId (Dgn::DgnElementId gridId) { SetPropertyValue (prop_Grid (), gridId, GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridHasAxes)); };
-
     //! Gets grid's that contains this axis id
     //! @return element id of the grid
-    Dgn::DgnElementId GetGridId () const { return GetPropertyValueId<Dgn::DgnElementId> (prop_Grid ()); };
+    Dgn::DgnElementId GetGridId () const { return GetModel()->GetModeledElementId(); };
 
     //! Gets name of this gridAxis
     //! @return name of this gridAxis
@@ -124,10 +136,10 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisX : GridAxis
         {
         DEFINE_T_SUPER(OrthogonalAxisX::T_Super::CreateParams);
 
-        //! Creates create parameters for orthogonal grid
-        //! @param[in] model              model for the PlanCartesianGridSurface
-        CreateParams(Dgn::DgnModelCR model, OrthogonalGridCR grid) :
-            T_Super::CreateParams(model, QueryClassId(model.GetDgnDb()), grid.GetElementId())
+        //! Creates create parameters for grid axis
+        //! @param[in] grid  grid this axis belongs to
+        CreateParams(OrthogonalGridCR grid) :
+            T_Super::CreateParams(grid, QueryClassId(grid.GetDgnDb()))
             {
             }
 
@@ -158,13 +170,13 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisX : GridAxis
         //! @param[in]  model   model for the axis
         //! @param[in]  grid    grid this axis belongs to
         //! @return             sketch grid
-        GRIDELEMENTS_EXPORT static OrthogonalAxisXPtr Create(Dgn::DgnModelCR model, OrthogonalGridCR grid);
+        GRIDELEMENTS_EXPORT static OrthogonalAxisXPtr Create(OrthogonalGridCR grid);
 
         //! Creates and inserts an empty grid axis
         //! @param[in]  model   model for the axis
         //! @param[in]  grid    grid this axis belongs to
         //! @return             sketch grid
-        GRIDELEMENTS_EXPORT static OrthogonalAxisXPtr CreateAndInsert(Dgn::DgnModelCR model, OrthogonalGridCR grid);
+        GRIDELEMENTS_EXPORT static OrthogonalAxisXPtr CreateAndInsert(OrthogonalGridCR grid);
     };
 
 //=======================================================================================
@@ -178,10 +190,10 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisY : GridAxis
         {
         DEFINE_T_SUPER(OrthogonalAxisY::T_Super::CreateParams);
 
-        //! Creates create parameters for orthogonal grid
-        //! @param[in] model              model for the PlanCartesianGridSurface
-        CreateParams(Dgn::DgnModelCR model, OrthogonalGridCR grid) :
-            T_Super::CreateParams(model, QueryClassId(model.GetDgnDb()), grid.GetElementId())
+        //! Creates create parameters for grid axis
+        //! @param[in] grid  grid this axis belongs to
+        CreateParams(OrthogonalGridCR grid) :
+            T_Super::CreateParams(grid, QueryClassId(grid.GetDgnDb()))
             {}
 
         //! Constructor from base params. Chiefly for internal use.
@@ -210,13 +222,13 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisY : GridAxis
         //! @param[in]  model   model for the axis
         //! @param[in]  grid    grid this axis belongs to
         //! @return             sketch grid
-        GRIDELEMENTS_EXPORT static OrthogonalAxisYPtr Create(Dgn::DgnModelCR model, OrthogonalGridCR grid);
+        GRIDELEMENTS_EXPORT static OrthogonalAxisYPtr Create(OrthogonalGridCR grid);
 
         //! Creates and inserts an empty grid axis
         //! @param[in]  model   model for the axis
         //! @param[in]  grid    grid this axis belongs to
         //! @return             sketch grid
-        GRIDELEMENTS_EXPORT static OrthogonalAxisYPtr CreateAndInsert(Dgn::DgnModelCR model, OrthogonalGridCR grid);
+        GRIDELEMENTS_EXPORT static OrthogonalAxisYPtr CreateAndInsert(OrthogonalGridCR grid);
     };
 
 //=======================================================================================
@@ -230,10 +242,10 @@ struct EXPORT_VTABLE_ATTRIBUTE CircularAxis : GridAxis
         {
         DEFINE_T_SUPER(CircularAxis::T_Super::CreateParams);
 
-        //! Creates create parameters for orthogonal grid
-        //! @param[in] model              model for the PlanCartesianGridSurface
-        CreateParams(Dgn::DgnModelCR model, RadialGridCR grid) :
-            T_Super::CreateParams(model, QueryClassId(model.GetDgnDb()), grid.GetElementId())
+        //! Creates create parameters for grid axis
+        //! @param[in] grid  grid this axis belongs to
+        CreateParams(RadialGridCR grid) :
+            T_Super::CreateParams(grid, QueryClassId(grid.GetDgnDb()))
             {}
 
         //! Constructor from base params. Chiefly for internal use.
@@ -247,13 +259,13 @@ struct EXPORT_VTABLE_ATTRIBUTE CircularAxis : GridAxis
     private:
 
     protected:
-        DECLARE_GRIDS_ELEMENT_BASE_METHODS(CircularAxis, GRIDELEMENTS_EXPORT)
         friend struct CircularAxisHandler;
 
         explicit GRIDELEMENTS_EXPORT CircularAxis(CreateParams const& params);
 
         virtual bool _IsCircularAxis() const { return true; }
     public:
+        DECLARE_GRIDS_ELEMENT_BASE_METHODS(CircularAxis, GRIDELEMENTS_EXPORT)
 
         //---------------------------------------------------------------------------------------
         // Creation
@@ -262,13 +274,13 @@ struct EXPORT_VTABLE_ATTRIBUTE CircularAxis : GridAxis
         //! @param[in]  model   model for the axis
         //! @param[in]  grid    grid this axis belongs to
         //! @return             sketch grid
-        GRIDELEMENTS_EXPORT static CircularAxisPtr Create(Dgn::DgnModelCR model, RadialGridCR grid);
+        GRIDELEMENTS_EXPORT static CircularAxisPtr Create(RadialGridCR grid);
 
         //! Creates and inserts an empty grid axis
         //! @param[in]  model   model for the axis
         //! @param[in]  grid    grid this axis belongs to
         //! @return             sketch grid
-        GRIDELEMENTS_EXPORT static CircularAxisPtr CreateAndInsert(Dgn::DgnModelCR model, RadialGridCR grid);
+        GRIDELEMENTS_EXPORT static CircularAxisPtr CreateAndInsert(RadialGridCR grid);
     };
 
 //=======================================================================================
@@ -282,10 +294,10 @@ struct EXPORT_VTABLE_ATTRIBUTE RadialAxis : GridAxis
         {
         DEFINE_T_SUPER(RadialAxis::T_Super::CreateParams);
 
-        //! Creates create parameters for orthogonal grid
-        //! @param[in] model              model for the PlanCartesianGridSurface
-        CreateParams(Dgn::DgnModelCR model, RadialGridCR grid) :
-            T_Super::CreateParams(model, QueryClassId(model.GetDgnDb()), grid.GetElementId())
+        //! Creates create parameters for grid axis
+        //! @param[in] grid  grid this axis belongs to
+        CreateParams(RadialGridCR grid) :
+            T_Super::CreateParams(grid, QueryClassId(grid.GetDgnDb()))
             {}
 
         //! Constructor from base params. Chiefly for internal use.
@@ -299,7 +311,6 @@ struct EXPORT_VTABLE_ATTRIBUTE RadialAxis : GridAxis
     private:
 
     protected:
-        DECLARE_GRIDS_ELEMENT_BASE_METHODS(RadialAxis, GRIDELEMENTS_EXPORT)
         friend struct RadialAxisHandler;
 
         explicit GRIDELEMENTS_EXPORT RadialAxis(CreateParams const& params);
@@ -307,6 +318,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RadialAxis : GridAxis
         virtual bool _IsRadialAxis() const { return true; }
 
     public:
+        DECLARE_GRIDS_ELEMENT_BASE_METHODS(RadialAxis, GRIDELEMENTS_EXPORT)
 
         //---------------------------------------------------------------------------------------
         // Creation
@@ -315,13 +327,13 @@ struct EXPORT_VTABLE_ATTRIBUTE RadialAxis : GridAxis
         //! @param[in]  model   model for the axis
         //! @param[in]  grid    grid this axis belongs to
         //! @return             sketch grid
-        GRIDELEMENTS_EXPORT static RadialAxisPtr Create(Dgn::DgnModelCR model, RadialGridCR grid);
+        GRIDELEMENTS_EXPORT static RadialAxisPtr Create(RadialGridCR grid);
 
         //! Creates and inserts an empty grid axis
         //! @param[in]  model   model for the axis
         //! @param[in]  grid    grid this axis belongs to
         //! @return             sketch grid
-        GRIDELEMENTS_EXPORT static RadialAxisPtr CreateAndInsert(Dgn::DgnModelCR model, RadialGridCR grid);
+        GRIDELEMENTS_EXPORT static RadialAxisPtr CreateAndInsert(RadialGridCR grid);
     };
 
 //=======================================================================================
@@ -335,10 +347,10 @@ struct EXPORT_VTABLE_ATTRIBUTE GeneralGridAxis : GridAxis
         {
         DEFINE_T_SUPER(GeneralGridAxis::T_Super::CreateParams);
 
-        //! Creates create parameters for orthogonal grid
-        //! @param[in] model              model for the PlanCartesianGridSurface
-        CreateParams(Dgn::DgnModelCR model, GridCR grid) :
-            T_Super::CreateParams(model, QueryClassId(model.GetDgnDb()), grid.GetElementId())
+        //! Creates create parameters for grid axis
+        //! @param[in] grid  grid this axis belongs to
+        CreateParams(GridCR grid) :
+            T_Super(grid, QueryClassId(grid.GetDgnDb()))
             {}
 
         //! Constructor from base params. Chiefly for internal use.
@@ -352,7 +364,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GeneralGridAxis : GridAxis
     private:
 
     protected:
-        DECLARE_GRIDS_ELEMENT_BASE_METHODS(GeneralGridAxis, GRIDELEMENTS_EXPORT)
         friend struct GeneralGridAxisHandler;
 
         explicit GRIDELEMENTS_EXPORT GeneralGridAxis(CreateParams const& params);
@@ -360,6 +371,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeneralGridAxis : GridAxis
         virtual bool _IsGeneralGridAxis() const { return true; }
 
     public:
+        DECLARE_GRIDS_ELEMENT_BASE_METHODS(GeneralGridAxis, GRIDELEMENTS_EXPORT)
 
         //---------------------------------------------------------------------------------------
         // Creation
@@ -368,12 +380,12 @@ struct EXPORT_VTABLE_ATTRIBUTE GeneralGridAxis : GridAxis
         //! @param[in]  model   model for the axis
         //! @param[in]  grid    grid this axis belongs to
         //! @return             sketch grid
-        GRIDELEMENTS_EXPORT static GeneralGridAxisPtr Create(Dgn::DgnModelCR model, GridCR grid);
+        GRIDELEMENTS_EXPORT static GeneralGridAxisPtr Create(GridCR grid);
 
         //! Creates and inserts an empty grid axis
         //! @param[in]  model   model for the axis
         //! @param[in]  grid    grid this axis belongs to
         //! @return             sketch grid
-        GRIDELEMENTS_EXPORT static GeneralGridAxisPtr CreateAndInsert(Dgn::DgnModelCR model, GridCR grid);
+        GRIDELEMENTS_EXPORT static GeneralGridAxisPtr CreateAndInsert(GridCR grid);
     };
 END_GRIDS_NAMESPACE

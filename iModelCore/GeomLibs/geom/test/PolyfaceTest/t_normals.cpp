@@ -485,6 +485,12 @@ TEST(Polyface,SharedNormals)
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
     builder->AddSolidPrimitive (*rotated);
     Check::Shift (0,10,0);
-    Check::SaveTransformed (builder->GetClientMeshR ());
+    auto mesh = builder->GetClientMeshPtr();
+    Check::SaveTransformed (mesh);
+    auto transform = Transform::FromMatrixAndFixedPoint (
+            RotMatrix::FromAxisAndRotationAngle (0, Angle::DegreesToRadians (80)),
+            DPoint3d::From(0, 1, 0));
+    mesh->Transform (transform);
+    Check::SaveTransformed(*mesh);
     Check::ClearGeometry ("Polyface.SharedNormals");
     }

@@ -68,8 +68,7 @@ TEST_F(LineGridSurfaceManipulationStrategyTestFixture, ModifyExisting)
     ASSERT_TRUE(grid.IsValid());
     ASSERT_TRUE(grid->Insert().IsValid());
 
-    Dgn::DgnModelCR defModel = BuildingUtils::GetGroupInformationModel(GetDgnDb());
-    GridAxisPtr axis = GeneralGridAxis::CreateAndInsert(defModel, *grid);
+    GridAxisPtr axis = GeneralGridAxis::CreateAndInsert(*grid);
     ASSERT_TRUE(axis.IsValid());
 
     SketchLineGridSurface::CreateParams surfaceCreateParams(*m_model, *axis, 0, 10, DPoint2d::From(0,0), DPoint2d::From(10,0));

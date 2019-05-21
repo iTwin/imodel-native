@@ -17,9 +17,9 @@ namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
-void GeneratedInserts::InsertOmniClass14Definitions(Dgn::DgnDbR db) const
+void GeneratedInserts::InsertOmniClass14Definitions(Dgn::DgnDbR db, Dgn::DgnModelCR model) const
     {
-    ClassificationSystemCPtr omniClassSystem = TryAndGetSystem(db, "OmniClass", "2006-03-28");
+    ClassificationSystemCPtr omniClassSystem = TryAndGetSystem(db, model, "OmniClass", "2006-03-28");
     ClassificationTableCPtr omniClassTable = TryAndGetTable(*omniClassSystem , "Table 14 - Spaces by Form");
 
     ClassificationPtr subsection0OmniClass;

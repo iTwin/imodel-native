@@ -782,10 +782,14 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         }
 
     // If the view exists and the name hasn't changed, use its existing name.  Otherwise, the previous loop will have changed its name thus causing an actual update
-    if (existingViewId.IsValid() && defaultName.EqualsI(v8ViewName))
+    if (existingViewId.IsValid())
         {
-        ViewDefinitionPtr existingDef = GetDgnDb().Elements().GetForEdit<ViewDefinition>(existingViewId);
-        name = existingDef->GetCode().GetValueUtf8();
+        Utf8String qualifiedName = RemapViewName(baseName, *v8Model->GetDgnFileP(), "");
+        if (defaultName.EqualsI(v8ViewName) || qualifiedName.EqualsI(v8ViewName))
+            {
+            ViewDefinitionPtr existingDef = GetDgnDb().Elements().GetForEdit<ViewDefinition>(existingViewId);
+            name = existingDef->GetCode().GetValueUtf8();
+            }
         }
     ViewFactory::ViewDefinitionParams parms(this, name, modelMapping, viewInfo, viewFactory._Is3d());
     parms.m_description = defaultDescription;
@@ -800,44 +804,6 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     ColorDef bgColor(DgnV8Api::IntColorDef(viewInfo.ResolveBGColor()).m_int); // Always set view's background color to "resolved" background color from V8.
     parms.m_dstyle->SetBackgroundColor(bgColor);
 
-    auto v8displayStyle = parms.m_viewInfo.GetDisplayStyleCP();
-    if (v8displayStyle)
-        {
-        Utf8String styleName = Utf8String(v8displayStyle->GetName().c_str());
-        auto existingStyle = m_dgndb->Elements().Get<DisplayStyle>(m_dgndb->Elements().QueryElementIdByCode(DisplayStyle::CreateCode(*definitionModel, styleName)));
-        if (existingStyle.IsValid() && (existingStyle->Is3d() == parms.m_dstyle->Is3d())) // only share display styles if the same dimension (V8 doesn't care)
-            parms.m_dstyle = existingStyle->MakeCopy<DisplayStyle>();
-        else
-            {
-            if (!existingStyle.IsValid())
-                parms.m_dstyle->SetCode(DisplayStyle::CreateCode(*definitionModel, styleName));
-            ConvertDisplayStyle(*parms.m_dstyle, *v8displayStyle);
-            }
-        // Need to ensure that the json value holds a uint, not an int
-        parms.m_dstyle->SetBackgroundColor(parms.m_dstyle->GetBackgroundColor());
-        }
-
-    // View geometry
-    trans.Multiply(parms.m_origin, (DPoint3dCR)viewInfo.GetOrigin());
-
-    // TFS#341830 - Some DgnV8 files have views that claim to be both defined and on, however have unusable geominfo. Attempt to detect and inject something that won't cause crashes later.
-    if (viewInfo.GetDelta().Magnitude() < mgds_fc_epsilon)
-        parms.m_extents.Init(DgnUnits::OneMeter(), DgnUnits::OneMeter(), DgnUnits::OneMeter());
-    else
-        {
-        auto viewCornerSrc = Bentley::DPoint3d::FromSumOf(viewInfo.GetOrigin(), viewInfo.GetDelta());  // corner of view (source coordinates)
-        DPoint3d viewCorner;
-        trans.Multiply(viewCorner, (DPoint3dCR)viewCornerSrc); // corner of view (BIM coordinates)
-        parms.m_extents = DVec3d::FromStartEnd(parms.m_origin, viewCorner);
-        }
-
-    Bentley::RotMatrix v8Rotation = viewInfo.GetRotation();
-    if (v8Rotation.MaxAbs() < mgds_fc_epsilon)
-        v8Rotation.InitIdentity();
-
-    parms.m_rot = (RotMatrixCR)v8Rotation;
-
-    ViewDefinitionPtr view;
     ViewDefinitionPtr existingDef;
     if (IsUpdating() && existingViewId.IsValid())
         {
@@ -863,9 +829,59 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
                 pcvs._Save(*existingDef);
                 }
             }
-
-        view = viewFactory._UpdateView(*this, parms, *existingDef);
         }
+
+    auto v8displayStyle = parms.m_viewInfo.GetDisplayStyleCP();
+    DisplayStyleCPtr existingStyle;
+    if (v8displayStyle)
+        {
+        Utf8String styleName = Utf8String(v8displayStyle->GetName().c_str());   
+        existingStyle = m_dgndb->Elements().Get<DisplayStyle>(m_dgndb->Elements().QueryElementIdByCode(DisplayStyle::CreateCode(*definitionModel, styleName)));
+        if (existingStyle.IsValid() && (existingStyle->Is3d() == parms.m_dstyle->Is3d())) // only share display styles if the same dimension (V8 doesn't care)
+            parms.m_dstyle = existingStyle->MakeCopy<DisplayStyle>();
+        else
+            {
+            if (!existingStyle.IsValid())
+                parms.m_dstyle->SetCode(DisplayStyle::CreateCode(*definitionModel, styleName));
+            ConvertDisplayStyle(*parms.m_dstyle, *v8displayStyle);
+            }
+        // Need to ensure that the json value holds a uint, not an int
+        parms.m_dstyle->SetBackgroundColor(parms.m_dstyle->GetBackgroundColor());
+        }
+    else if (existingDef.IsValid())
+        {
+        existingStyle = m_dgndb->Elements().Get<DisplayStyle>(existingDef->GetDisplayStyleId());
+        if (existingStyle.IsValid() && (existingStyle->Is3d() == parms.m_dstyle->Is3d())) // only share display styles if the same dimension (V8 doesn't care)
+            {
+            parms.m_dstyle = existingStyle->MakeCopy<DisplayStyle>();
+            // Need to ensure that the json value holds a uint, not an int
+            parms.m_dstyle->SetBackgroundColor(parms.m_dstyle->GetBackgroundColor());
+            }
+        }
+
+    // View geometry
+    trans.Multiply(parms.m_origin, (DPoint3dCR)viewInfo.GetOrigin());
+
+    // TFS#341830 - Some DgnV8 files have views that claim to be both defined and on, however have unusable geominfo. Attempt to detect and inject something that won't cause crashes later.
+    if (viewInfo.GetDelta().Magnitude() < mgds_fc_epsilon)
+        parms.m_extents.Init(DgnUnits::OneMeter(), DgnUnits::OneMeter(), DgnUnits::OneMeter());
+    else
+        {
+        auto viewCornerSrc = Bentley::DPoint3d::FromSumOf(viewInfo.GetOrigin(), viewInfo.GetDelta());  // corner of view (source coordinates)
+        DPoint3d viewCorner;
+        trans.Multiply(viewCorner, (DPoint3dCR)viewCornerSrc); // corner of view (BIM coordinates)
+        parms.m_extents = DVec3d::FromStartEnd(parms.m_origin, viewCorner);
+        }
+
+    Bentley::RotMatrix v8Rotation = viewInfo.GetRotation();
+    if (v8Rotation.MaxAbs() < mgds_fc_epsilon)
+        v8Rotation.InitIdentity();
+
+    parms.m_rot = (RotMatrixCR)v8Rotation;
+
+    ViewDefinitionPtr view;
+    if (IsUpdating() && existingDef.IsValid())
+        view = viewFactory._UpdateView(*this, parms, *existingDef);
     else
         view = viewFactory._MakeView(*this, parms);
 
@@ -900,6 +916,13 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
             auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::CreateAspect(externalSourceAspectScope, name, viewInfo, GetDgnDb());
             if (aspect.IsValid())
                 aspect.AddAspect(*view);
+            }
+
+        if (existingStyle.IsValid())
+            {
+            DisplayStyle *nonConst = const_cast<DisplayStyleP>(existingStyle.get());
+            if (nonConst->EqualState(view->GetDisplayStyle()))
+                view->GetDisplayStyle().Update();
             }
 
         if (!view->Insert().IsValid())

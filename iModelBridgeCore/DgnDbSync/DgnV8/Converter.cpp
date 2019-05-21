@@ -1806,7 +1806,7 @@ void Converter::GetOrCreateJobPartitions()
     InitDrawingListModel();
     InitSheetListModel();
 
-    InitUncategorizedCategory(); // Create the "uncategorized" category for elements that can't be categorized without application/domain help
+    InitUncategorizedCategory(); // Create the "Default" category for elements that can't be categorized without application/domain help
     InitUncategorizedDrawingCategory();
     InitBusinessKeyCodeSpec();
     }
@@ -2963,12 +2963,8 @@ void Converter::DoConvertDrawingElement(ElementConversionResults& results, DgnV8
 
     ReportProgress();
 
-    // *** TRICKY: For drawings, we do not convert all levels ahead of time. We wait until we see which ones are used.
-    //              That's how we tell which should be DrawingCategories instead of SpatialCategories. We must therefore
-    //              visit complex children and ensure that their levels are converted.
-    ConvertLevels(v8eh);
 
-    DgnCategoryId catid = ConvertDrawingLevel(*v8eh.GetDgnFileP(), GetV8Level(v8eh));
+    DgnCategoryId catid = GetSyncInfo().GetCategory(v8eh, v8mm);
     ConvertElement(results, v8eh, v8mm, catid, false, isNewElement);
     }
 

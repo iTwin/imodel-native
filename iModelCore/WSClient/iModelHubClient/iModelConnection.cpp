@@ -1530,6 +1530,48 @@ ChangeSetsTaskPtr iModelConnection::DownloadChangeSets(std::deque<ObjectId>& cha
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             05/2019
+//---------------------------------------------------------------------------------------
+ChangeSetsTaskPtr iModelConnection::DownloadChangeSetsBetween(Utf8StringCR firstChangeSetId, Utf8StringCR secondChangeSetId, 
+    BeSQLite::BeGuidCR fileId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+    {
+    if (Utf8String::IsNullOrEmpty(firstChangeSetId.c_str()) && Utf8String::IsNullOrEmpty(secondChangeSetId.c_str()))
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::InvalidChangeSet));
+
+    auto query = CreateBetweenChangeSetsQuery(firstChangeSetId, secondChangeSetId, fileId);
+    
+    Utf8String selectString;
+    selectString.Sprintf("%s,%s,%s,%s", ServerSchema::Property::Id, ServerSchema::Property::Index, ServerSchema::Property::ParentId, 
+                         ServerSchema::Property::SeedFileId);
+    FileAccessKey::AddDownloadAccessKeySelect(selectString);
+    query.SetSelect(selectString);
+
+    std::shared_ptr<ChangeSetsResult> finalResult = std::make_shared<ChangeSetsResult>();
+
+    return GetChangeSetsFromQueryByChunks(query, true, cancellationToken)
+        ->Then([=](ChangeSetsInfoResultCR changeSetsQueryResult) {
+        if (!changeSetsQueryResult.IsSuccess())
+            {
+            finalResult->SetError(changeSetsQueryResult.GetError());
+            return;
+            }
+
+        DownloadChangeSetsInternal(changeSetsQueryResult.GetValue(), callback, cancellationToken)->Then([=](ChangeSetsResultCR changesetsResult) {
+            if (!changesetsResult.IsSuccess())
+                {
+                finalResult->SetError(changesetsResult.GetError());
+                return;
+                }
+
+            finalResult->SetSuccess(changesetsResult.GetValue());
+            });
+        })->Then<ChangeSetsResult>([=]
+            {
+            return *finalResult;
+            });
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 ChangeSetTaskPtr iModelConnection::DownloadChangeSetFile

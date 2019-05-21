@@ -72,6 +72,12 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext& importer) override;
 
+    static Utf8String combineName(Utf8StringCR paletteName, Utf8StringCR materialName)
+        {
+        Utf8PrintfString combined("%s: %s", paletteName.c_str(), materialName.c_str());
+        return combined;
+        }
+
     DgnCode _GenerateDefaultCode() const override {return DgnCode();}
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override {return !codeSpec.IsNullCodeSpec();}
     
@@ -87,11 +93,12 @@ public:
     //! @param[in] materialName The name of the RenderMaterial. This becomes the value of the RenderMaterial's DgnCode.
     //! @param[in] parentMaterialId Optional ID of the parent RenderMaterial. If specified, this RenderMaterial inherits and can override the parent's material data.
     RenderMaterial(DefinitionModelR model, Utf8StringCR paletteName, Utf8StringCR materialName, RenderMaterialId parentMaterialId=RenderMaterialId())
-        : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, materialName), nullptr, parentMaterialId)) 
+        : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, paletteName, materialName), nullptr, parentMaterialId)) 
         {
         SetPaletteName(paletteName);
         if (parentMaterialId.IsValid())
             m_parent.m_relClassId = GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_RenderMaterialOwnsRenderMaterials);
+        SetUserLabel(materialName.c_str());
         }
 
     RenderMaterialId GetMaterialId() const {return RenderMaterialId(GetElementId().GetValue());} //!< Returns the Id of this RenderMaterial.
@@ -128,12 +135,12 @@ public:
     void SetRenderingAsset(JsonValueCR val) {GetAssetR(json_renderMaterial()) = val;}
 
     //! Creates a DgnCode for a RenderMaterial.
-    static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR materialName) {return CodeSpec::CreateCode(BIS_CODESPEC_RenderMaterial, scope, materialName);}
+    static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR paletteName, Utf8StringCR materialName) {return CodeSpec::CreateCode(BIS_CODESPEC_RenderMaterial, scope, combineName(materialName, paletteName));}
 
     //! Looks up the ID of the material with the specified code.
     static RenderMaterialId QueryMaterialId(DgnDbR db, DgnCodeCR code) {return RenderMaterialId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());}
     //! Looks up the ID of the material with the specified palette + material name.
-    static RenderMaterialId QueryMaterialId(DefinitionModelR model, Utf8StringCR materialName) {return QueryMaterialId(model.GetDgnDb(), CreateCode(model, materialName));}
+    static RenderMaterialId QueryMaterialId(DefinitionModelR model, Utf8StringCR paletteName, Utf8StringCR materialName) {return QueryMaterialId(model.GetDgnDb(), CreateCode(model, paletteName, materialName));}
 
     //! Looks up a RenderMaterial by ID.
     static RenderMaterialCPtr Get(DgnDbR db, RenderMaterialId materialId) {return db.Elements().Get<RenderMaterial>(materialId);}
