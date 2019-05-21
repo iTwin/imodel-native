@@ -1,8 +1,7 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: STM/Stores/SMSQLiteStore.cpp $
 //:>
-//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -225,7 +224,8 @@ SharedTransaction::SharedTransaction(SMSQLiteFilePtr fileP, bool readonly, bool 
     m_smSQLiteFile = fileP;
     if (m_smSQLiteFile.IsValid() && !m_smSQLiteFile->IsOpen() && m_smSQLiteFile->IsShared())
     {
-        m_smSQLiteFile->GetDb()->ReOpenShared(readonly, true);
+        bool openResult = m_smSQLiteFile->GetDb()->ReOpenShared(readonly, true);
+        assert(openResult == true);
         m_dbNeedsClosing = true;
         if (startTransaction)
         {

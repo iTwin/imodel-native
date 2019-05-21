@@ -1,12 +1,11 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: STM/ScalableMeshQuadTreeQueries.hpp $
 //:>    $RCSfile: ScalableMeshQuadTreeQueries.hpp,v $
 //:>   $Revision: 1.20 $
 //:>       $Date: 2012/11/29 17:30:34 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 

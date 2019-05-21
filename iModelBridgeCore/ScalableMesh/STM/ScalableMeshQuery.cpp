@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshQuery.cpp $
 |    $RCSfile: ScalableMeshQuery.cpp,v $
 |   $Revision: 1.41 $
 |       $Date: 2012/11/29 17:30:37 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1279,7 +1277,7 @@ int ScalableMeshMesh::AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFac
                 }
             }*/
 
-            if (m_nbFaceIndexes > 0)
+            if (m_nbFaceIndexes > 0 && m_pUvIndex != nullptr)
             {
                 memcpy(newUvIndex, m_pUvIndex, sizeof(int32_t) * m_nbFaceIndexes);
                 delete[] m_pUvIndex;
@@ -3000,6 +2998,11 @@ IScalableMeshNodeEditPtr IScalableMeshNode::EditNode()
     return _EditNode();
     }
 
+void IScalableMeshNode::MakeContours(bvector<bvector<DPoint3d>>& major, bvector<bvector<DPoint3d>>& minor, ContoursParameters params)
+    {
+    return _MakeContours(major, minor, params);
+    }
+
 bvector<IScalableMeshNodeEditPtr> IScalableMeshNodeEdit::EditChildrenNodes()
     {
     return _EditChildrenNodes();
@@ -3153,19 +3156,19 @@ int IScalableMeshNodeRayQuery::Query(bvector<IScalableMeshNodePtr>&             
     }
   
 
-StatusInt  IScalableMeshNodeEdit::AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph)
+StatusInt  IScalableMeshNodeEdit::AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph, bool arePoints3D)
     {
-    return _AddMesh(vertices, nVertices, indices, nIndices, computeGraph);
+    return _AddMesh(vertices, nVertices, indices, nIndices, computeGraph, arePoints3D);
     }
 
-StatusInt IScalableMeshNodeEdit::AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& pointsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph)
+StatusInt IScalableMeshNodeEdit::AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& pointsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph, bool arePoints3D)
     {
-    return _AddTexturedMesh(vertices, pointsIndices, uv, uvIndices, nTexture, texID, computeGraph);
+    return _AddTexturedMesh(vertices, pointsIndices, uv, uvIndices, nTexture, texID, computeGraph, arePoints3D);
     }
 
-StatusInt IScalableMeshNodeEdit::AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph)
+StatusInt IScalableMeshNodeEdit::AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph, bool arePoints3D)
     {
-    return _AddTexturedMesh(vertices, ptsIndices, uv, uvIndices, nTexture, texID, computeGraph);
+    return _AddTexturedMesh(vertices, ptsIndices, uv, uvIndices, nTexture, texID, computeGraph, arePoints3D);
     }
 
 

@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMesh.cpp $
 |    $RCSfile: ScalableMesh.cpp,v $
 |   $Revision: 1.106 $
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -2664,6 +2662,10 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const ClipVectorPtr& c
         }
     }
 
+    if (!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
+    {
+        clipP->TransformInPlace(m_reprojectionTransform);
+    }
     if (m_scmIndexPtr->GetClipRegistry()->HasClip(clipID)) return false;
     m_scmIndexPtr->GetClipRegistry()->AddClipWithParameters(clipID, clipP, geom, type, isActive);
 
@@ -2737,6 +2739,12 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const ClipVectorPtr
     bool isActive2;
     m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(clipID, clipData,geom2,type2,isActive2);
     DRange3d extent;
+    if (!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
+    {
+        Transform trans;
+        trans.InverseOf(m_reprojectionTransform);
+        clipData->TransformInPlace(trans);
+    }
     clipData->GetRange(extent, nullptr);
     if (extent.Volume() == 0)
     {
@@ -2767,6 +2775,11 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const ClipVectorPtr
     DRange3d extentNew;
     clipP->GetRange(extentNew, nullptr);
     extent.Extend(extentNew);
+
+    if (!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
+    {
+        clipP->TransformInPlace(m_reprojectionTransform);
+    }
 
     m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, clipP, geom, type, isActive);
 
@@ -2854,6 +2867,13 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
 
     if(clipVectorData.IsValid() && !clipVectorData->empty())
         {
+        if(!m_reprojectionTransform.IsIdentity() && IsCesium3DTiles())
+            {
+            Transform trans;
+            trans.InverseOf(m_reprojectionTransform);
+            clipVectorData->TransformInPlace(trans);
+            }
+
         DRange3d clipVectorRange;
         clipVectorData->GetRange(clipVectorRange, nullptr);
         extent.Extend(clipVectorRange);
@@ -3820,17 +3840,11 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
             smGCS = GeoCoordinates::DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnModel);
 
         assert(smGCS != nullptr); // Error creating SM GCS from GeoRef for reprojection
-        
+
+        computedTransform = Transform::FromProduct(Transform::From(globalOrigin.x, globalOrigin.y, globalOrigin.z), computedTransform);
         if (!targetCS->IsEquivalent(*smGCS))
             {
             smGCS->SetReprojectElevation(true);
-
-            //DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
-            //smGCS->UorsFromCartesian(scale, scale);
-            //scale.DifferenceOf(scale, globalOrigin);            
-            
-            computedTransform = Transform::FromProduct(Transform::From(globalOrigin.x, globalOrigin.y, globalOrigin.z), computedTransform);
-            //computedTransform = Transform::FromProduct(Transform::From(scale.x, scale.y, scale.z), computedTransform);
 
             DRange3d smExtent, smExtentUors;
             this->GetRange(smExtent);
@@ -3845,7 +3859,6 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
             if (0 == status || 1 == status)
                 {
                 computedTransform = Transform::FromProduct(approxTransform, computedTransform);
-                computedTransform = Transform::FromProduct(Transform::From(-globalOrigin.x, -globalOrigin.y, -globalOrigin.z), computedTransform);
                 }
             }
         }
@@ -3917,11 +3930,11 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
 
         assert(smGCS != nullptr); // Error creating SM GCS from GeoRef for reprojection
 
+        computedTransform = Transform::FromProduct(Transform::From(globalOrigin.x, globalOrigin.y, globalOrigin.z), computedTransform);
         if (targetCS != nullptr && !targetCS->IsEquivalent(*smGCS))
             {
             smGCS->SetReprojectElevation(true);
 
-            computedTransform = Transform::FromProduct(Transform::From(globalOrigin.x, globalOrigin.y, globalOrigin.z), computedTransform);
 
             DRange3d smExtent, smExtentUors;
             this->GetRange(smExtent);
@@ -3935,7 +3948,6 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
             if (0 == status || 1 == status || 25 == status)
                 {
                 computedTransform = Transform::FromProduct(approxTransform, computedTransform);
-                computedTransform = Transform::FromProduct(Transform::From(-globalOrigin.x, -globalOrigin.y, -globalOrigin.z), computedTransform);
                 }
             }
         }

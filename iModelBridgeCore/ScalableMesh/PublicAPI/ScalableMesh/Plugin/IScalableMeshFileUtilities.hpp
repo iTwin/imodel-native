@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: PublicAPI/ScalableMesh/Plugin/IScalableMeshFileUtilities.hpp $
 |    $RCSfile: IScalableMeshFileUtilities.hpp,v $
 |   $Revision: 1.6 $
 |       $Date: 2012/02/22 14:21:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

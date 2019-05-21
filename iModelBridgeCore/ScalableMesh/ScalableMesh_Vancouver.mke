@@ -1,8 +1,6 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: ScalableMesh_Vancouver.mke $
-#
-#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #----------------------------------------------------------------------------------------
 
@@ -348,6 +346,8 @@ $(o)ScalableMeshClippingOptions$(oext) : $(stmDir)ScalableMeshClippingOptions.cp
 $(o)ScalableMeshDetectGround$(oext) : $(stmDir)ScalableMeshDetectGround.cpp ${MultiCompileDepends}
 
 $(o)ScalableMeshSaveAs$(oext) : $(stmDir)ScalableMeshSaveAs.cpp ${MultiCompileDepends}
+
+$(o)ScalableMeshContourExtractor$(oext) : $(stmDir)ScalableMeshContourExtractor.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Tile Publisher

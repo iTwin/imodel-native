@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshClippingOptions.cpp $
 |    $RCSfile: ScalableMeshClippingOptions.cpp,v $
 |   $Revision: 1.0 $
 |       $Date: 2017/11/03 11:30:15 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

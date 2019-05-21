@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: PublicAPI/ScalableMesh/IScalableMeshQuery.h $
 |    $RCSfile: IScalableMeshPointQuery.h,v $
 |   $Revision: 1.17 $
 |       $Date: 2012/11/29 17:30:53 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -301,6 +299,13 @@ struct IScalableMeshPointQuery : RefCountedBase
         BENTLEY_SM_EXPORT int RemoveAllClip();    
     };
 
+
+struct ContoursParameters
+{
+    float majorContourSpacing;
+    float minorContourSpacing;
+};
+
 /*============================================================================**//**
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
@@ -544,6 +549,8 @@ struct IScalableMeshNode : virtual public RefCountedBase
 
         virtual IScalableMeshNodeEditPtr _EditNode() = 0;
 
+        virtual void _MakeContours(bvector<bvector<DPoint3d>>& major, bvector<bvector<DPoint3d>>& minor, ContoursParameters params) = 0;
+
 #ifdef WIP_MESH_IMPORT
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) = 0;
 
@@ -636,6 +643,8 @@ struct IScalableMeshNode : virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT IScalableMeshNodeEditPtr EditNode();
 
+        BENTLEY_SM_EXPORT void MakeContours(bvector<bvector<DPoint3d>>& major, bvector<bvector<DPoint3d>>& minor, ContoursParameters params);
+
 #ifdef WIP_MESH_IMPORT
         BENTLEY_SM_EXPORT bool IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata);
 
@@ -686,9 +695,9 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
 struct IScalableMeshNodeEdit : public virtual IScalableMeshNode
     {
     protected:
-        virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph = false) = 0;
-        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph = false) = 0;
-        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph = false) = 0;
+        virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph = false, bool arePoints3D = true) = 0;
+        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph = false, bool arePoints3D = true) = 0;
+        virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph = false, bool arePoints3D = true) = 0;
         virtual StatusInt _SetNodeExtent(DRange3d& extent) = 0;
         virtual StatusInt _SetContentExtent(DRange3d& extent) = 0;
         virtual StatusInt _SetArePoints3d(bool arePoints3d) = 0;
@@ -700,9 +709,9 @@ struct IScalableMeshNodeEdit : public virtual IScalableMeshNode
         virtual void   _ReplaceIndices(const bvector<size_t>& posToChange, const bvector<DPoint3d>& newCoordinates) = 0;
 
     public:
-        BENTLEY_SM_EXPORT StatusInt AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph = false);
-        BENTLEY_SM_EXPORT StatusInt AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID = -1, bool computeGraph = false);
-        BENTLEY_SM_EXPORT StatusInt AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID = -1, bool computeGraph = false);
+        BENTLEY_SM_EXPORT StatusInt AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph = false, bool arePoints3D = true);
+        BENTLEY_SM_EXPORT StatusInt AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID = -1, bool computeGraph = false, bool arePoints3D = true);
+        BENTLEY_SM_EXPORT StatusInt AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID = -1, bool computeGraph = false, bool arePoints3D = true);
         BENTLEY_SM_EXPORT StatusInt AddTextures(bvector<Byte>& data);
         BENTLEY_SM_EXPORT StatusInt SetNodeExtent(DRange3d& extent);
         BENTLEY_SM_EXPORT StatusInt SetContentExtent(DRange3d& extent);

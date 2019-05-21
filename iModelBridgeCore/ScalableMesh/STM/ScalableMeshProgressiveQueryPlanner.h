@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshProgressiveQueryPlanner.h $
 |    $RCSfile: ScalableMeshProgressiveQueryPlanner.h,v $
 |   $Revision: 1.20 $
 |       $Date: 2018/08/15 14:07:12 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

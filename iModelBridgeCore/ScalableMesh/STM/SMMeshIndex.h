@@ -958,6 +958,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         StatusInt           ChangeGeometricError(const WString& path, const bool& pi_pCompress, const double& newGeometricErrorValue);
 
+        BENTLEY_SM_EXPORT void DoParallelStitching(vector<SMMeshIndexNode<POINT, EXTENT>*>& nodesToStitch);
+
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false, vector<SMMeshIndexNode<POINT, EXTENT>*>* nodesToStitchInfo = nullptr);
         
         void                SetClipStore(HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>>& clipStore);

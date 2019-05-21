@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/GTests/SMUnitTestUtil.h $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,6 +8,7 @@
 #include <Windows.h>
 #include <DgnView/DgnViewLib.h>
 #include <DgnPlatform/DgnPlatform.h>
+#include <ScalableMesh/ScalableMeshLib.h>
 
 #include <Bentley/BeFileName.h>
 #include <json/json.h>
@@ -91,9 +90,9 @@ namespace ScalableMeshGTestUtil
     bool FilterEntry(BeFileName& entry, bool isDir, bool wantSource = false);
 
 #ifdef VANCOUVER_API
-    struct ScalableMeshModule : DgnViewLib::Host
+    struct ScalableMeshModule : ScalableMesh::ScalableMeshLib::Host, DgnViewLib::Host
 #else
-    struct ScalableMeshModule : DgnPlatformLib::Host
+    struct ScalableMeshModule : ScalableMesh::ScalableMeshLib::Host, DgnPlatformLib::Host
 #endif
         {
         protected:

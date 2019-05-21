@@ -1,6 +1,5 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: STM/ScalableMeshMesher.hpp $
 //:>    $RCSfile: ScalableMeshQuadTreeBCLIBFilters.hpp,v $
 //:>   $Revision: 1.28 $
 //:>       $Date: 2011/04/27 17:17:56 $

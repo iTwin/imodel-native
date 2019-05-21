@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/Plugins/ScalableMeshPointTypes.cpp $
 |    $RCSfile: ScalableMeshPointTypes.cpp,v $
 |   $Revision: 1.4 $
 |       $Date: 2011/08/30 19:03:59 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>

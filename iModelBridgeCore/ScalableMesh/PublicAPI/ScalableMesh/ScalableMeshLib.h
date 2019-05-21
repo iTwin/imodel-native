@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/ScalableMesh/ScalableMeshLib.h $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -74,6 +72,8 @@ public:
         bool IsInitialized () {return 0 != m_scalableTerrainModelAdmin;}
 
         void Initialize ();
+
+        BENTLEY_SM_EXPORT void InitializeLogging();
         
         //! Terminate this Host. After this method is called, no further ScalableTerrainModel methods can ever be called on this thread again (including Initialize).
         //! This method should be called on thread termination.

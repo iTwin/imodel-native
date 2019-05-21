@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshProgressiveQuery.cpp $
 |    $RCSfile: ScalableMeshPointQuery.cpp,v $
 |   $Revision: 1.41 $
 |       $Date: 2012/11/29 17:30:37 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -795,7 +793,7 @@ void IScalableMeshProgressiveQueryEngine::CancelAllQueries()
 static double s_updateOverviewsDelay = (double)1 / 10 * CLOCKS_PER_SEC;
 
 //controls whether preload of overviews is subject to delay
-static bool s_shouldDelayPreloadOverviews = true;
+static bool s_shouldDelayPreloadOverviews = false;
 
 void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
     {    
