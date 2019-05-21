@@ -414,7 +414,15 @@ int EXP_LVL9 CSgridiF3 (struct csGridi_ *gridi,double trgLl [3],Const double src
 			{
 				fbStatus = 1;
 			}
-			status = (fbStatus == 0) ? 2 : 1;
+#ifdef GEOCOORD_ENHANCEMENT
+            // CSMAP Implementation considers that a sucessful fallback should return 2 which is
+            // a hard out of math domain error. I think it should be then a 1 indicating an out of useful domain
+            // that can be considered a warning in some case. If however both grid file and fallback
+            // do not satisfy then I am ok with an hard error (2).
+            status = (fbStatus != 0) ? 2 : 1;
+#else
+            status = (fbStatus == 0) ? 2 : 1;
+#endif
 		}
 		else
 		{
@@ -486,7 +494,15 @@ int EXP_LVL9 CSgridiF2 (struct csGridi_ *gridi,double* trgLl,Const double* srcLl
 			{
 				fbStatus = 1;
 			}
+#ifdef GEOCOORD_ENHANCEMENT
+            // CSMAP Implementation considers that a sucessful fallback should return 2 which is
+            // a hard out of math domain error. I think it should be then a 1 indicating an out of useful domain
+            // that can be considered a warning in some case. If however both grid file and fallback
+            // do not satisfy then I am ok with an hard error (2).
+            status = (fbStatus != 0) ? 2 : 1;
+#else
 			status = (fbStatus == 0) ? 2 : 1;
+#endif
 		}
 		else
 		{
