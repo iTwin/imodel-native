@@ -106,63 +106,63 @@
   <!--   ************************************* -->
   <Part Name="BeHttp-GenTiaMaps" BentleyBuildMakeFile="${SrcRoot}imodel02/TestingScripts/TestImpactAnalysis/GenerateMaps.mke" BentleyBuildMakeOptions="+dCOMP_Name=BeHttp" OnlyPlatforms="x64">
       <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
-      <SubPart Repository="imodel02"              PartFile="imodelCore/BeHttp/BeHttp"                   PartName="RunGTest" />
+      <!-- <SubPart Repository="imodel02"              PartFile="imodelCore/BeHttp/BeHttp"                   PartName="RunGTest" /> -->
   </Part>
   <Part Name="Bentley-GenTiaMaps" BentleyBuildMakeFile="${SrcRoot}imodel02/TestingScripts/TestImpactAnalysis/GenerateMaps.mke" BentleyBuildMakeOptions="+dCOMP_Name=Bentley" OnlyPlatforms="x64">
       <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
-      <SubPart Repository="imodel02"              PartFile="imodelCore/Bentley/Bentley"                   PartName="RunGTest" />
+      <!-- <SubPart Repository="imodel02"              PartFile="imodelCore/Bentley/Bentley"                   PartName="RunGTest" /> -->
   </Part>
   <Part Name="BeSecurity-GenTiaMaps" BentleyBuildMakeFile="${SrcRoot}imodel02/TestingScripts/TestImpactAnalysis/GenerateMaps.mke" BentleyBuildMakeOptions="+dCOMP_Name=BeSecurity" OnlyPlatforms="x64">
       <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
-      <SubPart Repository="imodel02"              PartFile="imodelCore/BeSecurity/BeSecurity"                   PartName="RunGTest" />
+      <!-- <SubPart Repository="imodel02"              PartFile="imodelCore/BeSecurity/BeSecurity"                   PartName="RunGTest" /> -->
   </Part>
   <Part Name="BeSQLite-GenTiaMaps" BentleyBuildMakeFile="${SrcRoot}imodel02/TestingScripts/TestImpactAnalysis/GenerateMaps.mke" BentleyBuildMakeOptions="+dCOMP_Name=BeSQLite" OnlyPlatforms="x64">
       <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
-      <SubPart Repository="imodel02"              PartFile="imodelCore/BeSQLite/BeSQLite"                   PartName="RunGTest" />
+      <!-- <SubPart Repository="imodel02"              PartFile="imodelCore/BeSQLite/BeSQLite"                   PartName="RunGTest" /> -->
   </Part>
   <Part Name="DgnPlatform-GenTiaMaps" BentleyBuildMakeFile="${SrcRoot}imodel02/TestingScripts/TestImpactAnalysis/GenerateMaps.mke" BentleyBuildMakeOptions="+dCOMP_Name=DgnPlatform" OnlyPlatforms="x64">
       <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
-      <SubPart Repository="imodel02"              PartFile="imodelCore/DgnPlatform/DgnPlatform"                   PartName="RunGTest" />
+      <!-- <SubPart Repository="imodel02"              PartFile="imodelCore/DgnPlatform/DgnPlatform"                   PartName="RunGTest" /> -->
   </Part>
   <Part Name="ECDb-GenTiaMaps" BentleyBuildMakeFile="${SrcRoot}imodel02/TestingScripts/TestImpactAnalysis/GenerateMaps.mke" BentleyBuildMakeOptions="+dCOMP_Name=ECDb" OnlyPlatforms="x64">
       <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
-      <SubPart Repository="imodel02"              PartFile="imodelCore/ECDb/ECDb"                   PartName="RunGTest" />
+      <!-- <SubPart Repository="imodel02"              PartFile="imodelCore/ECDb/ECDb"                   PartName="RunGTest" /> -->
   </Part>
   <Part Name="ECObjects-GenTiaMaps" BentleyBuildMakeFile="${SrcRoot}imodel02/TestingScripts/TestImpactAnalysis/GenerateMaps.mke" BentleyBuildMakeOptions="+dCOMP_Name=ECObjects" OnlyPlatforms="x64">
       <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
-      <SubPart Repository="imodel02"              PartFile="imodelCore/ECObjects/ECObjects"                   PartName="RunGTest" />
+      <!-- <SubPart Repository="imodel02"              PartFile="imodelCore/ECObjects/ECObjects"                   PartName="RunGTest" /> -->
   </Part>
   <Part Name="ECPresentation-GenTiaMaps" BentleyBuildMakeFile="${SrcRoot}imodel02/TestingScripts/TestImpactAnalysis/GenerateMaps.mke" BentleyBuildMakeOptions="+dCOMP_Name=ECPresentation" OnlyPlatforms="x64">
       <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
-      <SubPart Repository="imodel02"              PartFile="imodelCore/ECPresentation/ECpresentation"                   PartName="RunGTest" />
+      <!-- <SubPart Repository="imodel02"              PartFile="imodelCore/ECPresentation/ECpresentation"                   PartName="RunGTest" /> -->
   </Part>
   <Part Name="GeomLibs-GenTiaMaps" BentleyBuildMakeFile="${SrcRoot}imodel02/TestingScripts/TestImpactAnalysis/GenerateMaps.mke" BentleyBuildMakeOptions="+dCOMP_Name=GeomLibs" OnlyPlatforms="x64">
       <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
-      <SubPart Repository="imodel02"              PartFile="imodelCore/GeomLibs/GeomLibs"                   PartName="RunGTest" />
+      <!-- <SubPart Repository="imodel02"              PartFile="imodelCore/GeomLibs/GeomLibs"                   PartName="RunGTest" /> -->
   </Part>
   <Part Name="Licensing-GenTiaMaps" BentleyBuildMakeFile="${SrcRoot}imodel02/TestingScripts/TestImpactAnalysis/GenerateMaps.mke" BentleyBuildMakeOptions="+dCOMP_Name=Licensing" OnlyPlatforms="x64">
       <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
-      <SubPart Repository="imodel02"              PartFile="imodelCore/LicensingCrossPlatform/LicensingCrossPlatform"                   PartName="RunGtestUnit" />
+      <!-- <SubPart Repository="imodel02"              PartFile="imodelCore/LicensingCrossPlatform/LicensingCrossPlatform"                   PartName="RunGtestUnit" /> -->
   </Part>
   <Part Name="Units-GenTiaMaps" BentleyBuildMakeFile="${SrcRoot}imodel02/TestingScripts/TestImpactAnalysis/GenerateMaps.mke" BentleyBuildMakeOptions="+dCOMP_Name=Units" OnlyPlatforms="x64">
       <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
-      <SubPart Repository="imodel02"              PartFile="imodelCore/Units/Units"                   PartName="RunGTest" />
+      <!-- <SubPart Repository="imodel02"              PartFile="imodelCore/Units/Units"                   PartName="RunGTest" /> -->
   </Part>
   <Part Name="WSClient-GenTiaMaps" BentleyBuildMakeFile="${SrcRoot}imodel02/TestingScripts/TestImpactAnalysis/GenerateMaps.mke" BentleyBuildMakeOptions="+dCOMP_Name=WSClient" OnlyPlatforms="x64">
       <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
-      <SubPart Repository="imodel02"              PartFile="imodelCore/WSClient/WSClient"                   PartName="RunGTest" />
+      <!-- <SubPart Repository="imodel02"              PartFile="imodelCore/WSClient/WSClient"                   PartName="RunGTest" /> -->
   </Part>
   <Part Name="DgnV8Converter-GenTiaMaps" BentleyBuildMakeFile="${SrcRoot}imodel02/TestingScripts/TestImpactAnalysis/GenerateMaps.mke" BentleyBuildMakeOptions="+dCOMP_Name=DgnV8Converter" OnlyPlatforms="x64">
       <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
-      <SubPart Repository="imodel02"              PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"                   PartName="RunDgnV8ConverterTests" />
+      <!-- <SubPart Repository="imodel02"              PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"                   PartName="RunDgnV8ConverterTests" /> -->
   </Part>
   <Part Name="DwgImporter-GenTiaMaps" BentleyBuildMakeFile="${SrcRoot}imodel02/TestingScripts/TestImpactAnalysis/GenerateMaps.mke" BentleyBuildMakeOptions="+dCOMP_Name=DwgImporter" OnlyPlatforms="x64">
       <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
-      <SubPart Repository="imodel02"              PartFile="iModelBridgeCore/DgnDbSync/DwgConverter"                   PartName="RunDwgImporterTests" />
+      <!-- <SubPart Repository="imodel02"              PartFile="iModelBridgeCore/DgnDbSync/DwgConverter"                   PartName="RunDwgImporterTests" /> -->
   </Part>
   <Part Name="MstnBridge-GenTiaMaps" BentleyBuildMakeFile="${SrcRoot}imodel02/TestingScripts/TestImpactAnalysis/GenerateMaps.mke" BentleyBuildMakeOptions="+dCOMP_Name=MstnBridge" OnlyPlatforms="x64">
       <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
-      <SubPart Repository="imodel02"              PartFile="Bridges/Mstn/MstnBridge"                   PartName="RunMstnBridgeTests" />
+      <!-- <SubPart Repository="imodel02"              PartFile="Bridges/Mstn/MstnBridge"                   PartName="RunMstnBridgeTests" /> -->
   </Part>
   <Part Name="All-GenTiaMaps"  OnlyPlatforms="x64">
       <SubPart PartName="BeHttp-GenTiaMaps" />
@@ -174,7 +174,7 @@
       <SubPart PartName="ECObjects-GenTiaMaps" />
       <SubPart PartName="ECPresentation-GenTiaMaps" />
       <SubPart PartName="GeomLibs-GenTiaMaps" />        
-      <SubPart PartName="Licensing-GenTiaMaps" />
+      <!-- <SubPart PartName="Licensing-GenTiaMaps" /> -->
       <SubPart PartName="Units-GenTiaMaps" />
       <SubPart PartName="WSClient-GenTiaMaps" />
       <SubPart PartName="DgnV8Converter-GenTiaMaps" />
