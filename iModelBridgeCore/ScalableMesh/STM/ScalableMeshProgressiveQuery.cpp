@@ -41,10 +41,6 @@ USING_NAMESPACE_IMAGEPP;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
-SmCachedDisplayMeshData::~SmCachedDisplayMeshData()
-            {     
-            }
-
  SmCachedDisplayMeshData::SmCachedDisplayMeshData(SmCachedDisplayMesh*                 cachedDisplayMesh,
                                 IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr,
                                 uint64_t                             textureID,

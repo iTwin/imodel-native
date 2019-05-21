@@ -148,7 +148,8 @@ struct SmCachedDisplayMeshData
             bool                                isTextured,
             size_t                               memorySize,
             const bvector<uint64_t>&             appliedClips);          
-        virtual ~SmCachedDisplayMeshData();
+        virtual ~SmCachedDisplayMeshData() {}
+
        
         size_t GetMemorySize() const
             {
