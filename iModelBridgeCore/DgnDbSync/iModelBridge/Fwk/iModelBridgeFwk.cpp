@@ -1418,7 +1418,7 @@ int iModelBridgeFwk::PullMergeAndPushChange(Utf8StringCR description, bool relea
     DbResult dbres;
     bool madeSchemaChanges = false;
     m_briefcaseDgnDb = nullptr; // close the current connection to the briefcase db before attempting to reopen it!
-    m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName);
+    m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName, EnableECProfileUpgrade());
     if (!m_briefcaseDgnDb.IsValid())
         {
         ReportIssue(BeSQLite::Db::InterpretDbResult(dbres));
@@ -1480,7 +1480,7 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
     StopWatch openBimWithSchemaUpgrade(true);
     bool madeSchemaChanges = false;
     DbResult dbres;
-    m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName);
+    m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName, EnableECProfileUpgrade());
     uint8_t retryopenII = 0;
     while (!m_briefcaseDgnDb.IsValid() && (DbResult::BE_SQLITE_ERROR_SchemaUpgradeFailed == dbres) && (++retryopenII < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry())
         {
@@ -1495,7 +1495,7 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
         m_briefcaseDgnDb = nullptr;
 
         GetLogger().infov("Retrying SchemaUpgrade (if still necessary).");
-        m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName);
+        m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName, EnableECProfileUpgrade());
         }
     if (!m_briefcaseDgnDb.IsValid())
         {
@@ -2176,7 +2176,7 @@ BeSQLite::BeBriefcaseId iModelBridgeFwk::GetBriefcaseId()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Wouter.Rombouts                 03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::TestFeatureFlag(CharCP ff, bool& flag)
+BentleyStatus iModelBridgeFwk::TestFeatureFlag(CharCP ff, bool& flag) const
     {
     if (m_bridge != nullptr) 
         {
@@ -2184,6 +2184,24 @@ BentleyStatus iModelBridgeFwk::TestFeatureFlag(CharCP ff, bool& flag)
         return BSISUCCESS; 
         } 
 
-    flag = false;
+    if (m_useIModelHub && m_iModelHubArgs)
+        {
+        if (SUCCESS != iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment).IsFeatureOn(flag, ff))
+            {
+            LOG.errorv("Testing feature flag %s failed for environment %d", ff, m_iModelHubArgs->m_environment);
+            return ERROR;
+            }
+        return BSISUCCESS;
+        }
     return BSIERROR; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            iModelBridgeFwk::EnableECProfileUpgrade() const
+    {
+    bool allowProfileUpgrade = false;
+    TestFeatureFlag("allow-ec-schema-3-2", allowProfileUpgrade);
+    return allowProfileUpgrade;
     }
