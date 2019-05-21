@@ -1867,6 +1867,23 @@ public:
         return Napi::Number::New(Env(), (int)BE_SQLITE_OK);
         }
 
+    Napi::Value SaveProjectGuid(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, guidStr, Env().Undefined());
+        BeGuid guid;
+        guid.FromString(guidStr.c_str());
+        m_dgndb->SaveProjectGuid(guid);
+        return Napi::Number::New(Env(), (int)BE_SQLITE_OK);
+        }
+
+    Napi::Value QueryProjectGuid(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        BeGuid beGuid = m_dgndb->QueryProjectGuid();
+        return toJsString(Env(), beGuid.ToString());
+        }
+
     Napi::Value SetAsMaster(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -2279,6 +2296,7 @@ public:
             InstanceMethod("queryNextAvailableFileProperty", &NativeDgnDb::QueryNextAvailableFileProperty),
             InstanceMethod("queryNextTxnId", &NativeDgnDb::QueryNextTxnId),
             InstanceMethod("queryPreviousTxnId", &NativeDgnDb::QueryPreviousTxnId),
+            InstanceMethod("queryProjectGuid", &NativeDgnDb::QueryProjectGuid),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
             InstanceMethod("reinstateTxn", &NativeDgnDb::ReinstateTxn),
             InstanceMethod("removePendingChangeSet", &NativeDgnDb::RemovePendingChangeSet),
@@ -2287,6 +2305,7 @@ public:
             InstanceMethod("reverseTxns", &NativeDgnDb::ReverseTxns),
             InstanceMethod("saveChanges", &NativeDgnDb::SaveChanges),
             InstanceMethod("saveFileProperty", &NativeDgnDb::SaveFileProperty),
+            InstanceMethod("saveProjectGuid", &NativeDgnDb::SaveProjectGuid),
             InstanceMethod("setAsMaster", &NativeDgnDb::SetAsMaster),
             InstanceMethod("setBriefcaseId", &NativeDgnDb::SetBriefcaseId),
             InstanceMethod("setBriefcaseManagerOptimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerOptimisticConcurrencyControlPolicy),
