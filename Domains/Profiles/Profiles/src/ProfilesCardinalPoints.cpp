@@ -42,7 +42,7 @@ constexpr uint32_t s_standardCardinalPointCount = _countof (s_standardCardinalPo
 Utf8CP StandardCardinalPointToString (StandardCardinalPoint standardCardinalPoint)
     {
     uint32_t index = static_cast<uint32_t> (standardCardinalPoint);
-    if (index > s_standardCardinalPointCount)
+    if (index >= s_standardCardinalPointCount)
         return "";
 
     return s_standardCardinalPointNames[index];
