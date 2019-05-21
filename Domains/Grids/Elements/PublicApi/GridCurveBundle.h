@@ -5,7 +5,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <DgnPlatform/DgnDb.h>
-#include <DgnPlatform/DgnElementDependency.h>
 #include <BuildingShared/BuildingSharedMacros.h>
 #include <BuildingShared/DgnUtils/BuildingUtils.h>
 #include "ForwardDeclarations.h"
