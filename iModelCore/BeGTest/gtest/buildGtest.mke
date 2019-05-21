@@ -128,10 +128,16 @@ always:
 # ---------------------------------------------------------------------------------------------------
 always:
     ~linkfile "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies/$(progNameExe)=$(o)$(progNameExe)"
+%if ("x64" == $(TARGET_PROCESSOR_ARCHITECTURE) || " " != $[@findstring WinRT, $(TARGET_PROCESSOR_ARCHITECTURE)])
     ~linkmultifiles "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(o)/*.pdb"
+%endif
 %if !defined (CREATE_STATIC_LIBRARIES)
     ~linkmultifiles "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(collectionProduct)Assemblies/*$(shlibext)"
     ~linkmultifiles "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(BuildContext)SubParts/Assemblies/*$(shlibext)"
 %endif
     ~linkfile "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies/logging.config.xml=$(baseDir)logging.config.xml"
     ~linkdir "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assets=$(collectionProduct)Assets"
+
+
+
+
