@@ -1,19 +1,19 @@
 
 [imodel02\imodelcore\ecobjects\src\expressionnode.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
-[imodel02\imodelcore\ecobjects\src\ecschemaconverter.cpp]
+[imodel02\imodelcore\ecobjects\src\expressioncontext.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\ecobjects\src\schemalocalizedstrings.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\ecobjects\src\ecenabler.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
-[imodel02\imodelcore\ecobjects\src\ecclass.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
+[imodel02\imodelcore\ecobjects\src\ecschema.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\ecobjects\src\ecinstance.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\ecobjects\src\ecvalue.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
-[imodel02\imodelcore\ecobjects\src\supplementalschema.cpp]
+[imodel02\imodelcore\ecobjects\src\schemaparseutils.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\ecobjects\src\standaloneecinstance.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
@@ -27,13 +27,13 @@
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\ecobjects\src\ecproperty.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
-[imodel02\imodelcore\ecobjects\src\expressioncontext.cpp]
+[imodel02\imodelcore\ecobjects\src\ecschemaconverter.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
-[imodel02\imodelcore\ecobjects\src\ecschema.cpp]
+[imodel02\imodelcore\ecobjects\src\ecclass.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\ecobjects\src\schemacomparer.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelcore\ecobjects\src\schemaparseutils.cpp]
+[imodel02\imodelcore\ecobjects\src\supplementalschema.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\ecobjects\src\ectype.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:

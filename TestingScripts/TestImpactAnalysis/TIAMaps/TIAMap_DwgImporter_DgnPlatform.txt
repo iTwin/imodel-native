@@ -10,7 +10,7 @@
 [imodel02\imodelcore\dgnplatform\dgncore\dgndomain.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\linestyle\lslocation.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\linestyle\lsname.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\unitmanager.cpp]
@@ -27,14 +27,14 @@
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgnbrep\psolidkernelmanager.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\dgnplatform\dgncore\dgnelementproperties.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\webmercator.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\elementdependency.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\dgnmodel.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
-[imodel02\imodelcore\dgnplatform\dgncore\cesiumtilewriter.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\dgnelements.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\annotations\annotationleaderstyle.cpp]
@@ -53,14 +53,14 @@
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\lighting.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
-[imodel02\imodelcore\dgnplatform\dgncore\dgndb.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\dgnplatform\dgncore\codespec.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\acsmanager.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\dgnrscfontdata.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
-[imodel02\imodelcore\dgnplatform\dgncore\codespec.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\dgnplatform\dgncore\dgndb.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\linestyle\lsdb.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\linkelement.cpp]
@@ -81,6 +81,8 @@
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\dgnpropertyjson.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:BasicTests.*:
+[imodel02\imodelcore\dgnplatform\dgngeocoord\geocoordservices.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\viewcontroller.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\render.cpp]
@@ -91,6 +93,8 @@
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\tile.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
+[imodel02\imodelcore\dgnplatform\dgnbrep\psolidattrib.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\linestyle\linestyleapi.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgnhandlers\dgnhandlers.cpp]
@@ -100,7 +104,7 @@
 [imodel02\imodelcore\dgnplatform\dgncore\dgnelement.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\unitdefinition.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\biscoredomain.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\sheet.cpp]
@@ -109,16 +113,14 @@
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\locksmanager.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
-[imodel02\imodelcore\dgnplatform\dgnbrep\psolidattrib.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\dgnplatform\dgncore\cesiumtilewriter.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\dgnfont.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\sprites.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\repositorymanager.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelcore\dgnplatform\dgncore\elementecinstanceadapter.h]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.Description:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\volumeelement.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\dgndbschema.cpp]
@@ -127,15 +129,13 @@
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\dgnmaterial.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
-[imodel02\imodelcore\dgnplatform\dgncore\dgnelementproperties.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+[imodel02\imodelcore\dgnplatform\dgncore\elementecinstanceadapter.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\functionaldomain.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\annotations\textannotationseed.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\tools\toolsubs\macro\configurationmanager.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
-[imodel02\imodelcore\dgnplatform\dgncore\annotations\textannotationelement.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\genericdomain.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
@@ -149,5 +149,5 @@
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\dgnplatform\privateapi\dgnplatforminternal\dgncore\elementgraphics.fb.h]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelcore\dgnplatform\dgngeocoord\geocoordservices.cpp]
+[imodel02\imodelcore\dgnplatform\dgncore\annotations\textannotationelement.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
