@@ -2773,7 +2773,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                 TRACEPOINT(THREAD_ID(), EventType::LOAD_MESH_CREATE_0, meshNode->GetBlockID().m_integerID, (uint64_t)cachedDisplayMesh, textureID, -1, -1, m_cachedDisplayMeshData->GetRefCount())
 
-                displayMeshData->m_cachedDisplayMesh = 0;
+                
                 delete displayMeshData;
                 if (isClipped)
                     {
