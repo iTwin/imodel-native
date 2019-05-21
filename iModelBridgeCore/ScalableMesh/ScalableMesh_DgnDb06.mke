@@ -347,6 +347,8 @@ $(o)SMCesiumPublisher$(oext) : $(stmDir)Stores/SMCesiumPublisher.cpp $(PCHHeader
 
 $(o)ScalableMeshSaveAs$(oext) : $(stmDir)ScalableMeshSaveAs.cpp ${MultiCompileDepends}
 
+$(o)ScalableMeshContourExtractor$(oext) : $(stmDir)ScalableMeshContourExtractor.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
 #-----------------------------------------------------------------------
 #   Build RDS provider
 #-----------------------------------------------------------------------
