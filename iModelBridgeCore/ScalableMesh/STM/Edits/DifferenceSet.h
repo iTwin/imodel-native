@@ -21,7 +21,10 @@ typedef struct { float x, y, z; } FloatXYZ;
 /* This structure represents a modification made on a mesh. */
 struct DifferenceSet
     {
-    uint64_t clientID; //Stores diff set ID, if applicable.
+    uint64_t clientID; //Stores diff set ID, if applicable. 
+                       //Note that there are 2 reserved clientId. 
+                       //   -1 is used to specified if all the diffsets are up-to-date (only the upToDate member is used). 
+                       //    0 is used to speficied the mesh outside all clip masks (i.e. : the only mesh visible if all clip masks are turned on).    
     int32_t firstIndex; //this index represents the beginning of the array for added vertices in the "added faces" index list. Previous indexes come from the base mesh.
     bvector<DPoint3d> addedVertices;
     bvector<int32_t> removedVertices;

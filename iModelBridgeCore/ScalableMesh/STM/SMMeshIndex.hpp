@@ -1542,7 +1542,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh(bv
                 bool isMeshed;
                 if (node->m_nodeHeader.m_arePoints3d)
                     {
-                    assert(!"3D Meshing is currently supported by ContextCapture - Should not be called.");
+                    assert(!"3D Meshing code in ScalableMesh is not used anymore. Only ContextCapture can do 3D meshing - Should not be called.");
                     isMeshed = node->m_mesher3d->Mesh(node);
                     }
                 else
@@ -2813,6 +2813,12 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
     bool clipApplied = true;
     /*TFS# 1021172 - SyncWithClipSets can trigger a delete on the child clips, that can lead to great children node to be update during modified (clipApplied will return false for the child node).
     uint64_t myTs = LastClippingStateUpdateTimestamp();*/
+    bool expected = false;
+    while(!this->m_isClipping.compare_exchange_weak(expected, true)) 
+        {
+        expected = false;
+        }
+
     switch (action)
         {
         case ClipAction::ACTION_ADD:
@@ -2825,6 +2831,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
             clipApplied = DeleteClip(clipId, false, setToggledWhenIdIsOn);
             break;
         }
+
+    this->m_isClipping = false;
+
     if (!clipApplied) return;
     else
         nOfNodesTouched++;
@@ -4773,13 +4782,15 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     if (dynamic_cast<SMMeshIndex<POINT,EXTENT>*>(this->m_SMIndex)->m_isInsertingClips) return;
 
     bool expected = false;
-    while (!this->m_isClipping.compare_exchange_weak(expected, true)) {}
+    while (!this->m_isClipping.compare_exchange_weak(expected, true)) 
+        {
+        expected = false;
+        }
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
 
     if (!diffSetPtr.IsValid())
     {
-        expected = true;
-        while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
+        this->m_isClipping = false;
         return;
     }
 
@@ -5098,8 +5109,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         }
     assert(m_nbClips > 0 || diffSetPtr->size() == 0);
 
-     expected = true;
-    while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
+    this->m_isClipping = false;
 
     //std::cout << "Merged clips for " << this->GetBlockID().m_integerID << " we have " << diffSetPtr->size() << "clips" << std::endl;
 

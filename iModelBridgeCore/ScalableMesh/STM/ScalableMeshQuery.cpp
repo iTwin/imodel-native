@@ -2907,7 +2907,7 @@ void ScalableMeshMeshFlags::_SetPrecomputeBoxes(bool precomputeBoxes)
 
 void ScalableMeshMeshFlags::_SetClipsToShow(bset<uint64_t>& clipsToShow, bool shouldInvertClips)
     {    
-    m_useClipsToShow = !clipsToShow.empty(); // should only be used if parameter is not empty (e.g. send empty set to consider merged clips, or to set shouldInvertClips when a boundary clip exists)
+    m_useClipsToShow = true;
     m_shouldInvertClips = shouldInvertClips;
     m_clipsToShow.insert(clipsToShow.begin(), clipsToShow.end());
     }
