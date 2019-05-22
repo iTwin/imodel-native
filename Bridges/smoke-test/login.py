@@ -14,7 +14,7 @@ import sys
 loginPass=sys.argv[1]
 version=sys.argv[2]
 
-url=r'https://qa-connect-imodelhubwebsite.bentley.com/Project/9303f305-8e48-416c-88a3-f3384d80f89a'
+url=r'https://qa-connect-imodelhubwebsite.bentley.com/Project/0b048e3d-9699-4a6c-82b8-68f79824c810'
 driver = webdriver.Chrome("C:\\bridge\\chromedriver.exe")
 driver.set_page_load_timeout(150)
 driver.get(url)

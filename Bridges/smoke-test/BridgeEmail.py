@@ -11,11 +11,9 @@ import smtplib
 import sys
 import os
 
-file = open('C:\\bridge\\Version.log', 'r') 
-version=file.read()
+
+version=sys.argv[1]
 build = version
-#output_path = sys.argv[2]
-#fileComp_path = sys.argv[3]
 
 sender = 'Saddam.Khattak@bentley.com'
 body= 'iModel Bridge Service - Microstation : '+ build + 'Error Result'
@@ -39,12 +37,6 @@ Encoders.encode_base64(part)
 part.add_header('Content-Disposition', 'attachment', filename="Errors.txt")
 msg.attach(part)
 
-'''if fileComp_path != 'null':
-    part = MIMEBase('application', "octet-stream")
-    part.set_payload(open(fileComp_path+"\FolderComparison_out_baseline.html", "rb").read())
-    Encoders.encode_base64(part)
-    part.add_header('Content-Disposition', 'attachment', filename="FolderComparison_out_baseline.html")
-    msg.attach(part)'''
 
 try:
     smtpObj = smtplib.SMTP('smtp.bentley.com')
