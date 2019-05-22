@@ -922,7 +922,7 @@ void ORDCorridorsConverter::ConvertSpeedTable(SpeedTableCP speedTable, int32_t c
 
     auto existingSpeeds = designCriteriaCPtr->QueryOrderedDesignSpeedIds();
     if (existingSpeeds.size() == stationStartEndSpeeds.size())
-        return; // TODO - compare existing vs. new speeds -> insert/update/delete
+        return; // TODO - compare existing vs. new speeds -> insert/update/delete accordingly
 
     for (auto rIter = stationStartEndSpeeds.rbegin(); rIter != stationStartEndSpeeds.rend(); rIter++)
         {
@@ -1463,7 +1463,7 @@ bool ConvertORDElementXDomain::AssignSuperelevationAspect(Dgn::DgnElementR eleme
         {
         // The following check is due to an null pointer error in CIF when calling GetEndDistance().
         // This check is a band-aid fix for now to avoid getting into trouble.
-        if (superElevationPtr->GetParentSection()->GetAlignment() != nullptr)
+        if (superElevationPtr->GetParentSection()->GetAlignment().IsValid())
             {
             assignStationRangeAspect(element, superElevationPtr->GetStartDistance(), superElevationPtr->GetEndDistance());
             assignSuperelevationAspect(element, *superElevationPtr);
