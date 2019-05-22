@@ -92,7 +92,7 @@ DgnDbStatus Profile::_OnUpdate (DgnElement const& original)
 void Profile::_OnUpdateFinished() const
     {
     ProfileHandler& profileHandler = ProfileHandler::GetHandler();
-    profileHandler.NotifyDependencies(m_dgndb, m_elementId);
+    profileHandler.NotifyDependenciesOnUpdateFinished(m_dgndb, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -106,6 +106,15 @@ DgnDbStatus Profile::_UpdateInDb()
     m_geometryUpdated = false;
 
     return T_Super::_UpdateInDb();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void Profile::_OnDeleted() const
+    {
+    ProfileHandler& profileHandler = ProfileHandler::GetHandler();
+    profileHandler.NotifyDependenciesOnDeleted(m_dgndb, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**

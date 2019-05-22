@@ -136,6 +136,7 @@ protected:
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override; //!< @private
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _UpdateInDb() override; //!< @private
     PROFILES_EXPORT virtual void _OnUpdateFinished() const override; //!< @private
+    PROFILES_EXPORT virtual void _OnDeleted() const override; //!< @private
     PROFILES_EXPORT virtual void _CopyFrom (Dgn::DgnElement const& source) override; //!< @private
 
 public:
@@ -232,28 +233,36 @@ private:
 //! Dependency handler interface to handle element updates
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct IDependencyUpdateHandler
+template <typename T>
+struct IDependencyChangeHandler
     {
 protected:
-    IDependencyUpdateHandler() = default;
+    IDependencyChangeHandler() = default;
 public:
-    //! Update elements that depend on the elementId element.
-    //! @param database database that owns the elementId element.
-    //! @param elementId the Id of an element that was updated.
-    PROFILES_EXPORT virtual void _OnUpdate (Dgn::DgnDb const& database, Dgn::DgnElementId const& elementId) = 0;
+    //! Called after the element was updated.
+    //! @param database database that owns the element.
+    //! @param element that was updated.
+    PROFILES_EXPORT virtual void _OnUpdateFinished (Dgn::DgnDb const& database, T const& element) = 0;
+
+    //! Called after the element was deleted.
+    //! @param database database that owns the element.
+    //! @param element that was deleted.
+    PROFILES_EXPORT virtual void _OnDeleted (Dgn::DgnDb const& database, T const& element) = 0;
     };
 
-using IDependencyUpdateHandlerPtr = std::unique_ptr<IDependencyUpdateHandler>;
+template <typename T>
+using IDependencyChangeHandlerPtr = std::unique_ptr<IDependencyChangeHandler<T>>;
 
 //=======================================================================================
-//! Generic class used to register IDependencyUpdateHandler and trigger updates.
+//! Generic class used to register IDependencyChangeHandler<T> and trigger updates.
 //! Inherited by Handlers that want to notify other elements depending on them.
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct DependencyUpdateNotifier
+template <typename T>
+struct DependencyChangeNotifier
     {
 private:
-    bvector<IDependencyUpdateHandlerPtr> m_dependencyHandlers;
+    bvector<IDependencyChangeHandlerPtr<T>> m_dependencyHandlers;
 
 public:
     //! Registers a DependencyUpdateHandler.
@@ -264,9 +273,9 @@ public:
     void RegisterDependencyHandler (_HandlerType& handler)
         {
         static_assert (std::is_copy_constructible_v<_HandlerType>, "_HandlerType must be copy constructable!");
-        static_assert (std::is_base_of_v<IDependencyUpdateHandler, _HandlerType>, "_HandlerType must inherit IDependencyUpdateHandler!");
+        static_assert (std::is_base_of_v<IDependencyChangeHandler<T>, _HandlerType>, "_HandlerType must inherit IDependencyChangeHandler!");
 
-        m_dependencyHandlers.push_back (IDependencyUpdateHandlerPtr (new _HandlerType (handler)));
+        m_dependencyHandlers.push_back (IDependencyChangeHandlerPtr<T> (new _HandlerType (handler)));
         }
 
     //! Registers a DependencyUpdateHandler.
@@ -277,19 +286,28 @@ public:
     void RegisterDependencyHandler (_HandlerType&& handler)
         {
         static_assert (std::is_move_constructible_v<_HandlerType>, "_HandlerType must be move constructable!");
-        static_assert (std::is_base_of_v<IDependencyUpdateHandler, _HandlerType>, "_HandlerType must inherit IDependencyUpdateHandler!");
+        static_assert (std::is_base_of_v<IDependencyChangeHandler<T>, _HandlerType>, "_HandlerType must inherit IDependencyChangeHandler!");
 
-        m_dependencyHandlers.push_back (IDependencyUpdateHandlerPtr (new _HandlerType (std::move (handler))));
+        m_dependencyHandlers.push_back (IDependencyChangeHandlerPtr<T>(new _HandlerType (std::move (handler))));
         }
 
 protected:
-    //! Notifies dependencies, triggers their update methods.
-    //! @param database database that owns the elementId element.
-    //! @param elementId Id of the element that was updated and wants to notify its dependencies.
-    void NotifyDependencies (Dgn::DgnDb const& database, Dgn::DgnElementId const& elementId)
+    //! Call this after the elment is updated to notify dependencies about the update.
+    //! @param database database that owns the element.
+    //! @param element that was updated and wants to notify its dependencies.
+    void NotifyDependenciesOnUpdateFinished (Dgn::DgnDb const& database, T const& element)
         {
-        for (IDependencyUpdateHandlerPtr const& dependencyHandler : m_dependencyHandlers)
-            dependencyHandler->_OnUpdate (database, elementId);
+        for (IDependencyChangeHandlerPtr<T> const& dependencyHandler : m_dependencyHandlers)
+            dependencyHandler->_OnUpdateFinished (database, element);
+        }
+
+    //! Call this after the elment is deleted to notify dependencies about the delete.
+    //! @param database database that owns the element.
+    //! @param element that was updated and wants to notify its dependencies.
+    void NotifyDependenciesOnDeleted (Dgn::DgnDb const& database, T const& element)
+        {
+        for (IDependencyChangeHandlerPtr<T> const& dependencyHandler : m_dependencyHandlers)
+            dependencyHandler->_OnDeleted (database, element);
         }
     };
 
@@ -297,7 +315,7 @@ protected:
 //! Handler for Profile class.
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ProfileHandler : Dgn::dgn_ElementHandler::Definition, DependencyUpdateNotifier
+struct EXPORT_VTABLE_ATTRIBUTE ProfileHandler : Dgn::dgn_ElementHandler::Definition, DependencyChangeNotifier<Profile>
     {
     friend struct Profile;
 

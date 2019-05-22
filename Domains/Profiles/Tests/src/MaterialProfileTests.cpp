@@ -145,3 +145,43 @@ TEST_F (MaterialProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
     EXPECT_EQ (profileId, materialProfilePtr->GetProfile()->GetElementId());
     EXPECT_EQ (materialId, materialProfilePtr->GetMaterial()->GetElementId());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MaterialProfileTestCase, Update_ExistingDepencencyChangeHandler_NotifyOnUpdate)
+    {
+    TestProfileChangeHandler<MaterialProfile> materialProfileChangeHandler;
+    MaterialProfileHandler::GetHandler().RegisterDependencyHandler(materialProfileChangeHandler);
+
+    EXPECT_EQ(0, *materialProfileChangeHandler.onUpdateFinsihedCount);
+
+    CreateParams createParams(GetModel(), CreateAndGetProfileId(), CreateAndGetMaterialId("0"));
+    MaterialProfilePtr materialProfile = ProfilesTestCase::InsertElement<MaterialProfile>(createParams);
+
+    materialProfile->SetUserLabel("name2");
+    DgnDbStatus status;
+    materialProfile->Update(&status);
+    ASSERT_EQ(DgnDbStatus::Success, status);
+
+    EXPECT_EQ(1, *materialProfileChangeHandler.onUpdateFinsihedCount);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MaterialProfileTestCase, Update_ExistingDepencencyChangeHandler_NotifyOnDelete)
+    {
+    TestProfileChangeHandler<MaterialProfile> materialProfileChangeHandler;
+    MaterialProfileHandler::GetHandler().RegisterDependencyHandler(materialProfileChangeHandler);
+
+    EXPECT_EQ(0, *materialProfileChangeHandler.onDeletedCount);
+
+    CreateParams createParams(GetModel(), CreateAndGetProfileId(), CreateAndGetMaterialId("0"));
+    MaterialProfilePtr materialProfile = ProfilesTestCase::InsertElement<MaterialProfile>(createParams);
+
+    materialProfile->SetUserLabel("name2");
+    materialProfile->Delete();
+
+    EXPECT_EQ(1, *materialProfileChangeHandler.onDeletedCount);
+    }
