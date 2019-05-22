@@ -291,6 +291,7 @@ void ECDb::Impl::OnRemoveFunction(DbFunction& function) const
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ECDb::Impl::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const
     {
+    BeMutexHolder lock(m_mutex);
     auto it = m_sqlFunctions.find(DbFunctionKey(name, argCount));
     if (it == m_sqlFunctions.end())
         {
