@@ -209,20 +209,36 @@ static bmap<Utf8String, NativeLogging::SEVERITY>* s_categorySeverityFilter;
 static BeThreadLocalStorage* s_currentClientRequestContext;
 static ObjRefVault s_objRefVault;
 static bset<JsInterop::ObjectReferenceClaimCheck> s_deferredLoggingClientRequestActivityClaimChecks;
-static int s_disableJsCalls;
 static bool s_assertionsEnabled = true;
 static BeMutex s_assertionMutex;
 static Utf8String s_mobileResourcesDir;
 static Utf8String s_mobileTempDir;
 
-struct DisableJsCalls
-    {
-    DisableJsCalls() {++s_disableJsCalls;}
-    ~DisableJsCalls() {--s_disableJsCalls;}
-    };
+// DON'T change this flag directly. It is managed by BeObjectWrap only.
+static bool s_BeObjectWrap_inDestructor;
 
-// The following must be the first line of every ObjectWrap's destructor:
-#define OBJECT_WRAP_DTOR_DISABLE_JS_CALLS DisableJsCalls disableJsCallsInScope;
+// Every ObjectWrap subclass must derive from BeObjectWrap!
+template<typename OBJ>
+struct BeObjectWrap : Napi::ObjectWrap<OBJ>
+    {
+    protected:
+
+    BeObjectWrap(Napi::CallbackInfo const& info) : Napi::ObjectWrap<OBJ>(info) {}
+
+    // Every derived class must call this function on the first line of its destructor
+    static void SetInDestructor()
+        {
+        BeAssert(!s_BeObjectWrap_inDestructor && "Call SetInDestructor once, as the first line of the subclass destructor.");
+        s_BeObjectWrap_inDestructor = true;
+        }
+
+    ~BeObjectWrap()
+        {
+        BeAssert(s_BeObjectWrap_inDestructor && "Subclass should have called SetInDestructor at the start of its destructor");
+        // We can re-enable JS callbacks, now that we know that the destructors for the subclass and its member variables have finished.
+        s_BeObjectWrap_inDestructor = false;
+        }
+    };
 
 static void doDeferredLogging();
 
@@ -509,7 +525,7 @@ void JsInterop::ObjectReferenceClaimCheck::Dispose()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool JsInterop::IsJsExecutionDisabled()
     {
-    return (s_disableJsCalls != 0) 
+    return s_BeObjectWrap_inDestructor
         || !IsMainThread()
         || (!s_logger.IsEmpty() && s_logger.Env().IsExceptionPending());
     }
@@ -781,15 +797,15 @@ Json::Value Convert(Napi::Value jsValue)
 // Projects the ECDb class into JS
 //! @bsiclass
 //=======================================================================================
-struct NativeECDb : Napi::ObjectWrap<NativeECDb>
+struct NativeECDb : BeObjectWrap<NativeECDb>
     {
     private:
         DEFINE_CONSTRUCTOR
         std::unique_ptr<ECDb> m_ecdb;
 
     public:
-        NativeECDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECDb>(info) {}
-        ~NativeECDb() {OBJECT_WRAP_DTOR_DISABLE_JS_CALLS}
+        NativeECDb(Napi::CallbackInfo const& info) : BeObjectWrap<NativeECDb>(info) {}
+        ~NativeECDb() {SetInDestructor();}
 
         // Check if val is really a NativeECDb peer object
         static bool InstanceOf(Napi::Value val)
@@ -902,7 +918,7 @@ struct NativeECDb : Napi::ObjectWrap<NativeECDb>
 // Projects the NativeECSchemaXmlContext class into JS
 //! @bsiclass
 //=======================================================================================
-struct NativeECSchemaXmlContext : Napi::ObjectWrap<NativeECSchemaXmlContext>
+struct NativeECSchemaXmlContext : BeObjectWrap<NativeECSchemaXmlContext>
     {
     private:
         DEFINE_CONSTRUCTOR
@@ -910,12 +926,12 @@ struct NativeECSchemaXmlContext : Napi::ObjectWrap<NativeECSchemaXmlContext>
         ECSchemaXmlContextUtils::LocaterCallbackUPtr m_locater;
 
     public:
-        NativeECSchemaXmlContext(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECSchemaXmlContext>(info)
+        NativeECSchemaXmlContext(Napi::CallbackInfo const& info) : BeObjectWrap<NativeECSchemaXmlContext>(info)
             {
             m_context = ECSchemaXmlContextUtils::CreateSchemaReadContext(T_HOST.GetIKnownLocationsAdmin());
             }
 
-        ~NativeECSchemaXmlContext() {OBJECT_WRAP_DTOR_DISABLE_JS_CALLS}
+        ~NativeECSchemaXmlContext() {SetInDestructor();}
 
         // Check if val is really a NativeECSchemaXmlContext peer object
         static bool HasInstance(Napi::Value val) {
@@ -1000,16 +1016,16 @@ public:
 };
 
 // Project the IBriefcaseManager::Request class
-struct BriefcaseManagerResourcesRequest : Napi::ObjectWrap<BriefcaseManagerResourcesRequest>
+struct BriefcaseManagerResourcesRequest : BeObjectWrap<BriefcaseManagerResourcesRequest>
 {
     IBriefcaseManager::Request m_req;
     DEFINE_CONSTRUCTOR;
 
-    BriefcaseManagerResourcesRequest(Napi::CallbackInfo const& info) : Napi::ObjectWrap<BriefcaseManagerResourcesRequest>(info)
+    BriefcaseManagerResourcesRequest(Napi::CallbackInfo const& info) : BeObjectWrap<BriefcaseManagerResourcesRequest>(info)
         {
         }
 
-    ~BriefcaseManagerResourcesRequest() {OBJECT_WRAP_DTOR_DISABLE_JS_CALLS}
+    ~BriefcaseManagerResourcesRequest() {SetInDestructor();}
 
     static bool InstanceOf(Napi::Value val) {
         if (!val.IsObject())
@@ -1072,7 +1088,7 @@ static void initializeGcs()
 // Projects the DgnDb class into JS
 //! @bsiclass
 //=======================================================================================
-struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
+struct NativeDgnDb : BeObjectWrap<NativeDgnDb>
     {
 public:
     static constexpr int ERROR_UsageTrackingFailed = -100;
@@ -1103,8 +1119,8 @@ public:
     ConnectionManager m_connections;
     //std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
     std::shared_ptr<CancellationToken> m_cancellationToken;
-    NativeDgnDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeDgnDb>(info) {}
-    ~NativeDgnDb() {OBJECT_WRAP_DTOR_DISABLE_JS_CALLS; CloseDgnDb();}
+    NativeDgnDb(Napi::CallbackInfo const& info) : BeObjectWrap<NativeDgnDb>(info) {}
+    ~NativeDgnDb() {SetInDestructor(); CloseDgnDb();}
 
     void CloseDgnDb()
         {
@@ -2333,7 +2349,7 @@ public:
 // Projects the Changed Elements ECDb class into JS
 //! @bsiclass
 //=======================================================================================
-struct NativeChangedElementsECDb : Napi::ObjectWrap<NativeChangedElementsECDb>
+struct NativeChangedElementsECDb : BeObjectWrap<NativeChangedElementsECDb>
     {
     private:
         DEFINE_CONSTRUCTOR;
@@ -2354,8 +2370,8 @@ struct NativeChangedElementsECDb : Napi::ObjectWrap<NativeChangedElementsECDb>
         }
 
       public:
-        NativeChangedElementsECDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeChangedElementsECDb>(info) {}
-        ~NativeChangedElementsECDb() {OBJECT_WRAP_DTOR_DISABLE_JS_CALLS}
+        NativeChangedElementsECDb(Napi::CallbackInfo const& info) : BeObjectWrap<NativeChangedElementsECDb>(info) {}
+        ~NativeChangedElementsECDb() {SetInDestructor();}
 
         // Check if val is really a NativeECDb peer object
         static bool InstanceOf(Napi::Value val)
@@ -2483,7 +2499,7 @@ struct NativeChangedElementsECDb : Napi::ObjectWrap<NativeChangedElementsECDb>
 // Projects the IECSqlBinder interface into JS.
 //! @bsiclass
 //=======================================================================================
-struct NativeECSqlBinder : Napi::ObjectWrap<NativeECSqlBinder>
+struct NativeECSqlBinder : BeObjectWrap<NativeECSqlBinder>
     {
 private:
     DEFINE_CONSTRUCTOR;
@@ -2502,7 +2518,7 @@ private:
         }
 
 public:
-    NativeECSqlBinder(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECSqlBinder>(info)
+    NativeECSqlBinder(Napi::CallbackInfo const& info) : BeObjectWrap<NativeECSqlBinder>(info)
         {
         if (info.Length() != 2)
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlBinder constructor expects two arguments.", );
@@ -2516,7 +2532,7 @@ public:
             THROW_TYPE_EXCEPTION_AND_RETURN("Invalid second arg for NativeECSqlBinder constructor. ECDb must not be nullptr",);
         }
 
-    ~NativeECSqlBinder() {OBJECT_WRAP_DTOR_DISABLE_JS_CALLS}
+    ~NativeECSqlBinder() {SetInDestructor();}
 
     static bool InstanceOf(Napi::Value val)
         {
@@ -2803,7 +2819,7 @@ public:
 // Projects the NativeECSqlColumnInfo interface into JS.
 //! @bsiclass
 //=======================================================================================
-struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
+struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
     {
     private:
         //Must match ECSqlValueType in imodeljs-core
@@ -2831,7 +2847,7 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
         ECSqlColumnInfo const* m_colInfo = nullptr;
 
     public:
-        NativeECSqlColumnInfo(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECSqlColumnInfo>(info)
+        NativeECSqlColumnInfo(Napi::CallbackInfo const& info) : BeObjectWrap<NativeECSqlColumnInfo>(info)
             {
             if (info.Length() != 1)
                 THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlColumnInfo constructor expects one argument.",);
@@ -2841,7 +2857,7 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
                 THROW_TYPE_EXCEPTION_AND_RETURN("Invalid first arg for NativeECSqlColumnInfo constructor. ECSqlColumnInfo must not be nullptr",);
             }
 
-        ~NativeECSqlColumnInfo() {OBJECT_WRAP_DTOR_DISABLE_JS_CALLS}
+        ~NativeECSqlColumnInfo() {SetInDestructor();}
 
         static bool InstanceOf(Napi::Value val)
             {
@@ -3055,7 +3071,7 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
 // Projects the IECSqlValue interface into JS.
 //! @bsiclass
 //=======================================================================================
-struct NativeECSqlValue : Napi::ObjectWrap<NativeECSqlValue>
+struct NativeECSqlValue : BeObjectWrap<NativeECSqlValue>
     {
 private:
     DEFINE_CONSTRUCTOR;
@@ -3063,7 +3079,7 @@ private:
     ECDb const* m_ecdb = nullptr;
 
 public:
-    NativeECSqlValue(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECSqlValue>(info)
+    NativeECSqlValue(Napi::CallbackInfo const& info) : BeObjectWrap<NativeECSqlValue>(info)
         {
         if (info.Length() < 2)
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue constructor expects two arguments.",);
@@ -3077,7 +3093,7 @@ public:
             THROW_TYPE_EXCEPTION_AND_RETURN("Invalid second arg for NativeECSqlValue constructor. ECDb must not be nullptr", );
         }
 
-    ~NativeECSqlValue() {OBJECT_WRAP_DTOR_DISABLE_JS_CALLS}
+    ~NativeECSqlValue() {SetInDestructor();}
 
     static bool InstanceOf(Napi::Value val)
         {
@@ -3347,7 +3363,7 @@ public:
 // Projects the IECSqlValueIterable interface into JS.
 //! @bsiclass
 //=======================================================================================
-struct NativeECSqlValueIterator : Napi::ObjectWrap<NativeECSqlValueIterator>
+struct NativeECSqlValueIterator : BeObjectWrap<NativeECSqlValueIterator>
     {
     private:
         DEFINE_CONSTRUCTOR;
@@ -3358,7 +3374,7 @@ struct NativeECSqlValueIterator : Napi::ObjectWrap<NativeECSqlValueIterator>
         IECSqlValueIterable::const_iterator m_endIt;
 
     public:
-        NativeECSqlValueIterator(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECSqlValueIterator>(info)
+        NativeECSqlValueIterator(Napi::CallbackInfo const& info) : BeObjectWrap<NativeECSqlValueIterator>(info)
             {
             if (info.Length() < 2)
                 THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValueIterator constructor expects two argument.", );
@@ -3374,7 +3390,7 @@ struct NativeECSqlValueIterator : Napi::ObjectWrap<NativeECSqlValueIterator>
                 THROW_TYPE_EXCEPTION_AND_RETURN("Invalid second arg for NativeECSqlValueIterator constructor. ECDb must not be nullptr",);
             }
 
-        ~NativeECSqlValueIterator() {OBJECT_WRAP_DTOR_DISABLE_JS_CALLS}
+        ~NativeECSqlValueIterator() {SetInDestructor();}
 
         static bool InstanceOf(Napi::Value val)
             {
@@ -3453,7 +3469,7 @@ Napi::Value NativeECSqlValue::GetArrayIterator(Napi::CallbackInfo const& info)
 // Projects the ECSqlStatement class into JS.
 //! @bsiclass
 //=======================================================================================
-struct NativeECSqlStatement : Napi::ObjectWrap<NativeECSqlStatement>
+struct NativeECSqlStatement : BeObjectWrap<NativeECSqlStatement>
 {
 private:
     DEFINE_CONSTRUCTOR;
@@ -3472,8 +3488,8 @@ private:
         };
 
 public:
-    NativeECSqlStatement(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECSqlStatement>(info), m_stmt(new ECSqlStatement()) {}
-    ~NativeECSqlStatement() {OBJECT_WRAP_DTOR_DISABLE_JS_CALLS}
+    NativeECSqlStatement(Napi::CallbackInfo const& info) : BeObjectWrap<NativeECSqlStatement>(info), m_stmt(new ECSqlStatement()) {}
+    ~NativeECSqlStatement() {SetInDestructor();}
 
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports)
@@ -3650,7 +3666,7 @@ public:
 // Projects the BeSQLite::Statement class into JS.
 //! @bsiclass
 //=======================================================================================
-struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
+struct NativeSqliteStatement : BeObjectWrap<NativeSqliteStatement>
     {
     private:
         DEFINE_CONSTRUCTOR;
@@ -3668,8 +3684,8 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
             }
 
     public:
-        NativeSqliteStatement(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeSqliteStatement>(info), m_stmt(new Statement()) {}
-        ~NativeSqliteStatement() {OBJECT_WRAP_DTOR_DISABLE_JS_CALLS}
+        NativeSqliteStatement(Napi::CallbackInfo const& info) : BeObjectWrap<NativeSqliteStatement>(info), m_stmt(new Statement()) {}
+        ~NativeSqliteStatement() {SetInDestructor();}
 
         //  Create projections
         static void Init(Napi::Env& env, Napi::Object exports)
@@ -4188,7 +4204,7 @@ void JsInterop::StepAsync(Napi::Function& callback, Statement& stmt)
 // A request to generate a snap point given an element and additional parameters.
 //! @bsiclass
 //=======================================================================================
-struct SnapRequest : Napi::ObjectWrap<SnapRequest>
+struct SnapRequest : BeObjectWrap<SnapRequest>
 {
     //=======================================================================================
     // Async Worker that does a snap on another thread.
@@ -4267,8 +4283,8 @@ struct SnapRequest : Napi::ObjectWrap<SnapRequest>
             }
         }
 
-    SnapRequest(Napi::CallbackInfo const& info) : Napi::ObjectWrap<SnapRequest>(info) {}
-    ~SnapRequest() {OBJECT_WRAP_DTOR_DISABLE_JS_CALLS}
+    SnapRequest(Napi::CallbackInfo const& info) : BeObjectWrap<SnapRequest>(info) {}
+    ~SnapRequest() {SetInDestructor();}
 
     static void Init(Napi::Env& env, Napi::Object exports)
         {
@@ -4507,7 +4523,7 @@ void JsInterop::GetTileContent(ICancellationTokenPtr cancel, DgnDbR db, Utf8Stri
 // Projects the NativeECPresentationManager class into JS.
 //! @bsiclass
 //=======================================================================================
-struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManager>
+struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     {
     //=======================================================================================
     // Async Worker which sends ECPresentationResult via callback
@@ -4600,7 +4616,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
     LocalState m_localState;
 
     NativeECPresentationManager(Napi::CallbackInfo const& info)
-        : Napi::ObjectWrap<NativeECPresentationManager>(info)
+        : BeObjectWrap<NativeECPresentationManager>(info)
         {
         OPTIONAL_ARGUMENT_STRING(0, id, );
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(m_connections, 
@@ -4612,7 +4628,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         }
     ~NativeECPresentationManager()
         {
-        OBJECT_WRAP_DTOR_DISABLE_JS_CALLS;  // Must be the first line of every ObjectWrap destructor
+        SetInDestructor();  // Must be the first line of every ObjectWrap destructor
         // 'terminate' not called
         BeAssert(m_presentationManager == nullptr);
         }
@@ -4853,7 +4869,7 @@ void JsInterop::HandleAssertion(WCharCP msg, WCharCP file, unsigned line, BeAsse
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-struct DisableNativeAssertions : Napi::ObjectWrap<DisableNativeAssertions>
+struct DisableNativeAssertions : BeObjectWrap<DisableNativeAssertions>
     {
     private:
         DEFINE_CONSTRUCTOR;
@@ -4871,14 +4887,14 @@ struct DisableNativeAssertions : Napi::ObjectWrap<DisableNativeAssertions>
             }
 
     public:
-        DisableNativeAssertions(Napi::CallbackInfo const& info) : Napi::ObjectWrap<DisableNativeAssertions>(info)
+        DisableNativeAssertions(Napi::CallbackInfo const& info) : BeObjectWrap<DisableNativeAssertions>(info)
             {
             BeMutexHolder lock(s_assertionMutex);
             m_enableOnDispose = s_assertionsEnabled;
             s_assertionsEnabled = false;
             }
 
-        ~DisableNativeAssertions() { OBJECT_WRAP_DTOR_DISABLE_JS_CALLS; DoDispose(); }
+        ~DisableNativeAssertions() { SetInDestructor(); DoDispose(); }
 
         void Dispose(Napi::CallbackInfo const& info) { DoDispose(); }
 
@@ -4898,7 +4914,7 @@ struct DisableNativeAssertions : Napi::ObjectWrap<DisableNativeAssertions>
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct NativeImportContext : Napi::ObjectWrap<NativeImportContext>
+struct NativeImportContext : BeObjectWrap<NativeImportContext>
 {
 private:
     DEFINE_CONSTRUCTOR;
@@ -4922,14 +4938,14 @@ public:
         SET_CONSTRUCTOR(t);
         }
 
-    NativeImportContext(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeImportContext>(info)
+    NativeImportContext(Napi::CallbackInfo const& info) : BeObjectWrap<NativeImportContext>(info)
         {
         REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, sourceDb, );
         REQUIRE_ARGUMENT_OBJ(1, NativeDgnDb, targetDb, );
         m_importContext = new DgnImportContext(sourceDb->GetDgnDb(), targetDb->GetDgnDb());
         }
 
-    ~NativeImportContext() {OBJECT_WRAP_DTOR_DISABLE_JS_CALLS}
+    ~NativeImportContext() {SetInDestructor();}
 
     static bool InstanceOf(Napi::Value val)
         {
@@ -5042,7 +5058,7 @@ public:
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-struct NativeDevTools : Napi::ObjectWrap<NativeDevTools>
+struct NativeDevTools : BeObjectWrap<NativeDevTools>
 {
 private:
 static Napi::Value Signal(Napi::CallbackInfo const &info)
@@ -5055,8 +5071,8 @@ static Napi::Value Signal(Napi::CallbackInfo const &info)
     }
 
 public:
-NativeDevTools(Napi::CallbackInfo const &info) : Napi::ObjectWrap<NativeDevTools>(info) {}
-~NativeDevTools() {OBJECT_WRAP_DTOR_DISABLE_JS_CALLS}
+NativeDevTools(Napi::CallbackInfo const &info) : BeObjectWrap<NativeDevTools>(info) {}
+~NativeDevTools() {SetInDestructor();}
 
 static void Init(Napi::Env env, Napi::Object exports)
     {
