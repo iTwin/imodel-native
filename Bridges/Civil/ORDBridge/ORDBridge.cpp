@@ -255,8 +255,22 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     // but I'm not sure yet.
     if (!m_converter->GetRoadRailNetwork())
         {
+        SubjectCPtr physicalSubjectCPtr = &jobSubject;
+        for (auto childId : jobSubject.QueryChildren())
+            {
+            auto childElmCPtr = jobSubject.GetDgnDb().Elements().GetElement(childId);
+            if (auto childSubjectCP = dynamic_cast<SubjectCP>(childElmCPtr.get()))
+                {
+                if (0 == childSubjectCP->GetCode().GetValueUtf8().CompareTo(DefaultPhysicalPartitionName))
+                    {
+                    physicalSubjectCPtr = childSubjectCP;
+                    break;
+                    }
+                }
+            }
+
         // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
-        auto physicalNetworkModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalNetworkModel(jobSubject,
+        auto physicalNetworkModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalNetworkModel(*physicalSubjectCPtr,
             DefaultPhysicalPartitionName, DefaultRoadRailNetworkName);
         m_converter->SetRoadRailNetwork(*dynamic_cast<RoadRailBim::RoadRailNetworkCP>(physicalNetworkModelPtr->GetModeledElement().get()));
         }

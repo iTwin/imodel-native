@@ -906,12 +906,22 @@ void ORDCorridorsConverter::ConvertSpeedTable(SpeedTableCP speedTable, int32_t c
         stationStartEndSpeeds.push_back({ 0.0, { speedQtyMPSEC, speedQtyMPSEC } });
         }
 
-    auto designCriteriaCPtr = RoadRailBim::PathwayDesignCriteria::Insert(pathway);
+    auto designCriteriaCPtr = RoadRailBim::PathwayDesignCriteria::Query(pathway);
+    if (designCriteriaCPtr.IsNull())
+        designCriteriaCPtr = RoadRailBim::PathwayDesignCriteria::Insert(pathway);
+
     if (params.domainModelsPrivate)
         {
-        designCriteriaCPtr->GetDesignCriteriaModel()->SetIsPrivate(true);
-        designCriteriaCPtr->GetDesignCriteriaModel()->Update();
+        if (!designCriteriaCPtr->GetDesignCriteriaModel()->IsPrivate())
+            {
+            designCriteriaCPtr->GetDesignCriteriaModel()->SetIsPrivate(true);
+            designCriteriaCPtr->GetDesignCriteriaModel()->Update();
+            }
         }
+
+    auto existingSpeeds = designCriteriaCPtr->QueryOrderedDesignSpeedIds();
+    if (existingSpeeds.size() == stationStartEndSpeeds.size())
+        return; // TODO - compare existing vs. new speeds -> insert/update/delete
 
     for (auto rIter = stationStartEndSpeeds.rbegin(); rIter != stationStartEndSpeeds.rend(); rIter++)
         {
