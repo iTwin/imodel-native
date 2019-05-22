@@ -341,6 +341,43 @@ DgnCode PathwayDesignCriteria::CreateCode(PathwayElementCR pathway)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId PathwayDesignCriteria::QueryId(PathwayElementCR pathway)
+    {
+    auto stmtPtr = pathway.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT ECInstanceId FROM " BRRP_SCHEMA(BRRP_CLASS_PathwayDesignCriteria) " WHERE Parent.Id = ?;");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, pathway.GetElementId());
+
+    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        return stmtPtr->GetValueId<DgnElementId>(0);
+
+    return DgnElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Dgn::DgnElementId> PathwayDesignCriteria::QueryOrderedDesignSpeedIds() const
+    {
+    ECSqlStatement stmt;
+    stmt.Prepare(GetDgnDb(), "SELECT s.ECInstanceId FROM " 
+        BRRP_SCHEMA(BRRP_CLASS_DesignSpeed) " s, " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedFromToLocation) " f "
+        "WHERE f.Element.Id = s.ECInstanceId AND s.Model.Id = ? ORDER BY f.FromPosition.DistanceAlongFromStart;");
+    BeAssert(stmt.IsPrepared());
+
+    stmt.BindId(1, GetSubModelId());
+
+    bvector<Dgn::DgnElementId> retVal;
+    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+        retVal.push_back(stmt.GetValueId<DgnElementId>(0));
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 PathwayDesignCriteriaCPtr PathwayDesignCriteria::Insert(PathwayElementCR pathway)
     {
     if (!pathway.GetElementId().IsValid())

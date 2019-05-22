@@ -223,6 +223,12 @@ public:
     //! @return The PathwayDesignCriteriaCPtr with the given id, or nullptr.
     ROADRAILPHYSICAL_EXPORT static PathwayDesignCriteriaCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get<PathwayDesignCriteria>(id); }
 
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnElementId QueryId(PathwayElementCR pathway);
+    ROADRAILPHYSICAL_EXPORT static PathwayDesignCriteriaCPtr Query(PathwayElementCR pathway) { return Get(pathway.GetDgnDb(), QueryId(pathway)); }
+
+    //! Query for DesignSpeed segments associated with the Pathway owning this design criteria
+    ROADRAILPHYSICAL_EXPORT bvector<Dgn::DgnElementId> QueryOrderedDesignSpeedIds() const;
+
     //! Get Owning Pathway element
     PathwayElementCPtr GetPathway() const { return PathwayElement::Get(GetDgnDb(), GetParentId()); }
     //__PUBLISH_SECTION_END__
