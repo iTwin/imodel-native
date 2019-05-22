@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ORDBridgeInternal.h>
+#include <windows.h>
 #include <VersionedDgnV8Api/GeomSerialization/GeomLibsFlatBufferApi.h>
 
 BEGIN_ORDBRIDGE_NAMESPACE
@@ -1460,9 +1461,14 @@ bool ConvertORDElementXDomain::AssignSuperelevationAspect(Dgn::DgnElementR eleme
     auto superElevationPtr = SuperElevation::CreateFromElementHandle(v8el);
     if (superElevationPtr.IsValid())
         {
-        assignStationRangeAspect(element, superElevationPtr->GetStartDistance(), superElevationPtr->GetEndDistance());
-        assignSuperelevationAspect(element, *superElevationPtr);
-        return true;
+        // The following check is due to an null pointer error in CIF when calling GetEndDistance().
+        // This check is a band-aid fix for now to avoid getting into trouble.
+        if (superElevationPtr->GetParentSection()->GetAlignment() != nullptr)
+            {
+            assignStationRangeAspect(element, superElevationPtr->GetStartDistance(), superElevationPtr->GetEndDistance());
+            assignSuperelevationAspect(element, *superElevationPtr);
+            return true;
+            }
         }
 
     return false;
