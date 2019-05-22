@@ -96,8 +96,6 @@ void Profile::_OnUpdateFinished() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Profiles should override this method to update geometry of profiles that reference/
-* depend on it. If overriden, T_Super must be called. See Profile::UpdateGeometry.
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Profile::_UpdateInDb()
@@ -131,7 +129,7 @@ void Profile::_CopyFrom (DgnElement const& source)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Create and set geometry. Regular geometry creation is skipped if profiles geometry
+* Regular geometry creation is skipped if profiles geometry
 * was updated via a call to Profile::UpdateGeometry.
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/

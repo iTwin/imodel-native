@@ -134,6 +134,10 @@ protected:
 
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override; //!< @private
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override; //!< @private
+
+    //! @private
+    //! Profiles should override this method to update geometry of profiles that reference/depend
+    //! on it. If overriden, T_Super must be called. See Profile::UpdateGeometry.
     PROFILES_EXPORT virtual Dgn::DgnDbStatus _UpdateInDb() override; //!< @private
     PROFILES_EXPORT virtual void _OnUpdateFinished() const override; //!< @private
     PROFILES_EXPORT virtual void _OnDeleted() const override; //!< @private
@@ -176,7 +180,7 @@ public:
     //! @returns DgnDbStatus::Success if `CodeValue` is successfully set for the profile, error code otherwise.
     PROFILES_EXPORT Dgn::DgnDbStatus SetStandardCatalogCode (StandardCatalogCode const& catalogCode);
     //! Remove `CodeValue` from this profile.
-    //! @param removeCatalogCode Pass 'nullptr' to call this method.
+    //! @param Pass 'nullptr'.
     //! @returns DgnDbStatus::Success if `CodeValue` is successfully removed for the profile, error code otherwise.
     PROFILES_EXPORT Dgn::DgnDbStatus SetStandardCatalogCode (nullptr_t);
     //! @endGroup
@@ -231,6 +235,7 @@ private:
 
 //=======================================================================================
 //! Dependency handler interface to handle element updates
+//! T should be an ECClass whose changes will be tracked.
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 template <typename T>
