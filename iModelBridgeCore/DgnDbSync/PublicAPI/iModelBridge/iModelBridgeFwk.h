@@ -333,6 +333,7 @@ protected:
     int PullMergeAndPushChange(Utf8StringCR description, bool releaseLocks);
     int StoreHeaderInformation();
     
+    bool EnableECProfileUpgrade() const;
 public:
 
     IMODEL_BRIDGE_FWK_EXPORT iModelBridgeFwk();
@@ -371,7 +372,7 @@ public:
 
     IMODEL_BRIDGE_FWK_EXPORT void SetTokenProvider(WebServices::IConnectTokenProviderPtr provider);
 
-    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus TestFeatureFlag (CharCP ff, bool& flag);
+    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus TestFeatureFlag (CharCP ff, bool& flag) const;
 
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) const;
 
