@@ -4542,6 +4542,15 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         BeConditionVariable m_waiter;
         ECPresentationResult m_result;
         BeAtomic<bool> m_hasResult;
+        DateTime m_startTime;
+    private:
+        uint64_t GetElapsedTime() const
+            {
+            int64_t start, end;
+            m_startTime.ToUnixMilliseconds(start);
+            DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(end);
+            return end - start;
+            }
     protected:
         void Execute() override
             {
@@ -4550,7 +4559,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             }
         void OnOK() override
             {
-            JsInterop::LogMessageInContext("ECPresentation.Node", NativeLogging::LOG_DEBUG, "Sending success response", m_requestContext);
+            JsInterop::LogMessageInContext("ECPresentation.Node", NativeLogging::LOG_DEBUG, Utf8PrintfString("Sending success response (took %" PRIu64 " ms)", GetElapsedTime()), m_requestContext);
             Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), m_result, true)});
             }
         void OnError(Napi::Error const& e) override
@@ -4559,7 +4568,9 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), ECPresentationResult(ECPresentationStatus::Error, "callback error"))});
             }
     public:
-        ResponseSender(Napi::Function& callback) : Napi::AsyncWorker(callback), m_requestContext(JsInterop::GetCurrentClientRequestContextForMainThread()), m_hasResult(false) {}
+        ResponseSender(Napi::Function& callback) 
+            : Napi::AsyncWorker(callback), m_requestContext(JsInterop::GetCurrentClientRequestContextForMainThread()), m_hasResult(false), m_startTime(DateTime::GetCurrentTimeUtc())
+            {}
         void SetResult(ECPresentationResult&& result) {m_result = std::move(result); m_hasResult.store(true); m_waiter.notify_all();}
     };
 
