@@ -55,17 +55,6 @@
         </Bindings>
     </Part>
 
-    <Part Name="WSClient-PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke"
-     BentleyBuildMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml +dPUBLISHAPI_VENDORAPI4=folly">
-        <SubPart PartName="WSClientLibrarySubParts"/>
-        <SubPart PartName="WebServicesClient-PublicAPI"/>
-        <SubPart PartName="WebServicesCache-PublicAPI"/>
-        <SubPart PartName="iModelHubClient-PublicAPI"/>
-        <Bindings>
-            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient" />
-        </Bindings>
-    </Part>
-
     <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="ClientLib.mke" ExcludePlatforms="Android*" ApiNumber="M02">
         <SubPart PartName="WebServicesClient-PublicAPI" />
         <SubPart PartName="BentleyDesktopClientCCApi"     PartFile="SdkSources"  Repository="bsicommon" />
@@ -94,7 +83,9 @@
         <RequiredRepository>bsitools-nuget</RequiredRepository>
         <SubPart PartName="WSClientLibrarySubParts" />
         <SubPart PartName="WebServicesClient"/>
-        <SubPart PartName="WSClient-PublishedAPI"/>
+        <SubPart PartName="WebServicesClient-PublicAPI"/>
+        <SubPart PartName="WebServicesCache-PublicAPI"/>
+        <SubPart PartName="iModelHubClient-PublicAPI"/>
         <SubPart PartName="WSClient_en_L10N"/>
         <Bindings>
             <Files ProductDirectoryName="NuGetPackages">Install\WebServicesClient\WebServicesClient.*.nupkg</Files>
@@ -192,7 +183,9 @@
         <RequiredRepository>bsitools-nuget</RequiredRepository>
         <SubPart PartName="WSClientLibrarySubParts" />
         <SubPart PartName="WebServicesCache" />
-        <SubPart PartName="WSClient-PublishedAPI" />
+        <SubPart PartName="WebServicesClient-PublicAPI"/>
+        <SubPart PartName="WebServicesCache-PublicAPI"/>
+        <SubPart PartName="iModelHubClient-PublicAPI"/>
         <Bindings>
             <Files ProductDirectoryName="NuGetPackages">Install\WebServicesCache\WebServicesCache.*.nupkg</Files>
         </Bindings>
@@ -292,7 +285,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="iModelHubIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Integration -dUsePublishedApi">
+    <Part Name="iModelHubIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Integration">
         <SubPart PartName="iModelHubIntegrationTestsHelpers"/>
         <SubPart PartName="FakeServer"/>
         <SubPart PartName="IMHSClientExe"/> 
@@ -584,25 +577,27 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-Published" DeferType="BuildUnitTests"
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests"
         BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke"
-        BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi -dENABLE_DGNDBSERVER_UNIT_TESTS -dBUILD_AGGREGATE_TESTS"
+        BentleyBuildMakeOptions="-dTestDir=NonPublished -dENABLE_DGNDBSERVER_UNIT_TESTS -dBUILD_AGGREGATE_TESTS"
         >
         <!-- NODE stub is required here to link DgnPlatform napi dependency for android -->
         <SubPart PartName="napi-stub"  Repository="imodel02" PartFile="node-addon-api/node-addon-api"/>
         <SubPart PartName="PrewireForUnitTests" />
-        <SubPart PartName="WSClient-PublishedAPI" />
+        <SubPart PartName="WebServicesClient-PublicAPI"/>
+        <SubPart PartName="WebServicesCache-PublicAPI"/>
+        <SubPart PartName="iModelHubClient-PublicAPI"/>
         <SubPart PartName="iModelHubClient-Library" />
         <SubPart PartName="iModelHubClient-Library-Android-Shim" />
 
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="WebServices/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="WebServices/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
 
     <!-- Define a test collection part. This is included in DgnClientFx's TestsAggregate -->
     <Part Name="Tests">
-        <SubPart PartName="UnitTests-Published"/>
+        <SubPart PartName="UnitTests-NonPublished"/>
 
         <!-- Ensure that builds, run manually if needed -->
         <SubPart PartName="WSClientIntegrationTests" />
@@ -787,7 +782,9 @@
         <SubPart PartName="WSClient_en_L10N"/>
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
-        <SubPart PartName="WSClient-PublishedAPI" />
+        <SubPart PartName="WebServicesClient-PublicAPI"/>
+        <SubPart PartName="WebServicesCache-PublicAPI"/>
+        <SubPart PartName="iModelHubClient-PublicAPI"/>
         <SubPart PartName="google_gtest_lib" PartFile="iModelCore/util/gtest/gtest" Repository="imodel02" />
         <SubPart PartName="google_gmock_lib" PartFile="iModelCore/util/gmock/gmock" Repository="imodel02" />
         <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
@@ -818,7 +815,9 @@
         <RequiredRepository>bsitools-nuget</RequiredRepository>
         <SubPart PartName="WSClientLibrarySubParts" />
         <SubPart PartName="WSClientCompatibilityTests" />
-        <SubPart PartName="WSClient-PublishedAPI" />
+        <SubPart PartName="WebServicesClient-PublicAPI"/>
+        <SubPart PartName="WebServicesCache-PublicAPI"/>
+        <SubPart PartName="iModelHubClient-PublicAPI"/>
         <Bindings>
             <Files ProductDirectoryName="NuGetPackages">Install\WSClientCompatibilityTestTool\WSClientCompatibilityTestTool.*.nupkg</Files>
         </Bindings>
@@ -871,7 +870,9 @@
         <SubPart PartName="WSClientLibrarySubParts" />
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
-        <SubPart PartName="WSClient-PublishedAPI" />
+        <SubPart PartName="WebServicesClient-PublicAPI"/>
+        <SubPart PartName="WebServicesCache-PublicAPI"/>
+        <SubPart PartName="iModelHubClient-PublicAPI"/>
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="google_gtest_lib" PartFile="iModelCore/util/gtest/gtest" Repository="imodel02" />
         <SubPart PartName="google_gmock_lib" PartFile="iModelCore/util/gmock/gmock" Repository="imodel02" />

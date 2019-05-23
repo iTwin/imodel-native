@@ -34,16 +34,16 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="PublicAPI" />
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeJsonCpp/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeJsonCpp/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
 
     <Part Name="Tests">
-        <SubPart PartName="UnitTests-Published"/>
+        <SubPart PartName="UnitTests-NonPublished"/>
     </Part>
 
     <Product Name="BeJsonCpp-Tests">

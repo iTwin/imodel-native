@@ -18,7 +18,7 @@
 #include <BeHttp/HttpConfigurationHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
-#include "../../UnitTests/Published/WebServices/Cache/CachingTestsHelper.h"
+#include "../../UnitTests/NonPublished/WebServices/Cache/CachingTestsHelper.h"
 
 void CachingDataSourceTests::SetUp()
     {

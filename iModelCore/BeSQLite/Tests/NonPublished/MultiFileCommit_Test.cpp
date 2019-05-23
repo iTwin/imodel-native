@@ -3,7 +3,7 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "BeSQLitePublishedTests.h"
+#include "BeSQLiteNonPublishedTests.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                   09/14

@@ -22,10 +22,6 @@ BEGTEST_IGNORE= $(baseDir)ignore_list.txt
 BEGTEST_OUTPUT=$(OutputRootDir)build/BeJsonCpp/UnitTests/
 o = $(PartBuildDir)
 
-%ifdef UsePublishedApi
-    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/BeJsonCpp/
-%endif
-
 dirToSearch = $(BuildContext)PublicApi/
 %include cincapnd.mki
 

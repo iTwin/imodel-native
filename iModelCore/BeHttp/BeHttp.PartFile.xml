@@ -17,14 +17,6 @@
         <SubPart PartName="PublicAPI"            PartFile="BeCasablanca"     Repository="Libsrc-casablanca"/>
     </Part>
 
-    <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BentleyBuildMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=folly">
-        <SubPart PartName="PublicAPI" />
-        <SubPart PartName="FollyShim"/>
-        <Bindings>
-            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/BeHttp" />
-        </Bindings>
-    </Part>
-
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
     <Part Name="FollyShim">
         <SubPart PartName="folly" PartFile="iModelCore/libsrc/facebook/facebook" Repository="imodel02"/>
@@ -49,7 +41,7 @@
     </Part>
 
     <Part Name="BeHttp">
-        <SubPart PartName="PublishedAPI" />
+        <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeHttpLibrary" />
         <SubPart PartName="BeHttp-Xliffs"/>
     </Part>
@@ -231,18 +223,18 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="PrewireForUnitTests" />
-        <SubPart PartName="PublishedAPI" />
+        <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeHttpSqlang-en" />
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeHttp/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeHttp/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
 
     <!-- Define a test collection part. This is included in DgnClientFx's TestsAggregate -->
     <Part Name="Tests">
-        <SubPart PartName="UnitTests-Published"/>
+        <SubPart PartName="UnitTests-NonPublished"/>
     </Part>
 
     <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts -->
@@ -391,16 +383,16 @@
 
     <Product Name="BeHttp-IntegrationTests" OnlyPlatforms="x64">
         <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
-        <SubPart PartName="IntegrationTests-Published"/>
+        <SubPart PartName="IntegrationTests-NonPublished"/>
         <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
-    <Part Name="IntegrationTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" BentleyBuildMakeOptions="-dUsePublishedApi" OnlyPlatforms="x64">
+    <Part Name="IntegrationTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" OnlyPlatforms="x64">
         <SubPart PartName="BeHttp" />
         <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" Repository="imodel02"/>
         <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeHttp/IntegrationTests/Published" SourceName="Delivery/BeHttpIntegrationTests/Objects"/>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeHttp/IntegrationTests/NonPublished" SourceName="Delivery/BeHttpIntegrationTests/Objects"/>
             <Directory ProductDirectoryName="Assets" ProductSubDirectory="BeHttpIntegrationTests" SourceName="Delivery/BeHttpIntegrationTests/Assets"/>
         </Bindings>
     </Part>

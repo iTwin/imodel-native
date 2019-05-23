@@ -14,11 +14,6 @@ baseDir = $(_MakeFilePath)
 CompileOptionsMki = $(baseDir)CompileOptions.mki
 %include $(CompileOptionsMki)
 
-%ifdef UsePublishedApi
-    # Make sure macro has a value so it can be exported to the environment
-    UsePublishedApi = 1
-%endif
-
 %ifdef BUILD_AGGREGATE_TESTS
     nameToDefine=BUILD_FOR_AGGREGATE_TESTS=1
     %include cdefapnd.mki
@@ -44,7 +39,6 @@ o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
     # Export bmake macros to make them accessible during precompiled headers compilation.
     always:
         ~putenv CCompPDBName=$(BEGTEST_NAME)
-        ~putenv UsePublishedApi=$(UsePublishedApi)
 
     %include $(SharedMki)PreCompileHeader.mki
 

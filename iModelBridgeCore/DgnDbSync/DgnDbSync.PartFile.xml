@@ -101,19 +101,6 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnV8Converter-PublishedApiAndDoc" DeferType="BuildDocs" BentleyBuildMakeFile="DgnV8/BuildDoc.mke" OnlyPlatforms="x64">
-        <RequiredRepository>Bsitools-Doxygen</RequiredRepository>
-        <SubPart PartName="BentleyDocConfig" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
-        <SubPart PartName="DgnV8Converter_PublishedApi"/>
-    </Part>
-
-    <Part Name ="DgnV8Converter_PublishedApi" BentleyBuildMakeFile="DgnV8/PublishedApi.mke">
-        <SubPart PartName="DgnV8ConverterDLL"/>
-        <Bindings>
-            <Directory SourceName="Delivery/PublishedApi" ProductDirectoryName="DgnV8Converter_PublishedApi" SubPartDirectory="DgnV8Converter_PublishedApi"/>
-        </Bindings>
-    </Part>
-
     <Part Name="SyncManager" BentleyBuildMakeFile="SyncManager/SyncManager.mke" ApiNumber="M02"  OnlyPlatforms="x64,x86">
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>

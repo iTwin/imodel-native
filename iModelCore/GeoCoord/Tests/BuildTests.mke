@@ -22,11 +22,6 @@ BEGTEST_INPUT = $(baseDir)$(TestDir)/
 BEGTEST_OUTPUT=$(OutputRootDir)build/GeoCoord/UnitTests/
 o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 
-# we do not have a publishedApi
-#%ifdef UsePublishedApi
-#    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/Bentley/
-#%endif
-
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 
 # Deliver test objs

@@ -22,10 +22,6 @@ BEGTEST_IGNORE= $(baseDir)ignore_list.txt
 BEGTEST_OUTPUT=$(OutputRootDir)build/BeHttp/UnitTests/
 o = $(PartBuildDir)$(BEGTEST_NAME)/
 
-%ifdef UsePublishedApi
-    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/BeHttp
-%endif
-
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 
 # Deliver 

@@ -122,12 +122,6 @@
         <SubPart PartName="__ParasiteSubParts_XCTest"/>
         <SubPart PartName="__ParasiteSubParts_CppTest"/>
 
-        <!-- For DgnClientSdk -->
-        <!-- .................................................................................. -->
-        <SubPart PartName="BentleyDocConfig" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
-        <SubPart PartName="DgnPlatformExtractions" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
-        <SubPart PartName="Docs" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
-
         <SubPart PartName="__ParasiteSubParts_DcsX64Parts"/>
     </Part>
     

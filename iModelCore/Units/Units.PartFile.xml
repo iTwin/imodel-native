@@ -62,8 +62,6 @@
         <ProductDirectory Name="LoggingOptionalNativeAssemblies" Path="Runtime"/>
         <ProductDirectory Name="Assemblies"                      Path="Runtime"/>
         <ProductDirectory Name="UnitsNativeAssemblies"           Path="Runtime"/>
-        <ProductDirectory Name="PublishedApi"                    Path="Include"/>
-        <ProductDirectory Name="PublishedApi_Doc"                Path="Docs"/>
         <ProductDirectory Name="VendorNotices"                   Path="Notices"/>
     </ProductDirectoryList>
 
@@ -91,10 +89,10 @@
         </Bindings>
     </Part>
 
-    <Part Name="PublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dIsPublished=1">
+    <Part Name="NonPublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="TestFixture"/>
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Units/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Units/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
 
@@ -113,7 +111,7 @@
 
     <!-- This part is the default test collection. It is included in DgnDb's aggregate test collection. -->
     <Part Name="Tests" DeferType="BuildUnitTests">
-        <SubPart PartName="PublishedTests" />
+        <SubPart PartName="NonPublishedTests" />
         <SubPart PartName="PerformanceTests" />
     </Part>
 

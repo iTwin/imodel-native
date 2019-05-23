@@ -253,16 +253,6 @@
       </Bindings>
     </Part>
 
-    <!-- ******************************** Documentation ************************************** -->
-
-    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BentleyBuildMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=folly">
-        <!-- While the published api does not depend on the library, this subpart is a quick, reliable, and maintainable way to ensure that all needed public apis are in the buildcontext. -->
-        <SubPart PartName="iModelBridgeLibrary" />
-        <Bindings>
-            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/iModelBridge"/>
-        </Bindings>
-    </Part>
-
     <!-- ******************************** Unit Tests ************************************** -->
 
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="iModelBridge/Tests/Prewire.mke">

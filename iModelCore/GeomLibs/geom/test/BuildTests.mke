@@ -20,10 +20,6 @@ BEGTEST_IGNORE= $(baseDir)ignore_list.txt
 BEGTEST_OUTPUT=$(OutputRootDir)build/geomlibs/UnitTests/
 o = $(PartBuildDir)$(BEGTEST_NAME)/
 
-%ifdef UsePublishedApi
-    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/GeomLibs/
-%endif
-
 # ignore: local variable is initialized but not referenced
 # CCompOpts + -wd4189
 

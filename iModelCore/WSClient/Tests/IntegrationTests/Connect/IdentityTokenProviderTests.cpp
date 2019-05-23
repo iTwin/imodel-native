@@ -11,7 +11,7 @@
 #include <BeHttp/ProxyHttpHandler.h>
 
 #include "../../../Connect/IdentityTokenProvider.h"
-#include "../../UnitTests/Published/WebServices/Connect/StubTokenStore.h"
+#include "../../UnitTests/NonPublished/WebServices/Connect/StubTokenStore.h"
 
 struct IdentityTokenProviderTests : public WSClientBaseTest {};
 

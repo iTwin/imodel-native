@@ -22,10 +22,6 @@ BEGTEST_IGNORE= $(baseDir)ignore_list.txt
 BEGTEST_OUTPUT=$(OutputRootDir)build/Bentley/UnitTests/
 o = $(PartBuildDir)
 
-%ifdef UsePublishedApi
-    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/Bentley
-%endif
-
 dirToSearch = $(OutputRootDir)BuildContexts/Bentley/VendorAPI
 %include cincapnd.mki
 

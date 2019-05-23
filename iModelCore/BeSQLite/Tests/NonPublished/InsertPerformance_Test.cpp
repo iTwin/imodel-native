@@ -3,7 +3,7 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "BeSQLitePublishedTests.h"
+#include "BeSQLiteNonPublishedTests.h"
 
 #define TABLE_IntBlob                   "test_IntBlob"
 #define TABLE_IntBlobShared16           "test_IntBlobShared16"

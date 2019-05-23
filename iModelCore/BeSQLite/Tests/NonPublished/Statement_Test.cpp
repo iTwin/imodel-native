@@ -3,7 +3,7 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "BeSQLitePublishedTests.h"
+#include "BeSQLiteNonPublishedTests.h"
 #include "BeSQLite/ChangeSet.h"
 #include <vector>
 #include <limits>

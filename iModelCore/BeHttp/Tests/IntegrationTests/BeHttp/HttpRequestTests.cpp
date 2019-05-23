@@ -27,8 +27,8 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 #include "../../../BeHttp/Backdoor.h"
-#include "../../UnitTests/Published/FSTest.h"
-#include "../../UnitTests/Published/WebTestsHelper.h"
+#include "../../UnitTests/NonPublished/FSTest.h"
+#include "../../UnitTests/NonPublished/WebTestsHelper.h"
 #include "../Scripts/ScriptRunner.h"
 #include "AsyncTestCheckpoint.h"
 

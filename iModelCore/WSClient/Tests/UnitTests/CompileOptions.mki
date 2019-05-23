@@ -13,12 +13,7 @@
     %include mdl.mki
 %endif
 
-%ifdef UsePublishedApi
-    PublicApiIncludes = -I${BuildContext}/SubParts/PublishedApi/WSClient/
-%else
-    PublicApiIncludes = -I${BuildContext}/PublicAPI/
-%endif
-
+PublicApiIncludes = -I${BuildContext}/PublicAPI/
 PublicApiIncludes + -I${BuildContext}/VendorAPI/
 
 # We do not need to set BEGTEST_API for unit tests because it is defaulted to our current PublicApiIncludes.

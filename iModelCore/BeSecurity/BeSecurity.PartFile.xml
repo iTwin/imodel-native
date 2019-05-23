@@ -4,7 +4,6 @@
 
     <Part Name="BeSecurity">
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="PublishedAPI" />
         <SubPart PartName="BeSecurityLibrary" />
         <SubPart PartName="BeSecurityMavenArchive" />
       </Part>
@@ -15,14 +14,6 @@
         <SubPart PartName="Base"                 PartFile="iModelCore/Bentley/Bentley"          Repository="imodel02" />
         <Bindings>
             <PublicAPI Domain="BeSecurity" />
-        </Bindings>
-    </Part>
-
-    <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BentleyBuildMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
-        <SubPart PartName="PublicAPI" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" Repository="imodel02"/>
-        <SubPart PartName="PublicAPI" />
-        <Bindings>
-            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/BeSecurity" />
         </Bindings>
     </Part>
 
@@ -53,17 +44,17 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="PrewireForUnitTests" />
-        <SubPart PartName="PublishedAPI" />
+        <SubPart PartName="PublicAPI" />
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeSecurity/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeSecurity/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
 
     <!-- Define a test collection part. This is included in MobileDgn's TestsAggregate-->
     <Part Name="Tests">
-        <SubPart PartName="UnitTests-Published"/>
+        <SubPart PartName="UnitTests-NonPublished"/>
     </Part>
 
     <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in MobileDgn's Gtest-Aggregator and RunGtest-MobileDgnTests parts-->

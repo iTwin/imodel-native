@@ -6,24 +6,14 @@
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <Part Name="ECPresentation">
         <SubPart PartName="ECPresentation-PublicAPI" />
-        <SubPart PartName="ECPresentation-PublishedAPI" />
         <SubPart PartName="ECPresentation-Library" />
         <SubPart PartName="ECPresentation-Xliffs" />
+        <SubPart PartName="PresentationRulesSchema" PartFile="BisSchemasIModelCore" Repository="BisSchemas"/>
     </Part>
 
     <Part Name="ECPresentation-PublicAPI" BentleyBuildMakeFile="Prewire.mke">
         <Bindings>
             <PublicAPI Domain="ECPresentation" />
-        </Bindings>
-    </Part>
-
-    <Part Name="ECPresentation-PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke"
-          BentleyBuildMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedAPI +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
-        <SubPart PartName="ECPresentation-Library"/>
-        <SubPart PartName="ECPresentation-PublicAPI"/>
-        <SubPart PartName="PresentationRulesSchema" PartFile="BisSchemasIModelCore" Repository="BisSchemas"/>
-        <Bindings>
-            <Directory SourceName="Delivery/PublishedAPI" SubPartDirectory="PublishedAPI/ECPresentation" />
         </Bindings>
     </Part>
 
@@ -53,18 +43,6 @@
         </Bindings>
     </Part>
 
-    <Part Name="Docs-CodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/Extractions.mke" BentleyBuildMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)imodel02/iModelCore/ECPresentation/Docs/Samples -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=ECPresentation/Docs/ExtractedSamples -dEXTRACTIONS_NO_PROVENANCE -dEXTRACTIONS_OUTPUT_BUILDCONTEXT_SUBDIR=Delivery/Docs/Extractions">
-        <SubPart PartName="ECPresentation-PublishedAPI" />
-        <Bindings>
-            <Directory SourceName="Delivery/Docs/Extractions" SubPartDirectory="Dox/Extractions/ECPresentation"/>
-        </Bindings>        
-    </Part>
-
-    <Part Name="Docs-BuildCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BentleyBuildMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)imodel02/iModelCore/ECPresentation/Docs/Samples -dBUILD_SAMPLE_CODE_SUB_DIR=ECPresentationSamples">
-        <SubPart PartName="ECPresentation-PublishedAPI" />
-        <SubPart PartName="ECPresentation-Library" />
-    </Part>
-    
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -243,23 +221,15 @@
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECP/NonPub" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
-    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+    <Part Name="UnitTests-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
         <SubPart PartName="BackDoorForUnitTests" />
-        <SubPart PartName="ECPresentation-PublishedAPI" />
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECP/Pub" SourceName="Delivery/UnitTests/Objects/Published"/>
-        </Bindings>
-    </Part>
-    <Part Name="UnitTests-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance -dUsePublishedApi">
-        <SubPart PartName="BackDoorForUnitTests" />
-        <SubPart PartName="ECPresentation-PublishedAPI" />
+        <SubPart PartName="ECPresentation-PublicAPI" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECP/Perf" SourceName="Delivery/UnitTests/Objects/Performance"/>
         </Bindings>
     </Part>
     <Part Name="Tests">
         <SubPart PartName="UnitTests-NonPublished" />
-        <SubPart PartName="UnitTests-Published" />
     </Part>
     <Product Name="ECPresentation-Tests">
         <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />

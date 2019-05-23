@@ -11,7 +11,7 @@
 #include <Bentley/Tasks/AsyncResult.h>
 #include <Bentley/Tasks/AsyncTask.h>
 
-#include "../UnitTests/Published/Utils/TestAppPathProvider.h"
+#include "../UnitTests/NonPublished/Utils/TestAppPathProvider.h"
 
 #include "Logging/GenericLogProviderActivator.h"
 #include "Logging/Logging.h"

@@ -16,8 +16,7 @@
     <Part Name="ECDb">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="ECDbLibrary" />
-        <SubPart PartName="PublishedApi" />
-        <SubPart PartName="ECDbPrepareDocGeneration" />
+        <!-- <SubPart PartName="ECDbPrepareDocGeneration" /> -->
     </Part>
 
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
@@ -44,14 +43,14 @@
     
 
     <Part Name="ECDbPrepareDocGeneration" DeferType="BuildDocs">
-        <SubPart PartName="PublishedApi" />
+        <SubPart PartName="PublicAPI" />
         <SubPart PartName="ECDbExtractCodeSamples" />
         <SubPart PartName="ECDbBuildCodeSamples" />
     </Part>
 
     <Part Name="ECDbExtractCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/Extractions.mke" BentleyBuildMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)imodel02/iModelCore/ECDb/ECDb/docs/samplecode -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=ECDb/docs/extractedsamplecode -dEXTRACTIONS_NO_PROVENANCE -dEXTRACTIONS_OUTPUT_BUILDCONTEXT_SUBDIR=Dox/Extractions/ECDb">
         <SubPart PartName="ECDbLibrary" />
-        <SubPart PartName="PublishedApi" />
+        <SubPart PartName="PublicAPI" />
         <Bindings>
             <Directory SourceName="Dox/Extractions/ECDb" SubPartDirectory="Dox/Extractions/ECDb"/>
         </Bindings>
@@ -59,17 +58,9 @@
 
     <Part Name="ECDbBuildCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BentleyBuildMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)imodel02/iModelCore/ECDb/ECDb/docs/samplecode -dBUILD_SAMPLE_CODE_SUB_DIR=ecdbsamplecode -dPolicyFile=$(SrcRoot)imodel02/iModelCore/ECDb/ECDb/ECDbPolicy.mki">
         <SubPart PartName="ECDbLibrary" />
-        <SubPart PartName="PublishedApi" />
+        <SubPart PartName="PublicAPI" />
     </Part>
   
-    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BentleyBuildMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson">
-        <!-- While the published api does not depend on the library, this subpart is a quick and maintainable way to ensure that all needed public apis are in the buildcontext. -->
-        <SubPart PartName="ECDbLibrary" />
-        <Bindings>
-            <Directory SourceName="Delivery/PublishedApi"  SubPartDirectory="PublishedApi/ECDb"/>
-        </Bindings>
-    </Part>
-
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <SubPart PartName="ECDb"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
@@ -94,17 +85,17 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="BackDoorForUnitTests" />
-        <SubPart PartName="PublishedApi" />
+        <SubPart PartName="PublicAPI" />
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
 
     <!-- Builds the ECDb tests (except performance tests) -->
     <Part Name="Tests">
-        <SubPart PartName="UnitTests-Published" />
+        <SubPart PartName="UnitTests-NonPublished" />
     </Part>
 
     <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts -->

@@ -3,7 +3,7 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "BeSQLitePublishedTests.h"
+#include "BeSQLiteNonPublishedTests.h"
 #include <BeSQLite/ChangeSet.h>
 #include <Bentley/BeDirectoryIterator.h>
 #define MEM_THRESHOLD 100 * 1024 * 1024

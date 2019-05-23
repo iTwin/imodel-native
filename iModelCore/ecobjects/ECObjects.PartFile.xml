@@ -28,7 +28,7 @@
     </Part>
     
     <Part Name="ECObjects">
-        <SubPart PartName="ECObjectsPrepareDocGeneration" />
+        <!-- <SubPart PartName="ECObjectsPrepareDocGeneration" /> -->
         <SubPart PartName="ECObjectsNative" />
         <SubPart PartName="PublicAPI" />
     </Part>
@@ -49,22 +49,6 @@
         <SubPart PartName="ECObjectsNative" />
     </Part>
 
-    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BentleyBuildMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson">
-        <!-- While the published api does not depend on the library, this subpart is a quick and maintainable way to ensure that all needed public apis are in the buildcontext. -->
-        <SubPart PartName="ECObjectsNative" />
-        <Bindings>
-            <Directory SubPartDirectory="PublishedApi/ECObjects" SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" Required="false"/>
-        </Bindings>
-    </Part>
-
-    <Part Name="PublishedApi_Doc" DeferType="BuildDocs" BentleyBuildMakeFile="PublicApi/BuildPublishedDoc.mke">
-        <RequiredRepository>bsitools-doxygen</RequiredRepository>
-        <SubPart PartName="PublishedApi" />
-        <Bindings>
-            <Files ProductDirectoryName="PublishedApi_Doc" IfNotPresent="Warn" Required="false">Delivery/ECObjectsAPI.chm</Files>
-        </Bindings>
-    </Part>
-
     <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
     <Part Name="PublicAPI" BentleyBuildMakeFile="ecobjects.prewire.mke">
         <Bindings>
@@ -80,7 +64,7 @@
     <!-- ProductDirectoryNames below are listed in the BeGTest part file, in directory list: CollectionProduct -->
     <Part Name="ECObjectsUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/BuildPlatformUnitTests.mke" BentleyBuildMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)imodel02/iModelCore/ecobjects/test/ -dBEGTEST_NAME=ECObjects -dBEGTEST_DEPENDENCIES=$(SrcRoot)imodel02/iModelCore/ecobjects/test/SeedData.prewire.mke">
         <SubPart PartName="TestDependencies"/>
-        <SubPart PartName="PublishedApi"/>
+        <SubPart PartName="PublicAPI"/>
     </Part>
 
     <!-- This part enables the ECObjects unit tests to be built into the set of unit tests that run on multiple platforms. -->
@@ -115,15 +99,6 @@
         </Bindings>
     </Part>
 
-    <Part Name="PublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dIsPublished=1">
-        <SubPart PartName="TestDependencies"/>
-        <SubPart PartName="TestFixture"/>
-        <SubPart PartName="PublishedApi"/>
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
-        </Bindings>
-    </Part>
-
     <Part Name="NonPublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="TestDependencies"/>
         <SubPart PartName="TestFixture"/>
@@ -134,7 +109,6 @@
 
     <!-- This part is the default test collection. It is included in MobileDgn's aggregate test collection. -->
     <Part Name="Tests" DeferType="BuildUnitTests">
-        <SubPart PartName="PublishedTests" />
         <SubPart PartName="NonPublishedTests" />
     </Part>
 
@@ -439,13 +413,11 @@
         <ProductDirectory Name="Libs"                                       Path="libs"/>
         <ProductDirectory Name="VendorNotices"                              Path="Notices"/>
         <ProductDirectory Name="VendorNotices"                              Path="Notices" LibType="Static"/>
-        <ProductDirectory Name="PublishedApi"                               Path="PublishedApi"/>
     </ProductDirectoryList>
 
     <Product Name="ECObjects">
         <SubPart PartName="ECObjectsNative"/>
-        <SubPart PartName="PublishedApi_Doc" />
-        <SubPart PartName="ECObjectsPrepareDocGeneration" />
+        <!-- <SubPart PartName="ECObjectsPrepareDocGeneration" /> -->
         <Directories DirectoryListName="ECObjects"/>
     </Product>
 

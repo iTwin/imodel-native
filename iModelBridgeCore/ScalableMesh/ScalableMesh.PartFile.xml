@@ -345,7 +345,7 @@
         <SubPart PartName="ScalableMesh-Tested" PartFile="iModelBridgeCore/ScalableMesh/ScalableMeshCoreUnitTests" Repository="imodel02"/>
         <SubPart PartName="ScalableTerrainModel" PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb" Repository="imodel02" />     
         <SubPart PartName="ScalableMeshElement" PartFile="DgnDisplay" Repository="DgnDisplay"/>		
-        <SubPart PartName="PublishedApi"   PartFile="iModelCore/GeomLibs/geomlibs"    Repository="imodel02"/>
+        <SubPart PartName="PublicAPI"   PartFile="iModelCore/GeomLibs/geomlibs"    Repository="imodel02"/>
         <SubPart PartName="DgnPlatformDll" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="PSolidCore" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="RasterCore" PartFile="DgnDisplay" Repository="DgnDisplay"/>

@@ -2,14 +2,6 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
-    <Part Name="Readme" BentleyBuildMakeFile="ProcessReadme.mke">
-        <Bindings>
-            <Files ProductDirectoryName="DgnPlatform_PublishedAPI_Scope1_Doc">
-                Delivery/readme.htm
-            </Files>
-        </Bindings>
-    </Part>
-
     <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
     <!-- Also re-deliver some ECSchemas -->
     <Part Name="PublicAPI" BentleyBuildMakeFile="DgnPlatform.prewire.mke">
@@ -92,30 +84,11 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnPlatformExtractions" BentleyBuildMakeFile="docs/DgnPlatformExtractions.mke">
-        <SubPart PartName="DgnPlatformDoc-Build-SampleCode" />
-        <Bindings>
-            <Directory SourceName="Dox/Extractions/DgnPlatform" SubPartDirectory="Dox/Extractions/DgnPlatform"/>
-        </Bindings>
-    </Part>
-
-    <!-- Check that code samples in docs/samplecode actually compile -->
-    <Part Name="DgnPlatformDoc-Build-SampleCode" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BentleyBuildMakeOptions="-dBUILD_SAMPLE_CODE_SUB_DIR=samplecode -dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)imodel02/iModelCore/DgnPlatform/docs/samplecode">
-        <SubPart PartName="PublishedApi"/>
-    </Part>
-
     <Part Name="DimStyleSchemaPrewire" BentleyBuildMakeFile="DgnHandlers/Dimension/DimStyleSchemaGenerator/DimStyleSchemaGenerator.mke" >
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
                 GeneratedSchemas/DimensionStyleSchema.01.00.ecschema.xml
             </Files>
-        </Bindings>
-    </Part>
-
-    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BentleyBuildMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=folly">
-        <SubPart PartName="DgnPlatformDLL"/>
-        <Bindings>
-            <Directory SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" SubPartDirectory="PublishedApi/DgnProject" Required="false"/>
         </Bindings>
     </Part>
 
@@ -206,14 +179,6 @@
         <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
-        </Bindings>
-    </Part>
-
-    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
-        <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
-        <SubPart PartName="PublishedApi" />
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>
     </Part>
 
@@ -545,7 +510,6 @@
     <!-- Define a test collection part-->
     <Part Name="Tests">
         <SubPart PartName="UnitTests-NonPublished"/>
-        <SubPart PartName="UnitTests-Published"/>
     </Part>
 
     <Product Name="DgnPlatform-Tests">

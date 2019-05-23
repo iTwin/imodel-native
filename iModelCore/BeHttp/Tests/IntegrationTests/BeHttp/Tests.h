@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../../UnitTests/Published/ValuePrinter.h"
+#include "../../UnitTests/NonPublished/ValuePrinter.h"
 #include <Bentley/BeTest.h>
 
 #define LOGGER_NAMESPACE_BEHTTP_TESTS "BeHttp.Tests"

@@ -9,7 +9,7 @@
 #include <Bentley/BeFileListIterator.h>
 #include <ECObjects/ECSchema.h>
 
-#include "../../UnitTests/Published/Utils/StubInstances.h"
+#include "../../UnitTests/NonPublished/Utils/StubInstances.h"
 
 #include "../Logging/Logging.h"
 

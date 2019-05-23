@@ -8,22 +8,6 @@
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02" />
     </Part>
 
-    <Part Name="PublishedApi" BentleyBuildMakeFile="PublicAPI/PublishApi.mke">
-        <!-- While the published api does not depend on the library, this subpart is a quick and maintainable way to ensure that all needed public apis are in the buildcontext. -->
-        <SubPart PartName="GeomDlls" />
-        <Bindings>
-            <Directory SubPartDirectory="PublishedApi/geomlibs" SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" Required="false"/>
-        </Bindings>
-    </Part>
-
-    <Part Name="PublishedApi_Doc" DeferType="BuildDocs" BentleyBuildMakeFile="PublicAPI/BuildPublishedDoc.mke">
-        <RequiredRepository>bsitools-doxygen</RequiredRepository>
-        <SubPart PartName="PublishedApi" />
-        <Bindings>
-            <Files ProductDirectoryName="PublishedApi_Doc" IfNotPresent="Warn" Required="false">Delivery/GeomLibsAPI.chm</Files>
-        </Bindings>
-    </Part>
-
     <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
     <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke">
         <Bindings>
@@ -312,9 +296,6 @@
         <SubPart PartName="GeomDlls" LibType="Static"/>
         <SubPart PartName="GeomlibsSerialization"/>
         <SubPart PartName="GeomlibsSerialization" LibType="Static"/>
-        <!--
-        <SubPart PartName="PublishedApi_Doc" />
-        -->
         <Directories DirectoryListName="GeomLibsProductDirectories" />
     </Product>
 
@@ -327,7 +308,6 @@
 
         <ProductDirectory Name="Assemblies"            Path="" />
         <ProductDirectory Name="BentleyDll"                         Path=""/>
-        <ProductDirectory Name="PublishedApi_Doc"                   Path="doc" />
     </ProductDirectoryList>
 
 </BuildContext>

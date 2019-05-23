@@ -30,10 +30,6 @@ BEGTEST_IGNORE= $(baseDir)ignore_list.txt
 BEGTEST_OUTPUT=$(OutputRootDir)build/iModelHubNativeTests/
 o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 
-%ifdef UsePublishedApi
-    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/WSClient/
-%endif
-
 #--------------------------------------------------------------------------------------
 #   Set variable if build crash tests
 #--------------------------------------------------------------------------------------

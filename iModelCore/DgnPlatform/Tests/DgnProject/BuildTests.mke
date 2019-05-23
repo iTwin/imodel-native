@@ -16,21 +16,12 @@ baseDir = $(_MakeFilePath)
 tempInclude = $(OutputRootDir)build/DgnPlatform/UnitTests/include/
 cIncs + -I$(tempInclude)
 
-# backdoor: Allow published tests (and all tests) to include ScopedDgnHost.h (which is not in the published api) at a predictable location
-$(tempInclude)DgnPlatform/ScopedDgnHost.h : $(BuildContext)PublicAPI/DgnPlatform/UnitTests/ScopedDgnHost.h
-    $(msg)
-    $(LinkFirstDepToFirstTarget)
-
 # Compile and Link the unit tests
 BEGTEST_NAME  = $(TestDir)DgnPlatform
 BEGTEST_INPUT = $(baseDir)$(TestDir)/
 BEGTEST_IGNORE= $(baseDir)ignore_list.txt
 BEGTEST_OUTPUT=$(OutputRootDir)build/DgnPlatform/UnitTests/
 o = $(PartBuildDir)
-
-%ifdef UsePublishedApi
-    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/DgnProject/
-%endif
 
 dirToSearch = $(OutputRootDir)BuildContexts/DgnPlatform/VendorAPI
 %include cincapnd.mki

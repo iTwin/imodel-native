@@ -11,8 +11,8 @@
 #include <BeHttp/ProxyHttpHandler.h>
 
 #include "../../../Connect/DelegationTokenProvider.h"
-#include "../../UnitTests/Published/WebServices/Connect/StubTokenStore.h"
-#include "../../UnitTests/Published/WebServices/Connect/MockConnectTokenProvider.h"
+#include "../../UnitTests/NonPublished/WebServices/Connect/StubTokenStore.h"
+#include "../../UnitTests/NonPublished/WebServices/Connect/MockConnectTokenProvider.h"
 
 struct DelegationTokenProviderTests : public WSClientBaseTest {};
 
