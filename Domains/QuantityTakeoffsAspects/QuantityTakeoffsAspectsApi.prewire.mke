@@ -10,3 +10,6 @@ $(BuildContext)PublicAPI/QuantityTakeoffsAspects/Domain : $(_MakeFilePath)Domain
 
 $(BuildContext)PublicAPI/QuantityTakeoffsAspects/Elements : $(_MakeFilePath)Elements/PublicApi
     $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/QuantityTakeoffsAspects/Handlers : $(_MakeFilePath)Handlers/PublicApi
+    $(LinkFirstDepToFirstTargetAsDirectory)

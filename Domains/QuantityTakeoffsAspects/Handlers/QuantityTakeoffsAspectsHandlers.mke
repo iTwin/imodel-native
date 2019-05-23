@@ -5,10 +5,10 @@
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
-AppName = QuantityTakeoffsAspectsElements
+AppName = QuantityTakeoffsAspectsHandlers
 CCompPDBName = $(AppName)
 
-o = $(OutputRootDir)build/QuantityTakeoffsAspects/Elements/
+o = $(OutputRootDir)build/QuantityTakeoffsAspects/Handlers/
 
 nameToDefine = __QUANTITYTAKEOFFSASPECTS_BUILD__
 %include cdefapnd.mki
@@ -25,9 +25,7 @@ nameToDefine = __QUANTITYTAKEOFFSASPECTS_BUILD__
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)PileAspect$(oext) : $(_MakeFilePath)PileAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\PileAspect.h
-
-$(o)QuantityTakeoffAspect$(oext) : $(_MakeFilePath)QuantityTakeoffAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\QuantityTakeoffAspect.h
+$(o)PileAspectHandler$(oext) : $(_MakeFilePath)PileAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PileAspectHandler.h  
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
@@ -43,9 +41,8 @@ DLM_NOENTRY = 1
 DLM_OBJECT_DEST = $(o)
 DLM_OBJECT_FILES = $(objs)
 
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)QuantityTakeoffsAspectsElements$(libext)
 
 %include $(sharedMki)linkLibrary.mki
 

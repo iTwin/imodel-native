@@ -4,13 +4,17 @@
     xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
     >
 
-    <Part Name="QuantityTakeoffsAspects">
-        <SubPart PartName="QuantityTakeoffsAspectsDomain"/>
+    <Part Name="QuantityTakeoffsAspects">        
+        <SubPart PartName="QuantityTakeoffsAspectsApi"/>
         <SubPart PartName="QuantityTakeoffsAspectsElements"/>
+        <SubPart PartName="QuantityTakeoffsAspectsHandlers"/>
+        <SubPart PartName="QuantityTakeoffsAspectsDomain"/>
+        <SubPart PartName="QuantityTakeoffsAspectsSchema" />
     </Part>
 
     <Part Name="QuantityTakeoffsAspectsSchema">
         <SubPart PartName="QuantityTakeoffsAspects" Repository="BisSchemas" PartFile="BisSchemas" />
+        <SubPart PartName="AecUnitsPublicAPI" Repository="DgnDomains-DesignModelingUnits" PartFile="AecUnits" />
     </Part>
 
     <Part Name="QuantityTakeoffsAspectsApi" BentleyBuildMakeFile="QuantityTakeoffsAspectsApi.prewire.mke">
@@ -28,9 +32,19 @@
         </Bindings>
     </Part>
 
+    <Part Name="QuantityTakeoffsAspectsHandlers" BentleyBuildMakeFile="Handlers/QuantityTakeoffsAspectsHandlers.mke" ApiNumber="B02">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="QuantityTakeoffsAspectsElements"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)QuantityTakeoffsAspectsHandlers$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)QuantityTakeoffsAspectsHandlers$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
     <Part Name="QuantityTakeoffsAspectsDomain" BentleyBuildMakeFile="Domain/QuantityTakeoffsAspectsDomain.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
-        <SubPart PartName="QuantityTakeoffsAspectsSchema" />
+        <SubPart PartName="QuantityTakeoffsAspectsApi"/>
+        <SubPart PartName="QuantityTakeoffsAspectsHandlers"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)QuantityTakeoffsAspectsDomain$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)QuantityTakeoffsAspectsDomain$(ApiNumber)$(shlibext)</Assemblies>
