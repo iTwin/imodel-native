@@ -1076,8 +1076,16 @@ StatusInt GetGeographicToCoordSys (WStringR wkt, WStringR geographicName, WStrin
                 return status;
 
         if ((wkt.length() >= 4) && (wkt.substr (0, 4) == (L"UNIT")))
+            {
             if (SUCCESS != (status = GetAngleUnit (wkt, conversionToDegree)))
                 return status;
+
+            // Conversion error may make it that a degree is slightly higher than 1.0 within 1E-11
+            // This may lead to values minuscully greater than 90 degrees for latitudes
+            // Clamping to 1.0 insures exact value.
+            if (*conversionToDegree > 1.0 && doubleSame(*conversionToDegree, 1.0))
+                *conversionToDegree = 1.0;
+            }
 
         // Optional AXIS
         if ((wkt.length() >= 4) && (wkt.substr (0, 4) == (L"AXIS")))
@@ -1511,9 +1519,30 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
                         if (!(distanceSame(deltaX, 0.0) && distanceSame(deltaY, 0.0) && distanceSame(deltaZ, 0.0) &&
                             doubleSame(rotX, 0.0) && doubleSame(rotY, 0.0) && doubleSame(rotZ, 0.0) && doubleSame(scalePPM, 0.0)))
                             {
-                            namedDatum1->Destroy();
-                            namedDatum2->Destroy();
-                            return ERROR;
+                            // If they are still different then it may be because the found datum is based on an eveloved method
+                            // such as grid shift files or multiple regression. In this case we consider the transformation parameters provided as fallback
+                            // solution.
+                            WGS84ConvertCode datumConvert = namedDatum1->GetConvertToWGS84MethodCode();
+
+                            if ((ConvertType_MREG != datumConvert) &&
+                                (ConvertType_NAD27 != datumConvert) &&
+                                (ConvertType_HPGN != datumConvert) &&
+                                (ConvertType_AGD66 != datumConvert) &&
+                                (ConvertType_AGD84 != datumConvert) &&
+                                (ConvertType_NZGD4 != datumConvert) &&
+                                (ConvertType_ATS77 != datumConvert) &&
+                                (ConvertType_CSRS != datumConvert) &&
+                                (ConvertType_TOKYO != datumConvert) &&
+                                (ConvertType_RGF93 != datumConvert) &&
+                                (ConvertType_ED50 != datumConvert) &&
+                                (ConvertType_DHDN != datumConvert) &&
+                                (ConvertType_GENGRID != datumConvert) &&
+                                (ConvertType_CHENYX != datumConvert))
+                                {                               
+                                namedDatum1->Destroy();
+                                namedDatum2->Destroy();
+                                return ERROR;
+                                }
                             }
                         }
 
@@ -3241,7 +3270,8 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
              (upperParameterName == L"LATITUDE OF 1ST STANDARD PARALLEL") ||
              (upperParameterName == L"NORTHERN STANDARD PARALLEL"))
         {
-        if (BaseGCS::pcvBonne == coordinateSystem.GetProjectionCode())
+        if ((BaseGCS::pcvBonne == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvLambertConformalConicOneParallel == coordinateSystem.GetProjectionCode()))
             {
             if (SUCCESS != coordinateSystem.SetOriginLatitude (parameterValue * conversionToDegree)) // Weird occurence !
                 return ERROR;
@@ -3278,8 +3308,22 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
         if ((BaseGCS::pcvObliqueCylindricalSwiss != coordinateSystem.GetProjectionCode()) && // Swiss azimuth is implicit and needs(cannot) not be specified
             (BaseGCS::pcvCzechKrovak != coordinateSystem.GetProjectionCode()) &&             // Krovak azimuth is implicit and needs(cannot) not be specified
             (BaseGCS::pcvCzechKrovakModified != coordinateSystem.GetProjectionCode()))       // Krovak azimuth is implicit and needs(cannot) not be specified
-            if (SUCCESS != coordinateSystem.SetAzimuth (parameterValue * conversionToDegree))
-                return ERROR;
+            {
+            if (BaseGCS::pcvLambertConformalConicTwoParallel == coordinateSystem.GetProjectionCode())
+                {
+                // The only Lambert 2SP that takes azimuth is the lambert variation ... we switch though the azimuth is built in
+                coordinateSystem.SetProjectionCode(BaseGCS::pcvLambertConformalConicBelgian);
+
+                // Check the value (fixed)
+                if (!doubleSame(0.0081384722222, parameterValue * conversionToDegree))
+                    return ERROR;
+                }
+            else
+                {
+                if (SUCCESS != coordinateSystem.SetAzimuth (parameterValue * conversionToDegree))
+                    return ERROR;
+                }
+            }
         }
     else if ((upperParameterName == L"ZONENUMBER") || 
              (upperParameterName == L"UTM ZONE NUMBER (1 - 60)"))
