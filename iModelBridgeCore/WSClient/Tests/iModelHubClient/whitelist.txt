@@ -55,6 +55,7 @@ iModelScope/ChangeSet?$select=Id,Index,ParentId,SeedFileId,FileAccessKey-forward
 iModelScope/ChangeSet?$select=Id,Index,ParentId,SeedFileId,FileAccessKey-forward-AccessKey.DownloadURL&$filter=(FollowingChangeSet-backward-ChangeSet.Id+eq+'*'+and+SeedFileId+eq+'********-****-****-****-************')+and+Index+gt+*&$orderby=Index&$top=*
 iModelScope/ChangeSet?$select=Id,Index,ParentId,SeedFileId,FileAccessKey-forward-AccessKey.DownloadURL&$filter=SeedFileId+eq+'********-****-****-****-************'&$orderby=Index&$top=*
 iModelScope/ChangeSet?$select=Id,Index,ParentId,SeedFileId,FileAccessKey-forward-AccessKey.DownloadURL&$filter=(SeedFileId+eq+'********-****-****-****-************')+and+Index+gt+*&$orderby=Index&$top=*
+iModelScope/ChangeSet?$select=Id,Index,ParentId,SeedFileId,FileAccessKey-forward-AccessKey.DownloadURL&$filter=((CumulativeChangeSet-backward-ChangeSet.Id+eq+'*'+and+FollowingChangeSet-backward-ChangeSet.Id+eq+'*')+or+(CumulativeChangeSet-backward-ChangeSet.Id+eq+'*'+and+FollowingChangeSet-backward-ChangeSet.Id+eq+'*'))+and+Index+gt+*&$orderby=Index&$top=*
 iModelScope/Code/$query
 iModelScope/Code?$filter=$id+in+['*']
 iModelScope/Code?$filter=BriefcaseId+ne+*
