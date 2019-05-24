@@ -18,7 +18,7 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     ASSERT_TRUE(configurationModelPtr.IsValid());
 
     auto physicalModelPtr = SetUpPhysicalPartition(*subjectCPtr);
-    auto alignmentsCPtr = DesignAlignments::Query(*physicalModelPtr);
+    auto alignmentsCPtr = DesignAlignments::Query(*physicalModelPtr, "Design Alignments");
     auto alignModelPtr = alignmentsCPtr->GetAlignmentModel();
 
     // Create Alignment
@@ -149,7 +149,7 @@ TEST_F(RoadRailAlignmentTests, AlignmentPairEditorTest)
 
     auto subjectCPtr = projectPtr->Elements().GetRootSubject();
     auto physicalModelPtr = SetUpPhysicalPartition(*subjectCPtr);
-    auto alignmentsCPtr = DesignAlignments::Query(*physicalModelPtr);
+    auto alignmentsCPtr = DesignAlignments::Query(*physicalModelPtr, "Design Alignments");
     auto alignModelPtr = alignmentsCPtr->GetAlignmentModel();
 
     // Create Horizontal 
@@ -194,7 +194,7 @@ TEST_F(RoadRailAlignmentTests, AlignmentSegmentationTest)
 
     auto subjectCPtr = projectPtr->Elements().GetRootSubject();
     auto physicalModelPtr = SetUpPhysicalPartition(*subjectCPtr);
-    auto alignmentsCPtr = DesignAlignments::Query(*physicalModelPtr);
+    auto alignmentsCPtr = DesignAlignments::Query(*physicalModelPtr, "Design Alignments");
     auto alignModelPtr = alignmentsCPtr->GetAlignmentModel();
 
     // Create Alignment

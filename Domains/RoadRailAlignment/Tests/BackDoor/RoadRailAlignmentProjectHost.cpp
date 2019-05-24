@@ -193,7 +193,7 @@ PhysicalModelPtr RoadRailAlignmentTestsFixture::SetUpPhysicalPartition(SubjectCR
     if (DgnDbStatus::Success != physicalModelPtr->Insert())
         return nullptr;
 
-    if (DesignAlignments::Insert(*physicalModelPtr).IsNull())
+    if (DesignAlignments::Insert(*physicalModelPtr, "Design Alignments").IsNull())
         return nullptr;
 
     return physicalModelPtr;
