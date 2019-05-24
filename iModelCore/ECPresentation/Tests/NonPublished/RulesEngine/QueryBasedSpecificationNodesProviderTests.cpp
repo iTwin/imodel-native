@@ -1011,3 +1011,35 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     EXPECT_TRUE(root->HasChildren());
     EXPECT_EQ(1, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByRelationship_AlwaysDeterminesWithQueryIfInstanceFilterIsSet)
+    {
+    ECClassCP classA2Base = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassA2Base");
+    ECClassCP classB2 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassB2");
+    ECRelationshipClassCP classA2BaseHasB2 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassA2BaseHasB2")->GetRelationshipClassCP();
+
+    IECInstancePtr a2Base = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA2Base);
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classA2BaseHasB2, *a2Base, *b2);
+
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", classA2Base->GetFullName(), false));
+    m_ruleset->AddPresentationRule(*rule);
+    ChildNodeRuleP childRule = new ChildNodeRule("", 0, false, RuleTargetTree::TargetTree_Both);
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(0, ChildrenHint::Unknown, false, false, false, false, 0, "TRUE",
+        RequiredRelationDirection::RequiredRelationDirection_Both, "", classA2BaseHasB2->GetFullName(), ""));
+    m_ruleset->AddPresentationRule(*childRule);
+
+    NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*m_context);
+    m_context->SetRootNodeContext(*rule);
+
+    JsonNavNodePtr root;
+    NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
+    ASSERT_TRUE(provider->GetNode(root, 0));
+    EXPECT_TRUE(root->HasChildren());
+    EXPECT_EQ(1, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    }

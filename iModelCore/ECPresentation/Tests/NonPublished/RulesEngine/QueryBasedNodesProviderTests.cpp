@@ -129,6 +129,7 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
     // verify the nodes cache is empty
     EXPECT_TRUE(m_nodesCache.GetHierarchyLevel(*cachedHierarchyLevel).IsNull());
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -1253,6 +1253,11 @@ struct SpecificationChildrenChecker : PresentationRuleSpecificationVisitor
             }
         void DetermineChildren(RelatedInstanceNodesSpecification const& spec)
             {
+            if (!spec.GetInstanceFilter().empty())
+                {
+                // note: if there's an instance filter then we can't tell if the node always has children..
+                return;
+                }
             SupportedRelationshipClassInfos relationships = m_context.GetSchemaHelper().GetECRelationshipClasses(spec.GetRelationshipClassNames());
             if (spec.GetSkipRelatedLevel() == 0)
                 m_result = std::any_of(relationships.begin(), relationships.end(), [&](SupportedRelationshipClassInfo const& r) {return AlwaysHasRelatedInstance(r, spec); });
