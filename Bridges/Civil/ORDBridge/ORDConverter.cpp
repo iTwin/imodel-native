@@ -10,6 +10,7 @@
 #include <VersionedDgnV8Api/GeomSerialization/GeomLibsFlatBufferApi.h>
 
 #define DefaultDesignAlignmentsName     "Road/Rail Design Alignments"
+#define DefaultCorridorRangeName        "Corridor Overall Range"
 
 BEGIN_ORDBRIDGE_NAMESPACE
 
@@ -293,8 +294,8 @@ SpatialModelP ORDAlignmentsConverter::Get3DLinearsAlignmentModel(AlignmentCR ali
     if (elementAndAspectId.elementId.IsValid())
         {
         auto bimCorridorCPtr = RoadRailBim::Corridor::Get(m_ordConverter.GetDgnDb(), elementAndAspectId.elementId);
-        auto corridorPortionsCPtr = RoadRailBim::CorridorPortions::Query(*bimCorridorCPtr);
-        return corridorPortionsCPtr->GetCorridorPortionsModel().get();
+        auto corridorRangeCPtr = RoadRailBim::CorridorRange::Query(*bimCorridorCPtr, DefaultCorridorRangeName);
+        return corridorRangeCPtr->GetCorridorRangeModel().get();
         }
 
     BeAssert(false);
@@ -976,22 +977,22 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
     if (DgnDbStatus::Success != corridorModelPtr->Insert())
         return BentleyStatus::ERROR;
 
-    auto corridorPortionsCPtr = RoadRailBim::CorridorPortions::Insert(*bimCorridorCPtr);
+    auto corridorRangeCPtr = RoadRailBim::CorridorRange::Insert(*bimCorridorCPtr, DefaultCorridorRangeName);
     if (params.domainModelsPrivate)
         {
-        corridorPortionsCPtr->GetCorridorPortionsModel()->SetIsPrivate(true);
-        corridorPortionsCPtr->GetCorridorPortionsModel()->Update();
+        corridorRangeCPtr->GetCorridorRangeModel()->SetIsPrivate(true);
+        corridorRangeCPtr->GetCorridorRangeModel()->Update();
 
-        auto horizontalAlignmentsCPtr = AlignmentBim::HorizontalAlignments::Query(*corridorPortionsCPtr->GetCorridorPortionsModel());
+        auto horizontalAlignmentsCPtr = AlignmentBim::HorizontalAlignments::Query(*corridorRangeCPtr->GetCorridorRangeModel());
         horizontalAlignmentsCPtr->GetHorizontalModel()->SetIsPrivate(true);
         horizontalAlignmentsCPtr->GetHorizontalModel()->Update();
         }
 
     RoadRailBim::PathwayElementPtr pathwayPtr;
     if (isRail)
-        pathwayPtr = RoadRailBim::Railway::Create(*corridorPortionsCPtr, RoadRailBim::PathwayElement::Order::LeftMost);
+        pathwayPtr = RoadRailBim::Railway::Create(*corridorRangeCPtr, RoadRailBim::PathwayElement::Order::LeftMost);
     else
-        pathwayPtr = RoadRailBim::Roadway::Create(*corridorPortionsCPtr, RoadRailBim::PathwayElement::Order::LeftMost);
+        pathwayPtr = RoadRailBim::Roadway::Create(*corridorRangeCPtr, RoadRailBim::PathwayElement::Order::LeftMost);
 
     if (pathwayPtr->Insert().IsNull())
         return BentleyStatus::ERROR;    
@@ -1740,8 +1741,8 @@ void ORDConverter::SetCorridorDesignAlignments()
                     corridorPtr->SetDesignAlignment(bimMainAlignmentPtr.get());
                     corridorPtr->Update();
 
-                    auto corridorPortionsCPtr = RoadRailBim::CorridorPortions::Query(*corridorPtr);
-                    for (auto pathwayId : corridorPortionsCPtr->QueryOrderedPathwayIds())
+                    auto corridorRangeCPtr = RoadRailBim::CorridorRange::Query(*corridorPtr, DefaultCorridorRangeName);
+                    for (auto pathwayId : corridorRangeCPtr->QueryOrderedPathwayIds())
                         {
                         auto pathwayPtr = RoadRailBim::PathwayElement::GetForEdit(GetDgnDb(), pathwayId);
                         pathwayPtr->SetDesignAlignment(bimMainAlignmentPtr.get());
@@ -1813,11 +1814,11 @@ void ORDConverter::AssociateGeneratedAlignments()
 
         if (corridorCPtr.IsValid() && bimAlignmentCPtr.IsValid())
             {
-            auto corridorPortionsCPtr = RoadRailBim::CorridorPortions::Query(*corridorCPtr);
-            if (corridorPortionsCPtr.IsNull())
+            auto corridorRangeCPtr = RoadRailBim::CorridorRange::Query(*corridorCPtr, DefaultCorridorRangeName);
+            if (corridorRangeCPtr.IsNull())
                 continue;
 
-                auto pathwayIds = corridorPortionsCPtr->QueryOrderedPathwayIds();
+                auto pathwayIds = corridorRangeCPtr->QueryOrderedPathwayIds();
                 if (pathwayIds.empty())
                     continue;
 
