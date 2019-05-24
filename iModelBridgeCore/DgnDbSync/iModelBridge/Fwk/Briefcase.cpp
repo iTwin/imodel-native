@@ -383,7 +383,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase()
         if (BE_SQLITE_ERROR_SchemaUpgradeRequired == rc)
             {
             bool madeSchemaChanges = false;
-            iModelBridge::OpenBimAndMergeSchemaChanges(rc, madeSchemaChanges, m_briefcaseName);
+            iModelBridge::OpenBimAndMergeSchemaChanges(rc, madeSchemaChanges, m_briefcaseName, EnableECProfileUpgrade());
             rc = SaveBriefcaseId();
             }
         else

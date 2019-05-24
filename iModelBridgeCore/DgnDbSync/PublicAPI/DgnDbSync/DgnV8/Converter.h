@@ -869,6 +869,7 @@ struct Converter
         L10N_STRING(TASK_CONVERTING_RELATIONSHIPS)     // =="Converting Relationships"==
         L10N_STRING(TASK_V8_PROGRESSS)                 // =="%s"==
         L10N_STRING(STEP_EMBEDDING_FILES)              // =="Embedding Files"==
+        L10N_STRING(STEP_DETECT_DELETIONS)             // =="Detecting Deleted Items"==
         L10N_STRING(TASK_FILLING_V8_MODELS)            // =="Filling"==
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 

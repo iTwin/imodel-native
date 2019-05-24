@@ -4,7 +4,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="urn:schemas-bentley-com:xml-dgndbimportconfiguration ImportConfig.xsd"
     >
-    <Levels copy="IfDifferent"/>
+    <Levels copy="Never"/>
     <Models>
         <ImportRules>
             <If name="Model">

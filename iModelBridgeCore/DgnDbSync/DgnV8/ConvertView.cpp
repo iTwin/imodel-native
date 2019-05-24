@@ -913,7 +913,7 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         {
         if (nullptr != viewInfo.GetElementRef()) // we run into cases where the ViewInfo does not correspond to a V8 element. We can't track that.
             {
-            auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::CreateAspect(externalSourceAspectScope, name, viewInfo, GetDgnDb());
+            auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::CreateAspect(externalSourceAspectScope, defaultName, viewInfo, GetDgnDb());
             if (aspect.IsValid())
                 aspect.AddAspect(*view);
             }
@@ -921,7 +921,7 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         if (existingStyle.IsValid())
             {
             DisplayStyle *nonConst = const_cast<DisplayStyleP>(existingStyle.get());
-            if (nonConst->EqualState(view->GetDisplayStyle()))
+            if (!nonConst->EqualState(view->GetDisplayStyle()))
                 view->GetDisplayStyle().Update();
             }
 

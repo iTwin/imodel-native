@@ -31,7 +31,8 @@ AnnotationTextStyleCP   DwgImporter::_ImportTextStyle (DwgDbTextStyleTableRecord
         return  nullptr;
         }
 
-    AnnotationTextStylePtr  dgnStyle = AnnotationTextStyle::Create (*m_dgndb);
+    auto model = this->GetOptions().GetMergeDefinitions() ? &this->GetDgnDb().GetDictionaryModel() : this->GetOrCreateJobDefinitionModel().get();
+    AnnotationTextStylePtr  dgnStyle = AnnotationTextStyle::Create (*model);
     if (!dgnStyle.IsValid())
         return  nullptr;
 

@@ -1812,6 +1812,9 @@ void RootModelConverter::_FinishConversion()
         {
         if (_GetParams().DoDetectDeletedModelsAndElements())
             {
+            SetStepName(ProgressMessage::STEP_DETECT_DELETIONS());
+            StopWatch timer(true);
+
             // Detect deletions in the V8 files that we processed. (Don't assume we saw all V8 files.)
             for (DgnV8FileP v8File : m_v8Files)
                 {
@@ -1825,6 +1828,7 @@ void RootModelConverter::_FinishConversion()
             GetChangeDetector()._DetectDeletedElementsEnd(*this);
             GetChangeDetector()._DetectDeletedViewsEnd(*this);
             GetChangeDetector()._DetectDeletedModelsEnd(*this);
+            ConverterLogging::LogPerformance(timer, "Remove deleted items");
             }
 
         // Update syncinfo for all V8 files *** WIP_UPDATER - really only need to update syncinfo for changed files, but we don't keep track of that.
@@ -1836,8 +1840,10 @@ void RootModelConverter::_FinishConversion()
             // it is safe for this bridge job to update it.
             auto rlinkEd = GetDgnDb().Elements().GetForEdit<RepositoryLink>(GetRepositoryLinkId(*v8File));
             auto rlinkXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspectForEdit(*rlinkEd);
+            auto constXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect(*rlinkEd);
             rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File));
-            rlinkEd->Update();
+            if (constXsa != rlinkXsa)
+                rlinkEd->Update();
             }
         }
 
@@ -2001,7 +2007,7 @@ BentleyStatus  RootModelConverter::ConvertData()
             }
         }
 
-    AddSteps(9);
+    AddSteps(10);
 
     StopWatch totalTimer(true);
 
