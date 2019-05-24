@@ -20,7 +20,7 @@ TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
     
     auto physicalPartitionCPtr = projectPtr->Elements().Get<PhysicalPartition>(*PhysicalModelUtilities::QueryPhysicalPartitions(*subjectCPtr).begin());
     auto networkCPtr = RoadRailNetwork::Query(*projectPtr, RoadRailNetwork::CreateCode(*physicalPartitionCPtr->GetSubModel()->ToPhysicalModel(), "Road Network"));
-    auto alignmentsCPtr = DesignAlignments::Query(*networkCPtr->GetNetworkModel());
+    auto alignmentsCPtr = DesignAlignments::Query(*networkCPtr->GetNetworkModel(), "Design Alignments");
     auto alignModelPtr = alignmentsCPtr->GetAlignmentModel();
 
     // Create Alignment
@@ -60,9 +60,9 @@ TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
     ASSERT_EQ(1, linearElements.size());
     ASSERT_EQ(alignmentPtr->GetElementId(), *linearElements.begin());
 
-    auto corridorPortionsCPtr = CorridorPortions::Insert(*corridorPtr);
+    auto corridorRangeCPtr = CorridorRange::Insert(*corridorPtr, "Overall Range");
 
-    auto leftRoadwayPtr = Roadway::Create(*corridorPortionsCPtr, PathwayElement::Order::LeftMost);
+    auto leftRoadwayPtr = Roadway::Create(*corridorRangeCPtr, PathwayElement::Order::LeftMost);
     leftRoadwayPtr->SetDesignAlignment(alignmentPtr.get());
     ASSERT_TRUE(leftRoadwayPtr->Insert().IsValid());
 
@@ -76,11 +76,11 @@ TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
     auto designSpeedCPtr = designSpeedPtr->Insert();
     ASSERT_TRUE(designSpeedCPtr.IsValid());
 
-    auto rightRoadwayPtr = Roadway::Create(*corridorPortionsCPtr, PathwayElement::Order::RightMost);
+    auto rightRoadwayPtr = Roadway::Create(*corridorRangeCPtr, PathwayElement::Order::RightMost);
     rightRoadwayPtr->SetDesignAlignment(alignmentPtr.get());
     ASSERT_TRUE(rightRoadwayPtr->Insert().IsValid());
 
-    auto pathwayIds = corridorPortionsCPtr->QueryOrderedPathwayIds();
+    auto pathwayIds = corridorRangeCPtr->QueryOrderedPathwayIds();
     ASSERT_EQ(2, pathwayIds.size());
     ASSERT_EQ(leftRoadwayPtr->GetElementId(), pathwayIds[0]);
     ASSERT_EQ(rightRoadwayPtr->GetElementId(), pathwayIds[1]);

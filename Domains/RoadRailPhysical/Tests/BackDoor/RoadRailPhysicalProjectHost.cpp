@@ -170,6 +170,8 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
     auto roadNetworkCPtr = RoadRailNetwork::Insert(*physicalPartitionCPtr->GetSubModel()->ToPhysicalModelP(), 
         "Road Network");
 
+    DesignAlignments::Insert(*roadNetworkCPtr->GetNetworkModel(), "Design Alignments");
+
     return projectPtr;
     }
 
