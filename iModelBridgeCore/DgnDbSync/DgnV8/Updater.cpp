@@ -47,6 +47,24 @@ ChangeDetector::~ChangeDetector()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ElementExternalSourceAspect ChangeDetector::FindElementAspectByIdentifier(Converter& converter, Utf8StringCR identifier, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter)
+    {
+    SyncInfo::V8ElementExternalSourceAspectIterator it(v8mm.GetDgnModel(), "Identifier=:identifier");
+    auto stmt = it.GetStatement();
+    stmt->BindText(stmt->GetParameterIndex(":identifier"), identifier.c_str(), EC::IECSqlBinder::MakeCopy::No);
+
+    auto found = it.begin();
+    if (nullptr != filter)
+        {
+        while ((found != it.end()) && !(*filter)(found, converter))
+            ++found;
+        }
+    return (found != it.end())? *found: SyncInfo::V8ElementExternalSourceAspect();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::V8ElementExternalSourceAspect ChangeDetector::FindElementAspectById(Converter& converter, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter)
     {
     SyncInfo::V8ElementExternalSourceAspectIteratorByV8Id it(v8mm.GetDgnModel(), v8eh);
@@ -78,11 +96,15 @@ SyncInfo::V8ElementExternalSourceAspect ChangeDetector::FindElementAspectByCheck
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, 
-                                       T_SyncInfoElementFilter* filter)
+                                       T_SyncInfoElementFilter* filter, Utf8CP identifier)
     {
     res.m_currentElementProvenance = SyncInfo::ElementProvenance(v8eh, converter.GetSyncInfo(), converter.GetCurrentIdPolicy());
     
-    if (converter.GetCurrentIdPolicy() == StableIdPolicy::ById)
+    if (nullptr != identifier)
+        {
+        res.m_v8ElementAspect = FindElementAspectByIdentifier(converter, identifier, v8mm, filter);
+        }
+    else if (converter.GetCurrentIdPolicy() == StableIdPolicy::ById)
         {
         res.m_v8ElementAspect = FindElementAspectById(converter, v8eh, v8mm, filter);
         }

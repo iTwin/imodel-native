@@ -1099,9 +1099,11 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool  IsElementChanged(SyncInfo::V8ElementExternalSourceAspect& elementMapping, DgnV8Api::EditElementHandle& v8eh, DgnAttachmentCP att)
     {
-    IChangeDetector::SearchResults      syncInfoSearch;
+    IChangeDetector::SearchResults syncInfoSearch;
+    Utf8String attachInfo, sourceIdPath;
+    m_converter.ComputeXSAInfo(sourceIdPath, attachInfo, v8eh, att);
 
-    if (! m_converter.GetChangeDetector()._IsElementChanged(syncInfoSearch, m_converter, v8eh, m_parentModelMapping, nullptr))
+    if (! m_converter.GetChangeDetector()._IsElementChanged(syncInfoSearch, m_converter, v8eh, m_masterModelMapping, nullptr, sourceIdPath.c_str()))
         {
         elementMapping = syncInfoSearch.m_v8ElementAspect;
         m_converter.GetChangeDetector()._OnElementSeen(m_converter, syncInfoSearch.GetExistingElementId());
@@ -1109,16 +1111,12 @@ bool  IsElementChanged(SyncInfo::V8ElementExternalSourceAspect& elementMapping, 
         }
     else if (IChangeDetector::ChangeType::Update == syncInfoSearch.m_changeType)
         {
-        Utf8String attachInfo, sourceIdPath;
-        m_converter.ComputeXSAInfo(sourceIdPath, attachInfo, v8eh, att);
         m_converter.WriteV8ElementExternalSourceAspect(syncInfoSearch.GetExistingElementId(), v8eh, m_masterModelMapping.GetDgnModel().GetModelId(), sourceIdPath, attachInfo);
         elementMapping = syncInfoSearch.m_v8ElementAspect;
         m_converter.GetChangeDetector()._OnElementSeen(m_converter, syncInfoSearch.GetExistingElementId());
         }
     else
         {
-        Utf8String attachInfo, sourceIdPath;
-        m_converter.ComputeXSAInfo(sourceIdPath, attachInfo, v8eh, att);
         elementMapping = m_converter.WriteV8ElementExternalSourceAspect(m_parentModelMapping.GetDgnModel().GetModeledElementId(), v8eh, m_masterModelMapping.GetDgnModel().GetModelId(), sourceIdPath, attachInfo);
         }
     return true;

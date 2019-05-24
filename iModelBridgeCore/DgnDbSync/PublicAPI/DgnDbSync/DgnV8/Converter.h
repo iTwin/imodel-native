@@ -443,8 +443,9 @@ struct IChangeDetector
     //! @param[in] v8eh     A V8 Element
     //! @param[in] v8mm     Mapping info for the V8 model that contains this V8 element
     //! @param[in] filter   Optional. Chooses among existing elements in SyncInfo
+    //! @param[in] identifier   Optional. If specified use this instead of v8eh.GetElementId() as the Identifier of the aspect to look up.
     //! @return true if the element is new or has changed.
-    virtual bool _IsElementChanged(SearchResults& prov, Converter&, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter = nullptr) = 0;
+    virtual bool _IsElementChanged(SearchResults& prov, Converter&, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter = nullptr, Utf8CP identifier = nullptr) = 0;
 
     virtual bool _ShouldSkipLevel(DgnCategoryId&, Converter&, DgnV8Api::LevelHandle const&, DgnV8FileR, Utf8StringCR dbCategoryName) = 0;
 
@@ -2158,7 +2159,7 @@ struct ChangeDetector : IChangeDetector
     DGNDBSYNC_EXPORT void _OnModelInserted(Converter&, ResolvedModelMapping const&);
     DGNDBSYNC_EXPORT void _OnViewSeen(Converter&, DgnViewId id);
     DGNDBSYNC_EXPORT bool _AreContentsOfModelUnChanged(Converter&, ResolvedModelMapping const&) ;
-    DGNDBSYNC_EXPORT bool _IsElementChanged(SearchResults&, Converter&, DgnV8EhCR, ResolvedModelMapping const&, T_SyncInfoElementFilter* filter) override;
+    DGNDBSYNC_EXPORT bool _IsElementChanged(SearchResults&, Converter&, DgnV8EhCR, ResolvedModelMapping const&, T_SyncInfoElementFilter* filter, Utf8CP identifier = nullptr) override;
 
     //! @name  Inferring Deletions - call these methods after processing all models in a conversion unit. Don't forget to call the ...End function when done.
     //! @{
@@ -2175,6 +2176,7 @@ struct ChangeDetector : IChangeDetector
     DGNDBSYNC_EXPORT void _DetectDeletedViewsEnd(Converter&) override { m_viewsSeen.clear(); }
     //! @}
 
+    DGNDBSYNC_EXPORT SyncInfo::V8ElementExternalSourceAspect FindElementAspectByIdentifier(Converter& converter, Utf8StringCR identifier, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter);
     DGNDBSYNC_EXPORT SyncInfo::V8ElementExternalSourceAspect FindElementAspectById(Converter& converter, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter);
     DGNDBSYNC_EXPORT SyncInfo::V8ElementExternalSourceAspect FindElementAspectByChecksum(Converter& converter, SyncInfo::ElementHash const& hash, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter);
 
