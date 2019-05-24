@@ -30,7 +30,8 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define NAVNODE_IsExpanded          "IsExpanded"
 #define NAVNODE_Label               "Label"
 #define NAVNODE_Description         "Description"
-#define NAVNODE_ExtendedData        "ExtendedData"
+#define NAVNODE_InternalData        "InternalData"
+#define NAVNODE_UsersExtendedData   "ExtendedData"
 
 #define NAVNODE_JSON_CHUNK_SIZE     256
 
@@ -70,6 +71,7 @@ protected:
     ECPRESENTATION_EXPORT bool _IsCheckboxVisible() const override;
     ECPRESENTATION_EXPORT bool _IsCheckboxEnabled() const override;
     ECPRESENTATION_EXPORT bool _IsExpanded() const override;
+    ECPRESENTATION_EXPORT rapidjson::Value const* _GetUsersExtendedData() const override;
 
     ECPRESENTATION_EXPORT void _SetInstanceId(uint64_t instanceId) override;
     ECPRESENTATION_EXPORT void _SetLabel(Utf8CP label) override;
@@ -103,6 +105,7 @@ public:
     ECPRESENTATION_EXPORT RapidJsonValueCR GetJson() const;
     bool DeterminedChildren() const {return m_json.HasMember(NAVNODE_HasChildren);}
     ECPRESENTATION_EXPORT void SetImageId(Utf8CP imageId);
+    void AddUsersExtendedData(Utf8CP key, ECValueCR value);
     void SetParentNode(NavNodeCR node) {SetParentNodeId(node.GetNodeId());}
 };
 

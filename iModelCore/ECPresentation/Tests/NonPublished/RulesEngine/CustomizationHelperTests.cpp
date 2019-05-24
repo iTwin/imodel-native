@@ -223,6 +223,23 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyLocalization)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomizationHelperTests, CustomizeNode_ApplyExtendedDataRules)
+    {
+    ExtendedDataRuleP rule = new ExtendedDataRule("ThisNode.Type=\"customType\"");
+    rule->AddItem("key1", "\"test string\"");
+    rule->AddItem("key2", "ThisNode.Label & \" \" & ThisNode.Type");
+    m_ruleset->AddPresentationRule(*rule);
+    JsonNavNodePtr node = CreateNode("label", "description", "imageId", "customType");
+    CustomizationHelper::Customize(*m_context, *node, false);
+    ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
+    EXPECT_EQ(2, node->GetUsersExtendedData().GetJson().MemberCount());
+    EXPECT_STREQ("test string", node->GetUsersExtendedData().GetJson()["key1"].GetString());
+    EXPECT_STREQ("label customType", node->GetUsersExtendedData().GetJson()["key2"].GetString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSymbols)

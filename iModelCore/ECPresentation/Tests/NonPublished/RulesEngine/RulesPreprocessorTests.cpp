@@ -842,6 +842,39 @@ TEST_F (RulesPreprocessorTests, GetCheckboxRule_WithNoMatchingCondition)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesPreprocessorTests, GetExtendedDataRules)
+    {
+    ExtendedDataRuleP rule1 = new ExtendedDataRule("1 = 1");
+    ExtendedDataRuleP rule2 = new ExtendedDataRule("2 = 3");
+    ExtendedDataRuleP rule3 = new ExtendedDataRule("4 = 4");
+    ExtendedDataRuleP rule4 = new ExtendedDataRule("5 = 6");
+
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
+    rules->AddPresentationRule(*rule1);
+    rules->AddPresentationRule(*rule2);
+
+    RootNodeRuleP navigationRule = new RootNodeRule();
+    rules->AddPresentationRule(*navigationRule);
+
+    InstanceNodesOfSpecificClassesSpecificationP navigationSpec = new InstanceNodesOfSpecificClassesSpecification();
+    navigationRule->AddSpecification(*navigationSpec);
+    navigationRule->AddCustomizationRule(*rule3);
+    navigationRule->AddCustomizationRule(*rule4);
+
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
+    NavNodeExtendedData(*node).SetSpecificationHash(navigationSpec->GetHash());
+
+    RulesPreprocessor::CustomizationRuleParameters params(*node, nullptr);
+    bvector<ExtendedDataRuleCP> extendedDataRules = GetTestRulesPreprocessor(*rules).GetExtendedDataRules(params);
+    ASSERT_EQ(2, extendedDataRules.size());
+    // note: order is not important
+    EXPECT_NE(extendedDataRules.end(), std::find(extendedDataRules.begin(), extendedDataRules.end(), rule1));
+    EXPECT_NE(extendedDataRules.end(), std::find(extendedDataRules.begin(), extendedDataRules.end(), rule3));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (RulesPreprocessorTests, GetContentSpecifications_NoConditions)

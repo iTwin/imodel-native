@@ -446,6 +446,11 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
             json.AddMember("mergedFieldNames", fieldNamesJson, json.GetAllocator());
             }
 
+        if (0 != (ContentSetItem::SerializationFlags::SERIALIZE_UsersExtendedData & flags) && contentSetItem.GetUsersExtendedData().GetJson().MemberCount() > 0)
+            {
+            json.AddMember("extendedData", rapidjson::Value(contentSetItem.GetUsersExtendedData().GetJson(), json.GetAllocator()), json.GetAllocator());
+            }
+
 #ifdef wip
         if (0 != (ContentSetItem::SerializationFlags::SERIALIZE_FieldPropertyInstanceKeys & flags))
             {
@@ -774,29 +779,31 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
             json.AddMember("key", navNode.GetKey()->AsJson(&json.GetAllocator()), json.GetAllocator());
         json.AddMember("label", rapidjson::Value(navNode.GetLabel().c_str(), json.GetAllocator()), json.GetAllocator());
         if (navNode.HasChildren())
-          json.AddMember("hasChildren", navNode.HasChildren(), json.GetAllocator());
+            json.AddMember("hasChildren", navNode.HasChildren(), json.GetAllocator());
         if (!navNode.GetDescription().empty())
-          json.AddMember("description", rapidjson::Value(navNode.GetDescription().c_str(), json.GetAllocator()), json.GetAllocator());
+            json.AddMember("description", rapidjson::Value(navNode.GetDescription().c_str(), json.GetAllocator()), json.GetAllocator());
         if (!navNode.GetExpandedImageId().empty())
-          json.AddMember("imageId", rapidjson::Value(navNode.GetExpandedImageId().c_str(), json.GetAllocator()), json.GetAllocator());
+            json.AddMember("imageId", rapidjson::Value(navNode.GetExpandedImageId().c_str(), json.GetAllocator()), json.GetAllocator());
         if (!navNode.GetForeColor().empty())
-          json.AddMember("foreColor", rapidjson::Value(navNode.GetForeColor().c_str(), json.GetAllocator()), json.GetAllocator());
+            json.AddMember("foreColor", rapidjson::Value(navNode.GetForeColor().c_str(), json.GetAllocator()), json.GetAllocator());
         if (!navNode.GetBackColor().empty())
-          json.AddMember("backColor", rapidjson::Value(navNode.GetBackColor().c_str(), json.GetAllocator()), json.GetAllocator());
+            json.AddMember("backColor", rapidjson::Value(navNode.GetBackColor().c_str(), json.GetAllocator()), json.GetAllocator());
         if (!navNode.GetFontStyle().empty() && !navNode.GetFontStyle().EqualsI("regular"))
-          json.AddMember("fontStyle", rapidjson::Value(navNode.GetFontStyle().c_str(), json.GetAllocator()), json.GetAllocator());
+            json.AddMember("fontStyle", rapidjson::Value(navNode.GetFontStyle().c_str(), json.GetAllocator()), json.GetAllocator());
         if (!navNode.IsSelectable())
-          json.AddMember("isSelectionDisabled", !navNode.IsSelectable(), json.GetAllocator());
+            json.AddMember("isSelectionDisabled", !navNode.IsSelectable(), json.GetAllocator());
         if (navNode.IsEditable())
-          json.AddMember("isEditable", navNode.IsEditable(), json.GetAllocator());
+            json.AddMember("isEditable", navNode.IsEditable(), json.GetAllocator());
         if (navNode.IsCheckboxVisible())
-          json.AddMember("isCheckboxVisible", navNode.IsCheckboxVisible(), json.GetAllocator());
+            json.AddMember("isCheckboxVisible", navNode.IsCheckboxVisible(), json.GetAllocator());
         if (navNode.IsChecked())
-          json.AddMember("isChecked", navNode.IsChecked(), json.GetAllocator());
+            json.AddMember("isChecked", navNode.IsChecked(), json.GetAllocator());
         if (navNode.IsCheckboxEnabled())
-          json.AddMember("isCheckboxEnabled", navNode.IsCheckboxEnabled(), json.GetAllocator());
+            json.AddMember("isCheckboxEnabled", navNode.IsCheckboxEnabled(), json.GetAllocator());
         if (navNode.IsExpanded())
-          json.AddMember("isExpanded", navNode.IsExpanded(), json.GetAllocator());
+            json.AddMember("isExpanded", navNode.IsExpanded(), json.GetAllocator());
+        if (navNode.GetUsersExtendedData().GetJson().MemberCount() > 0)
+            json.AddMember("extendedData", rapidjson::Value(navNode.GetUsersExtendedData().GetJson(), json.GetAllocator()), json.GetAllocator());
         return json;
         }
 

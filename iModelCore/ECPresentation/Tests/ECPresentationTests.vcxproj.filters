@@ -374,5 +374,8 @@
     <ClCompile Include="TestHelpers\TestRuleSetLocater.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Published\PresentationRules\ExtendedDataRuleTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

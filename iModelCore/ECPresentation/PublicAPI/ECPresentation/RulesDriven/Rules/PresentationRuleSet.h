@@ -44,6 +44,7 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
         UserSettingsGroupList                  m_userSettings;
         ContentModifierList                    m_contentModifiers;
         InstanceLabelOverrideList              m_instanceLabelOverrides;
+        ExtendedDataRuleList                   m_extendedDataRules;
 
     private:
         //Private constructor. This class instance should be creates using static helper methods.
@@ -248,6 +249,9 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
 
         //! Collection of rules, which should override instance label of specific class.
         ECPRESENTATION_EXPORT InstanceLabelOverrideList const& GetInstanceLabelOverrides(void) const;
+
+        //! Collection of rules, which add extended data into presentation objects.
+        ECPRESENTATION_EXPORT ExtendedDataRuleList const& GetExtendedDataRules() const;
     };
 
 template<> ECPRESENTATION_EXPORT RootNodeRuleList* PresentationRuleSet::GetRules<RootNodeRule>();
@@ -263,5 +267,6 @@ template<> ECPRESENTATION_EXPORT UserSettingsGroupList* PresentationRuleSet::Get
 template<> ECPRESENTATION_EXPORT ContentModifierList* PresentationRuleSet::GetRules<ContentModifier>();
 template<> ECPRESENTATION_EXPORT InstanceLabelOverrideList* PresentationRuleSet::GetRules<InstanceLabelOverride>();
 template<> ECPRESENTATION_EXPORT LocalizationResourceKeyDefinitionList* PresentationRuleSet::GetRules<LocalizationResourceKeyDefinition>();
+template<> ECPRESENTATION_EXPORT ExtendedDataRuleList* PresentationRuleSet::GetRules<ExtendedDataRule>();
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

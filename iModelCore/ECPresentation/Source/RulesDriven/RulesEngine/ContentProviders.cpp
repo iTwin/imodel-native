@@ -1010,10 +1010,7 @@ bool ContentProvider::GetContentSetItem(ContentSetItemPtr& item, size_t index) c
         return false;
 
     item = m_records[index];
-
-    if (GetContentDescriptor()->ShowImages())
-        CustomizationHelper::Customize(GetContext(), *item);
-
+    CustomizationHelper::Customize(GetContext(), *GetContentDescriptor(), *item);
     return true;
     }
 

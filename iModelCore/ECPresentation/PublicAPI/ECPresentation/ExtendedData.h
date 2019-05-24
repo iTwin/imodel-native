@@ -106,6 +106,28 @@ public:
     //! Initializes an empty read-write accessor. 
     RapidJsonAccessor() {InitWritable(rapidjson::Value(rapidjson::kObjectType));}
 
+    //! Copy constructor.
+    RapidJsonAccessor(RapidJsonAccessor const& other)
+        : m_ownsData(other.m_ownsData), m_allocator(nullptr), m_writableData(nullptr)
+        {
+        if (m_ownsData)
+            {
+            InitWritable(rapidjson::Value(rapidjson::kObjectType));
+            MergeWith(other);
+            }
+        else
+            {
+            m_readonlyData = other.m_readonlyData;
+            }
+        }
+
+    //! Move constructor.
+    RapidJsonAccessor(RapidJsonAccessor&& other)
+        : m_allocator(other.m_allocator), m_writableData(other.m_writableData), m_readonlyData(other.m_readonlyData), m_ownsData(other.m_ownsData)
+        {
+        other.m_ownsData = false;
+        }
+
     //! Initializes a read-only accessor with the specified JSON. Does not copy the supplied JSON.
     RapidJsonAccessor(RapidJsonValueCR data) : m_ownsData(false), m_allocator(nullptr), m_writableData(nullptr), m_readonlyData(&data) {}
     
@@ -129,7 +151,7 @@ public:
         }
 
     //! Initializes a read-write accessor with a copy of the supplied RapidJsonAccessor object.
-    RapidJsonAccessor(RapidJsonAccessor const& other) {InitWritable(*other.m_readonlyData);}
+    // RapidJsonAccessor(RapidJsonAccessor const& other) {InitWritable(*other.m_readonlyData);}
 
     //! Destructor
     ~RapidJsonAccessor() {Cleanup();}

@@ -6255,3 +6255,80 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CreatesValidHierarchyWhe
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ("fourth", childNodes[0]->GetLabel().c_str());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(AppliesNodeExtendedDataFromPresentationRules, R"*(
+    <ECEntityClass typeName="MyClass1">
+        <ECProperty propertyName="CodeValue" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClass2">
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, AppliesNodeExtendedDataFromPresentationRules)
+    {
+    ECClassCP ecClass1 = GetClass("MyClass1");
+    ECClassCP ecClass2 = GetClass("MyClass2");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass1, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("test value")); });
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass2);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule1 = new RootNodeRule();    
+    rules->AddPresentationRule(*rule1);
+    rule1->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", ecClass1->GetFullName(), true));
+
+    ExtendedDataRule* ex1 = new ExtendedDataRule();
+    ex1->AddItem("class_name", "ThisNode.ClassName");
+    ex1->AddItem("property_value", "this.CodeValue");
+    ex1->AddItem("is_MyClass", Utf8PrintfString("ThisNode.IsOfClass(\"%s\", \"%s\")", ecClass1->GetName().c_str(), ecClass1->GetSchema().GetName().c_str()));
+    rule1->AddCustomizationRule(*ex1);
+
+    ExtendedDataRule* ex2 = new ExtendedDataRule(Utf8PrintfString("ThisNode.IsOfClass(\"%s\", \"%s\")", ecClass1->GetName().c_str(), ecClass1->GetSchema().GetName().c_str()));
+    ex2->AddItem("constant_bool", "true");
+    ex2->AddItem("constant_int", "1");
+    ex2->AddItem("constant_double", "1.23");
+    ex2->AddItem("constant_string", "\"Red\"");
+    rules->AddPresentationRule(*ex2);
+
+    RootNodeRule* rule2 = new RootNodeRule();
+    rules->AddPresentationRule(*rule2);
+    rule2->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", ecClass2->GetFullName(), true));
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(2, rootNodes.GetSize());
+
+    RapidJsonAccessor extendedData = rootNodes[0]->GetUsersExtendedData();
+    ASSERT_TRUE(extendedData.GetJson().IsObject());
+    ASSERT_EQ(7, extendedData.GetJson().MemberCount());
+    
+    ASSERT_TRUE(extendedData.GetJson().HasMember("class_name"));
+    EXPECT_STREQ(ecClass1->GetName().c_str(), extendedData.GetJson()["class_name"].GetString());
+
+    ASSERT_TRUE(extendedData.GetJson().HasMember("property_value"));
+    EXPECT_STREQ("test value", extendedData.GetJson()["property_value"].GetString());
+
+    ASSERT_TRUE(extendedData.GetJson().HasMember("is_MyClass"));
+    EXPECT_TRUE(extendedData.GetJson()["is_MyClass"].GetBool());
+
+    ASSERT_TRUE(extendedData.GetJson().HasMember("constant_bool"));
+    EXPECT_TRUE(extendedData.GetJson()["constant_bool"].GetBool());
+
+    ASSERT_TRUE(extendedData.GetJson().HasMember("constant_int"));
+    EXPECT_EQ(1, extendedData.GetJson()["constant_int"].GetInt());
+
+    ASSERT_TRUE(extendedData.GetJson().HasMember("constant_double"));
+    EXPECT_DOUBLE_EQ(1.23, extendedData.GetJson()["constant_double"].GetDouble());
+
+    ASSERT_TRUE(extendedData.GetJson().HasMember("constant_string"));
+    EXPECT_STREQ("Red", extendedData.GetJson()["constant_string"].GetString());
+
+    RapidJsonAccessor extendedData2 = rootNodes[1]->GetUsersExtendedData();
+    ASSERT_TRUE(extendedData2.GetJson().IsObject());
+    ASSERT_EQ(0, extendedData2.GetJson().MemberCount());
+    }

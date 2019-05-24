@@ -267,6 +267,8 @@ protected:
     virtual StyleOverrideCP _GetStyleOverride(CustomizationRuleParametersCR params) = 0;
     //! @see GetCheckboxRule
     virtual CheckBoxRuleCP _GetCheckboxRule(CustomizationRuleParametersCR params) = 0;
+    //! @see GetExtendedDataRules
+    virtual bvector<ExtendedDataRuleCP> _GetExtendedDataRules(CustomizationRuleParametersCR params) = 0;
     //! @see GetGroupingRules
     virtual bvector<GroupingRuleCP> _GetGroupingRules(AggregateCustomizationRuleParametersCR params) = 0;
     //! @see GetSortingRules
@@ -308,6 +310,10 @@ public:
     //! Get matching checkbox rule.
     //! @param[in] params The request parameters.
     CheckBoxRuleCP GetCheckboxRule(CustomizationRuleParametersCR params) {return _GetCheckboxRule(params);}
+
+    //! Get matching extended data rules.
+    //! @param[in] params The request parameters.
+    bvector<ExtendedDataRuleCP> GetExtendedDataRules(CustomizationRuleParametersCR params) { return _GetExtendedDataRules(params); }
 
     //! Get matching grouping rules.
     //! @param[in] params The request parameters.

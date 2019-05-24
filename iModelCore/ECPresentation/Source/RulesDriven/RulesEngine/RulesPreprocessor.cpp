@@ -442,6 +442,41 @@ public:
 };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename TRule>
+static bvector<TRule const*> GetCustomizationRules(Utf8CP specificationHash, PresentationRuleSetCR ruleset, bvector<TRule*> const& (PresentationRuleSet::*rootRulesGetter)() const)
+    {
+    bset<CustomizationRuleOrder<CustomizationRule>> customizationRules;
+
+    // adds customization rules specified under specific spec
+    if (nullptr != specificationHash)
+        customizationRules = GetNestedCustomizationRules(ruleset, specificationHash);
+
+    // adds root level customization rules
+    for (TRule* rule : (ruleset.*rootRulesGetter)())
+        customizationRules.insert(CustomizationRuleOrder<CustomizationRule>(rule, 0));
+
+    // filters specific type of rules
+    bvector<TRule const*> concreteRules;
+    Visitor<TRule> visitor(concreteRules);
+    for (CustomizationRuleOrder<CustomizationRule> const& rule : customizationRules)
+        rule.GetRule()->Accept(visitor);
+    return concreteRules;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename TRule>
+static bvector<TRule const*> GetCustomizationRules(NavNodeCR node, PresentationRuleSetCR ruleset, bvector<TRule*> const& (PresentationRuleSet::*rootRulesGetter)() const)
+    {
+    NavNodeExtendedData nodeExtendedData(node);
+    Utf8CP nodeSpecificationHash = nodeExtendedData.HasSpecificationHash() ? nodeExtendedData.GetSpecificationHash() : nullptr;
+    return GetCustomizationRules(nodeSpecificationHash, ruleset, rootRulesGetter);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 LabelOverrideCP RulesPreprocessor::_GetLabelOverride(CustomizationRuleParametersCR params)
@@ -453,24 +488,8 @@ LabelOverrideCP RulesPreprocessor::_GetLabelOverride(CustomizationRuleParameters
             m_connection, m_locale, m_userSettings, m_usedSettingsListener);
         return ECExpressionContextsProvider::GetCustomizationRulesContext(contextParams);
         };
-    bset<CustomizationRuleOrder<CustomizationRule>> customizationRules;
     OptimizedExpressionsParameters optParams(m_connections, m_connection, params.GetNode().GetKey(), "");
-
-    //Finds nested customization rules
-    NavNodeExtendedData nodeExtendedData(params.GetNode());
-    if (nodeExtendedData.HasSpecificationHash())
-        customizationRules = GetNestedCustomizationRules(m_ruleset, nodeExtendedData.GetSpecificationHash());
-
-    //Adds root level customization rules
-    for (LabelOverrideP rule : m_ruleset.GetLabelOverrides())
-        customizationRules.insert(CustomizationRuleOrder<CustomizationRule>(rule, 0));
-
-    //Filters LabelOverideRules
-    bvector<LabelOverrideCP> labelOverrides;
-    Visitor<LabelOverride> visitor(labelOverrides);
-    for (CustomizationRuleOrder<CustomizationRule> const& rule : customizationRules)
-        rule.GetRule()->Accept(visitor);
-
+    bvector<LabelOverrideCP> labelOverrides = GetCustomizationRules(params.GetNode(), m_ruleset, &PresentationRuleSet::GetLabelOverrides);
     for (LabelOverrideCP override : labelOverrides)
         {
         if (override->GetLabel().empty() && override->GetDescription().empty())
@@ -494,24 +513,8 @@ StyleOverrideCP RulesPreprocessor::_GetStyleOverride(CustomizationRuleParameters
             m_connection, m_locale, m_userSettings, m_usedSettingsListener);
         return ECExpressionContextsProvider::GetCustomizationRulesContext(contextParams);
         };
-    bset<CustomizationRuleOrder<CustomizationRule>> customizationRules;
     OptimizedExpressionsParameters optParams(m_connections, m_connection, params.GetNode().GetKey(), "");
-
-    //Finds nested customization rules
-    NavNodeExtendedData nodeExtendedData(params.GetNode());
-    if (nodeExtendedData.HasSpecificationHash())
-        customizationRules = GetNestedCustomizationRules(m_ruleset, nodeExtendedData.GetSpecificationHash());
-
-    //Adds root level customization rules
-    for (StyleOverrideP rule : m_ruleset.GetStyleOverrides())
-        customizationRules.insert(CustomizationRuleOrder<CustomizationRule>(rule,0));
-
-    //Filters StyleOverrideRules
-    bvector<StyleOverrideCP> styleOverrides;
-    Visitor<StyleOverride> visitor(styleOverrides);
-    for (CustomizationRuleOrder<CustomizationRule> const& rule : customizationRules)
-        rule.GetRule()->Accept(visitor);
-
+    bvector<StyleOverrideCP> styleOverrides = GetCustomizationRules(params.GetNode(), m_ruleset, &PresentationRuleSet::GetStyleOverrides);
     for (StyleOverrideCP override : styleOverrides)
         {
         if (override->GetCondition().empty() || VerifyCondition(override->GetCondition().c_str(), m_ecexpressionsCache, &optParams, contextPreparer))
@@ -532,20 +535,7 @@ bvector<GroupingRuleCP> RulesPreprocessor::_GetGroupingRules(AggregateCustomizat
         return ECExpressionContextsProvider::GetNodeRulesContext(contextParams);
         };
     OptimizedExpressionsParameters optParams(m_connections, m_connection, nullptr == params.GetParentNode() ? nullptr : params.GetParentNode()->GetKey(), "");
-
-    //Finds nested customization rules
-    bset<CustomizationRuleOrder<CustomizationRule>> customizationRules = GetNestedCustomizationRules(m_ruleset, params.GetSpecificationHash().c_str());
-
-    //Adds root level customization rules
-    for (GroupingRuleP rule : m_ruleset.GetGroupingRules())
-        customizationRules.insert(CustomizationRuleOrder<CustomizationRule>(rule, 0));
-
-    //Filters GroupingRules
-    bvector<GroupingRuleCP> groupingRules;
-    Visitor<GroupingRule> visitor(groupingRules);
-    for (CustomizationRuleOrder<CustomizationRule> const& rule : customizationRules)
-        rule.GetRule()->Accept(visitor);
-
+    bvector<GroupingRuleCP> groupingRules = GetCustomizationRules(params.GetSpecificationHash().c_str(), m_ruleset, &PresentationRuleSet::GetGroupingRules);
     bvector<GroupingRuleCP> matchingGroupingRules;
     for (GroupingRuleCP  rule : groupingRules)
         {
@@ -570,20 +560,7 @@ bvector<SortingRuleCP> RulesPreprocessor::_GetSortingRules(AggregateCustomizatio
         return ECExpressionContextsProvider::GetNodeRulesContext(contextParams);
         };
     OptimizedExpressionsParameters optParams(m_connections, m_connection, nullptr == params.GetParentNode() ? nullptr : params.GetParentNode()->GetKey(), "");
-
-    //Finds nested customization rules
-    bset<CustomizationRuleOrder<CustomizationRule>> customizationRules = GetNestedCustomizationRules(m_ruleset, params.GetSpecificationHash().c_str());
-
-    //Adds root level customization rules    
-    for (SortingRuleP rule : m_ruleset.GetSortingRules())
-        customizationRules.insert(CustomizationRuleOrder<CustomizationRule>(rule, 0));
-
-    //Filters SortingRules
-    bvector<SortingRuleCP> sortingRules;
-    Visitor<SortingRule> visitor(sortingRules);
-    for (CustomizationRuleOrder<CustomizationRule> const& rule : customizationRules)
-        rule.GetRule()->Accept(visitor);   
-
+    bvector<SortingRuleCP> sortingRules = GetCustomizationRules(params.GetSpecificationHash().c_str(), m_ruleset, &PresentationRuleSet::GetSortingRules);
     bvector<SortingRuleCP> matchingSortingRules;
     for (SortingRuleCP  rule : sortingRules)
         {
@@ -619,24 +596,8 @@ ImageIdOverrideCP RulesPreprocessor::_GetImageIdOverride(CustomizationRuleParame
             m_connection, m_locale, m_userSettings, m_usedSettingsListener);
         return ECExpressionContextsProvider::GetCustomizationRulesContext(contextParams);
         };
-    bset<CustomizationRuleOrder<CustomizationRule>> customizationRules;  
-    NavNodeExtendedData nodeExtendedData(params.GetNode());
     OptimizedExpressionsParameters optParams(m_connections, m_connection, params.GetNode().GetKey(), "");
-
-    //Finds nested customization rules
-    if (nodeExtendedData.HasSpecificationHash())
-        customizationRules = GetNestedCustomizationRules(m_ruleset, nodeExtendedData.GetSpecificationHash());
-
-    //Adds root level customization rules
-    for (ImageIdOverrideP tempImageIdOverride : m_ruleset.GetImageIdOverrides())
-        customizationRules.insert(CustomizationRuleOrder<CustomizationRule>(tempImageIdOverride, 0));
-
-    //Filters ImageIdOverride Rules
-    bvector<ImageIdOverrideCP> imageIdOverrides;
-    Visitor<ImageIdOverride> visitor(imageIdOverrides);
-    for (CustomizationRuleOrder<CustomizationRule> const& rule : customizationRules)
-        rule.GetRule()->Accept(visitor);
-
+    bvector<ImageIdOverrideCP> imageIdOverrides = GetCustomizationRules(params.GetNode(), m_ruleset, &PresentationRuleSet::GetImageIdOverrides);
     for (ImageIdOverrideCP override : imageIdOverrides)
         {
         if (override->GetCondition().empty() || VerifyCondition(override->GetCondition().c_str(), m_ecexpressionsCache, &optParams, contextPreparer))
@@ -657,30 +618,37 @@ CheckBoxRuleCP RulesPreprocessor::_GetCheckboxRule(CustomizationRuleParametersCR
             m_connection, m_locale, m_userSettings, m_usedSettingsListener);
         return ECExpressionContextsProvider::GetCustomizationRulesContext(contextParams);
         };
-    bset<CustomizationRuleOrder<CustomizationRule>> customizationRules;
-    NavNodeExtendedData nodeExtendedData(params.GetNode());
     OptimizedExpressionsParameters optParams(m_connections, m_connection, params.GetNode().GetKey(), "");
-
-    //Adds nested customization rules
-    if (nodeExtendedData.HasSpecificationHash())
-        customizationRules = GetNestedCustomizationRules(m_ruleset, nodeExtendedData.GetSpecificationHash());
-
-    //Adds root level customization rules
-    for (CheckBoxRuleP checkbox : m_ruleset.GetCheckBoxRules())
-        customizationRules.insert(CustomizationRuleOrder<CustomizationRule>(checkbox, 0));
-
-    //Filters CheckBoxRules
-    bvector<CheckBoxRuleCP> checkboxRules;
-    Visitor<CheckBoxRule> visitor(checkboxRules);
-    for (CustomizationRuleOrder<CustomizationRule> const& rule : customizationRules)
-        rule.GetRule()->Accept(visitor);
-
+    bvector<CheckBoxRuleCP> checkboxRules = GetCustomizationRules(params.GetNode(), m_ruleset, &PresentationRuleSet::GetCheckBoxRules);
     for (CheckBoxRuleCP rule : checkboxRules)
         {
         if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), m_ecexpressionsCache, &optParams, contextPreparer))
             return rule;
         }
     return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<ExtendedDataRuleCP> RulesPreprocessor::_GetExtendedDataRules(CustomizationRuleParametersCR params)
+    {
+    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb());
+    std::function<ExpressionContextPtr()> contextPreparer = [&]()
+        {
+        ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(params.GetNode(), params.GetParentNode(),
+            m_connection, m_locale, m_userSettings, m_usedSettingsListener);
+        return ECExpressionContextsProvider::GetCustomizationRulesContext(contextParams);
+        };
+    OptimizedExpressionsParameters optParams(m_connections, m_connection, params.GetNode().GetKey(), "");
+    bvector<ExtendedDataRuleCP> rules = GetCustomizationRules(params.GetNode(), m_ruleset, &PresentationRuleSet::GetExtendedDataRules);
+    bvector<ExtendedDataRuleCP> matchingRules;
+    for (ExtendedDataRuleCP rule : rules)
+        {
+        if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), m_ecexpressionsCache, &optParams, contextPreparer))
+            matchingRules.push_back(rule);
+        }
+    return matchingRules;
     }
 
 /*---------------------------------------------------------------------------------**//**

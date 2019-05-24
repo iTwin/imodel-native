@@ -9,8 +9,9 @@
 #include <folly/futures/Future.h>
 #include <folly/Executor.h>
 #include <folly/Unit.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include <ECDb/ECDbApi.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
+#include <BeRapidJson/BeRapidJson.h>
 #include <rapidjson/document.h>
 
 //-----------------------------------------------------------------------------------------

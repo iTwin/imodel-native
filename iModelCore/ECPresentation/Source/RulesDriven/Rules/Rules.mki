@@ -45,6 +45,8 @@ $(o)GroupingRule$(oext)                                    : $(PresentationRules
 
 $(o)SortingRule$(oext)                                     : $(PresentationRulesSourceDirectory)SortingRule.cpp $(PresentationRulesDependencies)
 
+$(o)ExtendedDataRule$(oext)                                : $(PresentationRulesSourceDirectory)ExtendedDataRule.cpp $(PresentationRulesDependencies)
+
 $(o)AllInstanceNodesSpecification$(oext)                   : $(PresentationRulesSourceDirectory)AllInstanceNodesSpecification.cpp $(PresentationRulesDependencies)
 
 $(o)AllRelatedInstanceNodesSpecification$(oext)            : $(PresentationRulesSourceDirectory)AllRelatedInstanceNodesSpecification.cpp $(PresentationRulesDependencies)

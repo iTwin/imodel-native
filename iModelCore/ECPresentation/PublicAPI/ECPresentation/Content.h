@@ -1091,7 +1091,8 @@ struct ContentSetItem : RefCountedBase, RapidJsonExtendedDataHolder<>
         SERIALIZE_PrimaryKeys   = 1 << 5,
         SERIALIZE_MergedFieldNames = 1 << 6,
         SERIALIZE_FieldPropertyInstanceKeys = 1 << 7,
-        SERIALIZE_All           = 0xFF // 8 bits
+        SERIALIZE_UsersExtendedData = 1 << 8,
+        SERIALIZE_All           = ((1 << 9) - 1),
         };
     
     //===================================================================================
@@ -1128,6 +1129,7 @@ private:
     Utf8String m_imageId;
     rapidjson::Document m_values;
     rapidjson::Document m_displayValues;
+    rapidjson::Document m_extendedData;
     FieldPropertyInstanceKeyMap m_fieldPropertyInstanceKeys;
     bvector<Utf8String> m_mergedFieldNames;
 
@@ -1135,15 +1137,16 @@ private:
     ContentSetItem(bvector<ECClassInstanceKey> keys, Utf8String displayLabel, Utf8String imageId, rapidjson::Document&& values, 
         rapidjson::Document&& displayValues, bvector<Utf8String> mergedFieldNames, FieldPropertyInstanceKeyMap&& fieldPropertyInstanceKeys)
         : m_class(nullptr), m_keys(keys), m_displayLabel(displayLabel), m_imageId(imageId), 
-        m_values(std::move(values)), m_displayValues(std::move(displayValues)), 
+        m_values(std::move(values)), m_displayValues(std::move(displayValues)), m_extendedData(rapidjson::kObjectType), 
         m_mergedFieldNames(mergedFieldNames), m_fieldPropertyInstanceKeys(std::move(fieldPropertyInstanceKeys))
         {}
 //__PUBLISH_SECTION_END__
 public:
-    rapidjson::Document const& GetValues() const {return m_values;}
     rapidjson::Document& GetValues() {return m_values;}
-    rapidjson::Document const& GetDisplayValues() const {return m_displayValues;}
+    rapidjson::Document const& GetValues() const { return m_values; }
     rapidjson::Document& GetDisplayValues() {return m_displayValues;}
+    rapidjson::Document const& GetDisplayValues() const { return m_displayValues; }
+    rapidjson::Document& GetExtendedData() { return m_extendedData; }
     bvector<Utf8String>& GetMergedFieldNames() {return m_mergedFieldNames;}
     bvector<ECClassInstanceKey>& GetKeys() {return m_keys;}
     FieldPropertyInstanceKeyMap const& GetFieldInstanceKeys() const {return m_fieldPropertyInstanceKeys;}
@@ -1168,6 +1171,10 @@ public:
 
     //! Serialize this item to JSON.
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(int flags = SERIALIZE_All, rapidjson::Document::AllocatorType* allocator = nullptr) const;
+
+    //! Get user's extended data map
+    RapidJsonAccessor GetUsersExtendedData() const {return RapidJsonAccessor(m_extendedData);}
+    ECPRESENTATION_EXPORT void AddUsersExtendedData(Utf8CP key, ECValueCR value);
 
     //! Get keys of ECInstances whose values this item contains.
     bvector<ECClassInstanceKey> const& GetKeys() const {return m_keys;}

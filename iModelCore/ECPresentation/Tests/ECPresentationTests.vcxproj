@@ -76,7 +76,7 @@
     <NMakeCleanCommandLine>bb clean ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>bb rebuild ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>BENTLEY_WIN32;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(SrcRoot)imodel02\iModelCore\Bentley\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeHttp\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeSecurity\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeSQLite\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECPresentation\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECPresentation\Source\;$(SrcRoot)imodel02\iModelCore\ECPresentation\Tests\TestHelpers\;$(SrcRoot)imodel02\iModelCore\ECDb\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECObjects\PublicAPI\;$(SrcRoot)imodel02\iModelCore\GeomLibs\PublicAPI\;$(SrcRoot)imodel02\iModelCore\libsrc\facebook\VendorAPI\;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\include\;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\PublicAPI\;$(SrcRoot)imodel02\iModelCore\Units\PublicAPI\;$(SrcRoot)imodel02\iModelCore\WSClient\PublicAPI\;$(SrcRoot)imodel02\iModelJsNodeAddon\;$(SrcRoot)nuget\RapidJsonNuget_x64.2.0.2.34\native\include\;$(OutRoot)Winx64\BuildContexts\ECPresentation\SubParts\UnitTests\include\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(SrcRoot)imodel02\iModelCore\Bentley\PublicAPI\;${SrcRoot}\imodel02\iModelCore\Bentley\BeRapidJson\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeHttp\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeSecurity\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeSQLite\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECPresentation\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECPresentation\Source\;$(SrcRoot)imodel02\iModelCore\ECPresentation\Tests\TestHelpers\;$(SrcRoot)imodel02\iModelCore\ECDb\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECObjects\PublicAPI\;$(SrcRoot)imodel02\iModelCore\GeomLibs\PublicAPI\;$(SrcRoot)imodel02\iModelCore\libsrc\facebook\VendorAPI\;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\include\;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\PublicAPI\;$(SrcRoot)imodel02\iModelCore\Units\PublicAPI\;$(SrcRoot)imodel02\iModelCore\WSClient\PublicAPI\;$(SrcRoot)imodel02\iModelJsNodeAddon\;$(SrcRoot)nuget\RapidJsonNuget_x64.2.0.2.43\native\include\;$(OutRoot)Winx64\BuildContexts\ECPresentation\SubParts\UnitTests\include\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <ExcludePath />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -190,6 +190,7 @@
     <ClCompile Include="Published\PresentationRules\ContentRuleTests.cpp" />
     <ClCompile Include="Published\PresentationRules\ContentSpecificationTests.cpp" />
     <ClCompile Include="Published\PresentationRules\CustomNodeSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\ExtendedDataRuleTests.cpp" />
     <ClCompile Include="Published\PresentationRules\GroupingRuleTests.cpp" />
     <ClCompile Include="Published\PresentationRules\ImageIdOverrideTests.cpp" />
     <ClCompile Include="Published\PresentationRules\InstanceLabelOverrideTests.cpp" />

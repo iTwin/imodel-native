@@ -105,6 +105,9 @@ Utf8CP RuleSetJsonString = R"({
         "ruleType": "DisabledSorting"
     }, {
         "ruleType": "StyleOverride"
+    }, {
+        "ruleType": "ExtendedData",
+        "items": {}
     }],
     "vars": [ {
         "label": "vars group 1",
@@ -136,6 +139,7 @@ TEST_F(PresentationRuleSetTests, LoadsFromJsonString)
     EXPECT_EQ(1, ruleSet->GetLabelOverrides().size());
     EXPECT_EQ(1, ruleSet->GetSortingRules().size());
     EXPECT_EQ(1, ruleSet->GetStyleOverrides().size());
+    EXPECT_EQ(1, ruleSet->GetExtendedDataRules().size());
     EXPECT_EQ(2, ruleSet->GetContentModifierRules().size());
     EXPECT_EQ(2, ruleSet->GetUserSettings().size());
 
@@ -213,6 +217,7 @@ TEST_F(PresentationRuleSetTests, LoadsFromJsonValue)
     EXPECT_EQ(1, ruleSet->GetLabelOverrides().size());
     EXPECT_EQ(1, ruleSet->GetSortingRules().size());
     EXPECT_EQ(1, ruleSet->GetStyleOverrides().size());
+    EXPECT_EQ(1, ruleSet->GetExtendedDataRules().size());
     EXPECT_EQ(2, ruleSet->GetContentModifierRules().size());
     EXPECT_EQ(2, ruleSet->GetUserSettings().size());
 
@@ -604,6 +609,7 @@ TEST_F(PresentationRuleSetTests, ComputesCorrectHashes)
     ruleset1->AddPresentationRule(*new LocalizationResourceKeyDefinition());
     ruleset1->AddPresentationRule(*new CheckBoxRule());
     ruleset1->AddPresentationRule(*new SortingRule());
+    ruleset1->AddPresentationRule(*new ExtendedDataRule());
     ruleset1->AddPresentationRule(*new UserSettingsGroup());
     ruleset1->AddPresentationRule(*new ContentModifier());
     ruleset1->AddPresentationRule(*new InstanceLabelOverride());
@@ -613,11 +619,12 @@ TEST_F(PresentationRuleSetTests, ComputesCorrectHashes)
     ruleset2->AddPresentationRule(*new ContentRule());
     ruleset2->AddPresentationRule(*new ImageIdOverride());
     ruleset2->AddPresentationRule(*new LabelOverride());
-    ruleset2->AddPresentationRule(*new StyleOverride());
+    ruleset2->AddPresentationRule(*new ExtendedDataRule());
     ruleset2->AddPresentationRule(*new GroupingRule());
     ruleset2->AddPresentationRule(*new LocalizationResourceKeyDefinition());
     ruleset2->AddPresentationRule(*new CheckBoxRule());
     ruleset2->AddPresentationRule(*new SortingRule());
+    ruleset2->AddPresentationRule(*new StyleOverride());
     ruleset2->AddPresentationRule(*new UserSettingsGroup());
     ruleset2->AddPresentationRule(*new ContentModifier());
     ruleset2->AddPresentationRule(*new InstanceLabelOverride());

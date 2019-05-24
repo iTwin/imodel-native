@@ -431,6 +431,11 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContentSetItem cons
         json.AddMember("FieldValueKeys", fieldValueKeys, json.GetAllocator());
         }
 
+    if (0 != (ContentSetItem::SerializationFlags::SERIALIZE_UsersExtendedData & flags) && contentSetItem.GetUsersExtendedData().GetJson().MemberCount() > 0)
+        {
+        json.AddMember("ExtendedData", rapidjson::Value(contentSetItem.GetUsersExtendedData().GetJson(), json.GetAllocator()), json.GetAllocator());
+        }
+
     return json;
     }
 
@@ -776,6 +781,8 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(NavNode const& navN
     json.AddMember("IsCheckboxEnabled", navNode.IsCheckboxEnabled(), json.GetAllocator());
     json.AddMember("IsExpanded", navNode.IsExpanded(), json.GetAllocator());
     json.AddMember("ECInstanceId", rapidjson::Value(instanceId.c_str(), json.GetAllocator()), json.GetAllocator());
+    if (navNode.GetUsersExtendedData().GetJson().MemberCount() > 0)
+        json.AddMember("ExtendedData", rapidjson::Value(navNode.GetUsersExtendedData().GetJson(), json.GetAllocator()), json.GetAllocator());
 
     return json;
     }

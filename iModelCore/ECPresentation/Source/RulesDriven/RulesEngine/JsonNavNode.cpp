@@ -88,9 +88,9 @@ Utf8String JsonNavNode::_GetDescription() const {return m_json.HasMember(NAVNODE
 +---------------+---------------+---------------+---------------+---------------+------*/
 RapidJsonValueR JsonNavNode::_GetExtendedData() const 
     {
-    if (!m_json.IsObject() || !m_json.HasMember(NAVNODE_ExtendedData))
-        m_json.AddMember(NAVNODE_ExtendedData, rapidjson::Value(rapidjson::kObjectType), m_json.GetAllocator());
-    return m_json[NAVNODE_ExtendedData];
+    if (!m_json.IsObject() || !m_json.HasMember(NAVNODE_InternalData))
+        m_json.AddMember(NAVNODE_InternalData, rapidjson::Value(rapidjson::kObjectType), m_json.GetAllocator());
+    return m_json[NAVNODE_InternalData];
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -164,6 +164,26 @@ bool JsonNavNode::_IsCheckboxEnabled() const {return m_json.HasMember(NAVNODE_Is
 * @bsimethod                                    Aidas.Vaiksnoras                05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool JsonNavNode::_IsExpanded() const {return m_json.HasMember(NAVNODE_IsExpanded) ? m_json[NAVNODE_IsExpanded].GetBool() : false;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Value const* JsonNavNode::_GetUsersExtendedData() const
+    {
+    if (!m_json.HasMember(NAVNODE_UsersExtendedData))
+        return nullptr;
+    return &m_json[NAVNODE_UsersExtendedData];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsonNavNode::AddUsersExtendedData(Utf8CP key, ECValueCR value)
+    {
+    if (!m_json.HasMember(NAVNODE_UsersExtendedData))
+        m_json.AddMember(rapidjson::StringRef(NAVNODE_UsersExtendedData), rapidjson::Value(rapidjson::kObjectType), m_json.GetAllocator());
+    m_json[NAVNODE_UsersExtendedData].AddMember(rapidjson::Value(key, m_json.GetAllocator()), ValueHelpers::GetJsonFromECValue(value, &m_json.GetAllocator()), m_json.GetAllocator());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Pranciskus.Ambrazas             05/2016
@@ -530,7 +550,7 @@ static bool IsJsonNodeMemberSignificant(Utf8StringCR name)
     {
     if (name.Equals(NAVNODE_Key))
         return false;
-    if (name.Equals(NAVNODE_ExtendedData))
+    if (name.Equals(NAVNODE_InternalData))
         return false;
     return true;
     }
@@ -593,7 +613,7 @@ static void GetJsonNodeChanges(bvector<JsonChange>& changes, RapidJsonValueCR ol
         if (!IsMemberSignificant(member))
             continue;
 
-        if (member.Equals(NAVNODE_ExtendedData))
+        if (member.Equals(NAVNODE_InternalData))
             GetJsonNodeChanges(changes, oldJson[member.c_str()], newJson[member.c_str()], true);
         else if (oldJson[member.c_str()] != newJson[member.c_str()])
             changes.push_back(JsonChange(GetPrefixedName(member).c_str(), oldJson[member.c_str()], newJson[member.c_str()]));

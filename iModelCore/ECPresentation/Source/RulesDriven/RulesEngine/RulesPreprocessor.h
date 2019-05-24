@@ -42,6 +42,7 @@ protected:
     ECPRESENTATION_EXPORT ImageIdOverrideCP _GetImageIdOverride(CustomizationRuleParametersCR params) override;
     ECPRESENTATION_EXPORT StyleOverrideCP _GetStyleOverride(CustomizationRuleParametersCR params) override;
     ECPRESENTATION_EXPORT CheckBoxRuleCP _GetCheckboxRule(CustomizationRuleParametersCR params) override;
+    ECPRESENTATION_EXPORT bvector<ExtendedDataRuleCP> _GetExtendedDataRules(CustomizationRuleParametersCR params) override;
     ECPRESENTATION_EXPORT bvector<GroupingRuleCP> _GetGroupingRules(AggregateCustomizationRuleParametersCR params) override;
     ECPRESENTATION_EXPORT bvector<SortingRuleCP> _GetSortingRules(AggregateCustomizationRuleParametersCR params) override;
 

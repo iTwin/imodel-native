@@ -343,6 +343,7 @@ protected:
     virtual bool _IsCheckboxVisible() const = 0;
     virtual bool _IsCheckboxEnabled() const = 0;
     virtual bool _IsExpanded() const = 0;
+    virtual rapidjson::Value const* _GetUsersExtendedData() const { return nullptr; }
 
     virtual void _SetInstanceId(uint64_t instanceId) = 0;
     virtual void _SetNodeId(uint64_t nodeId) = 0;
@@ -455,9 +456,12 @@ public:
     void SetIsExpanded(bool value) {_SetIsExpanded(value);}
     //! Is this node expanded.
     bool IsExpanded() const {return _IsExpanded();}
+
     //! Returns a cloned copy of this object.
     NavNodePtr Clone() const { return _Clone(); };
 
+    //! Get extended data injected into this node by API user
+    ECPRESENTATION_EXPORT RapidJsonAccessor GetUsersExtendedData() const;
 
     //! Serialize the node to JSON
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;

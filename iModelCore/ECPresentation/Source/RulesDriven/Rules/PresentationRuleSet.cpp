@@ -57,6 +57,7 @@ PresentationRuleSet::~PresentationRuleSet ()
     CommonToolsInternal::FreePresentationRules(m_sortingRules);
     CommonToolsInternal::FreePresentationRules(m_contentModifiers);
     CommonToolsInternal::FreePresentationRules(m_instanceLabelOverrides);
+    CommonToolsInternal::FreePresentationRules(m_extendedDataRules);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -326,6 +327,7 @@ bool PresentationRuleSet::ReadJson(JsonValueCR json)
     CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_sortingRules, CommonToolsInternal::LoadRuleFromJson<SortingRule>, this);
     CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_styleOverrides, CommonToolsInternal::LoadRuleFromJson<StyleOverride>, this);
     CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_instanceLabelOverrides, CommonToolsInternal::LoadRuleFromJson<InstanceLabelOverride>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_extendedDataRules, CommonToolsInternal::LoadRuleFromJson<ExtendedDataRule>, this);
     CommonToolsInternal::LoadFromJsonByPriority(json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_USERSETTINGS], m_userSettings, CommonToolsInternal::LoadRuleFromJson<UserSettingsGroup>, this);
     return true;
     }
@@ -350,6 +352,7 @@ void PresentationRuleSet::WriteJson(JsonValueR json) const
     CommonToolsInternal::WriteRulesToJson<InstanceLabelOverride,InstanceLabelOverrideList>(rulesJson, m_instanceLabelOverrides);
     CommonToolsInternal::WriteRulesToJson<LabelOverride, LabelOverrideList>(rulesJson, m_labelOverrides);
     CommonToolsInternal::WriteRulesToJson<StyleOverride, StyleOverrideList>(rulesJson, m_styleOverrides);
+    CommonToolsInternal::WriteRulesToJson<ExtendedDataRule, ExtendedDataRuleList>(rulesJson, m_extendedDataRules);
     CommonToolsInternal::WriteRulesToJson<GroupingRule, GroupingRuleList>(rulesJson, m_groupingRules);
     CommonToolsInternal::WriteRulesToJson<UserSettingsGroup, UserSettingsGroupList>(rulesJson, m_userSettings);
     CommonToolsInternal::WriteRulesToJson<CheckBoxRule, CheckBoxRuleList>(rulesJson, m_checkBoxRules);
@@ -591,6 +594,11 @@ ContentModifierList const& PresentationRuleSet::GetContentModifierRules (void) c
 InstanceLabelOverrideList const& PresentationRuleSet::GetInstanceLabelOverrides (void) const { return m_instanceLabelOverrides; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ExtendedDataRuleList const& PresentationRuleSet::GetExtendedDataRules() const { return m_extendedDataRules; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 MD5 PresentationRuleSet::_ComputeHash(Utf8CP) const
@@ -673,6 +681,11 @@ MD5 PresentationRuleSet::_ComputeHash(Utf8CP) const
         Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
         md5.Add(ruleHash.c_str(), ruleHash.size());
         }
+    for (ExtendedDataRuleP rule : m_extendedDataRules)
+        {
+        Utf8StringCR ruleHash = rule->GetHash(currentHash.c_str());
+        md5.Add(ruleHash.c_str(), ruleHash.size());
+        }
     return md5;
     }
 
@@ -690,4 +703,5 @@ template<> ContentModifierList* PresentationRuleSet::GetRules<ContentModifier>()
 template<> UserSettingsGroupList* PresentationRuleSet::GetRules<UserSettingsGroup>() {return &m_userSettings;}
 template<> InstanceLabelOverrideList* PresentationRuleSet::GetRules<InstanceLabelOverride>() {return &m_instanceLabelOverrides;}
 template<> LocalizationResourceKeyDefinitionList* PresentationRuleSet::GetRules<LocalizationResourceKeyDefinition>() {return &m_localizationResourceKeyDefinitions;}
+template<> ExtendedDataRuleList* PresentationRuleSet::GetRules<ExtendedDataRule>() { return &m_extendedDataRules; }
 END_BENTLEY_ECPRESENTATION_NAMESPACE

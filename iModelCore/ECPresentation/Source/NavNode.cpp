@@ -259,6 +259,17 @@ rapidjson::Document NavNode::AsJson(rapidjson::Document::AllocatorType* allocato
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+RapidJsonAccessor NavNode::GetUsersExtendedData() const
+    {
+    rapidjson::Value const* ptr = _GetUsersExtendedData();
+    if (!ptr)
+        return RapidJsonAccessor();
+    return RapidJsonAccessor(*ptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document NodesPathElement::AsJson(rapidjson::Document::AllocatorType* allocator) const

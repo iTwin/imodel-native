@@ -9062,7 +9062,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDifferentFieldsIfPropert
     EXPECT_STREQ("ClassL_LengthProperty", descriptor->GetVisibleFields()[1]->GetName().c_str());
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -13776,4 +13775,98 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HandlesContentWithPolymorph
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(AppliesContentItemExtendedDataFromPresentationRules, R"*(
+    <ECEntityClass typeName="MyClass1">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="CodeValue" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyClass2">
+        <BaseClass>MyClass1</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesContentItemExtendedDataFromPresentationRules)
+    {
+    // set up data set
+    ECClassCP ecClass1 = GetClass("MyClass1");
+    ECClassCP ecClass2 = GetClass("MyClass2");
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass1, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("test value")); });
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass2);
+    
+    // set up ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRule* rule = new ContentRule();
+    rules->AddPresentationRule(*rule);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass1->GetFullName(), true));
+
+    ExtendedDataRule* ex1 = new ExtendedDataRule();
+    ex1->AddItem("class_name", "ThisNode.ClassName");
+    ex1->AddItem("property_value", "this.CodeValue");
+    ex1->AddItem("is_MyClass", Utf8PrintfString("ThisNode.IsOfClass(\"%s\", \"%s\")", ecClass1->GetName().c_str(), ecClass1->GetSchema().GetName().c_str()));
+    rules->AddPresentationRule(*ex1);
+
+    ExtendedDataRule* ex2 = new ExtendedDataRule(Utf8PrintfString("ThisNode.IsOfClass(\"%s\", \"%s\")", ecClass2->GetName().c_str(), ecClass2->GetSchema().GetName().c_str()));
+    ex2->AddItem("constant_bool", "true");
+    ex2->AddItem("constant_int", "1");
+    ex2->AddItem("constant_double", "1.23");
+    ex2->AddItem("constant_string", "\"Red\"");
+    rules->AddPresentationRule(*ex2);
+    
+    // get content
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
+
+    // assert
+    ASSERT_TRUE(content.IsValid());
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    RapidJsonAccessor extendedData1 = contentSet[0]->GetUsersExtendedData();
+    ASSERT_TRUE(extendedData1.GetJson().IsObject());
+    ASSERT_EQ(3, extendedData1.GetJson().MemberCount());
+
+    ASSERT_TRUE(extendedData1.GetJson().HasMember("class_name"));
+    EXPECT_STREQ(ecClass1->GetName().c_str(), extendedData1.GetJson()["class_name"].GetString());
+
+    ASSERT_TRUE(extendedData1.GetJson().HasMember("property_value"));
+    EXPECT_STREQ("test value", extendedData1.GetJson()["property_value"].GetString());
+
+    ASSERT_TRUE(extendedData1.GetJson().HasMember("is_MyClass"));
+    EXPECT_TRUE(extendedData1.GetJson()["is_MyClass"].GetBool());
+
+    RapidJsonAccessor extendedData2 = contentSet[1]->GetUsersExtendedData();
+    ASSERT_TRUE(extendedData2.GetJson().IsObject());
+    ASSERT_EQ(7, extendedData2.GetJson().MemberCount());
+
+    ASSERT_TRUE(extendedData2.GetJson().HasMember("class_name"));
+    EXPECT_STREQ(ecClass2->GetName().c_str(), extendedData2.GetJson()["class_name"].GetString());
+
+    ASSERT_TRUE(extendedData2.GetJson().HasMember("property_value"));
+    EXPECT_TRUE(extendedData2.GetJson()["property_value"].IsNull());
+
+    ASSERT_TRUE(extendedData2.GetJson().HasMember("is_MyClass"));
+    EXPECT_TRUE(extendedData2.GetJson()["is_MyClass"].GetBool());
+
+    ASSERT_TRUE(extendedData2.GetJson().HasMember("constant_bool"));
+    EXPECT_TRUE(extendedData2.GetJson()["constant_bool"].GetBool());
+
+    ASSERT_TRUE(extendedData2.GetJson().HasMember("constant_int"));
+    EXPECT_EQ(1, extendedData2.GetJson()["constant_int"].GetInt());
+
+    ASSERT_TRUE(extendedData2.GetJson().HasMember("constant_double"));
+    EXPECT_DOUBLE_EQ(1.23, extendedData2.GetJson()["constant_double"].GetDouble());
+
+    ASSERT_TRUE(extendedData2.GetJson().HasMember("constant_string"));
+    EXPECT_STREQ("Red", extendedData2.GetJson()["constant_string"].GetString());
     }

@@ -25,6 +25,7 @@ struct ICustomizablePropertiesSetter
     virtual void _SetIsCheckboxEnabled(bool value) const = 0;
     virtual void _SetIsChecked(bool value) const = 0;
     virtual void _SetCheckboxBoundInfo(Utf8StringCR propertyName, bool inverse) const = 0;
+    virtual void _AddExtendedData(Utf8StringCR key, ECValueCR value) const = 0;
     };
 
 /*=================================================================================**//**
@@ -51,6 +52,7 @@ public:
     bool ApplyImageIdOverride();
     bool ApplyCheckboxRules();
     bool ApplyLocalization();
+    bool ApplyExtendedDataRules();
 };
 
 /*=================================================================================**//**
@@ -58,8 +60,8 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct CustomizationHelper
     {
-    ECPRESENTATION_EXPORT static void Customize(NavNodesProviderContextCR context, JsonNavNode& node, bool customizeLabel);
-    ECPRESENTATION_EXPORT static void Customize(ContentProviderContextCR context, ContentSetItemR item);
+    ECPRESENTATION_EXPORT static void Customize(NavNodesProviderContextCR, JsonNavNode&, bool customizeLabel);
+    ECPRESENTATION_EXPORT static void Customize(ContentProviderContextCR, ContentDescriptorCR, ContentSetItemR);
     ECPRESENTATION_EXPORT static void NotifyCheckedStateChanged(IConnectionCR, JsonNavNodeCR node, bool isChecked);
     };
 

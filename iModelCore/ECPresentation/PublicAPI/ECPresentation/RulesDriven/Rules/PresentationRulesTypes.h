@@ -24,6 +24,7 @@ ECPRESENTATION_TYPEDEFS(StyleOverride);
 ECPRESENTATION_TYPEDEFS(CheckBoxRule);
 ECPRESENTATION_TYPEDEFS(SortingRule);
 ECPRESENTATION_TYPEDEFS(GroupingRule);
+ECPRESENTATION_TYPEDEFS(ExtendedDataRule);
 ECPRESENTATION_TYPEDEFS(ContentModifier);
 ECPRESENTATION_TYPEDEFS(GroupSpecification);
 ECPRESENTATION_TYPEDEFS(SameLabelInstanceGroup);
@@ -80,5 +81,6 @@ typedef bvector<ContentModifierP>                   ContentModifierList;
 typedef bvector<InstanceLabelOverrideP>             InstanceLabelOverrideList;
 typedef bvector<PropertyEditorParametersSpecificationP> PropertyEditorParametersList;
 typedef bvector<RelatedInstanceSpecificationP>      RelatedInstanceSpecificationList;
+typedef bvector<ExtendedDataRuleP>                  ExtendedDataRuleList;
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

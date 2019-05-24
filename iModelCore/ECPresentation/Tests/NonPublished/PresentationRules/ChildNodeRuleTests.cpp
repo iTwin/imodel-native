@@ -335,6 +335,9 @@ TEST_F(ChildNodeRuleTests, LoadsFromJson)
             "propertyNames": ["property"]
         }, {
             "ruleType": "ImageIdOverride"
+        }, {
+            "ruleType": "ExtendedData",
+            "items": {}
         }]
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
@@ -345,7 +348,7 @@ TEST_F(ChildNodeRuleTests, LoadsFromJson)
     EXPECT_TRUE(rule.GetStopFurtherProcessing());
     EXPECT_EQ(6, rule.GetSpecifications().size());
     EXPECT_EQ(2, rule.GetSubConditions().size());
-    EXPECT_EQ(7, rule.GetCustomizationRules().size());
+    EXPECT_EQ(8, rule.GetCustomizationRules().size());
     }
 
 /*---------------------------------------------------------------------------------**//**

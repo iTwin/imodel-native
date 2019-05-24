@@ -212,6 +212,33 @@ bool NavNodeCustomizer::ApplyCheckboxRules()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NavNodeCustomizer::ApplyExtendedDataRules()
+    {
+    RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
+        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+    RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
+    bvector<ExtendedDataRuleCP> rules = preprocessor.GetExtendedDataRules(params);
+    bool didAddExtendedData = false;
+    for (ExtendedDataRuleCP rule : rules)
+        {
+        for (auto entry : rule->GetItemsMap())
+            {
+            Utf8StringCR key = entry.first;
+            Utf8StringCR valueExpr = entry.second;
+            ECValue value;
+            if (ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, valueExpr, GetNodeExpressionContext()))
+                {
+                m_setter._AddExtendedData(key, value);
+                didAddExtendedData = true;
+                }
+            }
+        }
+    return didAddExtendedData;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeCustomizer::NavNodeCustomizer(RulesDrivenProviderContextCR context, JsonNavNodeCR node, JsonNavNodeCP parentNode, ICustomizablePropertiesSetter const& setter)
@@ -253,6 +280,7 @@ public:
         extendedData.SetCheckboxBoundPropertyName(propertyName.c_str());
         extendedData.SetCheckboxBoundPropertyInversed(inverse);
         }
+    void _AddExtendedData(Utf8StringCR key, ECValueCR value) const override {m_node.AddUsersExtendedData(key.c_str(), value);}
 };
 
 /*=================================================================================**//**
@@ -274,6 +302,7 @@ public:
     void _SetIsCheckboxEnabled(bool value) const override {}
     void _SetIsChecked(bool value) const override {}
     void _SetCheckboxBoundInfo(Utf8StringCR propertyName, bool inverse) const override {}
+    void _AddExtendedData(Utf8StringCR key, ECValueCR value) const override {m_item.AddUsersExtendedData(key.c_str(), value);}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -296,6 +325,7 @@ void CustomizationHelper::Customize(NavNodesProviderContextCR context, JsonNavNo
     customizer.ApplyImageIdOverride();
     customizer.ApplyCheckboxRules();
     customizer.ApplyLocalization();
+    customizer.ApplyExtendedDataRules();
 
     NavNodeExtendedData(node).SetIsCustomized(true);
     }
@@ -303,11 +333,19 @@ void CustomizationHelper::Customize(NavNodesProviderContextCR context, JsonNavNo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomizationHelper::Customize(ContentProviderContextCR context, ContentSetItemR item)
+void CustomizationHelper::Customize(ContentProviderContextCR context, ContentDescriptorCR descriptor, ContentSetItemR item)
     {
     ContentSetItemExtendedData extendedData(item);
     if (extendedData.IsCustomized())
         return;
+    
+    if (item.GetKeys().empty())
+        {
+        // note: the record has no keys when we're selecting distinct values. Multiple
+        // instances can have that value and it's not clear which one should be used
+        // for customizing
+        return;
+        }
 
     if (item.GetKeys().size() > 1)
         {
@@ -324,7 +362,9 @@ void CustomizationHelper::Customize(ContentProviderContextCR context, ContentSet
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(context.GetConnection(), *node, bvector<Utf8String>()));
     ContentSetItemPropertiesSetter setter(item);
     NavNodeCustomizer customizer(context, *node, nullptr, setter);
-    customizer.ApplyImageIdOverride();
+    if (descriptor.ShowImages())
+        customizer.ApplyImageIdOverride();
+    customizer.ApplyExtendedDataRules();
 
     extendedData.SetIsCustomized(true);
     }

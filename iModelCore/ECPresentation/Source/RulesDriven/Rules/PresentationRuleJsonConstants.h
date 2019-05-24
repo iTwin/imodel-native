@@ -94,6 +94,9 @@
 #define GROUPING_RULE_JSON_TYPE                                                         "Grouping"
 #define GROUPING_RULE_JSON_ATTRIBUTE_GROUPS                                             "groups"
 
+#define EXTENDED_DATA_RULE_JSON_TYPE                                                    "ExtendedData"
+#define EXTENDED_DATA_RULE_JSON_ATTRIBUTE_ITEMS                                         "items"
+
 #define CHECKBOX_RULE_JSON_TYPE                                                         "CheckBox"
 #define CHECKBOX_RULE_JSON_ATTRIBUTE_USEINVERSEDPROPERTYVALUE                           "useInversedPropertyValue"
 #define CHECKBOX_RULE_JSON_ATTRIBUTE_DEFAULTVALUE                                       "defaultValue"

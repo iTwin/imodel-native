@@ -467,7 +467,7 @@ TEST_F(DefaultECPresentationSerializerTests, PropertySerializationWithKOQ)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DefaultECPresentationSerializerTests, UpdateRecordCSerializationhangeTypeDelete)
+TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeTypeDelete)
     {
     TestNavNodePtr node = TestNavNode::Create(*m_connection);
     UpdateRecord updateRecord(*node);

@@ -1049,6 +1049,14 @@ bvector<ECClassInstanceKey> const& ContentSetItem::GetPropertyValueKeys(FieldPro
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentSetItem::AddUsersExtendedData(Utf8CP key, ECValueCR value)
+    {
+    m_extendedData.AddMember(rapidjson::Value(key, m_extendedData.GetAllocator()), ValueHelpers::GetJsonFromECValue(value, &m_extendedData.GetAllocator()), m_extendedData.GetAllocator());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ContentSetItem::AsJson(int flags, rapidjson::Document::AllocatorType* allocator) const
