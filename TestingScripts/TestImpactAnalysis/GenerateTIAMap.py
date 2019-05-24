@@ -77,12 +77,9 @@ def consolidateMaps(newtiaMap, fileName):
                 for testCase in newtiaMap[entry]:
                     for testCase1 in oldtiaMap[entry]:
                         if testCase == testCase1:
-                            testName = newtiaMap[entry][testCase]
-                            testName1 = oldtiaMap[entry][testCase]
-                            if testName == testName1:
-                                continue
-                            else:
-                                oldtiaMap[entry][testCase] = testName
+                            oldtiaMap[entry][testCase][0] = '*'                       
+                        else:
+                            oldtiaMap[entry].setdefault(testCase, ['*'])
     return oldtiaMap        
   
 #-------------------------------------------------------------------------------------------
@@ -101,8 +98,11 @@ def getTiaMapAll(covRoot, comp, dll=None):
         fileName, fileExt = os.path.splitext(file)
         if fileExt == '.xml':
             testNameP = fileName.split('.')
-            testCase = testNameP[0]
-            testName = testNameP[1]
+            if len(testNameP) > 1:
+                testCase = testNameP[0]
+                testName = testNameP[1]
+            else:
+                testCase = fileName
             print("Processing file " + str(i) + " of " + str(totalFiles) + ". File Name: " + os.path.join(covPath, file))
             i+=1
             tree = ET.parse(os.path.join(covPath, file))
@@ -131,9 +131,9 @@ def getTiaMapAll(covRoot, comp, dll=None):
                                     if sfNtoAdd not in tiaMap:
                                         tiaMap[packName].setdefault(sfNtoAdd, {})
                                     if testCase not in tiaMap[packName][sfNtoAdd]:
-                                        tiaMap[packName][sfNtoAdd].setdefault(testCase, [])
-                                    if testName not in tiaMap[packName][sfNtoAdd][testCase]:
-                                        tiaMap[packName][sfNtoAdd][testCase].append(testName)
+                                        tiaMap[packName][sfNtoAdd].setdefault(testCase, ['*'])
+                                    # if testName not in tiaMap[packName][sfNtoAdd][testCase]:
+                                    #     tiaMap[packName][sfNtoAdd][testCase].append(testName)
                 
     return tiaMap
 
@@ -157,7 +157,6 @@ def writeMapToFile(fileName, tiaMap, comp):
     oldtiaMapfile = os.path.join(os.getenv('SrcRoot'), 'imodel02', 'TestingScripts', 'TestImpactAnalysis', 'TIAMaps', os.path.basename(fileName))
     if os.path.exists(oldtiaMapfile): #TiaMap is there, so we need to conslidate
         tiaMap = consolidateMaps(tiaMap, oldtiaMapfile)
-
     mapFile = open(fileName,'w') 
     specialComps = ['GeoCoord', 'ConstructionPlanning', 'Planning']
     testLogDir = os.path.join(os.getenv('OutRoot'), 'Winx64', 'build','RunGTest')

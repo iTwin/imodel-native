@@ -119,14 +119,31 @@ def runCoverage(reportPath, comp, forceAll):
         for dll in dlls:
             modules_filter = modules_filter + " --modules=" + dll
         cov.editModules(modules_filter)
+        # Run coverage fixture wise
+        test_cases = []
         for test in testList:
-            i = i + 1
-            print printColored('***Running Coverage for Test: ' + str(i) + ' of ' + str(len(testList)), 'cyan', True)
-            result = cov.covSingleTest(testExe, test)
-            if result: # it passed
-                results['Passed'].append(test)
-            else:
-                results['Failed'].append(test)
+            tp = test.split('.')
+            if tp[0] not in test_cases:
+                test_cases.append(tp[0])
+        run_all_tests = False
+        if run_all_tests:
+            for test in testList:
+                i = i + 1
+                print printColored('***Running Coverage for Test: ' + str(i) + ' of ' + str(len(testList)), 'cyan', True)
+                result = cov.covSingleTest(testExe, test)
+                if result: # it passed
+                    results['Passed'].append(test)
+                else:
+                    results['Failed'].append(test)
+        else:
+            for tc in test_cases:
+                i = i + 1
+                print printColored('***Running Coverage for TestCase: ' + str(i) + ' of ' + str(len(test_cases)), 'cyan', True)
+                result = cov.covSingleTest(testExe, tc)
+                if result: # it passed
+                    results['Passed'].append(tc)
+                else:
+                    results['Failed'].append(tc)
 
     return results
 
