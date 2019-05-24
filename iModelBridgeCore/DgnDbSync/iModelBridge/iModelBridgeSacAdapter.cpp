@@ -623,6 +623,12 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
         return iModelBridge::CmdLineArgStatus::Success;
         }
 
+    if (argv[iArg] == wcsstr(argv[iArg], L"--match-on-embedded-file-basename"))
+        {
+        bparams.SetMatchOnEmbeddedFileBasename(true);
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
     return iModelBridge::CmdLineArgStatus::NotRecognized;
     }
 
@@ -684,6 +690,10 @@ BentleyStatus iModelBridgeSacAdapter::ParseCommandLine(bvector<WString>& unrecog
         if (iModelBridge::CmdLineArgStatus::Success != res)    // handled but invalid
             return BentleyStatus::ERROR;
         }
+
+    auto tempVarCheck = getenv("iModelBridge_MatchOnEmbeddedFileBasename");
+    if (tempVarCheck && *tempVarCheck == '1')
+        bparams.SetMatchOnEmbeddedFileBasename(true);
 
     return BentleyStatus::SUCCESS;
     }

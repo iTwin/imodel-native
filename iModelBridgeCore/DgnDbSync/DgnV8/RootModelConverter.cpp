@@ -2165,4 +2165,23 @@ void SpatialConverterBase::PushChangesForModel(DgnV8ModelRefCR model)
     PushChangesForFile(*model.GetDgnFileP(), BentleyApi::Utf8String(model.GetModelNameCP()));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      4/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnV8FileCP RootModelConverter::_GetPackageFileOf(DgnV8FileCR f)
+    {
+    if (!f.IsEmbeddedFile())
+        return &f;
+    auto packageFilename = const_cast<DgnV8FileR>(f).GetPackageName();
+    return GetV8FileByName(BentleyApi::BeFileName(packageFilename.c_str()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RootModelConverter::_WasEmbeddedFileSeen(Utf8StringCR uniqueName) const
+    {
+    return m_embeddedFilesSeen.find(uniqueName) != m_embeddedFilesSeen.end();
+    }
+
 END_DGNDBSYNC_DGNV8_NAMESPACE

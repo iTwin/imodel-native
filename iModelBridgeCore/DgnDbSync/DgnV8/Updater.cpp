@@ -318,8 +318,11 @@ bool Converter::IsDocumentInRegistry(Utf8StringCR docGuidStr, Utf8String localFi
     
     // If we don't have a document registry, then we must be converting raw disk files. 
     // Pretend that the directory is the registry.
-    if (BSISUCCESS == DgnV8Api::DgnFile::ParsePackagedName(nullptr, nullptr, nullptr, WString(localFileName.c_str()).c_str()))
+    if (IsEmbeddedFileName(localFileName))
+        {
+        BeAssert(false && "This method is not valid for embedded file names");
         return true;
+        }
 
     return BeFileName(localFileName.c_str(), true).DoesPathExist();
     }
@@ -379,7 +382,16 @@ void Converter::_DetectDeletedDocuments()
     SyncInfo::RepositoryLinkExternalSourceAspectIterator files(GetDgnDb(), nullptr);
     for (auto file = files.begin(); file != files.end(); ++file)
         {
-        if (!IsDocumentInRegistry(file->GetIdentifier(), file->GetFileName()))
+        auto identifier = file->GetIdentifier(); // for RepositoryLinks, the Identifier is the "unique name" of the document. See SyncInfo::ComputeFileInfo/GetUniqueNameForFile
+        auto filename = file->GetFileName();
+
+        bool wasSourceFileDeleted;
+        if (IsEmbeddedFileName(filename))
+            wasSourceFileDeleted = !WasEmbeddedFileSeen(identifier);
+        else
+            wasSourceFileDeleted = !IsDocumentInRegistry(identifier, filename);
+
+        if (wasSourceFileDeleted)
             {
             _DeleteFileAndContents(file->GetRepositoryLinkId());
             }
