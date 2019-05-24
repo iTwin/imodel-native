@@ -1840,9 +1840,8 @@ void RootModelConverter::_FinishConversion()
             // it is safe for this bridge job to update it.
             auto rlinkEd = GetDgnDb().Elements().GetForEdit<RepositoryLink>(GetRepositoryLinkId(*v8File));
             auto rlinkXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspectForEdit(*rlinkEd);
-            auto constXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect(*rlinkEd);
-            rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File));
-            if (constXsa != rlinkXsa)
+            auto anyChanges = rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File));
+            if (anyChanges)
                 rlinkEd->Update();
             }
         }

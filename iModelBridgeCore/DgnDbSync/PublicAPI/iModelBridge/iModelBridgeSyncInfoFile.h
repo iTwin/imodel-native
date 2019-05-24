@@ -320,6 +320,7 @@ struct iModelExternalSourceAspect
         {
         Utf8String m_checksum;
         Utf8String m_version;
+        bool Equals(SourceState const& rhs) const {return m_checksum.Equals(rhs.m_checksum) && m_version.Equals(rhs.m_version);}
         };
 
     RefCountedPtr<ECN::IECInstance> m_instance;

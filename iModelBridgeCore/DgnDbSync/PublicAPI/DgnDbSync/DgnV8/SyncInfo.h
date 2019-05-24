@@ -103,7 +103,7 @@ struct SyncInfo
         {
         RepositoryLinkExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {} 
         DGNDBSYNC_EXPORT static RepositoryLinkExternalSourceAspect CreateAspect(DgnDbR, V8FileInfo const&, StableIdPolicy);
-        DGNDBSYNC_EXPORT void Update(V8FileInfo const&);
+        DGNDBSYNC_EXPORT bool Update(V8FileInfo const&);
 
         DGNDBSYNC_EXPORT static RepositoryLinkExternalSourceAspect FindAspectByIdentifier(DgnDbR, Utf8StringCR identifier);
         DGNDBSYNC_EXPORT static RepositoryLinkExternalSourceAspect GetAspectForEdit(RepositoryLinkR);

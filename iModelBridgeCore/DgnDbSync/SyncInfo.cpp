@@ -801,16 +801,35 @@ SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::RepositoryLinkExternalSou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncInfo::RepositoryLinkExternalSourceAspect::Update(V8FileInfo const& fileInfo)
+bool SyncInfo::RepositoryLinkExternalSourceAspect::Update(V8FileInfo const& fileInfo)
     {
+    bool anyChanges = false;
+
     iModelExternalSourceAspect::SourceState ss;
     iModelExternalSourceAspect::UInt64ToString(ss.m_version, fileInfo.m_lastModifiedTime);
-    SetSourceState(ss);
+    if (!ss.Equals(GetSourceState()))
+        {
+        SetSourceState(ss);
+        anyChanges = true;
+        }
 
     auto json = GetProperties();
-    json["fileSize"] = rapidjson::Value(iModelExternalSourceAspect::UInt64ToString(fileInfo.m_fileSize).c_str(), json.GetAllocator());
-    json["lastSaveTime"] = fileInfo.m_lastSaveTime;
-    SetProperties(json);
+    auto newFileSize = iModelExternalSourceAspect::UInt64ToString(fileInfo.m_fileSize);
+    if (!newFileSize.Equals(json["fileSize"].GetString()))
+        {
+        json["fileSize"] = rapidjson::Value(newFileSize.c_str(), json.GetAllocator());
+        anyChanges = true;
+        }
+    if (json["lastSaveTime"].GetDouble() != fileInfo.m_lastSaveTime)
+        {
+        json["lastSaveTime"] = fileInfo.m_lastSaveTime;
+        anyChanges = true;
+        }
+
+    if (anyChanges)
+        SetProperties(json);
+
+    return anyChanges;
     }
 
 /*---------------------------------------------------------------------------------**//**
