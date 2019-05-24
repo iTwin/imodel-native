@@ -322,10 +322,6 @@ RoadRailNetworkCPtr RoadRailNetwork::Insert(PhysicalModelR parentModel, Utf8Stri
             return nullptr;
         }
 
-    auto designAlignmentsCPtr = DesignAlignments::Insert(*networkPhysicalModelPtr);
-    if (designAlignmentsCPtr.IsNull())
-        return nullptr;
-
     return networkCPtr;
     }
 
