@@ -248,6 +248,13 @@ public:
     DWGDB_EXPORT DwgTransparency            GetTransparency () const;
     DWGDB_EXPORT DwgTransparency            GetTransparency (bool& isOverridden, DwgDbObjectIdCR viewportId) const;
     DWGDB_EXPORT bool                       HasOverrides (DwgDbObjectIdCR viewportId) const;
+    DWGDB_EXPORT DwgDbStatus                SetIsFrozen (bool);
+    DWGDB_EXPORT DwgDbStatus                SetIsOff (bool);
+    DWGDB_EXPORT DwgDbStatus                SetIsHidden (bool);
+    DWGDB_EXPORT DwgDbStatus                SetIsLocked (bool);
+    DWGDB_EXPORT DwgDbStatus                SetIsPlottable (bool);
+    DWGDB_EXPORT DwgDbStatus                SetIsReconciled (bool);
+    DWGDB_EXPORT DwgDbStatus                SetDescription (DwgStringCR);
     };  // DwgDbLayerTableRecord
 DWGDB_DEFINE_OBJECTPTR (LayerTableRecord)
 

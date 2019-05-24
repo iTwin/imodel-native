@@ -2896,17 +2896,39 @@ BentleyStatus   ElementFactory::CreateElements (DwgImporter::T_BlockGeometryMap 
     }
 
 
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+struct EntityImportPreparer
+{
+enum class Modifiers
+    {
+    None                = 0,
+    RemovedGradient     = (0x0001 << 0),
+    FilteredBlockRef    = (0x0001 << 1),
+    ThawedLayer         = (0x0001 << 2),
+    TurnedLayerOn       = (0x0001 << 3),
+    };  // Modifiers
+
+private:
+    DwgDbEntityP    m_entity;
+    uint32_t    m_modifiers;
+
+public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool     PrepareEntityForImport (DrawParameters& drawParams, GeometryFactory& factory, DwgDbEntityP entity)
+EntityImportPreparer (DrawParameters& drawParams, GeometryFactory& factory, DwgDbEntityP entity)
     {
-    bool    entityUpdated = false;
+    m_entity = entity;
+    m_modifiers = static_cast<uint32_t>(Modifiers::None);
+    if (m_entity == nullptr)
+        return;
 
     // resolve the root effective ByBlock symbology:
     drawParams.ResolveRootEffectiveByBlockSymbology ();
 
-    // remove gradient from hatch as otherwise we will get a mesh. We don't the hatch anymore - GradientSymb has already been saved:
+    // remove gradient from hatch as otherwise we will get a mesh. We don't need the hatch anymore - GradientSymb has already been saved:
     DwgDbHatchP         hatch = DwgDbHatch::Cast (entity);
     if (nullptr != hatch && hatch->IsGradient() && DwgDbStatus::Success == hatch->UpgradeOpen())
         {
@@ -2914,7 +2936,7 @@ static bool     PrepareEntityForImport (DrawParameters& drawParams, GeometryFact
         hatch->SetPattern (DwgDbHatch::PatternType::PreDefined, DwgString(L"SOLID"));
         hatch->DowngradeOpen ();
 
-        entityUpdated = true;
+        m_modifiers |= static_cast<uint32_t>(Modifiers::RemovedGradient);
         }
 
     DwgDbBlockReferenceCP   insert = DwgDbBlockReference::Cast(entity);
@@ -2923,11 +2945,73 @@ static bool     PrepareEntityForImport (DrawParameters& drawParams, GeometryFact
         // if a block reference is clipped, get the clipper and set it into the geometry factory:
         DwgDbSpatialFilterPtr   spatialFilter;
         if (DwgDbStatus::Success == insert->OpenSpatialFilter(spatialFilter, DwgDbOpenMode::ForRead))
+            {
             factory.SetSpatialFilter (spatialFilter.get());
+            m_modifiers |= static_cast<uint32_t>(Modifiers::FilteredBlockRef);
+            }
         }
 
-    return  entityUpdated;
+    if (entity->IsAProxy())
+        {
+        // turn on the layer of a proxy entity such that it will draw all sub entities - VSTS 119379
+        DwgDbLayerTableRecordPtr layer(entity->GetLayerId(), DwgDbOpenMode::ForWrite);
+        if (layer.OpenStatus() == DwgDbStatus::Success)
+            {
+            if (layer->IsFrozen() && layer->SetIsFrozen(false) == DwgDbStatus::Success)
+                m_modifiers |= static_cast<uint32_t>(Modifiers::ThawedLayer);
+            if (layer->IsOff() && layer->SetIsOff(false) == DwgDbStatus::Success)
+                m_modifiers |= static_cast<uint32_t>(Modifiers::TurnedLayerOn);
+            }
+        }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    IsEntityUpdated () const
+    {
+    return  m_modifiers & static_cast<uint32_t>(Modifiers::RemovedGradient);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    HasAnyChange () const
+    {
+    return  m_modifiers != static_cast<uint32_t>(Modifiers::None);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    HasChange (Modifiers mod) const
+    {
+    return  m_modifiers & static_cast<uint32_t>(mod);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void Restore ()
+    {
+    if (!HasAnyChange() || m_entity == nullptr)
+        return;
+    
+    if (HasChange(Modifiers::ThawedLayer) || HasChange(Modifiers::TurnedLayerOn))
+        {
+        DwgDbLayerTableRecordPtr layer(m_entity->GetLayerId(), DwgDbOpenMode::ForWrite);
+        if (layer.OpenStatus() == DwgDbStatus::Success)
+            {
+            if (HasChange(Modifiers::ThawedLayer))
+                layer->SetIsFrozen (true);
+            if (HasChange(Modifiers::TurnedLayerOn))
+                layer->SetIsOff (true);
+            }
+        }
+    }
+};  // EntityImportPreparer
+
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
@@ -2983,7 +3067,7 @@ BentleyStatus   DwgImporter::_ImportEntity (ElementImportResults& results, Eleme
     GeometryFactory     geomFactory(createParams, drawParams, geomOptions, entity);
 
     // prepare for import
-    PrepareEntityForImport (drawParams, geomFactory, entity);
+    EntityImportPreparer entityPreparer(drawParams, geomFactory, entity);
 
     // draw entity and create geometry from it in our factory:
     try
@@ -2994,6 +3078,9 @@ BentleyStatus   DwgImporter::_ImportEntity (ElementImportResults& results, Eleme
         {
         this->ReportError (IssueCategory::Unknown(), Issue::Exception(), IssueReporter::FmtEntity(*entity).c_str());
         }
+
+    // invert entity changes as necessary
+    entityPreparer.Restore ();
 
     auto geometryMap = geomFactory.GetOutputGeometryMap ();
     if (geometryMap.empty() && this->_SkipEmptyElement(entity))
@@ -3042,12 +3129,16 @@ BentleyStatus   DwgImporter::ImportNewEntity (ElementImportResults& results, Ele
     GeometryFactory     geomFactory(createParams, drawParams, geomOptions, entity);
 
     // prepare for import
-    if (PrepareEntityForImport(drawParams, geomFactory, entity))
+    EntityImportPreparer    entityPreparer(drawParams, geomFactory, entity);
+    if (entityPreparer.IsEntityUpdated())
         {
         // entity is changed, make sure drawble still valid
         drawable = entity->GetDrawable ();
         if (!drawable.IsValid())
+            {
+            entityPreparer.Restore ();
             return  BSIERROR;
+            }
         }
 
     // draw drawble and create geometry in our factory:
@@ -3059,6 +3150,9 @@ BentleyStatus   DwgImporter::ImportNewEntity (ElementImportResults& results, Ele
         {
         this->ReportError (IssueCategory::Unknown(), Issue::Exception(), IssueReporter::FmtEntity(*entity).c_str());
         }
+
+    // invert entity changes as necessary
+    entityPreparer.Restore ();
 
     auto geometryMap = geomFactory.GetOutputGeometryMap ();
     if (geometryMap.empty())

@@ -1483,6 +1483,9 @@ void            DwgGiDrawable::Draw (IDwgDrawGeometryR drawGeom, IDwgDrawOptions
         if (!m_toolkitDrawable->worldDraw(&worldDraw))
             {
             DwgGiViewportDraw viewportDraw (drawGeom, options, drawParams, nullptr);
+#ifdef DEBUG
+            auto attribFlags = T_Super::viewportDrawLogicalFlags(viewportDraw);
+#endif
             m_toolkitDrawable->viewportDraw (&viewportDraw);
             }
         }

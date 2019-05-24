@@ -422,6 +422,13 @@ DwgDbLineWeight DwgDbLayerTableRecord::GetLineweight (bool& ovrd, DwgDbObjectIdC
 DwgTransparency DwgDbLayerTableRecord::GetTransparency () const { return T_Super::transparency(); }
 DwgTransparency DwgDbLayerTableRecord::GetTransparency (bool& ovrd, DwgDbObjectIdCR vpId) const { return DWGDB_CALLSDKMETHOD(T_Super::transparency(vpId, &ovrd),T_Super::transparency(vpId, ovrd)); }
 bool            DwgDbLayerTableRecord::HasOverrides (DwgDbObjectIdCR vpId) const { return T_Super::hasOverrides(vpId); }
+DwgDbStatus     DwgDbLayerTableRecord::SetIsFrozen (bool b) { DwgDbStatus e=DwgDbStatus::Success; DWGDB_CALLSDKMETHOD(T_Super::setIsFrozen(b), e=ToDwgDbStatus(T_Super::setIsFrozen(b))); return e; }
+DwgDbStatus     DwgDbLayerTableRecord::SetIsOff (bool b) { T_Super::setIsOff(b); return DwgDbStatus::Success; }
+DwgDbStatus     DwgDbLayerTableRecord::SetIsHidden (bool b) { DwgDbStatus e=DwgDbStatus::Success; DWGDB_CALLSDKMETHOD(T_Super::setIsHidden(b), e=ToDwgDbStatus(T_Super::setIsHidden(b))); return e; }
+DwgDbStatus     DwgDbLayerTableRecord::SetIsLocked (bool b) { T_Super::setIsLocked(b); return DwgDbStatus::Success; }
+DwgDbStatus     DwgDbLayerTableRecord::SetIsPlottable (bool b) { DwgDbStatus e=DwgDbStatus::Success; DWGDB_CALLSDKMETHOD(T_Super::setIsPlottable(b), e=ToDwgDbStatus(T_Super::setIsPlottable(b))); return e; }
+DwgDbStatus     DwgDbLayerTableRecord::SetIsReconciled (bool b) { DwgDbStatus e; DWGDB_CALLSDKMETHOD(e=DwgDbStatus::NotSupported, e=ToDwgDbStatus(T_Super::setIsReconciled(b))); return e; }
+DwgDbStatus     DwgDbLayerTableRecord::SetDescription (DwgStringCR s) { DwgDbStatus e=DwgDbStatus::Success; DWGDB_CALLSDKMETHOD(T_Super::setDescription(s), e=ToDwgDbStatus(T_Super::setDescription(s))); return e; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/16

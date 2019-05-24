@@ -703,6 +703,7 @@ END_DWGDB_NAMESPACE
     bool                DwgDb##_classSuffix_##::CanCastShadows () const { return T_Super::castShadows(); }                                 \
     bool                DwgDb##_classSuffix_##::CanReceiveShadows () const { return T_Super::receiveShadows(); }                           \
     bool                DwgDb##_classSuffix_##::IsPlanar () const { return DWGDB_Type(Entity)::isPlanar(); }                               \
+    bool                DwgDb##_classSuffix_##::IsAProxy () const { return DWGDB_Type(Entity)::isAProxy(); }                               \
     void DwgDb##_classSuffix_##::GetEcs(TransformR ecs) const { DWGGE_Type(Matrix3d) m; DWGDB_CALLSDKMETHOD(m=T_Super::getEcs(), T_Super::getEcs(m)); return Util::GetTransform(ecs, m); } \
     DwgDbStatus DwgDb##_classSuffix_##::TransformBy (TransformCR t) { DWGGE_Type(Matrix3d) m; Util::GetGeMatrix(m, t); return ToDwgDbStatus(T_Super::transformBy(m)); } \
     DwgDbStatus DwgDb##_classSuffix_##::SetColor (DwgCmColorCR c, bool s) { return ToDwgDbStatus(T_Super::setColor(static_cast<DWGCM_TypeCR(Color)>(c), s)); } \

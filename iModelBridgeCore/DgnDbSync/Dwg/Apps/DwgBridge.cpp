@@ -182,6 +182,11 @@ BentleyStatus   DwgBridge::_MakeDefinitionChanges (SubjectCR jobSubject)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgBridge::_OnOpenBim (DgnDbR bim)
     {
+    if (!bim.IsDbOpen() || bim.IsReadonly())
+        {
+        BeAssert(false && "DbDb is not open or open for read only!!");
+        return  BentleyStatus::BSIERROR;
+        }
     // instantiate a new importer to begin a new job
     m_importer.reset (this->_CreateDwgImporter());
     if (m_importer == nullptr)

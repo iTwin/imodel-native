@@ -222,7 +222,7 @@ public:
         };  // ModelAspectIterator
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(ModelAspectIterator)
 
-    //! Information about a layer.  A LayerAspect is scoped per source file, i.e. a lyer in an xRef should have its ID from that xRef, not the one in the master file.
+    //! Information about a layer.  A LayerAspect is scoped per source file, i.e. a layer in an xRef should have its ID from the xRef file, not the one from the master file.
     struct LayerAspect : BaseAspect
         {
         enum class Type {Spatial, Drawing}; // WARNING: Persistent values - do not change
@@ -351,13 +351,17 @@ public:
         public:
             //! Constructor from pre-calculated source data from a generic source object
             SourceData(DwgDbHandleCR h, DgnModelId m, ObjectProvenanceCR v, Utf8StringCR j) : m_objectHandle(h), m_modelId(m), m_provenance(v), m_jsonProperties(j) {}
+            //! Constructor from pre-calculated source data from a generic source object
+            SourceData(uint64_t h, DgnModelId m, ObjectProvenanceCR v, Utf8StringCR j) : m_objectHandle(h), m_modelId(m), m_provenance(v), m_jsonProperties(j) {}
             //! Constructor to build provenance from a DWG specific source object
             DWG_EXPORT SourceData(DwgDbObjectCR, DgnModelId, DwgImporter&);
             // the default constructor
             SourceData() {}
             bool IsValid() const { return m_modelId.IsValid() && !m_objectHandle.IsNull(); }
             DwgDbHandle GetObjectHandle() const { return m_objectHandle; }
+            uint64_t GetObjectIdAsUInt64() const { return m_objectHandle.AsUInt64(); }
             void SetObjectHandle(DwgDbHandleCR handle) { m_objectHandle = handle; }
+            void SetObjectIdAsUInt64(uint64_t handle) { m_objectHandle = handle; }
             DgnModelId GetModelId() const { return m_modelId; }
             void SetModelId(DgnModelId id) { m_modelId = id; }
             Utf8StringCR GetJsonProperties() const { return m_jsonProperties; }
@@ -383,6 +387,7 @@ public:
         DWG_EXPORT DgnModelId GetModelId() const;
         //! The ID of the source object
         DwgDbHandle GetObjectHandle() const { return BaseAspect::GetIdentifierAsHandle(); }
+        uint64_t GetObjectIdAsUInt64() const { return BaseAspect::GetIdentifierAsHandle().AsUInt64(); }
         DWG_EXPORT void Update(ObjectProvenanceCR); 
         DWG_EXPORT Utf8String GetHashString() const;
         DWG_EXPORT bool IsProvenanceEqual(ObjectProvenanceCR) const;
@@ -558,21 +563,25 @@ public:
     //! @param[in] sourceId A unique ID from the source object, the value is used as Identifier for the ObjectAspect
     //! @param[in] sourceProvenance Pre-calculated provenance for the source object
     DWG_EXPORT ObjectAspect AddOrUpdateObjectAspect (DgnElementR element, DwgDbHandleCR sourceId, ObjectProvenanceCR sourceProvenance);
+    ObjectAspect AddOrUpdateObjectAspect (DgnElementR element, uint64_t sourceId, ObjectProvenanceCR sourceProvenance) { return AddOrUpdateObjectAspect(element, DwgDbHandle(sourceId), sourceProvenance); }
     //! Create a new or update existing ObjectAspect from a DWG object from which the provenance will be calculated
     //! @param[in] element Existing element along with its aspect to be updated
     //! @param[in] object Source DWG object
     DWG_EXPORT ObjectAspect AddOrUpdateObjectAspect (DgnElementR element, DwgDbObjectCR object);
     //! Find the ExternalSourceApsect for an object by object handle
-    DWG_EXPORT ObjectAspect FindObjectAspect (DwgDbHandleCR objecthandle, DgnModelCR model, T_ObjectAspectFilter* filter=nullptr);
+    DWG_EXPORT ObjectAspect FindObjectAspect (DwgDbHandleCR objectHandle, DgnModelCR model, T_ObjectAspectFilter* filter=nullptr);
+    ObjectAspect FindObjectAspect (uint64_t sourceId, DgnModelCR model, T_ObjectAspectFilter* filter=nullptr) { return FindObjectAspect(DwgDbHandle(sourceId), model, filter); }
     //! Find the ExternalSourceApsect for an object by object provenance
     DWG_EXPORT ObjectAspect FindObjectAspect (ObjectProvenanceCR prov, DgnModelCR model, T_ObjectAspectFilter* filter=nullptr);
     //! Find all elements which have been mapped from this source object handle as an Element Kind
     DWG_EXPORT DgnElementIdSet FindElementsBy(DwgDbHandleCR sourceHandle) const;
+    DgnElementIdSet FindElementsBy(uint64_t sourceId) const { return FindElementsBy(DwgDbHandle(sourceId)); }
     //! @}
     
     //! @name Misc
     //! @{
     DWG_EXPORT DgnElementIdSet FindElementsBy(Utf8CP kind, DwgDbHandleCR sourceHandle) const;
+    DgnElementIdSet FindElementsBy(Utf8CP kind, uint64_t sourceId) const { return FindElementsBy(kind, DwgDbHandle(sourceId)); }
     DWG_EXPORT static T_ECInstanceIdArray GetExternalSourceAspectIds(DgnElementCR el, Utf8CP kind, Utf8StringCR sourceId);
     DWG_EXPORT static BeSQLite::EC::ECInstanceId GetSoleAspectIdByKind(DgnElementCR el, Utf8CP kind);
     //! @}
