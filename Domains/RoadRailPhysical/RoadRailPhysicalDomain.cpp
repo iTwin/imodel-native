@@ -29,7 +29,7 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     {    
     RegisterHandler(RoadRailNetworkHandler::GetHandler());
     RegisterHandler(CorridorHandler::GetHandler());    
-    RegisterHandler(CorridorPortionsHandler::GetHandler());
+    RegisterHandler(CorridorRangeHandler::GetHandler());
 
     RegisterHandler(CorridorPortionElementHandler::GetHandler());
     RegisterHandler(PathwayElementHandler::GetHandler());
@@ -101,6 +101,7 @@ void createCodeSpecs(DgnDbR dgndb)
     {
     INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadRailNetwork, CodeScopeSpec::CreateModelScope()));
     INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRP_CODESPEC_Corridor, CodeScopeSpec::CreateModelScope()));
+    INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRP_CODESPEC_CorridorRange, CodeScopeSpec::CreateModelScope()));
     INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRP_CODESPEC_Pathway, CodeScopeSpec::CreateModelScope()));
     INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRP_CODESPEC_DesignSpeedDefinition, CodeScopeSpec::CreateModelScope()));
     }

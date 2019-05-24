@@ -38,9 +38,6 @@ public:
     //! The name of the RoadwayStandards Partition
     static Utf8CP GetRoadwayStandardsPartitionName() { return "Roadway Standards"; }
 
-    //! The code name of the CorridorPortions element
-    static Utf8CP GetCorridorPortionsCodeName() { return "Corridor Portions"; }
-
     //! The code name of the PathwayDesignCriteria element
     static Utf8CP GetPathwayDesignCriteriaCodeName() { return "Design Criteria"; }
 

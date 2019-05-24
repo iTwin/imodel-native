@@ -47,8 +47,8 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Elements
 #define BRRP_CLASS_Corridor                                         "Corridor"
-#define BRRP_CLASS_CorridorPortions                                 "CorridorPortions"
 #define BRRP_CLASS_CorridorPortionElement                           "CorridorPortionElement"
+#define BRRP_CLASS_CorridorRange                                    "CorridorRange"
 #define BRRP_CLASS_DesignSpeed                                      "DesignSpeed"
 #define BRRP_CLASS_DesignSpeedDefinition                            "DesignSpeedDefinition"
 #define BRRP_CLASS_PathwayDesignCriteria                            "PathwayDesignCriteria"
@@ -92,6 +92,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // CodeSpec names
 //-----------------------------------------------------------------------------------------
 #define BRRP_CODESPEC_Corridor                                      "Corridor"
+#define BRRP_CODESPEC_CorridorRange                                 "CorridorRange"
 #define BRRP_CODESPEC_DesignSpeedDefinition                         "DesignSpeedDefinition"
 #define BRRP_CODESPEC_Pathway                                       "Pathway"
 #define BRRP_CODESPEC_RoadRailNetwork                               "RoadRailNetwork"
@@ -150,8 +151,8 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Road & Rail shared
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(Corridor)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CorridorPortions)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CorridorPortionElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CorridorRange)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeed)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedDefinition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayDesignCriteria)
