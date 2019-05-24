@@ -11,6 +11,7 @@
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"ORDBridge"))
 #define DefaultPhysicalPartitionName    "Physical"
+#define DefaultDesignAlignmentsName     "Road/Rail Design Alignments"
 #define DefaultRoadRailNetworkName      "Road/Rail Network"
 #define DomainModelsPrivate             true
 
@@ -217,7 +218,7 @@ SubjectCPtr ORDBridge::_InitializeJob()
 
         InsertElementHasLinksRelationship(GetDgnDbR(), physicalPartitionCPtr->GetElementId(), m_converter->GetRepositoryLinkId(*m_converter->GetRootV8File()));
 
-        auto designAlignmentsCPtr = AlignmentBim::DesignAlignments::Query(*roadRailNetworkCPtr->GetNetworkModel());
+        auto designAlignmentsCPtr = AlignmentBim::DesignAlignments::Insert(*roadRailNetworkCPtr->GetNetworkModel(), DefaultDesignAlignmentsName);
         auto designAlignmentModelPtr = designAlignmentsCPtr->GetAlignmentModel();
         InsertElementHasLinksRelationship(GetDgnDbR(), designAlignmentModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkId(*m_converter->GetRootV8File()));
 

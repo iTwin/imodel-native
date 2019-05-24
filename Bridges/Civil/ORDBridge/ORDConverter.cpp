@@ -9,6 +9,8 @@
 #include <windows.h>
 #include <VersionedDgnV8Api/GeomSerialization/GeomLibsFlatBufferApi.h>
 
+#define DefaultDesignAlignmentsName     "Road/Rail Design Alignments"
+
 BEGIN_ORDBRIDGE_NAMESPACE
 
 struct ConsensusSourceItem : iModelBridgeSyncInfoFile::ISourceItem
@@ -257,7 +259,7 @@ public:
 ORDAlignmentsConverter::ORDAlignmentsConverter(ORDConverter& converter): m_ordConverter(converter)
     {
     m_bimNetworkModelPtr = converter.GetRoadRailNetwork()->GetNetworkModel();
-    auto designAlignmentsCPtr = AlignmentBim::DesignAlignments::Query(*m_bimNetworkModelPtr);
+    auto designAlignmentsCPtr = AlignmentBim::DesignAlignments::Query(*m_bimNetworkModelPtr, DefaultDesignAlignmentsName);
     m_bimDesignAlignmentModelPtr = designAlignmentsCPtr->GetAlignmentModel();    
     }
 
@@ -1847,7 +1849,7 @@ void ORDConverter::CreateRoadRailElements()
     AssociateGeneratedAlignments();
 
     auto roadRailNetworkModelPtr = GetRoadRailNetwork()->GetNetworkModel();
-    auto designAlignmentsCPtr = AlignmentBim::DesignAlignments::Query(*roadRailNetworkModelPtr);
+    auto designAlignmentsCPtr = AlignmentBim::DesignAlignments::Query(*roadRailNetworkModelPtr, DefaultDesignAlignmentsName);
     auto designAlignmentModelPtr = designAlignmentsCPtr->GetAlignmentModel();
     auto designHorizontalAlignmentsCPtr = AlignmentBim::HorizontalAlignments::Query(*designAlignmentModelPtr);
     auto designHorizAlignmentModelPtr = designHorizontalAlignmentsCPtr->GetHorizontalModel();
@@ -1919,7 +1921,7 @@ Dgn::UnitSystem ORDConverter::GetRootModelUnitSystem()
 void ORDConverter::SetUpModelFormatters()
     {    
     auto roadRailNetworkModelPtr = GetRoadRailNetwork()->GetNetworkModel();
-    auto designAlignmentsCPtr = AlignmentBim::DesignAlignments::Query(*roadRailNetworkModelPtr);
+    auto designAlignmentsCPtr = AlignmentBim::DesignAlignments::Query(*roadRailNetworkModelPtr, DefaultDesignAlignmentsName);
     auto designAlignmentModelPtr = designAlignmentsCPtr->GetAlignmentModel();
 
     DgnV8Api::ModelInfo const& v8ModelInfo = _GetModelInfo(*GetRootModelP());
