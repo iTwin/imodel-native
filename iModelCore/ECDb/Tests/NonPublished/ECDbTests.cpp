@@ -6,9 +6,182 @@
 #include "ECDbPublishedTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
-
+#include <ECDb/ConcurrentQueryManager.h>
+#include <future>
+#include <chrono>
+#include <queue>
+#include <thread>
+#include <memory>
 BEGIN_ECDBUNITTESTS_NAMESPACE
+using namespace std::chrono_literals;
+struct AsyncQuery
+    {
+    private:
+    std::thread m_thread;
+    std::promise<void> m_promise;
+    Utf8String m_ecsql;
+    ConcurrentQueryManager* m_mgr;
+    ConcurrentQueryManager::Limit m_limit;
+    ConcurrentQueryManager::Priority m_priority;
+    std::chrono::time_point<std::chrono::steady_clock> m_requestTime;
+    Json::Value m_rowset;
+    int64_t m_rows;
+    int m_id;
+    static int inst;
+    static Utf8CP GetPriortyStr(ConcurrentQueryManager::Priority p)
+        {
+        if (p == ConcurrentQueryManager::Priority::High)
+            return "HIG";
+        if (p == ConcurrentQueryManager::Priority::Normal)
+            return "NOR";
 
+        return "LOW";
+        }
+    static void Run(AsyncQuery* q)
+        {
+        TaskId taskId;
+        ConcurrentQueryManager::PostStatus rcPost;
+        Utf8String result;
+        int64_t rows;
+        ConcurrentQueryManager::PollStatus rcPoll;
+        q->m_rowset = Json::Value(Json::ValueType::arrayValue);
+    next:
+        do
+            {
+            rcPost = q->m_mgr->PostQuery(taskId, q->m_ecsql.c_str(), nullptr, q->m_limit, ConcurrentQueryManager::Quota(), q->m_priority);
+            if (rcPost != ConcurrentQueryManager::PostStatus::Done)
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            } while (rcPost != ConcurrentQueryManager::PostStatus::Done);
+        std::chrono::time_point<std::chrono::steady_clock> start = std::chrono::steady_clock::now();
+        do
+            {
+            rcPoll = q->m_mgr->PollQuery(result, rows, taskId);
+            if (rcPoll == ConcurrentQueryManager::PollStatus::Pending)
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            } while (rcPoll == ConcurrentQueryManager::PollStatus::Pending);
+
+        auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);        
+        if (rcPoll == ConcurrentQueryManager::PollStatus::Done)
+            {
+            q->m_rows += rows;
+            printf("[%d-%s] DONE %lld sec: total rows %lld\n", q->m_id, GetPriortyStr(q->m_priority), diff.count(), q->m_rows);
+            auto t = Json::Value::From(result);
+            for (Json::ArrayIndex f = 0; f < t.size(); f++)
+                q->m_rowset.append(t[f]);
+            printf("[%d-%s] DONE %s\n", q->m_id, GetPriortyStr(q->m_priority), q->m_rowset.ToString().substr(0, 80).c_str());
+            q->m_promise.set_value();
+            return;
+            }
+        if (rcPoll == ConcurrentQueryManager::PollStatus::Error)
+            {
+            printf("[%d-%s] ERROR %lld sec\n", q->m_id, GetPriortyStr(q->m_priority), diff.count());
+            q->m_promise.set_value();
+            return;
+            }
+        if (rcPoll == ConcurrentQueryManager::PollStatus::Timeout)
+            {
+            printf("[%d-%s] TIMEOUT  %lld sec\n", q->m_id, GetPriortyStr(q->m_priority), diff.count());
+            goto next;
+            }
+        if (rcPoll == ConcurrentQueryManager::PollStatus::Partial)
+            {
+            // printf("[%d-%s] PARTIAL  %lld sec : rows recieved %lld\n", q->m_id, GetPriortyStr(q->m_priority), diff.count(), q->m_rows);
+            q->m_rows += rows;
+            auto t = Json::Value::From(result);
+            for (Json::ArrayIndex f = 0; f < t.size(); f++)
+                q->m_rowset.append(t[f]);
+
+            auto offset = q->m_limit.GetOffset() == -1 ? rows : q->m_limit.GetOffset() + rows;
+            q->m_limit = ConcurrentQueryManager::Limit(-1, offset);
+            goto next;
+            }
+        }
+    public:
+    AsyncQuery(ConcurrentQueryManager& mgr, Utf8CP ecsql, ConcurrentQueryManager::Priority priority)
+        :m_ecsql(ecsql), m_mgr(&mgr), m_priority(priority), m_id(inst++),m_rows(0)
+        {
+        m_thread = std::thread(Run, this);
+        }
+    AsyncQuery(const AsyncQuery&) = delete;
+    AsyncQuery& operator = (const AsyncQuery&) = delete;
+    AsyncQuery(AsyncQuery&& rhs) :
+        m_thread(std::move(m_thread)), m_promise(std::move(rhs.m_promise)), m_limit(std::move(rhs.m_limit)), m_priority(std::move(rhs.m_priority)), m_rowset(std::move(rhs.m_rowset)), m_mgr(std::move(rhs.m_mgr))
+        , m_id(std::move(rhs.m_id)), m_rows(std::move(rhs.m_rows)), m_requestTime(std::move(rhs.m_requestTime))
+        {}
+
+    AsyncQuery& operator = (AsyncQuery&& rhs)
+        {
+        if (this != &rhs)
+            {
+            m_thread = std::move(m_thread);
+            m_promise = std::move(rhs.m_promise);
+            m_limit = std::move(rhs.m_limit);
+            m_priority = std::move(rhs.m_priority);
+            m_rowset = std::move(rhs.m_rowset);
+            m_mgr = std::move(rhs.m_mgr);
+            m_id = std::move(rhs.m_id);
+            m_rows = std::move(rhs.m_rows);
+            m_requestTime = std::move(rhs.m_requestTime);
+            }
+
+        return *this;
+        }
+
+
+    void Wait()
+        {        
+        m_promise.get_future().wait();
+        m_thread.join();
+        }
+    };
+
+int AsyncQuery::inst = 1000;
+
+struct TimeoutFunc : BeSQLite::ScalarFunction
+    {
+    TimeoutFunc() : ScalarFunction("long_run", 1){}
+    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+        {
+        std::this_thread::sleep_for(10ms);
+        ctx.SetResultInt(args[0].GetValueInt());
+        }
+    };
+
+
+TEST_F(ECDbTestFixture, ConcurrentQueryManager)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("one.ecdb"));
+    TimeoutFunc timeoutFunc;
+    auto config = ConcurrentQueryManager::Config()
+        .SetQuota(ConcurrentQueryManager::Quota(1s,1000))
+        .SetIdolCleanupTime(30s)
+        .SetAfterConnectionOpenned([&timeoutFunc] (Db const& db) {
+            db.AddFunction(timeoutFunc);
+            });
+
+    auto& mgr = m_ecdb.GetConcurrentQueryManager();  
+    mgr.Initalize(config);
+    std::async([&] ()
+        {
+        for (int j = 0; j < 10; j++)
+            {
+            std::vector<std::unique_ptr<AsyncQuery>> queries;
+            for (int i = 0; i < 40; i++)
+                {
+                queries.push_back(std::make_unique<AsyncQuery>(mgr, "select * from meta.ecclassdef", ConcurrentQueryManager::Priority::Low));
+                queries.push_back(std::make_unique<AsyncQuery>(mgr, "select * from meta.ecclassdef", ConcurrentQueryManager::Priority::Normal));
+                queries.push_back(std::make_unique<AsyncQuery>(mgr, "select * from meta.ecpropertydef", ConcurrentQueryManager::Priority::High));
+
+                }
+            for (auto& k : queries)
+                {
+                k->Wait();
+                }
+            printf("SLEEPING for 24 sec\n");
+            std::this_thread::sleep_for(24s);
+            }
+        }).wait();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/13
 //+---------------+---------------+---------------+---------------+---------------+------

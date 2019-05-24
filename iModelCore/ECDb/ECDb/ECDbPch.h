@@ -58,10 +58,10 @@
 #include "SchemaWriter.h"
 #include "SchemaValidator.h"
 #include "SchemaImportContext.h"
-
 #include "ChangeManager.h"
 #include "ChangeIteratorImpl.h"
 #include "ChangeSummaryExtractor.h"
+#include "ConcurrentQueryManagerImpl.h"
 
 #include "ECSql/NativeSqlBuilder.h"
 #include "ECSql/Parser/SqlScan.h"

@@ -55,6 +55,10 @@ DbResult ECDb::_OnDbOpening()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2012
 //---------------+---------------+---------------+---------------+---------------+------
+ConcurrentQueryManager& ECDb::GetConcurrentQueryManager() const { return m_pimpl->GetConcurrentQueryManager(); }
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2012
+//---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::_OnDbCreated(CreateParams const& params)
     {
     DbResult stat = Db::_OnDbCreated(params);

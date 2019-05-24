@@ -147,6 +147,7 @@ struct JsonECSqlSelectAdapter final
             private:
                 MemberNameCasing m_memberNameCasing = MemberNameCasing::KeepOriginal;
                 ECN::ECJsonInt64Format m_int64Format = ECN::ECJsonInt64Format::AsDecimalString;
+                bool m_onlyApplyInt64FormatToSystemProperties = false;
             public:
                 //! Initializes a default FormatOptions object
                 //! with MemberCasingMode::KeepOriginal and ECJsonInt64Format::AsDecimalString
@@ -155,10 +156,11 @@ struct JsonECSqlSelectAdapter final
                 //!@param[in] memberNameCasing Defines how the member names in the resulting JSON will be formatted.
                 //!           Casing of system member names is not affected by this.
                 //!@param[in] int64Format Defines how ECProperty values of type Int64 / Long will be formatted
-                FormatOptions(MemberNameCasing memberNameCasing, ECN::ECJsonInt64Format int64Format) : m_memberNameCasing(memberNameCasing), m_int64Format(int64Format) {}
+                FormatOptions(MemberNameCasing memberNameCasing, ECN::ECJsonInt64Format int64Format, bool onlyApplyInt64FormatToSystemProperties = false) : m_memberNameCasing(memberNameCasing), m_int64Format(int64Format), m_onlyApplyInt64FormatToSystemProperties(onlyApplyInt64FormatToSystemProperties) {}
 
                 MemberNameCasing GetMemberCasingMode() const { return m_memberNameCasing; }
                 ECN::ECJsonInt64Format GetInt64Format() const { return m_int64Format; }
+                bool OnlyApplyInt64FormatToSystemProperties() const { return m_onlyApplyInt64FormatToSystemProperties; }
             };
 
     private:

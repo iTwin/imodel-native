@@ -99,6 +99,12 @@ USING_NAMESPACE_BENTLEY_EC
     }\
     int32_t var = info[i].As<Napi::Number>().Int32Value();
 
+#define REQUIRE_ARGUMENT_UINTEGER(i, var, retval)\
+    if (info.Length() <= (i) || !info[i].IsNumber()) {\
+        THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an integer", retval)\
+    }\
+    int32_t var = info[i].As<Napi::Number>().Uint32Value();
+
 #define REQUIRE_ARGUMENT_BOOL(i, var, retval)\
     if (info.Length() <= (i) || !info[i].IsBoolean()) {\
         THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be a boolean", retval)\
@@ -857,6 +863,29 @@ struct NativeECDb : BeObjectWrap<NativeECDb>
             return Napi::Number::New(Env(), (int) status);
             }
 
+
+        Napi::Value ConcurrentQueryInit(Napi::CallbackInfo const& info)
+            {
+            REQUIRE_ARGUMENT_ANY_OBJ(0, cfg, Napi::Boolean::New(Env(), (int) BE_SQLITE_ERROR));
+            return JsInterop::ConcurrentQueryInit(GetECDb(), Env(), cfg);
+            }
+
+        Napi::Value PostConcurrentQuery(Napi::CallbackInfo const& info)
+            {
+            REQUIRE_ARGUMENT_STRING(0, ecsql, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+            REQUIRE_ARGUMENT_STRING(1, bindings, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+            REQUIRE_ARGUMENT_ANY_OBJ(2, limit, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+            REQUIRE_ARGUMENT_ANY_OBJ(3, quota, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+            REQUIRE_ARGUMENT_UINTEGER(4, priority, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+            return JsInterop::PostConcurrentQuery(GetECDb(),Env(), ecsql, bindings, limit, quota, (ConcurrentQueryManager::Priority)priority);
+            }
+
+        Napi::Value PollConcurrentQuery(Napi::CallbackInfo const& info)
+            {
+            REQUIRE_ARGUMENT_UINTEGER(0, taskId, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+            return JsInterop::PollConcurrentQuery(GetECDb(), Env(), taskId);
+            }
+
         Napi::Value CloseDb(Napi::CallbackInfo const& info)
             {
             if (m_ecdb != nullptr)
@@ -905,7 +934,10 @@ struct NativeECDb : BeObjectWrap<NativeECDb>
                 InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
                 InstanceMethod("abandonChanges", &NativeECDb::AbandonChanges),
                 InstanceMethod("importSchema", &NativeECDb::ImportSchema),
-                InstanceMethod("isOpen", &NativeECDb::IsOpen)
+                InstanceMethod("isOpen", &NativeECDb::IsOpen),
+                InstanceMethod("concurrentQueryInit", &NativeECDb::ConcurrentQueryInit),
+                InstanceMethod("postConcurrentQuery", &NativeECDb::PostConcurrentQuery),
+                InstanceMethod("pollConcurrentQuery", &NativeECDb::PollConcurrentQuery),
             });
 
             exports.Set("ECDb", t);
@@ -2212,6 +2244,32 @@ public:
         return Napi::Number::New(Env(), next);
         }
 
+
+    Napi::Value ConcurrentQueryInit(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN;
+        REQUIRE_ARGUMENT_ANY_OBJ(0, cfg, Napi::Boolean::New(Env(), (int) BE_SQLITE_ERROR));
+        return JsInterop::ConcurrentQueryInit(GetDgnDb(), Env(), cfg);
+        }
+
+    Napi::Value PostConcurrentQuery(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN;
+        REQUIRE_ARGUMENT_STRING(0, ecsql, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        REQUIRE_ARGUMENT_STRING(1, bindings, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        REQUIRE_ARGUMENT_ANY_OBJ(2, limit, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        REQUIRE_ARGUMENT_ANY_OBJ(3, quota, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        REQUIRE_ARGUMENT_UINTEGER(4, priority, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        return JsInterop::PostConcurrentQuery(GetDgnDb(), Env(), ecsql, bindings, limit, quota, (ConcurrentQueryManager::Priority)priority);
+        }
+
+    Napi::Value PollConcurrentQuery(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN;
+        REQUIRE_ARGUMENT_UINTEGER(0, taskId, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        return JsInterop::PollConcurrentQuery(GetDgnDb(), Env(), taskId);
+        }
+
     static Napi::Value Vacuum(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, dbName, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
@@ -2335,6 +2393,9 @@ public:
             InstanceMethod("updateLinkTableRelationship", &NativeDgnDb::UpdateLinkTableRelationship),
             InstanceMethod("updateModel", &NativeDgnDb::UpdateModel),
             InstanceMethod("updateProjectExtents", &NativeDgnDb::UpdateProjectExtents),
+            InstanceMethod("concurrentQueryInit", &NativeDgnDb::ConcurrentQueryInit),
+            InstanceMethod("postConcurrentQuery", &NativeDgnDb::PostConcurrentQuery),
+            InstanceMethod("pollConcurrentQuery", &NativeDgnDb::PollConcurrentQuery),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("vacuum", &NativeDgnDb::Vacuum),
         });

@@ -51,3 +51,6 @@ ECDbSymbolProviderTests.Name
 ECDbSymbolProviderTests.GetECClassId
 ECDbExpressionSymbolContextTests.SymbolsAreInjectedWhenDeserializingSchemas
 ECInstanceUpdaterTests.ReadonlyAndCalculatedProperties
+
+# This is for testing only.
+ECDbTestFixture.ConcurrentQueryManager

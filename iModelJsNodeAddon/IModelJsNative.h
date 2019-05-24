@@ -211,6 +211,10 @@ public:
     static RepositoryStatus BriefcaseManagerStartBulkOperation(DgnDbR dgndb);
     static RepositoryStatus BriefcaseManagerEndBulkOperation(DgnDbR dgndb);
 
+    static Napi::Value ConcurrentQueryInit(ECDbCR ecdb, Napi::Env env, Napi::Object cfg);
+    static Napi::Value PostConcurrentQuery(ECDbCR ecdb, Napi::Env env, Utf8StringCR ecsql, Utf8StringCR bindings, Napi::Object limit, Napi::Object quota, ConcurrentQueryManager::Priority priority);
+    static Napi::Value PollConcurrentQuery(ECDbCR ecdb, Napi::Env env, uint32_t taskId);
+
     static void GetTileTree(ICancellationTokenPtr, DgnDbR db, Utf8StringCR id, Napi::Function& callback);
     static void GetTileContent(ICancellationTokenPtr, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId, Napi::Function& callback);
     static Tile::PollResult PollTileContent(ICancellationTokenPtr, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId);

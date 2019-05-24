@@ -73,7 +73,7 @@ private:
     std::unique_ptr<SchemaManager> m_schemaManager;
     ChangeManager m_changeManager;
     SettingsManager m_settingsManager;
-
+    mutable ConcurrentQueryManager m_queryManager;
     StatementCache m_sqliteStatementCache;
     BeBriefcaseBasedIdSequenceManager m_idSequenceManager;
     static const uint32_t s_instanceIdSequenceKey = 0;
@@ -83,7 +83,7 @@ private:
     IssueReporter m_issueReporter;
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
-    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_profileManager(ecdb), m_changeManager(ecdb), m_sqliteStatementCache(50, &m_mutex), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
+    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_profileManager(ecdb), m_changeManager(ecdb), m_sqliteStatementCache(50, &m_mutex), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence")), m_queryManager(ecdb)
         {
         m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex);
         }
@@ -137,7 +137,7 @@ public:
 
     CachedStatementPtr GetCachedSqliteStatement(Utf8CP sql) const;
     BeBriefcaseBasedIdSequence const& GetInstanceIdSequence() const { return m_idSequenceManager.GetSequence(s_instanceIdSequenceKey); }
-
+    ConcurrentQueryManager& GetConcurrentQueryManager() const { return m_queryManager; }
     ChangeManager const& GetChangeManager() const { return m_changeManager; }
 
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used

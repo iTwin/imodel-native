@@ -11,6 +11,7 @@
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <DgnPlatform/FunctionalDomain.h>
+#include <chrono>
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
@@ -211,6 +212,114 @@ NativeLogging::ILogger& JsInterop::GetLogger()
     return *s_logger;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Affan.Khan                     05/19
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::ConcurrentQueryInit(ECDbCR ecdb, Napi::Env env, Napi::Object cfg)
+    {
+    ConcurrentQueryManager::Config config;
+    Napi::Number v;
+
+    v = cfg.Get("concurrent").ToNumber();
+    if (!v.IsUndefined() && !v.IsNull())
+        config.SetConcurrent(v.Uint32Value());
+
+    v = cfg.Get("cachedStatementsPerThread").ToNumber();
+    if (!v.IsUndefined() && !v.IsNull())
+        config.SetCacheStatementsPerThread(v.Uint32Value());
+
+    v = cfg.Get("maxQueueSize").ToNumber();
+    if (!v.IsUndefined() && !v.IsNull())
+        config.SetMaxQueueSize(v.Uint32Value());
+
+    v = cfg.Get("minMonitorInterval").ToNumber();
+    if (!v.IsUndefined() && !v.IsNull())
+        config.SetMinMonitorInterval(std::chrono::seconds(v.Uint32Value()));
+
+    v = cfg.Get("idolCleanupTime").ToNumber();
+    if (!v.IsUndefined() && !v.IsNull())
+        config.SetIdolCleanupTime(std::chrono::seconds(v.Uint32Value()));
+
+    v = cfg.Get("autoExpireTimeForCompletedQuery").ToNumber();
+    if (!v.IsUndefined() && !v.IsNull())
+        config.SetAutoExpireTimeForCompletedQuery(std::chrono::seconds(v.Uint32Value()));
+
+    auto quota = cfg.Get("quota").ToObject();
+    if (!quota.IsUndefined() && !quota.IsNull())
+        {
+        std::chrono::seconds maxTimeAllowed(0);
+        unsigned int maxMemoryAllowed = 0;
+
+        v = quota.Get("maxTimeAllowed").ToNumber();
+        if (!v.IsUndefined() && !v.IsNull())
+            maxTimeAllowed = std::chrono::seconds(v.Uint32Value());
+
+        v = quota.Get("maxMemoryAllowed").ToNumber();
+        if (!v.IsUndefined() && !v.IsNull())
+            maxMemoryAllowed = v.Uint32Value();
+
+        config.SetQuota(ConcurrentQueryManager::Quota(maxTimeAllowed, maxMemoryAllowed));
+        }
+
+    return Napi::Boolean::New(env, ecdb.GetConcurrentQueryManager().Initalize(config));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Affan.Khan                     05/19
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::PostConcurrentQuery(ECDbCR ecdb, Napi::Env env, Utf8StringCR ecsql, Utf8StringCR bindings, Napi::Object limit, Napi::Object quota, ConcurrentQueryManager::Priority priority)
+    {
+    TaskId taskId = 0;
+    Napi::Number v;
+
+    int maxRowAllowed = -1;
+    int startRowOffset = -1;
+    std::chrono::seconds maxTimeAllowed(0);
+    unsigned int maxMemoryAllowed = 0;
+    if (!limit.IsUndefined() && !limit.IsNull())
+        {
+        v = limit.Get("maxRowAllowed").ToNumber();
+        if (!v.IsUndefined() && !v.IsNull())
+            maxRowAllowed = v.Int32Value() > 0 ? v.Int32Value() : -1;
+
+        v = limit.Get("startRowOffset").ToNumber();
+        if (!v.IsUndefined() && !v.IsNull())
+            startRowOffset = v.Int32Value() > 0 ? v.Int32Value() : -1;
+        }
+
+    if (!quota.IsUndefined() && !quota.IsNull())
+        {
+        v = quota.Get("maxTimeAllowed").ToNumber();
+        if (!v.IsUndefined() && !v.IsNull())
+            maxTimeAllowed = std::chrono::seconds(v.Uint32Value());
+
+        v = quota.Get("maxMemoryAllowed").ToNumber();
+        if (!v.IsUndefined() && !v.IsNull())
+            maxMemoryAllowed = v.Uint32Value();
+        }
+
+    const auto rc = ecdb.GetConcurrentQueryManager().PostQuery(taskId, ecsql.c_str(), bindings.c_str(),
+                                                       ConcurrentQueryManager::Limit(maxRowAllowed, startRowOffset), 
+                                                       ConcurrentQueryManager::Quota(maxTimeAllowed, maxMemoryAllowed), priority);
+    auto result = Napi::Object::New(env);
+    result.Set("status", (int) rc);
+    result.Set("taskId", taskId);
+    return result;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Affan.Khan                     05/19
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::PollConcurrentQuery(ECDbCR ecdb, Napi::Env env, uint32_t taskId)
+    {
+    Utf8String json;
+    int64_t rows;
+    const auto rc = ecdb.GetConcurrentQueryManager().PollQuery(json, rows, taskId);
+    auto result = Napi::Object::New(env);
+    result.Set("status", (int) rc);
+    result.Set("result", json.c_str());
+    result.Set("rowCount", rows);
+    return result;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 02/18
 //---------------------------------------------------------------------------------------

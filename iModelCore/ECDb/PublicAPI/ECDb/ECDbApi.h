@@ -17,3 +17,4 @@
 #include <ECDb/ChangeSummary.h>
 
 #include <ECDb/ECDbExpressionSymbolContext.h>
+#include <ECDb/ConcurrentQueryManager.h>

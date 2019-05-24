@@ -10,7 +10,7 @@
 #include <BeSQLite/ChangeSet.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <json/json.h>
-
+#include <ECDb/ConcurrentQueryManager.h>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct SchemaManager;
@@ -305,6 +305,9 @@ public:
     //! @return BE_SQLITE_OK in case of success, error codes otherwise
     //! @see @ref ECDbChange
     ECDB_EXPORT DbResult CreateChangeCache(ECDb& changeCacheFile, BeFileNameCR changeCacheFilePath) const;
+
+    //! Return a instance of concurrent query manager. It still require initialization.
+    ECDB_EXPORT ConcurrentQueryManager& GetConcurrentQueryManager() const;
 
     //! Extracts and generates the change summary from the specified change set.
     //! @remarks The change summary is persisted as an instance of the ECClass @b ECDbChange.ChangeSummary and its related classes

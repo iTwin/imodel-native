@@ -2521,6 +2521,9 @@ public:
     //! Get the current number of entries in this Db's Savepoint stack.
     BE_SQLITE_EXPORT int32_t GetCurrentSavepointDepth() const;
 
+    //! Attempts to free as much heap memory as possible from database connection
+    BE_SQLITE_EXPORT DbResult FreeMemory() const;
+
     //! Determine whether there is an active transaction against this Db.
     bool IsTransactionActive() const {return 0 < GetCurrentSavepointDepth();}
 

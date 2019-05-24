@@ -27,6 +27,7 @@
     <ClCompile Include="ClassMapColumnFactory.cpp" />
     <ClCompile Include="ClassMapPersistenceManager.cpp" />
     <ClCompile Include="ClassMappingInfo.cpp" />
+    <ClCompile Include="ConcurrentQueryManagerImpl.cpp" />
     <ClCompile Include="DbMappingManager.cpp" />
     <ClCompile Include="DbMapValidator.cpp" />
     <ClCompile Include="DbSchema.cpp" />
@@ -131,6 +132,7 @@
   <ItemGroup>
     <ClInclude Include="..\PublicAPI\ECDb\ChangeIterator.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ChangeSummary.h" />
+    <ClInclude Include="..\PublicAPI\ECDb\ConcurrentQueryManager.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDb.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbExpressionSymbolContext.h" />
@@ -153,6 +155,7 @@
     <ClInclude Include="ClassMapColumnFactory.h" />
     <ClInclude Include="ClassMapPersistenceManager.h" />
     <ClInclude Include="ClassMappingInfo.h" />
+    <ClInclude Include="ConcurrentQueryManagerImpl.h" />
     <ClInclude Include="DbMappingManager.h" />
     <ClInclude Include="DbMapValidator.h" />
     <ClInclude Include="DbSchema.h" />

@@ -475,7 +475,7 @@ void     SnappyFromBlob::Finish() {m_blobIO.Close();}
 void     Db::SetAllowImplictTransactions(bool val) {m_dbFile->m_allowImplicitTxns=val;}
 
 Utf8String ProfileVersion::ToJson() const { return ToString("{\"major\":%" PRIu16 ",\"minor\":%" PRIu16 ",\"sub1\":%" PRIu16 ",\"sub2\":%" PRIu16 "}"); }
-
+DbResult Db::FreeMemory() const { return (DbResult)sqlite3_db_release_memory(m_dbFile->m_sqlDb); }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
