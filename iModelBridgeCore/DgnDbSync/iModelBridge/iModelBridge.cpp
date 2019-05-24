@@ -162,23 +162,17 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
+* @bsimethod                                    Abeesh.Basheer                  05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName, bool doProfileUpgrade)
+DgnDbPtr        iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName, DgnDb::OpenParams& oparams)
     {
-    // Try to open the BIM without permitting schema changes. That's the common case, and that's the only way we have
+     // Try to open the BIM without permitting schema changes. That's the common case, and that's the only way we have
     // of detecting the case where we do have domain schema changes (by looking for an error result).
 
     // (Note that OpenDgnDb will also merge in any pending schema changes that were recently pulled from iModelHub.)
 
     madeSchemaChanges = false;
-    DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Exclusive);
-    oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades);
-
-    //
-    if (doProfileUpgrade)
-        oparams.SetProfileUpgradeOptions(EC::ECDb::ProfileUpgradeOptions::Upgrade);
-
+    
     auto db = DgnDb::OpenDgnDb(&dbres, dbName, oparams);
     if (!db.IsValid())
         {
@@ -208,14 +202,14 @@ DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, b
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2019
+* @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr        iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName)
+DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName)
     {
-    bool allowProfileUpgrade = TestFeatureFlag("allow-ec-schema-3-2");
-    LOG.infov("TestFeatureFlag allow-ec-schema-3-2 returned %d", allowProfileUpgrade);
+    DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Exclusive);
+    oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades);
 
-    return OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, dbName, allowProfileUpgrade);
+    return OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, dbName, oparams);
     }
 
 /*---------------------------------------------------------------------------------**//**
