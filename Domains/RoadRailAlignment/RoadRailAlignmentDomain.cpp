@@ -12,6 +12,13 @@
 //#include <RoadRailAlignment/ClipPlanesViewDefinition.h>
 
 #define DEFAULT_VIEWDEF_ASPECT_RATIO_SKEW 10.0 // For Profile and XS view definitions
+#define INSERT_CODESPEC(x) \
+    { auto codeSpecPtr = x; \
+    BeAssert(codeSpecPtr.IsValid()); \
+    if (codeSpecPtr.IsValid()) { \
+        codeSpecPtr->Insert(); \
+        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid()); } \
+    }
 
 DOMAIN_DEFINE_MEMBERS(RoadRailAlignmentDomain)
 
@@ -202,21 +209,9 @@ void createDomainCategoriesPartition(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void createCodeSpecs(DgnDbR dgndb)
     {
-    auto codeSpec = CodeSpec::Create(dgndb, BRRA_CODESPEC_Alignment, CodeScopeSpec::CreateModelScope());
-    BeAssert(codeSpec.IsValid());
-    if (codeSpec.IsValid())
-        {
-        codeSpec->Insert();
-        BeAssert(codeSpec->GetCodeSpecId().IsValid());
-        }
-
-    codeSpec = CodeSpec::Create(dgndb, BRRA_CODESPEC_HorizontalAlignment, CodeScopeSpec::CreateModelScope());
-    BeAssert(codeSpec.IsValid());
-    if (codeSpec.IsValid())
-        {
-        codeSpec->Insert();
-        BeAssert(codeSpec->GetCodeSpecId().IsValid());
-        }
+    INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRA_CODESPEC_Alignment, CodeScopeSpec::CreateModelScope()));
+    INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRA_CODESPEC_DesignAlignments, CodeScopeSpec::CreateModelScope()));
+    INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRA_CODESPEC_HorizontalAlignment, CodeScopeSpec::CreateModelScope()));
     }
 
 /*---------------------------------------------------------------------------------**//**

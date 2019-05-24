@@ -47,9 +47,6 @@ public:
     static Utf8CP GetDomainCategoriesPartitionName() { return "Road/Rail Domain Categories"; }
 
     //! Returns the code value used for the HorizontalAlignments element in Alignment models
-    static Utf8CP GetDesignAlignmentsCodeName() { return "Design Alignments"; }
-
-    //! Returns the code value used for the HorizontalAlignments element in Alignment models
     static Utf8CP GetHorizontalAlignmentsCodeName() { return "Horizontal Alignments"; }
 
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnModelId QueryConfigurationModelId(Dgn::SubjectCR subject);

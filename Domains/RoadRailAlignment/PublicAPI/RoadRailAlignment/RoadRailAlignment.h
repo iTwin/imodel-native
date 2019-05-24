@@ -101,6 +101,7 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 // CodeSpec names
 //-----------------------------------------------------------------------------------------
 #define BRRA_CODESPEC_Alignment                                    "Alignment"
+#define BRRA_CODESPEC_DesignAlignments                             "DesignAlignments"
 #define BRRA_CODESPEC_HorizontalAlignment                          "HorizontalAlignment"
 
 //-----------------------------------------------------------------------------------------

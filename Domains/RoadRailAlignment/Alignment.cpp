@@ -498,22 +498,23 @@ DgnDbStatus Alignment::GenerateAprox3dGeom(DgnSubCategoryId subCategoryId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DesignAlignments::CreateCodeBasic(DgnElementCR spatialElement)
+DgnCode DesignAlignments::CreateCodeBasic(DgnElementCR spatialElement, Utf8StringCR codeVal)
     {
-    return CodeSpec::CreateCode(BRRA_CODESPEC_Alignment, spatialElement, RoadRailAlignmentDomain::GetDesignAlignmentsCodeName());
+    return CodeSpec::CreateCode(BRRA_CODESPEC_DesignAlignments, spatialElement, codeVal);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DesignAlignments::QueryId(Dgn::SpatialModelCR parentSpatialModel)
+DgnElementId DesignAlignments::QueryId(SpatialModelCR parentSpatialModel, Utf8StringCR codeVal)
     {
     ECSqlStatement stmt;
     stmt.Prepare(parentSpatialModel.GetDgnDb(),
-        "SELECT ECInstanceId FROM " BRRA_SCHEMA(BRRA_CLASS_DesignAlignments) " WHERE Model.Id = ?;");
+        "SELECT ECInstanceId FROM " BRRA_SCHEMA(BRRA_CLASS_DesignAlignments) " WHERE Model.Id = ? AND CodeValue = ?;");
     BeAssert(stmt.IsPrepared());
 
     stmt.BindId(1, parentSpatialModel.GetModelId());
+    stmt.BindText(2, codeVal.c_str(), IECSqlBinder::MakeCopy::No);
 
     if (DbResult::BE_SQLITE_ROW == stmt.Step())
         return stmt.GetValueId<DgnElementId>(0);
@@ -524,17 +525,17 @@ DgnElementId DesignAlignments::QueryId(Dgn::SpatialModelCR parentSpatialModel)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DesignAlignmentsCPtr DesignAlignments::Insert(SpatialModelCR model)
+DesignAlignmentsCPtr DesignAlignments::Insert(SpatialModelCR model, Utf8StringCR codeVal)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;
 
-    if (QueryId(model).IsValid())
+    if (QueryId(model, codeVal).IsValid())
         return nullptr;
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()),
         AlignmentCategory::GetAlignment(model.GetDgnDb()));
-    createParams.m_code = CreateCodeBasic(*model.GetModeledElement().get());
+    createParams.m_code = CreateCodeBasic(*model.GetModeledElement().get(), codeVal);
 
     DesignAlignmentsPtr newPtr(new DesignAlignments(createParams));
     auto retValCPtr = model.GetDgnDb().Elements().Insert<DesignAlignments>(*newPtr);

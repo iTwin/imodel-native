@@ -156,7 +156,7 @@ struct DesignAlignments : Dgn::SpatialLocationElement
     friend struct DesignAlignmentsHandler;
 
 private:
-    static Dgn::DgnCode CreateCodeBasic(Dgn::DgnElementCR element);
+    static Dgn::DgnCode CreateCodeBasic(Dgn::DgnElementCR element, Utf8StringCR codeVal);
 
 protected:
     //! @private
@@ -171,14 +171,14 @@ public:
     ROADRAILALIGNMENT_EXPORT static DesignAlignmentsCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get<DesignAlignments>(id); }
 
     //! Query for the elementId representing all of the Design Alignments for a parent Spatial Model
-    ROADRAILALIGNMENT_EXPORT static Dgn::DgnElementId QueryId(Dgn::SpatialModelCR parentSpatialModel);
+    ROADRAILALIGNMENT_EXPORT static Dgn::DgnElementId QueryId(Dgn::SpatialModelCR parentSpatialModel, Utf8StringCR codeVal);
 
     //! Query for the element representing all of the Design Alignments for a parent Spatial Model
-    static DesignAlignmentsCPtr Query(Dgn::SpatialModelCR parentSpatialModel) { return Get(parentSpatialModel.GetDgnDb(), QueryId(parentSpatialModel)); }
+    static DesignAlignmentsCPtr Query(Dgn::SpatialModelCR parentSpatialModel, Utf8StringCR codeVal) { return Get(parentSpatialModel.GetDgnDb(), QueryId(parentSpatialModel, codeVal)); }
     //__PUBLISH_SECTION_END__
     //! @privatesection
-    ROADRAILALIGNMENT_EXPORT static DesignAlignmentsCPtr Insert(Dgn::SpatialModelCR model);
-    static Dgn::DgnCode CreateCode(Dgn::SpatialElementCR spatialElement) { return CreateCodeBasic(spatialElement); }
+    ROADRAILALIGNMENT_EXPORT static DesignAlignmentsCPtr Insert(Dgn::SpatialModelCR model, Utf8StringCR codeVal);
+    static Dgn::DgnCode CreateCode(Dgn::SpatialElementCR spatialElement, Utf8StringCR codeVal) { return CreateCodeBasic(spatialElement, codeVal); }
     //! @publicsection
     //__PUBLISH_SECTION_START__
     //! Gets the SpatialLocationModel that is modeling this element
