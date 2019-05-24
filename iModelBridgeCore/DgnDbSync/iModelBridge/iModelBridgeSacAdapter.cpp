@@ -691,10 +691,6 @@ BentleyStatus iModelBridgeSacAdapter::ParseCommandLine(bvector<WString>& unrecog
             return BentleyStatus::ERROR;
         }
 
-    auto tempVarCheck = getenv("iModelBridge_MatchOnEmbeddedFileBasename");
-    if (tempVarCheck && *tempVarCheck == '1')
-        bparams.SetMatchOnEmbeddedFileBasename(true);
-
     return BentleyStatus::SUCCESS;
     }
 
