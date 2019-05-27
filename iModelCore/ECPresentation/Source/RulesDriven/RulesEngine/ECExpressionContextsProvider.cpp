@@ -363,7 +363,7 @@ protected:
                 {
                 BeAssert(nullptr != node.GetKey()->AsECInstanceNodeKey());
                 ECClassInstanceKeyCR key = node.GetKey()->AsECInstanceNodeKey()->GetClassInstanceKey();
-                context.AddSymbol(*ValueSymbol::Create("InstanceId", ECValue(key.GetId().ToString().c_str())));
+                context.AddSymbol(*ValueSymbol::Create("InstanceId", ECValue(key.GetId().GetValueUnchecked())));
                 context.AddSymbol(*ValueSymbol::Create("BriefcaseId", ECValue(CommonTools::ToBase36String(CommonTools::GetBriefcaseId(key.GetId())).c_str(), false)));
                 context.AddSymbol(*ValueSymbol::Create("LocalId", ECValue(CommonTools::ToBase36String(CommonTools::GetLocalId(key.GetId())).c_str(), false)));
                 context.AddSymbol(*ValueSymbol::Create("IsInstanceNode", ECValue(true)));

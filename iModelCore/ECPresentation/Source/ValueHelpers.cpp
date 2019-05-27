@@ -510,7 +510,10 @@ ECValue ValueHelpers::GetECValueFromJson(ECPropertyCR ecProperty, JsonValueCR js
             value.SetInteger(json.asInt());
             break;
         case PRIMITIVETYPE_Long:
-            value.SetLong(json.asInt64());
+            if (json.isString())
+                value.SetLong(BeInt64Id::FromString(json.asCString()).GetValueUnchecked());
+            else
+                value.SetLong(json.asInt64());
             break;
         case PRIMITIVETYPE_String:
             value.SetUtf8CP(json.asCString());
@@ -538,7 +541,7 @@ rapidjson::Document ValueHelpers::GetJsonFromECValue(ECValueCR ecValue, rapidjso
 
     if (ecValue.IsNavigation())
         {
-        doc.SetUint64(ecValue.GetNavigationInfo().GetId<BeInt64Id>().GetValueUnchecked());
+        doc.SetString(ecValue.GetNavigationInfo().GetId<BeInt64Id>().ToHexStr().c_str(), doc.GetAllocator());
         return doc;
         }
     switch (ecValue.GetPrimitiveType())
@@ -558,7 +561,7 @@ rapidjson::Document ValueHelpers::GetJsonFromECValue(ECValueCR ecValue, rapidjso
             doc.SetInt(ecValue.GetInteger());
             return doc;
         case PRIMITIVETYPE_Long:
-            doc.SetInt64(ecValue.GetLong());
+            doc.SetString(BeInt64Id(ecValue.GetLong()).ToHexStr().c_str(), doc.GetAllocator());
             return doc;
         case PRIMITIVETYPE_String:
             doc.SetString(ecValue.GetUtf8CP(), doc.GetAllocator());

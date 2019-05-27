@@ -268,8 +268,8 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildNode_Instanc
     ASSERT_EQ(ExpressionStatus::Success, node->GetValue(result, *ctx));
     ECValue resultValue;
     ASSERT_EQ(ExpressionStatus::Success, result->GetECValue(resultValue));
-    ASSERT_TRUE(resultValue.IsString());
-    ASSERT_STREQ("456", resultValue.GetUtf8CP());
+    ASSERT_TRUE(resultValue.IsLong());
+    ASSERT_EQ(456, resultValue.GetLong());
     }
 
 /*---------------------------------------------------------------------------------**//**

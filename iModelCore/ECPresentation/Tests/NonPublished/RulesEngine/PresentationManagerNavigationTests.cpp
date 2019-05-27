@@ -6270,7 +6270,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AppliesNodeExtendedDataF
     {
     ECClassCP ecClass1 = GetClass("MyClass1");
     ECClassCP ecClass2 = GetClass("MyClass2");
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass1, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("test value")); });
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass1, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("test value")); });
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass2);
 
     // create the rule set
@@ -6285,6 +6285,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AppliesNodeExtendedDataF
     ex1->AddItem("class_name", "ThisNode.ClassName");
     ex1->AddItem("property_value", "this.CodeValue");
     ex1->AddItem("is_MyClass", Utf8PrintfString("ThisNode.IsOfClass(\"%s\", \"%s\")", ecClass1->GetName().c_str(), ecClass1->GetSchema().GetName().c_str()));
+    ex1->AddItem("my_id", "ThisNode.InstanceId");
     rule1->AddCustomizationRule(*ex1);
 
     ExtendedDataRule* ex2 = new ExtendedDataRule(Utf8PrintfString("ThisNode.IsOfClass(\"%s\", \"%s\")", ecClass1->GetName().c_str(), ecClass1->GetSchema().GetName().c_str()));
@@ -6305,7 +6306,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AppliesNodeExtendedDataF
 
     RapidJsonAccessor extendedData = rootNodes[0]->GetUsersExtendedData();
     ASSERT_TRUE(extendedData.GetJson().IsObject());
-    ASSERT_EQ(7, extendedData.GetJson().MemberCount());
+    ASSERT_EQ(8, extendedData.GetJson().MemberCount());
     
     ASSERT_TRUE(extendedData.GetJson().HasMember("class_name"));
     EXPECT_STREQ(ecClass1->GetName().c_str(), extendedData.GetJson()["class_name"].GetString());
@@ -6315,6 +6316,9 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AppliesNodeExtendedDataF
 
     ASSERT_TRUE(extendedData.GetJson().HasMember("is_MyClass"));
     EXPECT_TRUE(extendedData.GetJson()["is_MyClass"].GetBool());
+
+    ASSERT_TRUE(extendedData.GetJson().HasMember("my_id"));
+    EXPECT_STREQ("0x1", extendedData.GetJson()["my_id"].GetString());
 
     ASSERT_TRUE(extendedData.GetJson().HasMember("constant_bool"));
     EXPECT_TRUE(extendedData.GetJson()["constant_bool"].GetBool());

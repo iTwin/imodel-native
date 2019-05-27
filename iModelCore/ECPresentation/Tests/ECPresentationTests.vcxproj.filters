@@ -24,48 +24,6 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\SelectionManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NonPublished\RulesEngine\ContentProviderTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\RulesEngine\ECDbTestProject.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\RulesEngine\ECSchemaHelperTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\RulesEngine\ExpectedQueries.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\RulesEngine\NodesProviderTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\RulesEngine\QueryBuilderTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\RulesEngine\QueryExecutorTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\RulesEngine\TestHelpers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\RulesEngine\TestLocalizationProvider.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\RulesEngine\TestNavNode.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\RulesEngine\TestNodesProvider.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\RulesEngine\TestRulesDrivenPresentationManagerImpl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\PresentationRules\PresentationRulesTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\RulesEngine\PresentationManagerTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="TestHelpers\ECPresentationTest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -90,6 +48,48 @@
     <ClInclude Include="TestHelpers\TestUserSettings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="NonPublished\PresentationRules\PresentationRulesTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\RulesEngine\ContentProviderTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\RulesEngine\ECDbTestProject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\RulesEngine\ECSchemaHelperTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\RulesEngine\ExpectedQueries.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\RulesEngine\NodesProviderTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\RulesEngine\PresentationManagerTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\RulesEngine\QueryBuilderTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\RulesEngine\QueryExecutorTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\RulesEngine\TestHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\RulesEngine\TestLocalizationProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\RulesEngine\TestNavNode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\RulesEngine\TestNodesProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\RulesEngine\TestRulesDrivenPresentationManagerImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -101,7 +101,109 @@
     <ClCompile Include="BackDoor\SelectionManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TestHelpers\ECPresentationTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TestHelpers\IssueReporter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TestHelpers\TestRuleSetLocater.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\AllInstanceNodesSpecificationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\AllRelatedInstanceNodesSpecificationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\CheckBoxRuleTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\ChildNodeRuleTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\ContentInstancesOfSpecificClassesSpecificationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\ContentModifierTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\ContentRelatedInstancesSpecificationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\ContentRuleTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\ContentSpecificationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\CustomNodeSpecificationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\ExtendedDataRuleTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\GroupingRuleTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\ImageIdOverrideTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\InstanceLabelOverrideTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\InstanceNodesOfSpecificClassesSpecificationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\LabelOverrideTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\LocalizationResourceKeyDefinitionTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\PresentationRuleSetTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\PresentationRulesHashingTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\PropertiesDisplaySpecificationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\PropertyEditorRulesTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\RelatedInstanceNodesSpecificationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\RelatedInstanceSpecificationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\RelatedPropertiesSpecificationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\SearchResultInstanceNodesSpecificationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\SelectedNodeInstancesSpecificationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\SortingRuleTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\StyleOverrideTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\UserSettingsGroupTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="NonPublished\RulesEngine\CheckboxRuleTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\RulesEngine\Content_LocatingClasses.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\RulesEngine\ContentCacheTests.cpp">
@@ -147,6 +249,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\RulesEngine\ECExpressionsToECSqlConverterTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\RulesEngine\ECInstanceChangeHandlerTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\RulesEngine\ECSchemaHelperTests.cpp">
@@ -203,10 +308,19 @@
     <ClCompile Include="NonPublished\RulesEngine\OptimizedExpressionsEvaluationTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\RulesEngine\PresentationManagerContentTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="NonPublished\RulesEngine\PresentationManagerImplTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\RulesEngine\PresentationManagerMultithreadingTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\RulesEngine\PresentationManagerNavigationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\RulesEngine\PresentationManagerTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\RulesEngine\QueryBasedNodesProviderTests.cpp">
@@ -216,6 +330,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\RulesEngine\QueryExecutorTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\RulesEngine\RuleSetEmbedderTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\RulesEngine\RuleSetLocaterTests.cpp">
@@ -239,142 +356,25 @@
     <ClCompile Include="NonPublished\RulesEngine\UserSettingsTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\ConnectionManagerTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DefaultCategorySupplierTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DefaultECPresentationSerializerTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DefaultPropertyFormatterTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\IECPresentationManagerTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="NonPublished\PresentationRulesetTesterTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\PresentationRules\AllInstanceNodesSpecificationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\AllRelatedInstanceNodesSpecificationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\CheckBoxRuleTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\ChildNodeRuleTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\ContentInstancesOfSpecificClassesSpecificationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\ContentModifierTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\ContentRelatedInstancesSpecificationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\ContentRuleTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\ContentSpecificationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\CustomNodeSpecificationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\GroupingRuleTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\ImageIdOverrideTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\InstanceLabelOverrideTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\InstanceNodesOfSpecificClassesSpecificationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\LabelOverrideTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\LocalizationResourceKeyDefinitionTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\PresentationRuleSetTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\PresentationRulesHashingTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\PropertiesDisplaySpecificationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\PropertyEditorRulesTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\RelatedInstanceNodesSpecificationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\RelatedInstanceSpecificationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\RelatedPropertiesSpecificationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\SearchResultInstanceNodesSpecificationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\SelectedNodeInstancesSpecificationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\SortingRuleTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\StyleOverrideTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\UserSettingsGroupTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\RulesEngine\Content_LocatingClasses.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\RulesEngine\ECInstanceChangeHandlerTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\RulesEngine\PresentationManagerContentTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\RulesEngine\PresentationManagerNavigationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\RulesEngine\PresentationManagerTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\RulesEngine\RuleSetEmbedderTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ConnectionManagerTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\DefaultCategorySupplierTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\DefaultECPresentationSerializerTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\DefaultPropertyFormatterTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\IECPresentationManagerTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\SelectionTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TestHelpers\ECPresentationTest.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TestHelpers\IssueReporter.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TestHelpers\TestRuleSetLocater.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\PresentationRules\ExtendedDataRuleTests.cpp">
+    <ClCompile Include="NonPublished\SelectionTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
