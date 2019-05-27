@@ -25,9 +25,18 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct ScalableMeshAdmin : DgnHost::IHostObject
     {
+
+    public:
+        struct ProductInfo
+            {
+            WString m_productName;
+            WString m_productVersion;
+            };
+
     private:
 
         IScalableMeshTextureGeneratorPtr m_textureGeneratorPtr;
+        ProductInfo                      m_productInfo;
 
     public:
 
@@ -66,6 +75,17 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
         virtual void _SetTextureGenerator(IScalableMeshTextureGeneratorPtr& textureGenerator)
             { 
             m_textureGeneratorPtr = textureGenerator;        
+            }
+
+        virtual ProductInfo _GetProductInfo() const
+            {
+            return m_productInfo;
+            }
+
+        virtual void _SetProductInfo(ProductInfo productInfo)
+            {
+            m_productInfo.m_productName = productInfo.m_productName;
+            m_productInfo.m_productVersion = productInfo.m_productVersion;
             }
 
         virtual Utf8String _GetProjectID() const { return Utf8String(); }
