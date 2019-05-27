@@ -27,8 +27,7 @@ m_cache(other.m_cache)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-CacheTransaction::~CacheTransaction()
-    {}
+CacheTransaction::~CacheTransaction() {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -36,7 +35,7 @@ CacheTransaction::~CacheTransaction()
 CacheTransaction& CacheTransaction::operator=(CacheTransaction&& other)
     {
     Transaction::operator=(std::move(other));
-    
+
     m_cache = other.m_cache;
     other.m_cache = nullptr;
 
@@ -49,8 +48,7 @@ CacheTransaction& CacheTransaction::operator=(CacheTransaction&& other)
 IDataSourceCache& CacheTransaction::GetCache() const
     {
     if (!IsActive())
-        {
         BeAssert(IsActive());
-        }
+
     return *m_cache;
     }
