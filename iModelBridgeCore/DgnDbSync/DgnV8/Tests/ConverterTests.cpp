@@ -1411,7 +1411,7 @@ extern "C" iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Sam.Wilson                      5/19
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ConverterTests, DetectDeletionsInEmbeddedFiles)
+TEST_F(ConverterTests, DISABLED_DetectDeletionsInEmbeddedFiles)
     {
     m_params.SetMatchOnEmbeddedFileBasename(true);
 

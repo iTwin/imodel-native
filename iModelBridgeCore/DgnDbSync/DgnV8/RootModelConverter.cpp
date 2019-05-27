@@ -83,8 +83,10 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     DgnV8Api::DgnFileStatus openStatus;    
     m_rootFile = OpenDgnV8File(openStatus, rootFileName);
     if (!m_rootFile.IsValid())
+        {
+        LOG.errorv("Error opening the file %d", openStatus);
         return openStatus;
-
+        }
 
     //  Identify the root model
     auto rootModelId = _GetRootModelId();
