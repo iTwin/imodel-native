@@ -15,7 +15,7 @@ static constexpr Json::StaticString json_concurrent() { return Json::StaticStrin
 static constexpr Json::StaticString json_cachedStatementsPerWorker() { return Json::StaticString("cachedStatementsPerWorker"); }
 static constexpr Json::StaticString json_maxQueueSize() { return Json::StaticString("maxQueueSize"); }
 static constexpr Json::StaticString json_minMonitorInterval() { return Json::StaticString("minMonitorInterval"); }
-static constexpr Json::StaticString json_idolCleanupTime() { return Json::StaticString("idolCleanupTime"); }
+static constexpr Json::StaticString json_idleCleanupTime() { return Json::StaticString("idleCleanupTime"); }
 static constexpr Json::StaticString json_completedTaskExpires() { return Json::StaticString("completedTaskExpires"); }
 static constexpr Json::StaticString json_quota_timeLimit() { return Json::StaticString("timeLimit"); }
 static constexpr Json::StaticString json_quota_memoryLimit() { return Json::StaticString("memoryLimit"); }
@@ -77,7 +77,7 @@ ConcurrentQueryManager::Quota& ConcurrentQueryManager::Quota::FromJson(Json::Val
 void ConcurrentQueryManager::Config::ToJson(Json::Value& v) const
     {
     v = Json::Value(Json::ValueType::objectValue);
-    v[json_idolCleanupTime()] = static_cast<int>(m_idolCleanupTime.count());
+    v[json_idleCleanupTime()] = static_cast<int>(m_idleCleanupTime.count());
     v[json_minMonitorInterval()] = static_cast<int>(m_minMonitorInterval.count());
     v[json_completedTaskExpires()] = static_cast<int>(m_completedTaskExpires.count());
     v[json_cachedStatementsPerWorker()] = static_cast<int>(m_cacheStatementsPerThread);
@@ -92,8 +92,8 @@ void ConcurrentQueryManager::Config::ToJson(Json::Value& v) const
 //---------------------------------------------------------------------------------------
 ConcurrentQueryManager::Config& ConcurrentQueryManager::Config::FromJson(Json::Value const& v)
     {
-    if (v.isMember(json_idolCleanupTime()))
-        m_idolCleanupTime = seconds(v[json_idolCleanupTime()].asInt());
+    if (v.isMember(json_idleCleanupTime()))
+        m_idleCleanupTime = seconds(v[json_idleCleanupTime()].asInt());
 
     if (v.isMember(json_minMonitorInterval()))
         m_minMonitorInterval = seconds(v[json_minMonitorInterval()].asInt());
@@ -126,7 +126,7 @@ ConcurrentQueryManager::Config::Config(const Config&& rhs)
     m_cacheStatementsPerThread(std::move(rhs.m_cacheStatementsPerThread)),
     m_maxQueueSize(std::move(rhs.m_maxQueueSize)),
     m_quota(std::move(rhs.m_quota)),
-    m_idolCleanupTime(std::move(rhs.m_idolCleanupTime)),
+    m_idleCleanupTime(std::move(rhs.m_idleCleanupTime)),
     m_minMonitorInterval(std::move(rhs.m_minMonitorInterval)),
     m_completedTaskExpires(std::move(rhs.m_completedTaskExpires))
     {
@@ -142,7 +142,7 @@ ConcurrentQueryManager::Config::Config(const Config& rhs)
     m_cacheStatementsPerThread(rhs.m_cacheStatementsPerThread),
     m_maxQueueSize(rhs.m_maxQueueSize),
     m_quota(rhs.m_quota),
-    m_idolCleanupTime(rhs.m_idolCleanupTime),
+    m_idleCleanupTime(rhs.m_idleCleanupTime),
     m_minMonitorInterval(rhs.m_minMonitorInterval),
     m_completedTaskExpires(rhs.m_completedTaskExpires)
     {
@@ -161,7 +161,7 @@ ConcurrentQueryManager::Config& ConcurrentQueryManager::Config::operator= (const
         m_cacheStatementsPerThread = std::move(rhs.m_cacheStatementsPerThread);
         m_maxQueueSize = std::move(rhs.m_maxQueueSize);
         m_quota = std::move(rhs.m_quota);
-        m_idolCleanupTime = rhs.m_idolCleanupTime;
+        m_idleCleanupTime = rhs.m_idleCleanupTime;
         m_minMonitorInterval = rhs.m_minMonitorInterval;
         m_completedTaskExpires = rhs.m_completedTaskExpires;
         }
@@ -181,7 +181,7 @@ ConcurrentQueryManager::Config& ConcurrentQueryManager::Config::operator= (const
         m_cacheStatementsPerThread = rhs.m_cacheStatementsPerThread;
         m_maxQueueSize = rhs.m_maxQueueSize;
         m_quota = rhs.m_quota;
-        m_idolCleanupTime = rhs.m_idolCleanupTime;
+        m_idleCleanupTime = rhs.m_idleCleanupTime;
         m_minMonitorInterval = rhs.m_minMonitorInterval;
         m_completedTaskExpires = rhs.m_completedTaskExpires;
         }

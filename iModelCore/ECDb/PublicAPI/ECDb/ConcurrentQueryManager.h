@@ -63,7 +63,7 @@ struct ConcurrentQueryManager final
             unsigned int m_concurrent;
             unsigned int m_cacheStatementsPerThread;
             unsigned int m_maxQueueSize;
-            std::chrono::seconds m_idolCleanupTime;
+            std::chrono::seconds m_idleCleanupTime;
             std::chrono::seconds m_minMonitorInterval;
             std::chrono::seconds m_completedTaskExpires;
             std::function<void(Db const&)> m_afterConnectionOpenned;
@@ -79,7 +79,7 @@ struct ConcurrentQueryManager final
                 m_concurrent(std::thread::hardware_concurrency()),
                 m_cacheStatementsPerThread(20),
                 m_maxQueueSize(std::thread::hardware_concurrency() * 1000),
-                m_idolCleanupTime(20min),
+                m_idleCleanupTime(20min),
                 m_minMonitorInterval(1s),
                 m_completedTaskExpires(1min),
                 m_quota()
@@ -90,7 +90,7 @@ struct ConcurrentQueryManager final
             unsigned int GetMaxQueueSize() const noexcept { return m_maxQueueSize; }
             unsigned int GetCacheStatementPerThread() const noexcept { return m_cacheStatementsPerThread; }
             std::chrono::seconds GetMinMonitorInterval() const noexcept { return m_minMonitorInterval; }
-            std::chrono::seconds GetIdolCleanupTime() const noexcept { return m_idolCleanupTime; }
+            std::chrono::seconds GetIdolCleanupTime() const noexcept { return m_idleCleanupTime; }
             std::chrono::seconds GetAutoExpireTimeForCompletedQuery() const { return m_completedTaskExpires; }
 
             std::function<void(Db const&)> const& GetAfterConnectionOpenedCallback() const noexcept { return  m_afterConnectionOpenned; }
@@ -101,7 +101,7 @@ struct ConcurrentQueryManager final
             Config& SetCacheStatementsPerThread(unsigned int v) noexcept { m_cacheStatementsPerThread = v; return *this; }
             Config& SetMaxQueueSize(unsigned int v) noexcept { m_maxQueueSize = v; return *this; }
             Config& SetMinMonitorInterval(std::chrono::seconds seconds) noexcept { m_minMonitorInterval = seconds;  return *this; }
-            Config& SetIdolCleanupTime(std::chrono::seconds seconds) noexcept { m_idolCleanupTime = seconds; return *this; }
+            Config& SetIdleCleanupTime(std::chrono::seconds seconds) noexcept { m_idleCleanupTime = seconds; return *this; }
             Config& SetQuota(Quota quota) noexcept { m_quota = quota;  return *this; }
             Config& SetAfterConnectionOpenned(std::function<void(Db const&)> callback) noexcept { m_afterConnectionOpenned = callback;  return *this; }
             Config& SetBeforeConnectionClosed(std::function<void(Db const&)> callback) noexcept { m_beforeConnectionClosed = callback;  return *this; }

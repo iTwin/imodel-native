@@ -236,9 +236,9 @@ Napi::Value JsInterop::ConcurrentQueryInit(ECDbCR ecdb, Napi::Env env, Napi::Obj
     if (!v.IsUndefined() && !v.IsNull())
         config.SetMinMonitorInterval(std::chrono::seconds(v.Uint32Value()));
 
-    v = cfg.Get("idolCleanupTime").ToNumber();
+    v = cfg.Get("idleCleanupTime").ToNumber();
     if (!v.IsUndefined() && !v.IsNull())
-        config.SetIdolCleanupTime(std::chrono::seconds(v.Uint32Value()));
+        config.SetIdleCleanupTime(std::chrono::seconds(v.Uint32Value()));
 
     v = cfg.Get("autoExpireTimeForCompletedQuery").ToNumber();
     if (!v.IsUndefined() && !v.IsNull())

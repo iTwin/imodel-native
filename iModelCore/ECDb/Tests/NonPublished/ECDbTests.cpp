@@ -154,7 +154,7 @@ TEST_F(ECDbTestFixture, ConcurrentQueryManager)
     TimeoutFunc timeoutFunc;
     auto config = ConcurrentQueryManager::Config()
         .SetQuota(ConcurrentQueryManager::Quota(1s,1000))
-        .SetIdolCleanupTime(30s)
+        .SetIdleCleanupTime(30s)
         .SetAfterConnectionOpenned([&timeoutFunc] (Db const& db) {
             db.AddFunction(timeoutFunc);
             });
