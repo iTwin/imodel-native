@@ -25,6 +25,8 @@ nameToDefine = __QUANTITYTAKEOFFSASPECTS_BUILD__
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
+$(o)EnergyPerformanceAspectHandler$(oext) : $(_MakeFilePath)EnergyPerformanceAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/EnergyPerformanceAspectHandler.h
+
 $(o)PerimeterAspectHandler$(oext) : $(_MakeFilePath)PerimeterAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PerimeterAspectHandler.h
 
 $(o)PileAspectHandler$(oext) : $(_MakeFilePath)PileAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PileAspectHandler.h

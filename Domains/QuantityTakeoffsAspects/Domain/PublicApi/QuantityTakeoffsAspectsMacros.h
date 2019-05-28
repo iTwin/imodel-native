@@ -32,6 +32,7 @@
     END_QUANTITYTAKEOFFSASPECTS_NAMESPACE
 
 
+#define QUANTITYTAKEOFFSASPECTS_CLASS_EnergyPerformanceAspect       "EnergyPerformanceAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_PerimeterAspect               "PerimeterAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_PileAspect                    "PileAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_SideAreasAspect               "SideAreasAspect"
@@ -39,6 +40,8 @@
 #define QUANTITYTAKEOFFSASPECTS_CLASS_SlopeAspect                   "SlopeAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_ThicknessAspect               "ThicknessAspect"
 
+
+#define QUANTITYTAKEOFFSASPECTS_ENERGYPERFORMANCEASPECT_Rating      "Rating"
 
 #define QUANTITYTAKEOFFSASPECTS_PERIMETERASPECT_Perimeter           "Perimeter"
 
