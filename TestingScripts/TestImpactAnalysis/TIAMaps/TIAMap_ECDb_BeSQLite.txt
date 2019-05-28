@@ -3,10 +3,18 @@
 %OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=SchemaUpgradeTestFixture.*:DbMappingTestFixture.*:
 [imodel02\imodelcore\besqlite\besqlite.cpp]
 %OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=SchemaUpgradeTestFixture.*:DbMappingTestFixture.*:
+[imodel02\imodelcore\besqlite\changeset.cpp]
+%OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=ChangeSummaryTestFixtureV1.*:ChangeSummaryTestFixture.*:
+[imodel02\imodelcore\besqlite\belzma.cpp]
+%OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=FileInfoTestFixture.*:ECSqlStatementTestFixture.*:
 [imodel02\imodelcore\besqlite\sqlite\sqlite3.c]
 %OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=SchemaUpgradeTestFixture.*:DbMappingTestFixture.*:
+[imodel02\imodelcore\besqlite\besqliteprofilemanager.h]
+%OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=FileFormatCompatibilityTests.*:IndexTests.*:DateTimeTestFixture.*:SchemaPolicyTestFixture.*:SqliteJsonTests.*:ECSqlNavigationPropertyTestFixture.*:ECSqlToSqlGenerationTests.*:PrimArrayJsonInserterTests.*:ECSqlAdapterTestFixture.*:JsonECSqlSelectAdapterTests.*:JsonReaderTests.*:ECDbHoldingRelationshipStrengthTestFixture.*:ECSqlSelectPrepareTests.*:ECSqlExecutionFrameworkTests.*:ECInstanceFinderTests.*:ECDbMetaSchemaECSqlTestFixture.*:ECSqlCustomFunctionTestFixture.*:ECRelationshipInheritanceTestFixture.*:ECSqlStatementFunctionTestFixture.*:JsonInserterTests.*:RelationshipMappingTestFixture.*:ECSqlDeletePrepareTests.*:RelationshipStrengthTestFixture.*:DbMappingTestFixture.*:ChangeSummaryTestFixture.*:ECSqlInsertPrepareTests.*:ECInstanceInserterTests.*:ECInstanceUpdaterAgainstPrimitiveClassTests.*:FileInfoTestFixture.*:ECDbExpressionSymbolContextTests.*:RapidJsonTests.*:ECSqlStatementCacheTests.*:ECSqlStatementTestFixture.*:ECCrudWriteTokenTestFixture.*:JoinedTableTestFixture.*:SchemaUpgradeTestFixture.*:ECSqlRangeTreeTests.*:FuzzTestFixture.*:ChangeSummaryTestFixtureV1.*:SchemaManagerTests.*:ECSqlUpdatePrepareTests.*:SchemaRulesTestFixture.*:RelationshipsAndSharedTablesTestFixture.*:ECInstanceUpdaterTests.*:ECSqlPrepareTestFixture.*:TableSpaceTestFixture.*:JoinedTableECSqlStatementsTests.*:JsonUpdaterTests.*:ECDbTestFixture.*:
 [imodel02\imodelcore\besqlite\bebriefcasebasedidsequence.cpp]
 %OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=SchemaUpgradeTestFixture.*:DbMappingTestFixture.*:
+[imodel02\imodelcore\besqlite\sqlite\see-aes128-ofb.c]
+%OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=TableSpaceTestFixture.*:ECSqlStatementFunctionTestFixture.*:ChangeSummaryTestFixture.*:
 [imodel02\imodelcore\besqlite\besqliteprofilemanager.cpp]
 %OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=SchemaUpgradeTestFixture.*:DbMappingTestFixture.*:
 [imodel02\imodelcore\besqlite\l10n.cpp]

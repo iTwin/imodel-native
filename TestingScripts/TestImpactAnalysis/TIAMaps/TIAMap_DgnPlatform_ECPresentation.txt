@@ -1,12 +1,12 @@
 
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\contentproviders.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\selectednodeinstancesspecification.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\ecexpressioncontextsprovider.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\defaultecpresentationserializer.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\presentationruleset.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\navnodeproviders.h]
@@ -14,7 +14,7 @@
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\presentationrule.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\relatedclass.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\updatehandler.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\commontoolsinternal.h]
@@ -24,29 +24,29 @@
 [imodel02\imodelcore\ecpresentation\source\ecdbbasedcache.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\content.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\groupingrule.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\extendeddata.h]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\labeloverride.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\localization\xliffs\ecpresentation.xliff.h]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\relatedinstancenodesspecification.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\contentproviders.h]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\presentationmanagerimpl.h]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\contentdescriptorbuilder.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\ecexpressionoptimizer.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\presentationmanagerimpl.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\iecpresentationserializer.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\commontools.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\querybuilderhelpers.cpp]
@@ -58,13 +58,15 @@
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\contentspecificationshandler.h]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\queryexecutor.h]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\navigationquery.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\valuehelpers.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\localizationhelper.h]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
+[imodel02\imodelcore\ecpresentation\localization\xliffs\rulesengine.xliff.h]
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\updatehandler.h]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\instancenodesofspecificclassesspecification.cpp]
@@ -72,21 +74,21 @@
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\rulespreprocessor.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\rulesdrivenprovidercontext.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\imagehelper.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\localization.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\keyset.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\contentcache.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\contentquerybuilder.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\ecschemahelper.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\jsonnavnode.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\ecpresentationpch.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\navigationquery.h]
@@ -96,37 +98,37 @@
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\contentrule.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\rulesdrivenprovidercontext.h]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\customizationrule.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\selection.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\usersettings.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\rulesetlocater.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\querycontracts.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=UnitManagerTest.*:GeometryBuilderTests.*:TransactionManagerTests.*:DgnDbTest.*:DynamicTxnsTest.*:ChangeSummaryTestFixture.*:AnnotationTextStyleTest.*:CodesManagerTest.*:DoubleBriefcaseTest.*:MaterialTest.*:LinkElementTest.*:ImportTests.*:ViewDefinitionTests.*:EcutilsTests.*:DgnElementTests.*:DgnColorTests.*:AnnotationLeaderStyleTest.*:ElementGeomAndPlacementTests.*:AnnotationLeaderTest.*:FastQueryTest.*:DateTimeFormatterTest.*:BasicTextAnnotationSeedTest.*:VolumeElementTestFixture.*:DgnProject.DuplicateElementId:ElementDisplayProperties.*:MeshBuilderTest.*:DistanceParserTest.*:ExampleTestGroup.*:DisjointCurvesTest.*:SqlFunctionsTest.*:DgnModelTests.*:DirectionFormatterTest.*:ElementUriTests.*:ValueParser.*:VolumeFormatter.*:TextStringTest.*:RepositoryJsonTests.*:ImageUtilities_Tests.*:CodeSpecTests.*:ExtractLocksTest.*:RevisionTestFixture.*:AnnotationFrameTest.*:DirectionParserTest.*:Render_Tests.*:LinkTableRelationshipTests.*:ECInstancesCompatibility.*:PointParserTest.*:ElementAspectTests.*:DgnMarkupProjectTest.*:DgpRoundtripExpressionTests.*:AnnotationParagraphTest.*:TextAnnotationSeedTest.*:MissingHandlerTest.*:SearchableTextTest.*:UnitIterator.*:DgpInstanceListExpressionTests.*:ContentId.*:PointFormatter.*:DgnProjectPackageTest.*:AngleFormatterTest.*:TextAnnotationTest.*:VersionCompareTestFixture.*:GeometricPrimitiveTests.*:CsvFileTests.*:DgnLineStyleTest.*:GetSetCustomHandledProprty.*:FeatureTableTests.*:AnnotationTextBlockTest.*:BRepUtilTests.*:AngleParserTest.*:CategoryTests.*:ElementGeomPartTests.*:AnnotationLayoutTest.*:CompatibilityTests.*:AreaVolumeParserTest.*:BasicAnnotationTextStyleTest.*:DgpLiteralExpressionTests.*:DgnTexturesTest.*:AreaFormatter.*:DistanceFormatterTest.*:FunctionalDomainTests.*:DgnCodeSpecsTest.*:TypeTests.*:SchemaVersionTestFixture.*:ElementGroupTests.*:SingleBriefcaseLocksTest.*:ViewAttachmentTest.*:UnitIteratorOptionsTest.*:NodeId.*:FontTests.*:ImportTest.*:PhysicalMaterialTests.*:GeometryStreamTest.*:AnnotationFrameStyleTest.*:BisCoreDomainTests.*:UnitDefinitionTest.*:CreateFromInstanceTests.*:DgpFullyQualifiedExpressionTests.*:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=UnitManagerTest.*:GeometryBuilderTests.*:TransactionManagerTests.*:DgnDbTest.*:DynamicTxnsTest.*:ChangeSummaryTestFixture.*:AnnotationTextStyleTest.*:CodesManagerTest.*:DoubleBriefcaseTest.*:MaterialTest.*:LinkElementTest.*:ImportTests.*:ViewDefinitionTests.*:EcutilsTests.*:DgnElementTests.*:DgnColorTests.*:AnnotationLeaderStyleTest.*:ElementGeomAndPlacementTests.*:AnnotationLeaderTest.*:FastQueryTest.*:DateTimeFormatterTest.*:BasicTextAnnotationSeedTest.*:VolumeElementTestFixture.*:DgnProject.*:ElementDisplayProperties.*:MeshBuilderTest.*:DistanceParserTest.*:ExampleTestGroup.*:DisjointCurvesTest.*:SqlFunctionsTest.*:DgnModelTests.*:DirectionFormatterTest.*:ElementUriTests.*:ValueParser.*:VolumeFormatter.*:TextStringTest.*:RepositoryJsonTests.*:ImageUtilities_Tests.*:CodeSpecTests.*:ExtractLocksTest.*:RevisionTestFixture.*:AnnotationFrameTest.*:DirectionParserTest.*:Render_Tests.*:LinkTableRelationshipTests.*:ECInstancesCompatibility.*:PointParserTest.*:ElementAspectTests.*:DgnMarkupProjectTest.*:DgpRoundtripExpressionTests.*:AnnotationParagraphTest.*:TextAnnotationSeedTest.*:MissingHandlerTest.*:SearchableTextTest.*:UnitIterator.*:DgpInstanceListExpressionTests.*:ContentId.*:PointFormatter.*:DgnProjectPackageTest.*:AngleFormatterTest.*:TextAnnotationTest.*:VersionCompareTestFixture.*:GeometricPrimitiveTests.*:CsvFileTests.*:DgnLineStyleTest.*:GetSetCustomHandledProprty.*:FeatureTableTests.*:AnnotationTextBlockTest.*:BRepUtilTests.*:AngleParserTest.*:CategoryTests.*:ElementGeomPartTests.*:AnnotationLayoutTest.*:CompatibilityTests.*:AreaVolumeParserTest.*:BasicAnnotationTextStyleTest.*:DgpLiteralExpressionTests.*:DgnTexturesTest.*:AreaFormatter.*:DistanceFormatterTest.*:FunctionalDomainTests.*:DgnCodeSpecsTest.*:TypeTests.*:SchemaVersionTestFixture.*:ElementGroupTests.*:SingleBriefcaseLocksTest.*:ViewAttachmentTest.*:UnitIteratorOptionsTest.*:NodeId.*:FontTests.*:ImportTest.*:PhysicalMaterialTests.*:GeometryStreamTest.*:AnnotationFrameStyleTest.*:BisCoreDomainTests.*:UnitDefinitionTest.*:CreateFromInstanceTests.*:DgpFullyQualifiedExpressionTests.*:
 [imodel02\imodelcore\ecpresentation\source\navnode.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\jsonnavnode.h]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\contentspecification.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\queryexecutor.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\localizationhelper.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\singlethreadqueueexecutor.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\contentcache.h]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\logginghelper.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=UnitManagerTest.*:GeometryBuilderTests.*:TransactionManagerTests.*:DgnDbTest.*:DynamicTxnsTest.*:ChangeSummaryTestFixture.*:AnnotationTextStyleTest.*:CodesManagerTest.*:DoubleBriefcaseTest.*:MaterialTest.*:LinkElementTest.*:ImportTests.*:ViewDefinitionTests.*:EcutilsTests.*:DgnElementTests.*:DgnColorTests.*:AnnotationLeaderStyleTest.*:ElementGeomAndPlacementTests.*:AnnotationLeaderTest.*:FastQueryTest.*:DateTimeFormatterTest.*:BasicTextAnnotationSeedTest.*:VolumeElementTestFixture.*:DgnProject.DuplicateElementId:ElementDisplayProperties.*:MeshBuilderTest.*:DistanceParserTest.*:ExampleTestGroup.*:DisjointCurvesTest.*:SqlFunctionsTest.*:DgnModelTests.*:DirectionFormatterTest.*:ElementUriTests.*:ValueParser.*:VolumeFormatter.*:TextStringTest.*:RepositoryJsonTests.*:ImageUtilities_Tests.*:CodeSpecTests.*:ExtractLocksTest.*:RevisionTestFixture.*:AnnotationFrameTest.*:DirectionParserTest.*:Render_Tests.*:LinkTableRelationshipTests.*:ECInstancesCompatibility.*:PointParserTest.*:ElementAspectTests.*:DgnMarkupProjectTest.*:DgpRoundtripExpressionTests.*:AnnotationParagraphTest.*:TextAnnotationSeedTest.*:MissingHandlerTest.*:SearchableTextTest.*:UnitIterator.*:DgpInstanceListExpressionTests.*:ContentId.*:PointFormatter.*:DgnProjectPackageTest.*:AngleFormatterTest.*:TextAnnotationTest.*:VersionCompareTestFixture.*:GeometricPrimitiveTests.*:CsvFileTests.*:DgnLineStyleTest.*:GetSetCustomHandledProprty.*:FeatureTableTests.*:AnnotationTextBlockTest.*:BRepUtilTests.*:AngleParserTest.*:CategoryTests.*:ElementGeomPartTests.*:AnnotationLayoutTest.*:CompatibilityTests.*:AreaVolumeParserTest.*:BasicAnnotationTextStyleTest.*:DgpLiteralExpressionTests.*:DgnTexturesTest.*:AreaFormatter.*:DistanceFormatterTest.*:FunctionalDomainTests.*:DgnCodeSpecsTest.*:TypeTests.*:SchemaVersionTestFixture.*:ElementGroupTests.*:SingleBriefcaseLocksTest.*:ViewAttachmentTest.*:UnitIteratorOptionsTest.*:NodeId.*:FontTests.*:ImportTest.*:PhysicalMaterialTests.*:GeometryStreamTest.*:AnnotationFrameStyleTest.*:BisCoreDomainTests.*:UnitDefinitionTest.*:CreateFromInstanceTests.*:DgpFullyQualifiedExpressionTests.*:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=UnitManagerTest.*:GeometryBuilderTests.*:TransactionManagerTests.*:DgnDbTest.*:DynamicTxnsTest.*:ChangeSummaryTestFixture.*:AnnotationTextStyleTest.*:CodesManagerTest.*:DoubleBriefcaseTest.*:MaterialTest.*:LinkElementTest.*:ImportTests.*:ViewDefinitionTests.*:EcutilsTests.*:DgnElementTests.*:DgnColorTests.*:AnnotationLeaderStyleTest.*:ElementGeomAndPlacementTests.*:AnnotationLeaderTest.*:FastQueryTest.*:DateTimeFormatterTest.*:BasicTextAnnotationSeedTest.*:VolumeElementTestFixture.*:DgnProject.*:ElementDisplayProperties.*:MeshBuilderTest.*:DistanceParserTest.*:ExampleTestGroup.*:DisjointCurvesTest.*:SqlFunctionsTest.*:DgnModelTests.*:DirectionFormatterTest.*:ElementUriTests.*:ValueParser.*:VolumeFormatter.*:TextStringTest.*:RepositoryJsonTests.*:ImageUtilities_Tests.*:CodeSpecTests.*:ExtractLocksTest.*:RevisionTestFixture.*:AnnotationFrameTest.*:DirectionParserTest.*:Render_Tests.*:LinkTableRelationshipTests.*:ECInstancesCompatibility.*:PointParserTest.*:ElementAspectTests.*:DgnMarkupProjectTest.*:DgpRoundtripExpressionTests.*:AnnotationParagraphTest.*:TextAnnotationSeedTest.*:MissingHandlerTest.*:SearchableTextTest.*:UnitIterator.*:DgpInstanceListExpressionTests.*:ContentId.*:PointFormatter.*:DgnProjectPackageTest.*:AngleFormatterTest.*:TextAnnotationTest.*:VersionCompareTestFixture.*:GeometricPrimitiveTests.*:CsvFileTests.*:DgnLineStyleTest.*:GetSetCustomHandledProprty.*:FeatureTableTests.*:AnnotationTextBlockTest.*:BRepUtilTests.*:AngleParserTest.*:CategoryTests.*:ElementGeomPartTests.*:AnnotationLayoutTest.*:CompatibilityTests.*:AreaVolumeParserTest.*:BasicAnnotationTextStyleTest.*:DgpLiteralExpressionTests.*:DgnTexturesTest.*:AreaFormatter.*:DistanceFormatterTest.*:FunctionalDomainTests.*:DgnCodeSpecsTest.*:TypeTests.*:SchemaVersionTestFixture.*:ElementGroupTests.*:SingleBriefcaseLocksTest.*:ViewAttachmentTest.*:UnitIteratorOptionsTest.*:NodeId.*:FontTests.*:ImportTest.*:PhysicalMaterialTests.*:GeometryStreamTest.*:AnnotationFrameStyleTest.*:BisCoreDomainTests.*:UnitDefinitionTest.*:CreateFromInstanceTests.*:DgpFullyQualifiedExpressionTests.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\contentclasseslocater.h]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\querybuilder.h]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\querybuilderhelpers.h]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\contentclasseslocater.cpp]
@@ -138,13 +140,13 @@
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\customfunctions.h]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\contentspecificationshandler.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=UnitManagerTest.*:GeometryBuilderTests.*:TransactionManagerTests.*:DgnDbTest.*:DynamicTxnsTest.*:ChangeSummaryTestFixture.*:AnnotationTextStyleTest.*:CodesManagerTest.*:DoubleBriefcaseTest.*:MaterialTest.*:LinkElementTest.*:ImportTests.*:ViewDefinitionTests.*:EcutilsTests.*:DgnElementTests.*:DgnColorTests.*:AnnotationLeaderStyleTest.*:ElementGeomAndPlacementTests.*:AnnotationLeaderTest.*:FastQueryTest.*:DateTimeFormatterTest.*:BasicTextAnnotationSeedTest.*:VolumeElementTestFixture.*:DgnProject.DuplicateElementId:ElementDisplayProperties.*:MeshBuilderTest.*:DistanceParserTest.*:ExampleTestGroup.*:DisjointCurvesTest.*:SqlFunctionsTest.*:DgnModelTests.*:DirectionFormatterTest.*:ElementUriTests.*:ValueParser.*:VolumeFormatter.*:TextStringTest.*:RepositoryJsonTests.*:ImageUtilities_Tests.*:CodeSpecTests.*:ExtractLocksTest.*:RevisionTestFixture.*:AnnotationFrameTest.*:DirectionParserTest.*:Render_Tests.*:LinkTableRelationshipTests.*:ECInstancesCompatibility.*:PointParserTest.*:ElementAspectTests.*:DgnMarkupProjectTest.*:DgpRoundtripExpressionTests.*:AnnotationParagraphTest.*:TextAnnotationSeedTest.*:MissingHandlerTest.*:SearchableTextTest.*:UnitIterator.*:DgpInstanceListExpressionTests.*:ContentId.*:PointFormatter.*:DgnProjectPackageTest.*:AngleFormatterTest.*:TextAnnotationTest.*:VersionCompareTestFixture.*:GeometricPrimitiveTests.*:CsvFileTests.*:DgnLineStyleTest.*:GetSetCustomHandledProprty.*:FeatureTableTests.*:AnnotationTextBlockTest.*:BRepUtilTests.*:AngleParserTest.*:CategoryTests.*:ElementGeomPartTests.*:AnnotationLayoutTest.*:CompatibilityTests.*:AreaVolumeParserTest.*:BasicAnnotationTextStyleTest.*:DgpLiteralExpressionTests.*:DgnTexturesTest.*:AreaFormatter.*:DistanceFormatterTest.*:FunctionalDomainTests.*:DgnCodeSpecsTest.*:TypeTests.*:SchemaVersionTestFixture.*:ElementGroupTests.*:SingleBriefcaseLocksTest.*:ViewAttachmentTest.*:UnitIteratorOptionsTest.*:NodeId.*:FontTests.*:ImportTest.*:PhysicalMaterialTests.*:GeometryStreamTest.*:AnnotationFrameStyleTest.*:BisCoreDomainTests.*:UnitDefinitionTest.*:CreateFromInstanceTests.*:DgpFullyQualifiedExpressionTests.*:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=UnitManagerTest.*:GeometryBuilderTests.*:TransactionManagerTests.*:DgnDbTest.*:DynamicTxnsTest.*:ChangeSummaryTestFixture.*:AnnotationTextStyleTest.*:CodesManagerTest.*:DoubleBriefcaseTest.*:MaterialTest.*:LinkElementTest.*:ImportTests.*:ViewDefinitionTests.*:EcutilsTests.*:DgnElementTests.*:DgnColorTests.*:AnnotationLeaderStyleTest.*:ElementGeomAndPlacementTests.*:AnnotationLeaderTest.*:FastQueryTest.*:DateTimeFormatterTest.*:BasicTextAnnotationSeedTest.*:VolumeElementTestFixture.*:DgnProject.*:ElementDisplayProperties.*:MeshBuilderTest.*:DistanceParserTest.*:ExampleTestGroup.*:DisjointCurvesTest.*:SqlFunctionsTest.*:DgnModelTests.*:DirectionFormatterTest.*:ElementUriTests.*:ValueParser.*:VolumeFormatter.*:TextStringTest.*:RepositoryJsonTests.*:ImageUtilities_Tests.*:CodeSpecTests.*:ExtractLocksTest.*:RevisionTestFixture.*:AnnotationFrameTest.*:DirectionParserTest.*:Render_Tests.*:LinkTableRelationshipTests.*:ECInstancesCompatibility.*:PointParserTest.*:ElementAspectTests.*:DgnMarkupProjectTest.*:DgpRoundtripExpressionTests.*:AnnotationParagraphTest.*:TextAnnotationSeedTest.*:MissingHandlerTest.*:SearchableTextTest.*:UnitIterator.*:DgpInstanceListExpressionTests.*:ContentId.*:PointFormatter.*:DgnProjectPackageTest.*:AngleFormatterTest.*:TextAnnotationTest.*:VersionCompareTestFixture.*:GeometricPrimitiveTests.*:CsvFileTests.*:DgnLineStyleTest.*:GetSetCustomHandledProprty.*:FeatureTableTests.*:AnnotationTextBlockTest.*:BRepUtilTests.*:AngleParserTest.*:CategoryTests.*:ElementGeomPartTests.*:AnnotationLayoutTest.*:CompatibilityTests.*:AreaVolumeParserTest.*:BasicAnnotationTextStyleTest.*:DgpLiteralExpressionTests.*:DgnTexturesTest.*:AreaFormatter.*:DistanceFormatterTest.*:FunctionalDomainTests.*:DgnCodeSpecsTest.*:TypeTests.*:SchemaVersionTestFixture.*:ElementGroupTests.*:SingleBriefcaseLocksTest.*:ViewAttachmentTest.*:UnitIteratorOptionsTest.*:NodeId.*:FontTests.*:ImportTest.*:PhysicalMaterialTests.*:GeometryStreamTest.*:AnnotationFrameStyleTest.*:BisCoreDomainTests.*:UnitDefinitionTest.*:CreateFromInstanceTests.*:DgpFullyQualifiedExpressionTests.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\imageidoverride.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\contentmodifier.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\querycontracts.h]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\ecexpressionoptimizer.h]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\ecschemahelper.h]
@@ -158,7 +160,7 @@
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\childnoderule.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\navnodescache.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=UnitManagerTest.*:GeometryBuilderTests.*:TransactionManagerTests.*:DgnDbTest.*:DynamicTxnsTest.*:ChangeSummaryTestFixture.*:AnnotationTextStyleTest.*:CodesManagerTest.*:DoubleBriefcaseTest.*:MaterialTest.*:LinkElementTest.*:ImportTests.*:ViewDefinitionTests.*:EcutilsTests.*:DgnElementTests.*:DgnColorTests.*:AnnotationLeaderStyleTest.*:ElementGeomAndPlacementTests.*:AnnotationLeaderTest.*:FastQueryTest.*:DateTimeFormatterTest.*:BasicTextAnnotationSeedTest.*:VolumeElementTestFixture.*:DgnProject.DuplicateElementId:ElementDisplayProperties.*:MeshBuilderTest.*:DistanceParserTest.*:ExampleTestGroup.*:DisjointCurvesTest.*:SqlFunctionsTest.*:DgnModelTests.*:DirectionFormatterTest.*:ElementUriTests.*:ValueParser.*:VolumeFormatter.*:TextStringTest.*:RepositoryJsonTests.*:ImageUtilities_Tests.*:CodeSpecTests.*:ExtractLocksTest.*:RevisionTestFixture.*:AnnotationFrameTest.*:DirectionParserTest.*:Render_Tests.*:LinkTableRelationshipTests.*:ECInstancesCompatibility.*:PointParserTest.*:ElementAspectTests.*:DgnMarkupProjectTest.*:DgpRoundtripExpressionTests.*:AnnotationParagraphTest.*:TextAnnotationSeedTest.*:MissingHandlerTest.*:SearchableTextTest.*:UnitIterator.*:DgpInstanceListExpressionTests.*:ContentId.*:PointFormatter.*:DgnProjectPackageTest.*:AngleFormatterTest.*:TextAnnotationTest.*:VersionCompareTestFixture.*:GeometricPrimitiveTests.*:CsvFileTests.*:DgnLineStyleTest.*:GetSetCustomHandledProprty.*:FeatureTableTests.*:AnnotationTextBlockTest.*:BRepUtilTests.*:AngleParserTest.*:CategoryTests.*:ElementGeomPartTests.*:AnnotationLayoutTest.*:CompatibilityTests.*:AreaVolumeParserTest.*:BasicAnnotationTextStyleTest.*:DgpLiteralExpressionTests.*:DgnTexturesTest.*:AreaFormatter.*:DistanceFormatterTest.*:FunctionalDomainTests.*:DgnCodeSpecsTest.*:TypeTests.*:SchemaVersionTestFixture.*:ElementGroupTests.*:SingleBriefcaseLocksTest.*:ViewAttachmentTest.*:UnitIteratorOptionsTest.*:NodeId.*:FontTests.*:ImportTest.*:PhysicalMaterialTests.*:GeometryStreamTest.*:AnnotationFrameStyleTest.*:BisCoreDomainTests.*:UnitDefinitionTest.*:CreateFromInstanceTests.*:DgpFullyQualifiedExpressionTests.*:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=UnitManagerTest.*:GeometryBuilderTests.*:TransactionManagerTests.*:DgnDbTest.*:DynamicTxnsTest.*:ChangeSummaryTestFixture.*:AnnotationTextStyleTest.*:CodesManagerTest.*:DoubleBriefcaseTest.*:MaterialTest.*:LinkElementTest.*:ImportTests.*:ViewDefinitionTests.*:EcutilsTests.*:DgnElementTests.*:DgnColorTests.*:AnnotationLeaderStyleTest.*:ElementGeomAndPlacementTests.*:AnnotationLeaderTest.*:FastQueryTest.*:DateTimeFormatterTest.*:BasicTextAnnotationSeedTest.*:VolumeElementTestFixture.*:DgnProject.*:ElementDisplayProperties.*:MeshBuilderTest.*:DistanceParserTest.*:ExampleTestGroup.*:DisjointCurvesTest.*:SqlFunctionsTest.*:DgnModelTests.*:DirectionFormatterTest.*:ElementUriTests.*:ValueParser.*:VolumeFormatter.*:TextStringTest.*:RepositoryJsonTests.*:ImageUtilities_Tests.*:CodeSpecTests.*:ExtractLocksTest.*:RevisionTestFixture.*:AnnotationFrameTest.*:DirectionParserTest.*:Render_Tests.*:LinkTableRelationshipTests.*:ECInstancesCompatibility.*:PointParserTest.*:ElementAspectTests.*:DgnMarkupProjectTest.*:DgpRoundtripExpressionTests.*:AnnotationParagraphTest.*:TextAnnotationSeedTest.*:MissingHandlerTest.*:SearchableTextTest.*:UnitIterator.*:DgpInstanceListExpressionTests.*:ContentId.*:PointFormatter.*:DgnProjectPackageTest.*:AngleFormatterTest.*:TextAnnotationTest.*:VersionCompareTestFixture.*:GeometricPrimitiveTests.*:CsvFileTests.*:DgnLineStyleTest.*:GetSetCustomHandledProprty.*:FeatureTableTests.*:AnnotationTextBlockTest.*:BRepUtilTests.*:AngleParserTest.*:CategoryTests.*:ElementGeomPartTests.*:AnnotationLayoutTest.*:CompatibilityTests.*:AreaVolumeParserTest.*:BasicAnnotationTextStyleTest.*:DgpLiteralExpressionTests.*:DgnTexturesTest.*:AreaFormatter.*:DistanceFormatterTest.*:FunctionalDomainTests.*:DgnCodeSpecsTest.*:TypeTests.*:SchemaVersionTestFixture.*:ElementGroupTests.*:SingleBriefcaseLocksTest.*:ViewAttachmentTest.*:UnitIteratorOptionsTest.*:NodeId.*:FontTests.*:ImportTest.*:PhysicalMaterialTests.*:GeometryStreamTest.*:AnnotationFrameStyleTest.*:BisCoreDomainTests.*:UnitDefinitionTest.*:CreateFromInstanceTests.*:DgpFullyQualifiedExpressionTests.*:
 [imodel02\imodelcore\ecpresentation\source\connection.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\relatedpropertiesspecification.cpp]
@@ -166,7 +168,7 @@
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\presentationmanager.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\extendeddata.cpp]
-%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.PropertyTest1:VersionCompareTestFixture.PropertyTest2:
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\propertyinfostore.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\rulespreprocessor.h]

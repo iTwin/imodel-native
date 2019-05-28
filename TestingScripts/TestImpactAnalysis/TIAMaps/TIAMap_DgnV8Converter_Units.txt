@@ -2,16 +2,16 @@
 [imodel02\imodelcore\units\src\formatting\formatutils.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\units\src\formatting\numericformatspec.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.AttachIfc:
-[imodel02\imodelcore\units\src\unittypes.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.AttachIfc:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\units\src\formatting\format.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.AttachIfc:
-[imodel02\imodelcore\units\src\formatting\compositevaluespec.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.AttachIfc:
-[imodel02\imodelcore\units\src\symbolicexpression.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.AttachIfc:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\units\privateapi\units\symbolicexpression.h]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.AttachIfc:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
+[imodel02\imodelcore\units\src\formatting\compositevaluespec.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
+[imodel02\imodelcore\units\src\symbolicexpression.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
+[imodel02\imodelcore\units\src\unittypes.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\units\src\unitnamemappings.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.AttachIfc:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:

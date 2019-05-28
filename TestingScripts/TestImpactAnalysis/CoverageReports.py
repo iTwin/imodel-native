@@ -139,7 +139,7 @@ def runCoverage(reportPath, comp, forceAll):
             for tc in test_cases:
                 i = i + 1
                 print printColored('***Running Coverage for TestCase: ' + str(i) + ' of ' + str(len(test_cases)), 'cyan', True)
-                result = cov.covSingleTest(testExe, tc)
+                result = cov.covTestCase(testExe, tc)
                 if result: # it passed
                     results['Passed'].append(tc)
                 else:

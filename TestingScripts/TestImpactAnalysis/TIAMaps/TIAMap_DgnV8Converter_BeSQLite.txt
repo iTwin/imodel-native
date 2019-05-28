@@ -6,7 +6,7 @@
 [imodel02\imodelcore\besqlite\sqlite\sqlite3.c]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\besqlite\belzma.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ImportConfigTests.embedConfigFile:ImportConfigTests.FileLink:ImportConfigTests.FileLinkNonDgn:ConverterTests.EmbeddDir_SubDir:ConverterTests.EmbedDir:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ImportConfigTests.*:ConverterTests.*:
 [imodel02\imodelcore\besqlite\changeset.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\besqlite\besqliteprofilemanager.h]

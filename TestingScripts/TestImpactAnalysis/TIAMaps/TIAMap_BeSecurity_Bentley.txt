@@ -7,15 +7,17 @@
 %OutRoot%Winx64\Product\BeSecurity-GTest\BeSecurityTest.exe --gtest_filter=SecureLocalStateTests.*:
 [imodel02\imodelcore\bentley\tasks\asynctask.cpp]
 %OutRoot%Winx64\Product\BeSecurity-GTest\BeSecurityTest.exe --gtest_filter=SecureLocalStateTests.*:
-[imodel02\imodelcore\bentley\bentley\nonport\betimeutilities.cpp]
-%OutRoot%Winx64\Product\BeSecurity-GTest\BeSecurityTest.exe --gtest_filter=SecureLocalStateTests.*:
 [imodel02\imodelcore\bentley\bentley\nonport\base64utilities.cpp]
 %OutRoot%Winx64\Product\BeSecurity-GTest\BeSecurityTest.exe --gtest_filter=SecureLocalStateTests.*:
 [imodel02\imodelcore\bentley\loggingsdk\src\native\interface\loggercache.cpp]
 %OutRoot%Winx64\Product\BeSecurity-GTest\BeSecurityTest.exe --gtest_filter=SecureLocalStateTests.*:
 [imodel02\imodelcore\bentley\loggingsdk\src\native\interface\loggingmanager.cpp]
 %OutRoot%Winx64\Product\BeSecurity-GTest\BeSecurityTest.exe --gtest_filter=SecureLocalStateTests.*:
+[imodel02\imodelcore\bentley\loggingsdk\src\native\interface\bsilogprivate.h]
+%OutRoot%Winx64\Product\BeSecurity-GTest\BeSecurityTest.exe --gtest_filter=SecureLocalStateTests.*:
 [imodel02\imodelcore\bentley\bentley\wstring.cpp]
+%OutRoot%Winx64\Product\BeSecurity-GTest\BeSecurityTest.exe --gtest_filter=SecureLocalStateTests.*:
+[imodel02\imodelcore\bentley\bentley\nonport\betimeutilities.cpp]
 %OutRoot%Winx64\Product\BeSecurity-GTest\BeSecurityTest.exe --gtest_filter=SecureLocalStateTests.*:
 [imodel02\imodelcore\bentley\bentley\nonport\bethread.cpp]
 %OutRoot%Winx64\Product\BeSecurity-GTest\BeSecurityTest.exe --gtest_filter=SecureLocalStateTests.*:

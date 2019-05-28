@@ -28,7 +28,7 @@
 [imodel02\imodelcore\bentley\bentley\nonport\base64utilities.cpp]
 %OutRoot%Winx64\Product\BeHttp-GTest\BeHttpTest.exe --gtest_filter=BeUriTests.*:HttpMultipartBodyTests.*:HttpRangeBodyTests.*:AuthenticationHandlerTests.*:HttpClientTests.*:HttpRequestTests.*:HttpCompressedBodyTests.*:AuthenticationChallengeValueTests.*:HttpHeadersTests.*:HttpErrorTests.*:HttpBinaryBodyTests.*:HttpStringBodyTests.*:HttpProxyTests.*:HttpFileBodyTests.*:HttpResponseTests.*:HttpDummyBodyTests.*:ProxyHttpHandlerTests.*:
 [imodel02\imodelcore\bentley\tasks\asyncerror.cpp]
-%OutRoot%Winx64\Product\BeHttp-GTest\BeHttpTest.exe --gtest_filter=HttpErrorTests.*:AuthenticationHandlerTests.PerformRequest_AuthorizationHeaderHasNoValueAndRetrieveAuthorizationReturnsError_TriesRequestWithoutCredentials:AuthenticationHandlerTests.PerformRequest_FirstRequestHasAuthorizationButFailsAndRetrieveAuthorizationReturnsError_ReturnsResponse:
+%OutRoot%Winx64\Product\BeHttp-GTest\BeHttpTest.exe --gtest_filter=HttpErrorTests.*:AuthenticationHandlerTests.*:
 [imodel02\imodelcore\bentley\bentley\cancellationtoken.cpp]
 %OutRoot%Winx64\Product\BeHttp-GTest\BeHttpTest.exe --gtest_filter=HttpRequestTests.*:AuthenticationHandlerTests.*:ProxyHttpHandlerTests.*:HttpClientTests.*:
 [imodel02\imodelcore\bentley\tasks\asynctaskrunnerpool.cpp]
@@ -52,6 +52,6 @@
 [imodel02\imodelcore\bentley\loggingsdk\src\native\interface\loggingmanager.cpp]
 %OutRoot%Winx64\Product\BeHttp-GTest\BeHttpTest.exe --gtest_filter=BeUriTests.*:HttpMultipartBodyTests.*:HttpRangeBodyTests.*:AuthenticationHandlerTests.*:HttpClientTests.*:HttpRequestTests.*:HttpCompressedBodyTests.*:AuthenticationChallengeValueTests.*:HttpHeadersTests.*:HttpErrorTests.*:HttpBinaryBodyTests.*:HttpStringBodyTests.*:HttpProxyTests.*:HttpFileBodyTests.*:HttpResponseTests.*:HttpDummyBodyTests.*:ProxyHttpHandlerTests.*:
 [imodel02\imodelcore\bentley\loggingsdk\src\native\interface\bsilog.cpp]
-%OutRoot%Winx64\Product\BeHttp-GTest\BeHttpTest.exe --gtest_filter=BeUriTests.Ctor_InvalidPortNumberSpecified_InValidUri:AuthenticationHandlerTests.*:HttpRequestTests.Ctor_InvalidUrl_UrlSetToEmpty:HttpErrorTests.*:HttpBinaryBodyTests.AsString_VectorWithContent_EmptyString:HttpFileBodyTests.Write_FileLockedForWrite_WritesNothing:HttpCompressedBodyTests.AsString_NonEmptyContentWithoutOpen_ReturnsEmptyString:HttpCompressedBodyTests.AsString_NonEmptyContent_ReturnsEmptyString:HttpCompressedBodyTests.AsString_NullPointerContent_ReturnsEmptyString:HttpCompressedBodyTests.Write_NonEmptyContent_WritesNothing:HttpCompressedBodyTests.Write_NullPointerContent_WritesNothing:
+%OutRoot%Winx64\Product\BeHttp-GTest\BeHttpTest.exe --gtest_filter=BeUriTests.*:AuthenticationHandlerTests.*:HttpRequestTests.*:HttpErrorTests.*:HttpBinaryBodyTests.*:HttpFileBodyTests.*:HttpCompressedBodyTests.*:
 [imodel02\imodelcore\bentley\bentley\nonport\bestringutilities.cpp]
 %OutRoot%Winx64\Product\BeHttp-GTest\BeHttpTest.exe --gtest_filter=BeUriTests.*:HttpMultipartBodyTests.*:HttpRangeBodyTests.*:AuthenticationHandlerTests.*:HttpClientTests.*:HttpRequestTests.*:HttpCompressedBodyTests.*:AuthenticationChallengeValueTests.*:HttpHeadersTests.*:HttpErrorTests.*:HttpBinaryBodyTests.*:HttpStringBodyTests.*:HttpProxyTests.*:HttpFileBodyTests.*:HttpResponseTests.*:HttpDummyBodyTests.*:ProxyHttpHandlerTests.*:

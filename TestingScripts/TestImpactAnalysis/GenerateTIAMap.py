@@ -69,18 +69,32 @@ def getMapFromFile(fileName):
 # bsimethod                                    Majd.Uddin    12/2017
 #-------------------------------------------------------------------------------------------
 def consolidateMaps(newtiaMap, fileName):
+    map = {}
     print("\n 'Consolidating Maps for : " + fileName + "\n")
     oldtiaMap = getMapFromFile(fileName)
+    for entry in oldtiaMap:
+        if entry not in map:
+            map.setdefault(entry, {})
+            for testCase in oldtiaMap[entry]:
+                if testCase not in map[entry]:
+                    map[entry].setdefault(testCase, ['*'])
     for entry in newtiaMap:
-        for entry1 in oldtiaMap:
-            if entry == entry1:
-                for testCase in newtiaMap[entry]:
-                    for testCase1 in oldtiaMap[entry]:
-                        if testCase == testCase1:
-                            oldtiaMap[entry][testCase][0] = '*'                       
-                        else:
-                            oldtiaMap[entry].setdefault(testCase, ['*'])
-    return oldtiaMap        
+        if entry not in map:
+            map.setdefault(entry, {})
+            for testCase in newtiaMap[entry]:
+                if testCase not in map[entry]:
+                    map[entry].setdefault(testCase, ['*'])
+    # for entry in newtiaMap:
+    #     for entry1 in oldtiaMap:
+    #         if entry == entry1:
+    #             for testCase in newtiaMap[entry]:
+    #                 for testCase1 in oldtiaMap[entry]:
+    #                     if testCase == testCase1:
+    #                         oldtiaMap[entry][testCase][0] = '*'                       
+    #                     else:
+    #                         oldtiaMap[entry].setdefault(testCase, ['*'])
+    # return oldtiaMap        
+    return map
   
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Majd.Uddin    10/2017
