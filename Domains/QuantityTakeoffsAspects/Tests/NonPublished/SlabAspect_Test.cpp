@@ -35,7 +35,7 @@ TEST_F(SlabAspectTestFixture, Create)
     GenericPhysicalObjectPtr object = CreateAndInsertObject(db);
     ASSERT_TRUE(object.IsValid());
 
-    DPoint2d slabDirection{0.0f, 0.0f};
+    auto slabDirection = SlabDirectionType::OneWay;
 
     SlabAspectPtr aspect = SlabAspect::Create(slabDirection);
     ASSERT_TRUE(aspect.IsValid());
@@ -47,7 +47,7 @@ TEST_F(SlabAspectTestFixture, Create)
     SlabAspectCPtr aspect2 = SlabAspect::GetCP(*object);
     ASSERT_TRUE(aspect2.IsValid());
 
-    ASSERT_EQ(slabDirection, *aspect2->GetSlabDirection());
+    ASSERT_EQ(slabDirection, aspect2->GetSlabDirection());
 
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
     }

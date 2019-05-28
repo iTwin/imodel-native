@@ -13,17 +13,24 @@ QUANTITYTAKEOFFSASPECTS_REFCOUNTED_PTR_AND_TYPEDEFS(SlabAspect)
 
 BEGIN_QUANTITYTAKEOFFSASPECTS_NAMESPACE
 
+enum class SlabDirectionType: int
+    {
+    Unknown = 0,
+    OneWay = 1,
+    TwoWay = 2
+    };
+
 struct SlabAspect : QuantityTakeoffAspect
     {
     DGNASPECT_DECLARE_MEMBERS(QUANTITYTAKEOFFSASPECTS_SCHEMA_NAME, QUANTITYTAKEOFFSASPECTS_CLASS_SlabAspect, QuantityTakeoffAspect);
 
     private:
-        DPoint2d m_slabDirection;
+        SlabDirectionType m_slabDirection = SlabDirectionType::Unknown;
 
         friend struct SlabAspectHandler;
 
         QUANTITYTAKEOFFSASPECTS_EXPORT SlabAspect();
-        SlabAspect(DPoint2dCR slabDirection);
+        SlabAspect(SlabDirectionType slabDirection);
 
     protected:
         QUANTITYTAKEOFFSASPECTS_EXPORT virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR, const BeSQLite::EC::ECCrudWriteToken*);
@@ -35,7 +42,7 @@ struct SlabAspect : QuantityTakeoffAspect
         //! Create a SlabAspect
         //! @param[in]  slabDirection  Slab direction
         //! @return  Created SlabAspect
-        QUANTITYTAKEOFFSASPECTS_EXPORT static SlabAspectPtr Create(DPoint2dCR slabDirection);
+        QUANTITYTAKEOFFSASPECTS_EXPORT static SlabAspectPtr Create(SlabDirectionType slabDirection);
 
         //! Query SlabAspect's ECClassId from the database
         //! @param[in]  db  Reference to the database
@@ -59,11 +66,11 @@ struct SlabAspect : QuantityTakeoffAspect
 
         //! Get SlabAspect's slab direction
         //! @return  Slab direction
-        QUANTITYTAKEOFFSASPECTS_EXPORT DPoint2dCP GetSlabDirection() const;
+        QUANTITYTAKEOFFSASPECTS_EXPORT SlabDirectionType GetSlabDirection() const;
 
         //! Set SlabAspect's slab direction
         //! @param[in]  newSlabDirection  Slab direction
-        QUANTITYTAKEOFFSASPECTS_EXPORT void SetSlabDirection(DPoint2dCR newSlabDirection);
+        QUANTITYTAKEOFFSASPECTS_EXPORT void SetSlabDirection(SlabDirectionType newSlabDirection);
     };
 
 END_QUANTITYTAKEOFFSASPECTS_NAMESPACE
