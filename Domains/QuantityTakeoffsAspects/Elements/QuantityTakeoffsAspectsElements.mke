@@ -29,6 +29,8 @@ $(o)PerimeterAspect$(oext) : $(_MakeFilePath)PerimeterAspect.cpp ${MultiCompileD
 
 $(o)PileAspect$(oext) : $(_MakeFilePath)PileAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\PileAspect.h
 
+$(o)SideAreasAspect$(oext) : $(_MakeFilePath)SideAreasAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\SideAreasAspect.h
+
 $(o)SlabAspect$(oext) : $(_MakeFilePath)SlabAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\SlabAspect.h
 
 $(o)SlopeAspect$(oext) : $(_MakeFilePath)SlopeAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\SlopeAspect.h
