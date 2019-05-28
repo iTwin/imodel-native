@@ -8,26 +8,26 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/GenericDomain.h>
 #include <BeSQLite/BeSQLite.h>
-#include <QuantityTakeoffsAspects/Elements/SlabAspect.h>
+#include <QuantityTakeoffsAspects/Elements/ThicknessAspect.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_QUANTITYTAKEOFFSASPECTS_NAMESPACE
 
 //=======================================================================================
-// Sets up environment for SlabAspect testing.
+// Sets up environment for ThicknessAspect testing.
 // @bsiclass                                    Elonas.Seviakovas                05/2019
 //=======================================================================================
-struct SlabAspectTestFixture : public QuantityTakeoffsAspectsTestFixtureBase
+struct ThicknessAspectTestFixture : public QuantityTakeoffsAspectsTestFixtureBase
     {
     public:
-        SlabAspectTestFixture() {};
-        ~SlabAspectTestFixture() {};
+        ThicknessAspectTestFixture() {};
+        ~ThicknessAspectTestFixture() {};
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SlabAspectTestFixture, Create)
+TEST_F(ThicknessAspectTestFixture, Create)
     {
     DgnDbR db = GetDgnDb();
     db.BriefcaseManager().StartBulkOperation();
@@ -35,19 +35,19 @@ TEST_F(SlabAspectTestFixture, Create)
     GenericPhysicalObjectPtr object = CreateAndInsertObject(db);
     ASSERT_TRUE(object.IsValid());
 
-    DPoint2d slabDirection{0.0f, 0.0f};
+    double thickness = 7.66f;
 
-    SlabAspectPtr aspect = SlabAspect::Create(slabDirection);
+    ThicknessAspectPtr aspect = ThicknessAspect::Create(thickness);
     ASSERT_TRUE(aspect.IsValid());
 
-    SlabAspect::SetAspect(*object, *aspect);
+    ThicknessAspect::SetAspect(*object, *aspect);
 
     object->Update();
 
-    SlabAspectCPtr aspect2 = SlabAspect::GetCP(*object);
+    ThicknessAspectCPtr aspect2 = ThicknessAspect::GetCP(*object);
     ASSERT_TRUE(aspect2.IsValid());
 
-    ASSERT_EQ(slabDirection, *aspect2->GetSlabDirection());
+    ASSERT_EQ(thickness, aspect2->GetThickness());
 
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
     }

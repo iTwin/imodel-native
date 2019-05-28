@@ -34,6 +34,8 @@
 
 #define QUANTITYTAKEOFFSASPECTS_CLASS_PileAspect                    "PileAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_SlabAspect                    "SlabAspect"
+#define QUANTITYTAKEOFFSASPECTS_CLASS_ThicknessAspect               "ThicknessAspect"
 
 #define QUANTITYTAKEOFFSASPECTS_PILEASPECT_EmbedmentDepth           "EmbedmentDepth"
-#define QUANTITYTAKEOFFSASPECTS_PILEASPECT_SlabDirection            "SlabDirection"
+#define QUANTITYTAKEOFFSASPECTS_SLABASPECT_SlabDirection            "SlabDirection"
+#define QUANTITYTAKEOFFSASPECTS_THICKNESSASPECT_Thickness           "Thickness"
