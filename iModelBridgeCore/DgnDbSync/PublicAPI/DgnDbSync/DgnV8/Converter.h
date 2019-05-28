@@ -1023,6 +1023,8 @@ protected:
     virtual void _OnSheetsConvertViewAttachment(ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) {}
 
     virtual void _OnFileDiscovered(DgnV8FileCR) const {;}
+    virtual DgnV8FileCP _GetPackageFileOf(DgnV8FileCR f) {return &f;}
+    virtual bool _WasEmbeddedFileSeen(Utf8StringCR uniqueName) const {return false;}
 
 public:
     virtual Params const& _GetParams() const = 0;
@@ -1032,6 +1034,10 @@ public:
     bool ShouldCreateIntermediateRevisions() const {return _GetParams().GetPushIntermediateRevisions() != iModelBridge::Params::PushIntermediateRevisions::None;}
 
     bool SkipECContent() const {return m_skipECContent;}
+    
+    DgnV8FileCP GetPackageFileOf(DgnV8FileCR f) {return _GetPackageFileOf(f);}
+    bool WasEmbeddedFileSeen(Utf8StringCR uniqueName) const {return _WasEmbeddedFileSeen(uniqueName);}
+
     void SetSkipEContent(bool val) {m_skipECContent = val;}
     //! Add a callback to be invoked by RetrieveV8ECSchemas
     //! @param v    Verifier to be invoked by RetrieveV8ECSchemas to determine whether a given schema should be imported
@@ -1103,6 +1109,10 @@ public:
 
     //! @name V8Files
     //! @{
+
+    DGNDBSYNC_EXPORT static bool IsEmbeddedFileName0(wchar_t const*);
+    static bool IsEmbeddedFileName(Utf8StringCR fullName) {return IsEmbeddedFileName0(WString(fullName.c_str(), true).c_str());}
+    static bool IsEmbeddedFileName(WStringCR fullName) {return IsEmbeddedFileName0(fullName.c_str());}
 
     DGNDBSYNC_EXPORT Utf8String ComputeEffectiveEmbeddedFileName(Utf8StringCR fullName);
 
@@ -2527,6 +2537,8 @@ private:
 protected:
     RootModelSpatialParams& m_params;   // NB: Must store a *reference* to the bridge's Params, as they may change after our constructor is called
     mutable bvector<DgnV8FileP> m_v8Files;
+    mutable bmap<BeFileName, DgnV8FileP> m_v8FilesByName;
+    mutable bmap<Utf8String, DgnV8FileCP> m_embeddedFilesSeen;
     mutable bvector<Bentley::DgnFilePtr> m_filesKeepAlive;
     bvector<Bentley::DgnModelPtr> m_drawingModelsKeepAlive;
     bmultiset<ResolvedModelMapping> m_v8ModelMappings; // NB: the V8Model pointer is the key
@@ -2540,6 +2552,11 @@ protected:
 
     void CorrectSpatialTransforms();
     bool ShouldCorrectSpatialTransform(ResolvedModelMapping const& rmm) {return rmm.GetDgnModel().IsSpatialModel() && IsFileAssignedToBridge(*rmm.GetV8Model().GetDgnFileP());}
+
+    DgnV8FileP GetV8FileByName(BeFileName nm) {auto it = m_v8FilesByName.find(nm); return (it != m_v8FilesByName.end())? it->second: nullptr;}
+
+    DGNDBSYNC_EXPORT DgnV8FileCP _GetPackageFileOf(DgnV8FileCR) override;
+    DGNDBSYNC_EXPORT bool _WasEmbeddedFileSeen(Utf8StringCR uniqueName) const override;
 
     bool _HaveChangeDetector() override {return m_changeDetector != nullptr;}
     IChangeDetector& _GetChangeDetector() override {return *m_changeDetector;}

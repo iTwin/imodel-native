@@ -1407,3 +1407,119 @@ extern "C" iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey
 //    ASSERT_TRUE(db.IsValid());
 //    ASSERT_TRUE(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK == result);
 //    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      5/19
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ConverterTests, DISABLED_DetectDeletionsInEmbeddedFiles)
+    {
+    m_params.SetMatchOnEmbeddedFileBasename(true);
+
+    m_dgnDbFileName = GetOutputFileName(L"DetectDeletionsInEmbeddedFiles.bim");
+    DeleteExistingDgnDb(m_dgnDbFileName);
+    MakeWritableCopyOf(m_dgnDbFileName, m_seedDgnDbFileName, m_dgnDbFileName.GetFileNameAndExtension().c_str());
+
+    auto v1InputName = GetInputFileName(L"changesInEmbeddedFiles\\v1\\master.i.dgn");
+    auto v2InputName = GetInputFileName(L"changesInEmbeddedFiles\\v2\\master.i.dgn");
+
+    auto cvtDir = GetOutputDir();
+    cvtDir.AppendToPath(L"DetectDeletionsInEmbeddedFiles");
+    cvtDir.AppendToPath(L"cvt");
+    BeFileName::EmptyAndRemoveDirectory(cvtDir.c_str());
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::CreateNewDirectory(cvtDir.c_str()));
+
+    m_v8FileName = cvtDir;
+    m_v8FileName.AppendToPath(L"master.i.dgn");
+
+    // Convert v1
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(v1InputName.c_str(), m_v8FileName.c_str()));
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    RepositoryLinkId masterRepositoryLinkId, ref__1__RepositoryLinkId, ref__2__RepositoryLinkId;
+    DgnModelId masterModelId, ref__1__ModelId, ref__2__ModelId;
+    DgnElementId ref__1___620, ref__2___620, ref__2___621;
+
+    if (true)
+        {
+        auto db = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+
+        auto link = FindRepositoryLinkByFilename(*db, m_v8FileName);
+        ASSERT_TRUE(link.IsValid());
+        masterRepositoryLinkId = RepositoryLinkId(link->GetElementId().GetValue());
+        link = FindRepositoryLinkByFilename(*db, BentleyApi::BeFileName(L"Ref1.i.dgn"));
+        ASSERT_TRUE(link.IsValid());
+        ref__1__RepositoryLinkId = RepositoryLinkId(link->GetElementId().GetValue());
+        link = FindRepositoryLinkByFilename(*db, BentleyApi::BeFileName(L"Ref2.i.dgn"));
+        ASSERT_TRUE(link.IsValid());
+        ref__2__RepositoryLinkId = RepositoryLinkId(link->GetElementId().GetValue());
+
+        masterModelId = FindModelByV8ModelId(*db, masterRepositoryLinkId, 0);
+        ref__1__ModelId = FindModelByV8ModelId(*db, ref__1__RepositoryLinkId, 0);
+        ref__2__ModelId = FindModelByV8ModelId(*db, ref__2__RepositoryLinkId, 0);
+        ASSERT_TRUE(masterModelId.IsValid());
+        ASSERT_TRUE(ref__1__ModelId.IsValid());
+        ASSERT_TRUE(ref__2__ModelId.IsValid());
+
+        // Verify that V8 element '620' from Ref1.i.dgn is there
+        auto el = FindV8ElementInDgnDb(*db, 620, ref__1__RepositoryLinkId);
+        ASSERT_TRUE(el.IsValid());
+        ref__1___620 = el->GetElementId();
+
+        // Verify that V8 element '620' from Ref2.i.dgn is there
+        el = FindV8ElementInDgnDb(*db, 620, ref__2__RepositoryLinkId);
+        ASSERT_TRUE(el.IsValid());
+        ref__2___620 = el->GetElementId();
+
+        // Verify that V8 element '621' from Ref2.i.dgn is there
+        el = FindV8ElementInDgnDb(*db, 621, ref__2__RepositoryLinkId);
+        ASSERT_TRUE(el.IsValid());
+        ref__2___621 = el->GetElementId();
+
+        el = nullptr;
+        link = nullptr;
+        }
+
+    // Update from v2 
+    //  In v2, Ref1.i.dgn was deleted, and element #621 was removed from Ref2.i.dgn
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(v2InputName.c_str(), m_v8FileName.c_str()));
+    DoUpdate(m_dgnDbFileName, m_v8FileName, /*expectFailure*/false, /*expectUpdate*/true, /*detectDeletedDocuments*/true);
+
+    if (true)
+        {
+        auto db = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+
+        // Master.i.dgn's RepositoryLink and its Model should still be  there
+        ASSERT_TRUE(FindRepositoryLinkByFilename(*db, m_v8FileName).IsValid());
+        ASSERT_TRUE(db->Elements().GetElement(masterRepositoryLinkId).IsValid());
+        ASSERT_TRUE(db->Models().GetModel(masterModelId).IsValid());
+        ASSERT_TRUE(FindModelByV8ModelId(*db, masterRepositoryLinkId, 0).IsValid());
+
+#ifdef COMMENT_OUT
+        // Ref1.i.dgn's RepositoryLink and its Model should NOT be there
+        // ASSERT_FALSE(FindRepositoryLinkByFilename(*db, BentleyApi::BeFileName(L"Ref1.i.dgn")).IsValid()); Bridge cannot deleted the RepositoryLink safely. It can't guarantee that the repository link element was created by the bridge to which that file is assigned. It could happen that another bridge saw this repository/file first, while trying to find its own files via reference attachments.
+        // ASSERT_FALSE(db->Elements().GetElement(ref__1__RepositoryLinkId).IsValid());
+        ASSERT_FALSE(db->Models().GetModel(ref__1__ModelId).IsValid());             // The Bridge *can* delete the model in that file, because the bridge definition created it and owns it. 
+        ASSERT_FALSE(FindModelByV8ModelId(*db, ref__1__RepositoryLinkId, 0).IsValid());
+#endif
+
+        // Ref2.i.dgn's RepositoryLink and its Model should still be there
+        ASSERT_TRUE(FindRepositoryLinkByFilename(*db, BentleyApi::BeFileName(L"Ref2.i.dgn")).IsValid());
+        ASSERT_TRUE(db->Elements().GetElement(ref__2__RepositoryLinkId).IsValid());
+        ASSERT_TRUE(db->Models().GetModel(ref__2__ModelId).IsValid());
+        ASSERT_TRUE(FindModelByV8ModelId(*db, ref__2__RepositoryLinkId, 0).IsValid());
+
+#ifdef COMMENT_OUT
+        // Verify that V8 element '620' from Ref1.i.dgn is NOT there
+        ASSERT_FALSE(db->Elements().GetElement(ref__1___620).IsValid());
+        ASSERT_FALSE(FindV8ElementInDgnDb(*db, 620, ref__1__RepositoryLinkId).IsValid());
+#endif
+
+        // Verify that V8 element '620' from Ref2.i.dgn is there
+        ASSERT_TRUE(db->Elements().GetElement(ref__2___620).IsValid());
+        ASSERT_TRUE(FindV8ElementInDgnDb(*db, 620, ref__2__RepositoryLinkId).IsValid());
+
+        // Verify that V8 element '621' from Ref2.i.dgn is NOT there
+        ASSERT_FALSE(db->Elements().GetElement(ref__2___621).IsValid());
+        ASSERT_FALSE(FindV8ElementInDgnDb(*db, 621, ref__2__RepositoryLinkId).IsValid());
+        }
+    }
