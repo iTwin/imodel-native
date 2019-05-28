@@ -33,6 +33,8 @@ $(o)PerimeterAspectHandler$(oext) : $(_MakeFilePath)PerimeterAspectHandler.cpp $
 
 $(o)PileAspectHandler$(oext) : $(_MakeFilePath)PileAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PileAspectHandler.h
 
+$(o)PipeAspectHandler$(oext) : $(_MakeFilePath)PipeAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PipeAspectHandler.h
+
 $(o)SideAreasAspectHandler$(oext) : $(_MakeFilePath)SideAreasAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SideAreasAspectHandler.h
 
 $(o)SlabAspectHandler$(oext) : $(_MakeFilePath)SlabAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SlabAspectHandler.h

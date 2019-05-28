@@ -36,6 +36,7 @@
 #define QUANTITYTAKEOFFSASPECTS_CLASS_EnergyPerformanceAspect       "EnergyPerformanceAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_PerimeterAspect               "PerimeterAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_PileAspect                    "PileAspect"
+#define QUANTITYTAKEOFFSASPECTS_CLASS_PipeAspect                    "PipeAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_SideAreasAspect               "SideAreasAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_SlabAspect                    "SlabAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_SlopeAspect                   "SlopeAspect"
@@ -51,6 +52,11 @@
 #define QUANTITYTAKEOFFSASPECTS_PERIMETERASPECT_Perimeter           "Perimeter"
 
 #define QUANTITYTAKEOFFSASPECTS_PILEASPECT_EmbedmentDepth           "EmbedmentDepth"
+
+#define QUANTITYTAKEOFFSASPECTS_PIPEASPECT_Schedule                 "Schedule"
+#define QUANTITYTAKEOFFSASPECTS_PIPEASPECT_Thickness                "Thickness"
+#define QUANTITYTAKEOFFSASPECTS_PIPEASPECT_Length                   "Length"
+#define QUANTITYTAKEOFFSASPECTS_PIPEASPECT_Diameter                 "Diameter"
 
 #define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_RightSideNetArea    "RightSideNetArea"
 #define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_LeftSideNetArea     "LeftSideNetArea"

@@ -9,6 +9,7 @@
 #include <QuantityTakeoffsAspects/Handlers/EnergyPerformanceAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/PerimeterAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/PileAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/PipeAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/SideAreasAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/SlabAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/SlopeAspectHandler.h>
@@ -30,6 +31,7 @@ QuantityTakeoffsAspectsDomain::QuantityTakeoffsAspectsDomain() : DgnDomain(QUANT
     RegisterHandler(EnergyPerformanceAspectHandler::GetHandler());
     RegisterHandler(PerimeterAspectHandler::GetHandler());
     RegisterHandler(PileAspectHandler::GetHandler());
+    RegisterHandler(PipeAspectHandler::GetHandler());
     RegisterHandler(SideAreasAspectHandler::GetHandler());
     RegisterHandler(SlabAspectHandler::GetHandler());
     RegisterHandler(SlopeAspectHandler::GetHandler());
