@@ -1387,7 +1387,8 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
                 arrayValue.append(matrix.coff[j][i]);
 
         // Add publishing info
-        this->m_publisherInfo.ToJson(tileSet["root"]["SMPublisherInfo"]);
+        Json::Value info;
+        if (this->m_publisherInfo.ToJson(info)) tileSet["root"]["SMPublisherInfo"] = info;
 
         // Save master header info in Cesium tileset
         auto& SMMasterHeader = tileSet["root"]["SMMasterHeader"];

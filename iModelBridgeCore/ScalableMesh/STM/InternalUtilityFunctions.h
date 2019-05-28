@@ -86,7 +86,7 @@ void SimplifyPolygonToMinEdge(double minEdge, bvector<DPoint3d>& poly);
 struct ScalableMeshModuleInfo
     {
     ScalableMeshModuleInfo();
-    void ToJson(Json::Value& json) const;
+    bool ToJson(Json::Value& json) const;
 
 #if _WIN32
     HMODULE m_handle = NULL;

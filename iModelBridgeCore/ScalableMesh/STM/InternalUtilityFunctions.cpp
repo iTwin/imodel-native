@@ -1904,11 +1904,13 @@ ScalableMeshModuleInfo::ScalableMeshModuleInfo()
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                    Richard.Bois                 05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ScalableMeshModuleInfo::ToJson(Json::Value& output) const
+bool ScalableMeshModuleInfo::ToJson(Json::Value& output) const
     {
-    output["Publisher"] = Utf8String(m_publisherName.c_str());
-    output["Publisher Version"]= Utf8String(m_publisherVersion.c_str());
-    //output["Module Creation Date"] = Utf8String(m_dllCreationTime.c_str());
-    output["Product"] = Utf8String(m_productName.c_str());
-    output["Product Version"] = Utf8String(m_productVersion.c_str());
+    if(!m_publisherName.empty()) output["Publisher"] = Utf8String(m_publisherName.c_str());
+    if(!m_publisherVersion.empty()) output["Publisher Version"]= Utf8String(m_publisherVersion.c_str());
+    //if (!m_dllCreationTime.empty()) output["Module Creation Date"] = Utf8String(m_dllCreationTime.c_str());
+    if(!m_productName.empty()) output["Product"] = Utf8String(m_productName.c_str());
+    if (!m_productVersion.empty()) output["Product Version"] = Utf8String(m_productVersion.c_str());
+
+    return !output.empty();
     }
