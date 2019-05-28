@@ -71,37 +71,37 @@ public:
 //! Physical element representing a range of a corridor in a Corridor model.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct CorridorRange : Dgn::PhysicalElement
+struct CorridorSegment : Dgn::PhysicalElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_CorridorRange, Dgn::PhysicalElement);
-    friend struct CorridorRangeHandler;
+    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_CorridorSegment, Dgn::PhysicalElement);
+    friend struct CorridorSegmentHandler;
 
 protected:
     //! @private
-    explicit CorridorRange(CreateParams const& params) : T_Super(params) {}
+    explicit CorridorSegment(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(CorridorRange)
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(CorridorSegment)
     //! Get a CorridorPortionsCPtr from the DgnElementId in the DgnDb.
     //! @param db The project database.
     //! @param id The DgnElementId of the CorridorPortions.
     //! @return The CorridorPortionsCPtr with the given id, or nullptr.
-    ROADRAILPHYSICAL_EXPORT static CorridorRangeCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get<CorridorRange>(id); }
+    ROADRAILPHYSICAL_EXPORT static CorridorSegmentCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get<CorridorSegment>(id); }
 
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnElementId QueryId(CorridorCR corridor, Utf8StringCR codeVal);
-    ROADRAILPHYSICAL_EXPORT static CorridorRangeCPtr Query(CorridorCR corridor, Utf8StringCR codeVal) { return Get(corridor.GetDgnDb(), QueryId(corridor, codeVal)); }
+    ROADRAILPHYSICAL_EXPORT static CorridorSegmentCPtr Query(CorridorCR corridor, Utf8StringCR codeVal) { return Get(corridor.GetDgnDb(), QueryId(corridor, codeVal)); }
 
     //! Query for Pathways on this Corridor in left-to-right order
     ROADRAILPHYSICAL_EXPORT bvector<Dgn::DgnElementId> QueryOrderedPathwayIds() const;
     //__PUBLISH_SECTION_END__
     //! @privatesection
-    ROADRAILPHYSICAL_EXPORT static CorridorRangeCPtr Insert(CorridorCR corridor, Utf8StringCR codeVal);
+    ROADRAILPHYSICAL_EXPORT static CorridorSegmentCPtr Insert(CorridorCR corridor, Utf8StringCR codeVal);
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(CorridorCR corridor, Utf8StringCR codeVal);
     //! @publicsection
     //__PUBLISH_SECTION_START__
     //! Gets the PhysicalModel that is modeling this element
-    Dgn::PhysicalModelPtr GetCorridorRangeModel() const { return GetSub<Dgn::PhysicalModel>(); }
-}; // CorridorRange
+    Dgn::PhysicalModelPtr GetCorridorSegmentModel() const { return GetSub<Dgn::PhysicalModel>(); }
+}; // CorridorSegment
 
 //=======================================================================================
 //! Base class for Pathways and Separations between them
@@ -263,7 +263,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(Roadway)
 
     //! @private
-    ROADRAILPHYSICAL_EXPORT static RoadwayPtr Create(CorridorRangeCR corridorRange, PathwayElement::Order const& order);
+    ROADRAILPHYSICAL_EXPORT static RoadwayPtr Create(CorridorSegmentCR corridorSegment, PathwayElement::Order const& order);
 }; // Roadway
 
 //=======================================================================================
@@ -289,7 +289,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(Railway)
 
     //! @private
-    ROADRAILPHYSICAL_EXPORT static RailwayPtr Create(CorridorRangeCR corridorRange, PathwayElement::Order const& order);
+    ROADRAILPHYSICAL_EXPORT static RailwayPtr Create(CorridorSegmentCR corridorSegment, PathwayElement::Order const& order);
 }; // Railway
 
 
@@ -307,10 +307,10 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_Corridor, Corridor, CorridorHandler, D
 //! ElementHandler for CorridorPortions Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CorridorRangeHandler : Dgn::dgn_ElementHandler::Physical
+struct EXPORT_VTABLE_ATTRIBUTE CorridorSegmentHandler : Dgn::dgn_ElementHandler::Physical
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_CorridorRange, CorridorRange, CorridorRangeHandler, Dgn::dgn_ElementHandler::Physical, ROADRAILPHYSICAL_EXPORT)
-}; // CorridorRangeHandler
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_CorridorSegment, CorridorSegment, CorridorSegmentHandler, Dgn::dgn_ElementHandler::Physical, ROADRAILPHYSICAL_EXPORT)
+}; // CorridorSegmentHandler
 
 //=================================================================================
 //! ElementHandler for Corridor Portion Elements

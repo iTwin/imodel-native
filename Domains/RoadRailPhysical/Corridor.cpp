@@ -9,7 +9,7 @@
 
 HANDLER_DEFINE_MEMBERS(CorridorHandler)
 HANDLER_DEFINE_MEMBERS(CorridorPortionElementHandler)
-HANDLER_DEFINE_MEMBERS(CorridorRangeHandler)
+HANDLER_DEFINE_MEMBERS(CorridorSegmentHandler)
 HANDLER_DEFINE_MEMBERS(PathwayDesignCriteriaHandler)
 HANDLER_DEFINE_MEMBERS(PathwayElementHandler)
 HANDLER_DEFINE_MEMBERS(RailwayHandler)
@@ -179,10 +179,10 @@ CorridorCPtr Corridor::Insert(Dgn::DgnDbStatus* status)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId CorridorRange::QueryId(CorridorCR corridor, Utf8StringCR codeVal)
+DgnElementId CorridorSegment::QueryId(CorridorCR corridor, Utf8StringCR codeVal)
     {
     auto stmtPtr = corridor.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT ECInstanceId FROM " BRRP_SCHEMA(BRRP_CLASS_CorridorRange) " WHERE Model.Id = ? AND CodeValue = ?;");
+        "SELECT ECInstanceId FROM " BRRP_SCHEMA(BRRP_CLASS_CorridorSegment) " WHERE Model.Id = ? AND CodeValue = ?;");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, corridor.GetSubModelId());
@@ -197,7 +197,7 @@ DgnElementId CorridorRange::QueryId(CorridorCR corridor, Utf8StringCR codeVal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<DgnElementId> CorridorRange::QueryOrderedPathwayIds() const
+bvector<DgnElementId> CorridorSegment::QueryOrderedPathwayIds() const
     {
     auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM "
         BRRP_SCHEMA(BRRP_CLASS_PathwayElement) " WHERE Model.Id = ? ORDER BY `Order`;");
@@ -215,15 +215,15 @@ bvector<DgnElementId> CorridorRange::QueryOrderedPathwayIds() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode CorridorRange::CreateCode(CorridorCR corridor, Utf8StringCR codeVal)
+DgnCode CorridorSegment::CreateCode(CorridorCR corridor, Utf8StringCR codeVal)
     {
-    return CodeSpec::CreateCode(BRRP_CODESPEC_CorridorRange, corridor, codeVal);
+    return CodeSpec::CreateCode(BRRP_CODESPEC_CorridorSegment, corridor, codeVal);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-CorridorRangeCPtr CorridorRange::Insert(CorridorCR corridor, Utf8StringCR codeVal)
+CorridorSegmentCPtr CorridorSegment::Insert(CorridorCR corridor, Utf8StringCR codeVal)
     {
     if (!corridor.GetElementId().IsValid())
         return nullptr;
@@ -232,19 +232,19 @@ CorridorRangeCPtr CorridorRange::Insert(CorridorCR corridor, Utf8StringCR codeVa
         RoadRailCategory::GetCorridor(corridor.GetDgnDb()));
     createParams.m_code = CreateCode(corridor, codeVal);
 
-    CorridorRangePtr newPtr(new CorridorRange(createParams));
-    auto rangeCPtr = corridor.GetDgnDb().Elements().Insert<CorridorRange>(*newPtr);
+    CorridorSegmentPtr newPtr(new CorridorSegment(createParams));
+    auto rangeCPtr = corridor.GetDgnDb().Elements().Insert<CorridorSegment>(*newPtr);
     if (rangeCPtr.IsNull())
         return nullptr;
 
-    auto corridorRangeModelPtr = PhysicalModel::Create(*rangeCPtr);
-    if (corridorRangeModelPtr.IsValid())
+    auto corridorSegmentModelPtr = PhysicalModel::Create(*rangeCPtr);
+    if (corridorSegmentModelPtr.IsValid())
         {
-        if (DgnDbStatus::Success != corridorRangeModelPtr->Insert())
+        if (DgnDbStatus::Success != corridorSegmentModelPtr->Insert())
             return nullptr;
         }
 
-    auto horizontalPartitionCPtr = HorizontalAlignments::Insert(*corridorRangeModelPtr);
+    auto horizontalPartitionCPtr = HorizontalAlignments::Insert(*corridorSegmentModelPtr);
     if (horizontalPartitionCPtr.IsNull())
         return nullptr;
 
@@ -297,13 +297,13 @@ Roadway::Roadway(CreateParams const& params, PathwayElement::Order const& order)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadwayPtr Roadway::Create(CorridorRangeCR corridorRange, PathwayElement::Order const& order)
+RoadwayPtr Roadway::Create(CorridorSegmentCR corridorSegment, PathwayElement::Order const& order)
     {
-    if (!corridorRange.GetElementId().IsValid() || !corridorRange.GetSubModelId().IsValid())
+    if (!corridorSegment.GetElementId().IsValid() || !corridorSegment.GetSubModelId().IsValid())
         return nullptr;
 
-    CreateParams createParams(corridorRange.GetDgnDb(), corridorRange.GetSubModelId(), QueryClassId(corridorRange.GetDgnDb()),
-        RoadRailCategory::GetRoadway(corridorRange.GetDgnDb()));
+    CreateParams createParams(corridorSegment.GetDgnDb(), corridorSegment.GetSubModelId(), QueryClassId(corridorSegment.GetDgnDb()),
+        RoadRailCategory::GetRoadway(corridorSegment.GetDgnDb()));
 
     return new Roadway(createParams, order);
     }
@@ -320,13 +320,13 @@ Railway::Railway(CreateParams const& params, PathwayElement::Order const& order)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RailwayPtr Railway::Create(CorridorRangeCR corridorRange, PathwayElement::Order const& order)
+RailwayPtr Railway::Create(CorridorSegmentCR corridorSegment, PathwayElement::Order const& order)
     {
-    if (!corridorRange.GetElementId().IsValid() || !corridorRange.GetSubModelId().IsValid())
+    if (!corridorSegment.GetElementId().IsValid() || !corridorSegment.GetSubModelId().IsValid())
         return nullptr;
 
-    CreateParams createParams(corridorRange.GetDgnDb(), corridorRange.GetSubModelId(), QueryClassId(corridorRange.GetDgnDb()),
-        RoadRailCategory::GetRailway(corridorRange.GetDgnDb()));
+    CreateParams createParams(corridorSegment.GetDgnDb(), corridorSegment.GetSubModelId(), QueryClassId(corridorSegment.GetDgnDb()),
+        RoadRailCategory::GetRailway(corridorSegment.GetDgnDb()));
 
     return new Railway(createParams, order);
     }

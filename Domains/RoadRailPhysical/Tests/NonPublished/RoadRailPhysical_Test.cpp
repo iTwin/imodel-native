@@ -60,9 +60,9 @@ TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
     ASSERT_EQ(1, linearElements.size());
     ASSERT_EQ(alignmentPtr->GetElementId(), *linearElements.begin());
 
-    auto corridorRangeCPtr = CorridorRange::Insert(*corridorPtr, "Overall Range");
+    auto corridorSegmentCPtr = CorridorSegment::Insert(*corridorPtr, "Overall");
 
-    auto leftRoadwayPtr = Roadway::Create(*corridorRangeCPtr, PathwayElement::Order::LeftMost);
+    auto leftRoadwayPtr = Roadway::Create(*corridorSegmentCPtr, PathwayElement::Order::LeftMost);
     leftRoadwayPtr->SetDesignAlignment(alignmentPtr.get());
     ASSERT_TRUE(leftRoadwayPtr->Insert().IsValid());
 
@@ -76,11 +76,11 @@ TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
     auto designSpeedCPtr = designSpeedPtr->Insert();
     ASSERT_TRUE(designSpeedCPtr.IsValid());
 
-    auto rightRoadwayPtr = Roadway::Create(*corridorRangeCPtr, PathwayElement::Order::RightMost);
+    auto rightRoadwayPtr = Roadway::Create(*corridorSegmentCPtr, PathwayElement::Order::RightMost);
     rightRoadwayPtr->SetDesignAlignment(alignmentPtr.get());
     ASSERT_TRUE(rightRoadwayPtr->Insert().IsValid());
 
-    auto pathwayIds = corridorRangeCPtr->QueryOrderedPathwayIds();
+    auto pathwayIds = corridorSegmentCPtr->QueryOrderedPathwayIds();
     ASSERT_EQ(2, pathwayIds.size());
     ASSERT_EQ(leftRoadwayPtr->GetElementId(), pathwayIds[0]);
     ASSERT_EQ(rightRoadwayPtr->GetElementId(), pathwayIds[1]);
