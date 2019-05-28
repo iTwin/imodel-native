@@ -365,7 +365,7 @@ void Converter::HandleLevelAppearanceInconsistency(ViewDefinitionR theView, DgnA
         {
         forceInvisible = true;
 		if (IssueSeverity::Error == issueSeverity)
-            ReportIssueV(issueSeverity, IssueCategory::VisualFidelity(), Issue::LevelDisplayInconsistent(), nullptr, Utf8String(v8Level.GetName()).c_str(), IssueReporter::FmtAttachment(v8Attachment).c_str());
+            ReportIssueV(IssueSeverity::Info, IssueCategory::VisualFidelity(), Issue::LevelDisplayInconsistent(), nullptr, Utf8String(v8Level.GetName()).c_str(), IssueReporter::FmtAttachment(v8Attachment).c_str());
         }
 
     //  See if this appearance has its own symbology
@@ -383,7 +383,7 @@ void Converter::HandleLevelAppearanceInconsistency(ViewDefinitionR theView, DgnA
                 Utf8String diff;
                 compareAppearance(diff, dgnDbSubCategory->GetAppearance(), appearanceInAttachment);
 		        if (IssueSeverity::Error == issueSeverity)
-	                ReportIssueV(issueSeverity, IssueCategory::VisualFidelity(), Issue::LevelSymbologyInconsistent(), nullptr, Utf8String(v8Level.GetName()).c_str(), IssueReporter::FmtAttachment(v8Attachment).c_str(), diff.c_str());
+	                ReportIssueV(IssueSeverity::Info, IssueCategory::VisualFidelity(), Issue::LevelSymbologyInconsistent(), nullptr, Utf8String(v8Level.GetName()).c_str(), IssueReporter::FmtAttachment(v8Attachment).c_str(), diff.c_str());
                 }
             }
         }
