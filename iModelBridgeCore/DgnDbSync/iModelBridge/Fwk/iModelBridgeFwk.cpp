@@ -1418,7 +1418,7 @@ int iModelBridgeFwk::PullMergeAndPushChange(Utf8StringCR description, bool relea
     DbResult dbres;
     bool madeSchemaChanges = false;
     m_briefcaseDgnDb = nullptr; // close the current connection to the briefcase db before attempting to reopen it!
-    m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName, EnableECProfileUpgrade());
+    m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName);
     if (!m_briefcaseDgnDb.IsValid())
         {
         ReportIssue(BeSQLite::Db::InterpretDbResult(dbres));
@@ -1472,15 +1472,18 @@ Utf8String   iModelBridgeFwk::GetRevisionComment()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  06/2018
+* @bsimethod                                    Abeesh.Basheer                  05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
+BentleyStatus   iModelBridgeFwk::TryOpenBimWithOptions(DgnDb::OpenParams& oparams)
     {
-    GetLogger().trace("Entering TryOpenBimWithBisSchemaUpgrade");
-    StopWatch openBimWithSchemaUpgrade(true);
+    if (m_briefcaseDgnDb.IsValid())
+        return SUCCESS;
+
+    GetLogger().trace("Entering TryOpenBimWitOptions");
+    StopWatch openBimWithProfileUpgrade(true);
     bool madeSchemaChanges = false;
     DbResult dbres;
-    m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName, EnableECProfileUpgrade());
+    m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName, oparams);
     uint8_t retryopenII = 0;
     while (!m_briefcaseDgnDb.IsValid() && (DbResult::BE_SQLITE_ERROR_SchemaUpgradeFailed == dbres) && (++retryopenII < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry())
         {
@@ -1488,14 +1491,15 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
         // another briefcase pushed schema changes after this briefcase last pulled.
         // If so, then we have to pull before re-trying.
         GetLogger().infov("SchemaUpgrade failed. Pulling.");
-        DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Exclusive);
-        oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
-        m_briefcaseDgnDb = DgnDb::OpenDgnDb(&dbres, m_briefcaseName, oparams);
+        DgnDb::OpenParams tmpParams(oparams);
+        tmpParams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
+        tmpParams.SetProfileUpgradeOptions(EC::ECDb::ProfileUpgradeOptions::None);
+        m_briefcaseDgnDb = DgnDb::OpenDgnDb(&dbres, m_briefcaseName, tmpParams);
         Briefcase_PullMergePush("");    // TRICKY Only Briefcase_PullMergePush contains the mergeschemachanges logic. Briefcase_PullAndMerge does not.
         m_briefcaseDgnDb = nullptr;
 
         GetLogger().infov("Retrying SchemaUpgrade (if still necessary).");
-        m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName, EnableECProfileUpgrade());
+        m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName,oparams);
         }
     if (!m_briefcaseDgnDb.IsValid())
         {
@@ -1504,14 +1508,37 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
         return BentleyStatus::ERROR;
         }
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
-    if (madeSchemaChanges)
+    if (madeSchemaChanges || iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb))
         {
         if (0 != PullMergeAndPushChange("domain schema upgrade", true))  // pullmergepush + re-open
             return BSIERROR;
         }
 
-    LogPerformance(openBimWithSchemaUpgrade, "TryOpenBimWithBisSchemaUpgrade");
+    LogPerformance(openBimWithProfileUpgrade, "TryOpenBimWithBisSchemaUpgrade");
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeFwk::TryOpenBimWithBimProfileUpgrade()
+    {
+    GetLogger().trace("Entering TryOpenBimWithBimProfileUpgrade");
+    DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Exclusive);
+    oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
+    oparams.SetProfileUpgradeOptions(EC::ECDb::ProfileUpgradeOptions::Upgrade);
+    return TryOpenBimWithOptions(oparams);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
+    {
+    GetLogger().trace("Entering TryOpenBimWithBisSchemaUpgrade");
+    DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Exclusive);
+    oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades);
+    return TryOpenBimWithOptions(oparams);
     }
 
 
@@ -1722,6 +1749,14 @@ int iModelBridgeFwk::UpdateExistingBim()
     // ***          So, we need to be able to open the BIM just in order to pull/merge/push, before we allow the bridge to add a schema import/upgrade into the mix.
     // ***
     //  By getting the BIM to the tip, this initial pull also helps ensure that we will be able to get locks for the other changes that that bridge will make later.
+    if (EnableECProfileUpgrade())
+        {
+        LOG.tracev(L"TryOpenBimWithBimProfileUpgrade");
+        if (BSISUCCESS != TryOpenBimWithBimProfileUpgrade())
+            return BentleyStatus::ERROR;
+        LOG.tracev(L"TryOpenBimWithBimProfileUpgrade  : Done");
+        }
+
     LOG.tracev(L"TryOpenBimWithBisSchemaUpgrade");
     if (BSISUCCESS != TryOpenBimWithBisSchemaUpgrade())
         return BentleyStatus::ERROR;

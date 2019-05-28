@@ -710,9 +710,11 @@ struct iModelBridge
     //! Open an existing BIM for read-write, possibly doing a schema upgrade on it.
     //! @param[out] dbres  If the BIM cannot be opened or upgraded, return the error status here.
     //! @return Opened BIM or an invalid ptr if the BIM could not be opened.
-    static IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName, bool doProfileUpgrade);
 
-    IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName);
+    static IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName, DgnDb::OpenParams& params);
+
+    static IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName);
+
 
     //! @private
     //! Convert source data to an existing BIM. This is called by the framework as part of a normal conversion.
@@ -1060,10 +1062,15 @@ public:
 
     bool HadAnyChanges() const { return m_hadAnyChanges; }
 
-    //! @name Feature Flags
+    //! @name Feature Configuration
     //! @{
-
+    //! Test whether to enable launch darkly flag
     IMODEL_BRIDGE_EXPORT bool TestFeatureFlag(CharCP featureFlag);
+
+    //! Test whether to enable launch darkly flag
+    IMODEL_BRIDGE_EXPORT bool TrackUsage(CharCP featureString);
+
+    IMODEL_BRIDGE_EXPORT bool MarkFeature(CharCP featureString);
     //! @}
     };
 

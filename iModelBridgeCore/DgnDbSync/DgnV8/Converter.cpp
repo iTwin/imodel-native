@@ -80,6 +80,14 @@ static bool matchesString(Utf8StringCR pattern, uint32_t wantMatch, Utf8StringCR
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      4/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::IsEmbeddedFileName0(wchar_t const* fn)
+    {
+    return BSISUCCESS == DgnV8Api::DgnFile::ParsePackagedName(nullptr, nullptr, nullptr, fn);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Converter::GetFileBaseName(DgnV8FileCR ff)
@@ -298,8 +306,17 @@ void RootModelConverter::_OnFileDiscovered(DgnV8FileCR file) const
     {
     if (std::find(m_v8Files.begin(), m_v8Files.end(), &const_cast<DgnV8FileR>(file)) == m_v8Files.end())
         {
-        m_v8Files.push_back(&const_cast<DgnV8FileR>(file));
+        auto fileP = &const_cast<DgnV8FileR>(file);
+        m_v8Files.push_back(fileP);
         _KeepFileAlive(file);
+
+        if (!file.IsEmbeddedFile())
+            m_v8FilesByName[BentleyApi::BeFileName(file.GetFileName().c_str())] = fileP;
+        else
+            {
+            SyncInfo::V8FileInfo finfo = const_cast<RootModelConverter*>(this)->GetSyncInfo().ComputeFileInfo(file);
+            m_embeddedFilesSeen[finfo.m_uniqueName] = fileP;
+            }
         }
     }
 

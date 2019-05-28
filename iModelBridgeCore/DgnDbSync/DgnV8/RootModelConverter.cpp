@@ -83,8 +83,10 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     DgnV8Api::DgnFileStatus openStatus;    
     m_rootFile = OpenDgnV8File(openStatus, rootFileName);
     if (!m_rootFile.IsValid())
+        {
+        LOG.errorv("Error opening the file %d", openStatus);
         return openStatus;
-
+        }
 
     //  Identify the root model
     auto rootModelId = _GetRootModelId();
@@ -1840,8 +1842,9 @@ void RootModelConverter::_FinishConversion()
             // it is safe for this bridge job to update it.
             auto rlinkEd = GetDgnDb().Elements().GetForEdit<RepositoryLink>(GetRepositoryLinkId(*v8File));
             auto rlinkXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspectForEdit(*rlinkEd);
-            rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File));
-            rlinkEd->Update();
+            auto anyChanges = rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File));
+            if (anyChanges)
+                rlinkEd->Update();
             }
         }
 
@@ -2167,6 +2170,25 @@ void SpatialConverterBase::PushChangesForFile(DgnV8FileR file, ConverterDataStri
 void SpatialConverterBase::PushChangesForModel(DgnV8ModelRefCR model)
     {
     PushChangesForFile(*model.GetDgnFileP(), BentleyApi::Utf8String(model.GetModelNameCP()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      4/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnV8FileCP RootModelConverter::_GetPackageFileOf(DgnV8FileCR f)
+    {
+    if (!f.IsEmbeddedFile())
+        return &f;
+    auto packageFilename = const_cast<DgnV8FileR>(f).GetPackageName();
+    return GetV8FileByName(BentleyApi::BeFileName(packageFilename.c_str()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RootModelConverter::_WasEmbeddedFileSeen(Utf8StringCR uniqueName) const
+    {
+    return m_embeddedFilesSeen.find(uniqueName) != m_embeddedFilesSeen.end();
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
