@@ -166,9 +166,17 @@
     </Part>
 
     <!-- ******************************** Integration Tests ************************************** -->
+    <Part Name="PrewireForIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/Prewire.mke">
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="Licensing" SubPartDirectory="IntegrationTests">Delivery/IntegrationTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+    
     <Part Name="IntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published">
-      <!--SubPart PartName="PrewireForUnitTests" /-->
+        <SubPart PartName="PrewireForIntegrationTests" />
+        <SubPart PartName="OidcNativeClient" />
         <SubPart PartName="Licensing" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Licensing/IntegrationTests/Published" SourceName="Delivery/IntegrationTests/Objects/Published"/>
         </Bindings>
@@ -204,6 +212,34 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
+    <!-- for OIDC tokens in Integration tests -->
+    <Part Name="OidcNativeClient" DeferType="BuildUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests/IntegrationTests/OidcNativeClientPrewire.mke">
+        <NuGetPackage>Testing.OidcNativeClient</NuGetPackage>
+        <Bindings>
+            <Libs>Nuget\native\OidcInterop$(libext)</Libs>
+            <Assemblies>
+                Nuget\native\HtmlAgilityPack$(shlibext)
+                Nuget\native\IdentityModel$(shlibext)
+                Nuget\native\IdentityModel.OidcClient$(shlibext)
+                Nuget\native\Microsoft.Extensions.DependencyInjection.Abstractions$(shlibext)
+                Nuget\native\Microsoft.Extensions.Logging.Abstractions$(shlibext)
+                Nuget\native\Microsoft.Extensions.Logging$(shlibext)
+                Nuget\native\Microsoft.IdentityModel.Logging$(shlibext)
+                Nuget\native\Microsoft.IdentityModel.Tokens$(shlibext)
+                Nuget\native\Newtonsoft.Json$(shlibext)
+                Nuget\native\OidcClient$(shlibext)
+                Nuget\native\OidcInterop$(shlibext)
+                Nuget\native\System.IdentityModel.Tokens.Jwt$(shlibext)
+                Nuget\native\System.Net.Http$(shlibext)
+                Nuget\native\WebDriver$(shlibext)
+            </Assemblies>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">
+                Delivery/chromedriver.exe
+                Delivery/LicensingIntegrationTest.exe.config
+            </Files>
+        </Bindings>
+    </Part>
+
     <Product Name="LicenseClientCrossPLatform" PrgOutputDir="LicenseClientCrossPlatform" SaveProduct="true" SaveTranskit="true">
         <SubPart PartName="Licensing"/>
         <Directories DirectoryListName="LicenseClientCrossPlatform"/>
@@ -214,6 +250,8 @@
         <SubProduct ProductName="Licensing-GtestIntegration"/>
         <SubPart PartName="RunGtestIntegration"/>    
     </Product>
+
+
 
     <ProductDirectoryList ListName="LicenseClientCrossPlatform">
         <ProductDirectory Name="Assemblies" Deliver="true"/>
