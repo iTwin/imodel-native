@@ -52,6 +52,8 @@ Error::Id Error::ErrorIdFromString(Utf8StringCR errorIdString)
         map["iModelHub.ProjectIdIsNotSpecified"]                    = Id::ProjectIdIsNotSpecified;
         map["iModelHub.FailedToGetProjectPermissions"]              = Id::FailedToGetProjectPermissions;
         map["iModelHub.FailedToGetProjectMembers"]                  = Id::FailedToGetProjectMembers;
+        map["iModelHub.FailedToGetAssetPermissions"]                = Id::FailedToGetAssetPermissions;
+        map["iModelHub.FailedToGetAssetMembers"]                    = Id::FailedToGetAssetMembers;
         map["iModelHub.ChangeSetAlreadyHasVersion"]                 = Id::ChangeSetAlreadyHasVersion;
         map["iModelHub.VersionAlreadyExists"]                       = Id::VersionAlreadyExists;
         map["iModelHub.JobSchedulingFailed"]                        = Id::JobSchedulingFailed;

@@ -243,7 +243,7 @@ TEST_F(BriefcasePullTests, SuccessfulAcquireBriefcaseAfterMergeJob)
     {
     //This test will merge the imodel, making it no longer usable for this test fixture
     IWSRepositoryClientPtr projectClient = nullptr;
-    iModelHubHelpers::CreateProjectWSClient(projectClient, *s_client, s_projectId);
+    iModelHubHelpers::CreateContextWSClient(projectClient, *s_client, s_projectId);
     ASSERT_TRUE(nullptr != projectClient);
     Utf8StringCR mergeJobId = LRPJobBackdoorAPI::ScheduleLRPJob(projectClient, "MergeJob", s_info->GetId());
 

@@ -185,7 +185,7 @@ TEST_F(FakeServerFixture, CreateiModel)
     EXPECT_STRCASEEQ(ServerSchema::ChangedInstance, settings.getMemberNames()[0].c_str());
     EXPECT_STRCASEEQ("Created", settings[ServerSchema::ChangedInstance]["change"].asCString());
     EXPECT_STRCASEEQ("iModel", settings[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::ClassName].asCString());
-    EXPECT_STRCASEEQ("ProjectScope", settings[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::SchemaName].asCString());
+    EXPECT_STRCASEEQ("ContextScope", settings[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::SchemaName].asCString());
     EXPECT_FALSE(settings[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::Properties][ServerSchema::Property::Initialized].asBool());
     EXPECT_STRCASEEQ(description.c_str(), settings[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::Properties][ServerSchema::Property::Description].asCString());
     EXPECT_STRCASEEQ(iModelName.c_str(), settings[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::Properties][ServerSchema::Property::Name].asCString());

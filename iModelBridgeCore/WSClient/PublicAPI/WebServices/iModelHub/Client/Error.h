@@ -54,6 +54,8 @@ public:
         ProjectIdIsNotSpecified,
         FailedToGetProjectPermissions,
         FailedToGetProjectMembers,
+        FailedToGetAssetPermissions,
+        FailedToGetAssetMembers,
         ChangeSetAlreadyHasVersion,
         VersionAlreadyExists,
         JobSchedulingFailed,

@@ -31,7 +31,9 @@ protected:
         Utf8String versionId,
         Utf8String versionName,
         Utf8String changeSetId,
-        Utf8String lockUrl
+        Utf8String lockUrl,
+        Utf8String contextId,
+        ContextType contextType
     );
 
 public:
@@ -45,7 +47,9 @@ public:
         Utf8String versionId,
         Utf8String versionName,
         Utf8String changeSetId,
-        Utf8String lockUrl
+        Utf8String lockUrl,
+        Utf8String contextId,
+        ContextType contextType
     );
 
     GlobalEvent::GlobalEventType GetEventType() override { return GlobalEvent::GlobalEventType::NamedVersionCreatedEvent; }

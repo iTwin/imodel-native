@@ -21,6 +21,7 @@ struct IntegrationTestsBase : public ::testing::Test
         Utf8String m_imodelName;
         static ClientPtr s_client;
         static Utf8String s_projectId;
+        static Utf8String s_assetId;
 
     public:
         static void SetUpTestCase(RequestBehaviorOptions behaviourOptions = RequestBehaviorOptions());

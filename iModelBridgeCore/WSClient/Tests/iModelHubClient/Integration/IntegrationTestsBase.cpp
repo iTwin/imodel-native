@@ -20,6 +20,7 @@ BeFileName IntegrationTestsBase::s_seed;
 DgnCategoryId IntegrationTestsBase::s_defaultCategoryId;
 ClientPtr IntegrationTestsBase::s_client;
 Utf8String IntegrationTestsBase::s_projectId;
+Utf8String IntegrationTestsBase::s_assetId;
 
 BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
 ::testing::TestInfo const& GetTestInfo()
@@ -99,6 +100,7 @@ void IntegrationTestsBase::SetUpTestCase(RequestBehaviorOptions behaviourOptions
     iModelHubHelpers::CreateClient(s_client, IntegrationTestsSettings::Instance().GetValidAdminCredentials());
     iModelHubHost::Instance().SetRepositoryAdmin(s_client->GetiModelAdmin());
     s_projectId = IntegrationTestsSettings::Instance().GetProjectId();
+    s_assetId = IntegrationTestsSettings::Instance().GetAssetId();
 
     bmap<Utf8String, Utf8String> requestOptions = bmap<Utf8String, Utf8String>();
     requestOptions.insert(behaviourOptions.GetBehaviorOptionsResultPair());
