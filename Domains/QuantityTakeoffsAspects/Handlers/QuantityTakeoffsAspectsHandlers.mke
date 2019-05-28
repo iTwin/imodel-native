@@ -43,6 +43,8 @@ $(o)SlopeAspectHandler$(oext) : $(_MakeFilePath)SlopeAspectHandler.cpp ${MultiCo
 
 $(o)ThicknessAspectHandler$(oext) : $(_MakeFilePath)ThicknessAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ThicknessAspectHandler.h
 
+$(o)VolumeAspectHandler$(oext) : $(_MakeFilePath)VolumeAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/VolumeAspectHandler.h
+
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
 

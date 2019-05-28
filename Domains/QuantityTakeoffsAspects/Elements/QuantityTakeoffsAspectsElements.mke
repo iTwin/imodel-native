@@ -35,6 +35,8 @@ $(o)PileAspect$(oext) : $(_MakeFilePath)PileAspect.cpp ${MultiCompileDepends} $(
 
 $(o)PipeAspect$(oext) : $(_MakeFilePath)PipeAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\PipeAspect.h
 
+$(o)QuantityTakeoffAspect$(oext) : $(_MakeFilePath)QuantityTakeoffAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\QuantityTakeoffAspect.h
+
 $(o)SideAreasAspect$(oext) : $(_MakeFilePath)SideAreasAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\SideAreasAspect.h
 
 $(o)SlabAspect$(oext) : $(_MakeFilePath)SlabAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\SlabAspect.h
@@ -43,7 +45,7 @@ $(o)SlopeAspect$(oext) : $(_MakeFilePath)SlopeAspect.cpp ${MultiCompileDepends} 
 
 $(o)ThicknessAspect$(oext) : $(_MakeFilePath)ThicknessAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\ThicknessAspect.h
 
-$(o)QuantityTakeoffAspect$(oext) : $(_MakeFilePath)QuantityTakeoffAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\QuantityTakeoffAspect.h
+$(o)VolumeAspect$(oext) : $(_MakeFilePath)VolumeAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\VolumeAspect.h
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)

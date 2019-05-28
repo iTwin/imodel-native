@@ -14,6 +14,7 @@
 #include <QuantityTakeoffsAspects/Handlers/SlabAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/SlopeAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/ThicknessAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/VolumeAspectHandler.h>
 
 BEGIN_QUANTITYTAKEOFFSASPECTS_NAMESPACE
 
@@ -36,6 +37,7 @@ QuantityTakeoffsAspectsDomain::QuantityTakeoffsAspectsDomain() : DgnDomain(QUANT
     RegisterHandler(SlabAspectHandler::GetHandler());
     RegisterHandler(SlopeAspectHandler::GetHandler());
     RegisterHandler(ThicknessAspectHandler::GetHandler());
+    RegisterHandler(VolumeAspectHandler::GetHandler());
     }
     
 END_QUANTITYTAKEOFFSASPECTS_NAMESPACE

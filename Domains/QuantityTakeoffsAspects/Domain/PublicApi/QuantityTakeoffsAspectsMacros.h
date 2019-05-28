@@ -41,11 +41,12 @@
 #define QUANTITYTAKEOFFSASPECTS_CLASS_SlabAspect                    "SlabAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_SlopeAspect                   "SlopeAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_ThicknessAspect               "ThicknessAspect"
+#define QUANTITYTAKEOFFSASPECTS_CLASS_VolumeAspect                  "VolumeAspect"
 
 
+#define QUANTITYTAKEOFFSASPECTS_DIMENSIONSASPECT_Height             "Height"
 #define QUANTITYTAKEOFFSASPECTS_DIMENSIONSASPECT_Length             "Length"
 #define QUANTITYTAKEOFFSASPECTS_DIMENSIONSASPECT_Width              "Width"
-#define QUANTITYTAKEOFFSASPECTS_DIMENSIONSASPECT_Height             "Height"
 
 #define QUANTITYTAKEOFFSASPECTS_ENERGYPERFORMANCEASPECT_Rating      "Rating"
 
@@ -53,22 +54,25 @@
 
 #define QUANTITYTAKEOFFSASPECTS_PILEASPECT_EmbedmentDepth           "EmbedmentDepth"
 
+#define QUANTITYTAKEOFFSASPECTS_PIPEASPECT_Diameter                 "Diameter"
+#define QUANTITYTAKEOFFSASPECTS_PIPEASPECT_Length                   "Length"
 #define QUANTITYTAKEOFFSASPECTS_PIPEASPECT_Schedule                 "Schedule"
 #define QUANTITYTAKEOFFSASPECTS_PIPEASPECT_Thickness                "Thickness"
-#define QUANTITYTAKEOFFSASPECTS_PIPEASPECT_Length                   "Length"
-#define QUANTITYTAKEOFFSASPECTS_PIPEASPECT_Diameter                 "Diameter"
 
-#define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_RightSideNetArea    "RightSideNetArea"
-#define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_LeftSideNetArea     "LeftSideNetArea"
-#define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_TopNetArea          "TopNetArea"
-#define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_BottomNetArea       "BottomNetArea"
-#define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_RightSideGrossArea  "RightSideGrossArea"
-#define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_LeftSideGrossArea   "LeftSideGrossArea"
-#define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_TopGrossArea        "TopGrossArea"
 #define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_BottomGrossArea     "BottomGrossArea"
+#define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_LeftSideGrossArea   "LeftSideGrossArea"
+#define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_RightSideGrossArea  "RightSideGrossArea"
+#define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_TopGrossArea        "TopGrossArea"
+#define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_BottomNetArea       "BottomNetArea"
+#define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_LeftSideNetArea     "LeftSideNetArea"
+#define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_RightSideNetArea    "RightSideNetArea"
+#define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_TopNetArea          "TopNetArea"
 
 #define QUANTITYTAKEOFFSASPECTS_SLABASPECT_SlabDirection            "SlabDirection"
 
 #define QUANTITYTAKEOFFSASPECTS_SLOPEASPECT_Slope                   "Slope"
 
 #define QUANTITYTAKEOFFSASPECTS_THICKNESSASPECT_Thickness           "Thickness"
+
+#define QUANTITYTAKEOFFSASPECTS_VOLUMEASPECT_GrossVolume            "GrossVolume"
+#define QUANTITYTAKEOFFSASPECTS_VOLUMEASPECT_NetVolume              "NetVolume"
