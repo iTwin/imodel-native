@@ -29,6 +29,8 @@ $(o)PileAspectHandler$(oext) : $(_MakeFilePath)PileAspectHandler.cpp ${MultiComp
 
 $(o)SlabAspectHandler$(oext) : $(_MakeFilePath)SlabAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SlabAspectHandler.h
 
+$(o)SlopeAspectHandler$(oext) : $(_MakeFilePath)SlopeAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SlopeAspectHandler.h
+
 $(o)ThicknessAspectHandler$(oext) : $(_MakeFilePath)ThicknessAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ThicknessAspectHandler.h
 
 %include MultiCppCompileGo.mki

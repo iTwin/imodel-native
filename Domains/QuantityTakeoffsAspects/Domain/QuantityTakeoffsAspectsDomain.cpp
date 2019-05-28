@@ -7,6 +7,7 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <QuantityTakeoffsAspects/Handlers/PileAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/SlabAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/SlopeAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/ThicknessAspectHandler.h>
 
 BEGIN_QUANTITYTAKEOFFSASPECTS_NAMESPACE
@@ -23,6 +24,7 @@ QuantityTakeoffsAspectsDomain::QuantityTakeoffsAspectsDomain() : DgnDomain(QUANT
     {
     RegisterHandler(PileAspectHandler::GetHandler());
     RegisterHandler(SlabAspectHandler::GetHandler());
+    RegisterHandler(SlopeAspectHandler::GetHandler());
     RegisterHandler(ThicknessAspectHandler::GetHandler());
     }
     
