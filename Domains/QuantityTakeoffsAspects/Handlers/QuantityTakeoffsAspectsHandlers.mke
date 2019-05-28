@@ -25,7 +25,9 @@ nameToDefine = __QUANTITYTAKEOFFSASPECTS_BUILD__
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)PileAspectHandler$(oext) : $(_MakeFilePath)PileAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PileAspectHandler.h  
+$(o)PileAspectHandler$(oext) : $(_MakeFilePath)PileAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PileAspectHandler.h
+
+$(o)SlabAspectHandler$(oext) : $(_MakeFilePath)SlabAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SlabAspectHandler.h
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)

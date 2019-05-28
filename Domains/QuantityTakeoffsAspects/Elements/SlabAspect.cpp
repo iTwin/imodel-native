@@ -3,141 +3,161 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "QuantityTakeoffsAspectsTestFixtureBase.h"
-#include <QuantityTakeoffsAspects/Domain/QuantityTakeoffsAspectsDomain.h>
-#include <DgnPlatform/UnitTests/ScopedDgnHost.h>
-#include <DgnPlatform/FunctionalDomain.h>
-#include <DgnPlatform/DgnPlatformAPI.h>
+#include "PublicApi/SlabAspect.h"
 
-USING_NAMESPACE_BENTLEY_DGN
 BEGIN_QUANTITYTAKEOFFSASPECTS_NAMESPACE
 
-#define PROJECT_SEED_NAME       L"QuantityTakeoffsAspectsTests/QuantityTakeoffsAspectsTestSeed.bim"
-#define PROJECT_DEFAULT_NAME    L"QuantityTakeoffsAspectsTests/Default.bim"
-#define PROJECT_TEMP_FOLDER     L"QuantityTakeoffsAspectsTests"
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StaticRegisterDomains()
+SlabAspect::SlabAspect() : m_slabDirection()
     {
-    DgnDomains::RegisterDomain(Dgn::FunctionalDomain::GetDomain(), DgnDomain::Required::Yes);
-    DgnDomains::RegisterDomain(QuantityTakeoffsAspectsDomain::GetDomain(), DgnDomain::Required::Yes);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QuantityTakeoffsAspectsTestFixtureBase::RegisterDomains()
+SlabAspect::SlabAspect(DPoint2dCR slabDirection) : m_slabDirection(slabDirection)
     {
-    StaticRegisterDomains();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName QuantityTakeoffsAspectsTestFixtureBase::GetGivenProjectPath()
+Dgn::DgnDbStatus SlabAspect::_LoadProperties(Dgn::DgnElementCR el)
     {
-    return SharedRepositoryManagerTestBase::BuildProjectPath(PROJECT_DEFAULT_NAME);
+    BeSQLite::EC::CachedECSqlStatementPtr select = el.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT " QUANTITYTAKEOFFSASPECTS_PILEASPECT_SlabDirection
+        " FROM " QUANTITYTAKEOFFSASPECTS_SCHEMA(QUANTITYTAKEOFFSASPECTS_CLASS_SlabAspect)
+        " WHERE Element.Id=?");
+
+    if (!select.IsValid())
+        return Dgn::DgnDbStatus::ReadError;
+
+    select->BindId(1, el.GetElementId());
+
+    if (BeSQLite::BE_SQLITE_ROW != select->Step())
+        return Dgn::DgnDbStatus::ReadError;
+
+    m_slabDirection = select->GetValuePoint2d(0);
+
+    return Dgn::DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QuantityTakeoffsAspectsTestFixtureBase::CopyFile(BeFileName projectPath)
+Dgn::DgnDbStatus SlabAspect::_UpdateProperties
+(
+Dgn::DgnElementCR el,
+BeSQLite::EC::ECCrudWriteToken const* writeToken
+)
     {
-    BeFileName::BeCopyFile(SharedRepositoryManagerTestBase::BuildProjectPath(PROJECT_SEED_NAME), projectPath.c_str(), true);
+    BeSQLite::EC::CachedECSqlStatementPtr update = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(
+        "UPDATE " QUANTITYTAKEOFFSASPECTS_SCHEMA(QUANTITYTAKEOFFSASPECTS_CLASS_SlabAspect)
+        " SET " QUANTITYTAKEOFFSASPECTS_PILEASPECT_SlabDirection "=?"
+        " WHERE Element.Id=?", writeToken);
+
+    if (!update.IsValid())
+        return Dgn::DgnDbStatus::WriteError;
+
+    update->BindPoint2d(1, m_slabDirection);
+    update->BindId(2, el.GetElementId());
+
+    if (BeSQLite::BE_SQLITE_DONE != update->Step())
+        return Dgn::DgnDbStatus::WriteError;
+
+    return Dgn::DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QuantityTakeoffsAspectsTestFixtureBase::SetUpTestCase ()
+Dgn::DgnDbStatus SlabAspect::_GetPropertyValue
+(
+ECN::ECValueR value,
+Utf8CP propertyName, 
+Dgn::PropertyArrayIndex const& arrayIndex
+) const
     {
-    BeFileName seedPath = SharedRepositoryManagerTestBase::BuildProjectPath (PROJECT_SEED_NAME);
-    BeFileName outPath;
-    BeTest::GetHost ().GetOutputRoot (outPath);
-    BeFileName::CreateNewDirectory (outPath);
-    seedPath.BeDeleteFile ();
-    CreateSeedDb(PROJECT_SEED_NAME, PROJECT_TEMP_FOLDER, &StaticRegisterDomains);
+    if (0 != strcmp(propertyName, QUANTITYTAKEOFFSASPECTS_PILEASPECT_SlabDirection))
+        return Dgn::DgnDbStatus::BadArg;
+
+    value.SetPoint2d(m_slabDirection);
+    return Dgn::DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-L10N::SqlangFiles QuantityTakeoffsAspectsTestFixtureBase::_GetApplicationSqlangs()
+Dgn::DgnDbStatus SlabAspect::_SetPropertyValue
+(
+Utf8CP propertyName,
+ECN::ECValueCR value,
+Dgn::PropertyArrayIndex const& arrayIndex
+)
     {
-    BeFileName documentsRoot;
-    BeTest::GetHost().GetDocumentsRoot(documentsRoot);
+    if (0 != strcmp(propertyName, QUANTITYTAKEOFFSASPECTS_PILEASPECT_SlabDirection))
+        return Dgn::DgnDbStatus::BadArg;
 
-    BeFileName sqlangDbPath = BeFileName(documentsRoot).AppendToPath(L"../sqlang/QuantityTakeoffsAspects_en.sqlang.db3");
-    return L10N::SqlangFiles(sqlangDbPath);
+    m_slabDirection = value.GetPoint2d();
+    return Dgn::DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbR QuantityTakeoffsAspectsTestFixtureBase::GetDgnDb()
+SlabAspectPtr SlabAspect::Create(DPoint2dCR slabDirection)
     {
-    return *DgnClientFx::DgnClientApp::App().Project();
+    return new SlabAspect(slabDirection);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QuantityTakeoffsAspectsTestFixtureBase::SetUp()
+ECN::ECClassId SlabAspect::QueryECClassId(Dgn::DgnDbR db)
     {
-    BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::SharedRepositoryManagerTestBase::SetUp();
+    return db.Schemas().GetClassId(QUANTITYTAKEOFFSASPECTS_SCHEMA_NAME, QUANTITYTAKEOFFSASPECTS_CLASS_SlabAspect);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QuantityTakeoffsAspectsTestFixtureBase::TearDown()
+ECN::ECClassCP SlabAspect::QueryECClass(Dgn::DgnDbR db)
     {
-    BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::SharedRepositoryManagerTestBase::TearDown();
+    return db.Schemas().GetClass(QueryECClassId(db));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialCategoryCPtr QuantityTakeoffsAspectsTestFixtureBase::CreateAndInsertCategory(DgnDbR db, Utf8StringCR name)
+SlabAspectCP SlabAspect::GetCP(Dgn::DgnElementCR el)
     {
-    Dgn::DgnSubCategory::Appearance appearance;
-    appearance.SetColor(Dgn::ColorDef::White());
-    Dgn::SpatialCategory category(db.GetDictionaryModel(), name, Dgn::DgnCategory::Rank::Domain);
-    return category.Insert(appearance);
+    return UniqueAspect::Get<SlabAspect>(el, *QueryECClass(el.GetDgnDb()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalModelPtr QuantityTakeoffsAspectsTestFixtureBase::CreateAndInsertModel(DgnDbR db, Utf8StringCR name)
+SlabAspectP SlabAspect::GetP(Dgn::DgnElementR el)
     {
-    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    PhysicalPartitionPtr partition = PhysicalPartition::Create(*rootSubject, name);
-    db.Elements().Insert(*partition);
-    return PhysicalModel::CreateAndInsert(*partition);
+    return UniqueAspect::GetP<SlabAspect>(el, *QueryECClass(el.GetDgnDb()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-GenericPhysicalObjectPtr QuantityTakeoffsAspectsTestFixtureBase::CreateAndInsertObject(DgnDbR db)
+DPoint2dCP SlabAspect::GetSlabDirection() const
+    { 
+    return &m_slabDirection;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void SlabAspect::SetSlabDirection(DPoint2dCR newSlabDirection)
     {
-    PhysicalModelPtr model = CreateAndInsertModel(db, "TestModel");
-    if (model.IsNull())
-        return nullptr;
-
-    SpatialCategoryCPtr category = CreateAndInsertCategory(db, "TestObject");
-    if (category.IsNull())
-        return nullptr;
-
-    GenericPhysicalObjectPtr object = GenericPhysicalObject::Create(*model, category->GetCategoryId());
-    if (object->Insert().IsNull())
-        return nullptr;
-
-    return object;
+    m_slabDirection = newSlabDirection;
     }
 
 END_QUANTITYTAKEOFFSASPECTS_NAMESPACE

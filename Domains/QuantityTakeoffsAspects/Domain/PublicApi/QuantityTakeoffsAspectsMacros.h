@@ -33,6 +33,7 @@
 
 
 #define QUANTITYTAKEOFFSASPECTS_CLASS_PileAspect                    "PileAspect"
-
+#define QUANTITYTAKEOFFSASPECTS_CLASS_SlabAspect                    "SlabAspect"
 
 #define QUANTITYTAKEOFFSASPECTS_PILEASPECT_EmbedmentDepth           "EmbedmentDepth"
+#define QUANTITYTAKEOFFSASPECTS_PILEASPECT_SlabDirection            "SlabDirection"

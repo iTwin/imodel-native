@@ -6,6 +6,7 @@
 #include "PublicApi/QuantityTakeoffsAspectsDomain.h"
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <QuantityTakeoffsAspects/Handlers/PileAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/SlabAspectHandler.h>
 
 BEGIN_QUANTITYTAKEOFFSASPECTS_NAMESPACE
 
@@ -20,6 +21,7 @@ DOMAIN_DEFINE_MEMBERS(QuantityTakeoffsAspectsDomain)
 QuantityTakeoffsAspectsDomain::QuantityTakeoffsAspectsDomain() : DgnDomain(QUANTITYTAKEOFFSASPECTS_SCHEMA_NAME, "QuantityTakeoffsAspects Domain", 1)
     {
     RegisterHandler(PileAspectHandler::GetHandler());
+    RegisterHandler(SlabAspectHandler::GetHandler());
     }
     
 END_QUANTITYTAKEOFFSASPECTS_NAMESPACE

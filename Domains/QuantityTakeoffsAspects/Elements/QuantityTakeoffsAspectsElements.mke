@@ -27,6 +27,8 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)PileAspect$(oext) : $(_MakeFilePath)PileAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\PileAspect.h
 
+$(o)SlabAspect$(oext) : $(_MakeFilePath)SlabAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\SlabAspect.h
+
 $(o)QuantityTakeoffAspect$(oext) : $(_MakeFilePath)QuantityTakeoffAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\QuantityTakeoffAspect.h
 
 %include MultiCppCompileGo.mki

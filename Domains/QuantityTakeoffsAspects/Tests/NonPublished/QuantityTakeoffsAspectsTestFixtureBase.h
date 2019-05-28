@@ -22,6 +22,10 @@ struct QuantityTakeoffsAspectsTestFixtureBase : BENTLEY_BUILDING_SHARED_NAMESPAC
 
         void SetUp() override;
         void TearDown() override;
+
+        static Dgn::SpatialCategoryCPtr CreateAndInsertCategory(Dgn::DgnDbR db, Utf8StringCR name);
+        static Dgn::PhysicalModelPtr CreateAndInsertModel(Dgn::DgnDbR db, Utf8StringCR name);
+        static Dgn::GenericPhysicalObjectPtr CreateAndInsertObject(Dgn::DgnDbR db);
     };
 
 END_QUANTITYTAKEOFFSASPECTS_NAMESPACE
