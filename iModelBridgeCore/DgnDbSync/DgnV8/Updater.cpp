@@ -51,7 +51,7 @@ SyncInfo::V8ElementExternalSourceAspect ChangeDetector::FindElementAspectByIdent
     {
     SyncInfo::V8ElementExternalSourceAspectIterator it(v8mm.GetDgnModel(), "Identifier=:identifier");
     auto stmt = it.GetStatement();
-    stmt->BindText(stmt->GetParameterIndex(":identifier"), identifier.c_str(), EC::IECSqlBinder::MakeCopy::No);
+    stmt->BindText(stmt->GetParameterIndex("identifier"), identifier.c_str(), EC::IECSqlBinder::MakeCopy::No);
 
     auto found = it.begin();
     if (nullptr != filter)
