@@ -412,7 +412,10 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DwgSource
     size_t  i = 0;
     for (; i < existingCount; ++i)
         {
-        this->UpdateResults (results.m_childElements.at(i), source);
+        // set the parent element as the existing element for children, VSTS 127172:
+        auto childResults = results.m_childElements.at(i);
+        childResults.SetExistingElement (results.GetExistingElement());
+        this->UpdateResults (childResults, source);
         // *** WIP_CONVERTER - bail out if any child update fails?
         }
 

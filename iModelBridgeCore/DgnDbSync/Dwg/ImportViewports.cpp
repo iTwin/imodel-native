@@ -649,7 +649,8 @@ bool    ViewportFactory::IsLayerDisplayed (DwgDbHandleCR layerHandle, DwgDbObjec
     DwgDbObjectId   layerId;
     if (layerHandle.IsNull() || !(layerId = dwg.GetObjectId(layerHandle)).IsValid())
         {
-        BeAssert (false && "Non-database resident layers are not supported!");
+        if (layerHandle.IsNull())
+            BeAssert (false && "Non-database resident layers are not supported!");
         return  false;
         }
 
