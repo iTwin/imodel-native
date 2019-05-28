@@ -32,11 +32,13 @@
     END_QUANTITYTAKEOFFSASPECTS_NAMESPACE
 
 
+#define QUANTITYTAKEOFFSASPECTS_CLASS_PerimeterAspect               "PerimeterAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_PileAspect                    "PileAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_SlabAspect                    "SlabAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_SlopeAspect                   "SlopeAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_ThicknessAspect               "ThicknessAspect"
 
+#define QUANTITYTAKEOFFSASPECTS_PERIMETERASPECT_Perimeter           "Perimeter"
 #define QUANTITYTAKEOFFSASPECTS_PILEASPECT_EmbedmentDepth           "EmbedmentDepth"
 #define QUANTITYTAKEOFFSASPECTS_SLABASPECT_SlabDirection            "SlabDirection"
 #define QUANTITYTAKEOFFSASPECTS_SLOPEASPECT_Slope                   "Slope"

@@ -5,6 +5,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/QuantityTakeoffsAspectsDomain.h"
 #include <DgnPlatform/DgnPlatformApi.h>
+#include <QuantityTakeoffsAspects/Handlers/PerimeterAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/PileAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/SlabAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/SlopeAspectHandler.h>
@@ -22,6 +23,7 @@ DOMAIN_DEFINE_MEMBERS(QuantityTakeoffsAspectsDomain)
 +---------------+---------------+---------------+---------------+---------------+------*/
 QuantityTakeoffsAspectsDomain::QuantityTakeoffsAspectsDomain() : DgnDomain(QUANTITYTAKEOFFSASPECTS_SCHEMA_NAME, "QuantityTakeoffsAspects Domain", 1)
     {
+    RegisterHandler(PerimeterAspectHandler::GetHandler());
     RegisterHandler(PileAspectHandler::GetHandler());
     RegisterHandler(SlabAspectHandler::GetHandler());
     RegisterHandler(SlopeAspectHandler::GetHandler());
