@@ -47,6 +47,8 @@ $(o)SlopeAspect$(oext) : $(_MakeFilePath)SlopeAspect.cpp ${MultiCompileDepends} 
 
 $(o)StairsAspect$(oext) : $(_MakeFilePath)StairsAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\StairsAspect.h
 
+$(o)StructuralLinearMemberAspect$(oext) : $(_MakeFilePath)StructuralLinearMemberAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\StructuralLinearMemberAspect.h
+
 $(o)SurfaceAreaAspect$(oext) : $(_MakeFilePath)SurfaceAreaAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\SurfaceAreaAspect.h
 
 $(o)ThicknessAspect$(oext) : $(_MakeFilePath)ThicknessAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\ThicknessAspect.h
