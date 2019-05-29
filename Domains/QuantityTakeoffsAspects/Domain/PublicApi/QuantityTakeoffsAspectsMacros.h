@@ -41,6 +41,7 @@
 #define QUANTITYTAKEOFFSASPECTS_CLASS_SideAreasAspect               "SideAreasAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_SlabAspect                    "SlabAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_SlopeAspect                   "SlopeAspect"
+#define QUANTITYTAKEOFFSASPECTS_CLASS_StairsAspect                  "StairsAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_SurfaceAreaAspect             "SurfaceAreaAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_ThicknessAspect               "ThicknessAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_VolumeAspect                  "VolumeAspect"
@@ -77,6 +78,9 @@
 #define QUANTITYTAKEOFFSASPECTS_SLABASPECT_SlabDirection            "SlabDirection"
 
 #define QUANTITYTAKEOFFSASPECTS_SLOPEASPECT_Slope                   "Slope"
+
+#define QUANTITYTAKEOFFSASPECTS_STAIRSASPECT_NumberOfRisers         "NumberOfRisers"
+#define QUANTITYTAKEOFFSASPECTS_STAIRSASPECT_RiserHeight            "RiserHeight"
 
 #define QUANTITYTAKEOFFSASPECTS_SURFACEAREAASPECT_GrossSurfaceArea  "GrossSurfaceArea"
 #define QUANTITYTAKEOFFSASPECTS_SURFACEAREAASPECT_NetSurfaceArea    "NetSurfaceArea"

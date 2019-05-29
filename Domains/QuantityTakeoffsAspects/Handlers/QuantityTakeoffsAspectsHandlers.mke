@@ -43,6 +43,8 @@ $(o)SlabAspectHandler$(oext) : $(_MakeFilePath)SlabAspectHandler.cpp ${MultiComp
 
 $(o)SlopeAspectHandler$(oext) : $(_MakeFilePath)SlopeAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SlopeAspectHandler.h
 
+$(o)StairsAspectHandler$(oext) : $(_MakeFilePath)StairsAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/StairsAspectHandler.h
+
 $(o)SurfaceAreaAspectHandler$(oext) : $(_MakeFilePath)SurfaceAreaAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SurfaceAreaAspectHandler.h
 
 $(o)ThicknessAspectHandler$(oext) : $(_MakeFilePath)ThicknessAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ThicknessAspectHandler.h
