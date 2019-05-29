@@ -61,9 +61,13 @@ TEST_F(StructuralLinearMemberAspectTestFixture, Create)
     aspect2->SetSectionName(sectionName2);
     aspect2->SetType(type2);
 
-    ASSERT_EQ(crossSectionalArea2, aspect2->GetCrossSectionalArea());
-    ASSERT_EQ(sectionName2, *aspect2->GetSectionName());
-    ASSERT_EQ(type2, *aspect2->GetType());
+    object->Update();
+    StructuralLinearMemberAspectCPtr aspect3 = StructuralLinearMemberAspect::GetCP(*object);
+    ASSERT_TRUE(aspect3.IsValid());
+
+    ASSERT_EQ(crossSectionalArea2, aspect3->GetCrossSectionalArea());
+    ASSERT_EQ(sectionName2, *aspect3->GetSectionName());
+    ASSERT_EQ(type2, *aspect3->GetType());
 
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
     }

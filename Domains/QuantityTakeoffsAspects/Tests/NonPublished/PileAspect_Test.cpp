@@ -35,17 +35,29 @@ TEST_F(PileAspectTestFixture, Create)
     GenericPhysicalObjectPtr object = CreateAndInsertObject(db);
     ASSERT_TRUE(object.IsValid());
 
-    PileAspectPtr aspect = PileAspect::Create(5);
+    double embedmentDepth1 = 5.0f;
+
+    PileAspectPtr aspect = PileAspect::Create(embedmentDepth1);
     ASSERT_TRUE(aspect.IsValid());
 
     PileAspect::SetAspect(*object, *aspect);
 
     object->Update();
 
-    PileAspectCPtr aspect2 = PileAspect::GetCP(*object);
+    PileAspectPtr aspect2 = PileAspect::GetP(*object);
     ASSERT_TRUE(aspect2.IsValid());
 
-    ASSERT_EQ(5, aspect2->GetEmbedmentDepth());
+    ASSERT_EQ(embedmentDepth1, aspect2->GetEmbedmentDepth());
+
+    double embedmentDepth2 = 6.0f;
+
+    aspect2->SetEmbedmentDepth(embedmentDepth2);
+
+    object->Update();
+    PileAspectCPtr aspect3 = PileAspect::GetCP(*object);
+    ASSERT_TRUE(aspect3.IsValid());
+
+    ASSERT_EQ(embedmentDepth2, aspect3->GetEmbedmentDepth());
 
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
     }

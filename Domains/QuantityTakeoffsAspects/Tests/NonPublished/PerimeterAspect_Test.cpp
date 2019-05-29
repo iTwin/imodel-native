@@ -35,19 +35,29 @@ TEST_F(PerimeterAspectTestFixture, Create)
     GenericPhysicalObjectPtr object = CreateAndInsertObject(db);
     ASSERT_TRUE(object.IsValid());
 
-    double perimeter = 100.5f;
+    double perimeter1 = 100.5f;
 
-    PerimeterAspectPtr aspect = PerimeterAspect::Create(perimeter);
+    PerimeterAspectPtr aspect = PerimeterAspect::Create(perimeter1);
     ASSERT_TRUE(aspect.IsValid());
 
     PerimeterAspect::SetAspect(*object, *aspect);
 
     object->Update();
 
-    PerimeterAspectCPtr aspect2 = PerimeterAspect::GetCP(*object);
+    PerimeterAspectPtr aspect2 = PerimeterAspect::GetP(*object);
     ASSERT_TRUE(aspect2.IsValid());
 
-    ASSERT_EQ(perimeter, aspect2->GetPerimeter());
+    ASSERT_EQ(perimeter1, aspect2->GetPerimeter());
+
+    double perimeter2 = 75.95f;
+
+    aspect2->SetPerimeter(perimeter2);
+
+    object->Update();
+    PerimeterAspectCPtr aspect3 = PerimeterAspect::GetCP(*object);
+    ASSERT_TRUE(aspect3.IsValid());
+
+    ASSERT_EQ(perimeter2, aspect3->GetPerimeter());
 
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
     }

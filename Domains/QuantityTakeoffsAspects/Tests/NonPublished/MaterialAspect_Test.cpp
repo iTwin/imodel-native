@@ -61,9 +61,13 @@ TEST_F(MaterialAspectTestFixture, Create)
     aspect2->SetMaterialDensity(density2);
     aspect2->SetWeight(weight2);
 
-    ASSERT_EQ(material2, *aspect2->GetMaterial());
-    ASSERT_EQ(density2, aspect2->GetMaterialDensity());
-    ASSERT_EQ(weight2, aspect2->GetWeight());
+    object->Update();
+    MaterialAspectCPtr aspect3 = MaterialAspect::GetCP(*object);
+    ASSERT_TRUE(aspect3.IsValid());
+
+    ASSERT_EQ(material2, *aspect3->GetMaterial());
+    ASSERT_EQ(density2, aspect3->GetMaterialDensity());
+    ASSERT_EQ(weight2, aspect3->GetWeight());
 
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
     }

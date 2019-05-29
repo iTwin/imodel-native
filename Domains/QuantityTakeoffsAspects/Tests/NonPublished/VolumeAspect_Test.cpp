@@ -57,8 +57,12 @@ TEST_F(VolumeAspectTestFixture, Create)
     aspect2->SetGrossVolume(grossV2);
     aspect2->SetNetVolume(netV2);
 
-    ASSERT_EQ(grossV2, aspect2->GetGrossVolume());
-    ASSERT_EQ(netV2, aspect2->GetNetVolume());
+    object->Update();
+    VolumeAspectCPtr aspect3 = VolumeAspect::GetCP(*object);
+    ASSERT_TRUE(aspect3.IsValid());
+
+    ASSERT_EQ(grossV2, aspect3->GetGrossVolume());
+    ASSERT_EQ(netV2, aspect3->GetNetVolume());
 
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
     }

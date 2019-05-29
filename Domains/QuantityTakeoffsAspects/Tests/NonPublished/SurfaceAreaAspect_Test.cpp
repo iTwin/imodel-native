@@ -57,8 +57,12 @@ TEST_F(SurfaceAreaAspectTestFixture, Create)
     aspect2->SetGrossSurfaceArea(grossA2);
     aspect2->SetNetSurfaceArea(netA2);
 
-    ASSERT_EQ(grossA2, aspect2->GetGrossSurfaceArea());
-    ASSERT_EQ(netA2, aspect2->GetNetSurfaceArea());
+    object->Update();
+    SurfaceAreaAspectCPtr aspect3 = SurfaceAreaAspect::GetCP(*object);
+    ASSERT_TRUE(aspect3.IsValid());
+
+    ASSERT_EQ(grossA2, aspect3->GetGrossSurfaceArea());
+    ASSERT_EQ(netA2, aspect3->GetNetSurfaceArea());
 
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
     }

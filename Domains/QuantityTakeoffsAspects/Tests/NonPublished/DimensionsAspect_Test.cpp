@@ -57,9 +57,13 @@ TEST_F(DimensionsAspectTestFixture, Create)
     aspect2->SetWidth(dimensions2.y);
     aspect2->SetHeight(dimensions2.z);
 
-    ASSERT_EQ(dimensions2.x, aspect2->GetLength());
-    ASSERT_EQ(dimensions2.y, aspect2->GetWidth());
-    ASSERT_EQ(dimensions2.z, aspect2->GetHeight());
+    object->Update();
+    DimensionsAspectCPtr aspect3 = DimensionsAspect::GetCP(*object);
+    ASSERT_TRUE(aspect3.IsValid());
+
+    ASSERT_EQ(dimensions2.x, aspect3->GetLength());
+    ASSERT_EQ(dimensions2.y, aspect3->GetWidth());
+    ASSERT_EQ(dimensions2.z, aspect3->GetHeight());
 
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
     }

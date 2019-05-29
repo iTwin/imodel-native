@@ -35,19 +35,29 @@ TEST_F(ThicknessAspectTestFixture, Create)
     GenericPhysicalObjectPtr object = CreateAndInsertObject(db);
     ASSERT_TRUE(object.IsValid());
 
-    double thickness = 7.66f;
+    double thickness1 = 7.66f;
 
-    ThicknessAspectPtr aspect = ThicknessAspect::Create(thickness);
+    ThicknessAspectPtr aspect = ThicknessAspect::Create(thickness1);
     ASSERT_TRUE(aspect.IsValid());
 
     ThicknessAspect::SetAspect(*object, *aspect);
 
     object->Update();
 
-    ThicknessAspectCPtr aspect2 = ThicknessAspect::GetCP(*object);
+    ThicknessAspectPtr aspect2 = ThicknessAspect::GetP(*object);
     ASSERT_TRUE(aspect2.IsValid());
 
-    ASSERT_EQ(thickness, aspect2->GetThickness());
+    ASSERT_EQ(thickness1, aspect2->GetThickness());
+
+    double thickness2 = 8.00f;
+
+    aspect2->SetThickness(thickness2);
+
+    object->Update();
+    ThicknessAspectCPtr aspect3 = ThicknessAspect::GetCP(*object);
+    ASSERT_TRUE(aspect3.IsValid());
+
+    ASSERT_EQ(thickness2, aspect3->GetThickness());
 
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
     }

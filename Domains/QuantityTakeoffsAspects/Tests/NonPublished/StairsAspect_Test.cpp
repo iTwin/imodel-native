@@ -57,8 +57,12 @@ TEST_F(StairsAspectTestFixture, Create)
     aspect2->SetNumberOfRisers(numberOfRisers2);
     aspect2->SetRiserHeight(riserHeight2);
 
-    ASSERT_EQ(numberOfRisers2, aspect2->GetNumberOfRisers());
-    ASSERT_EQ(riserHeight2, aspect2->GetRiserHeight());
+    object->Update();
+    StairsAspectCPtr aspect3 = StairsAspect::GetCP(*object);
+    ASSERT_TRUE(aspect3.IsValid());
+
+    ASSERT_EQ(numberOfRisers2, aspect3->GetNumberOfRisers());
+    ASSERT_EQ(riserHeight2, aspect3->GetRiserHeight());
 
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
     }

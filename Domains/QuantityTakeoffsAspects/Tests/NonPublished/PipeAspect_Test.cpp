@@ -61,10 +61,14 @@ TEST_F(PipeAspectTestFixture, Create)
     aspect2->SetLength(dimensions2.y);
     aspect2->SetDiameter(dimensions2.z);
 
-    ASSERT_EQ(schedule2, *aspect2->GetSchedule());
-    ASSERT_EQ(dimensions2.x, aspect2->GetThickness());
-    ASSERT_EQ(dimensions2.y, aspect2->GetLength());
-    ASSERT_EQ(dimensions2.z, aspect2->GetDiameter());
+    object->Update();
+    PipeAspectCPtr aspect3 = PipeAspect::GetCP(*object);
+    ASSERT_TRUE(aspect3.IsValid());
+
+    ASSERT_EQ(schedule2, *aspect3->GetSchedule());
+    ASSERT_EQ(dimensions2.x, aspect3->GetThickness());
+    ASSERT_EQ(dimensions2.y, aspect3->GetLength());
+    ASSERT_EQ(dimensions2.z, aspect3->GetDiameter());
 
     ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
     }
