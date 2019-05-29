@@ -450,6 +450,11 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             m_mergeDefinitions = false;
             continue;
             }
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-all-docs-processed"))
+            {
+            // TODO: This signals that we should run "garbage collection"
+            continue;
+            }
 
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized fwk argument\n", argv[iArg]);
