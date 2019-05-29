@@ -34,6 +34,7 @@
 
 #define QUANTITYTAKEOFFSASPECTS_CLASS_DimensionsAspect              "DimensionsAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_EnergyPerformanceAspect       "EnergyPerformanceAspect"
+#define QUANTITYTAKEOFFSASPECTS_CLASS_MaterialAspect                "MaterialAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_PerimeterAspect               "PerimeterAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_PileAspect                    "PileAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_PipeAspect                    "PipeAspect"
@@ -50,6 +51,10 @@
 #define QUANTITYTAKEOFFSASPECTS_DIMENSIONSASPECT_Width              "Width"
 
 #define QUANTITYTAKEOFFSASPECTS_ENERGYPERFORMANCEASPECT_Rating      "Rating"
+
+#define QUANTITYTAKEOFFSASPECTS_MATERIALASPECT_Material             "Material"
+#define QUANTITYTAKEOFFSASPECTS_MATERIALASPECT_MaterialDensity      "MaterialDensity"
+#define QUANTITYTAKEOFFSASPECTS_MATERIALASPECT_Weight               "Weight"
 
 #define QUANTITYTAKEOFFSASPECTS_PERIMETERASPECT_Perimeter           "Perimeter"
 

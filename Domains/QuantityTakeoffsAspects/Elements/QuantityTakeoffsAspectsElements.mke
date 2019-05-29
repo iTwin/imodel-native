@@ -29,6 +29,8 @@ $(o)DimensionsAspect$(oext) : $(_MakeFilePath)DimensionsAspect.cpp ${MultiCompil
 
 $(o)EnergyPerformanceAspect$(oext) : $(_MakeFilePath)EnergyPerformanceAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\EnergyPerformanceAspect.h
 
+$(o)MaterialAspect$(oext) : $(_MakeFilePath)MaterialAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\MaterialAspect.h
+
 $(o)PerimeterAspect$(oext) : $(_MakeFilePath)PerimeterAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\PerimeterAspect.h
 
 $(o)PileAspect$(oext) : $(_MakeFilePath)PileAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\PileAspect.h

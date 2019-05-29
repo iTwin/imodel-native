@@ -29,6 +29,8 @@ $(o)DimensionsAspectHandler$(oext) : $(_MakeFilePath)DimensionsAspectHandler.cpp
 
 $(o)EnergyPerformanceAspectHandler$(oext) : $(_MakeFilePath)EnergyPerformanceAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/EnergyPerformanceAspectHandler.h
 
+$(o)MaterialAspectHandler$(oext) : $(_MakeFilePath)MaterialAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/MaterialAspectHandler.h
+
 $(o)PerimeterAspectHandler$(oext) : $(_MakeFilePath)PerimeterAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PerimeterAspectHandler.h
 
 $(o)PileAspectHandler$(oext) : $(_MakeFilePath)PileAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PileAspectHandler.h
