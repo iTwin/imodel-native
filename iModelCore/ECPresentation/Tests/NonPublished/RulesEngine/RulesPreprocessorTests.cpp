@@ -143,6 +143,8 @@ static void AddRulesToRuleset(PresentationRuleSetR ruleset)
     ruleset.AddPresentationRule(*new UserSettingsGroup());
     ruleset.AddPresentationRule(*new CheckBoxRule());
     ruleset.AddPresentationRule(*new SortingRule());
+    ruleset.AddPresentationRule(*new ContentModifier());
+    ruleset.AddPresentationRule(*new ExtendedDataRule());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -171,6 +173,8 @@ TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_MergesRul
     EXPECT_EQ(2, rules->GetUserSettings().size());
     EXPECT_EQ(2, rules->GetCheckBoxRules().size());
     EXPECT_EQ(2, rules->GetSortingRules().size());
+    EXPECT_EQ(2, rules->GetContentModifierRules().size());
+    EXPECT_EQ(2, rules->GetExtendedDataRules().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -203,6 +207,8 @@ TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_MergesRul
     EXPECT_EQ(3, rules->GetUserSettings().size());
     EXPECT_EQ(3, rules->GetCheckBoxRules().size());
     EXPECT_EQ(3, rules->GetSortingRules().size());
+    EXPECT_EQ(3, rules->GetContentModifierRules().size());
+    EXPECT_EQ(3, rules->GetExtendedDataRules().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -239,6 +245,8 @@ TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_UsesOnlyS
     EXPECT_EQ(1, rules->GetUserSettings().size());
     EXPECT_EQ(1, rules->GetCheckBoxRules().size());
     EXPECT_EQ(1, rules->GetSortingRules().size());
+    EXPECT_EQ(1, rules->GetContentModifierRules().size());
+    EXPECT_EQ(1, rules->GetExtendedDataRules().size());
     }
 
 /*---------------------------------------------------------------------------------**//**

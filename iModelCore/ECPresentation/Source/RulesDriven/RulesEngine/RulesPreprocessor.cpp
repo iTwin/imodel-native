@@ -86,6 +86,7 @@ static void AppendRules(PresentationRuleSetR target, PresentationRuleSetCR sourc
     CopyRules(target, source.GetCheckBoxRules());
     CopyRules(target, source.GetSortingRules());
     CopyRules(target, source.GetContentModifierRules());
+    CopyRules(target, source.GetExtendedDataRules());
     }
 
 /*---------------------------------------------------------------------------------**//**
