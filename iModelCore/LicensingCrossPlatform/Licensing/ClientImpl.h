@@ -144,7 +144,7 @@ public:
 
     // Used in tests
     LICENSING_EXPORT ILicensingDb& GetLicensingDb();
-	LICENSING_EXPORT void AddPolicyToDb(std::shared_ptr<Policy> policy) { StorePolicyInLicensingDb(policy); };
+    LICENSING_EXPORT void AddPolicyToDb(std::shared_ptr<Policy> policy);
 	LICENSING_EXPORT std::shared_ptr<Policy> GetPolicyWithId(Utf8StringCR policyId);
 
 	// clean up policies; used internally, but also used in unit tests

@@ -24,8 +24,6 @@ protected:
     std::shared_ptr<Policy> GetPolicyToken();
     std::list<std::shared_ptr<Policy>> GetUserPolicies();
 
-    void PolicyHeartbeat(int64_t currentTime);
-
 public:
     LICENSING_EXPORT AccessKeyClientImpl
         (

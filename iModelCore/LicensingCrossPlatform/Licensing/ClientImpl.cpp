@@ -227,7 +227,7 @@ void ClientImpl::PolicyHeartbeat(int64_t currentTime)
 
     if (m_startPolicyHeartbeat)
         {
-        // TODO: try to get policy token here
+        // TODO: try to get policy token here, or try earlier than policyInterval
         m_lastRunningPolicyheartbeatStartTime = currentTime;
         m_startPolicyHeartbeat = false;
         }
@@ -751,6 +751,23 @@ void ClientImpl::DeleteAllOtherPoliciesByUser(std::shared_ptr<Policy> policy)
 	m_licensingDb->DeleteAllOtherPolicyFilesByUser(policy->GetPolicyId(),
 		policy->GetUserData()->GetUserId());
 	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                        Jason.Wichert 5/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClientImpl::AddPolicyToDb(std::shared_ptr<Policy> policy)
+    {
+    //This function is for testing, allows you to put policies in the database without being entitled, etc.
+    LOG.debug("ClientImpl::AddPolicyToDb");
+
+    if (SUCCESS != m_licensingDb->OpenOrCreate(m_dbPath))
+        {
+        LOG.error("ClientImpl::AddPolicyToDb ERROR - Database creation failed.");
+        return;
+        }
+
+    StorePolicyInLicensingDb(policy);
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod

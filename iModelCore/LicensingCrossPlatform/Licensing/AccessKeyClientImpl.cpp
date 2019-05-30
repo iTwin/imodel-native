@@ -113,54 +113,19 @@ BentleyStatus AccessKeyClientImpl::StopApplication()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AccessKeyClientImpl::PolicyHeartbeat(int64_t currentTime)
-    {
-    LOG.debug("AccessKeyClientImpl::PolicyHeartbeat");
-
-    if (m_startPolicyHeartbeat)
-        {
-        m_lastRunningPolicyheartbeatStartTime = currentTime;
-        m_startPolicyHeartbeat = false;
-        }
-
-    m_delayedExecutor->Delayed(HEARTBEAT_THREAD_DELAY_MS).then([this, currentTime]
-        {
-        int64_t policyInterval = m_policy->GetPolicyInterval(m_clientInfo->GetApplicationProductId(), m_featureString);
-
-        int64_t time_elapsed = currentTime - m_lastRunningPolicyheartbeatStartTime;
-
-        if (time_elapsed >= policyInterval)
-            {
-            // refresh policy
-            auto policyToken = GetPolicyToken();
-            if (policyToken != nullptr)
-                {
-                m_policy = policyToken;
-                }
-
-            CleanUpPolicies(); // if policy is expired or invalid, this will result in GetLicenseStatus() returning NotEntitled
-            m_lastRunningPolicyheartbeatStartTime = currentTime;
-            }
-
-        if (!m_stopPolicyHeartbeat)
-            {
-            int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-            PolicyHeartbeat(currentTimeUnixMs);
-            }
-        else
-            {
-            m_policyHeartbeatStopped = true;
-            }
-        });
-    }
-
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool AccessKeyClientImpl::ValidateAccessKey()
     {
     LOG.debug("AccessKeyClientImpl::ValidateAccessKey");
+
+    // if we are offline with a valid cached policy
+    if (HasOfflineGracePeriodStarted())
+        {
+        if (m_policy->GetRequestData()->GetAccessKey().Equals(m_accessKey))
+            {
+            m_isAccessKeyValid = true;
+            return m_isAccessKeyValid;
+            }
+        }
 
     auto responseJson = m_ulasProvider->GetAccessKeyInfo(m_clientInfo, m_accessKey).get();
 
@@ -193,10 +158,10 @@ std::shared_ptr<Policy> AccessKeyClientImpl::GetPolicyToken()
     // TODO: rename this method? (and ClientImpl::GetPolicyToken) we are getting policy, not the token, and are storing the policy in the db...
     LOG.debug("AccessKeyClientImpl::GetPolicyToken");
 
-    // try to get policy from entitlements, fallback to database if call fails
-    // call to entitlements will fail if accesskey is inactive or expired
+    // try to get policy from entitlements, fallback to database if call fails to support offline workflows
     try
         {
+        // call to entitlements will fail if accesskey is inactive or expired
         auto policy = m_policyProvider->GetPolicyWithKey(m_accessKey).get();
 
         if (policy != nullptr)
@@ -209,6 +174,7 @@ std::shared_ptr<Policy> AccessKeyClientImpl::GetPolicyToken()
         }
     catch (...)
         {
+        // http call failed, offline support below
         LOG.info("AccessKeyClientImpl::GetPolicyToken: Call to entitlements failed, getting policy from DB");
 
         const auto productId = m_clientInfo->GetApplicationProductId();
@@ -268,5 +234,6 @@ std::list<std::shared_ptr<Policy>> AccessKeyClientImpl::GetUserPolicies()
             policyList.push_back(policy);
             }
         }
+
     return policyList;
     }
