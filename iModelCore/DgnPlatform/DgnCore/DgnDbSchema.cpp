@@ -602,8 +602,7 @@ DbResult DgnDb::_UpgradeProfile()
     m_profileVersion = DgnDbProfileVersion::GetCurrent();
 #endif
 
-    SaveDgnDbProfileVersion(m_profileVersion);
-    return SaveChanges();
+    return SaveDgnDbProfileVersion(m_profileVersion);
     }
 
 
