@@ -325,7 +325,7 @@ bool DgnTorusPipeDetail::ComputeSecondMomentVolumeProducts (TransformR localToWo
     RotMatrix spinAxes;
     DPoint3d center;
     if (TryGetFrame (center, spinAxes, radiusA, radiusB, sweepRadians)
-        & TorusMoments::ComputeProducts (radiusA, radiusB, sweepRadians, products)
+        && TorusMoments::ComputeProducts (radiusA, radiusB, sweepRadians, products)
         )
         {
         localToWorld = Transform::From (spinAxes, center);
