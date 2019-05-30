@@ -717,7 +717,7 @@ void AnnounceGridToBuilder (bool applyTolerances)
         }
     DRange2d distanceRange;
     distanceRange.Init ();
-    distanceRange.Extend (0,0);
+    distanceRange.Extend (0.0, 0.0);
     distanceRange.Extend (xDist.back (), yDist.back ());
     m_builder.SetCurrentFaceParamDistanceRange (distanceRange);
     m_builder.EndFace_internal ();
