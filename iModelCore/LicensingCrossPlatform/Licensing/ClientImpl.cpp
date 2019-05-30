@@ -110,15 +110,16 @@ LicenseStatus ClientImpl::StartApplication()
         return LicenseStatus::Error;
         }
 
+    // get policy from entitlements or database
     m_policy = GetPolicyToken();
 
     if (m_policy == nullptr)
         {
-        LOG.error("ClientImpl::StartApplication ERROR - Policy token object is null.");
+        LOG.error("ClientImpl::StartApplication ERROR - Policy token object is null. No policy obtained from entitlements or cached");
         return LicenseStatus::Error;
         }
 
-    // Get product status
+    // Get product status, this will search the DB for policy
     LicenseStatus licStatus = GetLicenseStatus();
 
     if ((LicenseStatus::Ok == licStatus) ||
@@ -226,6 +227,7 @@ void ClientImpl::PolicyHeartbeat(int64_t currentTime)
 
     if (m_startPolicyHeartbeat)
         {
+        // TODO: try to get policy token here
         m_lastRunningPolicyheartbeatStartTime = currentTime;
         m_startPolicyHeartbeat = false;
         }
@@ -574,14 +576,30 @@ std::shared_ptr<Policy> ClientImpl::GetPolicyToken()
     {
     LOG.debug("ClientImpl::GetPolicyToken");
 
-    auto policy = m_policyProvider->GetPolicy().get();
-    if (policy != nullptr)
-        {
-        StorePolicyInLicensingDb(policy);
-        DeleteAllOtherPoliciesByUser(policy);
-        }
+    // try to get policy from entitlements, fallback to database if call fails
+    try {
+        auto policy = m_policyProvider->GetPolicy().get();
+        if (policy != nullptr)
+            {
+            StorePolicyInLicensingDb(policy);
+            DeleteAllOtherPoliciesByUser(policy);
+            }
 
-    return policy;
+        return policy;
+        }
+    catch (...)
+        {
+        LOG.info("ClientImpl::GetPolicyToken: Call to entitlements failed, getting policy from DB");
+        
+        const auto productId = m_clientInfo->GetApplicationProductId();
+        auto policy = SearchForPolicy(productId);
+
+        // start offline grace period if there is a cached policy
+        if (policy != nullptr && !HasOfflineGracePeriodStarted())
+            m_licensingDb->SetOfflineGracePeriodStart(DateHelper::GetCurrentTime());
+
+        return policy;
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
