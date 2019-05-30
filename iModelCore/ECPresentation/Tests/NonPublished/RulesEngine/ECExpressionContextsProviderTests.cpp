@@ -659,6 +659,26 @@ TEST_F (ECExpressionContextsProviderTests, GetNodeRulesContext_ChildInstanceNode
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionContextsProviderTests, GetNodeRulesContext_GetNavigationPropertyId)
+    {
+    ECClassCP classA = GetSchema().GetClassCP("ClassA");
+    ECClassCP classDerivedA = GetSchema().GetClassCP("DerivedA");
+    ECRelationshipClassCP rel = GetSchema().GetClassCP("ClassAHasDerivedClasses")->GetRelationshipClassCP();
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceDerivedA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classDerivedA);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instanceA, *instanceDerivedA);
+    
+    TestNavNodePtr navNode = TestNodesHelper::CreateInstanceNode(*s_connection, *instanceDerivedA);
+    ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection, m_locale, m_userSettings, nullptr));
+
+    ECValue value = EvaluateAndGetResult("ParentNode.ECInstance.A.Id", *ctx);
+    ASSERT_TRUE(value.IsLong());
+    ASSERT_EQ(ECInstanceId::FromString(instanceA->GetInstanceId().c_str()).GetValue(), value.GetLong());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECExpressionContextsProviderTests, UserSettings_GetSettingValue)
