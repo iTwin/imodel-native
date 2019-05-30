@@ -44,22 +44,25 @@ static bool is_base64(Byte c) { return (isalnum (c) || (c == '+') || (c == '/'))
 //--------------------------------------------------------------------------------------
 // @bsimethod                                                    Tahir.Hayat    12/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String Base64Utilities::Encode(Utf8CP byteArray, size_t byteCount)
+Utf8String Base64Utilities::Encode(Utf8CP byteArray, size_t byteCount, Utf8CP header)
     {
     Utf8String encodedString;
-    Encode(encodedString, reinterpret_cast<Byte const*> (byteArray), byteCount);
+    Encode(encodedString, reinterpret_cast<Byte const*> (byteArray), byteCount, header);
     return encodedString;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void Base64Utilities::Encode(Utf8StringR encodedString, Byte const* byteArray, size_t byteCount)
+void Base64Utilities::Encode(Utf8StringR encodedString, Byte const* byteArray, size_t byteCount, Utf8CP header)
     {
     if (byteArray == nullptr || byteCount == 0)
         return;
 
-    size_t nEncodedBytes = (size_t) (4.0 * ((byteCount + 2) / 3.0));
+    if (!Utf8String::IsNullOrEmpty(header))
+        encodedString.assign(header);
+
+    size_t nEncodedBytes = (size_t) (4.0 * ((byteCount + 2) / 3.0)) + encodedString.size();
     encodedString.reserve(nEncodedBytes);
 
     Byte byte_array_3[3];

@@ -141,13 +141,20 @@ struct JsonECSqlSelectAdapter final
             KeepOriginal, //!< Member name as returned from ECSQL
             LowerFirstChar //!< First character of the member name is lowered. This does not apply to system members.
             };
-
+        enum class BlobMode
+            {
+            ArrayOfInt,
+            Base64String
+            
+            };
         struct FormatOptions final
             {
             private:
                 MemberNameCasing m_memberNameCasing = MemberNameCasing::KeepOriginal;
                 ECN::ECJsonInt64Format m_int64Format = ECN::ECJsonInt64Format::AsDecimalString;
+                BlobMode m_blobMode = BlobMode::Base64String;
                 bool m_onlyApplyInt64FormatToSystemProperties = false;
+                Utf8String m_base64Header;
             public:
                 //! Initializes a default FormatOptions object
                 //! with MemberCasingMode::KeepOriginal and ECJsonInt64Format::AsDecimalString
@@ -156,11 +163,13 @@ struct JsonECSqlSelectAdapter final
                 //!@param[in] memberNameCasing Defines how the member names in the resulting JSON will be formatted.
                 //!           Casing of system member names is not affected by this.
                 //!@param[in] int64Format Defines how ECProperty values of type Int64 / Long will be formatted
-                FormatOptions(MemberNameCasing memberNameCasing, ECN::ECJsonInt64Format int64Format, bool onlyApplyInt64FormatToSystemProperties = false) : m_memberNameCasing(memberNameCasing), m_int64Format(int64Format), m_onlyApplyInt64FormatToSystemProperties(onlyApplyInt64FormatToSystemProperties) {}
-
+                FormatOptions(MemberNameCasing memberNameCasing, ECN::ECJsonInt64Format int64Format, BlobMode blobMode = BlobMode::Base64String, bool onlyApplyInt64FormatToSystemProperties = false) : m_memberNameCasing(memberNameCasing), m_int64Format(int64Format), m_onlyApplyInt64FormatToSystemProperties(onlyApplyInt64FormatToSystemProperties), m_blobMode(blobMode) {}
+                void SetBase64Header(Utf8CP header) { m_base64Header = header; }
                 MemberNameCasing GetMemberCasingMode() const { return m_memberNameCasing; }
+                BlobMode GetBlobMode() const { return m_blobMode; }
                 ECN::ECJsonInt64Format GetInt64Format() const { return m_int64Format; }
                 bool OnlyApplyInt64FormatToSystemProperties() const { return m_onlyApplyInt64FormatToSystemProperties; }
+                Utf8StringCR GetBase64Header() const { return m_base64Header; }
             };
 
     private:

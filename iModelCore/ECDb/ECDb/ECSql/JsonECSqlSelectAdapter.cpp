@@ -643,9 +643,27 @@ BentleyStatus AdapterHelper::PrimitiveToJson(JsonRef& jsonValue, IECSqlValue con
             int size = 0;
             Byte const* data = (Byte const*) ecsqlValue.GetBlob(&size);
             if (jsonValue.IsRapidJson())
-                return ECJsonUtilities::BinaryToJson(jsonValue.RapidJson(), data, (size_t) size, jsonValue.Allocator());
+                {
+                if (formatOptions.GetBlobMode() == JsonECSqlSelectAdapter::BlobMode::Base64String)
+                    return ECJsonUtilities::BinaryToJson(jsonValue.RapidJson(), data, (size_t) size, jsonValue.Allocator(), formatOptions.GetBase64Header().c_str());
+                
+                
+                // render as int[]
+                jsonValue.SetArray();
+                for (int i = 0; i < size; i++)
+                    jsonValue.RapidJson().PushBack(data[i], jsonValue.Allocator());
+                return BentleyStatus::SUCCESS;
+                }
 
-            return ECJsonUtilities::BinaryToJson(jsonValue.JsonCpp(), data, (size_t) size);
+
+            if (formatOptions.GetBlobMode() == JsonECSqlSelectAdapter::BlobMode::Base64String)
+                return ECJsonUtilities::BinaryToJson(jsonValue.JsonCpp(), data, (size_t) size, formatOptions.GetBase64Header().c_str());
+
+            // render as int[]
+            jsonValue.SetArray();
+            for (Json::ArrayIndex i = 0; i < (Json::ArrayIndex)size; i++)
+                jsonValue.JsonCpp()[i] = data[i];
+            return BentleyStatus::SUCCESS;
             }
             case PRIMITIVETYPE_Boolean:
             {

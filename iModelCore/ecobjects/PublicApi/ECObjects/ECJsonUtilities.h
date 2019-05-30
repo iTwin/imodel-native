@@ -286,8 +286,9 @@ public:
     //! @param[out] json the resulting Base64 string JSON value
     //! @param[in] binaryArray the Byte array
     //! @param[in] binarySize size of the Byte array
+    //! @param[in] header this will put before the base64 encoded output
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus BinaryToJson(Json::Value& json, Byte const* binaryArray, size_t binarySize);
+    ECOBJECTS_EXPORT static BentleyStatus BinaryToJson(Json::Value& json, Byte const* binaryArray, size_t binarySize, Utf8CP header = nullptr);
 
     //! Converts the specified JSON value to a Byte array
     //! The JSON value must hold the Byte array as Base64 encoded string.
@@ -421,8 +422,9 @@ public:
     //! @param[in] binaryArray the Byte array
     //! @param[in] binarySize size of the Byte array
     //! @param[in] allocator Allocator to use to copy the string into the RapidJson value.
+    //! @param[in] header this will put before the base64 encoded output
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus BinaryToJson(RapidJsonValueR json, Byte const* binaryArray, size_t binarySize, rapidjson::MemoryPoolAllocator<>& allocator);
+    ECOBJECTS_EXPORT static BentleyStatus BinaryToJson(RapidJsonValueR json, Byte const* binaryArray, size_t binarySize, rapidjson::MemoryPoolAllocator<>& allocator, Utf8CP header = nullptr);
 
     //! Converts the specified RapidJson value to a Byte array
     //! The RapidJson value must hold the Byte array as Base64 encoded string.

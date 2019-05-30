@@ -23,9 +23,9 @@ private:
     ~Base64Utilities();
 
 public:
-    static Utf8String Encode(Utf8StringCR stringToEncode) { return Encode(stringToEncode.c_str(), stringToEncode.size()); }
-    BENTLEYDLL_EXPORT static Utf8String Encode (Utf8CP bytesToEncode, size_t byteCount);
-    BENTLEYDLL_EXPORT static void Encode(Utf8StringR encodedString, Byte const* bytesToEncode, size_t byteCount);
+    static Utf8String Encode(Utf8StringCR stringToEncode, Utf8CP header = nullptr) { return Encode(stringToEncode.c_str(), stringToEncode.size(), header); }
+    BENTLEYDLL_EXPORT static Utf8String Encode (Utf8CP bytesToEncode, size_t byteCount, Utf8CP header = nullptr);
+    BENTLEYDLL_EXPORT static void Encode(Utf8StringR encodedString, Byte const* bytesToEncode, size_t byteCount, Utf8CP header = nullptr);
 
     static void Decode(bvector<Byte>& byteArray, Utf8StringCR encodedString) { return Decode(byteArray, encodedString.c_str(), encodedString.size()); }
     BENTLEYDLL_EXPORT static void Decode(bvector<Byte>& byteArray, Utf8CP encodedString, size_t encodedStringLength);

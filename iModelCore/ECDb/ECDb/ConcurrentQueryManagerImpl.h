@@ -14,7 +14,7 @@
 
 #define QUERY_WORKER_RESULT_RESERVE_BYTES 1024*4 
 #define QUERY_MONITOR_SLEEP_TIME 1 // milliseconds
-
+#define BASE64_HEADER "encoding=base64;"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct QueryWorker;
@@ -86,9 +86,10 @@ struct JsonAdaptorCache final
                 {
                 if (!m_adaptor)
                     {
-                    m_adaptor = std::unique_ptr<JsonECSqlSelectAdapter>(new JsonECSqlSelectAdapter(
-                        *m_stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, 
-                                                                       ECN::ECJsonInt64Format::AsHexadecimalString, true)));
+                    auto options = JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar,
+                                                                         ECN::ECJsonInt64Format::AsHexadecimalString, JsonECSqlSelectAdapter::BlobMode::Base64String, true);
+                    options.SetBase64Header(BASE64_HEADER);
+                    m_adaptor = std::unique_ptr<JsonECSqlSelectAdapter>(new JsonECSqlSelectAdapter(*m_stmt, options));
                     }
 
                 return m_adaptor.get();
@@ -158,6 +159,7 @@ struct QueryTask final
         void SetError(Utf8CP error);
         void SetPartial();
         void SetDone();
+        BentleyStatus BindPrimitive(ECSqlStatement* stmt, Json::Value const& v, int index);
 
     public:
         QueryTask(const QueryTask& rhs) = delete;

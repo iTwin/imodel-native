@@ -152,7 +152,7 @@ BentleyStatus ECJsonUtilities::JsonToDateTime(DateTime& dateTime, JsonValueCR js
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECJsonUtilities::BinaryToJson(Json::Value& json, Byte const* binary, size_t binarySize)
+BentleyStatus ECJsonUtilities::BinaryToJson(Json::Value& json, Byte const* binary, size_t binarySize, Utf8CP header)
     {
     if (binarySize == 0)
         {
@@ -161,7 +161,7 @@ BentleyStatus ECJsonUtilities::BinaryToJson(Json::Value& json, Byte const* binar
         }
 
     Utf8String str;
-    Base64Utilities::Encode(str, binary, binarySize);
+    Base64Utilities::Encode(str, binary, binarySize, header);
     json = Json::Value(str);
     return SUCCESS;
     }
@@ -498,7 +498,7 @@ BentleyStatus ECJsonUtilities::JsonToDateTime(DateTime& dateTime, RapidJsonValue
 // @bsimethod                                                Krischan.Eberle      07/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ECJsonUtilities::BinaryToJson(RapidJsonValueR json, Byte const* binary, size_t binarySize, rapidjson::MemoryPoolAllocator<>& allocator)
+BentleyStatus ECJsonUtilities::BinaryToJson(RapidJsonValueR json, Byte const* binary, size_t binarySize, rapidjson::MemoryPoolAllocator<>& allocator, Utf8CP header)
     {
     if (binarySize == 0)
         {
@@ -507,7 +507,7 @@ BentleyStatus ECJsonUtilities::BinaryToJson(RapidJsonValueR json, Byte const* bi
         }
 
     Utf8String str;
-    Base64Utilities::Encode(str, binary, binarySize);
+    Base64Utilities::Encode(str, binary, binarySize, header);
 
     json.SetString(str.c_str(), (rapidjson::SizeType) str.size(), allocator);
     return SUCCESS;

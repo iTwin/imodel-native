@@ -231,6 +231,47 @@ void QueryTask::SetDone()
     m_interruptor = nullptr;
     m_state.store(State::Done);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Affan.Khan             05/2019
+//---------------------------------------------------------------------------------------
+BentleyStatus QueryTask::BindPrimitive(ECSqlStatement* stmt, Json::Value const& v, int index)
+    {
+    const auto type = v.type();
+    if (type == Json::ValueType::objectValue ||
+        type == Json::ValueType::arrayValue ||
+        type == Json::ValueType::nullValue)
+        {
+        SetError("Json object, array and null is not acceptable values for binding"); return ERROR;
+        }
+    else if (type == Json::ValueType::booleanValue)
+        stmt->BindBoolean(index, v.asBool());
+    else if (type == Json::ValueType::intValue)
+        stmt->BindInt(index, v.asInt());
+    else if (type == Json::ValueType::realValue)
+        stmt->BindDouble(index, v.asDouble());
+    else if (type == Json::ValueType::stringValue)
+        {
+        const size_t headerSize = strlen(BASE64_HEADER);
+        const size_t stringSize = strlen(v.asCString());
+        if (stringSize > headerSize)
+            {
+            if (strncmp(BASE64_HEADER, v.asCString(), headerSize) == 0)
+                {
+                const auto payLoadLen = stringSize - headerSize;
+                ByteStream stream;
+                Base64Utilities::Decode(stream, v.asCString() + headerSize, payLoadLen);
+                stmt->BindBlob(index, stream.GetData(), stream.GetSize(), EC::IECSqlBinder::MakeCopy::Yes);
+                return SUCCESS;
+                }
+            }
+        stmt->BindText(index, v.asCString(), EC::IECSqlBinder::MakeCopy::Yes);
+        }
+    else if (type == Json::ValueType::uintValue)
+        stmt->BindInt(index, v.asUInt());
+
+    return SUCCESS;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Affan.Khan             05/2019
 //---------------------------------------------------------------------------------------
@@ -258,29 +299,44 @@ void QueryTask::Run(JsonAdaptorCache& cache, QueryInterruptor& interruptor)
     if (!m_bindings.empty())
         {
         const auto userBindings = Json::Value::From(m_bindings);
-        if (userBindings.type() != Json::ValueType::arrayValue)
+        if (userBindings.type() == Json::ValueType::objectValue)
             {
-            SetError("Expecting primitive json array for binding params"); return;
-            }
-        for (Json::ArrayIndex i = 0; i < userBindings.size(); i++)
-            {
-            const auto type = userBindings[i].type();
-            if (type == Json::ValueType::objectValue ||
-                type == Json::ValueType::arrayValue ||
-                type == Json::ValueType::nullValue)
+            for (auto& mb : userBindings.getMemberNames())
                 {
-                SetError("Json object, array and null is not acceptable values for binding"); return;
+                const int idx = entry->GetStatement()->GetParameterIndex(mb.c_str());
+                if (idx < 1)
+                    {
+                    SetError(SqlPrintfString("Failed to find parameter '%s'", mb.c_str()));
+                    return;
+                    }
+
+                auto& v = userBindings[mb];
+                if (BindPrimitive(entry->GetStatement(), v, idx) != SUCCESS)
+                    return;
                 }
-            else if (type == Json::ValueType::booleanValue)
-                entry->GetStatement()->BindBoolean(i + 1, userBindings[i].asBool());
-            else if (type == Json::ValueType::intValue)
-                entry->GetStatement()->BindInt(i + 1, userBindings[i].asInt());
-            else if (type == Json::ValueType::realValue)
-                entry->GetStatement()->BindDouble(i + 1, userBindings[i].asDouble());
-            else if (type == Json::ValueType::stringValue)
-                entry->GetStatement()->BindText(i + 1, userBindings[i].asCString(), EC::IECSqlBinder::MakeCopy::Yes);
-            else if (type == Json::ValueType::uintValue)
-                entry->GetStatement()->BindInt(i + 1, userBindings[i].asUInt());
+            }
+        else if (userBindings.type() == Json::ValueType::arrayValue)
+            {
+            for (Json::ArrayIndex i = 0; i < userBindings.size(); i++)
+                {
+                auto& v = userBindings[i];
+                const auto type = v.type();
+                if (type == Json::ValueType::objectValue)
+                    {
+                    SetError("Object is not a acceptable value as parameter unless its top level object");
+                    return;
+                    }
+                else
+                    {
+                    if (BindPrimitive(entry->GetStatement(), v, i + 1) != SUCCESS)
+                        return;
+                    }
+                }
+            }
+        else
+            {
+            SetError("Only object or array is acceptable binding top level types");
+            return;
             }
         }
 
@@ -310,7 +366,7 @@ void QueryTask::Run(JsonAdaptorCache& cache, QueryInterruptor& interruptor)
                 m_result.append(rows.ToString());
                 }
             else
-                m_result.append(",\n").append(rows.ToString());
+                m_result.append(",").append(rows.ToString());
             }
 
         if (ExceededQuota())
@@ -721,6 +777,23 @@ ConcurrentQueryManager::PostStatus ConcurrentQueryManager::Impl::PostQuery(TaskI
     if (!m_initalized)
         return PostStatus::NotInitalized;
 
+    // remove semicolon in the end so this query can be but as subquery of another
+    Utf8String trimedECSql = ecsql;
+    if (!trimedECSql.empty())
+        {
+        for (size_t i = trimedECSql.size() - 1; i > 0; --i)
+            {
+            if (!isspace(trimedECSql[i]))
+                {
+                if (trimedECSql[i] != ';')
+                    break;
+                else
+                    trimedECSql[i] = ' ';
+                }
+            }
+        trimedECSql.TrimEnd();
+        }
+
     if (quota.IsEmpty())
         quota = m_config.GetQuota();
     else
@@ -739,7 +812,7 @@ ConcurrentQueryManager::PostStatus ConcurrentQueryManager::Impl::PostQuery(TaskI
 
     std::lock_guard<std::mutex> guard(m_mutex);
     auto id = NextId();
-    const Utf8String limitQuery = Utf8PrintfString("select * from (%s) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET , ecsql);
+    const Utf8String limitQuery = Utf8PrintfString("select * from (%s) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET , trimedECSql.c_str());
     auto itor = m_tasks.insert(std::make_pair(id, std::make_unique<QueryTask>(id, limitQuery.c_str(), bindings, limit, quota, priority)));
     auto task = itor.first->second.get();
     if (m_workerPool->Enqueue(task))
