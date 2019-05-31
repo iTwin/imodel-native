@@ -1,69 +1,59 @@
 
 [imodel02\imodelcore\ecobjects\src\expressionnode.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
 [imodel02\imodelcore\ecobjects\src\ecschemaconverter.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
 [imodel02\imodelcore\ecobjects\src\schemalocalizedstrings.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
 [imodel02\imodelcore\ecobjects\src\ecenabler.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
 [imodel02\imodelcore\ecobjects\src\ecclass.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
 [imodel02\imodelcore\ecobjects\src\ecinstance.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
 [imodel02\imodelcore\ecobjects\src\ecvalue.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\privateapi\ecobjects\schemaparseutils.h]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\standaloneecinstance.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\units\ecunitsclasslocater.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\ecdbuffer.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\ecunit.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\ecproperty.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\expressioncontext.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\ecschema.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\schemacomparer.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\schemaparseutils.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\phenomenon.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\ectype.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\format.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\standardcustomattributehelper.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\systemsymbolprovider.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\ecenumeration.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\standaloneecrelationshipinstance.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\stronglyconnectedgraph.h]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\schemaxml.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\eccustomattribute.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\expressionhandler.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\eccontext.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\ecschemaunitscontext.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\kindofquantity.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\schemaxml.h]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
 [imodel02\imodelcore\ecobjects\src\supplementalschema.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
-[imodel02\imodelcore\ecobjects\src\unitsystem.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesPreprocessorTests.*:
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\standaloneecinstance.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\units\ecunitsclasslocater.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\ecdbuffer.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\ecproperty.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\expressioncontext.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\ecschema.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\schemacomparer.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\schemaparseutils.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\ectype.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\standardcustomattributehelper.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\systemsymbolprovider.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\ecenumeration.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\standaloneecrelationshipinstance.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\stronglyconnectedgraph.h]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\eccustomattribute.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\expressionhandler.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\eccontext.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\ecschemaunitscontext.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\kindofquantity.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\schemaxml.h]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+[imodel02\imodelcore\ecobjects\src\schemaxml.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
