@@ -715,11 +715,17 @@ void AnnounceGridToBuilder (bool applyTolerances)
             );
         uvA.swap (uvB);
         }
-    DRange2d distanceRange;
-    distanceRange.Init ();
-    distanceRange.Extend (0.0, 0.0);
-    distanceRange.Extend (xDist.back (), yDist.back ());
-    m_builder.SetCurrentFaceParamDistanceRange (distanceRange);
+    // EDL March 24 2017 setting the distance range here interferes with EndFace.
+    // 
+    static bool s_buildDistanceRangeHere = false;
+    if (s_buildDistanceRangeHere)
+        {
+        DRange2d distanceRange;
+        distanceRange.Init();
+        distanceRange.Extend(0.0, 0.0);
+        distanceRange.Extend(xDist.back(), yDist.back());
+        m_builder.SetCurrentFaceParamDistanceRange(distanceRange);
+        }
     m_builder.EndFace_internal ();
     }
 
