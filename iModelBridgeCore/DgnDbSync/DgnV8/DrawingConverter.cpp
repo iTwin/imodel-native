@@ -1262,9 +1262,21 @@ bool CreateOrUpdateDrawingGraphics()
             }
         }
 
-    if (m_converter.IsUpdating() &&
-        m_converter.DetectDeletedExtractionGraphics(m_masterModelMapping, v8SectionedElementPathsSeen, m_attachmentsUnchanged))
-        modified = true;
+    if (m_converter.IsUpdating())
+        {
+        // If none of the models or attachments have changed, no need to check for deleted graphics
+        bool hasAnyChanges = false;
+        for (auto& modelRefInfo : m_modelRefInfoMap)
+            {
+            if (modelRefInfo.second.m_attachmentChanged || modelRefInfo.second.m_modelContentsChanged)
+                {
+                hasAnyChanges = true;
+                break;
+                }
+            }
+        if (hasAnyChanges && m_converter.DetectDeletedExtractionGraphics(m_masterModelMapping, v8SectionedElementPathsSeen, m_attachmentsUnchanged))
+            modified = true;
+        }
 
     return !m_converter.IsUpdating() || modified;
     }
