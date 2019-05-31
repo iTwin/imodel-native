@@ -9,12 +9,12 @@
 #include <unordered_set>
 #include <unordered_map>
 
-// Hash implementation for BentleyB0200::Utf8String type
+// Hash implementation for Utf8String type
 namespace std
     {
-    template<> struct hash<BentleyB0200::Utf8String>
+    template<> struct hash<Utf8String>
         {
-        typedef BentleyB0200::Utf8String argument_type;
+        typedef Utf8String argument_type;
         typedef size_t result_type;
         result_type operator()(argument_type const& string) const { return hash<std::string>{}(string.c_str()); }
         };

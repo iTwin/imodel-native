@@ -393,7 +393,7 @@ TEST_F(UnitRegistryTests, AllNewNamesMapToECNames)
             auto mapped = UnitNameMappings::TryGetECNameFromNewName(parsedName.c_str());
             if (nullptr == mapped)
                 {
-                ASSERT_TRUE(false) << "Unit with new Name " << parsedName.c_str() << " not mapped to an ec Name";
+                ASSERT_TRUE(false) << "Unit with new Name " << parsedName << " not mapped to an ec Name";
                 continue;
                 }
             if (0 == BeStringUtilities::StricmpAscii(mapped, "UNITS:DECA"))
