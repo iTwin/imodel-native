@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshQuery.hpp $
 |    $RCSfile: ScalableMeshPointQuery.hpp,v $
 |   $Revision: 1.23 $
 |       $Date: 2012/11/29 17:30:45 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1332,35 +1330,44 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
 
             bool clipsLoaded = false;
             if (flags->ShouldLoadClips())
-            {
+            {			
+				m_meshNode->PropagateClipSetFromAncestors();
+				
                 if (flags->ShouldUseClipsToShow())
                 {
                     bset<uint64_t> clipsToShow;
 
                     flags->GetClipsToShow(clipsToShow);
 
-                    if (clipsToShow.size() > 0)
-                    {
-                        DifferenceSet clipDiffSet;
-
-                        bool anythingToApply = ComputeDiffSet(clipDiffSet, clipsToShow, flags->ShouldInvertClips());
-
-                        if (anythingToApply)
+                    if (clipsToShow.empty())
                         {
-                            clipDiffSet.template ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes,
-                                toLoadUv, toLoadUvIndex, toLoadUvCount,
-                                dataPoints.data(), dataPoints.size(),
-                                dataFaceIndexes.data(), dataFaceIndexes.size(),
-                                dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0, 0, 0));
+                        if(flags->ShouldInvertClips())
+                            clipsToShow.insert(1);
+                        else
+                            {
+                            // Default to using all clips
+                            m_meshNode->CollectClipIds(clipsToShow);
+                            }
+                        }
+                    DifferenceSet clipDiffSet;
 
-                            clipsLoaded = true;
+                    bool anythingToApply = ComputeDiffSet(clipDiffSet, clipsToShow, flags->ShouldInvertClips());
+
+                    if(anythingToApply)
+                        {
+                        clipDiffSet.template ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes,
+                                                                                        toLoadUv, toLoadUvIndex, toLoadUvCount,
+                                                                                        dataPoints.data(), dataPoints.size(),
+                                                                                        dataFaceIndexes.data(), dataFaceIndexes.size(),
+                                                                                        dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0, 0, 0));
+
+                        clipsLoaded = true;
                         }
                     }
-                }
                 else
                 {
                     m_meshNode->ComputeMergedClips();
-                    uint64_t clipId = 0;
+                    uint64_t clipId = flags->ShouldInvertClips() ? 1 : 0;
                     if (m_meshNode->HasClip(clipId))
                     {
                         assert(m_meshNode->GetDiffSetPtr() != nullptr);
@@ -1562,7 +1569,9 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
 
             bool mustAppendDefaultMesh = true;
             if (flags->ShouldLoadClips())
-                {
+                {			
+				m_meshNode->PropagateClipSetFromAncestors();
+				
                 const DifferenceSet* clipDiffSet = nullptr;
                 bool anythingToApply = false;
                 mustAppendDefaultMesh = false;
@@ -1629,7 +1638,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
             //DRange3d range3D2(_GetContentExtent());
 
            
-            if (clips != nullptr /*&& range3D2.XLength() < 150 && range3D2.YLength() < 150*/)
+            if (clips != nullptr && !clips->empty()/*&& range3D2.XLength() < 150 && range3D2.YLength() < 150*/)
                 {
                 bmap<size_t, uint64_t> idsForPrimitives;
                 for (size_t n = 0; n < clips->size(); n++) idsForPrimitives[n] = n;
@@ -2236,7 +2245,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::HasCorrectClip
     
     for (auto& clipToShow : clipsToShow)
         {                    
-        if (meshNode->HasClip(clipToShow))
+        if (meshNode->HasClip(clipToShow, false))
             {        
             size_t clipInd = 0;
 
@@ -2603,7 +2612,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                     for (auto& clipToShow : clipsToShow)
                         {
-                        if (meshNode->HasClip(clipToShow))
+                        if (meshNode->HasClip(clipToShow, false)) 
                             {
                             appliedClips.push_back(clipToShow);
                             }
@@ -2764,7 +2773,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                 TRACEPOINT(THREAD_ID(), EventType::LOAD_MESH_CREATE_0, meshNode->GetBlockID().m_integerID, (uint64_t)cachedDisplayMesh, textureID, -1, -1, m_cachedDisplayMeshData->GetRefCount())
 
-                displayMeshData->m_cachedDisplayMesh = 0;
+                
                 delete displayMeshData;
                 if (isClipped)
                     {
@@ -3177,6 +3186,7 @@ template <class POINT> uint64_t ScalableMeshNode<POINT>::_LastClippingStateUpdat
 
 template <class POINT> void ScalableMeshNode<POINT>::_RefreshMergedClip(Transform tr) const
     {
+    //dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(this->m_node.GetPtr())->PropagateClipSetFromAncestors();
     dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(this->m_node.GetPtr())->BuildSkirts();
     dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(this->m_node.GetPtr())->ComputeMergedClips(tr);
     }
@@ -3330,12 +3340,12 @@ template <class POINT> SMNodeViewStatus ScalableMeshNode<POINT>::_IsCorrectForVi
     return SMNodeViewStatus::NotVisible;    
     }
 
-template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph)
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph, bool arePoints3D)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(this->m_node->GetPointsPtr());    
     pointsPtr->clear();
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(this->m_node);
-    m_meshNode->m_nodeHeader.m_arePoints3d = true;
+    m_meshNode->m_nodeHeader.m_arePoints3d = arePoints3D;
     vector<POINT> nodePts(nVertices);
     vector<size_t> sorted(nVertices);
     std::iota(sorted.begin(), sorted.end(), 0);
@@ -3388,13 +3398,13 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d*
     return BSISUCCESS;
     }
 
-template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph)
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph, bool arePoints3D)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(this->m_node->GetPointsPtr());
     pointsPtr->clear();
 
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(this->m_node);
-    //m_meshNode->m_nodeHeader.m_arePoints3d = true;
+    m_meshNode->m_nodeHeader.m_arePoints3d = arePoints3D;
     m_meshNode->m_nodeHeader.m_isTextured = true;
 
     if (texID != -1)
@@ -3454,13 +3464,13 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
     return BSISUCCESS;
     }
 
-template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph)
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph, bool arePoints3D)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(this->m_node->GetPointsPtr());    
     pointsPtr->clear();
     
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(this->m_node);
-    m_meshNode->m_nodeHeader.m_arePoints3d = true;    
+    m_meshNode->m_nodeHeader.m_arePoints3d = arePoints3D;
     m_meshNode->m_nodeHeader.m_isTextured = true;
 
     if (texID != -1)

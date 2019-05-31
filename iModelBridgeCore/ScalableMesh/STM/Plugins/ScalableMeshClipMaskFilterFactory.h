@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/Plugins/ScalableMeshClipMaskFilterFactory.h $
 |    $RCSfile: ScalableMeshClipMaskFilterFactory.h,v $
 |   $Revision: 1.4 $
 |       $Date: 2011/09/01 14:07:05 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

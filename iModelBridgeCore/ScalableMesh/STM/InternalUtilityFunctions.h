@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/InternalUtilityFunctions.h $
 |    $RCSfile: InternalUtilityFunctions.h,v $
 |   $Revision: 1.7 $
 |       $Date: 2012/06/27 14:06:54 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -83,4 +81,22 @@ struct BENTLEY_SM_EXPORT PtToPtConverter
 double ComputeMinEdgeLength(const DPoint3d* points, size_t ptNum, const int32_t* idx, size_t idxNum);
 BENTLEY_SM_EXPORT inline bool IsUrl(WCharCP filename);
 void SimplifyPolygonToMinEdge(double minEdge, bvector<DPoint3d>& poly);
+
+
+struct ScalableMeshModuleInfo
+    {
+    ScalableMeshModuleInfo();
+    bool ToJson(Json::Value& json) const;
+
+#if _WIN32
+    HMODULE m_handle = NULL;
+#endif
+    WString m_productName;
+    WString m_productVersion;
+    //WString m_dllCreationTime;
+    WString m_publisherName;
+    WString m_publisherVersion;
+    };
+
+StatusInt InitializeModuleHandle(ScalableMeshModuleInfo* moduleInfo);
 

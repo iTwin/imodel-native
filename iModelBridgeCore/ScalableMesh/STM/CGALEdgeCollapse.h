@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/CGALEdgeCollapse.h $
 |    $RCSfile: CGALEdgeCollapse.h,v $
 |   $Revision: 1.0 $
 |       $Date: 2015/11/30 14:54:23 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

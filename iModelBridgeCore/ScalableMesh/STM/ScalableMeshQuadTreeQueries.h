@@ -1,12 +1,11 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: STM/ScalableMeshQuadTreeQueries.h $
 //:>    $RCSfile: ScalableMeshQuadTreeQueries.h,v $
 //:>   $Revision: 1.12 $
 //:>       $Date: 2012/11/29 17:30:30 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+//:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -519,6 +518,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                             m_maxNumberOfPoints = maxNumberOfPoints;
                             m_viewClipVector = viewClipVector;
                             m_invertClips = invertClips;
+                            m_hasLevelLimit = false;
                             }
                                                         
         virtual             ~ScalableMeshQuadTreeViewDependentMeshQuery() {};

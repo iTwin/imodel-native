@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshCreator.cpp $
 |    $RCSfile: ScalableMeshCreator.cpp,v $
 |   $Revision: 1.90 $
 |       $Date: 2012/01/27 16:45:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -364,7 +362,7 @@ IScalableMeshProgress* IScalableMeshCreator::GetProgress()
     {
     return &*m_implP->GetProgress();
     }
-
+   
 bool  IScalableMeshCreator::IsShareable()
     {
     return m_implP->IsShareable();
@@ -518,7 +516,7 @@ StatusInt IScalableMeshCreator::Impl::GetStreamedTextureProvider(ITextureProvide
 
 StatusInt IScalableMeshCreator::Impl::GetStreamedTextureProvider(ITextureProviderPtr& textureStreamProviderPtr, const WString& url)
     {
-    return GetStreamedTextureProvider(textureStreamProviderPtr, m_scmPtr, m_dataIndex, url);
+    return GetStreamedTextureProvider(textureStreamProviderPtr, m_scmPtr, m_pDataIndex, url);
     }
 
 StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url)
@@ -728,7 +726,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>& pD
 
 
    /* ISMPointIndexFilter<PointType, PointIndexExtentType>* pFilter = s_filter != nullptr? s_filter:
-        scm_createFilterFromType<PointType, PointIndexExtentType>(scm_getFilterType());
+        scm_createFilterFromType<PointType, PointIndexExtentType>(scm_getFilterType()); 
 
     ISMPointIndexMesher<PointType, PointIndexExtentType>* pMesher2_5d =
                 Create2_5dMesherFromType<PointType, PointIndexExtentType>(Get2_5dMesherType());
@@ -854,7 +852,7 @@ SMSQLiteFilePtr IScalableMeshCreator::Impl::GetFile(bool fileExists)
             assert(!m_scmFileName.empty());
             m_smSQLitePtr = new SMSQLiteFile();
             if (!fileExists)
-                success = m_smSQLitePtr->Create(m_scmFileName);
+                success = m_smSQLitePtr->Create(m_scmFileName, SQLDatabaseType::SM_MAIN_DB_FILE, m_isShareable);
             else
                 success = m_smSQLitePtr->Open(m_scmFileName, false, m_isShareable); // open in read/write
         }
@@ -1006,7 +1004,7 @@ bool IScalableMeshCreator::Impl::IsCanceled()
 void IScalableMeshCreator::Impl::Cancel()
     {
     m_isCanceled = true;
-    if (m_dataIndex) m_dataIndex->SetCanceled(true);
+    if (m_pDataIndex) m_pDataIndex->SetCanceled(true);
     }
 
 IScalableMeshProgressPtr IScalableMeshCreator::Impl::GetProgress()

@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: Tests/ATP/Common/ATPFileFinder.cpp $
 |    $RCSfile: FileFinder.cpp,v $
 |   $Revision: 1.4 $
 |       $Date: 2012/05/17 14:52:36 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

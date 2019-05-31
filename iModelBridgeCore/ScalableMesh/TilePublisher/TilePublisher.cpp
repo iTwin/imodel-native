@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: TilePublisher/TilePublisher.cpp $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -118,35 +116,21 @@ void BatchIdMap::ToJson(Json::Value& value) const
 TilePublisher::TilePublisher(TileNodeCR tile, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS)
     : m_batchIds(TileSource::None), m_centroid(tile.GetTileCenter()), m_tile(&tile), m_context(nullptr)
     {
-    m_centroid = DPoint3d::From(0, 0, 0);
     m_meshes = m_tile->GenerateMeshes();
-#if 0
-    // 1. CESIUM_RTC does not work when root tileset contains a non-identity transform
-    // 2. Point to point reprojection is not necessary
-    // 3. TODO: Must investigate the use of RTC_CENTER instead
+    //// 1. CESIUM_RTC does not work when root tileset contains a non-identity rotation transform
+	////    (see here https://github.com/AnalyticalGraphicsInc/cesium/issues/7036)
+    //// 2. Point to point reprojection is not necessary
+    //// 3. TODO: Use RTC_CENTER instead
     if (!m_meshes.empty())
         {
-        if (sourceGCS != nullptr && sourceGCS != destinationGCS && !destinationGCS->IsEquivalent(*sourceGCS))
-            {
-            m_meshes[0]->ReprojectPoints(sourceGCS, destinationGCS);
 
-            GeoPoint inLatLong, outLatLong;
-            if (sourceGCS->LatLongFromCartesian(inLatLong, m_centroid) != SUCCESS)
-                assert(false);
-            if (sourceGCS->LatLongFromLatLong(outLatLong, inLatLong, *destinationGCS) != SUCCESS)
-                assert(false);
-            if (destinationGCS->XYZFromLatLong(m_centroid, outLatLong) != SUCCESS)
-                assert(false);
-            }
-
-        // Convert points to follow Y-up convention and translate to zero (avoids jittering for distant datasets)
+        // Translate to zero (avoids jittering for distant datasets)
         Transform transform = Transform::FromRowValues(1, 0, 0, -m_centroid.x,
                                                        0, 1, 0, -m_centroid.y,
                                                        0, 0, 1, -m_centroid.z);
         
         m_meshes[0]->ApplyTransform(transform);
         }
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

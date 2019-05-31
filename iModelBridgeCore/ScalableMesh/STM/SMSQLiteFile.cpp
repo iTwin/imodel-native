@@ -209,7 +209,11 @@ DbResult SMSQLiteFile::UpdateDatabase()
 bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly, bool openShareable, SQLDatabaseType type)
     {
     if (m_database == nullptr)
-        m_database = new ScalableMeshDb(type, this);
+        {
+        Utf8String fileNameStr(filename);
+        m_database = new ScalableMeshDb(type, this, fileNameStr);
+        }
+
     DbResult result = BE_SQLITE_OK;
     if (m_database->IsDbOpen())
         m_database->CloseDb();
@@ -350,6 +354,11 @@ SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, S
         }
 
     return smSQLiteFile;
+    }
+
+void SMSQLiteFile::SetIsShared(bool isShared)
+    {
+    m_isShared = isShared;
     }
 
 bool SMSQLiteFile::GetFileName(Utf8String& fileName) const
@@ -499,10 +508,13 @@ DbResult SMSQLiteFile::CreateTables()
     return result;
     }
 
-    bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename, SQLDatabaseType type)
+    bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename, SQLDatabaseType type, bool isSharable)
         {
     if (m_database == nullptr)
-        m_database = new ScalableMeshDb(type, this);
+        {
+        Utf8String fileNameStr(filename);
+        m_database = new ScalableMeshDb(type, this, fileNameStr);        
+        }
 
     DbResult result;
     result = m_database->CreateNewDb(filename);
@@ -519,10 +531,12 @@ DbResult SMSQLiteFile::CreateTables()
                                 
     m_database->SaveChanges();
 
+    m_isShared = isSharable;
+
     return result == BE_SQLITE_OK;
 }
 
-bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabaseType type)
+bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabaseType type, bool isSharable)
     {
     BeFileName sqlFileName(filename.GetWCharCP());
 
@@ -537,7 +551,7 @@ bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabase
 #endif
 
     Utf8String utf8FileName(filename);            
-    return Create(utf8FileName.c_str(), type);
+    return Create(utf8FileName.c_str(), type, isSharable);
     }
 
 bool SMSQLiteFile::SetMasterHeader(const SQLiteIndexHeader& newHeader)

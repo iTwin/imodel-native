@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ImportPlugins/CivilDTMHelpers.cpp $
 |    $RCSfile: CivilDTMHelpers.cpp,v $
 |   $Revision: 1.9 $
 |       $Date: 2012/02/23 00:32:43 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>

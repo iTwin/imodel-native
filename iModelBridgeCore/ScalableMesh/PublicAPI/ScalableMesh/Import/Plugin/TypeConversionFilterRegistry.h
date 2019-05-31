@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: PublicAPI/ScalableMesh/Import/Plugin/TypeConversionFilterRegistry.h $
 |    $RCSfile: TypeConversionFilterRegistry.h,v $
 |   $Revision: 1.3 $
 |       $Date: 2011/08/02 14:58:43 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

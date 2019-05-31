@@ -41,6 +41,8 @@ namespace BENTLEY_NAMESPACE_NAME
     }
 
 
+#define SM_SIMPLIFY_OVERVIEW_CLIPS_MAX_LEVEL 1 
+
 extern bool s_useThreadsInStitching;
 extern bool s_useThreadsInMeshing;
 extern bool s_useThreadsInTexturing;
@@ -321,11 +323,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(this->m_SMIndex)->GetClipRegistry();
         }
 
-    void  BuildSkirts();
+    void BuildSkirts();
 
-
+    void PropagateClipSetFromAncestors();
     bool HasAnyClip();
-    bool HasClip(uint64_t clipId);
+    bool HasClip(uint64_t clipId, bool propagateClipSetFromAncestors = true);
 
     bool IsClippingUpToDate();
 
@@ -955,6 +957,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         StatusInt           SaveMeshToCloud(const WString& path, const bool& pi_pCompress);
 
         StatusInt           ChangeGeometricError(const WString& path, const bool& pi_pCompress, const double& newGeometricErrorValue);
+
+        BENTLEY_SM_EXPORT void DoParallelStitching(vector<SMMeshIndexNode<POINT, EXTENT>*>& nodesToStitch);
 
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false, vector<SMMeshIndexNode<POINT, EXTENT>*>* nodesToStitchInfo = nullptr);
         

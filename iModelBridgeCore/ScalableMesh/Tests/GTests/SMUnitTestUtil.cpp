@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/GTests/SMUnitTestUtil.cpp $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -402,6 +400,7 @@ bool ScalableMeshGTestUtil::InitScalableMesh()
         static ScalableMeshModule smApp;
         if (SUCCESS == smApp.Initialize())
             bInitialized = true;
+        smApp.InitializeLogging();
         }
 
     return bInitialized;

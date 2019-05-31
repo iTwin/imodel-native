@@ -1,8 +1,6 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: ScalableMesh_DgnDb06.mke $
-#
-#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #----------------------------------------------------------------------------------------
      
@@ -348,6 +346,8 @@ $(o)SMPublisher$(oext) : $(stmDir)Stores/SMPublisher.cpp $(PCHHeaderDepends) ${M
 $(o)SMCesiumPublisher$(oext) : $(stmDir)Stores/SMCesiumPublisher.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)ScalableMeshSaveAs$(oext) : $(stmDir)ScalableMeshSaveAs.cpp ${MultiCompileDepends}
+
+$(o)ScalableMeshContourExtractor$(oext) : $(stmDir)ScalableMeshContourExtractor.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build RDS provider

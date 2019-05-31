@@ -75,6 +75,47 @@ struct SmCachedDisplayData
     };
 #endif
 
+struct SmCachedDisplayMeshWrapper : public RefCountedBase
+    {
+    SmCachedDisplayMeshWrapper(SmCachedDisplayMesh* cachedDisplayMesh, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)
+        {
+        m_cachedDisplayMesh = cachedDisplayMesh;
+        m_displayCacheManagerPtr = displayCacheManagerPtr;
+        m_isInVRAM = false;
+        }
+
+    virtual ~SmCachedDisplayMeshWrapper()
+        {
+        if (m_cachedDisplayMesh != 0 && m_displayCacheManagerPtr.IsValid())
+            {            
+            BentleyStatus status = m_isInVRAM ? m_displayCacheManagerPtr->_DeleteFromVideoMemory(m_cachedDisplayMesh) : m_displayCacheManagerPtr->_DestroyCachedMesh(m_cachedDisplayMesh);
+            assert(status == SUCCESS);
+            }        
+        }
+
+    bool IsInVRAM() const
+        {
+        return m_isInVRAM;
+        }
+
+    void SetIsInVRAM(bool isInVRAM)
+        {
+        m_isInVRAM = isInVRAM;
+        }
+
+
+
+    SmCachedDisplayMesh*                m_cachedDisplayMesh;
+    IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
+    bool m_isInVRAM = false;
+
+
+    private:
+
+            SmCachedDisplayMeshWrapper& operator=(const SmCachedDisplayMeshWrapper& pi_rObj);
+            SmCachedDisplayMeshWrapper(const SmCachedDisplayMeshWrapper& pi_rObj);
+           
+    };
 
 struct SmCachedDisplayMeshData
     {
@@ -85,39 +126,31 @@ struct SmCachedDisplayMeshData
         IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
         size_t                              m_memorySize;
         bvector<uint64_t>                   m_appliedClips;
-        bool                                m_isInVRAM;
+
+
+         // Methods Disabled
+    SmCachedDisplayMeshData(const SmCachedDisplayMeshData& pi_rObj);
+
+
 
     public:
 
-        SmCachedDisplayMesh*                m_cachedDisplayMesh;
+
+        RefCountedPtr<SmCachedDisplayMeshWrapper> m_cachedDisplayMeshPtr;
+        
         SmCachedDisplayMeshData()
             {}
 
+       
         SmCachedDisplayMeshData(SmCachedDisplayMesh*                 cachedDisplayMesh,
-                                IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr,
-                                uint64_t                             textureID,
-                                bool                                isTextured,
-                                size_t                               memorySize,
-                                const bvector<uint64_t>&             appliedClips)
-            {
-            m_cachedDisplayMesh = cachedDisplayMesh;
-            m_textureID = textureID;
-            m_isTextured = isTextured;
-            m_displayCacheManagerPtr = displayCacheManagerPtr;
-            m_memorySize = memorySize;
-            m_appliedClips.insert(m_appliedClips.end(), appliedClips.begin(), appliedClips.end());
-            m_isInVRAM = false;
-            }
+            IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr,
+            uint64_t                             textureID,
+            bool                                isTextured,
+            size_t                               memorySize,
+            const bvector<uint64_t>&             appliedClips);          
+        virtual ~SmCachedDisplayMeshData() {}
 
-        virtual ~SmCachedDisplayMeshData()
-            {
-            if (m_cachedDisplayMesh != 0)
-                {
-                BentleyStatus status = m_isInVRAM ? m_displayCacheManagerPtr->_DeleteFromVideoMemory(m_cachedDisplayMesh) : m_displayCacheManagerPtr->_DestroyCachedMesh(m_cachedDisplayMesh);
-                assert(status == SUCCESS);
-                }
-            }
-
+       
         size_t GetMemorySize() const
             {
             return m_memorySize;
@@ -125,7 +158,7 @@ struct SmCachedDisplayMeshData
 
         SmCachedDisplayMesh* GetCachedDisplayMesh() const
             {
-            return m_cachedDisplayMesh;
+            return m_cachedDisplayMeshPtr->m_cachedDisplayMesh;
             }
 
         const bvector<uint64_t>& GetAppliedClips()
@@ -135,12 +168,18 @@ struct SmCachedDisplayMeshData
 
         bool IsInVRAM() const
             {
-            return m_isInVRAM;
+            if (!m_cachedDisplayMeshPtr.IsValid())
+                false;
+
+            return  m_cachedDisplayMeshPtr->IsInVRAM();
             }
 
         void SetIsInVRAM(bool isInVRAM)
-            {
-            m_isInVRAM = isInVRAM;
+            {            
+            if (!m_cachedDisplayMeshPtr.IsValid())
+                assert(false);
+
+            m_cachedDisplayMeshPtr->SetIsInVRAM(isInVRAM);
             }
 
         bool GetTextureInfo(uint64_t& textureID) const
@@ -176,6 +215,7 @@ struct SmCachedDisplayTextureData
                                    IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr,
                                    size_t                               memorySize)
             {
+            assert(displayCacheManagerPtr.IsValid());
             m_cachedDisplayTexture = cachedDisplayTexture;
             m_textureID = textureID;
             m_displayCacheManagerPtr = displayCacheManagerPtr;
@@ -191,6 +231,7 @@ struct SmCachedDisplayTextureData
             m_consumers(texData.m_consumers),
             m_isInVRAM(texData.m_isInVRAM)
            {
+            assert(m_displayCacheManagerPtr.IsValid());
 
            }
 

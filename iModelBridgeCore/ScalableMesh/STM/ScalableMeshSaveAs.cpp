@@ -438,6 +438,7 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     //strategy->SetSourceAndDestinationGCS(sourceGCS, destinationGCS);
     strategy->SetRootTransform(ecefTrans);
     strategy->AddGroup(rootNodeGroup.get());
+    strategy->SetPublisherInfo(ScalableMeshModuleInfo());
     index->SetRootNodeGroup(rootNodeGroup);
 
     SMSAVEAS_LOG.debug("Publishing index...");

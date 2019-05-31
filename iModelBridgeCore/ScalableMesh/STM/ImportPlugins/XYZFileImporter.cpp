@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ImportPlugins/XYZFileImporter.cpp $
 |    $RCSfile: XYZFileImporter.cpp,v $
 |   $Revision: 1.42 $
 |       $Date: 2012/01/17 16:06:21 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 

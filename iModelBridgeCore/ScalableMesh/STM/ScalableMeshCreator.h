@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshCreator.h $
 |    $RCSfile: ScalableMeshCreator.h,v $
 |   $Revision: 1.45 $
 |       $Date: 2011/12/21 17:04:24 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -169,7 +167,6 @@ struct IScalableMeshCreator::Impl
 
     protected:
         
-        HFCPtr<MeshIndexType>               m_dataIndex;
 
         std::atomic<bool>        m_isCanceled;
 
@@ -234,7 +231,7 @@ struct IScalableMeshCreator::Impl
 
         BENTLEY_SM_EXPORT bool IsShareable();
 
-        BENTLEY_SM_EXPORT void SetShareable(bool isShareable);
+        BENTLEY_SM_EXPORT virtual void SetShareable(bool isShareable);        
 
       //  IScalableMeshNodePtr                AddChildNode (const IScalableMeshNodePtr& parentNode, 
        //                                                   StatusInt&                  status);
