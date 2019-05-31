@@ -2681,7 +2681,7 @@ public:
 
     DGNDBSYNC_EXPORT BentleyStatus MakeDefinitionChanges();
     DGNDBSYNC_EXPORT BentleyStatus ConvertData();
-
+    DGNDBSYNC_EXPORT BentleyStatus DetectDeletedEmbeddedFiles();
 };
 
 //=======================================================================================
