@@ -1312,6 +1312,139 @@ TEST_F(MstnBridgeTests, DISABLED_TestCodeRemovalPerformance)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
+    {
+    auto testDir = CreateTestDir();
+    
+    putenv("iModelBridge_MatchOnEmbeddedFileBasename=1");     // TODO: Replace this with a settings service parameter check
+
+    BentleyApi::BeFileName inputStagingDir = GetOutputDir();
+
+    auto master1 = GetOutputFileName(L"master1.i.dgn");      // These are the names of the staged input files
+    auto master2 = GetOutputFileName(L"master2.i.dgn");      //          "
+    BeFileName commonRef(L"commonRef.i.dgn");                   // The common embedded file will be identified by its basename only
+
+    SetupClient();
+    CreateRepository();
+    auto runningServer = StartServer();
+
+    BentleyApi::BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
+
+    BentleyApi::BeSQLite::BeGuid guid1, guid2, guidC;
+    guid1.Create();
+    guid2.Create();
+    guidC.Create();
+
+    iModelBridgeDocumentProperties docProps1(guid1.ToString().c_str(), "wurn1", "durn1", "other1", "");
+    iModelBridgeDocumentProperties docProps2(guid2.ToString().c_str(), "wurn2", "durn2", "other2", "");
+    // iModelBridgeDocumentProperties docPropsC(guidC.ToString().c_str(), "wurnC", "durnC", "otherC", "");
+    testRegistry.SetDocumentProperties(docProps1, master1);
+    testRegistry.SetDocumentProperties(docProps2, master2);
+    // testRegistry.SetDocumentProperties(docPropsC, commonRef);
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer,
+        const size_t bufferSize,
+        iModelBridgeAffinityLevel& affinityLevel,
+        BentleyApi::WCharCP affinityLibraryPath,
+            BentleyApi::WCharCP sourceFileName)
+        {
+        wcscpy(buffer, MSTN_BRIDGE_REG_SUB_KEY);
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        };
+
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, lambda);
+    BentleyApi::WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, master1, L"");
+    ASSERT_TRUE(bridgeName.Equals(MSTN_BRIDGE_REG_SUB_KEY));
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, master2, L"");
+    ASSERT_TRUE(bridgeName.Equals(MSTN_BRIDGE_REG_SUB_KEY));
+    testRegistry.Save();
+    TerminateHost();
+
+    int modelCount = 0;
+    if (true)
+        {
+        // In v1, master1 and master2 both embed commonRef
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+        
+        auto master_1_v1 = GetTestDataFileName(L"SharedEmbeddedReferences/v1/master1.i.dgn");
+        auto master_2_v1 = GetTestDataFileName(L"SharedEmbeddedReferences/v1/master2.i.dgn");
+
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_1_v1.c_str(), master1.c_str()));
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_2_v1.c_str(), master2.c_str()));
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
+        RunTheBridge(args);
+        
+        args.pop_back();
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
+        RunTheBridge(args);
+        
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+
+        modelCount = DbFileInfo(m_briefcaseName).GetPhysicalModelCount();
+        ASSERT_EQ(3, modelCount);
+        }
+
+    if (true)
+        {
+        // In v2, master1 still embeds commonRef, but master2 has dropped it.
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        auto master_1_v2 = GetTestDataFileName(L"SharedEmbeddedReferences/v2/master1.i.dgn");
+        auto master_2_v2 = GetTestDataFileName(L"SharedEmbeddedReferences/v2/master2.i.dgn");
+
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_1_v2.c_str(), master1.c_str()));
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_2_v2.c_str(), master2.c_str()));
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
+        RunTheBridge(args);
+        
+        args.pop_back();
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
+        RunTheBridge(args);
+
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+
+        ASSERT_EQ(modelCount, DbFileInfo(m_briefcaseName).GetPhysicalModelCount()) << "commonRef should still be in the iModel";
+        }
+
+     if (true)
+        {
+        // In v3, master1 has dropped its reference to commonRef, and so commonRef should be removed from the iModel.
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        auto master_1_v3 = GetTestDataFileName(L"SharedEmbeddedReferences/v3/master1.i.dgn");
+        auto master_2_v3 = GetTestDataFileName(L"SharedEmbeddedReferences/v3/master2.i.dgn");
+
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_1_v3.c_str(), master1.c_str()));
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_2_v3.c_str(), master2.c_str()));
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
+        RunTheBridge(args);
+        
+        args.pop_back();
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
+        RunTheBridge(args);
+
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+        
+        ASSERT_EQ(modelCount - 1, DbFileInfo(m_briefcaseName).GetPhysicalModelCount()) << "commonRef should have been deleted";
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mayuresh.Kanade                 01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P (SynchInfoTests, TestSynchInfoAspect)
