@@ -59,7 +59,7 @@ GeometryTestCase::GeometryTestCase()
     BeAssert (m_physicalModelPtr.IsValid());
 
     // Create a SpatialCategory used for creating PhysicalElements
-    SpatialCategory category (GetDb().GetDictionaryModel(), "ProfilesTestCategory", DgnCategory::Rank::Application);
+    SpatialCategory category (GetDb().GetDictionaryModel(), "Profiles", DgnCategory::Rank::Application);
 
     DgnDbStatus status;
     SpatialCategoryCPtr categoryPtr = category.Insert (DgnSubCategory::Appearance(), &status);
@@ -89,6 +89,7 @@ GeometryTestCase::GeometryTestCase()
 
     DefinitionModelR dictionaryModel = GetDb().GetDictionaryModel();
     CategorySelectorPtr categorySelectorPtr = new CategorySelector (dictionaryModel, "ProfilesTest");
+    categorySelectorPtr->AddCategory(m_categoryId);
 
     ModelSelectorPtr modelSelectorPtr = new ModelSelector (dictionaryModel, "ProfilesTest");
     modelSelectorPtr->AddModel (GetPhysicalModel().GetModelId());
