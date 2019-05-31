@@ -332,6 +332,24 @@ public:
     };  // ViewportFactory
 
 /*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          05/19
++===============+===============+===============+===============+===============+======*/
+struct XRefLoader
+    {
+private:
+    DwgImporter&    m_importer;
+    ECSchemaPtr     m_attrdefSchema;
+    bool IsXrefAlreadyLoaded (DwgDbBlockTableRecordCR xrefblock);
+    void ReportMissingFile (BeFileNameCR filename, DwgStringCR blockName) const;
+
+public:
+    XRefLoader (DwgImporter& importer) : m_importer(importer) {}
+    BentleyStatus LoadXrefsInMasterFile ();
+    BentleyStatus CacheUnresolvedXrefs ();
+    ECSchemaPtr GetAttrdefSchema () { return m_attrdefSchema; }
+    }; // XRefLoader
+
+/*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          12/16
 +===============+===============+===============+===============+===============+======*/
 struct    XRefLayerResolver

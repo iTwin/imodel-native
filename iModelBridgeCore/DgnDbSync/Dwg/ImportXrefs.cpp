@@ -369,6 +369,170 @@ DwgImporter::DwgXRefHolder* DwgImporter::FindXRefHolder (DwgDbBlockTableRecordCR
 
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus XRefLoader::LoadXrefsInMasterFile ()
+    {
+    auto& dwg = m_importer.GetDwgDb();
+    DwgDbBlockTablePtr  blockTable (dwg.GetBlockTableId(), DwgDbOpenMode::ForRead);
+    if (DwgDbStatus::Success != blockTable.OpenStatus())
+        return  BSIERROR;
+    
+    auto modelspaceId = dwg.GetModelspaceId ();
+    auto iter = blockTable->NewIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    /*-----------------------------------------------------------------------------------
+    Iterate the block table once for multiple tasks per import job:
+        1) Load xRef files from xRef block table records
+        2) Cache layout block object ID's from paperspace block table records
+        3) Collect attribute definitions from regular block table records
+    -----------------------------------------------------------------------------------*/
+    for (iter->Start(); !iter->Done(); iter->Step())
+        {
+        auto blockId = iter->GetRecordId ();
+        if (!blockId.IsValid() || modelspaceId == blockId)
+            continue;
+
+        DwgDbBlockTableRecordPtr    block(blockId, DwgDbOpenMode::ForRead);
+        if (block.OpenStatus() != DwgDbStatus::Success)
+            continue;
+
+        // if the block is a layout in the root master file, cache the block ID:
+        auto name = block->GetName ();
+        if (block->IsLayout())
+            {
+            m_importer.GetPaperspaceBlockIds().push_back (blockId);
+            continue;
+            }
+
+        // if the block is an xRef, load the file and cache the dwg:
+        if (block->IsExternalReference())
+            {
+            DwgImporter::DwgXRefHolder  xref(*block, m_importer);
+            if (xref.IsValid())
+                {
+                // add the new xref in local cache as well as in the syncInfo:
+                m_importer.GetLoadedXrefs().push_back (xref);
+                m_importer.CreateOrUpdateRepositoryLink (xref.GetDatabaseP());
+                }
+            else
+                {
+                // can't load the xRef file - error out
+                this->ReportMissingFile (xref.GetResolvedPath(), name);
+                }
+            continue;
+            }
+
+        // if the block has ATTRDEF's, create an attrdef ECClass from the block:
+        if (block->HasAttributeDefinitions())
+            m_importer.AddAttrdefECClassFromBlock(m_attrdefSchema, *block.get());
+        }
+
+    return  BentleyStatus::BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus XRefLoader::CacheUnresolvedXrefs ()
+    {
+    /*-------------------------------------------------------------------------------------------------
+    Nested xRef's may not be present in master file's block table, hence absent in our loaded xRef cache.
+    A practical scenario is when a user has attached a new DWG file to an existing xRef file as a nested 
+    xRef, but has not updated the master file.  Thus the master file does not have the nested xRef block 
+    defined.  We can force loading all nested xRef's by recursively drilling into xRefs in above method, 
+    but we still do not have their instances from which we can create models with correct transformation.
+    It is expensive to evaluate the xRef graph and drill into the entity level for model creation and then 
+    repeat the same operation for import.  For the sake of performance, we opt for caching nested Xrefs
+    not defined in the master file so we can detect xRef changes accordingly.
+
+    An alternative is to let a toolkit resolve xRef's (see DwgDbDatabase::ResolveXrefs).  Unfortunately,
+    RealDWG does not give us a way to create such an xRef database that it can be scoped in a RefCounted
+    pointer.  This toolkit creates and hides new databases for the xRefs it resolves.  A method which
+    returns a RefCounted pointer would be invalid (e.g. DwgDbObject::GetDatabase).
+    --------------------------------------------------------------------------------------------------*/
+    auto& unresolvedXrefs = m_importer.GetUnresolvedXrefs();
+    for (auto xref : m_importer.GetLoadedXrefs())
+        {
+        auto& dwg = xref.GetDatabaseR ();
+        DwgDbBlockTablePtr  blockTable(dwg.GetBlockTableId(), DwgDbOpenMode::ForRead);
+        if (DwgDbStatus::Success != blockTable.OpenStatus())
+            return  BSIERROR;
+
+        auto xModelspaceId = dwg.GetModelspaceId ();
+        auto iter = blockTable->NewIterator ();
+        if (!iter.IsValid() || !iter->IsValid())
+            return  BentleyStatus::BSIERROR;
+
+        for (iter->Start(); !iter->Done(); iter->Step())
+            {
+            auto blockId = iter->GetRecordId ();
+            if (!blockId.IsValid() || xModelspaceId == blockId)
+                continue;
+
+            DwgDbBlockTableRecordPtr    block(blockId, DwgDbOpenMode::ForRead);
+            if (block.OpenStatus() != DwgDbStatus::Success)
+                continue;
+
+            if (block->IsExternalReference())
+                {
+                if (!this->IsXrefAlreadyLoaded(*block))
+                    {
+                    BeFileName  foundPath;
+                    auto xrefPath = block->GetPath().c_str();
+                    if (DwgImportHost::GetHost()._FindFile(foundPath, xrefPath, &dwg, AcadFileType::XRefDrawing) == DwgDbStatus::Success)
+                        unresolvedXrefs.insert (foundPath);
+                    else
+                        this->ReportMissingFile (BeFileName(xrefPath), block->GetName());
+                    }
+                continue;
+                }
+
+            // if the block has ATTRDEF's, create an attrdef ECClass from the block:
+            if (block->HasAttributeDefinitions())
+                m_importer.AddAttrdefECClassFromBlock(m_attrdefSchema, *block.get());
+            }
+        }
+
+    return  BentleyStatus::BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool XRefLoader::IsXrefAlreadyLoaded (DwgDbBlockTableRecordCR xrefBlock)
+    {
+    BeFileName foundPath;
+    bool isSeen = false;
+    auto dwg = xrefBlock.GetDatabase().get ();
+
+    // is the xRef loaded?
+    if (DwgImportHost::GetHost()._FindFile(foundPath, xrefBlock.GetPath().c_str(), dwg, AcadFileType::XRefDrawing) == DwgDbStatus::Success)
+        isSeen = m_importer.FindLoadedXRef(foundPath);
+
+    // is the xRef cached in unloaded path list
+    if (!isSeen)
+        isSeen = m_importer.GetUnresolvedXrefs().find(foundPath) != m_importer.GetUnresolvedXrefs().end();
+
+    return  isSeen;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void XRefLoader::ReportMissingFile (BeFileNameCR path, DwgStringCR blockName) const
+    {
+    Utf8String  filename(path.GetNameUtf8());
+    if (filename.empty())
+        filename.Assign (blockName.c_str());
+    m_importer.ReportError (IssueCategory::DiskIO(), Issue::FileNotFound(), filename.c_str());
+    }
+
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 LayoutXrefFactory::LayoutXrefFactory (DwgImporter& im, DwgDbBlockReferenceCR x) : m_importer(im), m_xrefInsert(x)

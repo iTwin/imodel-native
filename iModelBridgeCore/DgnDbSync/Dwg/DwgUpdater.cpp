@@ -762,6 +762,7 @@ void UpdaterChangeDetector::_DetectDetachedXrefs (DwgImporter& importer)
     {
     auto&   db = importer.GetDgnDb ();
     auto&   loadedXrefs = importer.GetLoadedXrefs ();
+    auto&   unresolvedXrefs = importer.GetUnresolvedXrefs ();
     auto    rootfileId = importer.GetRepositoryLink(&importer.GetDwgDb());
 
     DwgSourceAspects::RepositoryLinkAspectIterator files(db, nullptr);
@@ -772,16 +773,24 @@ void UpdaterChangeDetector::_DetectDetachedXrefs (DwgImporter& importer)
         if (rlinkId == rootfileId)
             continue;
         
+        // check if this file is in our loaded xRef list
         bool    detached = true;
         for (auto& xref : loadedXrefs)
             {
             auto dwg = xref.GetDatabaseP ();
             if (nullptr != dwg && importer.GetRepositoryLink(dwg) == rlinkId)
                 {
-                uint64_t    savedId = 0;
                 detached = false;
                 break;
                 }
+            }
+
+        // also check the unresolved xRef list (nested xRef's out of sync with the master file)
+        if (detached)
+            {
+            BeFileName existingFilename(file.GetFileName());
+            if (unresolvedXrefs.find(existingFilename) != unresolvedXrefs.end())
+                detached = false;
             }
 
         if (detached)

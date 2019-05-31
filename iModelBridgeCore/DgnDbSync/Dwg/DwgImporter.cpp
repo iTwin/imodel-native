@@ -78,16 +78,9 @@ BentleyStatus   DwgImporter::_MakeSchemaChanges ()
     if (!m_dgndb.IsValid() || !m_dwgdb.IsValid())
         return  static_cast<BentleyStatus>(DgnDbStatus::NotOpen);
 
-    DwgDbBlockTablePtr  blockTable (m_dwgdb->GetBlockTableId(), DwgDbOpenMode::ForRead);
-    if (DwgDbStatus::Success != blockTable.OpenStatus())
-        return  BSIERROR;
-
-    DwgDbSymbolTableIteratorPtr iter = blockTable->NewIterator ();
-    if (!iter.IsValid() || !iter->IsValid())
-        return  BSIERROR;
-
     m_paperspaceBlockIds.clear ();
     m_loadedXrefFiles.clear ();
+    m_unresolvedXrefFiles.clear ();
 
     /*-----------------------------------------------------------------------------------
     Iterate the block table once for multiple tasks in an import job:
@@ -95,50 +88,10 @@ BentleyStatus   DwgImporter::_MakeSchemaChanges ()
         2) Cache layout block object ID's from paperspace block table records
         3) Collect attribute definitions from regular block table records
     -----------------------------------------------------------------------------------*/
-    ECSchemaPtr     attrdefSchema;
-    for (iter->Start(); !iter->Done(); iter->Step())
-        {
-        DwgDbObjectId   blockId = iter->GetRecordId ();
-        if (!blockId.IsValid() || m_dwgdb->GetModelspaceId() == blockId)
-            continue;
-
-        DwgDbBlockTableRecordPtr    block(blockId, DwgDbOpenMode::ForRead);
-        if (block.OpenStatus() != DwgDbStatus::Success)
-            continue;
-
-        // if the block is a layout, cache the block ID:
-        auto name = block->GetName ();
-        if (block->IsLayout())
-            {
-            m_paperspaceBlockIds.push_back (blockId);
-            continue;
-            }
-
-        // if the block is an xRef, load the file and cache the dwg:
-        if (block->IsExternalReference())
-            {
-            DwgXRefHolder   xref(*block, *this);
-            if (xref.IsValid())
-                {
-                // add the new xref in local cache as well as in the syncInfo:
-                m_loadedXrefFiles.push_back (xref);
-                this->CreateOrUpdateRepositoryLink (xref.GetDatabaseP());
-                }
-            else
-                {
-                // can't load the xRef file - error out
-                Utf8String  filename = xref.GetResolvedPath().GetNameUtf8 ();
-                if (filename.empty())
-                    filename = Utf8String (name.c_str());
-                this->ReportError (IssueCategory::DiskIO(), Issue::FileNotFound(), filename.c_str());
-                }
-            continue;
-            }
-
-        // if the block has ATTRDEF's, create an attrdef ECClass from the block:
-        if (block->HasAttributeDefinitions())
-            this->AddAttrdefECClassFromBlock(attrdefSchema, *block.get());
-        }
+    XRefLoader  xrefLoader(*this);
+    xrefLoader.LoadXrefsInMasterFile ();
+    xrefLoader.CacheUnresolvedXrefs ();
+    auto attrdefSchema = xrefLoader.GetAttrdefSchema ();
 
     if (attrdefSchema.IsValid() && attrdefSchema->GetClassCount() > 0)
         {
@@ -1159,7 +1112,7 @@ ResolvedModelMapping DwgImporter::_ImportXrefModel (DwgDbBlockTableRecordCR bloc
     DgnModelP   parentModel = nullptr;
 
     // if this xref is inserted in a paperspace block, import paperspace first, then use paperspace transform:
-    bool    isParentPaperspace = parentBlock->IsLayout() && m_modelspaceId != parentId;
+    bool    isParentPaperspace = parentBlock->IsLayout() && !parentBlock->IsModelspace() && m_modelspaceId != parentId;
     if (isParentPaperspace)
         {
         // get or create the paperspace model if not already created:

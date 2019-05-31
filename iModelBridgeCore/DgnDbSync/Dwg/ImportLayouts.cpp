@@ -295,6 +295,13 @@ bool    DwgImporter::ShouldSkipAllXrefs (ResolvedModelMapping const& ownerModel,
             return  false;
         }
 
+    // also check the unresolved xRef's, i.e. nested xRef's becoming out of sync with the master file
+    for (auto nestedXref : m_unresolvedXrefFiles)
+        {
+        if (this->GetSourceAspects().HasDiskFileChanged(nestedXref))
+            return  false;
+        }
+
     // either no xRef is attached, or no change is detected in any xref file, we can skip the owner space.
     return true;
     }

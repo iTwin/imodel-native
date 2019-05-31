@@ -272,6 +272,7 @@ struct DwgImporter
     friend struct LineStyleFactory;
     friend struct LayoutFactory;
     friend struct LayoutXrefFactory;
+    friend struct XRefLoader;
     friend struct GroupFactory;
     friend struct ElementFactory;
     friend class DwgProtocolExtension;
@@ -979,6 +980,7 @@ protected:
     FallbackFonts               m_fallbackFonts;
     DwgXRefHolder               m_currentXref;
     T_LoadedXRefFiles           m_loadedXrefFiles;
+    bset<BeFileName>            m_unresolvedXrefFiles;
     DgnModelIdSet               m_modelspaceXrefs;
     T_DwgXRefsInPaperspaces     m_paperspaceXrefs;
     T_PaperspaceViewMap         m_paperspaceViews;
@@ -1318,7 +1320,7 @@ public:
     //! @return True, if the root transform has been changed from previous import; false, otherwise.
     //! @note This happens when iModelBridge changes its spatial transformation for the same import job.
     DWG_EXPORT bool             HasRootTransformChanged () const { return m_rootTransformInfo.HasChanged(); }
-    //! @return Current root transform.
+    //! @return Current the root transform.
     TransformCR                 GetRootTransform () const { return m_rootTransformInfo.GetRootTransform(); }
     DWG_EXPORT double           GetScaleToMeters () const;
     DwgDbObjectId               GetCurrentViewportId () { return m_currentGeometryOptions.GetViewportId(); }
@@ -1348,7 +1350,7 @@ public:
     //! Get/create the DefinitionModel that stores all other job specific definitions
     DWG_EXPORT DefinitionModelPtr GetOrCreateJobDefinitionModel ();
 
-    //! An iModelBridge must call this method from _MakeSchemaChanges, to change schemass.
+    //! An iModelBridge must call this method from _MakeSchemaChanges, to change schemas.
     //! The default implementation iterates DWG block table for multiple tasks:
     //! 1) Create or update dynamic DwgAttributeDefinitions schema from ATTRDEF's
     //! 2) Load xRef files and cache them in m_loadedXrefFiles
@@ -1386,6 +1388,8 @@ public:
     DwgXRefHolder*              FindXRefHolder (DwgDbBlockTableRecordCR xrefBlock, bool createIfNotFound = false);
     DwgDbDatabaseP              FindLoadedXRef (BeFileNameCR path);
     T_LoadedXRefFiles&          GetLoadedXrefs () { return m_loadedXrefFiles; }
+    bset<BeFileName>&           GetUnresolvedXrefs () { return m_unresolvedXrefFiles; }
+    DwgDbObjectIdArrayR         GetPaperspaceBlockIds () { return m_paperspaceBlockIds; }
     //! Get or add a RepositoryLink for a DWG
     DWG_EXPORT DgnElementId GetRepositoryLink (DwgDbDatabaseP dwg);
     //! Import a database-resident entity
