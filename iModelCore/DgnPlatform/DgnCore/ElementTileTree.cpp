@@ -3590,7 +3590,8 @@ Utf8CP TileCache::GetCurrentVersion()
     //  12: Fixed display priority range in 2d models
     //  13: Texture atlas for raster text
     //  14: Fixed texture clipping
-    return "14";
+    //  15: Earlin fixed UV params for solids of extrusion
+    return "15";
     }
 
 /*---------------------------------------------------------------------------------**//**
