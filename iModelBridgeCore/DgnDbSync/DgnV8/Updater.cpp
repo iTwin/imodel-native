@@ -396,6 +396,37 @@ void Converter::_DeleteFileAndContents(RepositoryLinkId repositoryLinkId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::DeleteEmbeddedFileAndContents(RepositoryLinkId repositoryLinkId)
+    {
+    auto rlink = GetRepositoryLinkElement(repositoryLinkId);
+    if (!rlink.IsValid())
+        return;
+    SyncInfo::V8ModelExternalSourceAspectIterator modelsInFile(*rlink);
+    for (auto wasModel : modelsInFile)
+        {
+        auto model = GetDgnDb().Models().GetModel(wasModel.GetModelId());
+        if (!model.IsValid())
+            {
+            BeAssert(false && "I found a Model *aspect*, and yet I cannot access the model that it points to. That's impossible.:");
+            continue;
+            }
+
+        SyncInfo::V8ElementExternalSourceAspectIterator elementsInModel(*model);
+
+        for (auto wasElement : elementsInModel)
+            {
+            _DeleteElement(wasElement.GetElementId());
+            }
+
+        _DeleteModel(*model, wasModel);
+        }
+
+    rlink->Delete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::_DetectDeletedDocuments()
     {
     if (!IsUpdating())
@@ -498,7 +529,7 @@ BentleyApi::BentleyStatus RootModelConverter::DetectDeletedEmbeddedFiles()
         if (embeddedFileNamesFound.find(identifier) == embeddedFileNamesFound.end())
             {
             // No package file assigned to me embeds this file. Therefore, I say that the embedded file was deleted.
-            _DeleteFileAndContents(rlinkAspect->GetRepositoryLinkId());
+            DeleteEmbeddedFileAndContents(rlinkAspect->GetRepositoryLinkId());
     
             iModelBridge::PushChanges(*m_dgndb, _GetParams(), Utf8PrintfString("%s (%s) - Deleted", v8FileName.c_str(), identifier.c_str()));
             }

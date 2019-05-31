@@ -2557,6 +2557,7 @@ protected:
 
     DGNDBSYNC_EXPORT DgnV8FileCP _GetPackageFileOf(DgnV8FileCR) override;
     DGNDBSYNC_EXPORT bool _WasEmbeddedFileSeen(Utf8StringCR uniqueName) const override;
+    void DeleteEmbeddedFileAndContents(RepositoryLinkId);
 
     bool _HaveChangeDetector() override {return m_changeDetector != nullptr;}
     IChangeDetector& _GetChangeDetector() override {return *m_changeDetector;}
