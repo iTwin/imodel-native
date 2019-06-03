@@ -44,7 +44,7 @@
         <ProductDirectory Name="Assemblies"                                 RelativeTo="Root" Path="bin"/>
         <ProductDirectory Name="Assemblies"             LibType="Static"    Deliver="false"/>
         <ProductDirectory Name="Assets"                                     RelativeTo="Root" Path="assets"/>
-        <ProductDirectory Name="Assets"                 LibType="static"    RelativeTo="Root" Path="assets"/>
+        <ProductDirectory Name="Assets"                 LibType="Static"    RelativeTo="Root" Path="assets"/>
         <ProductDirectory Name="BeHttpXliffs"                               RelativeTo="Root" Path="xliffs"/>
         <ProductDirectory Name="BeHttpXliffs"           LibType="Static"    RelativeTo="Root" Path="xliffs"/>
         <ProductDirectory Name="DgnPlatformXliffs"                          RelativeTo="Root" Path="xliffs"/>
@@ -67,6 +67,7 @@
     <NuGetProduct Name="iModelCoreTestingNuget" Description="iModel Core Testing SDK" OnlyPlatforms="x64,linux*,macos*">
         <Directories DirectoryListName="iModelCoreTestingNugetDirs"/>
         <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <SubPart PartName="UnitTestSchemas" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
     </NuGetProduct>
 
     <ProductDirectoryList ListName="iModelCoreTestingNugetDirs">
@@ -75,11 +76,13 @@
         <ProductDirectory Name="Assemblies"                         RelativeTo="Root" Path="bin"/>
         <ProductDirectory Name="Assemblies"     LibType="Static"    Deliver="false"/>
         <ProductDirectory Name="Assets"                             RelativeTo="Root" Path="assets"/>
-        <ProductDirectory Name="Assets"         LibType="static"    RelativeTo="Root" Path="assets"/>
+        <ProductDirectory Name="Assets"         LibType="Static"    RelativeTo="Root" Path="assets"/>
         <ProductDirectory Name="Libs"                               RelativeTo="Root" Path="lib"/>
         <ProductDirectory Name="Libs"           LibType="Static"    RelativeTo="Root" Path="lib"/>
         <ProductDirectory Name="PublicApi"                          RelativeTo="Root" Path="include"/>
         <ProductDirectory Name="PublicApi"      LibType="Static"    RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="UnitTestAssets"                     RelativeTo="Root" Path="data"/>
+        <ProductDirectory Name="UnitTestAssets" LibType="Static"    RelativeTo="Root" Path="data"/>
         <ProductDirectory Name="UnitTestLibs"                       RelativeTo="Root" Path="lib"/>
         <ProductDirectory Name="UnitTestLibs"   LibType="Static"    RelativeTo="Root" Path="lib"/>
         <ProductDirectory Name="VendorApi"                          RelativeTo="Root" Path="include"/>

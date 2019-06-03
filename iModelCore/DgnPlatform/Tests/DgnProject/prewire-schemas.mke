@@ -1,0 +1,9 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+$(BuildContext)Delivery/UnitTestSchemas : $(_makeFilePath)ECSchemas
+    $(LinkFirstDepToFirstTargetAsDirectory)

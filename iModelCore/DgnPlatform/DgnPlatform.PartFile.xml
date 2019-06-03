@@ -139,6 +139,13 @@
         </Bindings>
     </Part>
 
+    <!-- One-off part to gather extra data requested by the IFC bridge team. -->
+    <Part Name="UnitTestSchemas" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire-schemas.mke">
+        <Bindings>
+            <Files ProductDirectoryName="UnitTestAssets" ProductSubDirectory="ECSchemas">Delivery/UnitTestSchemas/*.ecschema.xml</Files>
+        </Bindings>
+    </Part>
+
     <Part Name="DgnDbTestUtils" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=DgnDbTestUtils">
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
