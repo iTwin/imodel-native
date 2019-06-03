@@ -12,11 +12,9 @@
     </Part>
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="RoadRailPhysical.prewire.mke">
+        <SubPart PartName="RoadRailPhysicalSchema" PartFile="BisSchemas" Repository="BisSchemas"/>
         <Bindings>
             <PublicAPI Domain="RoadRailPhysical"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/RoadRailPhysical*.xml
-            </Files>
         </Bindings>
     </Part>
 

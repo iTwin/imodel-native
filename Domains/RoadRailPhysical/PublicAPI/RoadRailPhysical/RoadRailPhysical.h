@@ -45,52 +45,44 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // ECClass names
 //-----------------------------------------------------------------------------------------
 
-// Models
-#define BRRP_CLASS_RailwayStandardsModel                            "RailwayStandardsModel"
-#define BRRP_CLASS_RoadRailPhysicalModel                            "RoadRailPhysicalModel"
-#define BRRP_CLASS_RoadwayStandardsModel                            "RoadwayStandardsModel"
-
-
 // Elements
 #define BRRP_CLASS_Corridor                                         "Corridor"
 #define BRRP_CLASS_CorridorPortionElement                           "CorridorPortionElement"
+#define BRRP_CLASS_CorridorSegment                                  "CorridorSegment"
 #define BRRP_CLASS_DesignSpeed                                      "DesignSpeed"
 #define BRRP_CLASS_DesignSpeedDefinition                            "DesignSpeedDefinition"
-#define BRRP_CLASS_DesignSpeedElement                               "DesignSpeedElement"
-#define BRRP_CLASS_DesignSpeedTransition                            "DesignSpeedTransition"
-#define BRRP_CLASS_GenericTypicalSectionPointDefinition             "GenericTypicalSectionPointDefinition"
+#define BRRP_CLASS_PathwayDesignCriteria                            "PathwayDesignCriteria"
 #define BRRP_CLASS_PathwayElement                                   "PathwayElement"
 #define BRRP_CLASS_Railway                                          "Railway"
 #define BRRP_CLASS_RoadRailNetwork                                  "RoadRailNetwork"
 #define BRRP_CLASS_Roadway                                          "Roadway"
-#define BRRP_CLASS_TypicalSectionPointDefinition                    "TypicalSectionPointDefinition"
 
 
 // Aspects
-#define BRRP_CLASS_AssociatedFacetAspect                            "AssociatedFacetAspect"
 
 
 // Relationships
-#define BRRP_REL_CorridorAssemblesPortions                          "CorridorAssemblesPortions"
-#define BRRP_REL_CorridorRefersToOrderedPathways                    "CorridorRefersToOrderedPathways"
-#define BRRP_REL_DesignSpeedRefersToDefinition                      "DesignSpeedRefersToDefinition"
-#define BRRP_REL_DrawingGraphicRepresentsCorridor                   "DrawingGraphicRepresentsCorridor"
-#define BRRP_REL_GeometricElementBoundsContentForSheet              "GeometricElementBoundsContentForSheet"
-#define BRRP_REL_GraphicalElement3dRepresentsCorridor               "GraphicalElement3dRepresentsCorridor"
-#define BRRP_REL_ILinearElementRelatesToCorridorPortion             "ILinearElementRelatesToCorridorPortion"
-#define BRRP_REL_ILinearElementSourceRefersToMainLinearElement      "ILinearElementSourceRefersToMainLinearElement"
-#define BRRP_REL_PathwayAssemblesElements                           "PathwayAssemblesElements"
-#define BRRP_REL_PathwayOwnsLinearlyLocatedAttribution              "PathwayOwnsLinearlyLocatedAttribution"
+#define BRRP_REL_CorridorPortionOwnsAlignments                      "CorridorPortionOwnsAlignments"
+#define BRRP_REL_DesignSpeedRefersToEndDefinition                   "DesignSpeedRefersToEndDefinition"
+#define BRRP_REL_DesignSpeedRefersToStartDefinition                 "DesignSpeedRefersToStartDefinition"
+#define BRRP_REL_ILinearlyDesignedElementAlongAlignment             "ILinearlyDesignedElementAlongAlignment"
+#define BRRP_REL_PathwayOwnsDesignCriteria                          "PathwayOwnsDesignCriteria"
 
 
 // Properties
-#define BRRP_PROP_AssociatedFacetAspect_AssociatedFacet             "AssociatedFacet"
+#define BRRP_PROP_ILinearlyDesignedElement_DesignAlignment          "DesignAlignment"
+#define BRRP_PROP_DesignSpeed_EndDefinition                         "EndDefinition"
+#define BRRP_PROP_DesignSpeed_StartDefinition                       "StartDefinition"
+#define BRRP_PROP_DesignSpeedDefinition_DesignSpeed                 "DesignSpeed"
+#define BRRP_PROP_DesignSpeedDefinition_UnitSystem                  "UnitSystem"
+#define BRRP_PROP_PathwayElement_Order                              "Order"
 
 
 //-----------------------------------------------------------------------------------------
 // Category names
 //-----------------------------------------------------------------------------------------
 #define BRRP_CATEGORY_Corridor                                      "Corridor"
+#define BRRP_CATEGORY_DesignSpeed                                   "DesignSpeed"
 #define BRRP_CATEGORY_Railway                                       "Railway"
 #define BRRP_CATEGORY_Roadway                                       "Roadway"
 
@@ -100,10 +92,10 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // CodeSpec names
 //-----------------------------------------------------------------------------------------
 #define BRRP_CODESPEC_Corridor                                      "Corridor"
+#define BRRP_CODESPEC_CorridorSegment                               "CorridorSegment"
 #define BRRP_CODESPEC_DesignSpeedDefinition                         "DesignSpeedDefinition"
 #define BRRP_CODESPEC_Pathway                                       "Pathway"
 #define BRRP_CODESPEC_RoadRailNetwork                               "RoadRailNetwork"
-#define BRRP_CODESPEC_TypicalSectionPointDefinition                 "TypicalSectionPointDefinition"
 
 
 
@@ -158,23 +150,17 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 
 // Road & Rail shared
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(AssociatedFacetAspect)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(Corridor)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CorridorPortionElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CorridorSegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeed)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedDefinition)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedElement)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedTransition)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(GenericTypicalSectionPointDefinition)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayDesignCriteria)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRailNetwork)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRailPhysicalModel)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TypicalSectionPointDefinition)
 
 // Road-specific
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(Roadway)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadwayStandardsModel)
 
 // Rail-specific
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(Railway)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RailwayStandardsModel)

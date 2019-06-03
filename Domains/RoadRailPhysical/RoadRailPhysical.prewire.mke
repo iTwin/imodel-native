@@ -7,6 +7,3 @@
 
 $(BuildContext)PublicAPI/RoadRailPhysical : $(_MakeFilePath)PublicAPI/RoadRailPhysical
     $(LinkFirstDepToFirstTargetAsDirectory)
-
-$(BuildContext)ECSchemas/Domain/RoadRailPhysical.ecschema.xml : $(_MakeFilePath)RoadRailPhysical.ecschema.xml
-    $(LinkFirstDepToFirstTarget)
