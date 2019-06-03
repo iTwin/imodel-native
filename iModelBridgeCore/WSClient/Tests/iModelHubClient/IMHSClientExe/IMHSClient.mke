@@ -1,0 +1,59 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+appName     = IMHSClientExe
+baseDir     = $(_MakeFilePath)
+
+o = $(OutputRootDir)Build/iModelHubNativeTests/$(appName)/
+always:
+    ~mkdir $(o)
+
+PlatformLib = $(BuildContext)SubParts/Libs/
+CCompOpts + -I$(PlatformLib)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+%include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
+
+$(o)IntegrationTestsSettings.obj: $(baseDir)../Helpers/IntegrationTestsSettings.cpp $(baseDir)../Helpers/IntegrationTestsSettings.h $(DgnV8Depends) ${MultiCompileDepends}
+
+$(o)DgnPlatformHelpers.obj: $(baseDir)../Helpers/DgnPlatformHelpers.cpp $(baseDir)../Helpers/DgnPlatformHelpers.h $(DgnV8Depends) ${MultiCompileDepends}
+
+$(o)IMHSClientExe.obj: $(baseDir)IMHSClientExe.cpp $(baseDir)IMHSClientExe.h $(DgnV8Depends) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+EXE_DEST     = $(o)
+EXE_NAME     = $(appname)
+EXE_OBJS     = $(MultiCompileObjectList)
+EXE_LOPT1    = -entry:wmainCRTStartup
+LINKER_LIBRARIES  + $(PlatformLib)Bentley.lib
+LINKER_LIBRARIES  + $(PlatformLib)BeHttp.lib
+LINKER_LIBRARIES  + $(PlatformLib)BeSQLite.lib
+LINKER_LIBRARIES  + $(PlatformLib)BeSQLiteEC.lib
+LINKER_LIBRARIES  + $(PlatformLib)ECObjects.lib
+LINKER_LIBRARIES  + $(PlatformLib)Units.lib
+LINKER_LIBRARIES  + $(PlatformLib)BentleyGeom.lib
+LINKER_LIBRARIES  + $(PlatformLib)DgnPlatform.lib
+LINKER_LIBRARIES  + $(PlatformLib)BeJsonCpp.lib
+LINKER_LIBRARIeS  + $(PlatformLib)iModelHubClient.lib
+LINKER_LIBRARIeS  + $(PlatformLib)WebServicesClient.lib
+LINKER_LIBRARIeS  + $(PlatformLib)gtest.lib
+LINKER_LIBRARIES  + user32.lib dbghelp.lib
+
+EXE_TMP_DIR  = $(o)
+
+%include $(sharedMki)linktool.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
+    ~linkfile "$(OutputRootDir)Product/iModelHubNativeTests/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
+    
