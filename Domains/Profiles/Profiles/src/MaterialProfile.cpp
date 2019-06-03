@@ -73,8 +73,18 @@ bool MaterialProfile::_Validate() const
 void MaterialProfile::_OnUpdateFinished() const
     {
     MaterialProfileHandler& materialProfileHandler = MaterialProfileHandler::GetHandler();
-    materialProfileHandler.NotifyDependencies(m_dgndb, m_elementId);
+    materialProfileHandler.NotifyDependenciesOnUpdateFinished(m_dgndb, *this);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void MaterialProfile::_OnDeleted() const
+    {
+    MaterialProfileHandler& materialProfileHandler = MaterialProfileHandler::GetHandler();
+    materialProfileHandler.NotifyDependenciesOnDeleted(m_dgndb, *this);
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     01/2019
