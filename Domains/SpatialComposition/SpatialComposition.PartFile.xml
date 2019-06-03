@@ -21,7 +21,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="SpatialCompositionElements" BentleyBuildMakeFile="Elements/SpatialCompositionElements.mke" ApiNumber="B02">
+    <Part Name="SpatialCompositionElements" BentleyBuildMakeFile="Elements/SpatialCompositionElements.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="SpatialCompositionApi"/>
         <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
@@ -31,7 +31,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="SpatialCompositionDomain" BentleyBuildMakeFile="Domain/SpatialCompositionDomain.mke" ApiNumber="B02">
+    <Part Name="SpatialCompositionDomain" BentleyBuildMakeFile="Domain/SpatialCompositionDomain.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="SpatialCompositionSchema" />
         <Bindings>
