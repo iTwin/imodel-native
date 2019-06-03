@@ -38,7 +38,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="BuildingUtils" BentleyBuildMakeFile="Utils/BuildingUtils.mke" ApiNumber="B02">
+    <Part Name="BuildingUtils" BentleyBuildMakeFile="Utils/BuildingUtils.mke" ApiNumber="M02">
         <SubPart PartName="BuildingSharedApi"/>
         <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
         <Bindings>
@@ -47,7 +47,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="BuildingDgnUtils" BentleyBuildMakeFile="DgnUtils/BuildingDgnUtils.mke" ApiNumber="B02">
+    <Part Name="BuildingDgnUtils" BentleyBuildMakeFile="DgnUtils/BuildingDgnUtils.mke" ApiNumber="M02">
         <SubPart PartName="BuildingSharedApi" />
         <SubPart PartName="RoadRailPhysical"   PartFile="RoadRailPhysical"  Repository="DgnDomains-RoadRailPhysical" />
         <SubPart PartName="BuildingUnits" />
@@ -58,7 +58,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="BuildingDgnViewUtils" BentleyBuildMakeFile="DgnViewUtils/BuildingDgnViewUtils.mke" ApiNumber="B02">
+    <Part Name="BuildingDgnViewUtils" BentleyBuildMakeFile="DgnViewUtils/BuildingDgnViewUtils.mke" ApiNumber="M02">
         <SubPart PartName="BuildingSharedApi" />
         <SubPart PartName="DgnClientFxPublicApi" Repository="DgnClientFx" PartFile="DgnClientFx" />
         <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx" />
@@ -71,7 +71,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="BuildingUnits" BentleyBuildMakeFile="Units/BuildingUnits.mke" ApiNumber="B02">
+    <Part Name="BuildingUnits" BentleyBuildMakeFile="Units/BuildingUnits.mke" ApiNumber="M02">
         <SubPart PartName="BuildingSharedApi"/>
         <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
         <Bindings>
@@ -88,7 +88,7 @@
         <SubPart PartName="DgnElementManipulationStrategies"/>
     </Part>
 
-    <Part Name="GeometryManipulationStrategies" BentleyBuildMakeFile="GeometryManipulationStrategies/GeometryManipulationStrategies.mke" ApiNumber="B02">
+    <Part Name="GeometryManipulationStrategies" BentleyBuildMakeFile="GeometryManipulationStrategies/GeometryManipulationStrategies.mke" ApiNumber="M02">
         <SubPart PartName="BuildingUtils"/>
         <SubPart PartName="BuildingUnits"/>
         <SubPart PartName="BuildingSharedApi"/>
@@ -99,7 +99,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnElementManipulationStrategies" BentleyBuildMakeFile="DgnElementManipulationStrategies/DgnElementManipulationStrategies.mke" ApiNumber="B02">
+    <Part Name="DgnElementManipulationStrategies" BentleyBuildMakeFile="DgnElementManipulationStrategies/DgnElementManipulationStrategies.mke" ApiNumber="M02">
         <SubPart PartName="GeometryManipulationStrategies"/>
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="UnitsNative" PartFile="Units" Repository="Units" />
@@ -110,7 +110,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="StrategyPlatform" BentleyBuildMakeFile="StrategyPlatform/StrategyPlatform.mke" ApiNumber="B02">
+    <Part Name="StrategyPlatform" BentleyBuildMakeFile="StrategyPlatform/StrategyPlatform.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform" />
         <SubPart PartName="BeSQLite" Repository="BeSQLite" PartFile="BeSQLite" />
         <SubPart PartName="DgnView" Repository="DgnDisplay" PartFile="DgnDisplay" />
