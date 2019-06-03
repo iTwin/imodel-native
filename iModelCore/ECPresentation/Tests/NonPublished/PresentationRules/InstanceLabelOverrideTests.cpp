@@ -50,6 +50,9 @@ TEST_F(InstanceLabelOverrideTests, LoadsFromJson)
             "specType": "BriefcaseId"
         }, {
             "specType": "LocalId"
+        }, {
+            "specType": "String",
+            "value": "test"
         }]
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
@@ -59,7 +62,7 @@ TEST_F(InstanceLabelOverrideTests, LoadsFromJson)
 
     ASSERT_TRUE(rule.ReadJson(json));
     EXPECT_STREQ("TestSchema:TestClass", rule.GetClassName().c_str());
-    ASSERT_EQ(6, rule.GetValueSpeficications().size());
+    ASSERT_EQ(7, rule.GetValueSpeficications().size());
 
     InstanceLabelOverrideCompositeValueSpecification* s1 = dynamic_cast<InstanceLabelOverrideCompositeValueSpecification*>(rule.GetValueSpeficications()[0]);
     ASSERT_TRUE(nullptr != s1);
@@ -83,6 +86,10 @@ TEST_F(InstanceLabelOverrideTests, LoadsFromJson)
     ASSERT_TRUE(nullptr != dynamic_cast<InstanceLabelOverrideBriefcaseIdValueSpecification*>(rule.GetValueSpeficications()[4]));
 
     ASSERT_TRUE(nullptr != dynamic_cast<InstanceLabelOverrideLocalIdValueSpecification*>(rule.GetValueSpeficications()[5]));
+
+    InstanceLabelOverrideStringValueSpecification* s7 = dynamic_cast<InstanceLabelOverrideStringValueSpecification*>(rule.GetValueSpeficications()[6]);
+    ASSERT_TRUE(nullptr != s7);
+    EXPECT_STREQ("test", s7->GetValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -101,6 +108,7 @@ TEST_F(InstanceLabelOverrideTests, WriteToJson)
     specs.push_back(new InstanceLabelOverrideClassLabelValueSpecification());
     specs.push_back(new InstanceLabelOverrideBriefcaseIdValueSpecification());
     specs.push_back(new InstanceLabelOverrideLocalIdValueSpecification());
+    specs.push_back(new InstanceLabelOverrideStringValueSpecification(" test "));
     InstanceLabelOverride rule(123, true, "s:c", specs);
 
     Json::Value json = rule.WriteJson();
@@ -135,6 +143,9 @@ TEST_F(InstanceLabelOverrideTests, WriteToJson)
             "specType": "BriefcaseId"
         }, {
             "specType": "LocalId"
+        }, {
+            "specType": "String",
+            "value": " test "
         }]
     })");
     EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
@@ -184,6 +195,7 @@ TEST_F(InstanceLabelOverrideTests, WriteToXml)
     specs.push_back(new InstanceLabelOverrideClassLabelValueSpecification());
     specs.push_back(new InstanceLabelOverrideBriefcaseIdValueSpecification());
     specs.push_back(new InstanceLabelOverrideLocalIdValueSpecification());
+    specs.push_back(new InstanceLabelOverrideStringValueSpecification(" test "));
     InstanceLabelOverride rule(123, true, "s:c", specs);
 
     BeXmlStatus xmlStatus;

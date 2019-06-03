@@ -623,7 +623,11 @@ struct InstanceLabelOverrideSelectFieldsBuilder : InstanceLabelOverrideValueSpec
                 {
                 InstanceLabelOverrideSelectFieldsBuilder builder;
                 valuePart->GetSpecification()->Accept(builder);
-                BeAssert(1 == builder.GetSelectFields().size());
+                if (builder.GetSelectFields().empty())
+                    {
+                    BeAssert(false);
+                    continue;
+                    }
                 functionParameters.push_back(builder.GetSelectFields().front());
                 functionParameters.push_back(PresentationQueryContractSimpleField::Create("", valuePart->IsRequired() ? "TRUE" : "FALSE"));
                 }
@@ -671,6 +675,10 @@ struct InstanceLabelOverrideSelectFieldsBuilder : InstanceLabelOverrideValueSpec
                     PresentationQueryContractSimpleField::Create("/InstanceId/", "ECInstanceId"),
                     })
                 }));
+            }
+        void _Visit(InstanceLabelOverrideStringValueSpecification const& spec) override
+            {
+            m_fields.push_back(PresentationQueryContractSimpleField::Create("/StringValue/", Utf8PrintfString("'%s'", spec.GetValue().c_str()).c_str()));
             }
     public:
         bvector<PresentationQueryContractFieldCPtr> const& GetSelectFields() const { return m_fields; }

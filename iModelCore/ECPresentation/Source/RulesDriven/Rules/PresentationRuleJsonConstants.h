@@ -85,6 +85,8 @@
 #define INSTANCE_LABEL_OVERRIDE_CLASSLABEL_VALUE_SPECIFICATION_JSON_TYPE                "ClassLabel"
 #define INSTANCE_LABEL_OVERRIDE_BRIEFCASEID_VALUE_SPECIFICATION_JSON_TYPE               "BriefcaseId"
 #define INSTANCE_LABEL_OVERRIDE_LOCALID_VALUE_SPECIFICATION_JSON_TYPE                   "LocalId"
+#define INSTANCE_LABEL_OVERRIDE_STRING_VALUE_SPECIFICATION_JSON_TYPE                    "String"
+#define INSTANCE_LABEL_OVERRIDE_STRING_VALUE_SPECIFICATION_JSON_ATTRIBUTE_VALUE         "value"
 
 #define STYLE_OVERRIDE_JSON_TYPE                                                        "StyleOverride"
 #define STYLE_OVERRIDE_JSON_ATTRIBUTE_FORECOLOR                                         "foreColor"

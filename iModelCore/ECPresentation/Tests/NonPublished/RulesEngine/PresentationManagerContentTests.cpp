@@ -10503,43 +10503,90 @@ DEFINE_SCHEMA(InstanceLabelOverride_HandlesDefaultBisRulesCorrectly, R"*(
         <ECProperty propertyName="CodeValue" typeName="string" />
         <ECProperty propertyName="UserLabel" typeName="string" />
     </ECEntityClass>
+    <ECEntityClass typeName="GeometricElement" displayLabel="Geometric Element">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
     <ECEntityClass typeName="CustomElement" displayLabel="Custom Element">
         <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="CustomGeometricElement" displayLabel="Custom Geometric Element">
+        <BaseClass>GeometricElement</BaseClass>
     </ECEntityClass>
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_HandlesDefaultBisRulesCorrectly)
     {
     // set up data set
     ECClassCP elementClass = GetClass("Element");
+    ECClassCP geometricElementClass = GetClass("GeometricElement");
     ECClassCP customElementClass = GetClass("CustomElement");
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customElementClass, [](IECInstanceR instance)
-        {
-        instance.SetValue("CodeValue", ECValue("CodeValue"));
-        });
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customElementClass, [](IECInstanceR instance)
+    ECClassCP customGeometricElementClass = GetClass("CustomGeometricElement");
+
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customElementClass, [](IECInstanceR instance)
         {
         instance.SetValue("UserLabel", ECValue("UserLabel"));
         });
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customElementClass);
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customElementClass, [](IECInstanceR instance)
+        {
+        instance.SetValue("CodeValue", ECValue("CodeValue"));
+        });
+    IECInstancePtr element3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customElementClass);
+    IECInstancePtr geometricElement1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customGeometricElementClass, [](IECInstanceR instance)
+        {
+        instance.SetValue("CodeValue", ECValue("CodeValue"));
+        });
+    IECInstancePtr geometricElement2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customGeometricElementClass, [](IECInstanceR instance)
+        {
+        instance.SetValue("UserLabel", ECValue("UserLabel"));
+        });
+    IECInstancePtr geometricElement3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *customGeometricElementClass);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
-    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, elementClass->GetFullName(),
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, geometricElementClass->GetFullName(),
         {
         new InstanceLabelOverridePropertyValueSpecification("CodeValue"),
         new InstanceLabelOverrideCompositeValueSpecification(
             {
             new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverridePropertyValueSpecification("UserLabel"), true),
-            new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideBriefcaseIdValueSpecification()),
-            new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideLocalIdValueSpecification()),
-            }, "-"),
+            new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideCompositeValueSpecification(
+                {
+                new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideStringValueSpecification("[")),
+                new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideBriefcaseIdValueSpecification()),
+                new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideStringValueSpecification("-")),
+                new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideLocalIdValueSpecification()),
+                new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideStringValueSpecification("]"))
+                }, ""))
+            }, " "),
         new InstanceLabelOverrideCompositeValueSpecification(
             {
             new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideClassLabelValueSpecification(), true),
-            new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideBriefcaseIdValueSpecification()),
-            new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideLocalIdValueSpecification()),
-            }, "-"),
+            new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideCompositeValueSpecification(
+                {
+                new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideStringValueSpecification("[")),
+                new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideBriefcaseIdValueSpecification()),
+                new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideStringValueSpecification("-")),
+                new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideLocalIdValueSpecification()),
+                new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideStringValueSpecification("]"))
+                }, ""))
+            }, " ")
+        }));
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, elementClass->GetFullName(),
+        {
+        new InstanceLabelOverridePropertyValueSpecification("UserLabel"),
+        new InstanceLabelOverridePropertyValueSpecification("CodeValue"),
+        new InstanceLabelOverrideCompositeValueSpecification(
+            {
+            new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideClassLabelValueSpecification(), true),
+            new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideCompositeValueSpecification(
+                {
+                new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideStringValueSpecification("[")),
+                new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideBriefcaseIdValueSpecification()),
+                new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideStringValueSpecification("-")),
+                new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideLocalIdValueSpecification()),
+                new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideStringValueSpecification("]"))
+                }, ""))
+            })
         }));
 
     ContentRuleP rule = new ContentRule("", 1, false);
@@ -10565,10 +10612,15 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Handl
 
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
-    ASSERT_EQ(3, contentSet.GetSize());
-    EXPECT_STREQ("CodeValue", contentSet.Get(0)->GetDisplayLabel().c_str());
-    EXPECT_STREQ("UserLabel-0-2", contentSet.Get(1)->GetDisplayLabel().c_str());
-    EXPECT_STREQ("Custom Element-0-3", contentSet.Get(2)->GetDisplayLabel().c_str());
+    ASSERT_EQ(6, contentSet.GetSize());
+
+    EXPECT_STREQ("UserLabel", contentSet.Get(0)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("CodeValue", contentSet.Get(1)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Custom Element [0-3]", contentSet.Get(2)->GetDisplayLabel().c_str());
+
+    EXPECT_STREQ("CodeValue", contentSet.Get(3)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("UserLabel [0-5]", contentSet.Get(4)->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Custom Geometric Element [0-6]", contentSet.Get(5)->GetDisplayLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../../../../imodeljs/imodeljs-1/presentation/common/Ruleset.schema.json",
+  "$schema": "../../../../../../imodeljs/imodeljs-2/presentation/common/Ruleset.schema.json",
   "id": "BisCore",
   "supplementationInfo": {
     "supplementationPurpose": "BisCore specific customization rules"
@@ -15,7 +15,7 @@
       "onlyIfNotHandled": true,
       "class": {
         "schemaName": "BisCore",
-        "className": "Element"
+        "className": "GeometricElement"
       },
       "values": [
         {
@@ -24,7 +24,7 @@
         },
         {
           "specType": "Composite",
-          "separator": "-",
+          "separator": " ",
           "parts": [
             {
               "spec": {
@@ -35,19 +35,45 @@
             },
             {
               "spec": {
-                "specType": "BriefcaseId"
-              }
-            },
-            {
-              "spec": {
-                "specType": "LocalId"
+                "specType": "Composite",
+                "separator": "",
+                "parts": [
+                  {
+                    "spec": {
+                      "specType": "String",
+                      "value": "["
+                    }
+                  },
+                  {
+                    "spec": {
+                      "specType": "BriefcaseId"
+                    }
+                  },
+                  {
+                    "spec": {
+                      "specType": "String",
+                      "value": "-"
+                    }
+                  },
+                  {
+                    "spec": {
+                      "specType": "LocalId"
+                    }
+                  },
+                  {
+                    "spec": {
+                      "specType": "String",
+                      "value": "]"
+                    }
+                  }
+                ]
               }
             }
           ]
         },
         {
           "specType": "Composite",
-          "separator": "-",
+          "separator": " ",
           "parts": [
             {
               "spec": {
@@ -57,12 +83,104 @@
             },
             {
               "spec": {
-                "specType": "BriefcaseId"
+                "specType": "Composite",
+                "separator": "",
+                "parts": [
+                  {
+                    "spec": {
+                      "specType": "String",
+                      "value": "["
+                    }
+                  },
+                  {
+                    "spec": {
+                      "specType": "BriefcaseId"
+                    }
+                  },
+                  {
+                    "spec": {
+                      "specType": "String",
+                      "value": "-"
+                    }
+                  },
+                  {
+                    "spec": {
+                      "specType": "LocalId"
+                    }
+                  },
+                  {
+                    "spec": {
+                      "specType": "String",
+                      "value": "]"
+                    }
+                  }
+                ]
               }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ruleType": "InstanceLabelOverride",
+      "onlyIfNotHandled": true,
+      "class": {
+        "schemaName": "BisCore",
+        "className": "Element"
+      },
+      "values": [
+        {
+          "specType": "Property",
+          "propertyName": "UserLabel"
+        },
+        {
+          "specType": "Property",
+          "propertyName": "CodeValue"
+        },
+        {
+          "specType": "Composite",
+          "separator": " ",
+          "parts": [
+            {
+              "spec": {
+                "specType": "ClassLabel"
+              },
+              "isRequired": true
             },
             {
               "spec": {
-                "specType": "LocalId"
+                "specType": "Composite",
+                "separator": "",
+                "parts": [
+                  {
+                    "spec": {
+                      "specType": "String",
+                      "value": "["
+                    }
+                  },
+                  {
+                    "spec": {
+                      "specType": "BriefcaseId"
+                    }
+                  },
+                  {
+                    "spec": {
+                      "specType": "String",
+                      "value": "-"
+                    }
+                  },
+                  {
+                    "spec": {
+                      "specType": "LocalId"
+                    }
+                  },
+                  {
+                    "spec": {
+                      "specType": "String",
+                      "value": "]"
+                    }
+                  }
+                ]
               }
             }
           ]

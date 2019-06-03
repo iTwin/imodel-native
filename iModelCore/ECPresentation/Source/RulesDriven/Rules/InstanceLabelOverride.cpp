@@ -196,6 +196,8 @@ InstanceLabelOverrideValueSpecification* InstanceLabelOverrideValueSpecification
         spec = new InstanceLabelOverrideBriefcaseIdValueSpecification();
     else if (0 == strcmp(INSTANCE_LABEL_OVERRIDE_LOCALID_VALUE_SPECIFICATION_JSON_TYPE, type))
         spec = new InstanceLabelOverrideLocalIdValueSpecification();
+    else if (0 == strcmp(INSTANCE_LABEL_OVERRIDE_STRING_VALUE_SPECIFICATION_JSON_TYPE, type))
+        spec = new InstanceLabelOverrideStringValueSpecification();
     if (!spec || !spec->ReadJson(json))
         DELETE_AND_CLEAR(spec);
     return spec;
@@ -466,3 +468,48 @@ Utf8CP InstanceLabelOverrideBriefcaseIdValueSpecification::_GetJsonElementType()
 * @bsimethod                                    Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP InstanceLabelOverrideLocalIdValueSpecification::_GetJsonElementType() const { return INSTANCE_LABEL_OVERRIDE_LOCALID_VALUE_SPECIFICATION_JSON_TYPE; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP InstanceLabelOverrideStringValueSpecification::_GetJsonElementType() const { return INSTANCE_LABEL_OVERRIDE_STRING_VALUE_SPECIFICATION_JSON_TYPE; }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 InstanceLabelOverrideStringValueSpecification::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = InstanceLabelOverrideValueSpecification::_ComputeHash(parentHash);
+    md5.Add(m_value.c_str(), m_value.size());
+    return md5;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InstanceLabelOverrideStringValueSpecification::_ReadJson(JsonValueCR json)
+    {
+    if (!InstanceLabelOverrideValueSpecification::_ReadJson(json))
+        return false;
+
+    if (!json.isMember(INSTANCE_LABEL_OVERRIDE_STRING_VALUE_SPECIFICATION_JSON_ATTRIBUTE_VALUE))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "InstanceLabelOverrideStringValueSpecification", INSTANCE_LABEL_OVERRIDE_STRING_VALUE_SPECIFICATION_JSON_ATTRIBUTE_VALUE);
+        return false;
+        }
+
+    if (!json[INSTANCE_LABEL_OVERRIDE_STRING_VALUE_SPECIFICATION_JSON_ATTRIBUTE_VALUE].isString())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "InstanceLabelOverrideStringValueSpecification", INSTANCE_LABEL_OVERRIDE_STRING_VALUE_SPECIFICATION_JSON_ATTRIBUTE_VALUE);
+        return false;
+        }
+
+    m_value = json[INSTANCE_LABEL_OVERRIDE_STRING_VALUE_SPECIFICATION_JSON_ATTRIBUTE_VALUE].asCString();
+    return true;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceLabelOverrideStringValueSpecification::_WriteJson(JsonValueR json) const
+    {
+    InstanceLabelOverrideValueSpecification::_WriteJson(json);
+    json[INSTANCE_LABEL_OVERRIDE_STRING_VALUE_SPECIFICATION_JSON_ATTRIBUTE_VALUE] = m_value;
+    }

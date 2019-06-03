@@ -63,6 +63,7 @@ struct InstanceLabelOverrideClassNameValueSpecification;
 struct InstanceLabelOverrideClassLabelValueSpecification;
 struct InstanceLabelOverrideBriefcaseIdValueSpecification;
 struct InstanceLabelOverrideLocalIdValueSpecification;
+struct InstanceLabelOverrideStringValueSpecification;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Grigas.Petraitis                05/2019
@@ -75,6 +76,7 @@ struct EXPORT_VTABLE_ATTRIBUTE InstanceLabelOverrideValueSpecificationVisitor
     friend struct InstanceLabelOverrideClassLabelValueSpecification;
     friend struct InstanceLabelOverrideBriefcaseIdValueSpecification;
     friend struct InstanceLabelOverrideLocalIdValueSpecification;
+    friend struct InstanceLabelOverrideStringValueSpecification;
 protected:
     virtual void _Visit(InstanceLabelOverrideCompositeValueSpecification const&) {}
     virtual void _Visit(InstanceLabelOverridePropertyValueSpecification const&) {}
@@ -82,6 +84,7 @@ protected:
     virtual void _Visit(InstanceLabelOverrideClassLabelValueSpecification const&) {}
     virtual void _Visit(InstanceLabelOverrideBriefcaseIdValueSpecification const&) {}
     virtual void _Visit(InstanceLabelOverrideLocalIdValueSpecification const&) {}
+    virtual void _Visit(InstanceLabelOverrideStringValueSpecification const&) {}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -229,6 +232,26 @@ protected:
     void _Accept(InstanceLabelOverrideValueSpecificationVisitor& visitor) const override { visitor._Visit(*this); }
     InstanceLabelOverrideValueSpecification* _Clone() const override { return new InstanceLabelOverrideLocalIdValueSpecification(*this); }
     ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                     Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+struct InstanceLabelOverrideStringValueSpecification : InstanceLabelOverrideValueSpecification
+{
+private:
+    Utf8String m_value;
+protected:
+    void _Accept(InstanceLabelOverrideValueSpecificationVisitor& visitor) const override { visitor._Visit(*this); }
+    InstanceLabelOverrideValueSpecification* _Clone() const override { return new InstanceLabelOverrideStringValueSpecification(*this); }
+    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+    ECPRESENTATION_EXPORT Utf8CP _GetJsonElementType() const override;
+    ECPRESENTATION_EXPORT bool _ReadJson(JsonValueCR json) override;
+    ECPRESENTATION_EXPORT void _WriteJson(JsonValueR json) const override;
+public:
+    InstanceLabelOverrideStringValueSpecification() {}
+    InstanceLabelOverrideStringValueSpecification(Utf8String value) : m_value(value) {}
+    Utf8StringCR GetValue() const { return m_value; }
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE
