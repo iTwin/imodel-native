@@ -44,7 +44,7 @@
       </Bindings>
     </Part>
     
-    <Part Name="GridElements" BentleyBuildMakeFile="Grids/Elements/GridElements.mke" ApiNumber="B02">
+    <Part Name="GridElements" BentleyBuildMakeFile="Grids/Elements/GridElements.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="GridsApi"/>
         <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
@@ -54,7 +54,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="GridHandlers" BentleyBuildMakeFile="Grids/Handlers/GridHandlers.mke" ApiNumber="B02">
+    <Part Name="GridHandlers" BentleyBuildMakeFile="Grids/Handlers/GridHandlers.mke" ApiNumber="M02">
       <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
       <SubPart PartName="GridElements"/>
       <Bindings>
@@ -63,7 +63,7 @@
       </Bindings>
     </Part>
 
-    <Part Name="GridStrategies" BentleyBuildMakeFile="Grids/Strategies/GridStrategies.mke" ApiNumber="B02">
+    <Part Name="GridStrategies" BentleyBuildMakeFile="Grids/Strategies/GridStrategies.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="BuildingUtils" Repository="BuildingShared" PartFile="BuildingShared" />
         <SubPart PartName="GeometryManipulationStrategies" Repository="BuildingShared" PartFile="BuildingShared" />
@@ -77,7 +77,7 @@
       </Bindings>
     </Part>
     
-    <Part Name="GridManipulatorExtensions" BentleyBuildMakeFile="Grids/ManipulatorExtensions/GridManipulatorExtensions.mke" ApiNumber="B02">
+    <Part Name="GridManipulatorExtensions" BentleyBuildMakeFile="Grids/ManipulatorExtensions/GridManipulatorExtensions.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform" />
         <SubPart PartName="DgnView" Repository="DgnDisplay" PartFile="DgnDisplay" />
         <SubPart PartName="GridsApi" />
@@ -159,7 +159,7 @@
       </Bindings>
     </Part>
   
-    <Part Name="GridsDomain" BentleyBuildMakeFile="Grids/Domain/GridsDomain.mke" ApiNumber="B02">
+    <Part Name="GridsDomain" BentleyBuildMakeFile="Grids/Domain/GridsDomain.mke" ApiNumber="M02">
       <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
       <SubPart PartName="GridHandlers"/>
       <SubPart PartName="BeJsonCpp" Repository="libsrc-jsoncpp" PartFile="BeJsonCpp"/>
