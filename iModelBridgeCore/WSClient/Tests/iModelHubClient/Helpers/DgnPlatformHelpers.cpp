@@ -159,7 +159,7 @@ void OpenReadOnlyDgnDb(DgnDbPtr& db, BeFileNameCR path)
 //---------------------------------------------------------------------------------------
 DgnCode MakeStyleCode(Utf8CP name, DgnDbR db)
     {
-    AnnotationTextStyle style(db);
+    AnnotationTextStyle style(db.GetDictionaryModel());
     style.SetName(name);
     return style.GetCode();
     }
@@ -185,7 +185,7 @@ DgnDbStatus InsertStyle(AnnotationTextStylePtr style, DgnDbR db, bool expectSucc
 DgnDbStatus InsertStyle(Utf8CP name, DgnDbR db, bool expectSuccess)
     {
     AnnotationTextStylePtr style;
-    style = AnnotationTextStyle::Create(db);
+    style = AnnotationTextStyle::Create(db.GetDictionaryModel());
     style->SetName(name);
 
     return InsertStyle(style, db, expectSuccess);

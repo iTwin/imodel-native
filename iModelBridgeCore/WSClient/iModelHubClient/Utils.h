@@ -35,12 +35,14 @@ namespace ServerSchema
         static Utf8CP iModel = "iModelScope";
         static Utf8CP Project = "ProjectScope";
         static Utf8CP Global = "GlobalScope";
+        static Utf8CP Context = "ContextScope";
         }
     namespace Plugin
         {
         static Utf8CP iModel = "iModel";
         static Utf8CP Global = "Global";
         static Utf8CP Project = "Project";
+        static Utf8CP Context = "Context";
         }
     namespace Class
         {

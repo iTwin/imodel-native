@@ -23,31 +23,31 @@ struct MockECDbAdapter : public IECDbAdapter
         MOCK_METHOD0 (GetECInstanceFinder,
             ECInstanceFinder& ());
         MOCK_METHOD1 (GetECSchema,
-            ECSchemaP (Utf8StringCR schemaName));
+            ECSchemaCP (Utf8StringCR schemaName));
         MOCK_METHOD1 (HasECSchema,
             bool (Utf8StringCR schemaName));
         MOCK_METHOD1 (GetECClass,
-            ECClassP (Utf8StringCR classKey));
+            ECClassCP (Utf8StringCR classKey));
         MOCK_METHOD1 (GetECClass,
-            ECClassP (ECClassId classId));
+            ECClassCP (ECClassId classId));
         MOCK_METHOD2 (GetECClass,
-            ECClassP (Utf8StringCR schemaName, Utf8StringCR className));
+            ECClassCP (Utf8StringCR schemaName, Utf8StringCR className));
         MOCK_METHOD1 (GetECClass,
-            ECClassP (ECInstanceKeyCR instanceKey));
+            ECClassCP (ECInstanceKeyCR instanceKey));
         MOCK_METHOD1 (GetECClass,
-            ECClassP (ObjectIdCR objectId));
+            ECClassCP (ObjectIdCR objectId));
         MOCK_METHOD1 (GetECClasses,
             bvector<ECClassCP> (const ECInstanceKeyMultiMap& instanceMultiMap));
         MOCK_METHOD1 (GetECRelationshipClass,
-            ECRelationshipClassP (Utf8StringCR classKey));
+            ECRelationshipClassCP (Utf8StringCR classKey));
         MOCK_METHOD1 (GetECRelationshipClass,
-            ECRelationshipClassP (ECClassId classId));
+            ECRelationshipClassCP (ECClassId classId));
         MOCK_METHOD2 (GetECRelationshipClass,
-            ECRelationshipClassP (Utf8StringCR schemaName, Utf8StringCR className));
+            ECRelationshipClassCP (Utf8StringCR schemaName, Utf8StringCR className));
         MOCK_METHOD1 (GetECRelationshipClass,
-            ECRelationshipClassP (ECInstanceKeyCR instanceKey));
+            ECRelationshipClassCP (ECInstanceKeyCR instanceKey));
         MOCK_METHOD1 (GetECRelationshipClass,
-            ECRelationshipClassP (ObjectIdCR objectId));
+            ECRelationshipClassCP (ObjectIdCR objectId));
         MOCK_METHOD2 (FindRelationshipClasses,
             bvector<ECRelationshipClassCP> (ECClassId sourceClassId, ECClassId targetClassId));
         MOCK_METHOD2 (FindRelationshipClassesWithSource,

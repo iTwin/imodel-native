@@ -964,6 +964,7 @@ ICancellationTokenPtr ct
                 }
             else if (DataOrigin::CachedData == origin)
                 {
+                LOG.debugv("Requesting cached data but response '%s' is not cached", responseKey.GetName().c_str());
                 result->SetError(Status::DataNotCached);
                 return;
                 }
