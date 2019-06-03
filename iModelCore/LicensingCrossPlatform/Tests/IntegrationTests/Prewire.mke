@@ -1,0 +1,13 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/IntegrationTests/Prewire.mke $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+
+$(BuildContext)Delivery/IntegrationTests/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
