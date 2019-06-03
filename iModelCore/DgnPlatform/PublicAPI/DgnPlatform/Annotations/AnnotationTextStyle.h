@@ -118,7 +118,7 @@ private:
     Utf8String m_description;
     AnnotationTextStylePropertyBag m_data;
 
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return CodeSpec::CreateCode(BIS_CODESPEC_AnnotationTextStyle, db.GetDictionaryModel(), name); }
+    static DgnCode CreateCode(DefinitionModelCR model, Utf8StringCR name) { return CodeSpec::CreateCode(BIS_CODESPEC_AnnotationTextStyle, model, name); }
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
@@ -136,13 +136,15 @@ public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationTextStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     
-    explicit AnnotationTextStyle(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryDgnClassId(db), DgnCode())) {}
+    explicit AnnotationTextStyle(DefinitionModelCR model) : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryDgnClassId(model.GetDgnDb()), DgnCode())) {}
     explicit AnnotationTextStyle(CreateParams const& params) : T_Super(params) {}
-    static AnnotationTextStylePtr Create(DgnDbR db) { return new AnnotationTextStyle(db); }
+    static AnnotationTextStylePtr Create(DefinitionModelCR m) { return new AnnotationTextStyle(m); }
     AnnotationTextStylePtr CreateCopy() const { return MakeCopy<AnnotationTextStyle>(); }
 
+    DefinitionModelCPtr GetDefinitionModel() const {return GetDgnDb().Models().Get<DefinitionModel>(GetModelId());}
+
     Utf8String GetName() const { return GetCode().GetValue().GetUtf8(); }
-    void SetName(Utf8CP value) { T_Super::SetCode(CreateCode(GetDgnDb(), value)); /* Only SetName is allowed to SetCode. */ }
+    void SetName(Utf8CP value) { T_Super::SetCode(CreateCode(*GetDefinitionModel(), value)); /* Only SetName is allowed to SetCode. */ }
     Utf8StringCR GetDescription() const { return m_description; }
     void SetDescription(Utf8CP value) { m_description.AssignOrClear(value); }
     
@@ -181,11 +183,11 @@ public:
     DGNPLATFORM_EXPORT static AnnotationTextStylePtr CreateEffectiveStyle(AnnotationTextStyleCR docStyle, AnnotationTextStylePropertyBagCR docOverrides, AnnotationTextStyleCR parStyle, AnnotationTextStylePropertyBagCR parOverrides, AnnotationTextStyleCR runStyle, AnnotationTextStylePropertyBagCR runOverrides);
     DgnFontCR ResolveFont() const { return DgnFontManager::ResolveFont(m_dgndb.Fonts().FindFontById(GetFontId())); }
 
-    static DgnElementId QueryId(DgnDbR db, Utf8CP name) { return db.Elements().QueryElementIdByCode(CreateCode(db, name)); }
-    static AnnotationTextStyleCPtr Get(DgnDbR db, Utf8CP name) { return Get(db, QueryId(db, name)); }
+    static DgnElementId QueryId(DefinitionModelCR model, Utf8CP name) { return model.GetDgnDb().Elements().QueryElementIdByCode(CreateCode(model, name)); }
+    static AnnotationTextStyleCPtr Get(DefinitionModelCR model, Utf8CP name) { return Get(model.GetDgnDb(), QueryId(model, name)); }
     static AnnotationTextStyleCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<AnnotationTextStyle>(id); }
     static AnnotationTextStylePtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<AnnotationTextStyle>(id); }
-    static AnnotationTextStylePtr GetForEdit(DgnDbR db, Utf8CP name) { return GetForEdit(db, QueryId(db, name)); }
+    static AnnotationTextStylePtr GetForEdit(DefinitionModelCR model, Utf8CP name) { return GetForEdit(model.GetDgnDb(), QueryId(model, name)); }
     AnnotationTextStyleCPtr Insert() { return GetDgnDb().Elements().Insert<AnnotationTextStyle>(*this); }
     AnnotationTextStyleCPtr Update() { return GetDgnDb().Elements().Update<AnnotationTextStyle>(*this); }
 

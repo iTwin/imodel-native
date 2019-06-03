@@ -75,7 +75,7 @@ protected:
     static Utf8String combineName(Utf8StringCR paletteName, Utf8StringCR materialName)
         {
         Utf8PrintfString combined("%s: %s", paletteName.c_str(), materialName.c_str());
-        return combined;
+        return std::move(combined);
         }
 
     DgnCode _GenerateDefaultCode() const override {return DgnCode();}

@@ -50,7 +50,7 @@ TEST_F(TextAnnotationSeedTest, DefaultsAndAccessors)
     DgnDbR project = *GetDgnDb(L"DefaultsAndAccessors");
 
     //.............................................................................................
-    TextAnnotationSeedPtr style = TextAnnotationSeed::Create(project);
+    TextAnnotationSeedPtr style = TextAnnotationSeed::Create(project.GetDictionaryModel());
     ASSERT_TRUE(style.IsValid());
 
     // Basics
@@ -79,7 +79,7 @@ TEST_F(TextAnnotationSeedTest, DeepCopy)
     DgnDbR project = *GetDgnDb(L"DeepCopy");
 
     //.............................................................................................
-    TextAnnotationSeedPtr style = TextAnnotationSeed::Create(project);
+    TextAnnotationSeedPtr style = TextAnnotationSeed::Create(project.GetDictionaryModel());
     ASSERT_TRUE(style.IsValid());
 
     DECLARE_AND_SET_DATA_1(style);
@@ -109,7 +109,7 @@ TEST_F(TextAnnotationSeedTest, TableReadWrite)
 
     //.............................................................................................
     // Insert
-    TextAnnotationSeedPtr testStyle = TextAnnotationSeed::Create(project);
+    TextAnnotationSeedPtr testStyle = TextAnnotationSeed::Create(project.GetDictionaryModel());
     DECLARE_AND_SET_DATA_1(testStyle);
 
     ASSERT_TRUE(testStyle->Insert().IsValid());
@@ -120,7 +120,7 @@ TEST_F(TextAnnotationSeedTest, TableReadWrite)
     //.............................................................................................
     // Query
     EXPECT_TRUE(TextAnnotationSeed::Get(project, testStyle->GetElementId()).IsValid());
-    EXPECT_TRUE(TextAnnotationSeed::Get(project, name.c_str()).IsValid());
+    EXPECT_TRUE(TextAnnotationSeed::Get(project.GetDictionaryModel(), name.c_str()).IsValid());
 
     auto fileStyle = TextAnnotationSeed::Get(project, testStyle->GetElementId());
     ASSERT_TRUE(fileStyle.IsValid());
@@ -129,7 +129,7 @@ TEST_F(TextAnnotationSeedTest, TableReadWrite)
     EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
 
-    fileStyle = TextAnnotationSeed::Get(project, name.c_str());
+    fileStyle = TextAnnotationSeed::Get(project.GetDictionaryModel(), name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
@@ -147,7 +147,7 @@ TEST_F(TextAnnotationSeedTest, TableReadWrite)
 
     EXPECT_EQ(1, TextAnnotationSeed::QueryCount(project));
 
-    fileStyle = TextAnnotationSeed::Get(project, name.c_str());
+    fileStyle = TextAnnotationSeed::Get(project.GetDictionaryModel(), name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
@@ -213,12 +213,12 @@ TEST_F(TextAnnotationSeedTest, InvalidOperations)
 
         //.............................................................................................
         // Insert
-        TextAnnotationSeedPtr testStyle = TextAnnotationSeed::Create(project);
+        TextAnnotationSeedPtr testStyle = TextAnnotationSeed::Create(project.GetDictionaryModel());
         DECLARE_AND_SET_DATA_1(testStyle); 
 
         //.............................................................................................
         // Shoudl not exist before insert
-        ASSERT_FALSE(TextAnnotationSeed::Get(project, testStyle->GetName().c_str()).IsValid());
+        ASSERT_FALSE(TextAnnotationSeed::Get(project.GetDictionaryModel(), testStyle->GetName().c_str()).IsValid());
 
         ASSERT_TRUE(testStyle->Insert().IsValid());
         ASSERT_TRUE(testStyle->GetElementId().IsValid());
@@ -231,7 +231,7 @@ TEST_F(TextAnnotationSeedTest, InvalidOperations)
         //.............................................................................................
         // Query
         EXPECT_TRUE(TextAnnotationSeed::Get(project, testStyle->GetElementId()).IsValid());
-        EXPECT_TRUE(TextAnnotationSeed::Get(project, name.c_str()).IsValid());
+        EXPECT_TRUE(TextAnnotationSeed::Get(project.GetDictionaryModel(), name.c_str()).IsValid());
 
         auto fileStyle = TextAnnotationSeed::Get(project, testStyle->GetElementId());
         ASSERT_TRUE(fileStyle.IsValid());
@@ -240,7 +240,7 @@ TEST_F(TextAnnotationSeedTest, InvalidOperations)
         EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
         VERIFY_DATA_1(fileStyle);
 
-        fileStyle = TextAnnotationSeed::Get(project, name.c_str());
+        fileStyle = TextAnnotationSeed::Get(project.GetDictionaryModel(), name.c_str());
         EXPECT_TRUE(fileStyle.IsValid());
 
         EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
@@ -250,7 +250,7 @@ TEST_F(TextAnnotationSeedTest, InvalidOperations)
 
         //.............................................................................................
         // Query Invalid
-        EXPECT_FALSE(TextAnnotationSeed::Get(project, "InvalidName").IsValid());
+        EXPECT_FALSE(TextAnnotationSeed::Get(project.GetDictionaryModel(), "InvalidName").IsValid());
 
         //.............................................................................................
         // Update
@@ -263,7 +263,7 @@ TEST_F(TextAnnotationSeedTest, InvalidOperations)
 
         EXPECT_EQ(1, TextAnnotationSeed::QueryCount(project));
 
-        fileStyle = TextAnnotationSeed::Get(project, name.c_str());
+        fileStyle = TextAnnotationSeed::Get(project.GetDictionaryModel(), name.c_str());
         EXPECT_TRUE(fileStyle.IsValid());
 
         EXPECT_TRUE(&project == &fileStyle->GetDgnDb());

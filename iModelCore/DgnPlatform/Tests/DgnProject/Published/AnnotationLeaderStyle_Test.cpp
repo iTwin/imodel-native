@@ -67,7 +67,7 @@ TEST_F(AnnotationLeaderStyleTest, DefaultsAndAccessors)
     DgnDbR project = *GetDgnDb(L"DefaultsAndAccessors");
 
     //.............................................................................................
-    AnnotationLeaderStylePtr style = AnnotationLeaderStyle::Create(project);
+    AnnotationLeaderStylePtr style = AnnotationLeaderStyle::Create(project.GetDictionaryModel());
     ASSERT_TRUE(style.IsValid());
 
     // Basics
@@ -100,7 +100,7 @@ TEST_F(AnnotationLeaderStyleTest, DeepCopy)
     DgnDbR project = *GetDgnDb(L"DeepCopy");
 
     //.............................................................................................
-    AnnotationLeaderStylePtr style = AnnotationLeaderStyle::Create(project);
+    AnnotationLeaderStylePtr style = AnnotationLeaderStyle::Create(project.GetDictionaryModel());
     ASSERT_TRUE(style.IsValid());
 
     DECLARE_AND_SET_DATA_1(style);
@@ -130,7 +130,7 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
 
     //.............................................................................................
     // Insert
-    AnnotationLeaderStylePtr testStyle = AnnotationLeaderStyle::Create(project);
+    AnnotationLeaderStylePtr testStyle = AnnotationLeaderStyle::Create(project.GetDictionaryModel());
     DECLARE_AND_SET_DATA_1(testStyle);
 
     ASSERT_TRUE(testStyle->Insert().IsValid());
@@ -141,7 +141,7 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
     //.............................................................................................
     // Query
     EXPECT_TRUE(AnnotationLeaderStyle::Get(project, testStyle->GetElementId()).IsValid());
-    EXPECT_TRUE(AnnotationLeaderStyle::Get(project, name.c_str()).IsValid());
+    EXPECT_TRUE(AnnotationLeaderStyle::Get(project.GetDictionaryModel(), name.c_str()).IsValid());
 
     auto fileStyle = AnnotationLeaderStyle::Get(project, testStyle->GetElementId());
     ASSERT_TRUE(fileStyle.IsValid());
@@ -150,7 +150,7 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
     EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
 
-    fileStyle = AnnotationLeaderStyle::Get(project, name.c_str());
+    fileStyle = AnnotationLeaderStyle::Get(project.GetDictionaryModel(), name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
@@ -171,7 +171,7 @@ TEST_F(AnnotationLeaderStyleTest, TableReadWrite)
 
     EXPECT_EQ(1, AnnotationLeaderStyle::QueryCount(project));
 
-    fileStyle = AnnotationLeaderStyle::Get(project, name.c_str());
+    fileStyle = AnnotationLeaderStyle::Get(project.GetDictionaryModel(), name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
