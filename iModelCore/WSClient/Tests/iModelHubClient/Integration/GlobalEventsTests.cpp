@@ -23,10 +23,14 @@ struct ExpectedEventIdentifier
     GlobalEvent::GlobalEventType eventType = GlobalEvent::GlobalEventType::UnknownEventType;
     Utf8String projectId = nullptr;
     Utf8String iModelId = nullptr;
-    ExpectedEventIdentifier(const GlobalEvent::GlobalEventType eventType, const Utf8String projectId, const Utf8String iModelId)
+    Utf8String contextId = nullptr;
+    ContextType contextType = ContextType::Unknown;
+    ExpectedEventIdentifier(const GlobalEvent::GlobalEventType eventType, const Utf8String projectId, const Utf8String iModelId, const Utf8String contextId, const ContextType contextType)
         : eventType(eventType),
         projectId(projectId),
-        iModelId(iModelId)
+        iModelId(iModelId),
+        contextId(contextId),
+        contextType(contextType)
         {
         }
     };
@@ -142,7 +146,9 @@ void CheckAllEventsReceived(const Utf8String subscriptionInstanceId, GlobalEvent
                 EXPECT_NE(GlobalEvent::UnknownEventType, expectedEventIter->eventType);
                 if (expectedEventIter->eventType == gotEvent->GetEventType() &&
                     expectedEventIter->iModelId.EqualsI(gotEvent->GetiModelId()) &&
-                    expectedEventIter->projectId.EqualsI(gotEvent->GetProjectId()))
+                    (gotEvent->GetContextType() != ContextType::Project || expectedEventIter->projectId.EqualsI(gotEvent->GetProjectId())) &&
+                    expectedEventIter->contextId.EqualsI(gotEvent->GetContextId()) &&
+                    expectedEventIter->contextType == gotEvent->GetContextType())
                     {
                     expectedEvents.erase(expectedEventIter);
                     break;
@@ -190,11 +196,11 @@ TEST_F(GlobalEventsTests, EventGetTests)
     std::list<ExpectedEventIdentifier> expectedEventsList;
 
     iModelResult createResult = CreateiModel();
-    expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::iModelCreatedEvent, s_projectId, createResult.GetValue()->GetId()));
+    expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::iModelCreatedEvent, s_projectId, createResult.GetValue()->GetId(), s_projectId, ContextType::Project));
     iModelHubHelpers::DeleteiModelByName(s_client, GetTestiModelName());
 
     createResult = CreateiModel();
-    expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::iModelCreatedEvent, s_projectId, createResult.GetValue()->GetId()));
+    expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::iModelCreatedEvent, s_projectId, createResult.GetValue()->GetId(), s_projectId, ContextType::Project));
 
     CheckAllEventsReceived(m_subscriptionId, m_eventManager, expectedEventsList);
     }
@@ -216,7 +222,7 @@ TEST_F(GlobalEventsTests, GetMultipleEventTypes)
     std::list<ExpectedEventIdentifier> expectedEventsList;
 
     auto createResult = CreateiModel();
-    expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::iModelCreatedEvent, s_projectId, createResult.GetValue()->GetId()));
+    expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::iModelCreatedEvent, s_projectId, createResult.GetValue()->GetId(), s_projectId, ContextType::Project));
 
     BriefcaseResult acquireResult = iModelHubHelpers::AcquireAndOpenBriefcase(s_client, createResult.GetValue(), false);
     const auto iModelConnection = CreateiModelConnection(createResult.GetValue());
@@ -225,23 +231,23 @@ TEST_F(GlobalEventsTests, GetMultipleEventTypes)
     CreateElement(*model, DgnCode(), false);
 
     ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
-    expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::ChangeSetCreatedEvent, s_projectId, createResult.GetValue()->GetId()));
+    expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::ChangeSetCreatedEvent, s_projectId, createResult.GetValue()->GetId(), s_projectId, ContextType::Project));
 
     VersionInfoPtr version;
     iModelHubHelpers::CreateNamedVersion(version, iModelConnection, TestCodeName(), 1);
-    expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::NamedVersionCreatedEvent, s_projectId, createResult.GetValue()->GetId()));
+    expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::NamedVersionCreatedEvent, s_projectId, createResult.GetValue()->GetId(), s_projectId, ContextType::Project));
 
     iModelHubHelpers::DeleteiModelByName(s_client, GetTestiModelName());
-    expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::SoftiModelDeleteEvent, s_projectId, createResult.GetValue()->GetId()));
+    expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::SoftiModelDeleteEvent, s_projectId, createResult.GetValue()->GetId(), s_projectId, ContextType::Project));
 
     IWSRepositoryClientPtr projectClient = nullptr;
-    iModelHubHelpers::CreateProjectWSClient(projectClient, *s_client, s_projectId);
+    iModelHubHelpers::CreateContextWSClient(projectClient, *s_client, s_projectId);
     ASSERT_NE(nullptr, projectClient);
     Utf8StringCR deleteArchivedJobId = LRPJobBackdoorAPI::ScheduleLRPJob(projectClient, "DeleteArchivedJob", createResult.GetValue()->GetId());
 
     bool deleteArchivedJobSuccessful = LRPJobBackdoorAPI::WaitForLRPJobToFinish(projectClient, deleteArchivedJobId);
     EXPECT_TRUE(deleteArchivedJobSuccessful);
-    expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::HardiModelDeleteEvent, s_projectId, createResult.GetValue()->GetId()));
+    expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::HardiModelDeleteEvent, s_projectId, createResult.GetValue()->GetId(), s_projectId, ContextType::Project));
 
     CheckAllEventsReceived(m_subscriptionId, m_eventManager, expectedEventsList);
     }
@@ -305,4 +311,24 @@ TEST_F(GlobalEventsTests, DeleteNotPeekedEvent)
     // Deleting event that was not peeked should fail
     auto deletionResult = m_eventManager->DeleteEvent(gotEvent)->GetResult();
     EXPECT_FAILURE(deletionResult);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                Algirdas.Mikoliunas                  05/2019
+//---------------------------------------------------------------------------------------
+TEST_F(GlobalEventsTests, AssetiModelEventTest)
+    {
+    bset<GlobalEvent::GlobalEventType> eventTypes;
+    eventTypes.insert(GlobalEvent::GlobalEventType::iModelCreatedEvent);
+
+    Subscribe(&eventTypes);
+
+    std::list<ExpectedEventIdentifier> expectedEventsList;
+
+    iModelResult createResult = iModelHubHelpers::CreateEmptyiModel(*s_client, s_assetId, GetTestiModelName(), "", true);
+    ASSERT_SUCCESS(createResult);
+    expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::iModelCreatedEvent, s_assetId, createResult.GetValue()->GetId(), s_assetId, ContextType::Asset));
+    iModelHubHelpers::DeleteiModelByName(s_client, GetTestiModelName(), s_assetId);
+
+    CheckAllEventsReceived(m_subscriptionId, m_eventManager, expectedEventsList);
     }

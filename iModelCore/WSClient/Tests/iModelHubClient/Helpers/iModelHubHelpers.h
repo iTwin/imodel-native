@@ -23,14 +23,15 @@ namespace iModelHubHelpers
     void CreateClient(ClientPtr& client, CredentialsCR credentials); 
     void CreateOidcClient(ClientPtr& client, CredentialsCR credentials);
     WebServices::IWSRepositoryClientPtr CreateWSClient(iModelInfoPtr imodel, std::shared_ptr<MockHttpHandler> mockHandler);
-    void CreateProjectWSClient(IWSRepositoryClientPtr& result, ClientR client, Utf8StringCR projectId);
+    void CreateContextWSClient(IWSRepositoryClientPtr& result, ClientR client, Utf8StringCR contextId);
 
-    iModelResult CreateNewiModel(ClientPtr client, DgnDbPtr db, Utf8StringCR projectId, bool expectSuccess);
-    iModelResult CreateEmptyiModel(ClientCR client, Utf8StringCR projectId, Utf8StringCR name, Utf8StringCR description, bool expectSuccess);
-    void CreateUninitializediModel(iModelResult& result, ClientPtr client, Utf8StringCR projectId, Utf8StringCR imodelName);
+    iModelResult CreateNewiModel(ClientPtr client, DgnDbPtr db, Utf8StringCR contextId, bool expectSuccess);
+    iModelResult CreateEmptyiModel(ClientCR client, Utf8StringCR contextId, Utf8StringCR name, Utf8StringCR description, bool expectSuccess);
+    void CreateUninitializediModel(iModelResult& result, ClientPtr client, Utf8StringCR contextId, Utf8StringCR imodelName);
     void LockiModel(StatusResult& result, iModelConnectionPtr connection, bool expectSuccess = true);
     void UploadNewSeedFile(FileResult& result, iModelConnectionPtr connection, DgnDbPtr db, bool expectSuccess = true);
     BeSQLite::BeGuid ReplaceSeedFile(iModelConnectionPtr connection, DgnDbPtr db);
+    StatusResult DeleteiModelByName(ClientPtr client, Utf8String name, Utf8String contextId);
     StatusResult DeleteiModelByName(ClientPtr client, Utf8String name);
 
     BriefcaseInfoResult AcquireBriefcase(ClientPtr client, iModelInfoPtr imodelInfo, bool pull = true, bool expectSuccess = true);

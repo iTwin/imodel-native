@@ -1339,24 +1339,31 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
 
                     flags->GetClipsToShow(clipsToShow);
 
-                    if (clipsToShow.size() > 0)
-                    {
-                        DifferenceSet clipDiffSet;
-
-                        bool anythingToApply = ComputeDiffSet(clipDiffSet, clipsToShow, flags->ShouldInvertClips());
-
-                        if (anythingToApply)
+                    if (clipsToShow.empty())
                         {
-                            clipDiffSet.template ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes,
-                                toLoadUv, toLoadUvIndex, toLoadUvCount,
-                                dataPoints.data(), dataPoints.size(),
-                                dataFaceIndexes.data(), dataFaceIndexes.size(),
-                                dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0, 0, 0));
+                        if(flags->ShouldInvertClips())
+                            clipsToShow.insert(1);
+                        else
+                            {
+                            // Default to using all clips
+                            m_meshNode->CollectClipIds(clipsToShow);
+                            }
+                        }
+                    DifferenceSet clipDiffSet;
 
-                            clipsLoaded = true;
+                    bool anythingToApply = ComputeDiffSet(clipDiffSet, clipsToShow, flags->ShouldInvertClips());
+
+                    if(anythingToApply)
+                        {
+                        clipDiffSet.template ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes,
+                                                                                        toLoadUv, toLoadUvIndex, toLoadUvCount,
+                                                                                        dataPoints.data(), dataPoints.size(),
+                                                                                        dataFaceIndexes.data(), dataFaceIndexes.size(),
+                                                                                        dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0, 0, 0));
+
+                        clipsLoaded = true;
                         }
                     }
-                }
                 else
                 {
                     m_meshNode->ComputeMergedClips();
@@ -1631,7 +1638,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
             //DRange3d range3D2(_GetContentExtent());
 
            
-            if (clips != nullptr /*&& range3D2.XLength() < 150 && range3D2.YLength() < 150*/)
+            if (clips != nullptr && !clips->empty()/*&& range3D2.XLength() < 150 && range3D2.YLength() < 150*/)
                 {
                 bmap<size_t, uint64_t> idsForPrimitives;
                 for (size_t n = 0; n < clips->size(); n++) idsForPrimitives[n] = n;
@@ -2766,7 +2773,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                 TRACEPOINT(THREAD_ID(), EventType::LOAD_MESH_CREATE_0, meshNode->GetBlockID().m_integerID, (uint64_t)cachedDisplayMesh, textureID, -1, -1, m_cachedDisplayMeshData->GetRefCount())
 
-                displayMeshData->m_cachedDisplayMesh = 0;
+                
                 delete displayMeshData;
                 if (isClipped)
                     {

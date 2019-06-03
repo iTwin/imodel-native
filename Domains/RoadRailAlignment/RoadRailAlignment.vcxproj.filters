@@ -67,12 +67,15 @@
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentXSViewDefinition.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailAlignment\ClipPlanesViewDefinition.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="RoadRailAlignment.PartFile.xml">
       <Filter>Build Files</Filter>
     </Xml>
-    <Xml Include="RoadRailAlignment.ecschema.xml" />
+    <Xml Include="..\..\BisSchemas\Domains\RoadRailAlignment\RoadRailAlignment.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RoadRailAlignmentInternal.cpp">
@@ -112,6 +115,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="AlignmentProfileViewDefinition.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ClipPlanesViewDefinition.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -82,7 +82,7 @@ TEST_F(AnnotationFrameStyleTest, DefaultsAndAccessors)
     DgnDbR project = *GetDgnDb(L"DefaultsAndAccessors");
 
     //.............................................................................................
-    AnnotationFrameStylePtr style = AnnotationFrameStyle::Create(project);
+    AnnotationFrameStylePtr style = AnnotationFrameStyle::Create(project.GetDictionaryModel());
     ASSERT_TRUE(style.IsValid());
 
     // Basics
@@ -111,7 +111,7 @@ TEST_F(AnnotationFrameStyleTest, DeepCopy)
     DgnDbR project = *GetDgnDb(L"DeepCopy");
 
     //.............................................................................................
-    AnnotationFrameStylePtr style = AnnotationFrameStyle::Create(project);
+    AnnotationFrameStylePtr style = AnnotationFrameStyle::Create(project.GetDictionaryModel());
     ASSERT_TRUE(style.IsValid());
 
     DECLARE_AND_SET_DATA_1(style);
@@ -141,7 +141,7 @@ TEST_F(AnnotationFrameStyleTest, TableReadWrite)
 
     //.............................................................................................
     // Insert
-    AnnotationFrameStylePtr testStyle = AnnotationFrameStyle::Create(project);
+    AnnotationFrameStylePtr testStyle = AnnotationFrameStyle::Create(project.GetDictionaryModel());
     DECLARE_AND_SET_DATA_1(testStyle);
 
     ASSERT_TRUE(testStyle->Insert().IsValid());
@@ -152,7 +152,7 @@ TEST_F(AnnotationFrameStyleTest, TableReadWrite)
     //.............................................................................................
     // Query
     EXPECT_TRUE(AnnotationFrameStyle::Get(project, testStyle->GetElementId()).IsValid());
-    EXPECT_TRUE(AnnotationFrameStyle::Get(project, name.c_str()).IsValid());
+    EXPECT_TRUE(AnnotationFrameStyle::Get(project.GetDictionaryModel(), name.c_str()).IsValid());
 
     AnnotationFrameStyleCPtr fileStyle = AnnotationFrameStyle::Get(project, testStyle->GetElementId());
     ASSERT_TRUE(fileStyle.IsValid());
@@ -161,7 +161,7 @@ TEST_F(AnnotationFrameStyleTest, TableReadWrite)
     EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
 
-    fileStyle = AnnotationFrameStyle::Get(project, name.c_str());
+    fileStyle = AnnotationFrameStyle::Get(project.GetDictionaryModel(), name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
@@ -184,7 +184,7 @@ TEST_F(AnnotationFrameStyleTest, TableReadWrite)
 
     EXPECT_EQ(1, AnnotationFrameStyle::QueryCount(project));
 
-    fileStyle = AnnotationFrameStyle::Get(project, name.c_str());
+    fileStyle = AnnotationFrameStyle::Get(project.GetDictionaryModel(), name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
@@ -249,13 +249,13 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
 
         //.............................................................................................
         // Insert
-        AnnotationFrameStylePtr testStyle = AnnotationFrameStyle::Create(project);
+        AnnotationFrameStylePtr testStyle = AnnotationFrameStyle::Create(project.GetDictionaryModel());
         DECLARE_AND_SET_DATA_1(testStyle); 
 
         //.............................................................................................
         // Shoudl not exist before insert
         // Cannot pass an invalid ID to ExistsById... ASSERT_TRUE(false == project.Styles().AnnotationFrameStyles().ExistsById(testStyle->GetElementId()));
-        ASSERT_FALSE(AnnotationFrameStyle::Get(project, testStyle->GetName().c_str()).IsValid());
+        ASSERT_FALSE(AnnotationFrameStyle::Get(project.GetDictionaryModel(), testStyle->GetName().c_str()).IsValid());
 
         ASSERT_TRUE(testStyle->Insert().IsValid());
         ASSERT_TRUE(testStyle->GetElementId().IsValid());
@@ -268,7 +268,7 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
         //.............................................................................................
         // Query
         EXPECT_TRUE(AnnotationFrameStyle::Get(project, testStyle->GetElementId()).IsValid());
-        EXPECT_TRUE(AnnotationFrameStyle::Get(project, name.c_str()).IsValid());
+        EXPECT_TRUE(AnnotationFrameStyle::Get(project.GetDictionaryModel(), name.c_str()).IsValid());
 
         AnnotationFrameStyleCPtr fileStyle = AnnotationFrameStyle::Get(project, testStyle->GetElementId());
         ASSERT_TRUE(fileStyle.IsValid());
@@ -277,7 +277,7 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
         EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
         VERIFY_DATA_1(fileStyle);
 
-        fileStyle = AnnotationFrameStyle::Get(project, name.c_str());
+        fileStyle = AnnotationFrameStyle::Get(project.GetDictionaryModel(), name.c_str());
         EXPECT_TRUE(fileStyle.IsValid());
 
         EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
@@ -286,7 +286,7 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
 
         //.............................................................................................
         // Query Invalid
-        EXPECT_FALSE(AnnotationFrameStyle::Get(project, "InvalidName").IsValid());
+        EXPECT_FALSE(AnnotationFrameStyle::Get(project.GetDictionaryModel(), "InvalidName").IsValid());
 
         //.............................................................................................
         // Update
@@ -304,7 +304,7 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
 
         EXPECT_EQ(1, AnnotationFrameStyle::QueryCount(project));
 
-        fileStyle = AnnotationFrameStyle::Get(project, name.c_str());
+        fileStyle = AnnotationFrameStyle::Get(project.GetDictionaryModel(), name.c_str());
         EXPECT_TRUE(fileStyle.IsValid());
 
         EXPECT_TRUE(&project == &fileStyle->GetDgnDb());

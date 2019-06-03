@@ -58,21 +58,18 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //-----------------------------------------------------------------------------------------
 
 // Models
-#define BRRA_CLASS_RoadRailCategoryModel                            "RoadRailCategoryModel"
 
 
 
 // Elements
 #define BRRA_CLASS_Alignment                                        "Alignment"
-#define BRRA_CLASS_AlignmentModel                                   "AlignmentModel"
-#define BRRA_CLASS_AlignmentProfileViewDefinition                   "AlignmentProfileViewDefinition"
-#define BRRA_CLASS_ConfigurationModel                               "ConfigurationModel"
+#define BRRA_CLASS_DesignAlignments                                 "DesignAlignments"
+//#define BRRA_CLASS_AlignmentProfileViewDefinition                   "AlignmentProfileViewDefinition"
 #define BRRA_CLASS_LinearlyLocatedReferentElement                   "LinearlyLocatedReferentElement"
 #define BRRA_CLASS_AlignmentStation                                 "AlignmentStation"
-#define BRRA_CLASS_ClipPlanesViewDefinition                        "AlignmentXSViewDefinition"
+//#define BRRA_CLASS_ClipPlanesViewDefinition                        "AlignmentXSViewDefinition"
 #define BRRA_CLASS_HorizontalAlignment                              "HorizontalAlignment"
 #define BRRA_CLASS_HorizontalAlignments                             "HorizontalAlignments"
-#define BRRA_CLASS_HorizontalAlignmentModel                         "HorizontalAlignmentModel"
 #define BRRA_CLASS_VerticalAlignment                                "VerticalAlignment"
 #define BRRA_CLASS_VerticalAlignmentModel                           "VerticalAlignmentModel"
 
@@ -82,12 +79,12 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 #define BRRA_REL_AlignmentOwnsReferents                             "AlignmentOwnsReferents"
 #define BRRA_REL_AlignmentRefersToHorizontal                        "AlignmentRefersToHorizontal"
 #define BRRA_REL_AlignmentRefersToMainVertical                      "AlignmentRefersToMainVertical"
-#define BRRA_REL_DrawingGraphicRepresentsAlignment                  "DrawingGraphicRepresentsAlignment"
-#define BRRA_REL_GraphicalElement3dRepresentsAlignment              "GraphicalElement3dRepresentsAlignment"
 
 
 // Properties
-#define BRRA_PROP_Alignment_MainVerticalAlignment                   "MainVerticalAlignment"
+#define BRRA_PROP_Alignment_Horizontal                              "Horizontal"
+#define BRRA_PROP_Alignment_MainVertical                            "MainVertical"
+#define BRRA_PROP_Alignment_StartStation                            "StartStation"
 #define BRRA_PROP_HorizontalAlignment_HorizontalGeometry            "HorizontalGeometry"
 #define BRRA_PROP_VerticalAlignment_VerticalGeometry                "VerticalGeometry"
 
@@ -96,7 +93,7 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 // Category names
 //-----------------------------------------------------------------------------------------
 #define BRRA_CATEGORY_Alignment                                     "Alignment"
-#define BRRA_CATEGORY_HorizontalAlignment                           "Horizontal Alignment"
+#define BRRA_CATEGORY_Linear                                        "Linear"
 #define BRRA_CATEGORY_VerticalAlignment                             "Vertical Alignment"
 
 
@@ -104,6 +101,7 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 // CodeSpec names
 //-----------------------------------------------------------------------------------------
 #define BRRA_CODESPEC_Alignment                                    "Alignment"
+#define BRRA_CODESPEC_DesignAlignments                             "DesignAlignments"
 #define BRRA_CODESPEC_HorizontalAlignment                          "HorizontalAlignment"
 
 //-----------------------------------------------------------------------------------------
@@ -146,30 +144,22 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 // Define typedefs and Ptrs in the RoadRailAlignment namespace
 //-----------------------------------------------------------------------------------------
 ROADRAILALIGNMENT_TYPEDEFS(Alignment)
-ROADRAILALIGNMENT_TYPEDEFS(AlignmentModel)
-ROADRAILALIGNMENT_TYPEDEFS(AlignmentModelHandler)
-ROADRAILALIGNMENT_TYPEDEFS(AlignmentProfileViewDefinition)
-ROADRAILALIGNMENT_TYPEDEFS(ConfigurationModel)
-ROADRAILALIGNMENT_TYPEDEFS(LinearlyLocatedReferentElement)
+ROADRAILALIGNMENT_TYPEDEFS(DesignAlignments)
+//ROADRAILALIGNMENT_TYPEDEFS(AlignmentProfileViewDefinition)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentStation)
-ROADRAILALIGNMENT_TYPEDEFS(ClipPlanesViewDefinition)
+//ROADRAILALIGNMENT_TYPEDEFS(ClipPlanesViewDefinition)
 ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignment)
 ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignments)
-ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignmentModel)
-ROADRAILALIGNMENT_TYPEDEFS(RoadRailCategoryModel)
 ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignment)
 ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignmentModel)
 
 ROADRAILALIGNMENT_REFCOUNTED_PTR(Alignment)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentModel)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentProfileViewDefinition)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(DesignAlignments)
+//ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentProfileViewDefinition)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentStation)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentStationingTranslator)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(ClipPlanesViewDefinition)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(ConfigurationModel)
+//ROADRAILALIGNMENT_REFCOUNTED_PTR(ClipPlanesViewDefinition)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignment)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignments)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignmentModel)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(RoadRailCategoryModel)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(VerticalAlignment)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(VerticalAlignmentModel)

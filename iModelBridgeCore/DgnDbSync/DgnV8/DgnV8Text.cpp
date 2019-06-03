@@ -76,7 +76,7 @@ void Converter::ConvertColorFromStyle(AnnotationColorType& dbColorType, ColorDef
 //---------------------------------------------------------------------------------------
 AnnotationTextStylePtr Converter::_ConvertV8TextStyle(DgnV8Api::DgnTextStyle const& v8Style)
     {
-    AnnotationTextStylePtr dbStyle = AnnotationTextStyle::Create(*m_dgndb);
+    AnnotationTextStylePtr dbStyle = AnnotationTextStyle::Create(*GetJobDefinitionModel());
     dbStyle->SetName(Utf8String(v8Style.GetName().c_str()).c_str());
     
     // DgnV8 styles' units are in that of the dictionary model.
@@ -162,7 +162,7 @@ DgnElementId Converter::_GetOrCreateTextStyleNoneId(DgnV8Api::DgnFile& v8File)
             defaultName = "V8StyleNone";
             }
         
-        AnnotationTextStyleCPtr dbDefaultStyle = AnnotationTextStyle::Get(*m_dgndb, defaultName.c_str());
+        AnnotationTextStyleCPtr dbDefaultStyle = AnnotationTextStyle::Get(*GetJobDefinitionModel(), defaultName.c_str());
         if (!dbDefaultStyle.IsValid())
             {
             DgnV8Api::DgnTextStylePtr v8ActiveStyle = DgnV8Api::DgnTextStyle::GetSettings(v8File);
@@ -193,7 +193,7 @@ DgnElementId Converter::_RemapV8TextStyle(DgnV8Api::DgnFile& v8File, DgnV8Api::E
     if (!v8Style.IsValid())
         return _GetOrCreateTextStyleNoneId(v8File);
 
-    auto dbStyle = AnnotationTextStyle::Get(*m_dgndb, Utf8String(v8Style->GetName().c_str()).c_str());
+    auto dbStyle = AnnotationTextStyle::Get(*GetJobDefinitionModel(), Utf8String(v8Style->GetName().c_str()).c_str());
     if (!dbStyle.IsValid())
         {
         auto newDbStyle = _ConvertV8TextStyle(*v8Style);

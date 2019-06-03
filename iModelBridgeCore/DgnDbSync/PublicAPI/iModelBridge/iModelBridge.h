@@ -479,6 +479,11 @@ struct iModelBridge
         //! @param guid The the default docguid should docprops not exist for fn
         //! @return non-zero error status if assignment of this file to the registry database failed.
         virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey, BeSQLite::BeGuidCP guid) = 0;
+
+        //! Query all files assigned to this bridge.
+        //! @param fns   The names of all files that are assignd to this bridge.
+        //! @param bridgeRegSubKey The registry subkey that identifies the bridge
+        virtual void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) = 0;
         };
 
     //! Interface to enable bridges to perform briefcase operations, such as push while they run.
@@ -671,6 +676,9 @@ struct iModelBridge
 	    //! Check if the specified file is assigned to this bridge or not.
 	    IMODEL_BRIDGE_EXPORT bool IsFileAssignedToBridge(BeFileNameCR fn) const;
 
+        //! Get all files assigned to this bridge.
+        IMODEL_BRIDGE_EXPORT void QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns) const;
+
 	    //! Get the document GUID for the specified file, if available.
 	    //! @param localFileName    The filename of the source file.
 	    //! @return the document GUID, if available.
@@ -711,7 +719,11 @@ struct iModelBridge
     //! Open an existing BIM for read-write, possibly doing a schema upgrade on it.
     //! @param[out] dbres  If the BIM cannot be opened or upgraded, return the error status here.
     //! @return Opened BIM or an invalid ptr if the BIM could not be opened.
+
+    static IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName, DgnDb::OpenParams& params);
+
     static IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName);
+
 
     //! @private
     //! Convert source data to an existing BIM. This is called by the framework as part of a normal conversion.
@@ -721,6 +733,8 @@ struct iModelBridge
     //! @note The caller must check the return status and call SaveChanges on success or AbandonChanges on error.
     //! @see OpenBimAndMergeSchemaChanges
     IMODEL_BRIDGE_EXPORT BentleyStatus DoConvertToExistingBim(DgnDbR db, SubjectCR jobsubj, bool detectDeletedFiles);
+
+    IMODEL_BRIDGE_EXPORT BentleyStatus DoOnAllDocumentsProcessed(DgnDbR db);
 
     IMODEL_BRIDGE_EXPORT BentleyStatus DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR db);
 
@@ -901,6 +915,10 @@ public:
     //! @see _OnOpenBim
     virtual BentleyStatus _ConvertToBim(SubjectCR jobSubject) = 0;
 
+    //! Called after all calls to this bridge have been made (either on all masterfiles in a full run or all changed masterfiles in an incremental run).
+    //! This is not a request to convert anything. In fact, the inputFile property of Params may be empty.
+    virtual BentleyStatus _OnAllDocumentsProcessed() {return BSISUCCESS;}
+
     //! Query if the bridge must have exclusive access to the iModel while converting data.
     virtual bool _ConvertToBimRequiresExclusiveLock() {return false;}
 
@@ -1059,10 +1077,15 @@ public:
 
     bool HadAnyChanges() const { return m_hadAnyChanges; }
 
-    //! @name Feature Flags
+    //! @name Feature Configuration
     //! @{
-
+    //! Test whether to enable launch darkly flag
     IMODEL_BRIDGE_EXPORT bool TestFeatureFlag(CharCP featureFlag);
+
+    //! Test whether to enable launch darkly flag
+    IMODEL_BRIDGE_EXPORT bool TrackUsage(CharCP featureString);
+
+    IMODEL_BRIDGE_EXPORT bool MarkFeature(CharCP featureString);
     //! @}
     };
 

@@ -8,34 +8,35 @@
 #include <RoadRailAlignment/AlignmentCategory.h>
 #include <RoadRailAlignment/Alignment.h>
 #include <RoadRailAlignment/AlignmentReferent.h>
-#include <RoadRailAlignment/AlignmentProfileViewDefinition.h>
-#include <RoadRailAlignment/ClipPlanesViewDefinition.h>
+//#include <RoadRailAlignment/AlignmentProfileViewDefinition.h>
+//#include <RoadRailAlignment/ClipPlanesViewDefinition.h>
 
 #define DEFAULT_VIEWDEF_ASPECT_RATIO_SKEW 10.0 // For Profile and XS view definitions
+#define INSERT_CODESPEC(x) \
+    { auto codeSpecPtr = x; \
+    BeAssert(codeSpecPtr.IsValid()); \
+    if (codeSpecPtr.IsValid()) { \
+        codeSpecPtr->Insert(); \
+        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid()); } \
+    }
 
 DOMAIN_DEFINE_MEMBERS(RoadRailAlignmentDomain)
-HANDLER_DEFINE_MEMBERS(ConfigurationModelHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadRailAlignmentDomain::RoadRailAlignmentDomain() : DgnDomain(BRRA_SCHEMA_NAME, "Bentley RoadRailAlignment Domain", 1)
+RoadRailAlignmentDomain::RoadRailAlignmentDomain() : DgnDomain(BRRA_SCHEMA_NAME, "Bentley RoadRailAlignment Domain", 2)
     {
-    RegisterHandler(ConfigurationModelHandler::GetHandler());
-    RegisterHandler(RoadRailCategoryModelHandler::GetHandler());
-    RegisterHandler(AlignmentModelHandler::GetHandler());
     RegisterHandler(AlignmentHandler::GetHandler());
-    RegisterHandler(HorizontalAlignmentModelHandler::GetHandler());
+    RegisterHandler(DesignAlignmentsHandler::GetHandler());
     RegisterHandler(HorizontalAlignmentsHandler::GetHandler());
     RegisterHandler(HorizontalAlignmentHandler::GetHandler());    
-    RegisterHandler(AlignmentProfileViewDefinitionHandler::GetHandler());
-    RegisterHandler(LinearlyLocatedReferentElementHandler::GetHandler());
+    //RegisterHandler(AlignmentProfileViewDefinitionHandler::GetHandler());
     RegisterHandler(AlignmentStationHandler::GetHandler());
-    RegisterHandler(ClipPlanesViewDefinitionHandler::GetHandler());
+    //RegisterHandler(ClipPlanesViewDefinitionHandler::GetHandler());
     RegisterHandler(VerticalAlignmentModelHandler::GetHandler());
     RegisterHandler(VerticalAlignmentHandler::GetHandler());    
     }
-
 
 BEGIN_UNNAMED_NAMESPACE
 //---------------------------------------------------------------------------------------
@@ -90,7 +91,7 @@ void setupModelSelector(ModelSelectorR mSelector)
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        09/2017
 //---------------------------------------------------------------------------------------
-template <typename VIEWDEF_T>
+/*template <typename VIEWDEF_T>
 RefCountedPtr<VIEWDEF_T> createViewDefinition(ConfigurationModelR model, Utf8StringCR viewName)
     {
     Utf8String cSelectorName = viewName;
@@ -120,7 +121,7 @@ RefCountedPtr<VIEWDEF_T> createViewDefinition(ConfigurationModelR model, Utf8Str
         }
 
     return viewDefinition;
-    }
+    }*/
 
 END_UNNAMED_NAMESPACE
 
@@ -128,7 +129,7 @@ END_UNNAMED_NAMESPACE
 // @bsimethod                           Alexandre.Gagnon                        09/2017
 // Inserts the 'system' private views for ClipPlanesViewDefinition and AlignmentProfileViewDefinition classes
 //---------------------------------------------------------------------------------------
-DgnDbStatus RoadRailAlignmentDomain::InsertViewDefinitions(ConfigurationModelR model)
+/*DgnDbStatus RoadRailAlignmentDomain::InsertViewDefinitions(ConfigurationModelR model)
     {
     AlignmentProfileViewDefinitionPtr profileDefinition = createViewDefinition<AlignmentProfileViewDefinition>(model, AlignmentProfileViewDefinition::SYSTEM_VIEW_NAME);
     ClipPlanesViewDefinitionPtr xsDefinition = createViewDefinition<ClipPlanesViewDefinition>(model, ClipPlanesViewDefinition::SYSTEM_VIEW_NAME);
@@ -144,58 +145,15 @@ DgnDbStatus RoadRailAlignmentDomain::InsertViewDefinitions(ConfigurationModelR m
         return status;
 
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus createAlignmentPartition(SubjectCR subject, Utf8CP partitionName)
-    {
-    DgnDbStatus status;
-    auto partitionPtr = SpatialLocationPartition::Create(subject, partitionName);
-
-    IBriefcaseManager::Request req;
-    auto stat = partitionPtr->PopulateRequest(req, BeSQLite::DbOpcode::Insert);
-    if (RepositoryStatus::Success == stat)
-        Dgn::IBriefcaseManager::Response response = partitionPtr->GetDgnDb().BriefcaseManager().Acquire(req);
-
-    if (partitionPtr->Insert(&status).IsNull())
-        return status;
-
-    auto alignmentModelPtr = AlignmentModel::Create(AlignmentModel::CreateParams(subject.GetDgnDb(), partitionPtr->GetElementId()));
-
-    stat = alignmentModelPtr->PopulateRequest(req, BeSQLite::DbOpcode::Insert);
-    if (RepositoryStatus::Success == stat)
-        Dgn::IBriefcaseManager::Response response = alignmentModelPtr->GetDgnDb().BriefcaseManager().Acquire(req);
-
-    if (DgnDbStatus::Success != (status = alignmentModelPtr->Insert()))
-        return status;
-
-    auto horizontalPartitionCPtr = HorizontalAlignments::Insert(*alignmentModelPtr);
-    if (horizontalPartitionCPtr.IsNull())
-        return DgnDbStatus::BadModel;
-
-    auto horizontalBreakDownModelPtr = HorizontalAlignmentModel::Create(
-        HorizontalAlignmentModel::CreateParams(subject.GetDgnDb(), horizontalPartitionCPtr->GetElementId()));
-
-    stat = horizontalBreakDownModelPtr->PopulateRequest(req, BeSQLite::DbOpcode::Insert);
-    if (RepositoryStatus::Success == stat)
-        Dgn::IBriefcaseManager::Response response = horizontalBreakDownModelPtr->GetDgnDb().BriefcaseManager().Acquire(req);
-
-
-    if (DgnDbStatus::Success != (status = horizontalBreakDownModelPtr->Insert()))
-        return status;
-
-    return DgnDbStatus::Success;
-    }
+    }*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(SubjectCR subject)
+DgnDbStatus RoadRailAlignmentDomain::SetUpDefinitionPartitions(SubjectCR subject)
     {
     DgnDbStatus status;
-    auto configurationPartitionPtr = DefinitionPartition::Create(subject, ConfigurationModel::GetDomainPartitionName());
+    auto configurationPartitionPtr = DefinitionPartition::Create(subject, GetConfigurationPartitionName());
 
     IBriefcaseManager::Request req;
     auto stat = configurationPartitionPtr->PopulateRequest(req, BeSQLite::DbOpcode::Insert);
@@ -207,7 +165,7 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(SubjectCR subject)
         BeAssert(false);
         }
 
-    auto configModelPtr = ConfigurationModel::Create(ConfigurationModel::CreateParams(subject.GetDgnDb(), configurationPartitionPtr->GetElementId()));
+    auto configModelPtr = DefinitionModel::Create(*configurationPartitionPtr);
 
     stat = configModelPtr->PopulateRequest(req, BeSQLite::DbOpcode::Insert);
     if (RepositoryStatus::Success == stat)
@@ -218,14 +176,8 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(SubjectCR subject)
         BeAssert(false);
         }
 
-    if (DgnDbStatus::Success != (status = createAlignmentPartition(subject, GetDesignPartitionName())))
-        return status;
-
-    if (DgnDbStatus::Success != (status = createAlignmentPartition(subject, Get3DLinearsPartitionName())))
-        return status;
-    
-    if (DgnDbStatus::Success != (status = InsertViewDefinitions(*configModelPtr)))
-        return status;
+    /*if (DgnDbStatus::Success != (status = InsertViewDefinitions(*configModelPtr)))
+        return status;*/
 
     return DgnDbStatus::Success;
     }
@@ -242,7 +194,7 @@ void createDomainCategoriesPartition(DgnDbR db)
         BeAssert(false);
         }
 
-    auto modelPtr = RoadRailCategoryModel::Create(RoadRailCategoryModel::CreateParams(db, categoryPartitionPtr->GetElementId()));
+    auto modelPtr = DefinitionModel::Create(*categoryPartitionPtr);
 
     if (!modelPtr.IsValid() || (DgnDbStatus::Success != modelPtr->Insert()))
         {
@@ -257,21 +209,9 @@ void createDomainCategoriesPartition(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void createCodeSpecs(DgnDbR dgndb)
     {
-    auto codeSpec = CodeSpec::Create(dgndb, BRRA_CODESPEC_Alignment, CodeScopeSpec::CreateModelScope());
-    BeAssert(codeSpec.IsValid());
-    if (codeSpec.IsValid())
-        {
-        codeSpec->Insert();
-        BeAssert(codeSpec->GetCodeSpecId().IsValid());
-        }
-
-    codeSpec = CodeSpec::Create(dgndb, BRRA_CODESPEC_HorizontalAlignment, CodeScopeSpec::CreateModelScope());
-    BeAssert(codeSpec.IsValid());
-    if (codeSpec.IsValid())
-        {
-        codeSpec->Insert();
-        BeAssert(codeSpec->GetCodeSpecId().IsValid());
-        }
+    INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRA_CODESPEC_Alignment, CodeScopeSpec::CreateModelScope()));
+    INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRA_CODESPEC_DesignAlignments, CodeScopeSpec::CreateModelScope()));
+    INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRA_CODESPEC_HorizontalAlignment, CodeScopeSpec::CreateModelScope()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -304,18 +244,37 @@ DgnCode RoadRailAlignmentDomain::CreateCode(DgnModelCR scopeModel, Utf8StringCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId ConfigurationModel::QueryModelId(SubjectCR subject)
+DgnModelId RoadRailAlignmentDomain::QueryConfigurationModelId(SubjectCR subject)
     {
-    DgnCode partitionCode = DefinitionPartition::CreateCode(subject, GetDomainPartitionName());
+    DgnCode partitionCode = DefinitionPartition::CreateCode(subject, GetConfigurationPartitionName());
     return subject.GetDgnDb().Models().QuerySubModelId(partitionCode);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConfigurationModelPtr ConfigurationModel::Query(SubjectCR subject)
+DefinitionModelPtr RoadRailAlignmentDomain::QueryConfigurationModel(SubjectCR subject)
     {
-    ConfigurationModelPtr model = subject.GetDgnDb().Models().Get<ConfigurationModel>(ConfigurationModel::QueryModelId(subject));
+    DefinitionModelPtr model = subject.GetDgnDb().Models().Get<DefinitionModel>(QueryConfigurationModelId(subject));
+    BeAssert(model.IsValid());
+    return model;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId RoadRailAlignmentDomain::QueryCategoryModelId(DgnDbR db)
+    {
+    DgnCode partitionCode = DefinitionPartition::CreateCode(*db.Elements().GetRootSubject(), RoadRailAlignmentDomain::GetDomainCategoriesPartitionName());
+    return db.Models().QuerySubModelId(partitionCode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DefinitionModelPtr RoadRailAlignmentDomain::QueryCategoryModel(DgnDbR db)
+    {
+    DefinitionModelPtr model = db.Models().Get<DefinitionModel>(QueryCategoryModelId(db));
     BeAssert(model.IsValid());
     return model;
     }
@@ -323,10 +282,10 @@ ConfigurationModelPtr ConfigurationModel::Query(SubjectCR subject)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubjectCPtr ConfigurationModel::GetParentSubject() const
+/*SubjectCPtr ConfigurationModel::GetParentSubject() const
     {
     auto partitionCP = dynamic_cast<DefinitionPartitionCP>(GetModeledElement().get());
     BeAssert(partitionCP != nullptr);
 
     return GetDgnDb().Elements().Get<Subject>(partitionCP->GetParentId());
-    }
+    }*/

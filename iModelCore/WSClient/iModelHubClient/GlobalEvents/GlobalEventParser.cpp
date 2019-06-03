@@ -9,6 +9,7 @@
 #include <WebServices/iModelHub/GlobalEvents/iModelCreatedEvent.h>
 #include <WebServices/iModelHub/GlobalEvents/NamedVersionCreatedEvent.h>
 #include <WebServices/iModelHub/GlobalEvents/SoftiModelDeleteEvent.h>
+#include <WebServices/iModelHub/GlobalEvents/GlobalEvent.h>
 #include "../Utils.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -35,7 +36,8 @@ std::shared_ptr<Json::Value> EventPropertiesToJSON(const Utf8String jsonString, 
                 data.isMember(GlobalEvent::Property_ProjectId) &&
                 data.isMember(GlobalEvent::ChangeSetCreatedEventProperties::Property_BriefcaseId) &&
                 data.isMember(GlobalEvent::ChangeSetCreatedEventProperties::Property_ChangeSetId) &&
-                data.isMember(GlobalEvent::ChangeSetCreatedEventProperties::Property_ChangeSetIndex)
+                data.isMember(GlobalEvent::ChangeSetCreatedEventProperties::Property_ChangeSetIndex) &&
+                data.isMember(GlobalEvent::Property_ContextId)
                 )
             return std::make_shared<Json::Value>(data);
             break;
@@ -47,7 +49,8 @@ std::shared_ptr<Json::Value> EventPropertiesToJSON(const Utf8String jsonString, 
                 data.isMember(GlobalEvent::Property_FromEventSubscriptionId) &&
                 data.isMember(GlobalEvent::Property_ToEventSubscriptionId) &&
                 data.isMember(GlobalEvent::Property_iModelId) &&
-                data.isMember(GlobalEvent::Property_ProjectId)
+                data.isMember(GlobalEvent::Property_ProjectId) &&
+                data.isMember(GlobalEvent::Property_ContextId)
                 )
             return std::make_shared<Json::Value>(data);
             break;
@@ -59,7 +62,8 @@ std::shared_ptr<Json::Value> EventPropertiesToJSON(const Utf8String jsonString, 
                 data.isMember(GlobalEvent::Property_FromEventSubscriptionId) &&
                 data.isMember(GlobalEvent::Property_ToEventSubscriptionId) &&
                 data.isMember(GlobalEvent::Property_iModelId) &&
-                data.isMember(GlobalEvent::Property_ProjectId)
+                data.isMember(GlobalEvent::Property_ProjectId) &&
+                data.isMember(GlobalEvent::Property_ContextId)
                 )
             return std::make_shared<Json::Value>(data);
             break;
@@ -74,7 +78,8 @@ std::shared_ptr<Json::Value> EventPropertiesToJSON(const Utf8String jsonString, 
                 data.isMember(GlobalEvent::Property_ProjectId) &&
                 data.isMember(GlobalEvent::NamedVersionCreatedEventProperties::Property_ChangeSetId) &&
                 data.isMember(GlobalEvent::NamedVersionCreatedEventProperties::Property_VersionId) &&
-                data.isMember(GlobalEvent::NamedVersionCreatedEventProperties::Property_VersionName)
+                data.isMember(GlobalEvent::NamedVersionCreatedEventProperties::Property_VersionName) &&
+                data.isMember(GlobalEvent::Property_ContextId)
                 )
             return std::make_shared<Json::Value>(data);
             break;
@@ -86,7 +91,8 @@ std::shared_ptr<Json::Value> EventPropertiesToJSON(const Utf8String jsonString, 
                 data.isMember(GlobalEvent::Property_FromEventSubscriptionId) &&
                 data.isMember(GlobalEvent::Property_ToEventSubscriptionId) &&
                 data.isMember(GlobalEvent::Property_iModelId) &&
-                data.isMember(GlobalEvent::Property_ProjectId)
+                data.isMember(GlobalEvent::Property_ProjectId) &&
+                data.isMember(GlobalEvent::Property_ContextId)
                 )
             return std::make_shared<Json::Value>(data);
             break;
@@ -98,6 +104,18 @@ std::shared_ptr<Json::Value> EventPropertiesToJSON(const Utf8String jsonString, 
             }
         }
     return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Algirdas.Mikoliunas            05/2019
+//---------------------------------------------------------------------------------------
+ContextType ParseContextType(int contextTypeValue)
+    {
+    ContextType contextType = static_cast<ContextType>(contextTypeValue);
+    if (contextType == ContextType::Asset || contextType == ContextType::Project)
+        return contextType;
+
+    return ContextType::Unknown;
     }
 
 //---------------------------------------------------------------------------------------
@@ -119,7 +137,9 @@ GlobalEventPtr ParseIntoChangeSetCreatedEvent(const Utf8String jsonString, const
         (*data)[GlobalEvent::ChangeSetCreatedEventProperties::Property_ChangeSetId].asString(),
         (*data)[GlobalEvent::ChangeSetCreatedEventProperties::Property_ChangeSetIndex].asString(),
         (*data)[GlobalEvent::ChangeSetCreatedEventProperties::Property_BriefcaseId].asInt(),
-        headerLocation
+        headerLocation,
+        (*data)[GlobalEvent::Property_ContextId].asString(),
+        ParseContextType((*data)[GlobalEvent::Property_ContextTypeId].asInt())
     );
     }
 
@@ -139,7 +159,9 @@ GlobalEventPtr ParseIntoHardiModelDeleteEvent(const Utf8String jsonString, const
         (*data)[GlobalEvent::Property_ToEventSubscriptionId].asString(),
         (*data)[GlobalEvent::Property_ProjectId].asString(),
         (*data)[GlobalEvent::Property_iModelId].asString(),
-        headerLocation
+        headerLocation,
+        (*data)[GlobalEvent::Property_ContextId].asString(),
+        ParseContextType((*data)[GlobalEvent::Property_ContextTypeId].asInt())
     );
     }
 
@@ -158,7 +180,9 @@ GlobalEventPtr ParseIntoiModelCreatedEvent(const Utf8String jsonString, const Ut
         (*data)[GlobalEvent::Property_ToEventSubscriptionId].asString(),
         (*data)[GlobalEvent::Property_ProjectId].asString(),
         (*data)[GlobalEvent::Property_iModelId].asString(),
-        headerLocation
+        headerLocation,
+        (*data)[GlobalEvent::Property_ContextId].asString(),
+        ParseContextType((*data)[GlobalEvent::Property_ContextTypeId].asInt())
     );
     }
 
@@ -181,7 +205,9 @@ GlobalEventPtr ParseIntoNamedVersionCreatedEvent(const Utf8String jsonString, co
         (*data)[GlobalEvent::NamedVersionCreatedEventProperties::Property_VersionId].asString(),
         (*data)[GlobalEvent::NamedVersionCreatedEventProperties::Property_VersionName].asString(),
         (*data)[GlobalEvent::NamedVersionCreatedEventProperties::Property_ChangeSetId].asString(),
-        headerLocation
+        headerLocation,
+        (*data)[GlobalEvent::Property_ContextId].asString(),
+        ParseContextType((*data)[GlobalEvent::Property_ContextTypeId].asInt())
     );
     }
 
@@ -201,7 +227,9 @@ GlobalEventPtr ParseIntoSoftiModelDeleteEvent(const Utf8String jsonString, const
         (*data)[GlobalEvent::Property_ToEventSubscriptionId].asString(),
         (*data)[GlobalEvent::Property_ProjectId].asString(),
         (*data)[GlobalEvent::Property_iModelId].asString(),
-        headerLocation
+        headerLocation,
+        (*data)[GlobalEvent::Property_ContextId].asString(),
+        ParseContextType((*data)[GlobalEvent::Property_ContextTypeId].asInt())
     );
     }
 

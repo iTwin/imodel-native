@@ -92,6 +92,7 @@ protected:
     bool m_startLogPostingHeartbeat = true;
     bool m_stopLogPostingHeartbeat = false;
     bool m_logPostingHeartbeatStopped = false;
+    int64_t m_logsPostingInterval = 60 * 60 * 1000; // one hour in milliseconds
 
     void LogPostingHeartbeat(int64_t currentTime);
     void StopLogPostingHeartbeat();

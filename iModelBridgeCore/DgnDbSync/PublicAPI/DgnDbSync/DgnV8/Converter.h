@@ -443,8 +443,9 @@ struct IChangeDetector
     //! @param[in] v8eh     A V8 Element
     //! @param[in] v8mm     Mapping info for the V8 model that contains this V8 element
     //! @param[in] filter   Optional. Chooses among existing elements in SyncInfo
+    //! @param[in] identifier   Optional. If specified use this instead of v8eh.GetElementId() as the Identifier of the aspect to look up.
     //! @return true if the element is new or has changed.
-    virtual bool _IsElementChanged(SearchResults& prov, Converter&, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter = nullptr) = 0;
+    virtual bool _IsElementChanged(SearchResults& prov, Converter&, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter = nullptr, Utf8CP identifier = nullptr) = 0;
 
     virtual bool _ShouldSkipLevel(DgnCategoryId&, Converter&, DgnV8Api::LevelHandle const&, DgnV8FileR, Utf8StringCR dbCategoryName) = 0;
 
@@ -869,6 +870,7 @@ struct Converter
         L10N_STRING(TASK_CONVERTING_RELATIONSHIPS)     // =="Converting Relationships"==
         L10N_STRING(TASK_V8_PROGRESSS)                 // =="%s"==
         L10N_STRING(STEP_EMBEDDING_FILES)              // =="Embedding Files"==
+        L10N_STRING(STEP_DETECT_DELETIONS)             // =="Detecting Deleted Items"==
         L10N_STRING(TASK_FILLING_V8_MODELS)            // =="Filling"==
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
@@ -1021,6 +1023,8 @@ protected:
     virtual void _OnSheetsConvertViewAttachment(ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) {}
 
     virtual void _OnFileDiscovered(DgnV8FileCR) const {;}
+    virtual DgnV8FileCP _GetPackageFileOf(DgnV8FileCR f) {return &f;}
+    virtual bool _WasEmbeddedFileSeen(Utf8StringCR uniqueName) const {return false;}
 
 public:
     virtual Params const& _GetParams() const = 0;
@@ -1030,6 +1034,10 @@ public:
     bool ShouldCreateIntermediateRevisions() const {return _GetParams().GetPushIntermediateRevisions() != iModelBridge::Params::PushIntermediateRevisions::None;}
 
     bool SkipECContent() const {return m_skipECContent;}
+    
+    DgnV8FileCP GetPackageFileOf(DgnV8FileCR f) {return _GetPackageFileOf(f);}
+    bool WasEmbeddedFileSeen(Utf8StringCR uniqueName) const {return _WasEmbeddedFileSeen(uniqueName);}
+
     void SetSkipEContent(bool val) {m_skipECContent = val;}
     //! Add a callback to be invoked by RetrieveV8ECSchemas
     //! @param v    Verifier to be invoked by RetrieveV8ECSchemas to determine whether a given schema should be imported
@@ -1101,6 +1109,10 @@ public:
 
     //! @name V8Files
     //! @{
+
+    DGNDBSYNC_EXPORT static bool IsEmbeddedFileName0(wchar_t const*);
+    static bool IsEmbeddedFileName(Utf8StringCR fullName) {return IsEmbeddedFileName0(WString(fullName.c_str(), true).c_str());}
+    static bool IsEmbeddedFileName(WStringCR fullName) {return IsEmbeddedFileName0(fullName.c_str());}
 
     DGNDBSYNC_EXPORT Utf8String ComputeEffectiveEmbeddedFileName(Utf8StringCR fullName);
 
@@ -2157,7 +2169,7 @@ struct ChangeDetector : IChangeDetector
     DGNDBSYNC_EXPORT void _OnModelInserted(Converter&, ResolvedModelMapping const&);
     DGNDBSYNC_EXPORT void _OnViewSeen(Converter&, DgnViewId id);
     DGNDBSYNC_EXPORT bool _AreContentsOfModelUnChanged(Converter&, ResolvedModelMapping const&) ;
-    DGNDBSYNC_EXPORT bool _IsElementChanged(SearchResults&, Converter&, DgnV8EhCR, ResolvedModelMapping const&, T_SyncInfoElementFilter* filter) override;
+    DGNDBSYNC_EXPORT bool _IsElementChanged(SearchResults&, Converter&, DgnV8EhCR, ResolvedModelMapping const&, T_SyncInfoElementFilter* filter, Utf8CP identifier = nullptr) override;
 
     //! @name  Inferring Deletions - call these methods after processing all models in a conversion unit. Don't forget to call the ...End function when done.
     //! @{
@@ -2174,6 +2186,7 @@ struct ChangeDetector : IChangeDetector
     DGNDBSYNC_EXPORT void _DetectDeletedViewsEnd(Converter&) override { m_viewsSeen.clear(); }
     //! @}
 
+    DGNDBSYNC_EXPORT SyncInfo::V8ElementExternalSourceAspect FindElementAspectByIdentifier(Converter& converter, Utf8StringCR identifier, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter);
     DGNDBSYNC_EXPORT SyncInfo::V8ElementExternalSourceAspect FindElementAspectById(Converter& converter, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter);
     DGNDBSYNC_EXPORT SyncInfo::V8ElementExternalSourceAspect FindElementAspectByChecksum(Converter& converter, SyncInfo::ElementHash const& hash, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter);
 
@@ -2524,6 +2537,8 @@ private:
 protected:
     RootModelSpatialParams& m_params;   // NB: Must store a *reference* to the bridge's Params, as they may change after our constructor is called
     mutable bvector<DgnV8FileP> m_v8Files;
+    mutable bmap<BeFileName, DgnV8FileP> m_v8FilesByName;
+    mutable bmap<Utf8String, DgnV8FileCP> m_embeddedFilesSeen;
     mutable bvector<Bentley::DgnFilePtr> m_filesKeepAlive;
     bvector<Bentley::DgnModelPtr> m_drawingModelsKeepAlive;
     bmultiset<ResolvedModelMapping> m_v8ModelMappings; // NB: the V8Model pointer is the key
@@ -2537,6 +2552,12 @@ protected:
 
     void CorrectSpatialTransforms();
     bool ShouldCorrectSpatialTransform(ResolvedModelMapping const& rmm) {return rmm.GetDgnModel().IsSpatialModel() && IsFileAssignedToBridge(*rmm.GetV8Model().GetDgnFileP());}
+
+    DgnV8FileP GetV8FileByName(BeFileName nm) {auto it = m_v8FilesByName.find(nm); return (it != m_v8FilesByName.end())? it->second: nullptr;}
+
+    DGNDBSYNC_EXPORT DgnV8FileCP _GetPackageFileOf(DgnV8FileCR) override;
+    DGNDBSYNC_EXPORT bool _WasEmbeddedFileSeen(Utf8StringCR uniqueName) const override;
+    void DeleteEmbeddedFileAndContents(RepositoryLinkId);
 
     bool _HaveChangeDetector() override {return m_changeDetector != nullptr;}
     IChangeDetector& _GetChangeDetector() override {return *m_changeDetector;}
@@ -2661,7 +2682,7 @@ public:
 
     DGNDBSYNC_EXPORT BentleyStatus MakeDefinitionChanges();
     DGNDBSYNC_EXPORT BentleyStatus ConvertData();
-
+    DGNDBSYNC_EXPORT BentleyStatus DetectDeletedEmbeddedFiles();
 };
 
 //=======================================================================================

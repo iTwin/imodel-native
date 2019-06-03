@@ -30,6 +30,7 @@
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentProfileViewDefinition.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentReferent.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentXSViewDefinition.h" />
+    <ClInclude Include="PublicAPI\RoadRailAlignment\ClipPlanesViewDefinition.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\GeometryDebug.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\GeometryHelper.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\RoadAlignmentPairEditor.h" />
@@ -39,9 +40,7 @@
     <ClInclude Include="RoadRailAlignmentInternal.h" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="RoadRailAlignment.ecschema.xml">
-      <SubType>Designer</SubType>
-    </Xml>
+    <Xml Include="..\..\BisSchemas\Domains\RoadRailAlignment\RoadRailAlignment.ecschema.xml" />
     <Xml Include="RoadRailAlignment.PartFile.xml">
       <SubType>Designer</SubType>
     </Xml>
@@ -55,6 +54,7 @@
     <ClCompile Include="AlignmentPairIntersection.cpp" />
     <ClCompile Include="AlignmentProfileViewDefinition.cpp" />
     <ClCompile Include="AlignmentReferent.cpp" />
+    <ClCompile Include="ClipPlanesViewDefinition.cpp" />
     <ClCompile Include="GeometryDebug.cpp" />
     <ClCompile Include="GeometryHelper.cpp" />
     <ClCompile Include="RoadAlignmentPairEditor.cpp" />

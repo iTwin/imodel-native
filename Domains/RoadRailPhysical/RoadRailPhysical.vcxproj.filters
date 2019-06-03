@@ -31,7 +31,7 @@
     <Xml Include="RoadRailPhysical.PartFile.xml">
       <Filter>Build Files</Filter>
     </Xml>
-    <Xml Include="RoadRailPhysical.ecschema.xml" />
+    <Xml Include="..\..\BisSchemas\Domains\RoadRailPhysical\RoadRailPhysical.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysicalApi.h">
@@ -46,37 +46,13 @@
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysical.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailPhysical\ElementAspects.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailPhysical\RoadDesignSpeed.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailPhysical\RoadSegment.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailPhysical\RoadClass.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailCategory.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailPhysical\Pathway.h">
+    <ClInclude Include="PublicAPI\RoadRailPhysical\DesignSpeed.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailPhysical\TravelwaySegment.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailPhysical\TypicalSection.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailPhysical\TypicalSectionPoint.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailPhysical\TravelwaySideSegment.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailPhysical\TravelwayStructureSegment.h">
+    <ClInclude Include="PublicAPI\RoadRailPhysical\Corridor.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
   </ItemGroup>
@@ -87,37 +63,13 @@
     <ClCompile Include="RoadRailPhysicalInternal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ElementAspects.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="RoadDesignSpeed.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="RoadSegment.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="RoadClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="RoadRailCategory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Pathway.cpp">
+    <ClCompile Include="DesignSpeed.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TravelwaySegment.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TypicalSection.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TypicalSectionPoint.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TravelwaySideSegment.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TravelwayStructureSegment.cpp">
+    <ClCompile Include="Corridor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

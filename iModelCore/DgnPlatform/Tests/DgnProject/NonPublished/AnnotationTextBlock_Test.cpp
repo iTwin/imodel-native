@@ -167,7 +167,7 @@ TEST_F(AnnotationTextBlockTest, DeepCopy)
     DgnFontId ttFontId = project.Fonts().AcquireId(ttFont);
     ASSERT_TRUE(ttFontId.IsValid());
 
-    AnnotationTextStylePtr docStyle = AnnotationTextStyle::Create(project);
+    AnnotationTextStylePtr docStyle = AnnotationTextStyle::Create(project.GetDictionaryModel());
     docStyle->SetName("docStyle");
     docStyle->SetFontId(ttFontId);
     docStyle->SetHeight(11.0);
@@ -265,7 +265,7 @@ TEST_F(AnnotationTextBlockTest, CreateAnnotationTextBlock)
 
     //.............................................................................................
     // Text Style
-    AnnotationTextStylePtr testStyle = AnnotationTextStyle::Create(project);
+    AnnotationTextStylePtr testStyle = AnnotationTextStyle::Create(project.GetDictionaryModel());
     ASSERT_TRUE(testStyle.IsValid());
     
     /*
@@ -349,7 +349,7 @@ TEST_F(AnnotationTextBlockTest, Unicode)
 
     //.............................................................................................
     // Text Style
-    AnnotationTextStylePtr testStyle = AnnotationTextStyle::Create(project);
+    AnnotationTextStylePtr testStyle = AnnotationTextStyle::Create(project.GetDictionaryModel());
     ASSERT_TRUE(testStyle.IsValid());
 
     AnnotationTextRunPtr run = createAnnotationTextRun(project, testStyle);
@@ -381,7 +381,7 @@ TEST_F(AnnotationTextBlockTest, ToString)
     {
     DgnDbR db = *GetDgnDb();
 
-    AnnotationTextStylePtr style = AnnotationTextStyle::Create(db);
+    AnnotationTextStylePtr style = AnnotationTextStyle::Create(db.GetDictionaryModel());
     style->SetName("style");
     AnnotationTextStyleCPtr fileStyle = style->Insert();
     DgnElementId fileStyleId = fileStyle->GetElementId();

@@ -585,7 +585,7 @@ TEST_F(GetSetCustomHandledProprty, Annotation)
     if (true)
         {
         //Create AnnotationTextStyle
-        AnnotationTextStylePtr textStyle = AnnotationTextStyle::Create(*m_db);
+        AnnotationTextStylePtr textStyle = AnnotationTextStyle::Create(m_db->GetDictionaryModel());
         textStyle->SetName("MyStyle");
         ASSERT_EQ(textStyle->GetName(), "MyStyle");
         const static int DataSize = 10;
@@ -604,7 +604,7 @@ TEST_F(GetSetCustomHandledProprty, Annotation)
         Tsid = Ts->GetElementId();
         ASSERT_TRUE(Tsid.IsValid());
         //Create AnnotationFrameStyle
-        AnnotationFrameStylePtr FrameStyle = AnnotationFrameStyle::Create(*m_db);
+        AnnotationFrameStylePtr FrameStyle = AnnotationFrameStyle::Create(m_db->GetDictionaryModel());
         FrameStyle->SetName("MyFraneStyle");
         ASSERT_EQ(FrameStyle->GetName(), "MyFraneStyle");
         ASSERT_EQ(DgnDbStatus::Success, FrameStyle->GetPropertyIndex(Fsdescrindex, "Description"));
@@ -621,7 +621,7 @@ TEST_F(GetSetCustomHandledProprty, Annotation)
         Fsid = Fs->GetElementId();
         ASSERT_TRUE(Fsid.IsValid());
         //Create AnnotationLeaderStyle
-        AnnotationLeaderStylePtr LeaderStyle = AnnotationLeaderStyle::Create(*m_db);
+        AnnotationLeaderStylePtr LeaderStyle = AnnotationLeaderStyle::Create(m_db->GetDictionaryModel());
         LeaderStyle->SetName("MyLeaderStyle");
         ASSERT_EQ(LeaderStyle->GetName(), "MyLeaderStyle");
         ASSERT_EQ(DgnDbStatus::Success, LeaderStyle->GetPropertyIndex(Lsdescrindex, "Description"));
@@ -639,7 +639,7 @@ TEST_F(GetSetCustomHandledProprty, Annotation)
         ASSERT_TRUE(Lsid.IsValid());
 
         //Create TextAnnotationSeed
-        TextAnnotationSeedPtr Textannoseed = TextAnnotationSeed::Create(*m_db);
+        TextAnnotationSeedPtr Textannoseed = TextAnnotationSeed::Create(m_db->GetDictionaryModel());
         Textannoseed->SetName("TextAnnotationSeed");
         ASSERT_EQ(Textannoseed->GetName(), "TextAnnotationSeed");
         ASSERT_EQ(DgnDbStatus::Success, Textannoseed->GetPropertyIndex(tasdescrindex, "Description"));

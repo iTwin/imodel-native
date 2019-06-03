@@ -16,7 +16,7 @@ AnnotationTextStylePtr AnnotationTestFixture::createAnnotationTextStyle(DgnDbR p
     DgnFontId ttFontId = project.Fonts().AcquireId(ttFont);
     EXPECT_TRUE(ttFontId.IsValid());
 
-    AnnotationTextStylePtr docStyle = AnnotationTextStyle::Create(project);
+    AnnotationTextStylePtr docStyle = AnnotationTextStyle::Create(project.GetDictionaryModel());
     docStyle->SetName(styleName);
     docStyle->SetFontId(ttFontId);
     docStyle->SetHeight(11.0);
@@ -61,7 +61,7 @@ AnnotationTextBlockPtr AnnotationTestFixture::createAnnotationTextBlock(DgnDbR p
 AnnotationLeaderStylePtr AnnotationTestFixture::createAnnotationLeaderStyle(DgnDbR project, const char* styleName)
     {
     //.............................................................................................
-    AnnotationLeaderStylePtr style = AnnotationLeaderStyle::Create(project);
+    AnnotationLeaderStylePtr style = AnnotationLeaderStyle::Create(project.GetDictionaryModel());
     EXPECT_TRUE(style.IsValid());
     style->SetName(styleName);
 
@@ -75,7 +75,7 @@ AnnotationLeaderStylePtr AnnotationTestFixture::createAnnotationLeaderStyle(DgnD
 AnnotationFrameStylePtr AnnotationTestFixture::createAnnotationFrameStyle(DgnDbR project, const char* styleName)
     {
     //.............................................................................................
-    AnnotationFrameStylePtr style = AnnotationFrameStyle::Create(project);
+    AnnotationFrameStylePtr style = AnnotationFrameStyle::Create(project.GetDictionaryModel());
     EXPECT_TRUE(style.IsValid());
 
     style->SetName(styleName);

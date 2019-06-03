@@ -19,6 +19,8 @@
 #include <condition_variable>
 #include <json/json.h>
 #include <CloudDataSource/DataSourceManager.h>
+#include "InternalUtilityFunctions.h"
+
 #define SESSION_NAME DataSource::SessionName
 
 #include <queue>
@@ -950,6 +952,7 @@ class SMGroupingStrategy
             }
         void             SetRootTransform(const Transform& transform) { m_rootTransform = transform; }
         void             SetTransform(const Transform& transform) { m_transform = transform; }
+        void             SetPublisherInfo(const ScalableMeshModuleInfo& info) { m_publisherInfo = info; }
         void             Clear()
             {
             m_GroupID = 0;
@@ -973,6 +976,7 @@ class SMGroupingStrategy
         SMNodeGroupMasterHeader m_GroupMasterHeader;
         GeoCoordinates::BaseGCSCPtr m_sourceGCS;
         GeoCoordinates::BaseGCSCPtr m_destinationGCS;
+        ScalableMeshModuleInfo m_publisherInfo;
         Transform m_rootTransform;
         Transform m_transform = Transform::FromIdentity();
         bool m_isClipBoundary = false;
@@ -1381,6 +1385,10 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         for (size_t i = 0; i<4; i++)
             for (size_t j = 0; j<4; j++)
                 arrayValue.append(matrix.coff[j][i]);
+
+        // Add publishing info
+        Json::Value info;
+        if (this->m_publisherInfo.ToJson(info)) tileSet["root"]["SMPublisherInfo"] = info;
 
         // Save master header info in Cesium tileset
         auto& SMMasterHeader = tileSet["root"]["SMMasterHeader"];

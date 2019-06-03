@@ -160,7 +160,7 @@ DgnDbPtr RoadRailAlignmentProjectHost::CreateProject(WCharCP baseName)
         return nullptr;
 
     BeAssert(BentleyStatus::SUCCESS == projectPtr->Schemas().CreateClassViewsInDb());
-    RoadRailAlignmentDomain::SetUpModelHierarchy(*projectPtr->Elements().GetRootSubject());
+    RoadRailAlignmentDomain::SetUpDefinitionPartitions(*projectPtr->Elements().GetRootSubject());
 
     return projectPtr;
     }
@@ -180,6 +180,24 @@ DgnDbPtr RoadRailAlignmentProjectHost::OpenProject(WCharCP baseName)
     return projectPtr;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalModelPtr RoadRailAlignmentTestsFixture::SetUpPhysicalPartition(SubjectCR subject)
+    {
+    auto physicalPartitionPtr = PhysicalPartition::Create(subject, "Physical");
+    if (physicalPartitionPtr->Insert().IsNull())
+        return nullptr;
+
+    auto physicalModelPtr = PhysicalModel::Create(*physicalPartitionPtr);
+    if (DgnDbStatus::Success != physicalModelPtr->Insert())
+        return nullptr;
+
+    if (DesignAlignments::Insert(*physicalModelPtr, "Design Alignments").IsNull())
+        return nullptr;
+
+    return physicalModelPtr;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    11/2014
@@ -227,23 +245,6 @@ void RoadRailAlignmentTestsFixture::TearDownTestCase()
 
     delete m_host;
     m_host = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId RoadRailAlignmentTestsFixture::QueryFirstModelIdOfType(DgnDbR db, DgnClassId classId)
-    {
-    ECSqlStatement stmt;
-    stmt.Prepare(db, "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Model) " WHERE ECClassId = ? LIMIT 1;");
-    BeAssert(stmt.IsPrepared());
-
-    stmt.BindId(1, classId);
-
-    if (DbResult::BE_SQLITE_ROW != stmt.Step())
-        return DgnModelId();
-
-    return stmt.GetValueId<DgnModelId>(0);
     }
 
 //---------------------------------------------------------------------------------------

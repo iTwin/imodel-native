@@ -83,8 +83,10 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     DgnV8Api::DgnFileStatus openStatus;    
     m_rootFile = OpenDgnV8File(openStatus, rootFileName);
     if (!m_rootFile.IsValid())
+        {
+        LOG.errorv("Error opening the file %d", openStatus);
         return openStatus;
-
+        }
 
     //  Identify the root model
     auto rootModelId = _GetRootModelId();
@@ -951,8 +953,22 @@ void RootModelConverter::_ConvertSpatialLevels()
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2019
+//---------------+---------------+---------------+---------------+---------------+-------
 void RootModelConverter::_ConvertDrawingLevels()
     {
+    // Need to create these categories upfront since we don't know whether we'll need them until we're converting the data and that is too late to create categories
+    if (!m_nonSpatialModelsInModelIndexOrder.empty())
+        {
+        GetOrCreateDrawingCategoryId(*GetJobDefinitionModel(), CATEGORY_NAME_Attachments);
+        GetExtractionCategoryId(Converter::V8NamedViewType::Other);
+        GetExtractionCategoryId(Converter::V8NamedViewType::Section);
+        GetExtractionCategoryId(Converter::V8NamedViewType::Plan);
+        GetExtractionCategoryId(Converter::V8NamedViewType::Elevation);
+        GetExtractionCategoryId(Converter::V8NamedViewType::Detail);
+        }
+
     for (auto v8Model : m_nonSpatialModelsInModelIndexOrder)
         {
         if (!IsFileAssignedToBridge(*v8Model->GetDgnFileP()))
@@ -1812,6 +1828,9 @@ void RootModelConverter::_FinishConversion()
         {
         if (_GetParams().DoDetectDeletedModelsAndElements())
             {
+            SetStepName(ProgressMessage::STEP_DETECT_DELETIONS());
+            StopWatch timer(true);
+
             // Detect deletions in the V8 files that we processed. (Don't assume we saw all V8 files.)
             for (DgnV8FileP v8File : m_v8Files)
                 {
@@ -1825,6 +1844,7 @@ void RootModelConverter::_FinishConversion()
             GetChangeDetector()._DetectDeletedElementsEnd(*this);
             GetChangeDetector()._DetectDeletedViewsEnd(*this);
             GetChangeDetector()._DetectDeletedModelsEnd(*this);
+            ConverterLogging::LogPerformance(timer, "Remove deleted items");
             }
 
         // Update syncinfo for all V8 files *** WIP_UPDATER - really only need to update syncinfo for changed files, but we don't keep track of that.
@@ -1836,8 +1856,9 @@ void RootModelConverter::_FinishConversion()
             // it is safe for this bridge job to update it.
             auto rlinkEd = GetDgnDb().Elements().GetForEdit<RepositoryLink>(GetRepositoryLinkId(*v8File));
             auto rlinkXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspectForEdit(*rlinkEd);
-            rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File));
-            rlinkEd->Update();
+            auto anyChanges = rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File));
+            if (anyChanges)
+                rlinkEd->Update();
             }
         }
 
@@ -2001,7 +2022,7 @@ BentleyStatus  RootModelConverter::ConvertData()
             }
         }
 
-    AddSteps(9);
+    AddSteps(10);
 
     StopWatch totalTimer(true);
 
@@ -2163,6 +2184,25 @@ void SpatialConverterBase::PushChangesForFile(DgnV8FileR file, ConverterDataStri
 void SpatialConverterBase::PushChangesForModel(DgnV8ModelRefCR model)
     {
     PushChangesForFile(*model.GetDgnFileP(), BentleyApi::Utf8String(model.GetModelNameCP()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      4/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnV8FileCP RootModelConverter::_GetPackageFileOf(DgnV8FileCR f)
+    {
+    if (!f.IsEmbeddedFile())
+        return &f;
+    auto packageFilename = const_cast<DgnV8FileR>(f).GetPackageName();
+    return GetV8FileByName(BentleyApi::BeFileName(packageFilename.c_str()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RootModelConverter::_WasEmbeddedFileSeen(Utf8StringCR uniqueName) const
+    {
+    return m_embeddedFilesSeen.find(uniqueName) != m_embeddedFilesSeen.end();
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

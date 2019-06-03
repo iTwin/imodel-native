@@ -18,8 +18,10 @@ HardiModelDeleteEvent::HardiModelDeleteEvent
     const Utf8String toEventSubscriptionId,
     const Utf8String projectId,
     const Utf8String iModelId,
-    const Utf8String lockUrl
-) : GenericGlobalEvent(eventTopic, fromEventSubscriptionId, toEventSubscriptionId, projectId, iModelId, lockUrl)
+    const Utf8String lockUrl,
+    const Utf8String contextId,
+    const ContextType contextType
+) : GenericGlobalEvent(eventTopic, fromEventSubscriptionId, toEventSubscriptionId, projectId, iModelId, lockUrl, contextId, contextType)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -32,7 +34,9 @@ RefCountedPtr<struct HardiModelDeleteEvent> HardiModelDeleteEvent::Create
     const Utf8String toEventSubscriptionId,
     const Utf8String projectId,
     const Utf8String iModelId,
-    const Utf8String lockUrl
+    const Utf8String lockUrl,
+    const Utf8String contextId,
+    const ContextType contextType
 )
     {
     return new HardiModelDeleteEvent
@@ -42,6 +46,8 @@ RefCountedPtr<struct HardiModelDeleteEvent> HardiModelDeleteEvent::Create
         toEventSubscriptionId,
         projectId,
         iModelId,
-        lockUrl
+        lockUrl, 
+        contextId, 
+        contextType
     );
     }

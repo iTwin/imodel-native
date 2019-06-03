@@ -80,14 +80,14 @@ namespace iModelHubHelpers
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              11/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void CreateProjectWSClient(IWSRepositoryClientPtr& result, ClientR client, Utf8StringCR projectId)
+    void CreateContextWSClient(IWSRepositoryClientPtr& result, ClientR client, Utf8StringCR contextId)
         {
         Utf8StringCR serverUrl = GetServerUrl();
         ClientInfoPtr clientInfo = IntegrationTestsSettings::Instance().GetClientInfo();
 
-        Utf8String project;
-        project.Sprintf("%s--%s", ServerSchema::Plugin::Project, projectId.c_str());
-        result = WSRepositoryClient::Create(serverUrl, ServerProperties::ServiceVersion(), project, clientInfo, nullptr, client.GetHttpHandler());
+        Utf8String context;
+        context.Sprintf("%s--%s", ServerSchema::Plugin::Context, contextId.c_str());
+        result = WSRepositoryClient::Create(serverUrl, ServerProperties::ServiceVersion(), context, clientInfo, nullptr, client.GetHttpHandler());
         }
 
     /*--------------------------------------------------------------------------------------+
@@ -97,7 +97,7 @@ namespace iModelHubHelpers
         {
         Json::Value iModelCreation(Json::objectValue);
         JsonValueR instance = iModelCreation[ServerSchema::Instance] = Json::objectValue;
-        instance[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
+        instance[ServerSchema::SchemaName] = ServerSchema::Schema::Context;
         instance[ServerSchema::ClassName] = ServerSchema::Class::iModel;
         JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
         properties[ServerSchema::Property::iModelName] = imodelName;
@@ -108,24 +108,24 @@ namespace iModelHubHelpers
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              03/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void CreateUninitializediModel(iModelResult& result, ClientPtr client, Utf8StringCR projectId, Utf8StringCR imodelName)
+    void CreateUninitializediModel(iModelResult& result, ClientPtr client, Utf8StringCR contextId, Utf8StringCR imodelName)
         {
         IWSRepositoryClientPtr wsClient;
-        CreateProjectWSClient(wsClient, *client, projectId);
+        CreateContextWSClient(wsClient, *client, contextId);
 
         auto requestOptions = CreateiModelHubRequestOptions();
         ASSERT_SUCCESS(wsClient->SendCreateObjectRequestWithOptions(iModelCreationJson(imodelName, ""), BeFileName(), nullptr, requestOptions)->GetResult());
-        result = client->GetiModelByName(projectId, imodelName)->GetResult();
+        result = client->GetiModelByName(contextId, imodelName)->GetResult();
         ASSERT_SUCCESS(result);
         }
 
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              11/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    iModelResult CreateNewiModel(ClientCR client, DgnDbR db, Utf8StringCR projectId, bool expectSuccess)
+    iModelResult CreateNewiModel(ClientCR client, DgnDbR db, Utf8StringCR contextId, bool expectSuccess)
         {
         TestsProgressCallback callback;
-        auto createResult = client.CreateNewiModel(projectId, db, true, callback.Get())->GetResult();
+        auto createResult = client.CreateNewiModel(contextId, db, true, callback.Get())->GetResult();
         EXPECT_RESULT(createResult, expectSuccess)
             callback.Verify(expectSuccess);
         return createResult;
@@ -134,17 +134,17 @@ namespace iModelHubHelpers
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              01/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    iModelResult CreateNewiModel(ClientPtr client, DgnDbPtr db, Utf8StringCR projectId, bool expectSuccess)
+    iModelResult CreateNewiModel(ClientPtr client, DgnDbPtr db, Utf8StringCR contextId, bool expectSuccess)
         {
-        return CreateNewiModel(*client, *db, projectId, expectSuccess);
+        return CreateNewiModel(*client, *db, contextId, expectSuccess);
         }
     
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Algirdas.Mikoliunas             01/2019
     +---------------+---------------+---------------+---------------+---------------+------*/
-    iModelResult CreateEmptyiModel(ClientCR client, Utf8StringCR projectId, Utf8StringCR name, Utf8StringCR description, bool expectSuccess)
+    iModelResult CreateEmptyiModel(ClientCR client, Utf8StringCR contextId, Utf8StringCR name, Utf8StringCR description, bool expectSuccess)
         {
-        auto createResult = client.CreateEmptyiModel(projectId, name, description)->GetResult();
+        auto createResult = client.CreateEmptyiModel(contextId, name, description)->GetResult();
         EXPECT_RESULT(createResult, expectSuccess);
         return createResult;
         }
@@ -187,13 +187,12 @@ namespace iModelHubHelpers
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              11/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    StatusResult DeleteiModelByName(ClientCR client, Utf8String name)
+    StatusResult DeleteiModelByName(ClientPtr client, Utf8String name, Utf8String contextId)
         {
-        Utf8String projectId = IntegrationTestsSettings::Instance().GetProjectId();
-        iModelResult getResult = client.GetiModelByName(projectId, name)->GetResult();
+        iModelResult getResult = client->GetiModelByName(contextId, name)->GetResult();
         if (getResult.IsSuccess())
             {
-            StatusResult deleteResult = client.DeleteiModel(projectId, *getResult.GetValue())->GetResult();
+            StatusResult deleteResult = client->DeleteiModel(contextId, *getResult.GetValue())->GetResult();
             EXPECT_SUCCESS(deleteResult);
             return deleteResult;
             }
@@ -203,13 +202,14 @@ namespace iModelHubHelpers
         }
 
     /*--------------------------------------------------------------------------------------+
-    * @bsimethod                                    Karolis.Dziedzelis              01/2018
+    * @bsimethod                                    Karolis.Dziedzelis              11/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     StatusResult DeleteiModelByName(ClientPtr client, Utf8String name)
         {
-        return DeleteiModelByName(*client, name);
+        Utf8String contextId = IntegrationTestsSettings::Instance().GetProjectId();
+        return DeleteiModelByName(client, name, contextId);
         }
-
+    
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              11/2017
     +---------------+---------------+---------------+---------------+---------------+------*/

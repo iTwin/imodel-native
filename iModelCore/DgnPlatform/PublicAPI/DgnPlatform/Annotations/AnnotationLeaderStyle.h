@@ -117,7 +117,7 @@ private:
     Utf8String m_description;
     AnnotationLeaderStylePropertyBag m_data;
 
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return CodeSpec::CreateCode(BIS_CODESPEC_AnnotationLeaderStyle, db.GetDictionaryModel(), name); }
+    static DgnCode CreateCode(DefinitionModelCR model, Utf8StringCR name) { return CodeSpec::CreateCode(BIS_CODESPEC_AnnotationLeaderStyle, model, name); }
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
@@ -134,13 +134,15 @@ public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationLeaderStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
 
-    explicit AnnotationLeaderStyle(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryDgnClassId(db), DgnCode())) {}
+    explicit AnnotationLeaderStyle(DefinitionModelCR model) : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryDgnClassId(model.GetDgnDb()), DgnCode())) {}
     explicit AnnotationLeaderStyle(CreateParams const& params) : T_Super(params) {}
-    static AnnotationLeaderStylePtr Create(DgnDbR db) { return new AnnotationLeaderStyle(db); }
+    static AnnotationLeaderStylePtr Create(DefinitionModelCR model) { return new AnnotationLeaderStyle(model); }
     AnnotationLeaderStylePtr CreateCopy() const { return MakeCopy<AnnotationLeaderStyle>(); }
 
+    DefinitionModelCPtr GetDefinitionModel() {return GetDgnDb().Models().Get<DefinitionModel>(GetModelId());}
+
     Utf8String GetName() const { return GetCode().GetValue().GetUtf8(); }
-    void SetName(Utf8CP value) { T_Super::SetCode(CreateCode(GetDgnDb(), value)); /* Only SetName is allowed to SetCode. */ }
+    void SetName(Utf8CP value) { T_Super::SetCode(CreateCode(*GetDefinitionModel(), value)); /* Only SetName is allowed to SetCode. */ }
     Utf8StringCR GetDescription() const { return m_description; }
     void SetDescription(Utf8CP value) { m_description.AssignOrClear(value); }
 
@@ -165,11 +167,11 @@ public:
 
     DGNPLATFORM_EXPORT AnnotationLeaderStylePtr CreateEffectiveStyle(AnnotationLeaderStylePropertyBagCR overrides) const;
 
-    static DgnElementId QueryId(DgnDbR db, Utf8CP name) { return db.Elements().QueryElementIdByCode(CreateCode(db, name)); }
-    static AnnotationLeaderStyleCPtr Get(DgnDbR db, Utf8CP name) { return Get(db, QueryId(db, name)); }
+    static DgnElementId QueryId(DefinitionModelCR model, Utf8CP name) { return model.GetDgnDb().Elements().QueryElementIdByCode(CreateCode(model, name)); }
+    static AnnotationLeaderStyleCPtr Get(DefinitionModelCR model, Utf8CP name) { return Get(model.GetDgnDb(), QueryId(model, name)); }
     static AnnotationLeaderStyleCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<AnnotationLeaderStyle>(id); }
     static AnnotationLeaderStylePtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<AnnotationLeaderStyle>(id); }
-    static AnnotationLeaderStylePtr GetForEdit(DgnDbR db, Utf8CP name) { return GetForEdit(db, QueryId(db, name)); }
+    static AnnotationLeaderStylePtr GetForEdit(DefinitionModelCR model, Utf8CP name) { return GetForEdit(model.GetDgnDb(), QueryId(model, name)); }
     AnnotationLeaderStyleCPtr Insert() { return GetDgnDb().Elements().Insert<AnnotationLeaderStyle>(*this); }
     AnnotationLeaderStyleCPtr Update() { return GetDgnDb().Elements().Update<AnnotationLeaderStyle>(*this); }
 

@@ -100,7 +100,8 @@ TEST_F(TextBlockTests, TextBlock)
         AnnotationTextBlockCP anTxtb=txtan->GetTextCP();
         AnnotationTextStyleId anTxtstyleID=anTxtb->GetStyleId();
         ASSERT_TRUE(anTxtstyleID.IsValid());
-        AnnotationTextStyleCPtr anTxtstyle=AnnotationTextStyle::Get(*db, "MyTextStyle");
+        auto jobDefinitionModel = GetJobDefinitionModel(*db);
+        AnnotationTextStyleCPtr anTxtstyle=AnnotationTextStyle::Get(*jobDefinitionModel, "MyTextStyle");
         ASSERT_TRUE(anTxtstyle.IsValid());
         ASSERT_DOUBLE_EQ(0.01 , anTxtstyle->GetHeight()); 
         ASSERT_TRUE(1 == anTxtb->GetParagraphs().size());

@@ -558,6 +558,13 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
                 {
                 return 1; //Default product Id for internal product
                 }
+
+            virtual ScalableMesh::ScalableMeshAdmin::ProductInfo _GetProductInfo() const override
+                {
+                ScalableMesh::ScalableMeshAdmin::ProductInfo productInfo;
+                productInfo.m_productName = L"DgnV8Converter";
+                return productInfo;
+                }
             };
         return *new CsScalableMeshAdmin;
         };

@@ -15,7 +15,7 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 struct FeatureEvent
     {
 private:
-    Utf8String m_featureId;
+    Utf8String m_featureId; // must be a GUID
     BeVersion m_version;
     Utf8String m_projectId = "";
     FeatureUserDataMapPtr m_featureUserData;

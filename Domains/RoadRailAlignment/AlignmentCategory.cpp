@@ -5,15 +5,14 @@
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailAlignmentInternal.h"
 #include <RoadRailAlignment/AlignmentCategory.h>
-
-HANDLER_DEFINE_MEMBERS(RoadRailCategoryModelHandler)
+#include <RoadRailAlignment/RoadRailAlignmentDomain.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AlignmentCategory::InsertDomainCategories(DgnDbR db)
     {
-    auto modelPtr = RoadRailCategoryModel::GetModel(db);
+    auto modelPtr = RoadRailAlignmentDomain::QueryCategoryModel(db);
     if (modelPtr.IsNull())
         {
         BeAssert(false);
@@ -26,9 +25,9 @@ void AlignmentCategory::InsertDomainCategories(DgnDbR db)
     alignmentCategory.Insert(appearance);
     BeAssert(alignmentCategory.GetCategoryId().IsValid());
 
-    DrawingCategory horizontalCategory(*modelPtr, BRRA_CATEGORY_HorizontalAlignment, DgnCategory::Rank::Domain);
-    horizontalCategory.Insert(appearance);
-    BeAssert(horizontalCategory.GetCategoryId().IsValid());
+    SpatialCategory linearCategory(*modelPtr, BRRA_CATEGORY_Linear, DgnCategory::Rank::Domain);
+    linearCategory.Insert(appearance);
+    BeAssert(linearCategory.GetCategoryId().IsValid());
 
     DrawingCategory verticalCategory(*modelPtr, BRRA_CATEGORY_VerticalAlignment, DgnCategory::Rank::Domain);
     verticalCategory.Insert(appearance);
@@ -40,7 +39,7 @@ void AlignmentCategory::InsertDomainCategories(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId AlignmentCategory::QueryDomainCategoryId(DgnDbR db, Utf8CP codeValue, bool isSpatial)
     {
-    auto modelPtr = RoadRailCategoryModel::GetModel(db);
+    auto modelPtr = RoadRailAlignmentDomain::QueryCategoryModel(db);
     if (!modelPtr.IsValid())
         return DgnCategoryId();
 
@@ -63,11 +62,11 @@ DgnCategoryId AlignmentCategory::GetAlignment(DgnDbR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      06/2017
+* @bsimethod                                    Diego.Diaz                      05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId AlignmentCategory::GetHorizontal(DgnDbR db)
+DgnCategoryId AlignmentCategory::GetLinear(DgnDbR db)
     {
-    DgnCategoryId categoryId = QueryDomainCategoryId(db, BRRA_CATEGORY_HorizontalAlignment, false);
+    DgnCategoryId categoryId = QueryDomainCategoryId(db, BRRA_CATEGORY_Linear, true);
     BeAssert(categoryId.IsValid());
     return categoryId;
     }
@@ -80,23 +79,4 @@ DgnCategoryId AlignmentCategory::GetVertical(DgnDbR db)
     DgnCategoryId categoryId = QueryDomainCategoryId(db, BRRA_CATEGORY_VerticalAlignment, false);
     BeAssert(categoryId.IsValid());
     return categoryId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId RoadRailCategoryModel::GetModelId(DgnDbR db)
-    {
-    DgnCode partitionCode = DefinitionPartition::CreateCode(*db.Elements().GetRootSubject(), RoadRailAlignmentDomain::GetDomainCategoriesPartitionName());
-    return db.Models().QuerySubModelId(partitionCode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-RoadRailCategoryModelPtr RoadRailCategoryModel::GetModel(DgnDbR db)
-    {
-    RoadRailCategoryModelPtr model = db.Models().Get<RoadRailCategoryModel>(RoadRailCategoryModel::GetModelId(db));
-    BeAssert(model.IsValid());
-    return model;
     }

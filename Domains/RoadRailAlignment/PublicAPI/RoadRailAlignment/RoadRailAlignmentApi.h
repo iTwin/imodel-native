@@ -21,5 +21,5 @@
 #include "AlignmentReferent.h"
 #include "AlignmentCategory.h"
 #include "RoadRailAlignmentDomain.h"
-#include "AlignmentProfileViewDefinition.h"
-#include "ClipPlanesViewDefinition.h"
+//#include "AlignmentProfileViewDefinition.h"
+//#include "ClipPlanesViewDefinition.h"

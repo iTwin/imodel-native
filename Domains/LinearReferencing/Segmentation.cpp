@@ -19,7 +19,7 @@ bvector<LinearSegment> ISegmentableLinearElement::_QueryLinearSegments(QueryPara
 
     bvector<LinearSegment> retVal;
     
-    bvector<LinearLocation> segmentReferences;
+    bvector<LinearLocationReference> segmentReferences;
     while (!currentStartStops.empty())
         {
         double minStart = DBL_MAX;

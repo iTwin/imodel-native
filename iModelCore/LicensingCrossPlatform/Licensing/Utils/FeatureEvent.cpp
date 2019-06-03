@@ -49,7 +49,8 @@ Utf8String FeatureEvent::ToJson
     Utf8String ver;
     ver.Sprintf("%" PRIu64 "", versionNumber);
 
-    Json::Value requestJson(Json::objectValue);
+    Json::Value requestJson(Json::arrayValue);
+    Json::Value featureLogJson(Json::objectValue);
     Json::Value userDataJson(Json::arrayValue);
 
     if (!m_featureUserData->Empty())
@@ -74,20 +75,22 @@ Utf8String FeatureEvent::ToJson
         userDataJson = Json::Value::GetNull();
         }
 
-    requestJson["hID"] = deviceId;
-    requestJson["polID"] = BeSQLite::BeGuid(true).ToString();
-    requestJson["secID"] = BeSQLite::BeGuid(true).ToString();
-    requestJson["prdid"] = Utf8String(std::to_string(productId).c_str());
-    requestJson["fstr"] = featureString;
-    requestJson["ftrID"] = m_featureId;
-    requestJson["ver"] = ver;
-    requestJson["projID"] = m_projectId;
-    requestJson["corID"] = BeSQLite::BeGuid(true).ToString();
-    requestJson["evTimeZ"] = DateHelper::GetCurrentTime();
-    requestJson["lVer"] = 1;
-    requestJson["lSrc"] = "RealTime";
-    requestJson["uType"] = "Production";
-    requestJson["uData"] = userDataJson;
+    featureLogJson["hID"] = deviceId; // client's machine name [STRING]
+    featureLogJson["polID"] = BeSQLite::BeGuid(true).ToString(); // policy file ID [GUID
+    featureLogJson["secID"] = BeSQLite::BeGuid(true).ToString(); // securable ID [STRING]
+    featureLogJson["prdid"] = Utf8String(std::to_string(productId).c_str()); // product ID (4 digits) [NUMBER]
+    featureLogJson["fstr"] = featureString;  // feature string [STRING]
+    featureLogJson["ftrID"] = m_featureId; // feature Id [STRING]
+    featureLogJson["ver"] = ver; // application version [NUMBER]
+    featureLogJson["projID"] = m_projectId; // project ID [GUID or UNDEFINED]
+    featureLogJson["corID"] = BeSQLite::BeGuid(true).ToString(); // correlation GUID [GUID]
+    featureLogJson["evTimeZ"] = DateHelper::GetCurrentTime(); // event time (current UTC time) [STRING]
+    featureLogJson["lVer"] = 1; // version of scheme of this log [NUMBER]
+    featureLogJson["lSrc"] = "RealTime"; // source of usage log entry: RealTime, Offline, Checkout [STRING]
+    featureLogJson["uType"] = "Production"; // usage type: Production, Trial, Beta, HomeUse, PreActivation [STRING]
+    featureLogJson["uData"] = userDataJson;
+
+    requestJson.append(featureLogJson); // the input to ULAS is an array of FeatureLogEntries
 
     return Json::FastWriter().write(requestJson);
     }

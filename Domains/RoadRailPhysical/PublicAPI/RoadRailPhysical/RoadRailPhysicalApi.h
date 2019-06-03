@@ -9,16 +9,7 @@
 #include "RoadRailPhysical.h"
 #include "RoadRailCategory.h"
 #include "RoadRailPhysicalDomain.h"
-#include "Pathway.h"
+#include "Corridor.h"
+#include "DesignSpeed.h"
 
 //__PUBLISH_SECTION_END__
-#include "ElementAspects.h"
-#include "RoadClass.h"
-#include "RoadDesignSpeed.h"
-#include "RoadSegment.h"
-#include "TravelwaySegment.h"
-#include "TravelwaySideSegment.h"
-#include "TravelwayStructureSegment.h"
-#include "TypicalSection.h"
-#include "TypicalSectionPoint.h"
-

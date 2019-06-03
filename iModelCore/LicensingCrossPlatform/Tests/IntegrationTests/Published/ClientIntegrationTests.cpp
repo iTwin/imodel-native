@@ -34,6 +34,7 @@
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 
+
 #define TEST_PRODUCT_ID      "2545"
 
 USING_NAMESPACE_BENTLEY_LICENSING
@@ -86,7 +87,8 @@ void ClientIntegrationTests::SetUpTestCase()
 
 ClientPtr ClientIntegrationTests::CreateTestClient(bool signIn, Utf8StringCR productId) const
     {
-    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+    //InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+    RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
     UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
 
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
@@ -96,9 +98,14 @@ ClientPtr ClientIntegrationTests::CreateTestClient(bool signIn, Utf8StringCR pro
     if (signIn)
         {
         Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
-        if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
+        auto result = manager->SignInWithCredentials(credentials)->GetResult();
+        if (!result.IsSuccess())
+            {
+            LOG.infov("error: %s, %s", result.GetError().GetMessage().c_str(), result.GetError().GetDescription().c_str());
             return nullptr;
+            }
         }
+
     BeFileName dbPath = GetLicensingDbPathIntegration();
 
     return Client::Create
@@ -116,9 +123,11 @@ ClientPtr ClientIntegrationTests::CreateTestClient(bool signIn, Utf8StringCR pro
 
 ClientImplPtr ClientIntegrationTests::CreateTestClientImpl(bool signIn, Utf8StringCR productId) const
     {
-    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+    //InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+    RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
     UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
 
+    //NOTE (5/28/19): the policy for this test user and product ID seems to be trial now so some integration tests fail. Will take a look at this...
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -126,8 +135,12 @@ ClientImplPtr ClientIntegrationTests::CreateTestClientImpl(bool signIn, Utf8Stri
     if (signIn)
         {
         Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
-        if (!manager->SignInWithCredentials(credentials)->GetResult().IsSuccess())
+        auto result = manager->SignInWithCredentials(credentials)->GetResult();
+        if (!result.IsSuccess())
+            {
+            LOG.infov("error: %s, %s", result.GetError().GetMessage().c_str(), result.GetError().GetDescription().c_str());
             return nullptr;
+            }
         }
     BeFileName dbPath = GetLicensingDbPathIntegration();
 
@@ -162,6 +175,10 @@ TEST_F(ClientIntegrationTests, DISABLED_Equality_Test)
 TEST_F(ClientIntegrationTests, FactoryStartStopApplication_Success)
     {
     auto client = CreateTestClient(true, TEST_PRODUCT_ID);
+    if (nullptr == client)
+        {
+        FAIL() << "client is null";
+        }
     ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
     EXPECT_SUCCESS(client->StopApplication());
     }

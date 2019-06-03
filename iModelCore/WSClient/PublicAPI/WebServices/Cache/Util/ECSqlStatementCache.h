@@ -26,6 +26,7 @@ struct ECSqlStatementCache : IECDbSchemaChangeListener
     public:
         typedef std::function<Utf8String()> CreateECSqlCallback;
         typedef const CreateECSqlCallback& CreateECSqlCallbackCR;
+        struct Loader;
 
     private:
         ObservableECDb* m_ecDb;
@@ -42,7 +43,12 @@ struct ECSqlStatementCache : IECDbSchemaChangeListener
         //! @param key - identifier for statement. Cached statement is returned if such key is found or callback called in other case.
         //! @param createECSqlCallback - callback to create ECSql string if statement is not cached yet.
         //! @return - prepared statement if successful or invalid statement if error occurred. Will not return nullptr.
-        WSCACHE_EXPORT ECSqlStatementPtr GetPreparedStatement(Utf8String key, CreateECSqlCallbackCR createECSqlCallback);
+        WSCACHE_EXPORT ECSqlStatementPtr GetPreparedStatement(Utf8StringCR key, CreateECSqlCallbackCR createECSqlCallback);
+
+        //! Get cached and reset or newly prepared statement.
+        //! @param ecsql - ECSql string to use if statement is not cached yet. Same string is used as a key
+        //! @return - prepared statement if successful or invalid statement if error occurred. Will not return nullptr.
+        WSCACHE_EXPORT ECSqlStatementPtr GetPreparedStatement(Utf8StringCR ecsql);
 
         //! Clear statement cache.
         WSCACHE_EXPORT void Clear();
