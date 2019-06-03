@@ -30,6 +30,10 @@
 
     <ProductDirectory Name="VendorNotices"  RelativeTo="SupportingFilesRoot" Path="Notices"/>
     <ProductDirectory Name="VendorNotices"  RelativeTo="SupportingFilesRoot" Path="Notices" LibType="static"/>
+
+    <!-- Not sure if you need these, but adding to silence BB warnings. -->
+    <ProductDirectory Name="DgnV8Dlls" Deliver="false"/>
+    <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false"/>
   </ProductDirectoryList>
 
   <Part Name="bridge-addon-lib" BentleyBuildMakeFile="./iModelBridge/addon/bridge-addon.mke" >
