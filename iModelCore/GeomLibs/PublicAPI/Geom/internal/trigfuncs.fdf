@@ -1,0 +1,620 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+//!
+//! @param degrees IN      angle in degrees
+//! @return angle in radians
+//!
+Public GEOMDLLIMPEXP double bsiTrig_degreesToRadians (double degrees);
+
+//!
+//! @param radians IN      angle in radians
+//! @return angle in degrees
+//!
+Public GEOMDLLIMPEXP double bsiTrig_radiansToDegrees (double radians);
+
+//!
+//! Try to divide numerator by denominator.  If denominator is near zero,
+//!   return false and set the result to a default value.
+//! @param pRatio OUT     numerator / denominator if safe, defaultRatio otherwise
+//! @param numerator IN      numerator of ratio
+//! @param denominator IN      denominator of ratio
+//! @param defaultRatio IN      default ratio if b is small
+//! @return true if division is numerically safe.
+//!
+Public GEOMDLLIMPEXP bool    bsiTrig_safeDivide
+(
+double  *pRatio,
+double  numerator,
+double  denominator,
+double  defaultRatio
+);
+
+//!
+//! Find the fractional position of a between a0 and a1, testing if a1 and a0
+//!   are too close to do the division safely.
+//! @param pRatio OUT     (a - a0) / (a1 - a0) if safe, defaultRatio otherwise
+//! @param a IN      position within interval
+//! @param a0 IN      start of interval
+//! @param a1 IN      end of interval
+//! @param defaultRatio IN      default result if division is not safe.
+//! @return true if division is numerically safe.
+//!
+Public GEOMDLLIMPEXP bool    bsiTrig_safeInverseLinearInterpolate
+(
+double  *pRatio,
+double  a,
+double  a0,
+double  a1,
+double  defaultRatio
+);
+
+//!
+//! One dimensional interpolation.
+//! @param [in] a0 start of interval
+//! @parma [in] fraction 
+//! @param [in] a1 end of interval
+//! @return interpolated value.
+//!
+Public GEOMDLLIMPEXP double bsiTrig_interpolate
+(
+double  a0,
+double  fraction,
+double  a1
+);
+
+//!
+//! @param angle IN      angle in radians
+//! @return angle shifted by 2pi towards (and usually past) zero.
+//!
+Public GEOMDLLIMPEXP double bsiTrig_complementaryAngle (double angle);
+
+//!
+//! @param theta IN      nominal angle
+//! @param theta0 IN      start of interval
+//! @param sweep IN      signed sweep
+//! @return angle theta adjusted into the 2pi interval beginning at theta0
+//!       and going in the direction of sweep.
+//!
+Public GEOMDLLIMPEXP double bsiTrig_adjustAngleToSweep
+(
+double  theta,
+double  theta0,
+double  sweep
+);
+
+//!
+//! Restrict a sweep to that (a) its absolute value is no more than 2pi (full circle) and
+//! (b) its sign is preserved. (Hence both +2pi and -2pi are possible).   Any value with larger
+//! absolute value is pulled back to the nearer limit.
+//! @param sweep IN      angle to adjust.
+//!
+//!
+Public GEOMDLLIMPEXP double   bsiTrig_restrictSweep (double sweep);
+
+//!
+//! Convert xyz coordinates to spherical (theta, phi, r)                  |
+//! <UL>
+//! <LI>theta = longitude, i.e. angle of (x,y,0) from (1,0,0)
+//! <LI>phi   = latitude, i.e. angle between (x,y,z) and (x,y,0)
+//! <LI>r     = distance from origin
+//! </UL>
+//!
+//! @param pSphericalPoint OUT      theta, phi, r
+//! @param pXYZ IN     x,y,z
+//! @return true unless r is zero.
+//!
+Public GEOMDLLIMPEXP bool    bsiVector_cartesianToSpherical
+(
+DPoint3dP pSphericalPoint,
+DPoint3dP pXYZ
+);
+
+//!
+//! Convert (theta, phi, r) coordinates to spherical (x,y,z)
+//!
+//! @param pXYZ OUT     x,y,z
+//! @param pSphericalPoint IN      theta, phi, r
+//! @return true (always)
+//!
+Public GEOMDLLIMPEXP bool    bsiVector_sphericalToCartesian
+(
+DPoint3dP pXYZ,
+DPoint3dP pSphericalPoint
+);
+
+//!
+//! @return system wide small angle tolerance
+//!
+Public GEOMDLLIMPEXP double bsiTrig_smallAngle
+(
+void
+);
+
+//!
+//! Compare floating point values, using a tolerance of system small angle times the
+//!   larger of 1 or either given values.
+//! @return -1, 0, or 1 according as a < b, a == b, or a > c with the tolerance
+//!
+Public GEOMDLLIMPEXP int bsiTrig_tolerancedComparison
+(
+double a,
+double b
+);
+
+//!
+//! Compare floating point values, using a tolerance of system small angle times the
+//!   larger of 1 or either given values or a further reference value
+//! @param a IN      first value for comparison
+//! @param b IN      second value for comparison
+//! @param c IN      additional value which may expand the tolerance.
+//! @return -1, 0, or 1 according as a < b, a == b, or a > c with the tolerance
+//!
+Public GEOMDLLIMPEXP int bsiTrig_tolerancedComparisonWithReferenceDouble
+(
+double a,
+double b,
+double c
+);
+
+//!
+//! Compare floating point values, using a tolerance of system small angle times the
+//!   larger of 1 or either given values or the largest component of a further reference point
+//! @param a IN      first value for comparison
+//! @param b IN      second value for comparison
+//! @param pPoint IN      point whose largest coordinate (x,y, or z) may expand tolerance.
+//! @return -1, 0, or 1 according as a < b, a == b, or a > c with the tolerance
+//!
+Public GEOMDLLIMPEXP int bsiTrig_tolerancedComparisonWithReferenceDPoint3d
+(
+double a,
+double b,
+DPoint3dCP pPoint
+);
+
+//!
+//! Compare floating point values, using a tolerance of system small angle times the
+//!   larger of 1 or either given values or the largest component of a further reference point
+//! @param a IN      first value for comparison
+//! @param b IN      second value for comparison
+//! @param pRange IN      range whose largest coordinate (x,y, or z) may expand tolerance.
+//! @return -1, 0, or 1 according as a < b, a == b, or a > c with the tolerance
+//!
+Public GEOMDLLIMPEXP int bsiTrig_tolerancedComparisonWithReferenceDRange3d
+(
+double a,
+double b,
+DRange3dCP pRange
+);
+//!  Compare point coordinates, using a tolerance of system small angle times the
+//!   larger of 1 or any given coordinate.
+//!  @param [in] pointA first value for comparison
+//!  @param [in] pointB second value for comparison
+//! @return true of points are nearly equal.
+Public GEOMDLLIMPEXP bool bsiTrig_nearlyEqualDPoint3d
+(
+DPoint3dCP pointA,
+DPoint3dCP pointB
+);
+
+
+//!
+//! Compare floating point values, using a tolerance of system small angle times the
+//!   larger of 1 or either given values or the largest component of a further reference point
+//! @param a IN      first value for comparison
+//! @param b IN      second value for comparison
+//! @param pPointA IN      range whose largest coordinate (x,y, or z) may expand tolerance.
+//! @param pPointB IN      range whose largest coordinate (x,y, or z) may expand tolerance.
+//! @return -1, 0, or 1 according as a < b, a == b, or a > c with the tolerance
+//!
+Public GEOMDLLIMPEXP int bsiTrig_tolerancedComparisonWithReferenceDPoint3dDPoint3d
+(
+double a,
+double b,
+DPoint3dCP pPointA,
+DPoint3dCP pPointB
+);
+
+//!  Compare a point to its projection on a ray, using a tolerance of system small angle times the
+//!   larger of 1 or any given coordinate.
+//!  @param [in] pointA first value for comparison
+//!  @param [in] pointB second value for comparison
+//! @return true of points are nearly equal.
+Public GEOMDLLIMPEXP bool bsiTrig_pointNearlyOnRay
+(
+DPoint3dCP pointA,
+DPoint3dCP originB,
+DVec3dCP   directionB
+);
+
+//!
+//! @return the largest absolute value of two given doubles
+//!
+Public GEOMDLLIMPEXP double bsiTrig_maxAbsDoubleDouble
+(
+double a,
+double b
+);
+
+//!
+//! @return the largest absolute value appearing in a point and a double
+//!
+Public GEOMDLLIMPEXP double bsiTrig_maxAbsDPoint3dDouble
+(
+DPoint3dCP pPoint,
+double b
+);
+
+//!
+//! @return the largest absolute value appearing in two points.
+//!
+Public GEOMDLLIMPEXP double bsiTrig_maxAbsDPoint3dDPoint3d
+(
+DPoint3dCP pPoint0,
+DPoint3dCP pPoint1
+);
+
+//!
+//! @return the largest absolute value appearing in two points and a double
+//!
+Public GEOMDLLIMPEXP double bsiTrig_maxAbsDPoint3dDPoint3dDouble
+(
+DPoint3dCP pPoint0,
+DPoint3dCP pPoint1,
+double b
+);
+
+//!
+//! Wrap the system atan2 with checks for (0,0) arguments.
+//!
+//! @param y IN      numerator
+//! @param x IN      denominator
+//! @return arctan of y/x.
+//!
+Public GEOMDLLIMPEXP double bsiTrig_atan2
+(
+double  y,
+double  x
+);
+
+//!
+//! @param angle IN      angle to test
+//! @return true if (absolute value of) angle is more than 2pi minus a tolerance
+//!
+Public GEOMDLLIMPEXP bool    bsiTrig_isAngleFullCircle (double angle);
+
+//!
+//! @param angle IN      angle to test
+//! @return true if (absolute value of) angle is less than the small angle tolerance.
+//!
+Public GEOMDLLIMPEXP bool    bsiTrig_isAngleNearZero (double angle);
+
+//!
+//! @param theta0
+//! @param theta1
+//! @return true if theta0 and theta1, or some shift by 2pi, are equal
+//!       within tolerance.
+//!
+//!
+Public GEOMDLLIMPEXP bool    bsiTrig_equalAngles
+(
+double theta0,
+double theta1
+);
+
+//!
+//! @param angle IN      unnormalized angle
+//! @return angle normalized into (-pi..pi)
+//!
+Public GEOMDLLIMPEXP double bsiTrig_getNormalizedAngle (double angle);
+
+//!
+//! @description Normalize the angle so that it falls in the range [0,2pi].
+//! @param angle IN      unnormalized angle
+//! @return normalized angle
+//!
+Public GEOMDLLIMPEXP double bsiTrig_getPositiveNormalizedAngle (double angle);
+
+//!
+//! @description Convert an angle (in radians) so that:
+//! <UL>
+//! <LI>0 is start of sweep range
+//! <LI>1 is end of sweep
+//! <LI>If outside of sweep, angle is positive.
+//! </UL>
+//! @param angle IN      unnormalized angle
+//! @param startAngle IN      start of sweep range
+//! @param sweep IN      sweep extent
+//! @return fraction of angular sweep
+//!
+Public GEOMDLLIMPEXP double bsiTrig_normalizeAngleToSweep
+(
+double angle,
+double startAngle,
+double sweep
+);
+
+//!
+//! @param testAngle IN      angle to test
+//! @param startAngle IN      start of sweep range
+//! @param sweepAngle IN      signed sweep
+//! @return true if angle is within the signed, toleranced sweep.
+//!
+Public GEOMDLLIMPEXP bool    bsiTrig_angleInSweep
+(
+double testAngle,
+double startAngle,
+double sweepAngle
+);
+
+//!
+//! @param testAngle IN      angle to test
+//! @param startAngle IN      start of sweep range
+//! @param endAngle IN      end of sweep range.
+//! @return true if angle is within the angular range
+//!
+Public GEOMDLLIMPEXP bool    bsiTrig_angleInRange
+(
+double testAngle,
+double startAngle,
+double endAngle
+);
+
+//!
+//! Test if a (not angular) scalar is within a given interval, using a relative tolerance.
+//! @param a IN      fraction to test
+//! @param a0 IN      start of interval
+//! @param a1 IN      end of interval
+//! @return true if a is within the signed, toleranced interval
+//!
+Public GEOMDLLIMPEXP bool    bsiTrig_scalarInInterval
+(
+double a,
+double a0,
+double a1
+);
+
+//!
+//! Test if a (scalar, not angular) scalar is within a given sweep, using a relative tolerance.
+//! @param a IN      fraction to test
+//! @param a0 IN      start of interval
+//! @param da IN      (signed) sweep of interval (end minus start)
+//! @return true if a is within the signed, toleranced sweep.
+//!
+Public GEOMDLLIMPEXP bool    bsiTrig_scalarInSweep
+(
+double a,
+double a0,
+double da
+);
+
+//!
+//! Update a bounding interval of a line based on the variation of that
+//! line within one dimension.
+//!
+//! @param pParam0 IN OUT  lower limit of 'in' segment in parametric space
+//! @param pParam1 IN OUT  upper limit of 'in' segment in parametric space
+//! @param pContents IN OUT  description of current intersection interval.  Updated here.
+//!                            -1 ===> unbounded.
+//!                             0 ===> empty
+//!                             1 ===> bounded
+//! @param x0 IN      Start coordinate in this dimension
+//! @param dxds IN      Rate of change of this coordiante wrt line's s coordinate
+//! @param low IN      start of bounding interval in this dimension
+//! @param high IN      end of bounding interval in this dimension
+//!
+Public GEOMDLLIMPEXP void bsiRange1d_intersectLine
+(
+double  *pParam0,
+double  *pParam1,
+int     *pContents,
+double  x0,
+double  dxds,
+double  low,
+double  high
+);
+
+//!
+//!
+//!
+Public GEOMDLLIMPEXP int bsiGeom_cyclic2dAxis (int i);
+
+//!
+//!
+//!
+Public GEOMDLLIMPEXP int bsiGeom_cyclic3dAxis (int i);
+
+//!
+//!
+//!
+Public GEOMDLLIMPEXP void bsiGeom_cyclic3dAxes
+(
+int *pI0,
+int *pI1,
+int *pI2,
+int i
+);
+
+//!
+//!
+//!
+Public GEOMDLLIMPEXP void bsiGeom_cyclic2dAxes
+(
+int *pI0,
+int *pI1,
+int i
+);
+
+//!
+//! Deprecated function -- use bsiTrig_getNormalizedAngle
+//! @param    theta IN      angle to normalize
+//!
+Public GEOMDLLIMPEXP double bsiRange1d_getNormalizedAngle (double theta);
+
+//!
+//! Deprecated function -- use bsiTrig_getPositiveNormalizedAngle
+//! @param    theta IN      angle to normalize
+//!
+Public GEOMDLLIMPEXP double bsiRange1d_getPositiveNormalizedAngle (double theta);
+
+//!
+//! Deprecated function -- use bsiTrig_normalizeAngleToSweep
+//! @param    theta IN      angle to normalize
+//! @param    start IN      start of sweep range
+//! @param    sweep IN      signed sweep
+//!
+Public GEOMDLLIMPEXP double bsiRange1d_normalizeAngleToSweep
+(
+double theta,
+double start,
+double sweep
+);
+
+//!
+//! Deprecated function -- use bsiTrig_angleInSweep.
+//! WARNING-- this function is incorrectly typed as a double.  The original bsiRange1d_angleInSweep,
+//!  and the current bsiTrig_angleInSweep, are BoolInt.  It's here so your old code can be
+//!  compiled, but please change over.
+//! @param    theta IN      angle to test
+//! @param    start IN      start of sweep range
+//! @param    sweep IN      signed sweep
+//!
+Public GEOMDLLIMPEXP double bsiRange1d_angleInSweep
+(
+double theta,
+double start,
+double sweep
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+|   name        jmdlTrig_componentRange                                 |
+|                                                                       |
+|                                                                       |
+| Conditional update range of one component of a homogeneous trig       |
+| function.                                                             |
+| That is, find local extrema of                                        |
+|<p>                                                                    |
+|   (x0 + x1 * cos(theta) + x2 * sin(theta)) / (w0 + w1 * cos(theta) + w2 * sin(theta))     |
+|<p>                                                                    |
+| and augment minP, maxP if the angle of the extrema is 'in' the        |
+| the sector set.                                                       |
+|                                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void    bsiTrig_extendComponentRange
+(
+double*         pMin,           /* IN OUT  min coordiante of range box. */
+double*         pMax,           /* IN OUT  max coordinate of range box */
+double          x0,             /* IN      constant term of numerator */
+double          x1,             /* IN      cosine term of numerator */
+double          x2,             /* IN      sine term of numerator */
+double          w0,             /* IN      constant term of numerator */
+double          w1,             /* IN      cosine term of numerator */
+double          w2,             /* IN      sine term of numerator */
+double          theta0,         /* IN      start angle */
+double          sweep,          /* IN      sweep of live part of angle range */
+bool            applySweep      /* IN      false to suppress use of angle range. */
+);
+
+//!
+//! Normalize an value to a period with specified base value.
+//! (Typically used with angles, but period is given as an arg so it might be other than 2pi)
+//!
+//!
+Public GEOMDLLIMPEXP double bsiTrig_normalizeToPeriod
+(
+double a,
+double a0,
+double da
+);
+
+//!
+//! @description normalize to a period centered around zero.  Shift by a multiple
+//!   of fullPeriod to bring to between negative and positive half period.
+//! @param a IN periodic value
+//! @param fullPeriod IN the full period.
+//!
+Public GEOMDLLIMPEXP double bsiTrig_normalizeToPeriodAroundZero
+(
+double a,
+double fullPeriod
+);
+
+//!
+//! @description split a number into "digits" with varying digit size.
+//! <p>
+//! Examples:
+//! <ul>
+//!  <li>DEGREES (double) to DDD MM SS.xxx is split with 60,60,1000
+//!  <li>ARCES (double) to ACRES SQFEET SQINCHES 43560 144
+//! </p>
+//! @param value IN value to split
+//! @param valueIsNegative OUT true if original value was negative.
+//! @param pDigit OUT array of numSplitter+1 integer digits.
+//! @param residual OUT the difference between the original number and digit series, expressed as
+//!                a signed fraction of the smallest unit.  Under normal rounding (i.e. with biasFactor=0)
+//!               the residual is between -0.5 and 0.5.
+//! @param pSplitter IN array of unit factors
+//! @param numSplitter IN number of splits.
+//! @param biasFactor IN factor indicating caller's urge to have rounding candidates near 0.5 rounded up or down.
+//!        A bias factor of zero means rounding occurs by adding 0.5 and truncating.
+//!        A nonzero bias factor means that in addition to adding 0.5 the candidate is increased by
+//!            biasFactor times the smallest unit of precision for the candidate.  The smallest unit
+//!            of precision is determined by the C intrinsic function "nextafter".
+//!
+Public GEOMDLLIMPEXP void bsiTrig_splitDoubleToUnitizedDigits
+(
+double value,
+bool    *pValueIsNegative,
+int    *pDigit,
+double *pResidual,
+int   *pSplitter,
+int  numSplitter,
+double biasFactor
+);
+
+//!
+//! @description recombine the results of bsiTrig_splitDoubleToUnitizedDigits.
+//! @param valueIsNegative IN true to negate value
+//! @param pDigit IN array of (numSplitter+1) integer digits
+//! @param residual IN residual, as a fraction of least significant place.
+//! @param pSplitter IN array of digits spliters.
+//! @param numSplitter IN numbr of splitters.
+//!
+Public GEOMDLLIMPEXP double bsiTrig_mergeUnitizedDigits
+(
+bool    valueIsNegative,
+int    *pDigit,
+double residual,
+int   *pSplitter,
+int  numSplitter
+);
+
+//! Convert (c,s,w) point to angle.
+Public GEOMDLLIMPEXP double bsiTrig_trigPointToAngle (DPoint3dCR csw);
+
+
+//! Evalute the (quadratic) bezier on the trig poles.
+//! convert the resulting (cosine, sine, weight) to an angle.
+//! @param [in] trigPole array of 3 (three !!) poles of [c,s,w] order 3 bezier.
+//! @param [in] fraction bezier evaluation parameter
+//! @return angle (in radians)
+Public GEOMDLLIMPEXP double bsiTrig_quadricTrigPointBezierFractionToAngle
+(
+DPoint3d *trigPole,
+double f
+);
+
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

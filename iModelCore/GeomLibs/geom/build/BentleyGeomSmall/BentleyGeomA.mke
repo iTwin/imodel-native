@@ -1,0 +1,144 @@
+#--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+%include    mdl.mki
+%include $(SrcRoot)GeomLibs/common/inc/geomlibsdev.mki
+
+Wp64                = 1
+
+# Precompile header options
+CompileOptionsMki   = $(_MakeFilePath)BentleyGeom.mki
+%include $(CompileOptionsMki)
+
+srcGeomLibs         = $(SrcRoot)GeomLibs/
+baseGeom_build      = $(geomlibs_build)basegeom/geom_dll/
+o                   = $(PartBuildDir)
+
+#-------------------------------------------------
+# Make Directories
+#-------------------------------------------------
+$(geomObj)$(tstdir)     :   $(geomObj)$(tstdir)
+
+dirToSearch         = $(geomSrcRegions)
+%include cincapnd.mki
+
+#-----------------------------------------------------------------------
+# Local macros / modifications
+#-----------------------------------------------------------------------
+nameToDefine = MinimalRefMethods
+%include cdefapnd.mki
+
+nameToDefine = jmdlgeom_internal
+%include cdefapnd.mki
+
+nameToDefine = COMPILE_OLD_DVector
+%include cdefapnd.mki
+
+nameToDefine = BENTLEYGEOM_NO_PTRMETHODS
+%include cdefapnd.mki
+
+dirToSearch = $(srcGeomLibs)PublicAPI/
+%include cincapnd.mki
+
+%include $(SrcRoot)bsicommon/sharedmki/DefinePublicApiIncludes.mki
+
+%ifdef GEOMLIBS_ENABLE_ITERATOR_WARNINGS
+CCompOpts + -we4238 
+%endif
+#--------------------------------------------------------------------------------
+#  Bring our precompiled header up-to-date.  After including PreCompileHeader.mki
+#  $(UsePrecompiledHeaderOptions) will contain the /Yu and /Fp options that we
+#  need to consume the .pch.
+#----------------------------------------------------------------------
+CompileOptionsMki = $(_MakeFilePath)BentleyGeomA.mki
+
+PchExtraOptions+ $(CCompOpts)
+%ifdef COMPILE_PLATFORM_GEOMETRY
+PchExtraOptions + -DCOMPILE_PLATFORM_GEOMETRY=1
+%endif
+PchCompiland = $(_MakeFilePath)bsibasegeomPCH.cpp
+PchOutputDir = $(o)
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+%include MultiCppCompileRule.mki
+CPchOpts = $(CCPchOpts)
+
+#-----------------------------------------------------------------------
+# Common dependency lists
+#-----------------------------------------------------------------------
+
+OUT_DIR = $(geomObj)
+OUT_EXT = $(oExt)
+OTHER_DEPENDENCIES = \
+    $(geomSrcPubGeom)msgeomstructs.hpp  \
+    $(geomSrcPubGeom)msgeomstructs.h    \
+    $(geomSrcPubGeom)../Vu/VuApi.h      \
+    $(geomSrcPubGeom)../Mtg/GpaApi.h
+
+FileTypeControl = $(FileTypeControlCPP)
+
+# list of files to build
+%include $(_MakeFilePath)geomTargetsA.mki
+
+$(geomObj)BentleyGeom_init$(oExt)   : $(_MakeFilePath)BentleyGeomSmall_init.cpp
+
+%include MultiCppCompileGo.mki
+#-----------------------------------------------------------------------
+# Set up to indicate that we are rights-compliant.
+#-----------------------------------------------------------------------
+rightsCompliantAppsFile     = $(_MakeFilePath)rightscompliant.txt
+nonRightsCompliantAppsFile  = $(_MakeFilePath)nonrightscompliant.txt
+rightsNeutralFile           = $(_MakeFilePath)rightsNeutralLibraries.txt
+
+#-----------------------------------------------------------------------
+# link
+#-----------------------------------------------------------------------
+DLM_NAME            = BentleyGeom
+DLM_LIBDEF_SRC      = $(_MakeFilePath)
+DLM_OBJECT_DEST     = $(geomObj)
+DLM_DEST            = $(baseGeom_bin)
+DLM_EXPORT_DEST     = $(baseGeom_lib)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_OBJECT_PCH      = $(o)bsibasegeompch.obj
+
+DLM_EXPORT_OBJS     = $(DLM_OBJECT_FILES)
+
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_NOENTRY         = 1
+dlmspecCmd          + -i$(_MakeFilePath)
+DLM_SYMB_DEST       = $(baseGeom_symbols)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# REMOVE_BASE_ADDRESS -- Remove base address when xp support is dropped
+# See http://bsw-wiki.bentley.com/default.aspx/Development/RemovalOfBaseAddressingInBeijing.html (specifically the 'Caveats' section)
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+DLM_BASE_ADDRESS = 0x54050000
+
+%include    $(sharedMki)linkLibrary.mki
+
+%ifdef RunGeomLibsTest
+%iffile $(srcGeomLibsTest)geomlibsTest.mke
+always:
+    bmake $(srcGeomLibsTest)geomlibsTest.mke 
+
+%endif
+%endif
+
+
+%if defined (PRG) || defined (BUILD_DOC)
+    # build all geomlibs documentation (always start from scratch, since html help sometimes gets confused)
+%message Documentation build turned off for Beijing until someone can work on it.
+#    always:
+#        bmake +a $(GEOMLIBS_ROOT)geom/doc/build/bsibasegeomdoc/bsibasegeomdoc.mke
+    always:
+        > $(OutGeomLibs)delivery/basegeom/doc/bsibasegeomdoc.chm
+        Documentation build turned off for Beijing until someone can work on it.
+        <
+
+%endif
+
+
+

@@ -1,0 +1,74 @@
+ geomlibs test environment -- command line arguments:
+ Tail of argv[0] = bsigeomtest3.exe
+<OK name="Unit Square clip @y=0.5"><int>2</int></OK>
+<OK name="Enter"><double>0.25</double></OK>
+<OK name="Leave"><double>0.75</double></OK>
+<OK name="Concave @y=0.5"><int>2</int></OK>
+<OK name="Enter"><double>0.75</double></OK>
+<OK name="Leave"><double>1.25</double></OK>
+<OK name="Concave @y=0.5"><int>4</int></OK>
+<OK name="Enter"><double>-2.5</double></OK>
+<OK name="Leave"><double>-0.5</double></OK>
+<OK name="Enter"><double>0.5</double></OK>
+<OK name="Leave"><double>1.5</double></OK>
+<OK name="Concave @y=0.5"><int>4</int></OK>
+<OK name="Enter"><double>-1.5</double></OK>
+<OK name="Leave"><double>-0.5</double></OK>
+<OK name="Enter"><double>0.5</double></OK>
+<OK name="Leave"><double>2.5</double></OK>
+<OK name="Concave @y=0.5"><int>2</int></OK>
+<OK name="MidPoint of ON edge"><double>0.5</double></OK>
+<OK name="Leave"><double>2</double></OK>
+<OK name="Concave @y=0.5"><int>2</int></OK>
+<OK name="MidPoint of ON edge"><double>0.5</double></OK>
+<OK name="Leave"><double>2</double></OK>
+<OK name="A intersect B segments"><int>1</int></OK>
+<OK name="not parallel"><bool::false/></OK>
+<OK name="intersect enter"><DPoint3d>0,1,0</DPoint3d></OK>
+<OK name="intersect leave"><DPoint3d>1,1,0</DPoint3d></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (-0.500000,-0.500000)"><int>-1</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (-0.500000,0.000000)"><int>-1</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (-0.500000,0.500000)"><int>-1</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (-0.500000,1.000000)"><int>-1</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (-0.500000,1.500000)"><int>-1</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (0.000000,-0.500000)"><int>-1</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (0.000000,0.000000)"><int>0</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (0.000000,0.500000)"><int>0</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (0.000000,1.000000)"><int>0</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (0.000000,1.500000)"><int>-1</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (0.500000,-0.500000)"><int>-1</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (0.500000,0.000000)"><int>0</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (0.500000,0.500000)"><int>1</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (0.500000,1.000000)"><int>0</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (0.500000,1.500000)"><int>-1</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (1.000000,-0.500000)"><int>-1</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (1.000000,0.000000)"><int>0</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (1.000000,0.500000)"><int>0</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (1.000000,1.000000)"><int>0</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (1.000000,1.500000)"><int>-1</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (1.500000,-0.500000)"><int>-1</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (1.500000,0.000000)"><int>-1</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (1.500000,0.500000)"><int>-1</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (1.500000,1.000000)"><int>-1</int></OK>
+<OK name="Unit Square bsiDPoint2d_PolygonParity (1.500000,1.500000)"><int>-1</int></OK>
+<OK name="Convex box"><int>1</int></OK>
+<OK name="Convex box"><int>0</int></OK>
+<OK name="Convex box"><int>1</int></OK>
+<OK name="Convex box"><int>0</int></OK>
+<OK name="Convex box"><int>-1</int></OK>
+<OK name="Convex box"><int>0</int></OK>
+<OK name="Convex (numSides 6)"><int>1</int></OK>
+<OK name="Krinkle (numSides 6) (move vertex 0)"><int>0</int></OK>
+<OK name="Convex (numSides 6)"><int>1</int></OK>
+<OK name="Krinkle (numSides 6) (move vertex 1)"><int>0</int></OK>
+<OK name="Convex (numSides 6)"><int>1</int></OK>
+<OK name="Krinkle (numSides 6) (move vertex 2)"><int>0</int></OK>
+<OK name="Convex (numSides 6)"><int>1</int></OK>
+<OK name="Krinkle (numSides 6) (move vertex 3)"><int>0</int></OK>
+<OK name="Convex (numSides 6)"><int>1</int></OK>
+<OK name="Krinkle (numSides 6) (move vertex 4)"><int>0</int></OK>
+<OK name="Convex (numSides 6)"><int>1</int></OK>
+<OK name="Krinkle (numSides 6) (move vertex 5)"><int>0</int></OK>
+<OK name="Double wrap turns left"><int>1</int></OK>
+<OK name="Double wrap is not convex"><int>0</int></OK>
+Exit with 0 errors, 71 OK

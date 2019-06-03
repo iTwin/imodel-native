@@ -1,0 +1,30 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* Use UV area to identify true exterior faces; start recursive traversal
+* from each negative area face to set exterior masks according to parity
+* rules as boundary edges are crossed.
+* @bsimethod                                                    BentleySystems  10/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    jmdlMTGParity_markFaceParityFromNegativeAreaFaces
+(
+MTGGraph        *pGraph,
+int             vertexLabelOffset,
+EmbeddedDPoint3dArray *pCoordinates,
+MTGMask         parityChangeMask,
+MTGMask         exteriorMask
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+
