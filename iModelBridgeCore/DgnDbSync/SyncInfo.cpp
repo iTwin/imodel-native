@@ -219,6 +219,8 @@ bool SyncInfo::HasDiskFileChanged(BeFileNameCR fileName)
     if (!prov.IsValid())
         return true;
 
+    BeAssert(!Converter::IsEmbeddedFileName(fileName) && "This method is not valid for embedded files");
+
     // This is an attempt to tell if a file has *not* changed, looking only at the file's time and size.
     // This is a dangerous test, since we don't look at the contents, but we think that we can narrow 
     // the odds of a mistake by:
@@ -235,7 +237,15 @@ bool SyncInfo::HasDiskFileChanged(BeFileNameCR fileName)
 bool SyncInfo::HasLastSaveTimeChanged(DgnV8FileCR v8File)
     {
     if (v8File.IsEmbeddedFile())
-        return false;
+        {
+        auto packageFile = m_converter.GetPackageFileOf(v8File);
+        if (nullptr == packageFile)
+            return true; // assume the worst
+
+        return HasLastSaveTimeChanged(*packageFile);
+        }
+
+    BeAssert(!v8File.IsEmbeddedFile());
 
     V8FileInfo finfo = ComputeFileInfo(v8File);
     auto previous = RepositoryLinkExternalSourceAspect::FindAspectByIdentifier(*GetDgnDb(), finfo.m_uniqueName);
@@ -791,16 +801,35 @@ SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::RepositoryLinkExternalSou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncInfo::RepositoryLinkExternalSourceAspect::Update(V8FileInfo const& fileInfo)
+bool SyncInfo::RepositoryLinkExternalSourceAspect::Update(V8FileInfo const& fileInfo)
     {
+    bool anyChanges = false;
+
     iModelExternalSourceAspect::SourceState ss;
     iModelExternalSourceAspect::UInt64ToString(ss.m_version, fileInfo.m_lastModifiedTime);
-    SetSourceState(ss);
+    if (!ss.Equals(GetSourceState()))
+        {
+        SetSourceState(ss);
+        anyChanges = true;
+        }
 
     auto json = GetProperties();
-    json["fileSize"] = rapidjson::Value(iModelExternalSourceAspect::UInt64ToString(fileInfo.m_fileSize).c_str(), json.GetAllocator());
-    json["lastSaveTime"] = fileInfo.m_lastSaveTime;
-    SetProperties(json);
+    auto newFileSize = iModelExternalSourceAspect::UInt64ToString(fileInfo.m_fileSize);
+    if (!newFileSize.Equals(json["fileSize"].GetString()))
+        {
+        json["fileSize"] = rapidjson::Value(newFileSize.c_str(), json.GetAllocator());
+        anyChanges = true;
+        }
+    if (json["lastSaveTime"].GetDouble() != fileInfo.m_lastSaveTime)
+        {
+        json["lastSaveTime"] = fileInfo.m_lastSaveTime;
+        anyChanges = true;
+        }
+
+    if (anyChanges)
+        SetProperties(json);
+
+    return anyChanges;
     }
 
 /*---------------------------------------------------------------------------------**//**

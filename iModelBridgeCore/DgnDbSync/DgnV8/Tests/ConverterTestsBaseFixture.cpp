@@ -377,7 +377,7 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool expectFailure, bool expectUpdate)
+void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool expectFailure, bool expectUpdate, bool doDetectDeletedDocuments, bool onAllDocsProcessed)
     {
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
@@ -408,6 +408,10 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
             ASSERT_EQ(expectFailure, updater.WasAborted());
             m_count = updater.GetElementsConverted();
             hadAnyChanges = updater.HadAnyChanges();
+            if (doDetectDeletedDocuments)
+                updater._DetectDeletedDocuments();
+            if (onAllDocsProcessed)
+                updater.DetectDeletedEmbeddedFiles();
             }
         }
     else
@@ -431,6 +435,10 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
             ASSERT_EQ(expectFailure, updater.WasAborted());
             m_count = updater.GetElementsConverted();
             hadAnyChanges = updater.HadAnyChanges();
+            if (doDetectDeletedDocuments)
+                updater._DetectDeletedDocuments();
+            // if (onAllDocsProcessed)
+            //     updater.DetectDeletedEmbeddedFiles();
             }
         }
     db->SaveChanges();
@@ -666,6 +674,22 @@ RepositoryLinkId ConverterTestBaseFixture::FindRepositoryLinkIdByFilename(DgnDbR
             return aspect.GetRepositoryLinkId();
         }
     return RepositoryLinkId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId ConverterTestBaseFixture::FindModelByV8ModelId(DgnDbR db, RepositoryLinkId rlinkId, DgnV8Api::ModelId v8ModelId)
+    {
+    auto rlink = db.Elements().Get<RepositoryLink>(rlinkId);
+    if (!rlink.IsValid())
+        return DgnModelId();
+
+    SyncInfo::V8ModelExternalSourceAspectIteratorByV8Id iter(*rlink, v8ModelId);
+    auto first = iter.begin();
+    if (first != iter.end())
+         return first->GetModelId();
+    return DgnModelId();
     }
 
 /*---------------------------------------------------------------------------------**//**

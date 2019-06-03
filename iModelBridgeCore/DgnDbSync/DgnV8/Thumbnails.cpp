@@ -137,7 +137,7 @@ bool Converter::ThumbnailUpdateRequired(ViewDefinition const& view)
                 if (attach.IsValid())
                     {
                     auto attachedView = m_dgndb->Elements().Get<ViewDefinition>(attach->GetAttachedViewId());
-                    if (attachedView.IsValid() && ThumbnailUpdateRequired(*attachedView))
+                    if (attachedView.IsValid() && !attachedView->IsPrivate() && ThumbnailUpdateRequired(*attachedView))
                         return true;
                     }
                 }

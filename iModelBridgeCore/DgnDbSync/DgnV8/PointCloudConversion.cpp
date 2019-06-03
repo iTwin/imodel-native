@@ -620,8 +620,11 @@ void SpatialConverterBase::ConvertV8PointCloudViewSettings(SpatialViewController
         pcViewSettings.SetUseACSAsPlaneAxis(v8ViewSettingsData.m_useACSAsPlaneAxis);
         pcViewSettings.SetClampIntensity(v8ViewSettingsData.m_clampIntensity);
         pcViewSettings.SetNeedClassifBuffer(v8ViewSettingsData.m_NeedClassifBuffer);
-        pcViewSettings.SetDisplayStyleName(Utf8String(v8ViewSettingsData.m_DisplayStyleName.c_str()));
-        pcViewSettings.SetDisplayStyleIndex(v8ViewSettingsData.m_dsIdx);
+        if (v8ViewSettingsData.m_displayStyle != PointCloudViewSettings::DisplayStyle::None)
+            {
+            pcViewSettings.SetDisplayStyleName(Utf8String(v8ViewSettingsData.m_DisplayStyleName.c_str()));
+            pcViewSettings.SetDisplayStyleIndex(v8ViewSettingsData.m_dsIdx);
+            }
         }
 
     convertV8PointCloudClassificationViewSettings(spatial, viewInfo);

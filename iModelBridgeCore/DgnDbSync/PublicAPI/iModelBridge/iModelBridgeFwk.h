@@ -123,6 +123,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         bool       m_skipAssignmentCheck = false;
         bool       m_createRepositoryIfNecessary = false;
         bool       m_mergeDefinitions = true;
+        bool       m_allDocsProcessed = false;
         int m_maxWaitForMutex = 60000;
         Utf8String m_revisionComment;
         WString    m_bridgeRegSubKey;
@@ -285,6 +286,7 @@ protected:
     void InitLogging();
 
     bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
+    void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) override;
     BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) override;
     BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid) override;
     BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey, BeSQLite::BeGuidCP guid) override;
@@ -313,11 +315,15 @@ protected:
     void ReportFeatureFlags();
     void GetMutexName(wchar_t* buf, size_t bufLen);
     int RunExclusive(int argc, WCharCP argv[]);
+    BentleyStatus  TryOpenBimWithOptions(DgnDb::OpenParams& oparams);
+    BentleyStatus  TryOpenBimWithBimProfileUpgrade();
     BentleyStatus  TryOpenBimWithBisSchemaUpgrade();
     int UpdateExistingBim();
     int UpdateExistingBimWithExceptionHandling();
     int MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions&);
     int MakeDefinitionChanges(SubjectCPtr& jobsubj, iModelBridgeCallOpenCloseFunctions&);
+    int DoNormalUpdate();
+    int OnAllDocsProcessed();
     void OnUnhandledException(Utf8CP);
     Utf8String GetRevisionComment();
     void SetBridgeParams(iModelBridge::Params&, FwkRepoAdmin*);
@@ -333,6 +339,7 @@ protected:
     int PullMergeAndPushChange(Utf8StringCR description, bool releaseLocks);
     int StoreHeaderInformation();
     
+    bool EnableECProfileUpgrade() const;
 public:
 
     IMODEL_BRIDGE_FWK_EXPORT iModelBridgeFwk();
@@ -371,7 +378,7 @@ public:
 
     IMODEL_BRIDGE_FWK_EXPORT void SetTokenProvider(WebServices::IConnectTokenProviderPtr provider);
 
-    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus TestFeatureFlag (CharCP ff, bool& flag);
+    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus TestFeatureFlag (CharCP ff, bool& flag) const;
 
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) const;
 
