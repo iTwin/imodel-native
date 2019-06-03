@@ -1,0 +1,75 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+appName = iModelBridge
+o = $(OutputRootDir)Build/$(appName)/
+
+nameToDefine = __IMODEL_BRIDGE_BUILD__
+%include cdefapnd.mki
+
+always:
+    ~mkdir $(o)
+
+iModelBridgeAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/
+
+#--------------------------------------------------------------------------------------
+#   Compile the source
+#--------------------------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+
+%include MultiCppCompileRule.mki
+
+$(o)iModelBridge$(oext) : $(_MakeFilePath)iModelBridge.cpp $(iModelBridgeAPISrc)iModelBridge.h ${MultiCompileDepends}
+
+$(o)iModelBridgeSacAdapter$(oext) : $(_MakeFilePath)iModelBridgeSacAdapter.cpp $(iModelBridgeAPISrc)iModelBridge.h $(iModelBridgeAPISrc)iModelBridgeSacAdapter.h ${MultiCompileDepends}
+
+$(o)iModelBridgeBimHost$(oext) : $(_MakeFilePath)iModelBridgeBimHost.cpp $(iModelBridgeAPISrc)iModelBridge.h $(iModelBridgeAPISrc)iModelBridgeBimHost.h ${MultiCompileDepends}
+
+$(o)iModelBridgeSyncInfoFile$(oext) : $(_MakeFilePath)iModelBridgeSyncInfoFile.cpp $(iModelBridgeAPISrc)iModelBridge.h $(iModelBridgeAPISrc)iModelBridgeSyncInfoFile.h ${MultiCompileDepends}
+
+$(o)iModelBridgeSyncInfoFileChangeDetector$(oext) : $(_MakeFilePath)iModelBridgeSyncInfoFileChangeDetector.cpp $(iModelBridgeAPISrc)iModelBridge.h $(iModelBridgeAPISrc)iModelBridgeSyncInfoFile.h ${MultiCompileDepends}
+
+%if $(TARGET_PLATFORM)=="Windows"
+
+$(o)iModelBridgeLdClient$(oext) : $(_MakeFilePath)iModelBridgeLdClient.cpp $(_MakeFilePath)iModelBridgeLdClient.h ${MultiCompileDepends}
+
+%endif
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeLibxml2$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)Units$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
+
+%if $(TARGET_PLATFORM)=="Windows"
+    LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)ldclientapi$(libext)
+%endif
+
+%include $(sharedMki)linkLibrary.mki
