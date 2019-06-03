@@ -176,7 +176,7 @@
         <SubPart PartName="PrewireForIntegrationTests" />
         <SubPart PartName="OidcNativeClient" />
         <SubPart PartName="Licensing" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Licensing/IntegrationTests/NonPublished" SourceName="Delivery/IntegrationTests/Objects/NonPublished"/>
         </Bindings>
