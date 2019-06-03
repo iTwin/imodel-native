@@ -19,11 +19,11 @@ struct TextAnnotationTest : DgnDbTestFixture
 static DgnElementId ensureAnnotationTextStyle1(DgnDbR db)
     {
     static const Utf8CP STYLE_NAME = "AnnotationTextStyle1";
-    AnnotationTextStyleCPtr existingStyle = AnnotationTextStyle::Get(db, STYLE_NAME);
+    AnnotationTextStyleCPtr existingStyle = AnnotationTextStyle::Get(db.GetDictionaryModel(), STYLE_NAME);
     if (existingStyle.IsValid())
         return existingStyle->GetElementId();
 
-    AnnotationTextStyle style(db);
+    AnnotationTextStyle style(db.GetDictionaryModel());
     style.SetColorType(AnnotationColorType::RGBA);
     style.SetColorValue(ColorDef(0x00, 0xff, 0x00));
     style.SetFontId(db.Fonts().AcquireId(DgnFontManager::GetAnyLastResortFont()));

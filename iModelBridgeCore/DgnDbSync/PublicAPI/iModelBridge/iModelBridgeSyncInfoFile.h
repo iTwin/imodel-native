@@ -320,6 +320,7 @@ struct iModelExternalSourceAspect
         {
         Utf8String m_checksum;
         Utf8String m_version;
+        bool Equals(SourceState const& rhs) const {return m_checksum.Equals(rhs.m_checksum) && m_version.Equals(rhs.m_version);}
         };
 
     RefCountedPtr<ECN::IECInstance> m_instance;
@@ -333,8 +334,8 @@ struct iModelExternalSourceAspect
     void Invalidate() {m_instance = nullptr;}
     ECN::IECInstance* GetInstanceP() {return m_instance.get();}
 
-    bool operator!=(iModelExternalSourceAspect const& rhs) const {return m_instance == rhs.m_instance;}
-    bool operator==(iModelExternalSourceAspect const& rhs) const {return m_instance != rhs.m_instance;}
+    bool operator!=(iModelExternalSourceAspect const& rhs) const {return m_instance != rhs.m_instance;}
+    bool operator==(iModelExternalSourceAspect const& rhs) const {return m_instance == rhs.m_instance;}
 
     BeSQLite::EC::ECInstanceId GetECInstanceId() const { return BeSQLite::EC::ECInstanceId(BeSQLite::EC::ECInstanceId::FromString(m_instance->GetInstanceId().c_str()).GetValueUnchecked()); }
     IMODEL_BRIDGE_EXPORT Utf8String GetKind() const;

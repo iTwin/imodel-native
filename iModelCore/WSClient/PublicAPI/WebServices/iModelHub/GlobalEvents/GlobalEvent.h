@@ -18,6 +18,8 @@
 #define EVENT_PROPERTY_BRIEFCASE_ID "BriefcaseId"
 #define EVENT_PROPERTY_VERSION_ID "VersionId"
 #define EVENT_PROPERTY_VERSION_NAME "VersionName"
+#define EVENT_PROPERTY_CONTEXT_ID "ContextId"
+#define EVENT_PROPERTY_CONTEXT_TYPE_ID "ContextTypeId"
 
 #define IMODEL_CREATED_EVENT "iModelCreatedEvent"
 #define SOFT_IMODEL_DELETE_EVENT "SoftiModelDeleteEvent"
@@ -30,6 +32,13 @@ BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 struct GlobalEventManager;
 USING_NAMESPACE_BENTLEY_DGN
 
+enum ContextType
+{
+    Unknown,
+    Asset = 2,
+    Project = 3
+};
+
 //=======================================================================================
 //@bsiclass                                      Karolis.Uzkuraitis             04/2018
 //=======================================================================================
@@ -40,6 +49,8 @@ namespace GlobalEvent
     static Utf8CP Property_ToEventSubscriptionId = EVENT_PROPERTY_TO_EVENT_SUBSCRIPTION_ID;
     static Utf8CP Property_ProjectId = EVENT_PROPERTY_PROJECT_ID;
     static Utf8CP Property_iModelId = EVENT_PROPERTY_IMODEL_ID;
+    static Utf8CP Property_ContextId = EVENT_PROPERTY_CONTEXT_ID;
+    static Utf8CP Property_ContextTypeId = EVENT_PROPERTY_CONTEXT_TYPE_ID;
 
     namespace ChangeSetCreatedEventProperties
         {
@@ -120,6 +131,8 @@ namespace GlobalEvent
         Utf8String m_projectId;
         Utf8String m_iModelId;
         Utf8String m_lockUrl;
+        Utf8String m_contextId;
+        ContextType m_contextType;
 
         GenericGlobalEvent
         (
@@ -128,7 +141,9 @@ namespace GlobalEvent
             const Utf8String toEventSubscriptionId,
             const Utf8String projectId,
             const Utf8String iModelId,
-            const Utf8String lockUrl
+            const Utf8String lockUrl,
+            const Utf8String contextId,
+            const ContextType contextType
         )
             {
             m_eventTopic = eventTopic;
@@ -137,6 +152,8 @@ namespace GlobalEvent
             m_projectId = projectId;
             m_iModelId = iModelId;
             m_lockUrl = lockUrl;
+            m_contextId = contextId;
+            m_contextType = contextType;
             }
 
     public:
@@ -146,6 +163,8 @@ namespace GlobalEvent
         Utf8String GetToEventSubscriptionId() const { return m_toEventSubscriptionId; }
         Utf8String GetProjectId() const { return m_projectId; }
         Utf8String GetiModelId() const { return m_iModelId; }
+        Utf8String GetContextId() const { return m_contextId; }
+        ContextType GetContextType() const { return m_contextType; }
         };
     }
 

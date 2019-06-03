@@ -870,23 +870,25 @@ Response CurlHttpRequest::ResolveResponse()
     if (m_transferInfo->status == ConnectionStatus::OK)
         httpStatus = ResolveHttpStatus(httpStatusCode);
 
-    
-
     Response response(m_transferInfo->responseContent, GetEffectiveUrl().c_str(), m_transferInfo->status, httpStatus);
+
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
+        {
+        double totalTimeSeconds = 0;
+        curl_easy_getinfo(m_curl, CURLINFO_TOTAL_TIME, &totalTimeSeconds);
+
+        LOG.infov("< HTTP #%lld %s [%.2fs] %s",
+                  GetNumber(),
+                  Response::ToStatusString(response.GetConnectionStatus(), response.GetHttpStatus()).c_str(),
+                  totalTimeSeconds,
+                  response.GetEffectiveUrl().c_str());
+        }
 
     m_transferInfo->responseContent->GetBody()->Close();
     m_transferInfo = nullptr;
 
     m_curlPool.ReturnHandle(m_curl);
     m_curl = nullptr;
-
-    if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
-        {
-        LOG.infov("< HTTP #%lld %s %s",
-            GetNumber(),
-            Response::ToStatusString(response.GetConnectionStatus(), response.GetHttpStatus()).c_str(),
-            response.GetEffectiveUrl().c_str());
-        }
 
     return response;
     }

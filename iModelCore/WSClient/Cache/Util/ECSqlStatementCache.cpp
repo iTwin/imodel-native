@@ -37,7 +37,7 @@ void WebServices::ECSqlStatementCache::OnSchemaChanged()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSqlStatementPtr WebServices::ECSqlStatementCache::GetPreparedStatement(Utf8String key, CreateECSqlCallbackCR createECSqlCallback)
+ECSqlStatementPtr WebServices::ECSqlStatementCache::GetPreparedStatement(Utf8StringCR key, CreateECSqlCallbackCR createECSqlCallback)
     {
     ECSqlStatementPtr statement;
 
@@ -73,6 +73,14 @@ ECSqlStatementPtr WebServices::ECSqlStatementCache::GetPreparedStatement(Utf8Str
         }
 
     return statement;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSqlStatementPtr WebServices::ECSqlStatementCache::GetPreparedStatement(Utf8StringCR ecsql)
+    {
+    return GetPreparedStatement(ecsql, [&] { return ecsql; });
     }
 
 /*--------------------------------------------------------------------------------------+

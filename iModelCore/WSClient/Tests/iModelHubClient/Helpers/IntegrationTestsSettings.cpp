@@ -90,6 +90,7 @@ void IntegrationTestsSettings::ReadSettings(BeFileNameCR settingsFile)
     if (Utf8String::IsNullOrEmpty(m_url.c_str()))
         m_url = UrlProvider::Urls::iModelHubApi.Get();
     m_projectId = settings["ProjectId"].asString();
+    m_assetId = settings["AssetId"].asString();
 
     m_environment = ResolveEnvironment(settings);
     }
@@ -122,6 +123,11 @@ Credentials IntegrationTestsSettings::GetWrongPassword() const
 Utf8String IntegrationTestsSettings::GetProjectId() const
     {
     return m_projectId;
+    }
+
+Utf8String IntegrationTestsSettings::GetAssetId() const
+    {
+    return m_assetId;
     }
 
 Utf8String IntegrationTestsSettings::GetServerUrl() const

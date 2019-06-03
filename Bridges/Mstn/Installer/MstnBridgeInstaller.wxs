@@ -25,6 +25,7 @@
                         <RegistryValue Name="BridgeAssetsDir" Type="string" Value="[INSTALLDIR]Assets"/>
                         <RegistryValue Name="iModelFrameWorkExe" Type="string" Value="[INSTALLDIR]iModelBridgeFwk.exe"/>
                         <RegistryValue Name="IsPowerPlatformBased" Type="string" Value="false"/>
+                        <RegistryValue Name="SendDocProcessedNotifications" Type="string" Value="true"/>
                     </RegistryKey>
                 </Component>
             </Directory>

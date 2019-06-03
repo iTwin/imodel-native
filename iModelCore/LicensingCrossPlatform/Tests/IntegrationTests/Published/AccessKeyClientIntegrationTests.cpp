@@ -85,10 +85,10 @@ void AccessKeyClientIntegrationTests::SetUpTestCase()
 
 AccessKeyClientPtr AccessKeyClientIntegrationTests::CreateTestClient(Utf8StringCR productId, Utf8StringCR accessKey) const
     {
-    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-    //RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
+    //InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+    RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
     UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
-
+ 
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();

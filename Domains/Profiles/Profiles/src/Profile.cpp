@@ -92,12 +92,10 @@ DgnDbStatus Profile::_OnUpdate (DgnElement const& original)
 void Profile::_OnUpdateFinished() const
     {
     ProfileHandler& profileHandler = ProfileHandler::GetHandler();
-    profileHandler.NotifyDependencies(m_dgndb, m_elementId);
+    profileHandler.NotifyDependenciesOnUpdateFinished(m_dgndb, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Profiles should override this method to update geometry of profiles that reference/
-* depend on it. If overriden, T_Super must be called. See Profile::UpdateGeometry.
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Profile::_UpdateInDb()
@@ -106,6 +104,15 @@ DgnDbStatus Profile::_UpdateInDb()
     m_geometryUpdated = false;
 
     return T_Super::_UpdateInDb();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void Profile::_OnDeleted() const
+    {
+    ProfileHandler& profileHandler = ProfileHandler::GetHandler();
+    profileHandler.NotifyDependenciesOnDeleted(m_dgndb, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -122,7 +129,7 @@ void Profile::_CopyFrom (DgnElement const& source, CopyFromOptions const& opts)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Create and set geometry. Regular geometry creation is skipped if profiles geometry
+* Regular geometry creation is skipped if profiles geometry
 * was updated via a call to Profile::UpdateGeometry.
 * @bsimethod                                                                     01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/

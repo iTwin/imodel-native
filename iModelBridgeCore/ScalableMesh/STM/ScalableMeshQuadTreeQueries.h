@@ -518,6 +518,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                             m_maxNumberOfPoints = maxNumberOfPoints;
                             m_viewClipVector = viewClipVector;
                             m_invertClips = invertClips;
+                            m_hasLevelLimit = false;
                             }
                                                         
         virtual             ~ScalableMeshQuadTreeViewDependentMeshQuery() {};

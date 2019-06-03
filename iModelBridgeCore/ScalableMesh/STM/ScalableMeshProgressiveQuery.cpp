@@ -40,6 +40,23 @@ USING_NAMESPACE_IMAGEPP;
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+
+ SmCachedDisplayMeshData::SmCachedDisplayMeshData(SmCachedDisplayMesh*                 cachedDisplayMesh,
+                                IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr,
+                                uint64_t                             textureID,
+                                bool                                isTextured,
+                                size_t                               memorySize,
+                                const bvector<uint64_t>&             appliedClips)
+            {
+            assert(displayCacheManagerPtr.IsValid());
+            m_cachedDisplayMeshPtr = new SmCachedDisplayMeshWrapper(cachedDisplayMesh, displayCacheManagerPtr);      
+            m_textureID = textureID;
+            m_isTextured = isTextured;
+            m_displayCacheManagerPtr = displayCacheManagerPtr;
+            m_memorySize = memorySize;
+            m_appliedClips.insert(m_appliedClips.end(), appliedClips.begin(), appliedClips.end());                
+            }
+    
 typedef DRange3d Extent3dType;
 
 #define PRINT_SMDISPLAY_MSG

@@ -517,6 +517,14 @@ bool iModelBridgeSacAdapter::Params::_IsFileAssignedToBridge(BeFileNameCR fn, wc
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeSacAdapter::Params::_QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) 
+    {
+    fns.push_back(m_dupInputFileName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeSacAdapter::Params::_GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn) 
@@ -620,6 +628,12 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
         {
         unSupportedFwkArg(argv[iArg]);
         bparams.SetBridgeJobName(iModelBridge::GetArgValue(argv[iArg]).c_str());
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
+    if (argv[iArg] == wcsstr(argv[iArg], L"--match-on-embedded-file-basename"))
+        {
+        bparams.SetMatchOnEmbeddedFileBasename(true);
         return iModelBridge::CmdLineArgStatus::Success;
         }
 

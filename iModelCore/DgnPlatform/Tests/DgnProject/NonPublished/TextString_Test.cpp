@@ -47,7 +47,7 @@ TEST_F(TextStringTest, TextStringToAnnotation)
     TextStringStylePtr tss = TextStringStyle::Create();
     tss->SetFont(DgnFontManager::GetLastResortTrueTypeFont());
     tss->SetSize(DPoint2d::From(1000.0, 1000.0));
-    AnnotationTextStyle ats(db);
+    AnnotationTextStyle ats(db.GetDictionaryModel());
     ASSERT_TRUE(SUCCESS == TextStyleInterop::TextStringToAnnotation(db, ats, *tss));
     EXPECT_TRUE(db.Fonts().FindId(tss->GetFont()) == ats.GetFontId());
     }

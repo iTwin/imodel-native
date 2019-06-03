@@ -16,7 +16,7 @@ namespace LRPJobBackdoorAPI
         {
         Json::Value lrpJobInstanceJson = Json::objectValue;
         JsonValueR instance = lrpJobInstanceJson[ServerSchema::Instance] = Json::objectValue;
-        instance[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
+        instance[ServerSchema::SchemaName] = ServerSchema::Schema::Context;
         instance[ServerSchema::ClassName] = BackdoorAPISchema::Class::LRPJob;
 
         JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
@@ -49,7 +49,7 @@ namespace LRPJobBackdoorAPI
     +---------------+---------------+---------------+---------------+---------------+------*/
     int QueryLRPJobState (IWSRepositoryClientPtr projectConnection, Utf8StringCR lrpJobRecordId)
         {
-        ObjectId lrpJobRecordObjectId(ServerSchema::Schema::Project, BackdoorAPISchema::Class::LRPJob, lrpJobRecordId);
+        ObjectId lrpJobRecordObjectId(ServerSchema::Schema::Context, BackdoorAPISchema::Class::LRPJob, lrpJobRecordId);
 
         auto requestOptions = iModelHubHelpers::CreateiModelHubRequestOptions();
         auto result = projectConnection->SendGetObjectRequestWithOptions(lrpJobRecordObjectId, nullptr, requestOptions, nullptr)->GetResult ();

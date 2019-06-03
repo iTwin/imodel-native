@@ -48,11 +48,11 @@ $(o)AlignmentCategory$(oext) : $(_MakeFilePath)AlignmentCategory.cpp ${MultiComp
 
 $(o)AlignmentModel$(oext) : $(_MakeFilePath)AlignmentModel.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentModel.h
 
-$(o)AlignmentProfileViewDefinition$(oext) : $(_MakeFilePath)AlignmentProfileViewDefinition.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentProfileViewDefinition.h
+# $(o)AlignmentProfileViewDefinition$(oext) : $(_MakeFilePath)AlignmentProfileViewDefinition.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentProfileViewDefinition.h
 
 $(o)AlignmentReferent$(oext) : $(_MakeFilePath)AlignmentReferent.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentReferent.h
 
-$(o)ClipPlanesViewDefinition$(oext) : $(_MakeFilePath)ClipPlanesViewDefinition.cpp ${MultiCompileDepends} $(appPublicApi)ClipPlanesViewDefinition.h
+# $(o)ClipPlanesViewDefinition$(oext) : $(_MakeFilePath)ClipPlanesViewDefinition.cpp ${MultiCompileDepends} $(appPublicApi)ClipPlanesViewDefinition.h
 
 $(o)RoadRailAlignmentDomain$(oext) : $(_MakeFilePath)RoadRailAlignmentDomain.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailAlignmentDomain.h
 

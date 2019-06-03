@@ -72,7 +72,7 @@ protected:
 
     AnnotationTextStyleCPtr CreateTextStyle(Utf8CP name)
         {
-        AnnotationTextStyle style(*m_db);
+        AnnotationTextStyle style(m_db->GetDictionaryModel());
         style.SetName(name);
         auto pStyle = style.Insert();
         EXPECT_TRUE(pStyle.IsValid());
@@ -579,11 +579,95 @@ TEST_F(RevisionTestFixture, Codes)
     }
 
 //=======================================================================================
+// Silly handler for testing dependencies.
+// Assuming A and B are TestElement-s, if A drives B then:
+//  - TestElementDrivesElement.Property1 is an integer X from 0-3 identifying TestIntegerProperty[X+1]
+//    in element B
+//  - The value of TestIntegerPropertyX always has the same value as A.TestIntegerProperty1
+// @bsistruct                                                   Paul.Connelly   05/16
+//=======================================================================================
+struct TestElementDependency : TestElementDrivesElementHandler::Callback
+{
+    int32_t m_mostRecentValue = -1;
+    uint32_t m_invocationCount = 0;
+
+    void Reset() { m_mostRecentValue = -1; m_invocationCount = 0; }
+    int32_t GetMostRecentValue() const { return m_mostRecentValue; }
+    uint32_t GetInvocationCount() const { return m_invocationCount; }
+
+    void _OnRootChanged(DgnDbR, ECInstanceId, DgnElementId, DgnElementId) override;
+    void _ProcessDeletedDependency(DgnDbR, dgn_TxnTable::ElementDep::DepRelData const&) override { }
+
+    TestElementDependency() { TestElementDrivesElementHandler::SetCallback(this); }
+    ~TestElementDependency() { TestElementDrivesElementHandler::SetCallback(nullptr); }
+
+    static void Insert(DgnDbR db, DgnElementId rootId, DgnElementId depId, uint8_t index);
+    static uint8_t GetIndex(DgnDbR db, ECInstanceId relId);
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElementDependency::Insert(DgnDbR db, DgnElementId rootId, DgnElementId depId, uint8_t index)
+    {
+    ECInstanceKey key = TestElementDrivesElementHandler::Insert(db, rootId, depId);
+    Utf8CP str = "0";
+    switch (index)
+        {
+        case 1: str = "1"; break;
+        case 2: str = "2"; break;
+        case 3: str = "3"; break;
+        }
+
+    TestElementDrivesElementHandler::SetProperty1(db, str, key);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+uint8_t TestElementDependency::GetIndex(DgnDbR db, ECInstanceId relId)
+    {
+    Utf8String str = TestElementDrivesElementHandler::GetProperty1(db, relId);
+    uint8_t idx = 0;
+    if (0 < str.length())
+        {
+        switch (str[0])
+            {
+            case '1':   idx = 1; break;
+            case '2':   idx = 2; break;
+            case '3':   idx = 3; break;
+            }
+        }
+
+    return idx;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElementDependency::_OnRootChanged(DgnDbR db, ECInstanceId relId, DgnElementId rootId, DgnElementId depId)
+    {
+    ++m_invocationCount;
+    auto root = db.Elements().Get<TestElement>(rootId);
+    auto dep = db.Elements().GetForEdit<TestElement>(depId);
+    ASSERT_TRUE(root.IsValid() && dep.IsValid());
+
+    uint8_t index = GetIndex(db, relId);
+    m_mostRecentValue = root->GetIntegerProperty(0);
+    dep->SetIntegerProperty(index, m_mostRecentValue);
+    auto cpDep = db.Elements().Update(*dep);
+    ASSERT_TRUE(cpDep.IsValid());
+    EXPECT_EQ(cpDep->GetIntegerProperty(index), root->GetIntegerProperty(0));
+    }
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   05/16
 //=======================================================================================
 struct DependencyRevisionTest : RevisionTestFixture
 {
     DEFINE_T_SUPER(RevisionTestFixture);
+
+    TestElementDependency   m_dep;
 
     TestElementCPtr InsertElement(int32_t intProp1);
     void UpdateRootProperty(int32_t intProp1, DgnElementId eId);
@@ -665,7 +749,6 @@ void DependencyRevisionTest::VerifyDependentProperties(DgnElementId eId, std::ar
     EXPECT_EQ(el->GetIntegerProperty(3), props[3]);
     }
 
-#if defined JS_TXN_MGR_CHANGE
 /*---------------------------------------------------------------------------------**//**
 * Ensure the dependency callback works as expected...
 * @bsimethod                                                    Paul.Connelly   05/16
@@ -724,7 +807,6 @@ TEST_F(DependencyRevisionTest, TestDependency)
     EXPECT_EQ(321, c->GetIntegerProperty(2));
     EXPECT_EQ(654, c->GetIntegerProperty(3));
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * Create a revision which includes indirect changes, then apply that revision.
@@ -1130,7 +1212,6 @@ TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
     VerifyRootProperty(rootId, 654);
     VerifyDependentProperties(depId, {456, 0, 654, 0});
     }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/2017
@@ -2206,7 +2287,7 @@ static DgnRevisionPtr createRevision(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RevisionTestFixture, OptimisticConcurrencyConflict)
+TEST_F(RevisionTestFixture, OptimisiticConcurrencyConflict)
     {
     // Get any profile upgrades out of the way. We don't want any of that to appear in the revision history for the purposes of this test.
     SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"upgraded.bim");

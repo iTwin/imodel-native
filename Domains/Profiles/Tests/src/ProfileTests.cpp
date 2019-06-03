@@ -616,38 +616,77 @@ TEST_F(ProfileTestCase, ParseStandardCardinalPoint_Null_Unset)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ProfileTestCase, NotifyDependencies_RegisteredIDependencyUpdateHandler_HandlerWasCalled)
+TEST_F (ProfileTestCase, NotifyDependencies_RegisteredIDependencyChangeHandler_HandlerWasCalled)
     {
-    struct ProfileUpdateHandlerExample : IDependencyUpdateHandler
-        {
-        std::shared_ptr<int> value;
-        virtual void _OnUpdate (DgnDb const& database, DgnElementId const& elementId) override
-            {
-            ++(*value);
-            }
+    struct ProfileTestDummy {};
 
-        ProfileUpdateHandlerExample()
+    struct TestNotifier : DependencyChangeNotifier<ProfileTestDummy>
+        {
+        void NotifyDependenciesUpdateFinishedWrapper(DgnDb const& database, ProfileTestDummy const& element)
             {
-            value = std::make_shared<int> (0);
+            NotifyDependenciesOnUpdateFinished(database, element);
+            }
+        void NotifyDependenciesDeletedWrapper(DgnDb const& database, ProfileTestDummy const& element)
+            {
+            NotifyDependenciesOnDeleted(database, element);
             }
         };
 
-    struct TestNotifier : DependencyUpdateNotifier
-        {
-        void NotifyDependenciesWrapper(Dgn::DgnDb const& database, Dgn::DgnElementId const& elementId)
-            {
-            NotifyDependencies(database, elementId);
-            }
-        };
-
-    ProfileUpdateHandlerExample profileUpdateHandler = ProfileUpdateHandlerExample();
+    TestProfileChangeHandler<ProfileTestDummy> profileChangeHandler;
 
     TestNotifier notifier;
-    notifier.RegisterDependencyHandler(profileUpdateHandler);
+    notifier.RegisterDependencyHandler(profileChangeHandler);
 
-    ASSERT_EQ (0, *profileUpdateHandler.value);
-    notifier.NotifyDependenciesWrapper(GetDb(), DgnElementId());
-    ASSERT_EQ (1, *profileUpdateHandler.value) << "NotifyDependecies() failed to call _OnUpdate() of registered handlers";
-    notifier.NotifyDependenciesWrapper(GetDb(), DgnElementId());
-    ASSERT_EQ (2, *profileUpdateHandler.value) << "NotifyDependecies() failed to call _OnUpdate() of registered handlers";
+    EXPECT_EQ (0, *profileChangeHandler.onUpdateFinsihedCount);
+    notifier.NotifyDependenciesUpdateFinishedWrapper(GetDb(), ProfileTestDummy());
+    EXPECT_EQ (1, *profileChangeHandler.onUpdateFinsihedCount) << "NotifyDependenciesOnUpdateFinished() failed to call _OnUpdateFinished() of registered handlers";
+    notifier.NotifyDependenciesUpdateFinishedWrapper(GetDb(), ProfileTestDummy());
+    EXPECT_EQ (2, *profileChangeHandler.onUpdateFinsihedCount) << "NotifyDependenciesOnUpdateFinished() failed to call _OnUpdateFinished() of registered handlers";
+
+    EXPECT_EQ (0, *profileChangeHandler.onDeletedCount);
+    notifier.NotifyDependenciesDeletedWrapper(GetDb(), ProfileTestDummy());
+    EXPECT_EQ (1, *profileChangeHandler.onDeletedCount) << "NotifyDependenciesOnDeleted() failed to call _OnDeleted() of registered handlers";
+    notifier.NotifyDependenciesDeletedWrapper(GetDb(), ProfileTestDummy());
+    EXPECT_EQ (2, *profileChangeHandler.onDeletedCount) << "NotifyDependenciesOnDeleted() failed to call _OnDeleted() of registered handlers";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ProfileTestCase, Update_ExistingDepencencyChangeHandler_NotifyOnUpdate)
+    {
+    TestProfileChangeHandler<Profile> profileChangeHandler;
+    ProfileHandler::GetHandler().RegisterDependencyHandler(profileChangeHandler);
+
+    EXPECT_EQ(0, *profileChangeHandler.onUpdateFinsihedCount);
+
+    ProfilePtr profile = CreateProfile("C");
+    DgnDbStatus status;
+    profile->Insert(&status);
+    ASSERT_EQ(DgnDbStatus::Success, status);
+    profile->SetName("name2");
+    profile->Update(&status);
+    ASSERT_EQ(DgnDbStatus::Success, status);
+
+    EXPECT_EQ(1, *profileChangeHandler.onUpdateFinsihedCount);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ProfileTestCase, Update_ExistingDepencencyChangeHandler_NotifyOnDelete)
+    {
+    TestProfileChangeHandler<Profile> profileChangeHandler;
+    ProfileHandler::GetHandler().RegisterDependencyHandler(profileChangeHandler);
+
+    EXPECT_EQ(0, *profileChangeHandler.onDeletedCount);
+
+    ProfilePtr profile = CreateProfile("C");
+    DgnDbStatus status;
+    profile->Insert(&status);
+    ASSERT_EQ(DgnDbStatus::Success, status);
+    profile->SetName("name2");
+    profile->Delete();
+
+    EXPECT_EQ(1, *profileChangeHandler.onDeletedCount);
     }

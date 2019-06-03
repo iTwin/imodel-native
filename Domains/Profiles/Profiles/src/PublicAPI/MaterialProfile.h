@@ -40,6 +40,7 @@ protected:
     virtual bool _Validate() const;
 
     PROFILES_EXPORT virtual void _OnUpdateFinished() const override; //!< @private
+    PROFILES_EXPORT virtual void _OnDeleted() const override; //!< @private
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (MaterialProfile)
@@ -62,7 +63,7 @@ public:
 //! Handler for MaterialProfile class
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE MaterialProfileHandler : MaterialProfileDefinitionHandler, DependencyUpdateNotifier
+struct EXPORT_VTABLE_ATTRIBUTE MaterialProfileHandler : MaterialProfileDefinitionHandler, DependencyChangeNotifier<MaterialProfile>
     {
     friend struct MaterialProfile;
 

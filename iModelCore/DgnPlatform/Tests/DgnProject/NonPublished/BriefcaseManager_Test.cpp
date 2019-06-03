@@ -1510,7 +1510,7 @@ TEST_F (DoubleBriefcaseTest, StandaloneBriefcase)
     ExpectAcquire(*GetElement(brief, Elem3dId2()), LockLevel::Exclusive);
 
     // So are codes...
-    AnnotationTextStyle style(master);
+    AnnotationTextStyle style(master.GetDictionaryModel());
     style.SetName("MyStyle");
     DgnCode code = style.GetCode(); // the only reason we created the style...
     EXPECT_EQ(RepositoryStatus::Success, master.BriefcaseManager().ReserveCode(code));
@@ -1521,7 +1521,7 @@ TEST_F (DoubleBriefcaseTest, StandaloneBriefcase)
     EXPECT_EQ(BE_SQLITE_OK, master.SaveChanges());
     EXPECT_FALSE(master.Txns().IsUndoPossible());
 
-    AnnotationTextStyle briefStyle(brief);
+    AnnotationTextStyle briefStyle(brief.GetDictionaryModel());
     briefStyle.SetName("MyStyle");
     EXPECT_TRUE(briefStyle.Insert().IsValid());
     EXPECT_EQ(BE_SQLITE_OK, brief.SaveChanges());
@@ -1725,7 +1725,7 @@ TEST_F (FastQueryTest, CacheCodes)
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ExtractLocksTest : SingleBriefcaseLocksTest
+struct ExtractLocksTest : SingleBriefcaseLocksTest, TestElementDrivesElementHandler::Callback
 {
     DgnElementCPtr  m_onRootChangedElement = nullptr;
 
@@ -1743,7 +1743,10 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
                 req.Clear();
                 return DgnDbStatus::Success;
                 }
-            return DgnDbStatus::BadRequest;
+            else
+                {
+                return DgnDbStatus::BadRequest;
+                }
             }
 
         req.FromRevision(*rev, *m_db, extractInserted, avoidExclusiveModelElements);
@@ -1751,6 +1754,26 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
         return DgnDbStatus::Success;
         }
 
+    /*---------------------------------------------------------------------------------**//**
+     * @bsimethod                                                    Diego.Pinate    04/18
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    void _OnRootChanged(DgnDbR db, ECInstanceId relationshipId, DgnElementId source, DgnElementId target) override
+        {
+        // Update an element to test dependency changes don't generate locks in ExtractLocks call
+        EXPECT_TRUE(m_onRootChangedElement.IsValid());
+        DgnElementPtr elementEdit = db.Elements().GetForEdit<DgnElement>(m_onRootChangedElement->GetElementId());
+        elementEdit->SetUserLabel("Updated label OnRootChanged");
+        EXPECT_TRUE(elementEdit->Update().IsValid());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+     * @bsimethod                                                    Diego.Pinate    04/18
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    void _ProcessDeletedDependency(DgnDbR db, dgn_TxnTable::ElementDep::DepRelData const& relData) override
+        {
+        //
+        }
+    
     //-------------------------------------------------------------------------------------------
     // @bsimethod                                                 Diego.Pinate     12/17
     //-------------------------------------------------------------------------------------------
@@ -1765,7 +1788,8 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
             {
             if (RevisionStatus::NoTransactions == revStat)
                 return DgnDbStatus::Success;
-            return DgnDbStatus::BadRequest;
+            else
+                return DgnDbStatus::BadRequest;
             }
         
         return m_db->Revisions().FinishCreateRevision() == RevisionStatus::Success ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
@@ -1931,7 +1955,6 @@ TEST_F(ExtractLocksTest, UsedLocks)
     EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
     EXPECT_TRUE(req.IsEmpty());
 
-#if defined NOTNOW
     // Indirect changes shouldn't be extracted as required locks
         {
         UndoScope V_V_V_Undo(db);
@@ -1954,7 +1977,6 @@ TEST_F(ExtractLocksTest, UsedLocks)
         // Get rid of the static callback pointer
         TestElementDrivesElementHandler::SetCallback(nullptr);
         }
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2041,7 +2063,7 @@ struct CodesManagerTest : RepositoryManagerTest
 
     static DgnDbStatus InsertStyle(Utf8CP name, DgnDbR db, bool expectSuccess = true)
         {
-        AnnotationTextStyle style(db);
+        AnnotationTextStyle style(db.GetDictionaryModel());
         style.SetName(name);
         IBriefcaseManager::Request req;
         EXPECT_EQ(expectSuccess, RepositoryStatus::Success == db.BriefcaseManager().PrepareForElementInsert(req, style, IBriefcaseManager::PrepareAction::Acquire));
@@ -2063,7 +2085,7 @@ struct CodesManagerTest : RepositoryManagerTest
     static DgnCode MakeStyleCode(Utf8CP name, DgnDbR db)
         {
         // Because AnnotationTextStyle::CreateCodeFromName() is private for some reason...
-        AnnotationTextStyle style(db);
+        AnnotationTextStyle style(db.GetDictionaryModel());
         style.SetName(name);
         return style.GetCode();
         }
@@ -2232,7 +2254,7 @@ TEST_F(CodesManagerTest, AutoReserveCodes)
     EXPECT_EQ(DgnDbStatus::CodeNotReserved, InsertStyle(existingStyleCode.GetValueUtf8().c_str(), db, false));
 
     // Updating an element and changing its code will NOT reserve the new code if we haven't done so already
-    auto pStyle = AnnotationTextStyle::Get(db, "MyStyle")->CreateCopy();
+    auto pStyle = AnnotationTextStyle::Get(db.GetDictionaryModel(), "MyStyle")->CreateCopy();
     DgnDbStatus status;
     pStyle->SetName("MyRenamedStyle");
     EXPECT_FALSE(pStyle->DgnElement::Update(&status).IsValid());
@@ -2245,7 +2267,7 @@ TEST_F(CodesManagerTest, AutoReserveCodes)
     pStyle = nullptr;
 
     // Attempting to change code to an already-used code will fail on update
-    pStyle = AnnotationTextStyle::Get(db, "MyRenamedStyle")->CreateCopy();
+    pStyle = AnnotationTextStyle::Get(db.GetDictionaryModel(), "MyRenamedStyle")->CreateCopy();
     pStyle->SetName(existingStyleCode.GetValueUtf8().c_str());
     EXPECT_TRUE(pStyle->DgnElement::Update(&status).IsNull());
     EXPECT_EQ(DgnDbStatus::CodeNotReserved, status);
@@ -2337,7 +2359,7 @@ TEST_F(CodesManagerTest, CodesInRevisions)
     EXPECT_STATUS(CodeUnavailable, mgr.ReserveCode(usedCode));
 
     // Swap the code so that "Used" becomes "Unused"
-    auto pStyle = AnnotationTextStyle::Get(db, "Used")->CreateCopy();
+    auto pStyle = AnnotationTextStyle::Get(db.GetDictionaryModel(), "Used")->CreateCopy();
     pStyle->SetName("Unused");
     EXPECT_TRUE(pStyle->Update().IsValid());
     pStyle = nullptr;
@@ -2352,7 +2374,7 @@ TEST_F(CodesManagerTest, CodesInRevisions)
 
     // Delete the style => its code becomes discarded
     // Ugh except you are not allowed to delete text styles...rename it again instead
-    pStyle = AnnotationTextStyle::Get(db, "Unused")->CreateCopy();
+    pStyle = AnnotationTextStyle::Get(db.GetDictionaryModel(), "Unused")->CreateCopy();
     pStyle->SetName("Deleted");
     // Will fail because we haven't reserved code...
     DgnDbStatus status;

@@ -101,7 +101,7 @@ public:
     Utf8String GetDisplayStyleName() const {return m_displayStyleName;}
     void SetDisplayStyleName(Utf8StringCR displayStyleName){m_displayStyleName = displayStyleName;}
     int32_t GetDisplayStyleIndex() const {return m_displayStyleIndex;}
-    void SetDisplayStyleIndex(int32_t displayStyleIndex){m_displayStyleIndex = displayStyleIndex;}
+    void SetDisplayStyleIndex(int32_t displayStyleIndex){m_displayStyleIndex = displayStyleIndex > -1 ? displayStyleIndex : -1;}
 
     POINTCLOUD_EXPORT void _Save(ViewDefinitionR) const override;
     POINTCLOUD_EXPORT void _Load(ViewDefinitionR) override;

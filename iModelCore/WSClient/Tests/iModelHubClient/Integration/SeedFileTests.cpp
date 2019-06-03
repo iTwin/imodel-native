@@ -488,7 +488,7 @@ TEST_F(SeedFileTests, ReplaceCodesLocksChangeSets)
     ExpectCodeState(CreateCodeReserved(code2, db), manager);
 
     // Discard one code and use another
-    auto pStyle = AnnotationTextStyle::GetForEdit(db, TestCodeName(1).c_str());
+    auto pStyle = AnnotationTextStyle::GetForEdit(db.GetDictionaryModel(), TestCodeName(1).c_str());
     pStyle->SetName(TestCodeName(2).c_str());
     EXPECT_TRUE(pStyle->Update().IsValid());
     pStyle = nullptr;

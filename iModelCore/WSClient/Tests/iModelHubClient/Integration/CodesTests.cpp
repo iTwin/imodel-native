@@ -168,7 +168,7 @@ TEST_F(CodesTests, ReserveStyleCodes)
     EXPECT_EQ(DgnDbStatus::DuplicateCode, InsertStyle(TestCodeName().c_str(), db, false));
 
     // Updating an element and changing its code will NOT reserve the new code if we haven't done so already
-    auto pStyle = AnnotationTextStyle::Get(db, TestCodeName().c_str())->CreateCopy();
+    auto pStyle = AnnotationTextStyle::Get(db.GetDictionaryModel(), TestCodeName().c_str())->CreateCopy();
     DgnDbStatus status;
     pStyle->SetName(TestCodeName(1).c_str());
     EXPECT_FALSE(pStyle->DgnElement::Update(&status).IsValid());
@@ -261,7 +261,7 @@ TEST_F(CodesTests, CodesWithChangeSets)
     ExpectCodeState(CreateCodeReserved(unusedCode, db), manager);
 
     // Swap the code so that "Used" becomes "Unused"
-    auto pStyle = AnnotationTextStyle::GetForEdit(db, TestCodeName(1).c_str());
+    auto pStyle = AnnotationTextStyle::GetForEdit(db.GetDictionaryModel(), TestCodeName(1).c_str());
     pStyle->SetName(TestCodeName().c_str());
     EXPECT_TRUE(pStyle->Update().IsValid());
     pStyle = nullptr;
@@ -277,7 +277,7 @@ TEST_F(CodesTests, CodesWithChangeSets)
 
     // Delete the style => its code becomes discarded
     // Ugh except you are not allowed to delete text styles...rename it again instead
-    pStyle = AnnotationTextStyle::GetForEdit(db, TestCodeName().c_str());
+    pStyle = AnnotationTextStyle::GetForEdit(db.GetDictionaryModel(), TestCodeName().c_str());
     pStyle->SetName(TestCodeName(2).c_str());
 
     // Will fail because we haven't reserved code...
@@ -349,7 +349,7 @@ TEST_F(CodesTests, CodesWithSpecialSymbols)
     ExpectCodeState(CreateCodeReserved(code2, db), manager);
 
     // Discard first code
-    auto pStyle = AnnotationTextStyle::GetForEdit(db, "1*1");
+    auto pStyle = AnnotationTextStyle::GetForEdit(db.GetDictionaryModel(), "1*1");
     pStyle->SetName("\t*\n");
     EXPECT_TRUE(pStyle->Update().IsValid());
     pStyle = nullptr;
@@ -404,7 +404,7 @@ TEST_F(CodesTests, QueryUnavailableCodesTest)
     iModelHubHelpers::ExpectUnavailableCodesCount(briefcase2, codesCountInSeedFile + 2);
 
     //Swap the name, to discard the first code
-    auto pStyle = AnnotationTextStyle::GetForEdit(db1, TestCodeName(1).c_str());
+    auto pStyle = AnnotationTextStyle::GetForEdit(db1.GetDictionaryModel(), TestCodeName(1).c_str());
     pStyle->SetName(TestCodeName().c_str());
     EXPECT_TRUE(pStyle->Update().IsValid());
     pStyle = nullptr;
@@ -489,7 +489,7 @@ TEST_F(CodesTests, QueryAvailableCodesTest)
 
     //Discard a code
     EXPECT_STATUS(Success, db1.BriefcaseManager().ReserveCodes(codes).Result());
-    auto pStyle = AnnotationTextStyle::GetForEdit(db1, TestCodeName().c_str());
+    auto pStyle = AnnotationTextStyle::GetForEdit(db1.GetDictionaryModel(), TestCodeName().c_str());
     pStyle->SetName(TestCodeName(1).c_str());
     EXPECT_TRUE(pStyle->Update().IsValid());
     pStyle = nullptr;

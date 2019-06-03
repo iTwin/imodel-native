@@ -127,3 +127,47 @@ TEST_F(ThumbnailsTests, GetThumbnailsByVersionId)
             }
         }
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Algirdas.Mikoliunas             05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ThumbnailsTests, GetAssetiModelThumbnail)
+    {
+    ASSERT_SUCCESS(iModelHubHelpers::DeleteiModelByName(s_client, GetTestiModelName(), s_assetId));
+
+    //Create iModel with no changesets
+    iModelResult result = iModelHubHelpers::CreateEmptyiModel(*s_client, s_assetId, GetTestiModelName(), "", true);
+    ASSERT_SUCCESS(result);
+    auto assetiModelInfo = result.GetValue();
+    auto assetiModelConnection = CreateiModelConnection(assetiModelInfo);
+
+    // Add view, changeSet, named version
+    iModelHubHelpers::PushDefaultView(s_client, assetiModelInfo);
+    iModelHubHelpers::AcquireAndAddChangeSets(s_client, assetiModelInfo, 1);
+    VersionInfoPtr version;
+
+    auto behaviourOptions = RequestBehaviorOptions();
+    behaviourOptions.DisableOption(RequestBehaviorOptionsEnum::DoNotScheduleRenderThumbnailJob);
+
+    bmap<Utf8String, Utf8String> requestOptions = bmap<Utf8String, Utf8String>();
+    requestOptions.insert(behaviourOptions.GetBehaviorOptionsResultPair());
+    s_client->GlobalRequestOptions()->SetRequestOptions(requestOptions);
+
+    iModelHubHelpers::CreateNamedVersion(version, assetiModelConnection, Utf8PrintfString("ThumbnailsTests%d", 1), 1);
+
+    for (Thumbnail::Size size : s_thumbnailSizes)
+        {
+        ThumbnailImageResult result;
+        int retryCount = 100;
+        for (int i = 0; i <= retryCount; i++)
+            {
+            result = s_client->GetiModelThumbnail(s_assetId, assetiModelInfo->GetId(), size)->GetResult();
+            if (result.IsSuccess() || i == retryCount)
+                break;
+            BeThreadUtilities::BeSleep(3000);
+            }
+        EXPECT_TRUE(result.IsSuccess());
+        EXPECT_TRUE(result.GetValue().IsValid());
+        EXPECT_TRUE(result.GetValue().GetByteStream().HasData());
+        }
+    }

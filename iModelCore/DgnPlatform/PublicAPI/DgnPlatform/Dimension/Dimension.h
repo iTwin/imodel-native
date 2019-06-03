@@ -39,7 +39,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DimensionStyle : DefinitionElement
 private:
     DgnElementId m_textStyleId;
 
-    static DgnCode CreateCode(DgnDbR db, Utf8CP name) {return CodeSpec::CreateCode(db, BIS_CODESPEC_AnnotationTextStyle, name);}
+    static DgnCode CreateCode(DefinitionModelCR model, Utf8CP name) {return CodeSpec::CreateCode(BIS_CODESPEC_AnnotationTextStyle, model, name);}
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
@@ -55,18 +55,20 @@ protected:
 public:
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DimensionStyle));}
     
-    explicit DimensionStyle(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), DgnCode())) {}
+    explicit DimensionStyle(DefinitionModelCR model) : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), DgnCode())) {}
     explicit DimensionStyle(CreateParams const& params) : T_Super(params) {}
     DimensionStylePtr CreateCopy() const {return MakeCopy<DimensionStyle>();}
 
-    Utf8String GetName() const {return GetCode().GetValueUtf8();}
-    void SetName(Utf8CP value) {T_Super::SetCode(CreateCode(GetDgnDb(), value)); /* Only SetName is allowed to SetCode. */ }
+    DefinitionModelCPtr GetDefinitionModel() const {return GetDgnDb().Models().Get<DefinitionModel>(GetModelId());}
 
-    static DgnElementId QueryId(DgnDbR db, Utf8CP name) {return db.Elements().QueryElementIdByCode(CreateCode(db, name));}
-    static DimensionStyleCPtr Get(DgnDbR db, Utf8CP name) {return Get(db, QueryId(db, name));}
+    Utf8String GetName() const {return GetCode().GetValueUtf8();}
+    void SetName(Utf8CP value) {T_Super::SetCode(CreateCode(*GetDefinitionModel(), value)); /* Only SetName is allowed to SetCode. */ }
+
+    static DgnElementId QueryId(DefinitionModelCR model, Utf8CP name) {return model.GetDgnDb().Elements().QueryElementIdByCode(CreateCode(model, name));}
+    static DimensionStyleCPtr Get(DefinitionModelCR model, Utf8CP name) {return Get(model.GetDgnDb(), QueryId(model, name));}
     static DimensionStyleCPtr Get(DgnDbR db, DgnElementId id) {return db.Elements().Get<DimensionStyle>(id);}
     static DimensionStylePtr GetForEdit(DgnDbR db, DgnElementId id) {return db.Elements().GetForEdit<DimensionStyle>(id);}
-    static DimensionStylePtr GetForEdit(DgnDbR db, Utf8CP name) {return GetForEdit(db, QueryId(db, name));}
+    static DimensionStylePtr GetForEdit(DefinitionModelCR model, Utf8CP name) {return GetForEdit(model.GetDgnDb(), QueryId(model, name));}
     DimensionStyleCPtr Insert() {return GetDgnDb().Elements().Insert<DimensionStyle>(*this);}
     DimensionStyleCPtr Update() {return GetDgnDb().Elements().Update<DimensionStyle>(*this);}
 

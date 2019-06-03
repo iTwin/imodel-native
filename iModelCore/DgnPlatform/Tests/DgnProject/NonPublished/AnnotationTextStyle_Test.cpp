@@ -87,7 +87,7 @@ TEST_F(AnnotationTextStyleTest, DefaultsAndAccessors)
     DgnDbR project = *GetDgnDb(L"DefaultsAndAccessors");
 
     //.............................................................................................
-    AnnotationTextStylePtr style = AnnotationTextStyle::Create(project);
+    AnnotationTextStylePtr style = AnnotationTextStyle::Create(project.GetDictionaryModel());
     ASSERT_TRUE(style.IsValid());
 
     // Basics
@@ -121,7 +121,7 @@ TEST_F(AnnotationTextStyleTest, DeepCopy)
     DgnDbR project = *GetDgnDb();
 
     //.............................................................................................
-    AnnotationTextStylePtr style = AnnotationTextStyle::Create(project);
+    AnnotationTextStylePtr style = AnnotationTextStyle::Create(project.GetDictionaryModel());
     ASSERT_TRUE(style.IsValid());
 
     DECLARE_AND_SET_DATA_1(style);
@@ -151,7 +151,7 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
 
     //.............................................................................................
     // Insert
-    AnnotationTextStylePtr testStyle = AnnotationTextStyle::Create(project);
+    AnnotationTextStylePtr testStyle = AnnotationTextStyle::Create(project.GetDictionaryModel());
     DECLARE_AND_SET_DATA_1(testStyle);
 
     ASSERT_TRUE(testStyle->Insert().IsValid());
@@ -162,7 +162,7 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     //.............................................................................................
     // Query
     EXPECT_TRUE(AnnotationTextStyle::Get(project, testStyle->GetElementId()).IsValid());
-    EXPECT_TRUE(AnnotationTextStyle::Get(project, name.c_str()).IsValid());
+    EXPECT_TRUE(AnnotationTextStyle::Get(project.GetDictionaryModel(), name.c_str()).IsValid());
 
     AnnotationTextStyleCPtr fileStyle = AnnotationTextStyle::Get(project, testStyle->GetElementId());
     ASSERT_TRUE(fileStyle.IsValid());
@@ -171,7 +171,7 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     EXPECT_TRUE(testStyle->GetElementId() == fileStyle->GetElementId());
     VERIFY_DATA_1(fileStyle);
 
-    fileStyle = AnnotationTextStyle::Get(project, name.c_str());
+    fileStyle = AnnotationTextStyle::Get(project.GetDictionaryModel(), name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDgnDb());
@@ -192,7 +192,7 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
 
     EXPECT_EQ((1), AnnotationTextStyle::QueryCount(project));
 
-    fileStyle = AnnotationTextStyle::Get(project, name.c_str());
+    fileStyle = AnnotationTextStyle::Get(project.GetDictionaryModel(), name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
     EXPECT_TRUE(&project == &fileStyle->GetDgnDb());

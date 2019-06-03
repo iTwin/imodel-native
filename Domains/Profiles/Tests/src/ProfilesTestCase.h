@@ -96,3 +96,24 @@ protected:
     Utf8String GetFailureMessage (Utf8CP message, CharCP file, size_t lineNo);
     };
 
+/*---------------------------------------------------------------------------------**//**
+* This template should be used as a helper for testing IDependencyChangeHandler<T>
+* @bsiclass                                                                      05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename T>
+struct TestProfileChangeHandler : Profiles::IDependencyChangeHandler<T>
+    {
+    std::shared_ptr<int> onUpdateFinsihedCount = std::make_shared<int>(0);
+    std::shared_ptr<int> onDeletedCount = std::make_shared<int>(0);
+
+    virtual void _OnUpdateFinished (Dgn::DgnDb const& database, T const& element) override
+        {
+        ++(*onUpdateFinsihedCount);
+        }
+
+    virtual void _OnDeleted (Dgn::DgnDb const& database, T const& element) override
+        {
+        ++(*onDeletedCount);
+        }
+    };
+

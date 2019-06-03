@@ -12,13 +12,14 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RoadRailCategory::InsertDomainCategories(DgnDbR db)
     {
-    auto modelPtr = RoadRailCategoryModel::GetModel(db);
+    auto modelPtr = RoadRailAlignmentDomain::QueryCategoryModel(db);
     if (modelPtr.IsNull())
         {
         BeAssert(false);
         }
 
     InsertSpatialCategory(*modelPtr, BRRP_CATEGORY_Corridor, ColorDef::White());
+    InsertSpatialCategory(*modelPtr, BRRP_CATEGORY_DesignSpeed, ColorDef::White());
     InsertSpatialCategory(*modelPtr, BRRP_CATEGORY_Roadway, ColorDef::White());
     InsertSpatialCategory(*modelPtr, BRRP_CATEGORY_Railway, ColorDef::White());
     }
@@ -41,7 +42,7 @@ void RoadRailCategory::InsertSubCategory(DgnCategoryCR category, Utf8CP codeValu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialCategoryCPtr RoadRailCategory::InsertSpatialCategory(RoadRailCategoryModelR model, Utf8CP codeValue, ColorDef const& color)
+SpatialCategoryCPtr RoadRailCategory::InsertSpatialCategory(DefinitionModelR model, Utf8CP codeValue, ColorDef const& color)
     {
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(color);
@@ -56,7 +57,7 @@ SpatialCategoryCPtr RoadRailCategory::InsertSpatialCategory(RoadRailCategoryMode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DrawingCategoryCPtr RoadRailCategory::InsertDrawingCategory(RoadRailCategoryModelR model, Utf8CP codeValue, ColorDef const& color)
+DrawingCategoryCPtr RoadRailCategory::InsertDrawingCategory(DefinitionModelR model, Utf8CP codeValue, ColorDef const& color)
     {
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(color);
@@ -74,7 +75,7 @@ DrawingCategoryCPtr RoadRailCategory::InsertDrawingCategory(RoadRailCategoryMode
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId RoadRailCategory::QuerySpatialCategoryId(DgnDbR db, Utf8CP codeValue)
     {
-    auto modelPtr = RoadRailCategoryModel::GetModel(db);
+    auto modelPtr = RoadRailAlignmentDomain::QueryCategoryModel(db);
     if (modelPtr.IsNull())
         return DgnCategoryId();
 
@@ -88,7 +89,7 @@ DgnCategoryId RoadRailCategory::QuerySpatialCategoryId(DgnDbR db, Utf8CP codeVal
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId RoadRailCategory::QueryDrawingCategoryId(DgnDbR db, Utf8CP codeValue)
     {
-    auto modelPtr = RoadRailCategoryModel::GetModel(db);
+    auto modelPtr = RoadRailAlignmentDomain::QueryCategoryModel(db);
     if (modelPtr.IsNull())
         return DgnCategoryId();
 
@@ -111,5 +112,6 @@ DgnSubCategoryId RoadRailCategory::QuerySubCategoryId(DgnDbR dgnDb, DgnCategoryI
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId RoadRailCategory::GetCorridor(DgnDbR db) { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRRP_CATEGORY_Corridor);    BeAssert(categoryId.IsValid()); return categoryId; }
+DgnCategoryId RoadRailCategory::GetDesignSpeed(DgnDbR db) { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRRP_CATEGORY_DesignSpeed);    BeAssert(categoryId.IsValid()); return categoryId; }
 DgnCategoryId RoadRailCategory::GetRoadway(DgnDbR db)  { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRRP_CATEGORY_Roadway);    BeAssert(categoryId.IsValid()); return categoryId; }
 DgnCategoryId RoadRailCategory::GetRailway(DgnDbR db) { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRRP_CATEGORY_Railway);   BeAssert(categoryId.IsValid()); return categoryId; }
