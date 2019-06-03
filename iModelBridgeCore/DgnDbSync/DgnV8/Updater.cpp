@@ -401,6 +401,7 @@ void RootModelConverter::DeleteEmbeddedFileAndContents(RepositoryLinkId reposito
     auto rlink = GetRepositoryLinkElement(repositoryLinkId);
     if (!rlink.IsValid())
         return;
+    
     SyncInfo::V8ModelExternalSourceAspectIterator modelsInFile(*rlink);
     for (auto wasModel : modelsInFile)
         {
@@ -528,10 +529,12 @@ BentleyApi::BentleyStatus RootModelConverter::DetectDeletedEmbeddedFiles()
         auto identifier = rlinkAspect->GetIdentifier();
         if (embeddedFileNamesFound.find(identifier) == embeddedFileNamesFound.end())
             {
+            LOG.tracev("Detected deleted embedded file %s (%s). Deleting content based on that file from the iModel...", v8FileName.c_str(), identifier.c_str());
+
             // No package file assigned to me embeds this file. Therefore, I say that the embedded file was deleted.
             DeleteEmbeddedFileAndContents(rlinkAspect->GetRepositoryLinkId());
     
-            iModelBridge::PushChanges(*m_dgndb, _GetParams(), Utf8PrintfString("%s (%s) - Deleted", v8FileName.c_str(), identifier.c_str()));
+            iModelBridge::PushChanges(*m_dgndb, _GetParams(), Utf8PrintfString("Deleted reference file %s", identifier.c_str()));
             }
         }
 
