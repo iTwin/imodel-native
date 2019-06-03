@@ -193,7 +193,8 @@ std::shared_ptr<Policy> AccessKeyClientImpl::GetPolicyToken()
     // TODO: rename this method? (and ClientImpl::GetPolicyToken) we are getting policy, not the token, and are storing the policy in the db...
     LOG.debug("AccessKeyClientImpl::GetPolicyToken");
 
-    // returns nullptr if accesskey is inactive or expired
+    // try to get policy from entitlements, fallback to database if call fails
+    // call to entitlements will fail if accesskey is inactive or expired
     try
         {
         auto policy = m_policyProvider->GetPolicyWithKey(m_accessKey).get();
@@ -208,8 +209,16 @@ std::shared_ptr<Policy> AccessKeyClientImpl::GetPolicyToken()
         }
     catch (...)
         {
-        // error should be logged where it was thrown
-        return nullptr;
+        LOG.info("AccessKeyClientImpl::GetPolicyToken: Call to entitlements failed, getting policy from DB");
+
+        const auto productId = m_clientInfo->GetApplicationProductId();
+        auto policy = SearchForPolicy(productId);
+
+        // start offline grace period if there is a cached policy
+        if (policy != nullptr && !HasOfflineGracePeriodStarted())
+            m_licensingDb->SetOfflineGracePeriodStart(DateHelper::GetCurrentTime());
+
+        return policy;
         }
     }
 
