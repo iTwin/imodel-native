@@ -12,11 +12,9 @@
     </Part>
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="LinearReferencing.prewire.mke">
+        <SubPart PartName="LinearReferencingSchema" PartFile="BisSchemas" Repository="BisSchemas"/>
         <Bindings>
             <PublicAPI Domain="LinearReferencing"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/LinearReferencing*.xml
-            </Files>
         </Bindings>
     </Part>
 

@@ -21,16 +21,16 @@ struct LinearSegment
 {
 private:
     double m_startDistanceAlong, m_stopDistanceAlong;
-    bvector<LinearLocation> m_referencedLocations;
+    bvector<LinearLocationReference> m_referencedLocations;
 
 public:
-    LinearSegment(double startDistanceAlong, double stopDistanceAlong, bvector<LinearLocation> const& referencedLocations) :
+    LinearSegment(double startDistanceAlong, double stopDistanceAlong, bvector<LinearLocationReference> const& referencedLocations) :
         m_startDistanceAlong(startDistanceAlong), m_stopDistanceAlong(stopDistanceAlong),  m_referencedLocations(referencedLocations)
         {}
 
     double GetStartDistanceAlong() const { return m_startDistanceAlong; }
     double GetStopDistanceAlong() const { return m_stopDistanceAlong; }
-    bvector<LinearLocation> GetReferencedLocations() const { return m_referencedLocations; }
+    bvector<LinearLocationReference> GetReferencedLocations() const { return m_referencedLocations; }
 }; // LinearSegment
 
 //=======================================================================================

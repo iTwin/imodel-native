@@ -9,6 +9,7 @@
 #include "DistanceExpression.h"
 #include "LinearlyReferencedLocation.h"
 #include "ILinearElement.h"
+#include "LinearlyLocated.h"
 #include "LinearReferencingDomain.h"
 //__PUBLISH_SECTION_END__
 #include "Segmentation.h"

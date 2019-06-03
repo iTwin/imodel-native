@@ -46,6 +46,8 @@ $(o)DistanceExpression$(oext) : $(_MakeFilePath)DistanceExpression.cpp ${MultiCo
 
 $(o)ILinearElement$(oext) : $(_MakeFilePath)ILinearElement.cpp ${MultiCompileDepends} $(appPublicApi)ILinearElement.h
 
+$(o)LinearlyLocated$(oext) : $(_MakeFilePath)LinearlyLocated.cpp ${MultiCompileDepends} $(appPublicApi)LinearlyLocated.h
+
 $(o)LinearlyReferencedLocation$(oext) : $(_MakeFilePath)LinearlyReferencedLocation.cpp ${MultiCompileDepends} $(appPublicApi)LinearlyReferencedLocation.h
 
 $(o)LinearReferencingDomain$(oext) : $(_MakeFilePath)LinearReferencingDomain.cpp ${MultiCompileDepends} $(appPublicApi)LinearReferencingDomain.h

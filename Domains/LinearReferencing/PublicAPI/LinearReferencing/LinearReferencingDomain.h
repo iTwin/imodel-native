@@ -6,7 +6,6 @@
 #pragma once
 
 #include "LinearReferencing.h"
-#include "ILinearElement.h"
 
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_LINEARREFERENCING_NAMESPACE

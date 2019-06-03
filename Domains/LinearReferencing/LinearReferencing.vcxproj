@@ -121,15 +121,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Xml Include="LinearReferencing.ecschema.xml">
-      <SubType>Designer</SubType>
-    </Xml>
+    <Xml Include="..\..\BisSchemas\Domains\LinearReferencing\LinearReferencing.ecschema.xml" />
     <Xml Include="LinearReferencing.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LinearReferencingInternal.h" />
     <ClInclude Include="PublicAPI\LinearReferencing\DistanceExpression.h" />
     <ClInclude Include="PublicAPI\LinearReferencing\ILinearElement.h" />
+    <ClInclude Include="PublicAPI\LinearReferencing\LinearlyLocated.h" />
     <ClInclude Include="PublicAPI\LinearReferencing\LinearlyReferencedLocation.h" />
     <ClInclude Include="PublicAPI\LinearReferencing\LinearReferencing.h" />
     <ClInclude Include="PublicAPI\LinearReferencing\LinearReferencingApi.h" />
@@ -144,6 +143,7 @@
   <ItemGroup>
     <ClCompile Include="DistanceExpression.cpp" />
     <ClCompile Include="ILinearElement.cpp" />
+    <ClCompile Include="LinearlyLocated.cpp" />
     <ClCompile Include="LinearlyReferencedLocation.cpp" />
     <ClCompile Include="LinearReferencingDomain.cpp" />
     <ClCompile Include="LinearReferencingInternal.cpp" />
