@@ -430,7 +430,7 @@ void ILinearElement::SetSource(ILinearElementSourceCP source)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<LinearLocationReference> ILinearElement::_QueryLinearLocations(QueryParams const& params) const
     {
-    auto& dgnDb = ToElement().GetDgnDb();
+    // unused - auto& dgnDb = ToElement().GetDgnDb();
     
     Utf8String ecSql;
     bvector<double> bindVals;
