@@ -485,8 +485,19 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
             cifAlignmentName = Utf8String(cifSyncId.c_str());
         }    
 
+    uint32_t algSuffix = 0;
     Utf8String bimAlignmentName = cifAlignmentName;
     bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(*bimAlignmentModelPtr, bimAlignmentName);
+
+    // Addressing alignments with the same name
+    do
+    {        
+        if (!bimAlignmentModelPtr->GetDgnDb().Elements().QueryElementIdByCode(bimCode).IsValid())
+            break;
+
+        Utf8String bimAlignmentNameDup = Utf8PrintfString("%s_%d", bimAlignmentName.c_str(), ++algSuffix);
+        bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(*bimAlignmentModelPtr, bimAlignmentNameDup);
+    } while (true);
 
     // Create Alignment
     auto bimAlignmentPtr = AlignmentBim::Alignment::Create(*bimAlignmentModelPtr);
@@ -918,7 +929,7 @@ void ORDCorridorsConverter::ConvertSpeedTable(SpeedTableCP speedTable, int32_t c
         {
         if (!designCriteriaCPtr->GetDesignCriteriaModel()->IsPrivate())
             {
-            designCriteriaCPtr->GetDesignCriteriaModel()->SetIsPrivate(true);
+            designCriteriaCPtr->GetDesignCriteriaModel()->SetIsPrivate(params.domainModelsPrivate);
             designCriteriaCPtr->GetDesignCriteriaModel()->Update();
             }
         }
@@ -980,11 +991,11 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
     auto corridorSegmentCPtr = RoadRailBim::CorridorSegment::Insert(*bimCorridorCPtr, DefaultCorridorSegmentName);
     if (params.domainModelsPrivate)
         {
-        corridorSegmentCPtr->GetCorridorSegmentModel()->SetIsPrivate(true);
+        corridorSegmentCPtr->GetCorridorSegmentModel()->SetIsPrivate(params.domainModelsPrivate);
         corridorSegmentCPtr->GetCorridorSegmentModel()->Update();
 
         auto horizontalAlignmentsCPtr = AlignmentBim::HorizontalAlignments::Query(*corridorSegmentCPtr->GetCorridorSegmentModel());
-        horizontalAlignmentsCPtr->GetHorizontalModel()->SetIsPrivate(true);
+        horizontalAlignmentsCPtr->GetHorizontalModel()->SetIsPrivate(params.domainModelsPrivate);
         horizontalAlignmentsCPtr->GetHorizontalModel()->Update();
         }
 
