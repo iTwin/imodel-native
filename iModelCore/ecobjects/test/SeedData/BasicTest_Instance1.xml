@@ -1,0 +1,12 @@
+﻿<Company xmlns="BasicTest.01.00.00">
+    <Name>Bentley Systems</Name>
+    <NumberOfEmployees>3000</NumberOfEmployees>
+    <RecordKey>0</RecordKey>
+    <ContactAddress>
+        <Street>685 Stockton Drive</Street>
+        <City>Exton</City>
+        <State>PA</State>
+        <Country>United States</Country>
+        <Zip>19341</Zip>
+    </ContactAddress>
+</Company>
