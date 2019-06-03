@@ -3331,7 +3331,7 @@ template <class POINT> bool ScalableMesh<POINT>::_InSynchWithSources() const
     SourcesDataSQLite sourcesData;
     m_smSQLitePtr->LoadSources(sourcesData);
 
-    const bool InSync = sourcesData.GetLastModifiedTime() < sourcesData.GetLastSyncTime();
+    const bool InSync = sourcesData.GetLastModifiedTime() <= sourcesData.GetLastSyncTime();
     return InSync;
     }
 
