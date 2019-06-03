@@ -31,8 +31,6 @@ struct less_str
 struct AliasMappings
 {
 private:
-    static AliasMappings * s_mappings;
-
     bmap<Utf8String, Utf8String, less_str> m_aliasNameMapping; // key: alias value: name
     bmap<Utf8String, Utf8String, less_str> m_nameAliasMapping; // key: name value: alias
 
@@ -58,8 +56,6 @@ public:
 struct LegacyNameMappings
 {
 private:
-    static LegacyNameMappings * s_mappings;
-
     bmap<Utf8String, Utf8String, less_str> m_nameToFormatMapping; // key: legacy name value: formatString
     bmap<Utf8String, Utf8String, less_str> m_formatToNameMapping; // key: formatString value: legacy name
 

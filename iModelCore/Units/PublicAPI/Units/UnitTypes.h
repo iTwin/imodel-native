@@ -199,8 +199,6 @@ private:
     Unit(UnitCR unit) = delete;
     UnitR operator=(UnitCR unit) = delete;
 
-    ExpressionCR Evaluate() const;
-
     UnitCP CombineWithUnit(UnitCR rhs, int factor) const;
 
     UnitsProblemCode DoNumericConversion(double& converted, double value, UnitCR toUnit) const;
@@ -233,6 +231,8 @@ protected:
 
     //! Sets the Parent Unit.
     BentleyStatus SetParent(UnitCR parentUnit) {if (IsInvertedUnit() || nullptr != m_parent) return ERROR; m_parent = &parentUnit; return SUCCESS;}
+
+    UNITS_EXPORT ExpressionCR Evaluate() const;
 
 public:
     UNITS_EXPORT Utf8String GetUnitSignature() const;
@@ -305,12 +305,12 @@ private:
     Phenomenon(PhenomenonCR phenomenon) = delete;
     PhenomenonR operator=(PhenomenonCR phenomenon) = delete;
 
-    ExpressionCR Evaluate() const;
-
 protected:
     UNITS_EXPORT Phenomenon(Utf8CP name, Utf8CP definition);
     UNITS_EXPORT virtual ~Phenomenon();
     void SetLabel(Utf8CP label) {m_displayLabel = label;}
+
+    UNITS_EXPORT ExpressionCR Evaluate() const;
 
 public:
     PhenomenonCP GetPhenomenon() const override {return this;} //!< Returns this Phenomenon.
