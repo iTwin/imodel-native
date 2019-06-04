@@ -1413,6 +1413,7 @@ extern "C" iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ConverterTests, DetectDeletionsInEmbeddedFiles)
     {
+    putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=0");
     m_params.SetMatchOnEmbeddedFileBasename(true);
 
     m_dgnDbFileName = GetOutputFileName(L"DetectDeletionsInEmbeddedFiles.bim");
