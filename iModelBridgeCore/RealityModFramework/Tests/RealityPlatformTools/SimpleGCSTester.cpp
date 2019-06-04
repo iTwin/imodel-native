@@ -67,4 +67,5 @@ TEST_F(SimpleGCSFixture, GCSRequestManagerTest)
     ASSERT_TRUE(!GeoCoordinationService::GetWSGProtocol().empty());
     ASSERT_EQ(GeoCoordinationService::GetRepoName(), "IndexECPlugin--Server");
     ASSERT_EQ(GeoCoordinationService::GetSchemaName(), "RealityModeling");
-    }
+    ASSERT_EQ(GeoCoordinationService::GetUserAgent(), "My User Agent");
+}

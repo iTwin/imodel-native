@@ -33,6 +33,7 @@ static void statusFunc(int index, void *pClient, int ErrorCode, const char* pMsg
 int main(int argc, char *argv[])
 {
     RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
+    RealityDataService::SetUserAgent("RealityDataServiceUploader");
     RealityDataService::SetProjectId("72524420-7d48-4f4e-8b0f-144e5fa0aa22");
 
 #if (0) 

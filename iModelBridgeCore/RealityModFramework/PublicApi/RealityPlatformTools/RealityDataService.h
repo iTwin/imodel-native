@@ -44,6 +44,8 @@ public:
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
 
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUserAgent() const override;
+
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override; 
     REALITYDATAPLATFORM_EXPORT virtual void EncodeId() const override;
@@ -681,6 +683,7 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVersion() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUserAgent() const override;
 
     REALITYDATAPLATFORM_EXPORT RealityDataPagedRequest() : m_informationSourceFilteringSet(false) 
         { 
@@ -692,6 +695,8 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetFilter(RDSFilter const& filter);
     REALITYDATAPLATFORM_EXPORT void SetQuery(Utf8StringCR query);
     REALITYDATAPLATFORM_EXPORT void SetProject(Utf8StringCR project);
+    REALITYDATAPLATFORM_EXPORT void SetUserAgent(Utf8StringCR userAgent);
+
 
     //! Sets the sort order for the list. This sorting is performed server-side.
     //! Note that it is not possible to specify two sorts (sort by field a then by filed b is not supported).
@@ -1258,6 +1263,8 @@ public:
 
     REALITYDATAPLATFORM_EXPORT static void SetProjectId(Utf8StringCR projectId);
 
+    REALITYDATAPLATFORM_EXPORT static void SetUserAgent(Utf8StringCR userAgent);
+
     REALITYDATAPLATFORM_EXPORT static void SetErrorCallback(RealityDataService_ErrorCallBack errorCallback);
 
     //! Returns the current name of the server
@@ -1280,6 +1287,9 @@ public:
 
     //! Returns the id of the current project (required for write/delete permissions).
     REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetProjectId();
+
+    //! Returns the user agent string (added to every HHTP request headers)
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetUserAgent();
 
     //! Validates if server parameters have been set
     REALITYDATAPLATFORM_EXPORT static const bool AreParametersSet();

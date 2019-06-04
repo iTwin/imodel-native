@@ -34,11 +34,13 @@ static bool FilterFunc(SpatialEntityPtr entity)
 int main(int argc, char *argv[])
     {
     GeoCoordinationService::SetServerComponents("dev-contextservices-eus.cloudapp.net", "2.4", "IndexECPlugin--Server", "RealityModeling");
+    GeoCoordinationService::SetUserAgent("GeoCoordinateServiceExample dummy UserAgent");
 
     std::cout << GeoCoordinationService::GetServerName() << std::endl;
     std::cout << GeoCoordinationService::GetWSGProtocol() << std::endl;
     std::cout << GeoCoordinationService::GetRepoName() << std::endl;
     std::cout << GeoCoordinationService::GetSchemaName() << std::endl << std::endl;
+    std::cout << GeoCoordinationService::GetUserAgent() << std::endl << std::endl;
 
     BingKeyRequest bkRequest = BingKeyRequest("1000");
     RawServerResponse bkResponse = RawServerResponse();

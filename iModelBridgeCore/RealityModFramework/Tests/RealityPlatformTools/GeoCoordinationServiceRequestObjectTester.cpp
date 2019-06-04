@@ -360,6 +360,7 @@ TEST_F(GeoCoordinationServiceRequestsFixture, GeoCoordinationServiceRequestGette
     EXPECT_STREQ(requestUnderTest.GetVersion().c_str(), "99");
     EXPECT_STREQ(requestUnderTest.GetSchema().c_str(), "VirtualModeling");
     EXPECT_STREQ(requestUnderTest.GetRepoId().c_str(), "Dummy-Server");
+    EXPECT_STREQ(requestUnderTest.GetUserAgent().c_str(), "MockGeoCoordinationServiceFixture - dummy user agent");
 }
 
 TEST_F(GeoCoordinationServiceRequestsFixture, GeoCoordinationServicePagedRequestGetter)
@@ -371,4 +372,6 @@ TEST_F(GeoCoordinationServiceRequestsFixture, GeoCoordinationServicePagedRequest
     EXPECT_STREQ(requestUnderTest.GetVersion().c_str(), "99");
     EXPECT_STREQ(requestUnderTest.GetSchema().c_str(), "VirtualModeling");
     EXPECT_STREQ(requestUnderTest.GetRepoId().c_str(), "Dummy-Server");
+    EXPECT_STREQ(requestUnderTest.GetUserAgent().c_str(), "MockGeoCoordinationServiceFixture - dummy user agent");
+
 }

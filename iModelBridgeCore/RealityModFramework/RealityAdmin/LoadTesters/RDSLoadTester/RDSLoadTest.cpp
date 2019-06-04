@@ -802,6 +802,7 @@ int main(int argc, char* argv[])
         server = LoadTester::MakeBuddiCall(L"RealityDataServices");
 
     RealityDataService::SetServerComponents(server, "2.5", "S3MXECPlugin--Server", "S3MX");
+    RealityDataService::SetUserAgent("RDS Load Tester");
 
     tester.SetupInactiveUsers(inactiveUsers);
 
