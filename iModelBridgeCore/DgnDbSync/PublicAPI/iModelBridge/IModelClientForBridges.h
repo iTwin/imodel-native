@@ -96,6 +96,8 @@ public:
     static bool SleepBeforeRetry();
 
     static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("iModelBridge"); }
+
+    WebServices::IConnectTokenProviderPtr GetTokenProvider();
 };
 
 // ========================================================================================================

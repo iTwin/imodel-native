@@ -1100,6 +1100,11 @@ BentleyStatus iModelBridgeFwk::InitBridge()
 
     SetBridgeParams(m_bridge->_GetParams(), m_repoAdmin);    // make sure that MY definition of these params is used!
 
+	if (BSISUCCESS != m_bridge->TrackUsage())
+		{
+		LOG.error("Bridge Usage tracking failed. Please ignore if OIDC is not initialized.");
+		}
+
     if (BSISUCCESS != m_bridge->_Initialize((int)m_bargptrs.size(), m_bargptrs.data()))
         return BentleyStatus::ERROR;
 
