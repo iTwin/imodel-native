@@ -1764,7 +1764,8 @@ void Converter::_OnElementConverted(DgnElementId elementId, DgnV8EhCP v8eh, Chan
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::_OnElementBeforeDelete(DgnElementId elementId)
     {
-    m_linkConverter->RemoveLinksOnElement(elementId);
+    if (nullptr != m_linkConverter)
+        m_linkConverter->RemoveLinksOnElement(elementId);
     }
 
 /*---------------------------------------------------------------------------------**//**

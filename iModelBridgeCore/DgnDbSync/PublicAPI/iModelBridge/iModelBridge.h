@@ -478,6 +478,11 @@ struct iModelBridge
         //! @param guid The the default docguid should docprops not exist for fn
         //! @return non-zero error status if assignment of this file to the registry database failed.
         virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey, BeSQLite::BeGuidCP guid) = 0;
+
+        //! Query all files assigned to this bridge.
+        //! @param fns   The names of all files that are assignd to this bridge.
+        //! @param bridgeRegSubKey The registry subkey that identifies the bridge
+        virtual void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) = 0;
         };
 
     //! Interface to enable bridges to perform briefcase operations, such as push while they run.
@@ -670,6 +675,9 @@ struct iModelBridge
 	    //! Check if the specified file is assigned to this bridge or not.
 	    IMODEL_BRIDGE_EXPORT bool IsFileAssignedToBridge(BeFileNameCR fn) const;
 
+        //! Get all files assigned to this bridge.
+        IMODEL_BRIDGE_EXPORT void QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns) const;
+
 	    //! Get the document GUID for the specified file, if available.
 	    //! @param localFileName    The filename of the source file.
 	    //! @return the document GUID, if available.
@@ -724,6 +732,8 @@ struct iModelBridge
     //! @note The caller must check the return status and call SaveChanges on success or AbandonChanges on error.
     //! @see OpenBimAndMergeSchemaChanges
     IMODEL_BRIDGE_EXPORT BentleyStatus DoConvertToExistingBim(DgnDbR db, SubjectCR jobsubj, bool detectDeletedFiles);
+
+    IMODEL_BRIDGE_EXPORT BentleyStatus DoOnAllDocumentsProcessed(DgnDbR db);
 
     IMODEL_BRIDGE_EXPORT BentleyStatus DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR db);
 
@@ -903,6 +913,10 @@ public:
     //! @return non-zero error status if the bridge cannot conversion the BIM. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
     //! @see _OnOpenBim
     virtual BentleyStatus _ConvertToBim(SubjectCR jobSubject) = 0;
+
+    //! Called after all calls to this bridge have been made (either on all masterfiles in a full run or all changed masterfiles in an incremental run).
+    //! This is not a request to convert anything. In fact, the inputFile property of Params may be empty.
+    virtual BentleyStatus _OnAllDocumentsProcessed() {return BSISUCCESS;}
 
     //! Query if the bridge must have exclusive access to the iModel while converting data.
     virtual bool _ConvertToBimRequiresExclusiveLock() {return false;}

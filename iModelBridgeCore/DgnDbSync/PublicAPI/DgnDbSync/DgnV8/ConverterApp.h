@@ -87,6 +87,7 @@ protected:
     iModelBridge::Params& _GetParams() override {return m_params;}
     CmdLineArgStatus _ParseCommandLineArg(int iArg, int argc, WCharCP argv[]);
     BentleyStatus _ConvertToBim(Dgn::SubjectCR jobSubject) override;
+    BentleyStatus _OnAllDocumentsProcessed() override;
     BentleyStatus _Initialize(int argc, WCharCP argv[]) override;
     Dgn::SubjectCPtr _InitializeJob() override;
     BentleyStatus _OnOpenBim(DgnDbR db) override;

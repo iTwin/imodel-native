@@ -116,6 +116,7 @@ struct iModelBridgeSacAdapter
 
         IMODEL_BRIDGE_EXPORT void GetDocumentProperties(iModelBridgeDocumentProperties&);
         IMODEL_BRIDGE_EXPORT bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
+        IMODEL_BRIDGE_EXPORT void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) override;
         IMODEL_BRIDGE_EXPORT BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn) override;
         IMODEL_BRIDGE_EXPORT BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid) override;
         virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey, BeSQLite::BeGuidCP guid) override { return BSIERROR;}

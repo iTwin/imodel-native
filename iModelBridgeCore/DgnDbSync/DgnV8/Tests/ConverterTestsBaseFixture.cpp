@@ -377,7 +377,7 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool expectFailure, bool expectUpdate, bool doDetectDeletedDocuments)
+void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool expectFailure, bool expectUpdate, bool doDetectDeletedDocuments, bool onAllDocsProcessed)
     {
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
@@ -410,6 +410,8 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
             hadAnyChanges = updater.HadAnyChanges();
             if (doDetectDeletedDocuments)
                 updater._DetectDeletedDocuments();
+            if (onAllDocsProcessed)
+                updater.DetectDeletedEmbeddedFiles();
             }
         }
     else
@@ -435,6 +437,8 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
             hadAnyChanges = updater.HadAnyChanges();
             if (doDetectDeletedDocuments)
                 updater._DetectDeletedDocuments();
+            // if (onAllDocsProcessed)
+            //     updater.DetectDeletedEmbeddedFiles();
             }
         }
     db->SaveChanges();
