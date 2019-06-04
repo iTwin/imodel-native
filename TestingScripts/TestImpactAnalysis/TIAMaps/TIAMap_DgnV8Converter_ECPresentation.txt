@@ -11,6 +11,8 @@
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:V8AttachmentTests.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\contentmodifier.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:V8AttachmentTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\navnodeproviders.h]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\updatehandler.h]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\querycontracts.cpp]
@@ -31,6 +33,8 @@
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
 [imodel02\imodelcore\ecpresentation\source\ecdbbasedcache.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\navigationquerybuilder.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\instancelabeloverride.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
 [imodel02\imodelcore\ecpresentation\source\presentationmanager.cpp]
@@ -61,6 +65,8 @@
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\checkboxrule.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\contentclasseslocater.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\ecpresentation\predefined c++ types (compiler internal)]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\presentationmanager.cpp]
@@ -71,6 +77,8 @@
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\commontools.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:V8AttachmentTests.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\contentspecificationshandler.h]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rules\contentrule.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=RulesetEmbedderTests.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\navnodescache.h]

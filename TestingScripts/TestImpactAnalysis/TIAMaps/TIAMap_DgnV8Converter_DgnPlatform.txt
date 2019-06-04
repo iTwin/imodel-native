@@ -9,6 +9,8 @@
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\dgnplatform\dgnhandlers\dgnecsymbolprovider.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ECConversionTests.*:
+[imodel02\imodelcore\dgnplatform\tools\toolsubs\macro\macroconfigurationadmin.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\dgnplatform\dgnbrep\psolidattrib.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\annotations\annotationpropertybag.cpp]
@@ -47,6 +49,8 @@
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\cesiumtilewriter.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
+[imodel02\imodelcore\dgnplatform\dgncore\annotations\annotationframe.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ConverterTests.*:MultiBridgeTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\annotations\textannotationseed.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\dgnplatform\dgngeocoord\geocoordservices.cpp]
@@ -113,12 +117,16 @@
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\imagesource.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=SheetCompositionTests.*:
+[imodel02\imodelcore\dgnplatform\dgncore\simplifygraphic.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\dgnplatform\privateapi\dgnplatforminternal\dgncore\dgncorel10n.h]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\annotations\annotationframelayout.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\elementdependency.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
+[imodel02\imodelcore\dgnplatform\dgncore\annotations\annotationleader.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ConverterTests.*:MultiBridgeTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\annotations\annotationtextstyle.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\dgnshxfont.cpp]
@@ -147,8 +155,12 @@
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\dgnplatform\dgnbrep\psolidkernelentity.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ConverterTests.*:V8AttachmentTests.*:
+[imodel02\imodelcore\dgnplatform\dgncore\subjectviewcontroller.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\biscoredomain.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
+[imodel02\imodelcore\dgnplatform\dgncore\renderprimitives.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\annotations\annotationparagraph.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=TextBlockTests.*:MultiBridgeTests.*:ImportConfigTests.*:ConverterTests.*:SheetCompositionTests.*:RasterTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\volumeelement.cpp]
@@ -161,12 +173,16 @@
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\dgnelementproperties.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
+[imodel02\imodelcore\dgnplatform\dgncore\revisionmanager.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\annotations\textannotation.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=TextBlockTests.*:MultiBridgeTests.*:ImportConfigTests.*:ConverterTests.*:SheetCompositionTests.*:RasterTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\dgncategory.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:MultiBridgeTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:TextBlockTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\annotations\textannotationelement.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
+[imodel02\imodelcore\dgnplatform\dgncore\facetcount.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\elementecinstanceadapter.h]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:MultiBridgeTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:TextBlockTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\webmercator.cpp]
@@ -179,6 +195,10 @@
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\annotations\annotationtextblock.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=TextBlockTests.*:MultiBridgeTests.*:ImportConfigTests.*:ConverterTests.*:SheetCompositionTests.*:RasterTests.*:
+[imodel02\imodelcore\dgnplatform\dgncore\linestyle\strokesymbol.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
+[imodel02\imodelcore\dgnplatform\tools\toolsubs\macro\macrofileprocessor.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\sheet.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\dgnplatform\dgnbrep\psolidutil.cpp]
@@ -189,3 +209,5 @@
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:GeomPartTests.*:V8AttachmentTests.*:TagTests.*:MultiBridgeTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:TextBlockTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\dgnplatform\dgncore\dgnsqlfuncs.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
+[imodel02\imodelcore\dgnplatform\dgnhandlers\scopeddgnhost.cpp]
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:

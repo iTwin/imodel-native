@@ -83,6 +83,8 @@
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\contentcache.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
+[imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\navigationquerybuilder.cpp]
+%OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=SingleBriefcaseLocksTest.*:TextAnnotationTest.*:AnnotationLeaderStyleTest.*:BasicAnnotationTextStyleTest.*:BasicTextAnnotationSeedTest.*:CodeSpecTests.*:AnnotationTextStyleTest.*:CodesManagerTest.*:ViewAttachmentTest.*:GetSetCustomHandledProprty.*:DgnCodeSpecsTest.*:ExtractLocksTest.*:AnnotationTextBlockTest.*:RevisionTestFixture.*:DoubleBriefcaseTest.*:TextAnnotationSeedTest.*:TextStringTest.*:FastQueryTest.*:AnnotationFrameStyleTest.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\contentquerybuilder.cpp]
 %OutRoot%Winx64\Product\DgnPlatform-GTest\DgnPlatformTest.exe --gtest_filter=VersionCompareTestFixture.*:
 [imodel02\imodelcore\ecpresentation\source\rulesdriven\rulesengine\ecschemahelper.cpp]

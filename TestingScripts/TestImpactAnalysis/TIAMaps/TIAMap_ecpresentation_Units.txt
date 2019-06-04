@@ -1,3 +1,17 @@
 
 [imodel02\imodelcore\units\src\formatting\formatutils.cpp]
-%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=ECExpressionContextsProviderTests.*:
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesDrivenECPresentationManagerContentTests.*:InstanceLabelOverrideTests.*:RulesDrivenECPresentationManagerNavigationTests.*:
+[imodel02\imodelcore\units\src\formatting\numericformatspec.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesDrivenECPresentationManagerContentTests.*:RulesDrivenECPresentationManagerNavigationTests.*:
+[imodel02\imodelcore\units\src\formatting\format.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesDrivenECPresentationManagerContentTests.*:RulesDrivenECPresentationManagerNavigationTests.*:
+[imodel02\imodelcore\units\src\formatting\formatparsing.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesDrivenECPresentationManagerContentTests.*:RulesDrivenECPresentationManagerNavigationTests.*:
+[imodel02\imodelcore\units\src\formatting\compositevaluespec.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesDrivenECPresentationManagerContentTests.*:RulesDrivenECPresentationManagerNavigationTests.*:
+[imodel02\imodelcore\units\src\symbolicexpression.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesDrivenECPresentationManagerContentTests.*:RulesDrivenECPresentationManagerNavigationTests.*:
+[imodel02\imodelcore\units\src\unittypes.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesDrivenECPresentationManagerContentTests.*:RulesDrivenECPresentationManagerNavigationTests.*:
+[imodel02\imodelcore\units\src\unitnamemappings.cpp]
+%OutRoot%Winx64\Product\ECPresentation-GTest\ECPresentationTest.exe --gtest_filter=RulesDrivenECPresentationManagerContentTests.*:RulesDrivenECPresentationManagerNavigationTests.*:
