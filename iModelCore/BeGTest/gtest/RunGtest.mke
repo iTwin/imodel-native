@@ -54,6 +54,8 @@ always:
 		tests were not run
 		<
 		~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
+
+	%return
 %endif
 
 %if defined (winNT) && !defined(ENABLE_GTEST_COVERAGE)

@@ -91,6 +91,24 @@ static void writeCustomPropertiesFile(std::map<std::wstring, std::wstring> const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void writeMarkerFile(WCharCP name, Utf8CP message)
+{
+    BeFileName dmpFileName(s_crashFilesDir.c_str());
+    dmpFileName.AppendToPath(name);
+    wchar_t buf[32];
+    dmpFileName.append(_itow(++s_nextNativeCrashTxtFileNo, buf, 10));
+    dmpFileName.append(L".txt");
+
+    FILE* fp = _wfopen(dmpFileName.c_str(), L"w+");
+    fputs(message, fp);
+    fclose(fp);
+
+    return;
+}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int safeStrCat(wchar_t* dest, wchar_t const* source, size_t& remainingDestCapacity)
@@ -219,10 +237,17 @@ static LONG CALLBACK vectoredExceptionHandler(PEXCEPTION_POINTERS exceptionInfo)
 
     if (!is_debug_exception || s_exceptionHandler->get_handle_debug_exceptions())
         {
+        writeMarkerFile(L"vectoredExceptionHandler_called", "About to call WriteMinidumpForException...");
+
         s_exceptionHandler->WriteMinidumpForException(exceptionInfo);
 
         for (int i = 0; !s_dumpFinished && i < 100; ++i)
             ::Sleep(100);
+
+        if (!s_dumpFinished)
+            writeMarkerFile(L"WriteMinidumpForException_failed", "WriteMinidumpForException never invoked my onDumpWritten callback");
+        else
+            writeMarkerFile(L"WriteMinidumpForException_success", "WriteMinidumpForException invoked onDumpWritten as expected.");
         }
 
     return EXCEPTION_CONTINUE_SEARCH;
