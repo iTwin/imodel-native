@@ -3159,7 +3159,8 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
         if (0 == BeStringUtilities::Strnicmp("EWR", v8SchemaName.c_str(), 3))
             bimSchemaName.AssignOrClear("EWR");
 
-        if (!m_converter.GetDgnDb().Schemas().ContainsSchema(bimSchemaName))
+        // Supplemental schemas are not imported so won't find it in the existing imodel
+        if (!m_converter.GetDgnDb().Schemas().ContainsSchema(bimSchemaName) && !bimSchemaName.Contains("_Supplemental"))
             {
             m_needReimportSchemas = true;
             continue;
