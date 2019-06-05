@@ -1796,19 +1796,9 @@ BentleyStatus DynamicSchemaGenerator::CopyFlattenedProperty(ECN::ECClassP target
     // Only copy properties either directly on the same class or on a base class that was dropped.  Don't copy properties from base classes that are still set
     if (0 != strcmp(targetClass->GetFullName(), sourceProperty->GetClass().GetFullName()))
         {
-        ECN::ECClassP targetPropertyClass = nullptr;
-        ECN::ECSchemaPtr flatSchema = m_flattenedRefs[sourceProperty->GetClass().GetSchema().GetName()];
-        if (!flatSchema.IsValid())
-            {
-            if (Utf8String(sourceProperty->GetClass().GetSchema().GetName()).StartsWithIAscii("SP3D"))
-                targetPropertyClass = targetClass->GetSchemaR().GetClassP(sourceProperty->GetClass().GetName().c_str());
-            else
-                return BSIERROR;
-            }
-        else
-            targetPropertyClass = flatSchema->GetClassP(sourceProperty->GetClass().GetName().c_str());
-        //if (targetClass->Is(targetPropertyClass))
-        //    return BSISUCCESS;
+        // If the property already exists, then it is coming from a base class and we don't need to copy it.
+        if (nullptr != targetClass->GetPropertyP(sourceProperty->GetName().c_str()))
+            return BSISUCCESS;
         }
 
     ECN::ECPropertyP destProperty = nullptr;
@@ -1989,6 +1979,13 @@ BentleyStatus DynamicSchemaGenerator::CopyFlattenedProperty(ECN::ECClassP target
             targetClass->GetEntityClassP()->CreateNavigationProperty(destNav, sourceProperty->GetName(), *flatBaseSchema->GetClassP(sourceRelClass->GetName().c_str())->GetRelationshipClassP(), sourceNav->GetDirection(), false);
             }
         destProperty = destNav;
+        }
+
+    // We shouldn't ever have a null destProperty, but just to be safe
+    if (nullptr == destProperty)
+        {
+        LOG.warningv("Unable to copy incoming sourceProperty %s from %s", sourceProperty->GetName().c_str(), sourceProperty->GetClass().GetFullName());
+        return BSIERROR;
         }
 
     destProperty->SetDescription(sourceProperty->GetInvariantDescription());
