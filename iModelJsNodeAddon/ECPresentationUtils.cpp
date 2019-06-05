@@ -1392,20 +1392,20 @@ ECPresentationResult ECPresentationUtils::SetRulesetVariableValue(RulesDrivenECP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static folly::Future<NavNodeCPtr> GetNode(IECPresentationManager& mgr, IConnectionCR connection, JsonValueCR params)
+static folly::Future<NavNodeCPtr> GetNode(IECPresentationManager& mgr, IConnectionCR connection, JsonValueCR params, PresentationTaskNotificationsContextCR notificationsContext)
     {
     NavNodeKeyCPtr key = NavNodeKey::FromJson(connection, params["nodeKey"]);
     if (key.IsNull())
         return NavNodeCPtr();
-    return mgr.GetNode(connection.GetECDb(), *key, GetNavigationOptions(params).GetJson());
+    return mgr.GetNode(connection.GetECDb(), *key, GetNavigationOptions(params).GetJson(), notificationsContext);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodesCount(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodesCount(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    return manager.GetRootNodesCount(db, GetNavigationOptions(params).GetJson())
+    return manager.GetRootNodesCount(db, GetNavigationOptions(params).GetJson(), notificationsContext)
         .then([](size_t count)
             {
             return ECPresentationResult(rapidjson::Value((int64_t) count));
@@ -1415,11 +1415,12 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodesCount(IECPr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    return manager.GetRootNodes(db, GetPageOptions(params), GetNavigationOptions(params).GetJson())
-        .then([](DataContainer<NavNodeCPtr> nodes)
+    return manager.GetRootNodes(db, GetPageOptions(params), GetNavigationOptions(params).GetJson(), notificationsContext)
+        .then([notificationsContext](DataContainer<NavNodeCPtr> nodes)
             {
+            notificationsContext.OnTaskStart();
             rapidjson::Document json;
             json.SetArray();
             for (NavNodeCPtr const& node : nodes)
@@ -1431,20 +1432,22 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(IECPresent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, PresentationTaskNotificationsContextCR notificationsContext)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
     Json::Value options = GetNavigationOptions(params).GetJson();
-    return GetNode(manager, *connection, params)
-        .then([&manager, &db, options](NavNodeCPtr parentNode)
+    return GetNode(manager, *connection, params, notificationsContext)
+        .then([&manager, &db, options, notificationsContext](NavNodeCPtr parentNode)
             {
+            notificationsContext.OnTaskStart();
+
             if (parentNode.IsNull())
                 {
                 BeAssert(false);
                 return folly::makeFutureWith([]() {return ECPresentationResult(ECPresentationStatus::InvalidArgument, "parent node");});
                 }
 
-            return manager.GetChildrenCount(db, *parentNode, options)
+            return manager.GetChildrenCount(db, *parentNode, options, notificationsContext)
                 .then([](size_t count)
                     {
                     return ECPresentationResult(rapidjson::Value((int64_t) count));
@@ -1455,23 +1458,26 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(IECPre
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, PresentationTaskNotificationsContextCR notificationsContext)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
     Json::Value options = GetNavigationOptions(params).GetJson();
     PageOptions pageOptions = GetPageOptions(params);
-    return GetNode(manager, *connection, params)
-        .then([&manager, &db, options, pageOptions](NavNodeCPtr parentNode)
+    return GetNode(manager, *connection, params, notificationsContext)
+        .then([&manager, &db, options, pageOptions, notificationsContext](NavNodeCPtr parentNode)
             {
+            notificationsContext.OnTaskStart();
+
             if (parentNode.IsNull())
                 {
                 BeAssert(false);
                 return folly::makeFutureWith([]() {return ECPresentationResult(ECPresentationStatus::InvalidArgument, "parent node");});
                 }
 
-            return manager.GetChildren(db, *parentNode, pageOptions, options)
-                .then([](DataContainer<NavNodeCPtr> nodes)
+            return manager.GetChildren(db, *parentNode, pageOptions, options, notificationsContext)
+                .then([notificationsContext](DataContainer<NavNodeCPtr> nodes)
                     {
+                    notificationsContext.OnTaskStart();
                     rapidjson::Document json;
                     json.SetArray();
                     for (NavNodeCPtr const& node : nodes)
@@ -1485,7 +1491,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(IECPresenta
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kilinskas                 06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ECPresentationResult>  ECPresentationUtils::GetNodesPaths(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult>  ECPresentationUtils::GetNodesPaths(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, PresentationTaskNotificationsContextCR notificationsContext)
     {
     if (!params.isMember("markedIndex"))
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "markedIndex");
@@ -1520,9 +1526,10 @@ folly::Future<ECPresentationResult>  ECPresentationUtils::GetNodesPaths(IECPrese
             }
         }
 
-    return manager.GetNodesPath(db, keys, params["markedIndex"].asInt64(), options)
-        .then([](bvector<NodesPathElement> result)
+    return manager.GetNodesPath(db, keys, params["markedIndex"].asInt64(), options, notificationsContext)
+        .then([notificationsContext](bvector<NodesPathElement> result)
             {
+            notificationsContext.OnTaskStart();
             rapidjson::Document response;
             response.SetArray();
             for (size_t i = 0; i < result.size(); i++)
@@ -1534,15 +1541,16 @@ folly::Future<ECPresentationResult>  ECPresentationUtils::GetNodesPaths(IECPrese
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kililnskas                06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ECPresentationResult>  ECPresentationUtils::GetFilteredNodesPaths(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult>  ECPresentationUtils::GetFilteredNodesPaths(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, PresentationTaskNotificationsContextCR notificationsContext)
     {
     if (!params.isMember("filterText"))
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "filterText");
 
     Json::Value options = GetNavigationOptions(params).GetJson();
-    return manager.GetFilteredNodesPaths(db, params["filterText"].asCString(), options)
-        .then([](bvector<NodesPathElement> result)
+    return manager.GetFilteredNodesPaths(db, params["filterText"].asCString(), options, notificationsContext)
+        .then([notificationsContext](bvector<NodesPathElement> result)
             {
+            notificationsContext.OnTaskStart();
             rapidjson::Document response;
             response.SetArray();
             for (size_t i = 0; i < result.size(); i++)
@@ -1614,13 +1622,14 @@ static KeySetPtr GetKeys(IConnectionCR connection, JsonValueCR params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ECPresentationResult> ECPresentationUtils::GetContentDescriptor(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult> ECPresentationUtils::GetContentDescriptor(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, PresentationTaskNotificationsContextCR notificationsContext)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
     Json::Value options = GetContentOptions(params).GetJson();
-    return manager.GetContentDescriptor(db, GetDisplayType(params), *GetKeys(*connection, params), nullptr, options)
-        .then([](ContentDescriptorCPtr descriptor)
+    return manager.GetContentDescriptor(db, GetDisplayType(params), *GetKeys(*connection, params), nullptr, options, notificationsContext)
+        .then([notificationsContext](ContentDescriptorCPtr descriptor)
             {
+            notificationsContext.OnTaskStart();
             if (descriptor.IsValid())
                 return ECPresentationResult(descriptor->AsJson());
             return ECPresentationResult();
@@ -1630,47 +1639,53 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentDescriptor(IE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, PresentationTaskNotificationsContextCR notificationsContext)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
     JsonValueCR descriptorOverridesJson = params["descriptorOverrides"];
     PageOptions pageOptions = GetPageOptions(params);
     Json::Value options = GetContentOptions(params).GetJson();
-    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options)
-        .then([&manager, descriptorOverridesJson, pageOptions](ContentDescriptorCPtr descriptor) {
-          if (descriptor.IsNull())
-            return folly::makeFutureWith([]() { return ECPresentationResult(); });
-          ContentDescriptorCPtr overridenDescriptor = DescriptorOverrideHelper(descriptorOverridesJson).GetOverridenDescriptor(*descriptor);
-          return manager.GetContent(*overridenDescriptor, pageOptions).then([](ContentCPtr content) {
-            return ECPresentationResult(content->AsJson());
-          });
-        });
+    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options, notificationsContext)
+        .then([&manager, descriptorOverridesJson, pageOptions, notificationsContext](ContentDescriptorCPtr descriptor)
+            {
+            notificationsContext.OnTaskStart();
+            if (descriptor.IsNull())
+                return folly::makeFutureWith([]() { return ECPresentationResult(); });
+            ContentDescriptorCPtr overridenDescriptor = DescriptorOverrideHelper(descriptorOverridesJson).GetOverridenDescriptor(*descriptor);
+            return manager.GetContent(*overridenDescriptor, pageOptions, notificationsContext).then([notificationsContext](ContentCPtr content)
+                {
+                notificationsContext.OnTaskStart();
+                return ECPresentationResult(content->AsJson());
+                });
+            });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSetSize(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSetSize(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, PresentationTaskNotificationsContextCR notificationsContext)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
     JsonValueCR descriptorOverridesJson = params["descriptorOverrides"];
     Json::Value options = GetContentOptions(params).GetJson();
-    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options)
-        .then([&manager, descriptorOverridesJson](ContentDescriptorCPtr descriptor) {
-          if (descriptor.IsNull())
-            return folly::makeFutureWith([]() { return ECPresentationResult(rapidjson::Value(0)); });
-          ContentDescriptorCPtr overridenDescriptor = DescriptorOverrideHelper(descriptorOverridesJson).GetOverridenDescriptor(*descriptor);
-          return manager.GetContentSetSize(*overridenDescriptor)
-              .then([](size_t size) {
+    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options, notificationsContext)
+        .then([&manager, descriptorOverridesJson, notificationsContext](ContentDescriptorCPtr descriptor) {
+            notificationsContext.OnTaskStart();
+            if (descriptor.IsNull())
+                return folly::makeFutureWith([]() { return ECPresentationResult(rapidjson::Value(0)); });
+            ContentDescriptorCPtr overridenDescriptor = DescriptorOverrideHelper(descriptorOverridesJson).GetOverridenDescriptor(*descriptor);
+            return manager.GetContentSetSize(*overridenDescriptor, notificationsContext).then([notificationsContext](size_t size)
+                {
+                notificationsContext.OnTaskStart();
                 return ECPresentationResult(rapidjson::Value((int64_t)size));
-              });
-        });
+                });
+            });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kilinskas                 06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, PresentationTaskNotificationsContextCR notificationsContext)
     {
     if (!params.isMember("fieldName"))
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "fieldName");
@@ -1682,8 +1697,8 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPr
     Json::Value options = GetContentOptions(params).GetJson();
     Utf8String fieldName = params["fieldName"].asString();
     int64_t maximumValueCount = params["maximumValueCount"].asInt64();
-    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options)
-        .then([&manager, descriptorOverridesJson, fieldName, maximumValueCount] (ContentDescriptorCPtr descriptor)
+    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options, notificationsContext)
+        .then([&manager, descriptorOverridesJson, fieldName, maximumValueCount, notificationsContext] (ContentDescriptorCPtr descriptor)
             {
             if (descriptor.IsNull())
                 return folly::makeFutureWith([] () { return ECPresentationResult(ECPresentationStatus::InvalidArgument, "descriptor"); });
@@ -1697,9 +1712,10 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPr
                 }
             overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
 
-            return manager.GetContent(*overridenDescriptor, PageOptions())
-                .then([fieldName, maximumValueCount](ContentCPtr content)
+            return manager.GetContent(*overridenDescriptor, PageOptions(), notificationsContext)
+                .then([fieldName, maximumValueCount, notificationsContext](ContentCPtr content)
                 {
+                notificationsContext.OnTaskStart();
                 DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
 
                 rapidjson::Document response;
@@ -1723,7 +1739,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ECPresentationResult> ECPresentationUtils::GetDisplayLabel(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult> ECPresentationUtils::GetDisplayLabel(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, PresentationTaskNotificationsContextCR notificationsContext)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
     if (!params.isMember("key"))
@@ -1738,8 +1754,10 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDisplayLabel(IECPres
     if (!id.IsValid())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "key.id");
 
-    return manager.GetDisplayLabel(db, ECInstanceKey(ecClass->GetId(), id)).then([](Utf8String label)
+    return manager.GetDisplayLabel(db, ECInstanceKey(ecClass->GetId(), id), notificationsContext)
+        .then([notificationsContext](Utf8String label)
         {
+        notificationsContext.OnTaskStart();
         rapidjson::Document responseJson;
         responseJson.SetString(label.c_str(), responseJson.GetAllocator());
         return ECPresentationResult(std::move(responseJson));

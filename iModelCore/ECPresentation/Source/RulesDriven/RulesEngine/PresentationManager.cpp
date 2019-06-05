@@ -220,46 +220,6 @@ static std::shared_ptr<CancelablePromise<T>> CreateCancelablePromise(RulesDriven
     return std::make_shared<CancelablePromise<T>>(cancelableTasks, id, dependencies);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-RulesDrivenECPresentationManager::TaskNotificationsContext::TaskNotificationsContext(RulesDrivenECPresentationManager& manager, std::function<void()> onTaskStart)
-    : m_manager(&manager), m_callbackOnTaskStart(onTaskStart)
-    {
-    BeAssert(nullptr == m_manager->m_taskNotificationsContext);
-    m_manager->m_taskNotificationsContext = this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-RulesDrivenECPresentationManager::TaskNotificationsContext::~TaskNotificationsContext()
-    {
-    if (nullptr != m_manager)
-        {
-        BeAssert(this == m_manager->m_taskNotificationsContext);
-        m_manager->m_taskNotificationsContext = nullptr;
-        }
-    }
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                03/2019
-+===============+===============+===============+===============+===============+======*/
-struct RulesDrivenECPresentationManager::TaskExecutionContext
-    {
-    std::function<void()> m_callbackOnTaskStart;
-    TaskExecutionContext(RulesDrivenECPresentationManager const& manager)
-        {
-        if (manager.m_taskNotificationsContext)
-            m_callbackOnTaskStart = manager.m_taskNotificationsContext->GetOnTaskStartCallback();
-        }
-    void OnTaskStart() const
-        {
-        if (m_callbackOnTaskStart)
-            m_callbackOnTaskStart();
-        }
-    };
-
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2017
 +===============+===============+===============+===============+===============+======*/
@@ -293,10 +253,9 @@ protected:
             return;
             }
 
-        auto context = std::make_shared<RulesDrivenECPresentationManager::TaskExecutionContext>(m_manager);
-        folly::via(&m_manager.GetExecutor(), [&, context, connectionId = connection->GetId(), changes]()
+        folly::via(&m_manager.GetExecutor(), [&, connectionId = connection->GetId(), changes]()
             {
-            context->OnTaskStart();
+            // WIP: need to bring task notifications context here when we start getting instance changes
             IConnectionPtr connection = m_manager.GetConnections().GetConnection(connectionId.c_str());
             NotifyECInstancesChanged(connection->GetECDb(), changes);
             });
@@ -327,14 +286,12 @@ protected:
     void _DropListener(IConnectionsListener& listener) const override {m_listeners.erase(std::remove(m_listeners.begin(), m_listeners.end(), &listener));}
     void _OnConnectionEvent(ConnectionEvent const& evt) override
         {
-        auto context = std::make_shared<RulesDrivenECPresentationManager::TaskExecutionContext>(m_manager);
-
         if (ConnectionEventType::Closed == evt.GetEventType())
             m_manager.m_cancelableTasks->CancelConnectionRequests(evt.GetConnection());
 
-        folly::via(m_manager.m_executor, [&, context, evt, connectionId = evt.GetConnection().GetId()]()
+        folly::via(m_manager.m_executor, [&, evt, connectionId = evt.GetConnection().GetId()]()
             {
-            context->OnTaskStart();
+            // WIP: need to bring task notifications context here
             IConnectionPtr connection = m_wrapped.GetConnection(connectionId.c_str());
             ConnectionEvent evtForThisThread(*connection, evt.IsPrimaryConnection(), evt.GetEventType());
             for (IConnectionsListener* listener : m_listeners)
@@ -374,24 +331,22 @@ protected:
     // IRulesetCallbacksHandler
     void _OnRulesetDispose(RuleSetLocaterCR locater, PresentationRuleSetR ruleset) override
         {
-        auto context = std::make_shared<RulesDrivenECPresentationManager::TaskExecutionContext>(m_manager);
         m_manager.m_cancelableTasks->CancelByRulesetId(ruleset.GetRuleSetId());
-        folly::via(&m_manager.GetExecutor(), [&, context, ruleset = PresentationRuleSetPtr(&ruleset)]()
+        folly::via(&m_manager.GetExecutor(), [&, ruleset = PresentationRuleSetPtr(&ruleset)]()
             {
-            context->OnTaskStart();
+            // WIP: need to bring task notifications context here
             if (nullptr != GetRulesetCallbacksHandler())
                 GetRulesetCallbacksHandler()->_OnRulesetDispose(locater, *ruleset);
             });
         }
     void _OnRulesetCreated(RuleSetLocaterCR locater, PresentationRuleSetR ruleset) override
         {
-        auto context = std::make_shared<RulesDrivenECPresentationManager::TaskExecutionContext>(m_manager);
         // note this callback is blocking because we need to initialize some stuff
         // like user settings and expect it to be accessible immediately after
         // ruleset is created
-        folly::via(&m_manager.GetExecutor(), [&, context, ruleset = PresentationRuleSetPtr(&ruleset)]()
+        folly::via(&m_manager.GetExecutor(), [&, ruleset = PresentationRuleSetPtr(&ruleset)]()
             {
-            context->OnTaskStart();
+            // WIP: need to bring task notifications context here
             if (nullptr != GetRulesetCallbacksHandler())
                 GetRulesetCallbacksHandler()->_OnRulesetCreated(locater, *ruleset);
             }).wait();
@@ -419,10 +374,9 @@ protected:
     void _OnLocalStateChanged() override {m_wrapped.SetLocalState(GetLocalState());}
     void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override
         {
-        auto context = std::make_shared<RulesDrivenECPresentationManager::TaskExecutionContext>(m_manager);
-        folly::via(&m_manager.GetExecutor(), [&, context, rulesetId = Utf8String(rulesetId), settingId = Utf8String(settingId)]()
+        folly::via(&m_manager.GetExecutor(), [&, rulesetId = Utf8String(rulesetId), settingId = Utf8String(settingId)]()
             {
-            context->OnTaskStart();
+            // WIP: need to bring task notifications context here
             if (nullptr != GetChangesListener())
                 GetChangesListener()->_OnSettingChanged(rulesetId.c_str(), settingId.c_str());
             });
@@ -483,7 +437,6 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Params const&
     m_executor = new SingleThreadedQueueExecutor("ECPresentation");
 #endif
     m_cancelableTasks = new CancelableTasksStore();
-    m_taskNotificationsContext = nullptr;
     m_connectionsWrapper = new ConnectionManagerWrapper(*this, params.GetConnections());
     Params implParams(*m_connectionsWrapper, params.GetPaths());
     implParams.SetDisableDiskCache(params.ShouldDisableDiskCache());
@@ -512,9 +465,6 @@ RulesDrivenECPresentationManager::~RulesDrivenECPresentationManager()
     DELETE_AND_CLEAR(m_connectionsWrapper);
     DELETE_AND_CLEAR(m_executor);
     DELETE_AND_CLEAR(m_cancelableTasks);
-
-    if (nullptr != m_taskNotificationsContext)
-        m_taskNotificationsContext->Reset();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -534,13 +484,12 @@ IUserSettingsManager& RulesDrivenECPresentationManager::GetUserSettings() const 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetRootNodes(IConnectionCR primaryConnection, PageOptionsCR pageOpts, JsonValueCR jsonOptions)
+folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetRootNodes(IConnectionCR primaryConnection, PageOptionsCR pageOpts, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
     auto promise = CreateCancelablePromise<INavNodesDataSourcePtr>(*m_cancelableTasks, "Root nodes", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, context, promise, connectionId = primaryConnection.GetId(), pageOpts, jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), pageOpts, jsonOptions]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -562,13 +511,12 @@ folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetRootNodes
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<size_t> RulesDrivenECPresentationManager::_GetRootNodesCount(IConnectionCR primaryConnection, JsonValueCR jsonOptions)
+folly::Future<size_t> RulesDrivenECPresentationManager::_GetRootNodesCount(IConnectionCR primaryConnection, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
     auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, "Root nodes count", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, context, promise, connectionId = primaryConnection.GetId(), jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), jsonOptions]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -583,13 +531,12 @@ folly::Future<size_t> RulesDrivenECPresentationManager::_GetRootNodesCount(IConn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetChildren(IConnectionCR primaryConnection, NavNodeCR parent, PageOptionsCR pageOpts, JsonValueCR jsonOptions)
+folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetChildren(IConnectionCR primaryConnection, NavNodeCR parent, PageOptionsCR pageOpts, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
     auto promise = CreateCancelablePromise<INavNodesDataSourcePtr>(*m_cancelableTasks, "Child nodes", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, context, promise, connectionId = primaryConnection.GetId(), parent = (NavNodeCPtr)&parent, pageOpts, jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), parent = (NavNodeCPtr)&parent, pageOpts, jsonOptions]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -611,13 +558,12 @@ folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetChildren(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<size_t> RulesDrivenECPresentationManager::_GetChildrenCount(IConnectionCR primaryConnection, NavNodeCR parent, JsonValueCR jsonOptions)
+folly::Future<size_t> RulesDrivenECPresentationManager::_GetChildrenCount(IConnectionCR primaryConnection, NavNodeCR parent, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
     auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, "Child nodes count", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, context, promise, connectionId = primaryConnection.GetId(), parent = (NavNodeCPtr)&parent, jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), parent = (NavNodeCPtr)&parent, jsonOptions]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -632,13 +578,12 @@ folly::Future<size_t> RulesDrivenECPresentationManager::_GetChildrenCount(IConne
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetParent(IConnectionCR primaryConnection, NavNodeCR node, JsonValueCR jsonOptions)
+folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetParent(IConnectionCR primaryConnection, NavNodeCR node, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
     auto promise = CreateCancelablePromise<NavNodeCPtr>(*m_cancelableTasks, "Parent node", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, context, promise, connectionId = primaryConnection.GetId(), node = (NavNodeCPtr)&node, jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), node = (NavNodeCPtr)&node, jsonOptions]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -653,13 +598,12 @@ folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetParent(IConnect
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetNode(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions)
+folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetNode(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
     auto promise = CreateCancelablePromise<NavNodeCPtr>(*m_cancelableTasks, "Node", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, context, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -674,13 +618,12 @@ folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetNode(IConnectio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<bvector<NavNodeCPtr>> RulesDrivenECPresentationManager::_GetFilteredNodes(IConnectionCR primaryConnection, Utf8CP filterText, JsonValueCR jsonOptions)
+folly::Future<bvector<NavNodeCPtr>> RulesDrivenECPresentationManager::_GetFilteredNodes(IConnectionCR primaryConnection, Utf8CP filterText, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
     auto promise = CreateCancelablePromise<bvector<NavNodeCPtr>>(*m_cancelableTasks, "Filtered nodes", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, context, promise, connectionId = primaryConnection.GetId(), filterText = Utf8String(filterText), jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), filterText = Utf8String(filterText), jsonOptions]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -695,13 +638,12 @@ folly::Future<bvector<NavNodeCPtr>> RulesDrivenECPresentationManager::_GetFilter
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<bool> RulesDrivenECPresentationManager::_HasChild(IConnectionCR primaryConnection, NavNodeCR parent, ECInstanceKeyCR childKey, JsonValueCR jsonOptions)
+folly::Future<bool> RulesDrivenECPresentationManager::_HasChild(IConnectionCR primaryConnection, NavNodeCR parent, ECInstanceKeyCR childKey, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
     auto promise = CreateCancelablePromise<bool>(*m_cancelableTasks, "Child check", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, context, promise, connectionId = primaryConnection.GetId(), parent = (NavNodeCPtr)&parent, childKey, jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), parent = (NavNodeCPtr)&parent, childKey, jsonOptions]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -716,13 +658,12 @@ folly::Future<bool> RulesDrivenECPresentationManager::_HasChild(IConnectionCR pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetContentClasses(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, bvector<ECClassCP> const& classes, JsonValueCR jsonOptions)
+folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetContentClasses(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, bvector<ECClassCP> const& classes, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
     auto promise = CreateCancelablePromise<bvector<SelectClassInfo>>(*m_cancelableTasks, "Content classes", TaskDependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, context, promise, connectionId = primaryConnection.GetId(), displayType = (Utf8String)preferredDisplayType, classes, jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), displayType = (Utf8String)preferredDisplayType, classes, jsonOptions]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -738,18 +679,16 @@ folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetCo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetContentDescriptor(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, KeySetCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR jsonOptions)
+folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetContentDescriptor(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, KeySetCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
-
     if (selectionInfo)
         m_cancelableTasks->CancelSelectionDependants(primaryConnection, preferredDisplayType, *selectionInfo);
 
     TaskDependencies dependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId(), preferredDisplayType, selectionInfo);
     auto promise = CreateCancelablePromise<ContentDescriptorCPtr>(*m_cancelableTasks, "Content descriptor", dependencies);
-    folly::via(m_executor, [&, context, promise, connectionId = primaryConnection.GetId(), displayType = Utf8String(preferredDisplayType), input = KeySetCPtr(&inputKeys), selectionInfo = SelectionInfoCPtr(selectionInfo), jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), displayType = Utf8String(preferredDisplayType), input = KeySetCPtr(&inputKeys), selectionInfo = SelectionInfoCPtr(selectionInfo), jsonOptions]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -765,18 +704,16 @@ folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetConte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOpts)
+folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOpts, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
-
     if (descriptor.GetSelectionInfo())
         m_cancelableTasks->CancelSelectionDependants(descriptor.GetConnection(), descriptor.GetPreferredDisplayType().c_str(), *descriptor.GetSelectionInfo());
 
     TaskDependencies dependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), descriptor.GetPreferredDisplayType().c_str(), descriptor.GetSelectionInfo());
     auto promise = CreateCancelablePromise<ContentCPtr>(*m_cancelableTasks, "Content", dependencies);
-    folly::via(m_executor, [&, context, promise, descriptor = ContentDescriptorCPtr(&descriptor), pageOpts]()
+    folly::via(m_executor, [&, notificationsContext, promise, descriptor = ContentDescriptorCPtr(&descriptor), pageOpts]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -789,18 +726,16 @@ folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(Content
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<size_t> RulesDrivenECPresentationManager::_GetContentSetSize(ContentDescriptorCR descriptor)
+folly::Future<size_t> RulesDrivenECPresentationManager::_GetContentSetSize(ContentDescriptorCR descriptor, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
-
     if (descriptor.GetSelectionInfo())
         m_cancelableTasks->CancelSelectionDependants(descriptor.GetConnection(), descriptor.GetPreferredDisplayType().c_str(), *descriptor.GetSelectionInfo());
 
     TaskDependencies dependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), descriptor.GetPreferredDisplayType().c_str(), descriptor.GetSelectionInfo());
     auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, "Content set size", dependencies);
-    folly::via(m_executor, [&, context, promise, descriptor = ContentDescriptorCPtr(&descriptor)]()
+    folly::via(m_executor, [&, notificationsContext, promise, descriptor = ContentDescriptorCPtr(&descriptor)]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -813,14 +748,13 @@ folly::Future<size_t> RulesDrivenECPresentationManager::_GetContentSetSize(Conte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<Utf8String> RulesDrivenECPresentationManager::_GetDisplayLabel(IConnectionCR primaryConnection, KeySetCR keys)
+folly::Future<Utf8String> RulesDrivenECPresentationManager::_GetDisplayLabel(IConnectionCR primaryConnection, KeySetCR keys, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
     TaskDependencies dependencies(primaryConnection.GetId(), DISPLAY_LABEL_RULESET_ID, ContentDisplayType::List, nullptr);
     auto promise = CreateCancelablePromise<Utf8String>(*m_cancelableTasks, "Display label", dependencies);
-    folly::via(m_executor, [&, context, promise, connectionId = primaryConnection.GetId(), keys = KeySetCPtr(&keys)]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), keys = KeySetCPtr(&keys)]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -922,10 +856,8 @@ IPropertyCategorySupplier& RulesDrivenECPresentationManager::GetCategorySupplier
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManager::NotifyCategoriesChanged()
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
-    folly::via(m_executor, [&, context]()
+    folly::via(m_executor, [&]()
         {
-        context->OnTaskStart();
         m_impl->NotifyCategoriesChanged();
         });
     }
@@ -950,7 +882,7 @@ void RulesDrivenECPresentationManager::UnregisterECInstanceChangeHandler(IECInst
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<bvector<ECInstanceChangeResult>> RulesDrivenECPresentationManager::_SaveValueChange(IConnectionCR primaryConnection, bvector<ChangedECInstanceInfo> const& instances,
-    Utf8CP propertyAccessor, ECValueCR value, JsonValueCR)
+    Utf8CP propertyAccessor, ECValueCR value, JsonValueCR, PresentationTaskNotificationsContextCR notificationsContext)
     {
     // note: the connection should be changed only on the primary thread so we're not
     // switching to the executor thread here.
@@ -971,13 +903,12 @@ void RulesDrivenECPresentationManager::_OnLocalizationProviderChanged()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeChecked(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions)
+folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeChecked(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
     auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node checked", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, context, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -992,13 +923,12 @@ folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeChecked(ICon
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeUnchecked(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions)
+folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeUnchecked(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
     auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node unchecked", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, context, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -1013,13 +943,12 @@ folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeUnchecked(IC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeExpanded(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions)
+folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeExpanded(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
     auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node expanded", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, context, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -1034,13 +963,12 @@ folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeExpanded(ICo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeCollapsed(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions)
+folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeCollapsed(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
     auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node collapsed", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, context, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 
@@ -1055,13 +983,12 @@ folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeCollapsed(IC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnAllNodesCollapsed(IConnectionCR primaryConnection, JsonValueCR jsonOptions)
+folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnAllNodesCollapsed(IConnectionCR primaryConnection, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
-    std::shared_ptr<TaskExecutionContext> context = std::make_shared<TaskExecutionContext>(*this);
     auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "All nodes collapsed");
-    folly::via(m_executor, [&, context, promise, connectionId = primaryConnection.GetId(), jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), jsonOptions]()
         {
-        context->OnTaskStart();
+        notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
             return;
 

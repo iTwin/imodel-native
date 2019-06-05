@@ -54,7 +54,6 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
 {
     struct Impl;
     struct CancelableTasksStore;
-    struct TaskExecutionContext;
     struct ConnectionManagerWrapper;
     struct RulesetLocaterManagerWrapper;
     struct UserSettingsManagerWrapper;
@@ -212,54 +211,38 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         ContentOptions(Utf8StringCR rulesetId, Utf8StringCR locale = "") : CommonOptions(rulesetId.c_str(), locale.empty() ? nullptr : locale.c_str()) {}
         };
 
-    //===================================================================================
-    // @bsiclass                                    Grigas.Petraitis            03/2019
-    //===================================================================================
-    struct TaskNotificationsContext
-        {
-        private:
-            RulesDrivenECPresentationManager* m_manager;
-            std::function<void()> m_callbackOnTaskStart;
-        public:
-            ECPRESENTATION_EXPORT TaskNotificationsContext(RulesDrivenECPresentationManager& manager, std::function<void()> onTaskStart);
-            ECPRESENTATION_EXPORT ~TaskNotificationsContext();
-            std::function<void()> const& GetOnTaskStartCallback() const { return m_callbackOnTaskStart; }
-            void Reset() { m_manager = nullptr; }
-        };
-
 private:
     Impl* m_impl;
     folly::Executor* m_executor;
     CancelableTasksStore* m_cancelableTasks;
-    TaskNotificationsContext* m_taskNotificationsContext;
     ConnectionManagerWrapper* m_connectionsWrapper;
     bvector<ECInstanceChangeEventSourceWrapper*> m_ecInstanceChangeEventSourceWrappers;
 
 protected:
     // IECPresentationManager: Navigation
-    ECPRESENTATION_EXPORT virtual folly::Future<NavNodesContainer> _GetRootNodes(IConnectionCR, PageOptionsCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetRootNodesCount(IConnectionCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<NavNodesContainer> _GetChildren(IConnectionCR, NavNodeCR, PageOptionsCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetChildrenCount(IConnectionCR, NavNodeCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<bool> _HasChild(IConnectionCR, NavNodeCR, ECInstanceKeyCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<NavNodeCPtr> _GetParent(IConnectionCR, NavNodeCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<NavNodeCPtr> _GetNode(IConnectionCR, NavNodeKeyCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<bvector<NavNodeCPtr>> _GetFilteredNodes(IConnectionCR, Utf8CP filterText, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnNodeChecked(IConnectionCR, NavNodeKeyCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnNodeUnchecked(IConnectionCR, NavNodeKeyCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnNodeExpanded(IConnectionCR, NavNodeKeyCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnNodeCollapsed(IConnectionCR, NavNodeKeyCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnAllNodesCollapsed(IConnectionCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<NavNodesContainer> _GetRootNodes(IConnectionCR, PageOptionsCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetRootNodesCount(IConnectionCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<NavNodesContainer> _GetChildren(IConnectionCR, NavNodeCR, PageOptionsCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetChildrenCount(IConnectionCR, NavNodeCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<bool> _HasChild(IConnectionCR, NavNodeCR, ECInstanceKeyCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<NavNodeCPtr> _GetParent(IConnectionCR, NavNodeCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<NavNodeCPtr> _GetNode(IConnectionCR, NavNodeKeyCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<bvector<NavNodeCPtr>> _GetFilteredNodes(IConnectionCR, Utf8CP filterText, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnNodeChecked(IConnectionCR, NavNodeKeyCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnNodeUnchecked(IConnectionCR, NavNodeKeyCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnNodeExpanded(IConnectionCR, NavNodeKeyCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnNodeCollapsed(IConnectionCR, NavNodeKeyCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnAllNodesCollapsed(IConnectionCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
 
     // IECPresentationManager: Content
-    ECPRESENTATION_EXPORT virtual folly::Future<bvector<SelectClassInfo>> _GetContentClasses(IConnectionCR, Utf8CP, bvector<ECClassCP> const&, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR, Utf8CP preferredDisplayType, KeySetCR, SelectionInfo const*, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR, PageOptionsCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<Utf8String> _GetDisplayLabel(IConnectionCR, KeySetCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<bvector<SelectClassInfo>> _GetContentClasses(IConnectionCR, Utf8CP, bvector<ECClassCP> const&, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR, Utf8CP preferredDisplayType, KeySetCR, SelectionInfo const*, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR, PageOptionsCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<Utf8String> _GetDisplayLabel(IConnectionCR, KeySetCR, PresentationTaskNotificationsContextCR) override;
 
     // IECPresentationManager: Updating
-    ECPRESENTATION_EXPORT virtual folly::Future<bvector<ECInstanceChangeResult>> _SaveValueChange(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<bvector<ECInstanceChangeResult>> _SaveValueChange(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
     
     ECPRESENTATION_EXPORT virtual void _OnLocalizationProviderChanged() override;
 

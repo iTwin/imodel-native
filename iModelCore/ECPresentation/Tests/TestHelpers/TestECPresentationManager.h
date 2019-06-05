@@ -118,16 +118,16 @@ private:
     
 protected:
     // Navigation
-    folly::Future<DataContainer<NavNodeCPtr>> _GetRootNodes(IConnectionCR, PageOptionsCR, JsonValueCR) override {return GetNodes(nullptr);}
-    folly::Future<size_t> _GetRootNodesCount(IConnectionCR, JsonValueCR) override {return GetNodesCount(nullptr);}
-    folly::Future<DataContainer<NavNodeCPtr>> _GetChildren(IConnectionCR, NavNodeCR parent, PageOptionsCR, JsonValueCR) override {return GetNodes(&parent);}
-    folly::Future<size_t> _GetChildrenCount(IConnectionCR, NavNodeCR parent, JsonValueCR) override {return GetNodesCount(&parent);}
-    folly::Future<NavNodeCPtr> _GetParent(IConnectionCR, NavNodeCR node, JsonValueCR) override
+    folly::Future<DataContainer<NavNodeCPtr>> _GetRootNodes(IConnectionCR, PageOptionsCR, JsonValueCR, PresentationTaskNotificationsContextCR) override {return GetNodes(nullptr);}
+    folly::Future<size_t> _GetRootNodesCount(IConnectionCR, JsonValueCR, PresentationTaskNotificationsContextCR) override {return GetNodesCount(nullptr);}
+    folly::Future<DataContainer<NavNodeCPtr>> _GetChildren(IConnectionCR, NavNodeCR parent, PageOptionsCR, JsonValueCR, PresentationTaskNotificationsContextCR) override {return GetNodes(&parent);}
+    folly::Future<size_t> _GetChildrenCount(IConnectionCR, NavNodeCR parent, JsonValueCR, PresentationTaskNotificationsContextCR) override {return GetNodesCount(&parent);}
+    folly::Future<NavNodeCPtr> _GetParent(IConnectionCR, NavNodeCR node, JsonValueCR, PresentationTaskNotificationsContextCR) override
         {
         auto iter = m_parentship.find(&node);
         return (m_parentship.end() != iter) ? iter->second : nullptr;
         }
-    folly::Future<NavNodeCPtr> _GetNode(IConnectionCR, NavNodeKeyCR nodeKey, JsonValueCR) override
+    folly::Future<NavNodeCPtr> _GetNode(IConnectionCR, NavNodeKeyCR nodeKey, JsonValueCR, PresentationTaskNotificationsContextCR) override
         {
         for (auto pair : m_hierarchy)
             {
@@ -137,7 +137,7 @@ protected:
             }
         return NavNodeCPtr(nullptr);
         }
-    folly::Future<bool> _HasChild(IConnectionCR db, NavNodeCR parentNode, ECInstanceKeyCR childKey, JsonValueCR options) override
+    folly::Future<bool> _HasChild(IConnectionCR db, NavNodeCR parentNode, ECInstanceKeyCR childKey, JsonValueCR options, PresentationTaskNotificationsContextCR) override
         {
         if (nullptr != m_hasChildHandler)
             return m_hasChildHandler(db, parentNode, childKey, options);
@@ -152,37 +152,37 @@ protected:
             return (child->GetKey()->AsECInstanceNodeKey() && child->GetKey()->AsECInstanceNodeKey()->GetInstanceKey() == childKey);
             });
         }
-    folly::Future<bvector<NavNodeCPtr>> _GetFilteredNodes(IConnectionCR connection, Utf8CP filterText, JsonValueCR options) override 
+    folly::Future<bvector<NavNodeCPtr>> _GetFilteredNodes(IConnectionCR connection, Utf8CP filterText, JsonValueCR options, PresentationTaskNotificationsContextCR) override 
         {
         if (nullptr != m_getFilteredNodesPathsHandler)
             return m_getFilteredNodesPathsHandler(connection, filterText, options);
         return bvector<NavNodeCPtr>();
         }
-    folly::Future<folly::Unit> _OnNodeChecked(IConnectionCR db, NavNodeKeyCR nodeKey, JsonValueCR options) override
+    folly::Future<folly::Unit> _OnNodeChecked(IConnectionCR db, NavNodeKeyCR nodeKey, JsonValueCR options, PresentationTaskNotificationsContextCR) override
         {
         if (nullptr != m_onNodeCheckedHandler) 
             m_onNodeCheckedHandler(db, nodeKey, options);
         return folly::unit;
         }
-    folly::Future<folly::Unit> _OnNodeUnchecked(IConnectionCR db, NavNodeKeyCR nodeKey, JsonValueCR options) override
+    folly::Future<folly::Unit> _OnNodeUnchecked(IConnectionCR db, NavNodeKeyCR nodeKey, JsonValueCR options, PresentationTaskNotificationsContextCR) override
         {
         if (nullptr != m_onNodeUncheckedHandler) 
             m_onNodeUncheckedHandler(db, nodeKey, options);
         return folly::unit;
         }
-    folly::Future<folly::Unit> _OnNodeExpanded(IConnectionCR db, NavNodeKeyCR nodeKey, JsonValueCR options) override
+    folly::Future<folly::Unit> _OnNodeExpanded(IConnectionCR db, NavNodeKeyCR nodeKey, JsonValueCR options, PresentationTaskNotificationsContextCR) override
         {
         if (nullptr != m_onNodeExpandedHandler) 
             m_onNodeExpandedHandler(db, nodeKey, options);
         return folly::unit;
         }
-    folly::Future<folly::Unit> _OnNodeCollapsed(IConnectionCR db, NavNodeKeyCR nodeKey, JsonValueCR options) override
+    folly::Future<folly::Unit> _OnNodeCollapsed(IConnectionCR db, NavNodeKeyCR nodeKey, JsonValueCR options, PresentationTaskNotificationsContextCR) override
         {
         if (nullptr != m_onNodeCollapsedHandler) 
             m_onNodeCollapsedHandler(db, nodeKey, options);
         return folly::unit;
         }
-    folly::Future<folly::Unit> _OnAllNodesCollapsed(IConnectionCR connection, JsonValueCR options) override
+    folly::Future<folly::Unit> _OnAllNodesCollapsed(IConnectionCR connection, JsonValueCR options, PresentationTaskNotificationsContextCR) override
         {
         if (nullptr != m_onAllNodesCollapseHandler) 
             m_onAllNodesCollapseHandler(connection, options);
@@ -190,33 +190,33 @@ protected:
         }
 
     // Content
-    folly::Future<bvector<SelectClassInfo>> _GetContentClasses(IConnectionCR db, Utf8CP preferredDisplayType, bvector<ECClassCP> const& classes, JsonValueCR options) override
+    folly::Future<bvector<SelectClassInfo>> _GetContentClasses(IConnectionCR db, Utf8CP preferredDisplayType, bvector<ECClassCP> const& classes, JsonValueCR options, PresentationTaskNotificationsContextCR) override
         {
         return bvector<SelectClassInfo>();
         }
-    folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR db, Utf8CP preferredDisplayType, KeySetCR input, SelectionInfo const* selectionInfo, JsonValueCR options) override 
+    folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR db, Utf8CP preferredDisplayType, KeySetCR input, SelectionInfo const* selectionInfo, JsonValueCR options, PresentationTaskNotificationsContextCR) override 
         {
         if (nullptr != m_contentDescriptorHandler)
             return m_contentDescriptorHandler(db, preferredDisplayType, input, selectionInfo, options);
         return ContentDescriptor::Create(db, options, *NavNodeKeyListContainer::Create());
         }
-    folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOptions) override 
+    folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOptions, PresentationTaskNotificationsContextCR) override
         {
         if (nullptr != m_contentHandler)
             return m_contentHandler(descriptor, pageOptions);
         return Content::Create(descriptor, *TestDataSource::Create());
         }
-    folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR) override
+    folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR, PresentationTaskNotificationsContextCR) override
         {
         return 0;
         }
-    folly::Future<Utf8String> _GetDisplayLabel(IConnectionCR, KeySetCR) override
+    folly::Future<Utf8String> _GetDisplayLabel(IConnectionCR, KeySetCR, PresentationTaskNotificationsContextCR) override
         {
         return "";
         }
 
     // Updating
-    folly::Future<bvector<ECInstanceChangeResult>> _SaveValueChange(IConnectionCR db, bvector<ChangedECInstanceInfo> const& instancesInfo, Utf8CP propertyAccessor, ECValueCR value, JsonValueCR options) override
+    folly::Future<bvector<ECInstanceChangeResult>> _SaveValueChange(IConnectionCR db, bvector<ChangedECInstanceInfo> const& instancesInfo, Utf8CP propertyAccessor, ECValueCR value, JsonValueCR options, PresentationTaskNotificationsContextCR) override
         {
         if (nullptr != m_saveValueChangeHandler)
             return m_saveValueChangeHandler(db, instancesInfo, propertyAccessor, value, options);

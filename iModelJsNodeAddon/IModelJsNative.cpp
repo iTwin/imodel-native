@@ -4663,23 +4663,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             }
     };
 
-    //=======================================================================================
-    //! @bsiclass
-    //=======================================================================================
-    struct AsyncLoggingNotificationsContext
-        {
-        RulesDrivenECPresentationManager::TaskNotificationsContext* m_notificationsContext;
-        AsyncLoggingNotificationsContext(RulesDrivenECPresentationManager& presentationManager)
-            {
-            JsInterop::ObjectReferenceClaimCheck requestContext = JsInterop::GetCurrentClientRequestContextForMainThread();
-            m_notificationsContext = new RulesDrivenECPresentationManager::TaskNotificationsContext(presentationManager, [requestContext]()
-                {
-                JsInterop::SetCurrentClientRequestContextForWorkerThread(requestContext);
-                });
-            }
-        ~AsyncLoggingNotificationsContext() { delete m_notificationsContext; }
-        };
-
     DEFINE_CONSTRUCTOR;
 
     ConnectionManager m_connections;
@@ -4694,7 +4677,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(m_connections, 
             T_HOST.GetIKnownLocationsAdmin(), id));
         m_ruleSetLocater = SimpleRuleSetLocater::Create();
-        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         m_presentationManager->GetLocaters().RegisterLocater(*m_ruleSetLocater);
         m_presentationManager->SetLocalState(&m_localState);
         }
@@ -4767,6 +4749,15 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         return CreateReturnValue(Env(), result, serializeResponse);
         }
 
+    static PresentationTaskNotificationsContext CreateAsyncLoggingContext()
+        {
+        JsInterop::ObjectReferenceClaimCheck requestContext = JsInterop::GetCurrentClientRequestContextForMainThread();
+        return PresentationTaskNotificationsContext([requestContext]()
+            {
+            JsInterop::SetCurrentClientRequestContextForWorkerThread(requestContext);
+            });
+        }
+
     void HandleRequest(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_FUNCTION(2, responseCallback, );
@@ -4792,7 +4783,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             return;
             }
 
-        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         m_connections.NotifyConnectionOpened(db->GetDgnDb());
 
         JsonValueCR params = request["params"];
@@ -4805,27 +4795,27 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             folly::Future<ECPresentationResult> result = folly::makeFutureWith([]() {return ECPresentationResult(ECPresentationStatus::InvalidArgument, "request.requestId"); });
 
             if (0 == strcmp("GetRootNodesCount", requestId))
-                result = ECPresentationUtils::GetRootNodesCount(*m_presentationManager, db->GetDgnDb(), params);
+                result = ECPresentationUtils::GetRootNodesCount(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
             else if (0 == strcmp("GetRootNodes", requestId))
-                result = ECPresentationUtils::GetRootNodes(*m_presentationManager, db->GetDgnDb(), params);
+                result = ECPresentationUtils::GetRootNodes(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
             else if (0 == strcmp("GetChildrenCount", requestId))
-                result = ECPresentationUtils::GetChildrenCount(*m_presentationManager, db->GetDgnDb(), params);
+                result = ECPresentationUtils::GetChildrenCount(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
             else if (0 == strcmp("GetChildren", requestId))
-                result = ECPresentationUtils::GetChildren(*m_presentationManager, db->GetDgnDb(), params);
+                result = ECPresentationUtils::GetChildren(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
             else if (0 == strcmp("GetNodePaths", requestId))
-                result = ECPresentationUtils::GetNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
+                result = ECPresentationUtils::GetNodesPaths(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
             else if (0 == strcmp("GetFilteredNodePaths", requestId))
-                result = ECPresentationUtils::GetFilteredNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
+                result = ECPresentationUtils::GetFilteredNodesPaths(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
             else if (0 == strcmp("GetContentDescriptor", requestId))
-                result = ECPresentationUtils::GetContentDescriptor(*m_presentationManager, db->GetDgnDb(), params);
+                result = ECPresentationUtils::GetContentDescriptor(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
             else if (0 == strcmp("GetContent", requestId))
-                result = ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params);
+                result = ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
             else if (0 == strcmp("GetContentSetSize", requestId))
-                result = ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params);
+                result = ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
             else if (0 == strcmp("GetDistinctValues", requestId))
-                result = ECPresentationUtils::GetDistinctValues(*m_presentationManager, db->GetDgnDb(), params);
+                result = ECPresentationUtils::GetDistinctValues(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
             else if (0 == strcmp("GetDisplayLabel", requestId))
-                result = ECPresentationUtils::GetDisplayLabel(*m_presentationManager, db->GetDgnDb(), params);
+                result = ECPresentationUtils::GetDisplayLabel(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
 
             result
             .then([responseSender](ECPresentationResult result)
@@ -4846,7 +4836,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     Napi::Value SetupRulesetDirectories(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, rulesetDirectories, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetDirectories")));
-        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         ECPresentationResult result = ECPresentationUtils::SetupRulesetDirectories(*m_presentationManager, rulesetDirectories);
         return CreateReturnValue(result);
         }
@@ -4854,7 +4843,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     Napi::Value SetupLocaleDirectories(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, localeDirectories, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "localeDirectories")));
-        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         ECPresentationResult result = ECPresentationUtils::SetupLocaleDirectories(*m_presentationManager, localeDirectories);
         return CreateReturnValue(result);
         }
@@ -4862,7 +4850,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     Napi::Value GetRulesets(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
-        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         ECPresentationResult result = ECPresentationUtils::GetRulesets(*m_ruleSetLocater, rulesetId);
         return CreateReturnValue(result, true);
         }
@@ -4870,7 +4857,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     Napi::Value AddRuleset(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetJsonString, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetJsonString")));
-        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         ECPresentationResult result = ECPresentationUtils::AddRuleset(*m_ruleSetLocater, rulesetJsonString);
         return CreateReturnValue(result);
         }
@@ -4879,14 +4865,12 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
         REQUIRE_ARGUMENT_STRING(1, hash, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "hash")));
-        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         ECPresentationResult result = ECPresentationUtils::RemoveRuleset(*m_ruleSetLocater, rulesetId, hash);
         return CreateReturnValue(result);
         }
 
     Napi::Value ClearRulesets(Napi::CallbackInfo const& info)
         {
-        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         ECPresentationResult result = ECPresentationUtils::ClearRulesets(*m_ruleSetLocater);
         return CreateReturnValue(result);
         }
@@ -4896,7 +4880,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_STRING(0, rulesetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
         REQUIRE_ARGUMENT_STRING(1, variableId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "variableId")));
         REQUIRE_ARGUMENT_STRING(2, type, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "type")));
-        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         ECPresentationResult result = ECPresentationUtils::GetRulesetVariableValue(*m_presentationManager, rulesetId, variableId, type);
         return CreateReturnValue(result);
         }
@@ -4907,7 +4890,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_STRING(1, variableId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "variableId")));
         REQUIRE_ARGUMENT_STRING(2, variableType, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "type")));
         REQUIRE_ARGUMENT_ANY_OBJ(3, value, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "value")));
-        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         Json::Value jsonValue = NapiUtils::Convert(value);
         ECPresentationResult result = ECPresentationUtils::SetRulesetVariableValue(*m_presentationManager, ruleSetId, variableId, variableType, jsonValue);
         return CreateReturnValue(result);
@@ -4915,7 +4897,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
 
     void Terminate(Napi::CallbackInfo const& info)
         {
-        AsyncLoggingNotificationsContext loggingContext(*m_presentationManager);
         m_presentationManager.reset();
         }
     };

@@ -74,19 +74,19 @@ struct ECPresentationUtils
     static ECPresentationResult RemoveRuleset(SimpleRuleSetLocater&, Utf8StringCR ruleSetId, Utf8StringCR hash);
     static ECPresentationResult ClearRulesets(SimpleRuleSetLocater&);
 
-    static folly::Future<ECPresentationResult> GetRootNodesCount(IECPresentationManagerR, ECDbR, JsonValueCR params);
-    static folly::Future<ECPresentationResult> GetRootNodes(IECPresentationManagerR, ECDbR, JsonValueCR params);
-    static folly::Future<ECPresentationResult> GetChildrenCount(IECPresentationManagerR, ECDbR, JsonValueCR params);
-    static folly::Future<ECPresentationResult> GetChildren(IECPresentationManagerR, ECDbR, JsonValueCR params);
+    static folly::Future<ECPresentationResult> GetRootNodesCount(IECPresentationManagerR, ECDbR, JsonValueCR params, PresentationTaskNotificationsContextCR);
+    static folly::Future<ECPresentationResult> GetRootNodes(IECPresentationManagerR, ECDbR, JsonValueCR params, PresentationTaskNotificationsContextCR);
+    static folly::Future<ECPresentationResult> GetChildrenCount(IECPresentationManagerR, ECDbR, JsonValueCR params, PresentationTaskNotificationsContextCR);
+    static folly::Future<ECPresentationResult> GetChildren(IECPresentationManagerR, ECDbR, JsonValueCR params, PresentationTaskNotificationsContextCR);
 
-    static folly::Future<ECPresentationResult> GetContentDescriptor(IECPresentationManagerR, ECDbR, JsonValueCR params);
-    static folly::Future<ECPresentationResult> GetContent(IECPresentationManagerR, ECDbR, JsonValueCR params);
-    static folly::Future<ECPresentationResult> GetContentSetSize(IECPresentationManagerR, ECDbR, JsonValueCR params);
-    static folly::Future<ECPresentationResult> GetDistinctValues(IECPresentationManagerR, ECDbR, JsonValueCR params);
-    static folly::Future<ECPresentationResult> GetDisplayLabel(IECPresentationManagerR, ECDbR, JsonValueCR params);
+    static folly::Future<ECPresentationResult> GetContentDescriptor(IECPresentationManagerR, ECDbR, JsonValueCR params, PresentationTaskNotificationsContextCR);
+    static folly::Future<ECPresentationResult> GetContent(IECPresentationManagerR, ECDbR, JsonValueCR params, PresentationTaskNotificationsContextCR);
+    static folly::Future<ECPresentationResult> GetContentSetSize(IECPresentationManagerR, ECDbR, JsonValueCR params, PresentationTaskNotificationsContextCR);
+    static folly::Future<ECPresentationResult> GetDistinctValues(IECPresentationManagerR, ECDbR, JsonValueCR params, PresentationTaskNotificationsContextCR);
+    static folly::Future<ECPresentationResult> GetDisplayLabel(IECPresentationManagerR, ECDbR, JsonValueCR params, PresentationTaskNotificationsContextCR);
 
-    static folly::Future<ECPresentationResult> GetNodesPaths(IECPresentationManagerR, ECDbR, JsonValueCR params);
-    static folly::Future<ECPresentationResult> GetFilteredNodesPaths(IECPresentationManagerR, ECDbR, JsonValueCR params);
+    static folly::Future<ECPresentationResult> GetNodesPaths(IECPresentationManagerR, ECDbR, JsonValueCR params, PresentationTaskNotificationsContextCR);
+    static folly::Future<ECPresentationResult> GetFilteredNodesPaths(IECPresentationManagerR, ECDbR, JsonValueCR params, PresentationTaskNotificationsContextCR);
 
     static ECPresentationResult SetRulesetVariableValue(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR variableId, Utf8StringCR variableType, JsonValueCR value);
     static ECPresentationResult GetRulesetVariableValue(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR variableId, Utf8StringCR variableType);
