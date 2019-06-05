@@ -654,6 +654,9 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
 
     SetSyncState(SyncState::Initial);
     LogPerformance(releaseLockTimer, "Briefcase_ReleaseAllPublicLocks to iModelHub");
+
+    BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
+
     return BSISUCCESS;
     }
 

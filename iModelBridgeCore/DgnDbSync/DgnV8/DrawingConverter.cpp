@@ -1155,7 +1155,8 @@ void InitCurrentModel(DgnModelRefP modelRef)
     if (nullptr != attachment->GetDgnModelP())
         {
         info.m_modelMapping = m_converter._FindFirstResolvedModelMapping(*attachment->GetDgnModelP());
-        info.m_modelContentsChanged = info.m_modelMapping.IsValid() ? !m_converter.GetChangeDetector()._AreContentsOfModelUnChanged(m_converter, info.m_modelMapping) : true;        // If no model mapping can't tell whether unchanged...
+        // If no model mapping, then this model is only used as an attachment for proxy graphics and in that case we only care if the drawing changed
+        info.m_modelContentsChanged = info.m_modelMapping.IsValid() ? !m_converter.GetChangeDetector()._AreContentsOfModelUnChanged(m_converter, info.m_modelMapping) : false; 
         }
 
 
@@ -1262,9 +1263,21 @@ bool CreateOrUpdateDrawingGraphics()
             }
         }
 
-    if (m_converter.IsUpdating() &&
-        m_converter.DetectDeletedExtractionGraphics(m_masterModelMapping, v8SectionedElementPathsSeen, m_attachmentsUnchanged))
-        modified = true;
+    if (m_converter.IsUpdating())
+        {
+        // If none of the models or attachments have changed, no need to check for deleted graphics
+        bool hasAnyChanges = false;
+        for (auto& modelRefInfo : m_modelRefInfoMap)
+            {
+            if (modelRefInfo.second.m_attachmentChanged || modelRefInfo.second.m_modelContentsChanged)
+                {
+                hasAnyChanges = true;
+                break;
+                }
+            }
+        if (hasAnyChanges && m_converter.DetectDeletedExtractionGraphics(m_masterModelMapping, v8SectionedElementPathsSeen, m_attachmentsUnchanged))
+            modified = true;
+        }
 
     return !m_converter.IsUpdating() || modified;
     }

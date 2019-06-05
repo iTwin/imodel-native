@@ -31,6 +31,16 @@ struct MultiBridgeTestDocumentAccessor : iModelBridge::IDocumentPropertiesAccess
         return false;
         }
 
+    void _QueryAllFilesAssignedToBridge(BentleyApi::bvector<BentleyApi::BeFileName>& fns, wchar_t const* bridgeRegSubKey) override
+        {
+        auto iBridge = m_assignments.find(bridgeRegSubKey);
+        if (iBridge != m_assignments.end())
+            {
+            for (auto const& fn: iBridge->second)
+                fns.push_back(BentleyApi::BeFileName(fn.c_str()));
+            }
+        }
+
     void BuildGuidMap()
         {
         for (auto const& props : m_docProps)
