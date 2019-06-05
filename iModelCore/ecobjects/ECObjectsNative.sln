@@ -11,8 +11,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsNative", "src\ECObjectsNative.vcxproj", "{01917E3B-2174-4AC9-860E-BAAAA15C606D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsPublishedTests", "test\PublishedTests.vcxproj", "{885B170C-2635-4A7D-9532-8A4AE95B2561}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsPerformanceTests", "test\PerformanceTests.vcxproj", "{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsNonPublishedTests", "test\NonPublishedTests.vcxproj", "{119BB5B5-C681-457D-AAB9-6B0AB43EDCFD}"

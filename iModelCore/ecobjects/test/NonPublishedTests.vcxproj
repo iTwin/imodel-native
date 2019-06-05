@@ -42,10 +42,73 @@
     <NMakeOutput>$(OutRoot)Winx64\Product\ECObjects-Gtest\ECObjectsTest.exe</NMakeOutput>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir);$(ProjectDir)\..\PublicAPI\;$(ProjectDir)\TestFixture\;$(OutRoot)Winx64\BuildContexts\ECObjects\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECObjects\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">WIN32;_DEBUG;$(NMakePreprocessorDefinitions);;BENTLEY_WIN32</NMakePreprocessorDefinitions>
+    <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
+    <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
+    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">WIN32;NDEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;BENTLEY_WIN32</NMakePreprocessorDefinitions>
+    <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
+    <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NMakeReBuildCommandLine>bb re ECObjects:TestFixture ECObjects:NonPublishedTests ECObjects::Gtest</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb re ECObjects:TestFixture ECObjects:NonPublishedTests ECObjects::Gtest -c</NMakeCleanCommandLine>
+  </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="NonPublished\AccessorTests.cpp" />
+    <ClCompile Include="NonPublished\AdhocPropertyTests.cpp" />
+    <ClCompile Include="NonPublished\CalculatedPropertyTests.cpp" />
+    <ClCompile Include="NonPublished\CustomAttributeConversionsTest.cpp" />
+    <ClCompile Include="NonPublished\CustomAttributeTests.cpp" />
+    <ClCompile Include="NonPublished\CustomAttributeUnitsConversionTests.cpp" />
+    <ClCompile Include="NonPublished\DateTimeInfoCustomAttributeTests.cpp" />
+    <ClCompile Include="NonPublished\ECClassTests.cpp" />
+    <ClCompile Include="NonPublished\ECDBufferTests.cpp" />
+    <ClCompile Include="NonPublished\ECEnumerationTests.cpp" />
+    <ClCompile Include="NonPublished\ECExpressionTests.cpp" />
+    <ClCompile Include="NonPublished\ECInstanceJsonWriterTests.cpp" />
+    <ClCompile Include="NonPublished\ECJsonUtilitiesTests.cpp" />
+    <ClCompile Include="NonPublished\ECQuantityFormattingTests.cpp" />
+    <ClCompile Include="NonPublished\ECRelationshipTests.cpp" />
+    <ClCompile Include="NonPublished\ECSchemaValidatorTests.cpp" />
+    <ClCompile Include="NonPublished\ExtendedTypeTests.cpp" />
+    <ClCompile Include="NonPublished\FormatTests.cpp" />
+    <ClCompile Include="NonPublished\InstanceLabelTests.cpp" />
+    <ClCompile Include="NonPublished\InstanceQuantityTests.cpp" />
+    <ClCompile Include="NonPublished\InstanceSerializationTests.cpp" />
+    <ClCompile Include="NonPublished\InstanceTests.cpp" />
+    <ClCompile Include="NonPublished\KindOfQuantityTests.cpp" />
+    <ClCompile Include="NonPublished\MacroTests.cpp" />
+    <ClCompile Include="NonPublished\MemoryLayoutTests.cpp" />
+    <ClCompile Include="NonPublished\MixinTests.cpp" />
+    <ClCompile Include="NonPublished\NavigationECPropertyTests.cpp" />
+    <ClCompile Include="NonPublished\PhenomenonTests.cpp" />
+    <ClCompile Include="NonPublished\PropertyCategoryTests.cpp" />
+    <ClCompile Include="NonPublished\PropertyTests.cpp" />
+    <ClCompile Include="NonPublished\SchemaComparerTests.cpp" />
+    <ClCompile Include="NonPublished\SchemaCompatiblityTests.cpp" />
+    <ClCompile Include="NonPublished\SchemaConverterTests.cpp" />
+    <ClCompile Include="NonPublished\SchemaCopyTests.cpp" />
+    <ClCompile Include="NonPublished\SchemaDeserializationConversionTests.cpp" />
+    <ClCompile Include="NonPublished\SchemaDeserializationTests.cpp" />
+    <ClCompile Include="NonPublished\SchemaLocalizationTests.cpp" />
+    <ClCompile Include="NonPublished\SchemaLocatorTests.cpp" />
     <ClCompile Include="NonPublished\SchemaParseUtilsTests.cpp" />
+    <ClCompile Include="NonPublished\SchemaSerializationTests.cpp" />
+    <ClCompile Include="NonPublished\SchemaTests.cpp" />
+    <ClCompile Include="NonPublished\SchemaValidationTests.cpp" />
+    <ClCompile Include="NonPublished\SchemaVersionConversionTests.cpp" />
+    <ClCompile Include="NonPublished\StrictSchemaTests.cpp" />
+    <ClCompile Include="NonPublished\SupplementalSchemaTests.cpp" />
+    <ClCompile Include="NonPublished\UnitsTests.cpp" />
+    <ClCompile Include="NonPublished\UnitSystemTests.cpp" />
+    <ClCompile Include="NonPublished\ValueTests.cpp" />
+    <ClCompile Include="TestFixture\TestFixture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h" />
@@ -55,9 +118,97 @@
     <None Include="BuildTests.mke" />
     <None Include="prewire.mke" />
     <None Include="SeedData.prewire.mke" />
+    <None Include="SeedData\BasicTest_Instance1.json" />
+    <None Include="SeedData\ec31UnitConversions.csv" />
+    <None Include="SeedData\ECJson\RelationshipConstraintInheritedCustomAttributes.ecschema.json" />
+    <None Include="SeedData\ECJson\SchemaWithClassProperties.ecschema.json" />
+    <None Include="SeedData\ECJson\SchemaWithItems.ecschema.json" />
+    <None Include="SeedData\ECJson\SchemaWithNoItems.ecschema.json" />
+    <None Include="SeedData\ECJson\StandaloneClassDefaultSerializeInheritedCustomAttributesAndProperties.ecschema.json" />
+    <None Include="SeedData\ECJson\StandaloneClassExplicitlySerializeInheritedProperties.ecschema.json" />
+    <None Include="SeedData\ECJson\StandaloneConstant.ecschema.json" />
+    <None Include="SeedData\ECJson\StandaloneECCustomAttributeClass.ecschema.json" />
+    <None Include="SeedData\ECJson\StandaloneECEntityClass.ecschema.json" />
+    <None Include="SeedData\ECJson\StandaloneECEnumeration.ecschema.json" />
+    <None Include="SeedData\ECJson\StandaloneECRelationshipClass.ecschema.json" />
+    <None Include="SeedData\ECJson\StandaloneECRelationshipClassWithAbstractConstraint.ecschema.json" />
+    <None Include="SeedData\ECJson\StandaloneECStructClass.ecschema.json" />
+    <None Include="SeedData\ECJson\StandaloneFormat.ecschema.json" />
+    <None Include="SeedData\ECJson\StandaloneInvertedUnit.ecschema.json" />
+    <None Include="SeedData\ECJson\StandaloneKindOfQuantity.ecschema.json" />
+    <None Include="SeedData\ECJson\StandaloneMixin.ecschema.json" />
+    <None Include="SeedData\ECJson\StandalonePhenomenon.ecschema.json" />
+    <None Include="SeedData\ECJson\StandalonePropertyCategory.ecschema.json" />
+    <None Include="SeedData\ECJson\StandaloneUnit.ecschema.json" />
+    <None Include="SeedData\ECJson\StandaloneUnitSystem.ecschema.json" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="SeedData\BadRelationship.01.00.ecschema.xml" />
+    <Xml Include="SeedData\BadSchema.01.00.ecschema.xml" />
+    <Xml Include="SeedData\BadSchemaFlat.01.00.ecschema.xml" />
+    <Xml Include="SeedData\BadSchemaFlat2.01.00.ecschema.xml" />
+    <Xml Include="SeedData\BaseSchema.01.00.ecschema.xml" />
+    <Xml Include="SeedData\BasicTest.ecschema.xml" />
+    <Xml Include="SeedData\BasicTest_Instance1.xml" />
+    <Xml Include="SeedData\CAConversionTestSchema.01.00.ecschema.xml" />
+    <Xml Include="SeedData\CircleSchema.01.00.ecschema.xml" />
+    <Xml Include="SeedData\ComprehensiveSchemaWithUnknowns.01.00.ecschema.xml" />
+    <Xml Include="SeedData\DuplicatePrefixes.01.00.ecschema.xml" />
+    <Xml Include="SeedData\ECDbMap.02.00.00.ecschema.xml" />
+    <Xml Include="SeedData\EmptyArrayInstance.xml" />
+    <Xml Include="SeedData\EmptyCustomAttribute.01.00.ecschema.xml" />
+    <Xml Include="SeedData\en-GB\House_Supplemental_Localization_en_GB.01.00.00.ecschema.xml" />
+    <Xml Include="SeedData\en-GB\House_Supplemental_Localization_en_GB.02.00.00.ecschema.xml" />
+    <Xml Include="SeedData\EnumInReferencedSchema.01.00.01.ecschema.xml" />
+    <Xml Include="SeedData\EnumInReferencedSchema_Base.01.12.05.ecschema.xml" />
+    <Xml Include="SeedData\House.01.00.ecschema.xml" />
+    <Xml Include="SeedData\House.02.00.00.ecschema.xml" />
+    <Xml Include="SeedData\IllFormedXml.01.00.ecschema.xml" />
+    <Xml Include="SeedData\InvalidReference.01.00.ecschema.xml" />
+    <Xml Include="SeedData\InvalidVersionString.01.00.ecschema.xml" />
+    <Xml Include="SeedData\it\House_Supplemental_Localization_it.01.00.00.ecschema.xml" />
+    <Xml Include="SeedData\it\House_Supplemental_Localization_it.02.00.00.ecschema.xml" />
+    <Xml Include="SeedData\KindOfQuantityInReferencedSchema.01.00.00.ecschema.xml" />
+    <Xml Include="SeedData\KindOfQuantityInReferencedSchema_Base.01.00.00.ecschema.xml" />
+    <Xml Include="SeedData\MasterSchema.01.00.ecschema.xml" />
+    <Xml Include="SeedData\MasterSchema_Supplemental_Testing.01.00.ecschema.xml" />
+    <Xml Include="SeedData\MetaSchema.02.00.ecschema.xml" />
+    <Xml Include="SeedData\MismatchedInstance.xml" />
+    <Xml Include="SeedData\MismatchedSchema.01.00.ecschema.xml" />
+    <Xml Include="SeedData\MissingClassName.01.00.ecschema.xml" />
+    <Xml Include="SeedData\MissingECSchemaNode.01.00.ecschema.xml" />
+    <Xml Include="SeedData\MissingNamespace.01.00.ecschema.xml" />
+    <Xml Include="SeedData\MissingNamespaceOnCustomAttribute.01.00.ecschema.xml" />
+    <Xml Include="SeedData\MissingNodes.01.00.ecschema.xml" />
+    <Xml Include="SeedData\MissingSchemaName.01.00.ecschema.xml" />
+    <Xml Include="SeedData\OldUnits.01.00.ecschema.xml" />
+    <Xml Include="SeedData\OnlyRequiredECSchemaAttributes.01.00.ecschema.xml" />
+    <Xml Include="SeedData\OpenPlant_Supplemental_Mapping_OPPID.01.01.ecschema.xml" />
+    <Xml Include="SeedData\pidSnippet.01.08.ecschema.xml" />
+    <Xml Include="SeedData\Polymorphism.01.00.ecschema.xml" />
+    <Xml Include="SeedData\PolymorphismInstance.xml" />
+    <Xml Include="SeedData\SchemaThatReferences.01.00.ecschema.xml" />
+    <Xml Include="SeedData\SchemaWithoutVersion.ecschema.xml" />
+    <Xml Include="SeedData\SimpleTest_EmptyInstance.xml" />
+    <Xml Include="SeedData\SimpleTest_FirstSchema.01.00.ecschema.xml" />
+    <Xml Include="SeedData\SimpleTest_Instance.xml" />
+    <Xml Include="SeedData\SimpleTest_SecondSchema.02.00.00.ecschema.xml" />
+    <Xml Include="SeedData\SquareSchema.01.00.ecschema.xml" />
+    <Xml Include="SeedData\testReferencedSchema.01.00.ecschema.xml" />
+    <Xml Include="SeedData\testschema.01.00.ecschema.xml" />
+    <Xml Include="SeedData\TestSupplementalSchema.01.00.ecschema.xml" />
+    <Xml Include="SeedData\TestUnitDefaults.01.00.ecschema.xml" />
+    <Xml Include="SeedData\Unit_Attributes.01.00.ecschema.xml" />
+    <Xml Include="SeedData\UnsupportedECXmlNamespace.01.00.ecschema.xml" />
+    <Xml Include="SeedData\ur-PK\House_Supplemental_Localization_ur_PK.01.00.00.ecschema.xml" />
+    <Xml Include="SeedData\ur-PK\House_Supplemental_Localization_ur_PK.02.00.00.ecschema.xml" />
+    <Xml Include="SeedData\V3Conversion\BadSchemaFlat_V3Conversion.01.00.ecschema.xml" />
+    <Xml Include="SeedData\V3Conversion\BadSchema_V3Conversion.01.00.ecschema.xml" />
+    <Xml Include="SeedData\Widgets.01.00.ecschema.xml" />
+    <Xml Include="SeedData\Widgets.09.06.ecschema.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

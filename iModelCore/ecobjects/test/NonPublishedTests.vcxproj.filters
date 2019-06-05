@@ -1,18 +1,472 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="NonPublished\SchemaParseUtilsTests.cpp" />
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="Source Files\Schema">
+      <UniqueIdentifier>{8a70bafd-274b-4ae4-bb21-89ee142a4f29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\SchemaConverter">
+      <UniqueIdentifier>{11adc197-be69-46d3-9656-cb9acd7813ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Units">
+      <UniqueIdentifier>{77da0cb6-be83-4c5d-b180-b6167b4219d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Schema\Deserialization">
+      <UniqueIdentifier>{fe9e971f-559a-4ef8-8b96-9d83ce5ea22b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SeedData">
+      <UniqueIdentifier>{308d3154-b734-413b-8825-4c210e392b42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SeedData\ECJson">
+      <UniqueIdentifier>{91c810f0-8f69-43fc-9da8-39cf85766b1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SeedData\en-GB">
+      <UniqueIdentifier>{a0b3c305-6888-4bfc-bf35-45b0679cc3d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SeedData\it">
+      <UniqueIdentifier>{7a00b8e7-be2d-4190-a031-1447b9babf69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SeedData\ur-PK">
+      <UniqueIdentifier>{3485d940-81ab-4ec0-9499-2aaf98c2d7d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SeedData\V3Conversion">
+      <UniqueIdentifier>{2195a61e-0c38-4c61-a2b7-8b0072f70168}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ECObjectsTestPCH.h" />
-    <ClInclude Include="TestFixture\TestFixture.h" />
+    <ClCompile Include="NonPublished\MacroTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\MemoryLayoutTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\CustomAttributeTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECRelationshipTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\SupplementalSchemaTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DateTimeInfoCustomAttributeTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\AccessorTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\InstanceLabelTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\InstanceTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ValueTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\NavigationECPropertyTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\TestFixture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ExtendedTypeTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECClassTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\InstanceSerializationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECSchemaValidatorTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\MixinTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\KindOfQuantityTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\SchemaVersionConversionTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PropertyCategoryTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PropertyTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\CustomAttributeConversionsTest.cpp">
+      <Filter>Source Files\SchemaConverter</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\CustomAttributeUnitsConversionTests.cpp">
+      <Filter>Source Files\SchemaConverter</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECEnumerationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECDBufferTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\SchemaLocalizationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECExpressionTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\AdhocPropertyTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\CalculatedPropertyTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECQuantityFormattingTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\SchemaTests.cpp">
+      <Filter>Source Files\Schema</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\SchemaValidationTests.cpp">
+      <Filter>Source Files\Schema</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\StrictSchemaTests.cpp">
+      <Filter>Source Files\Schema</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\SchemaSerializationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\InstanceQuantityTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECJsonUtilitiesTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\SchemaCopyTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\SchemaLocatorTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\UnitSystemTests.cpp">
+      <Filter>Source Files\Units</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PhenomenonTests.cpp">
+      <Filter>Source Files\Units</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\UnitsTests.cpp">
+      <Filter>Source Files\Units</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\SchemaComparerTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\SchemaCompatiblityTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\SchemaDeserializationTests.cpp">
+      <Filter>Source Files\Schema\Deserialization</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\SchemaDeserializationConversionTests.cpp">
+      <Filter>Source Files\Schema\Deserialization</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\FormatTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\SchemaConverterTests.cpp">
+      <Filter>Source Files\SchemaConverter</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECInstanceJsonWriterTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\SchemaParseUtilsTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ECObjectsTestPCH.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TestFixture\TestFixture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />
     <None Include="prewire.mke" />
     <None Include="SeedData.prewire.mke" />
+    <None Include="SeedData\BasicTest_Instance1.json">
+      <Filter>SeedData</Filter>
+    </None>
+    <None Include="SeedData\ec31UnitConversions.csv">
+      <Filter>SeedData</Filter>
+    </None>
+    <None Include="SeedData\ECJson\RelationshipConstraintInheritedCustomAttributes.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\SchemaWithClassProperties.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\SchemaWithItems.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\SchemaWithNoItems.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandaloneClassDefaultSerializeInheritedCustomAttributesAndProperties.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandaloneClassExplicitlySerializeInheritedProperties.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandaloneConstant.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandaloneECCustomAttributeClass.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandaloneECEntityClass.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandaloneECEnumeration.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandaloneECRelationshipClass.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandaloneECRelationshipClassWithAbstractConstraint.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandaloneECStructClass.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandaloneFormat.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandaloneInvertedUnit.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandaloneKindOfQuantity.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandaloneMixin.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandalonePhenomenon.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandalonePropertyCategory.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandaloneUnit.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
+    <None Include="SeedData\ECJson\StandaloneUnitSystem.ecschema.json">
+      <Filter>SeedData\ECJson</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="SeedData\BadRelationship.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\BadSchema.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\BadSchemaFlat.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\BadSchemaFlat2.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\BaseSchema.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\BasicTest.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\BasicTest_Instance1.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\CAConversionTestSchema.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\CircleSchema.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\ComprehensiveSchemaWithUnknowns.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\DuplicatePrefixes.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\ECDbMap.02.00.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\EmptyArrayInstance.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\EmptyCustomAttribute.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\EnumInReferencedSchema.01.00.01.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\EnumInReferencedSchema_Base.01.12.05.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\House.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\House.02.00.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\IllFormedXml.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\InvalidReference.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\InvalidVersionString.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\KindOfQuantityInReferencedSchema.01.00.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\KindOfQuantityInReferencedSchema_Base.01.00.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\MasterSchema.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\MasterSchema_Supplemental_Testing.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\MetaSchema.02.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\MismatchedInstance.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\MismatchedSchema.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\MissingClassName.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\MissingECSchemaNode.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\MissingNamespace.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\MissingNamespaceOnCustomAttribute.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\MissingNodes.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\MissingSchemaName.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\OldUnits.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\OnlyRequiredECSchemaAttributes.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\OpenPlant_Supplemental_Mapping_OPPID.01.01.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\pidSnippet.01.08.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\Polymorphism.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\PolymorphismInstance.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\SchemaThatReferences.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\SchemaWithoutVersion.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\SimpleTest_EmptyInstance.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\SimpleTest_FirstSchema.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\SimpleTest_Instance.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\SimpleTest_SecondSchema.02.00.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\SquareSchema.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\testReferencedSchema.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\testschema.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\TestSupplementalSchema.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\TestUnitDefaults.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\Unit_Attributes.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\UnsupportedECXmlNamespace.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\Widgets.01.00.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\Widgets.09.06.ecschema.xml">
+      <Filter>SeedData</Filter>
+    </Xml>
+    <Xml Include="SeedData\it\House_Supplemental_Localization_it.01.00.00.ecschema.xml">
+      <Filter>SeedData\it</Filter>
+    </Xml>
+    <Xml Include="SeedData\it\House_Supplemental_Localization_it.02.00.00.ecschema.xml">
+      <Filter>SeedData\it</Filter>
+    </Xml>
+    <Xml Include="SeedData\en-GB\House_Supplemental_Localization_en_GB.01.00.00.ecschema.xml">
+      <Filter>SeedData\en-GB</Filter>
+    </Xml>
+    <Xml Include="SeedData\en-GB\House_Supplemental_Localization_en_GB.02.00.00.ecschema.xml">
+      <Filter>SeedData\en-GB</Filter>
+    </Xml>
+    <Xml Include="SeedData\ur-PK\House_Supplemental_Localization_ur_PK.01.00.00.ecschema.xml">
+      <Filter>SeedData\ur-PK</Filter>
+    </Xml>
+    <Xml Include="SeedData\ur-PK\House_Supplemental_Localization_ur_PK.02.00.00.ecschema.xml">
+      <Filter>SeedData\ur-PK</Filter>
+    </Xml>
+    <Xml Include="SeedData\V3Conversion\BadSchema_V3Conversion.01.00.ecschema.xml">
+      <Filter>SeedData\V3Conversion</Filter>
+    </Xml>
+    <Xml Include="SeedData\V3Conversion\BadSchemaFlat_V3Conversion.01.00.ecschema.xml">
+      <Filter>SeedData\V3Conversion</Filter>
+    </Xml>
   </ItemGroup>
 </Project>
