@@ -41,7 +41,7 @@ static void logMessageToJobUtility(Utf8CP msg)
         return;
         }
 
-    // auto msgJS = Napi::String::New(env, msg);   
+  
     auto msgJS = toJsString(env, msg);
 
     method({ msgJS });
@@ -231,7 +231,7 @@ int RunBridge(Env env, const char* jsonString)
 
     BridgeNative::JsInterop::InitLogging();
 
-    LogTrace("BridgeAddon.cpp: RunBridge() BEGIN");        
+    LogTrace("BridgeAddon.cpp: RunBridge() BEGIN");    
     logMessageToJobUtility("BridgeAddon.cpp: RunBridge() BEGIN");                 // [NEEDSWORK] This line just for testing.  Remove later.
     
     // Convert JSON string into a JSON object
@@ -242,7 +242,6 @@ int RunBridge(Env env, const char* jsonString)
 
     args.push_back(L"BridgeAddon");    
 
-    // Required
     SET_ARG("server_user", L"server-user")                  // [NEEDSWORK] Deprecated but still supported.  Use server_oidcCallBackUrl instead.
     SET_ARG("server_password", L"server-password")          // [NEEDSWORK] Deprecated but still supported.  Use server_oidcCallBackUrl instead.
     SET_ARG("server_project", L"server-project") 
@@ -264,6 +263,8 @@ int RunBridge(Env env, const char* jsonString)
 
     // Optional 
     SET_ARG("server_project_guid", L"server-project-guid"); 
+    SET_ARG("server_briefcaseId", L"server-briefcaseId") 
+
     SET_ARG("fwk_bridge_regsubkey", L"fwk-bridge-regsubkey");
     SET_ARG("fwk_input_sheet", L"fwk-input-sheet");
     SET_ARG("fwk_revision_comment", L"fwk-revision-comment");
