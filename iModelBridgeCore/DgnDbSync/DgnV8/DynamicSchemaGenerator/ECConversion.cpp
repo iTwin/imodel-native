@@ -885,7 +885,7 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
         {
         auto schemaIter = kvPairs.second.begin();
         BECN::SchemaKey const& schemaKey = schemaIter->first;
-        if (!schemaKey.Matches(key, BECN::SchemaMatchType::Latest))
+        if (!schemaKey.Matches(key, matchType))
             continue;
 
         BECN::ECSchemaPtr leftSchema;
