@@ -242,9 +242,14 @@ Future<T>::then(R(Caller::*func)(Args...), Caller *instance) {
 
 template <class T>
 template <class Executor, class Arg, class... Args>
+// BENTLEY_CHANGES - Some versions of GCC do not understand the trailing decltype; trying a workaround for them. Influenced by https://stackoverflow.com/questions/37185803/prototype-mismatch-with-decltype-and-auto
+#if defined(__GNUC__) && __GNUC__ > 6
+decltype(auto) Future<T>::then(Executor* x, Arg&& arg, Args&&... args)
+#else
 auto Future<T>::then(Executor* x, Arg&& arg, Args&&... args)
   -> decltype(this->then(std::forward<Arg>(arg),
                          std::forward<Args>(args)...))
+#endif
 {
   auto oldX = getExecutor();
   setExecutor(x);

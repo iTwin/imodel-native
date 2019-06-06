@@ -225,11 +225,17 @@ class Future {
   ///
   /// In the former both b and c execute via x. In the latter, only b executes
   /// via x, and c executes via the same executor (if any) that f had.
+// BENTLEY_CHANGES - Some versions of GCC do not understand the trailing decltype; trying a workaround for them. Influenced by https://stackoverflow.com/questions/37185803/prototype-mismatch-with-decltype-and-auto
+#if defined(__GNUC__) && __GNUC__ > 6
+  template <class Executor, class Arg, class... Args>
+  decltype(auto) then(Executor* x, Arg&& arg, Args&&... args);
+#else
   template <class Executor, class Arg, class... Args>
   auto then(Executor* x, Arg&& arg, Args&&... args)
     -> decltype(this->then(std::forward<Arg>(arg),
                            std::forward<Args>(args)...));
-
+#endif
+    
   /// Convenience method for ignoring the value and creating a Future<Unit>.
   /// Exceptions still propagate.
   Future<Unit> then();
