@@ -64,23 +64,20 @@ ChangeSetsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, IC
                    Utf8String::IsNullOrEmpty(lastChangeSetId.c_str()) ? "No changeSets pulled yet" : "Downloading changeSets after changeSet ", 
                    lastChangeSetId.c_str());
 
-    return m_imodelConnection->DownloadChangeSetsAfterId(lastChangeSetId, GetDgnDb().GetDbGuid(), callback, cancellationToken)
-        ->Then<ChangeSetsResult>([=](ChangeSetsResultCR result)
+    ChangeSetsResultPtr result = ExecuteAsync(m_imodelConnection->DownloadChangeSetsAfterId(lastChangeSetId, GetDgnDb().GetDbGuid(), callback, cancellationToken));
+    if (!result->IsSuccess())
         {
-        if (!result.IsSuccess())
-            {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
-            return ChangeSetsResult::Error(result.GetError());
-            }
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result->GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(result->GetError()));
+        }
 
-        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "ChangeSets pulled successfully.");
+    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "ChangeSets pulled successfully.");
 
-        // If some previous pushes failed - try to update codes/locks now
-        m_imodelConnection->PushPendingCodesLocks(m_db)->Then([=](StatusResultCR result) {});
+    // If some previous pushes failed - try to update codes/locks now
+    ExecuteAsync(m_imodelConnection->PushPendingCodesLocks(m_db));
 
-        return result;
-        });
+    return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Success(result->GetValue()));
     }
 
 //---------------------------------------------------------------------------------------

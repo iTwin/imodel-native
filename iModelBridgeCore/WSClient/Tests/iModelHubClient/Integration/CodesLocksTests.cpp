@@ -39,6 +39,7 @@ TEST_F(CodesLocksTests, QueryLocksCodes)
     {
     //Prapare imodel and acquire briefcases
     BriefcasePtr briefcase = AcquireAndOpenBriefcase();
+    briefcase->GetiModelConnectionPtr()->SetCodesLocksPageSize(2);
     DgnDbR db = briefcase->GetDgnDb();
     auto manager = IntegrationTestsBase::_GetRepositoryManager(db);
 
@@ -68,7 +69,6 @@ TEST_F(CodesLocksTests, QueryLocksCodes)
 
     iModelHubHelpers::ExpectCodesCount(briefcase, 2);
     iModelHubHelpers::ExpectLocksCount(briefcase, 4);
-
 
     codesSet.clear();
     codesSet.insert(code);

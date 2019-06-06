@@ -83,8 +83,11 @@ TEST_F(LocksTests, QueryLocksTest)
     BriefcasePtr briefcase1 = AcquireAndOpenBriefcase();
     BriefcasePtr briefcase2 = AcquireAndOpenBriefcase();
 
-     iModelHubHelpers::ExpectLocksCount(briefcase1, 0);
-     iModelHubHelpers::ExpectLocksCount(briefcase2, 0);
+    briefcase1->GetiModelConnectionPtr()->SetCodesLocksPageSize(1);
+    briefcase2->GetiModelConnectionPtr()->SetCodesLocksPageSize(3);
+
+    iModelHubHelpers::ExpectLocksCount(briefcase1, 0);
+    iModelHubHelpers::ExpectLocksCount(briefcase2, 0);
 
     //Create two models in different briefcases. This should also acquire locks automatically.
     PhysicalModelPtr model1 = CreateModel(TestCodeName().c_str(), briefcase1->GetDgnDb());
@@ -92,8 +95,8 @@ TEST_F(LocksTests, QueryLocksTest)
     PhysicalModelPtr model2 = CreateModel(TestCodeName(1).c_str(), briefcase2->GetDgnDb());
     ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, true, false));
 
-     iModelHubHelpers::ExpectLocksCount(briefcase1, 4);
-     iModelHubHelpers::ExpectLocksCount(briefcase2, 4);
+    iModelHubHelpers::ExpectLocksCount(briefcase1, 4);
+    iModelHubHelpers::ExpectLocksCount(briefcase2, 4);
 
     //Check if we can access locks by Id
     iModelHubHelpers::ExpectLocksCountById(briefcase1, 2, true, LockableId(*model1), LockableId(model1->GetDgnDb()));

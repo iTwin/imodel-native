@@ -59,6 +59,7 @@ DEFINE_TASK_TYPEDEFS(AzureServiceBusSASDTOPtr, AzureServiceBusSASDTO);
 DEFINE_TASK_TYPEDEFS(Utf8String, DgnDbServerString);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(CodeLockSetResultInfo, CodeLockSet);
+DEFINE_TASK_TYPEDEFS(Utf8String, SkipToken);
 DEFINE_TASK_TYPEDEFS(CodeSequence, CodeSequence);
 DEFINE_TASK_TYPEDEFS(Http::Response, EventReponse);
 DEFINE_TASK_TYPEDEFS(Dgn::DgnCodeInfoSet, CodeInfoSet);
@@ -179,7 +180,8 @@ private:
     static PredownloadManagerPtr s_preDownloadManager;
     bool m_subscribedForPreDownload = false;
 
-    uint64_t                   m_pageSize = 100000;
+    uint64_t                   m_changeSetsPageSize = 1000;
+    uint64_t                   m_codesLocksPageSize = 10000;
     iModelInfo                 m_iModelInfo;
 
     IWSRepositoryClientPtr     m_wsRepositoryClient;
@@ -278,12 +280,23 @@ private:
     ICancellationTokenPtr cancellationToken
     ) const;
 
-    //! Returns all available codes and locks by executing given query.
-    StatusTaskPtr QueryCodesLocksInternal
+    //! Returns all available codes and locks by executing given query by chunks.
+    StatusTaskPtr QueryCodesLocksByChunks
     (
     WSQuery query,
     CodeLockSetResultInfoPtr codesLocksOut,
     CodeLocksSetAddFunction addFunction,
+    ICancellationTokenPtr cancellationToken
+    ) const;
+
+    //! Returns available codes and locks by executing given query (repeated).
+    SkipTokenTaskPtr QueryCodesLocksInternal
+    (
+    WSQueryCR query,
+    Utf8StringCR skipToken,
+    CodeLockSetResultInfoPtr codesLocksOut,
+    CodeLocksSetAddFunction addFunction,
+    IWSRepositoryClient::RequestOptionsPtr requestOptions,
     ICancellationTokenPtr cancellationToken
     ) const;
 
@@ -332,21 +345,18 @@ private:
     //! Gets single ChangeSet by Id
     ChangeSetInfoTaskPtr GetChangeSetByIdInternal(Utf8StringCR changeSetId, bool loadAccessKey, ICancellationTokenPtr cancellationToken) const;
 
-    //! Get all ChangeSet information based on a query (repeated).
-    ChangeSetsInfoTaskPtr ChangeSetsFromQueryInternal(WSQuery const& query, bool parseFileAccessKey, 
-                                                      ICancellationTokenPtr cancellationToken = nullptr) const;
-
     //! Get all ChangeSet information based on a query by chunks.
     ChangeSetsInfoTaskPtr GetChangeSetsFromQueryByChunks(WSQuery query, bool parseFileAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Get all ChangeSet information based on a query by chunks recursively.
-    ChangeSetsInfoTaskPtr GetChangeSetsFromQueryByChunksRecursively
+    //! Get ChangeSet information based on a query (repeated).
+    SkipTokenTaskPtr ChangeSetsFromQueryInternal
     (
-    WSQueryPtr query,
+    WSQueryCR query,
+    Utf8StringCR skipToken,
     bool parseFileAccessKey,
-    Utf8StringCR originalFilter,
     ChangeSetsInfoResultPtr finalResult,
-    ICancellationTokenPtr cancellationToken
+    IWSRepositoryClient::RequestOptionsPtr requestOptions,
+    ICancellationTokenPtr cancellationToken = nullptr
     ) const;
 
     //! Get all of the changeSets.
@@ -536,11 +546,17 @@ public:
     //! @private
     void SetAzureBlobStorageClient(IAzureBlobStorageClientPtr client) { m_azureClient = client; }
 
-    //! Sets page size.
+    //! Sets ChangeSets page size.
     //! @param[in] pageSize 
-    //! @note Codes, Locks and ChangeSets are queried by pages.
+    //! @note ChangeSets are queried by pages.
     //! @private
-    void SetPageSize(uint64_t pageSize) { m_pageSize = pageSize; }
+    void SetChangeSetsPageSize(uint64_t pageSize) { m_changeSetsPageSize = pageSize; }
+
+    //! Sets Codes, Locks, MultiCodes, MultiLocks page size.
+    //! @param[in] pageSize 
+    //! @note Codes and Locks are queried by pages.
+    //! @private
+    void SetCodesLocksPageSize(uint64_t pageSize) { m_codesLocksPageSize = pageSize; }
 
     //! Gets VersionsManager
     //! @return Versions manager

@@ -32,12 +32,15 @@ BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 struct GlobalEventManager;
 USING_NAMESPACE_BENTLEY_DGN
 
+//=======================================================================================
+//@bsiclass                                      Algirdas.Mikoliunas            06/2019
+//=======================================================================================
 enum ContextType
-{
+    {
     Unknown,
     Asset = 2,
     Project = 3
-};
+    };
 
 //=======================================================================================
 //@bsiclass                                      Karolis.Uzkuraitis             04/2018
