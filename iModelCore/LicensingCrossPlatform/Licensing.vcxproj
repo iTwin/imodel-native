@@ -19,7 +19,6 @@
     <ClCompile Include="Licensing\Providers\UlasProvider.cpp" />
     <ClCompile Include="Licensing\LicensingDb.cpp" />
     <ClCompile Include="Licensing\Providers\BuddiProvider.cpp" />
-    <ClCompile Include="Licensing\Utils\DelayedExecutor.cpp" />
     <ClCompile Include="Licensing\GenerateSID.cpp" />
     <ClCompile Include="Licensing\Utils\FeatureEvent.cpp" />
     <ClCompile Include="Licensing\Utils\FeatureUserDataMap.cpp" />
@@ -59,7 +58,6 @@
     <ClInclude Include="PublicAPI\Licensing\Client.h" />
     <ClInclude Include="PublicAPI\Licensing\LicenseStatus.h" />
     <ClInclude Include="PublicAPI\Licensing\Licensing.h" />
-    <ClInclude Include="PublicAPI\Licensing\Utils\DelayedExecutor.h" />
     <ClInclude Include="Licensing\GenerateSID.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\FeatureUserDataMap.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\InMemoryJsonLocalState.h" />

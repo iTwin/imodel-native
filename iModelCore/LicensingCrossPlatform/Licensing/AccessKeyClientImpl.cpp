@@ -49,7 +49,6 @@ AccessKeyClientImpl::AccessKeyClientImpl
 
     m_correlationId = BeSQLite::BeGuid(true).ToString();
     m_timeRetriever = TimeRetriever::Get();
-    m_delayedExecutor = DelayedExecutor::Get();
 
     m_isAccessKeyValid = false; // assume invalid access key to start
 
@@ -88,9 +87,11 @@ LicenseStatus AccessKeyClientImpl::StartApplication()
         (LicenseStatus::Offline == licStatus) ||
         (LicenseStatus::Trial == licStatus))
         {
-        // Begin heartbeats
-        int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-        PolicyHeartbeat(currentTimeUnixMs);     // refresh policy
+        // Begin heartbeat
+        CallOnInterval(m_stopPolicyHeartbeatThread, m_policyHeartbeatThreadStopped, m_lastRunningPolicyHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return PolicyHeartbeat(); });
+
+        //int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
+        //PolicyHeartbeat(currentTimeUnixMs);     // refresh policy
         }
     else
         {

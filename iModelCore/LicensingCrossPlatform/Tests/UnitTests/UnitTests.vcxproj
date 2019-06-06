@@ -7,7 +7,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Mocks\AuthHandlerProviderMock.cpp" />
     <ClCompile Include="Mocks\BuddiProviderMock.cpp" />
     <ClCompile Include="Mocks\LicensingDbMock.cpp" />
     <ClCompile Include="Mocks\PolicyProviderMock.cpp" />
@@ -30,7 +29,6 @@
     <ClCompile Include="Published\SaasClientTests.cpp" />
     <ClCompile Include="Published\TestsHelper.cpp" />
     <ClCompile Include="Published\UlasProviderTests.cpp" />
-    <ClCompile Include="Published\Utils\DelayedExecutorTests.cpp" />
     <ClCompile Include="Published\Utils\FeatureUserDataMapTests.cpp" />
     <ClCompile Include="Published\Utils\JWTokenTests.cpp" />
     <ClCompile Include="Published\Utils\LogFileHelperTests.cpp" />
@@ -68,7 +66,6 @@
     <ClInclude Include="Published\SaasClientTests.h" />
     <ClInclude Include="Published\TestsHelper.h" />
     <ClInclude Include="Published\UlasProviderTests.h" />
-    <ClInclude Include="Published\Utils\DelayedExecutorTests.h" />
     <ClInclude Include="Published\Utils\FeatureUserDataMapTests.h" />
     <ClInclude Include="Published\Utils\JWTokenTests.h" />
     <ClInclude Include="Published\Utils\LogFileHelperTests.h" />

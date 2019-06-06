@@ -66,9 +66,9 @@ void AccessKeyClientIntegrationTests::TearDown() {}
 void AccessKeyClientIntegrationTests::SetUpTestCase()
     {
     // This is only an example of how to set logging severity and see info logs. Usually should be set more globally than in TestCase SetUp
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_DEBUG);
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_TRACE);
+    //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
+    //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_DEBUG);
+    //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_TRACE);
 
     BeFileName asssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(asssetsDir);
@@ -186,7 +186,7 @@ TEST_F(AccessKeyClientIntegrationTests, GetLicenseStatusValidPolicy_Success)
     EXPECT_SUCCESS(client->StopApplication());
     }
 
-// TODO: heartbeat tests, different LicenseStatus situations
+// The following are tests we use to verify behavior, not meant to be run on a regular basis
 
 //TEST_F(AccessKeyClientIntegrationTests, AccessKeyClientTestPolicyHeartbeat_Test)
 //    {
@@ -194,8 +194,8 @@ TEST_F(AccessKeyClientIntegrationTests, GetLicenseStatusValidPolicy_Success)
 //    // - policy heartbeat does in fact run as expected (heartbeat every 1 second, refresh policy by PolicyInterval)
 //    // - policy heartbeat cleans up as expected (after StopApplication is called, it doens't try to access disposed resources)
 //    // - maybe: policy heartbeat handles going offline well (keeps using old policy and access key until policy expires)
-//    auto client = CreateWithKeyTestClient(true);
-//    EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+//    auto client = CreateTestClient();
+//    ASSERT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
 //
 //    // use std::chrono::seconds(2); to wait in tests
 //    // PolicyRefresh: make a custom policy with a fast refresh! -> right now it is set for 60 days!
@@ -211,25 +211,25 @@ TEST_F(AccessKeyClientIntegrationTests, GetLicenseStatusValidPolicy_Success)
 //    EXPECT_EQ(1, 0);
 //    }
 
-TEST_F(AccessKeyClientIntegrationTests, OfflinePolicyHeartbeat_Test)
-    {
-    // I am using this test to manually debug/test the heartbeat to make sure of the following:
-    // - policy heartbeat does in fact run as expected (heartbeat every 1 second, refresh policy by PolicyInterval)
-    // - policy heartbeat cleans up as expected (after StopApplication is called, it doens't try to access disposed resources)
-
-    auto client = CreateTestClientImpl(TEST_ACCESSKEY_PRODUCT_ID, TEST_VALID_ACCESSKEY);
-
-    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa"; // shouldn't need this
-    auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFullWithKey(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_ACCESSKEY_PRODUCT_ID), "", 1, false, TEST_VALID_ACCESSKEY);
-    auto validPolicy = Policy::Create(jsonPolicyValid);
-    client->AddPolicyToDb(validPolicy);
-
-    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
-
-    std::this_thread::sleep_for(std::chrono::seconds(10));
-
-    EXPECT_SUCCESS(client->StopApplication());
-
-    std::this_thread::sleep_for(std::chrono::seconds(10));
-
-    }
+//TEST_F(AccessKeyClientIntegrationTests, OfflinePolicyHeartbeat_Test)
+//    {
+//    // I am using this test to manually debug/test the heartbeat to make sure of the following:
+//    // - policy heartbeat does in fact run as expected (heartbeat every 1 second, refresh policy by PolicyInterval)
+//    // - policy heartbeat cleans up as expected (after StopApplication is called, it doens't try to access disposed resources)
+//
+//    auto client = CreateTestClientImpl(TEST_ACCESSKEY_PRODUCT_ID, TEST_VALID_ACCESSKEY);
+//
+//    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa"; // shouldn't need this
+//    auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFullWithKey(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_ACCESSKEY_PRODUCT_ID), "", 1, false, TEST_VALID_ACCESSKEY);
+//    auto validPolicy = Policy::Create(jsonPolicyValid);
+//    client->AddPolicyToDb(validPolicy);
+//
+//    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+//
+//    std::this_thread::sleep_for(std::chrono::seconds(10));
+//
+//    EXPECT_SUCCESS(client->StopApplication());
+//
+//    std::this_thread::sleep_for(std::chrono::seconds(10));
+//
+//    }
