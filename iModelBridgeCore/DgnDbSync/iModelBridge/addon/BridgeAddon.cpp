@@ -278,8 +278,8 @@ int RunBridge(Env env, const char* jsonString)
     SET_ARG("imodel_bank_access_token", L"imodel-bank-access-token");
 
     SET_ARG("fwk_jobrequest_guid", L"fwk-jobrequest-guid");  
-    SET_ARG("fwk_create_repository_if_necessary", L"fwk-create-repository-if-necessary"); 
 
+    SET_ARG_NO_VALUE("fwk_create_repository_if_necessary", L"fwk-create-repository-if-necessary"); 
     SET_ARG_NO_VALUE("fwk_skip_assignment_check", L"fwk-skip-assignment-check");
     
     bvector<WCharCP> argptrs;
