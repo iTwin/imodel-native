@@ -1156,7 +1156,7 @@ void InitCurrentModel(DgnModelRefP modelRef)
         {
         info.m_modelMapping = m_converter._FindFirstResolvedModelMapping(*attachment->GetDgnModelP());
         // If no model mapping, then this model is only used as an attachment for proxy graphics and in that case we only care if the drawing changed
-        info.m_modelContentsChanged = info.m_modelMapping.IsValid() ? !m_converter.GetChangeDetector()._AreContentsOfModelUnChanged(m_converter, info.m_modelMapping) : false; 
+        info.m_modelContentsChanged = info.m_modelMapping.IsValid() ? !m_converter.GetChangeDetector()._AreContentsOfModelUnChanged(m_converter, info.m_modelMapping) : true; 
         }
 
 
