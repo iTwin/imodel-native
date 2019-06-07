@@ -160,6 +160,13 @@ void ClientImpl::CallOnInterval(std::atomic_bool& stopThread, std::atomic_bool& 
     // all variables used in this thread and the main thread, and modified anywhere must be atomic so there is no race condition
     std::thread th([=, &stopThread, &isFinished, &lastRunStartTime]
         {
+        if (lastRunStartTime.load() == 0)
+            {
+            // to get rid of "not used" errors on Android. lastRunStartTime is the reference to each heartbeat's respective lastRun variable
+            // TODO: Refactor this to not need this hack. Perhaps have each heartbeat create a thread rather than a generic function
+            //       creating the heartbeat threads.
+            }
+
         // first heartbeat without waiting
         func();
 
