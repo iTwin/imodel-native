@@ -57,13 +57,16 @@
     <!-- iModelBridgeFwk - Loads and runs iModelBridges connected to iModelHub -->
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <Product Name="iModelBridgeFwk" SaveProduct="true">
-      <SubPart PartName="iModelBridgeFwkExe-Windows" LibType="Dynamic" />
-      <SubPart PartName="iModelBridgeFwkExe-Unix-Shim"/>
-      <SubPart PartName="Docs-Windows" LibType="Dynamic"/>
-      <SubPart PartName="Docs-Unix-Shim"/>
-      <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
-      <Directories DirectoryListName="iModelBridgeAppCommonDirList"/>
-      <Directories DirectoryListName="iModelBridgeFwkDirList" />
+        <SubPart PartName="iModelBridgeFwkExe-Windows" LibType="Dynamic" />
+        <SubPart PartName="iModelBridgeFwkExe-Unix-Shim"/>
+        <SubPart PartName="Docs-Windows" LibType="Dynamic"/>
+        <SubPart PartName="Docs-Unix-Shim"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <SubPart PartName="iModelBridgeAssignExeShim" />
+        <SubPart PartName="iModelBridgeGetAffinityHostForFwk" />
+
+        <Directories DirectoryListName="iModelBridgeAppCommonDirList"/>
+        <Directories DirectoryListName="iModelBridgeFwkDirList" />
     </Product>
 
     <ProductDirectoryList ListName="iModelBridgeFwkDirList">
@@ -88,6 +91,8 @@
         <SubPart PartName="Docs-Windows" LibType="Dynamic"/>
         <SubPart PartName="Docs-Unix-Shim"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <SubPart PartName="iModelBridgeAssignExeShim" />
+        <SubPart PartName="iModelBridgeGetAffinityHostForFwk" />
 
         <Directories DirectoryListName="iModelBridgeAppCommonDirList"/>
         <Directories DirectoryListName="iModelBridgeFwkDirList"/>
@@ -97,6 +102,35 @@
     <ProductDirectoryList ListName="iModelBridgeFwkNugetDirList">
         <ProductDirectory Name="applicationroot" Path="native"/>
     </ProductDirectoryList>
+
+    <!--
+        This exists because iModelBridgeAssign always builds iModelBridgeGetAffinityHost statically, even on Windows.
+        But, iModelBridgeFwk wants to deliver iModelBridgeAssign and its dependencies, along with a dynamic SDK.
+        This would normally cause a build error because it reaches both static and dynamic .lib files (e.g. bentley.lib) through SubParts.
+        So we create this Product middle-man to isolate the static EXE for iModelBridgeFwk.
+        Further, we know that iModelBridgeGetAffinityHostExe has produced an EXE in our Delivery/ directory, so we can use it directly from there.
+    -->
+    <Product Name="iModelBridgeGetAffinityHostWrapper">
+        <SubPart PartName="iModelBridgeGetAffinityHostExe" LibType="Static"/>
+        <Directories DirectoryListName="iModelBridgeGetAffinityHostWrapperDirs"/>
+    </Product>
+    <ProductDirectoryList ListName="iModelBridgeGetAffinityHostWrapperDirs">
+        <ProductDirectory Name="Assemblies" Deliver="false"/>
+        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
+        <ProductDirectory Name="Assets" Deliver="false"/>
+        <ProductDirectory Name="Assets" LibType="Static" Deliver="false"/>
+        <ProductDirectory Name="VendorNotices" Deliver="false"/>
+        <ProductDirectory Name="VendorNotices" LibType="Static" Deliver="false"/>
+    </ProductDirectoryList>
+    <Part Name="_iModelBridgeGetAffinityHostForFwk">
+        <SubProduct ProductName="iModelBridgeGetAffinityHostWrapper"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assemblies" ProductSubDirectory="iModelBridgeGetAffinityHost">Delivery/exe/iModelBridgeGetAffinityHost$(exeext)</Files>
+        </Bindings>
+    </Part>
+    <Part Name="iModelBridgeGetAffinityHostForFwk">
+        <SubPart PartName="_iModelBridgeGetAffinityHostForFwk" LibType="Static"/>
+    </Part>
 
     <Part Name="iModelBridgeFwkExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
       <SubPart PartName="iModelBridgeFwkExe"/>
