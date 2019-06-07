@@ -234,9 +234,8 @@ LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DwgDgnIO.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acpal.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acdb$(RDVSuffix).lib
 
-%if exists($(DgnPlatformV8LibDir)TerrainModelElementHandler.lib)
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)TerrainModelElementHandler.lib
-%endif
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)TerrainModelCore.lib
 
 LINKER_LIBRARIES_DELAYLOADED + msi.lib
 
