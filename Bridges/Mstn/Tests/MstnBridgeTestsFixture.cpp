@@ -1,4 +1,3 @@
-
 /*--------------------------------------------------------------------------------------+
 |
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
@@ -805,7 +804,7 @@ BentleyApi::BentleyStatus ProcessRunner::Start(size_t waitMs)
     m_hThread = pi.hThread;
     m_pid = pi.dwProcessId;
 
-    BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->tracev(L"++++++++++++++++++ %ls\n", m_cmdline.c_str());
+    BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->tracev(L"Started %ls", m_cmdline.c_str());
 
     ::Sleep(waitMs);
 
@@ -830,7 +829,7 @@ int ProcessRunner::FindProcessId(BentleyApi::Utf8CP name)
             if (strstr(processEntry.szExeFile, name))
                 {
                 pid = processEntry.th32ProcessID;
-                BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->tracev("%s %ld\n", processEntry.szExeFile, processEntry.th32ProcessID);
+                BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->tracev("%s %ld", processEntry.szExeFile, processEntry.th32ProcessID);
                 break;
                 }
 
@@ -850,10 +849,17 @@ BentleyApi::BentleyStatus ProcessRunner::Stop(size_t waitMs)
         return BentleyApi::BSIERROR;
 
     if (m_sendKillSignal != nullptr)
+        {
+        BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->tracev("Sending kill signal");
         m_sendKillSignal(*this);
+        }
 
     if (m_shutdown != nullptr)
-        m_shutdown->Shutdown();
+        {
+        auto rc = m_shutdown->Shutdown();
+        if (rc != 0)
+            BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->tracev("Shutdown failed");
+        }
 
     DWORD status = WaitForSingleObject (m_hProcess, waitMs);
 
@@ -865,7 +871,7 @@ BentleyApi::BentleyStatus ProcessRunner::Stop(size_t waitMs)
         {
         // TODO: This won't work until we assert the PROCESS_TERMINATE right when we create the process
         //    TerminateProcess(m_hProcess, 1);    
-        BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->warningv("%s wait = %x\n", m_cmdline.c_str(), status);
+        BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->warningv("%s wait = %x", m_cmdline.c_str(), status);
         }
 
     CloseHandle(m_hProcess);
@@ -876,7 +882,7 @@ BentleyApi::BentleyStatus ProcessRunner::Stop(size_t waitMs)
 
     m_exitCode = (int)dwExitCode;
 
-    BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->tracev(L"xxxxxxxxxxxxxxxxx %ls\n", m_cmdline.c_str());
+    BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->tracev(L"Stopped %ls", m_cmdline.c_str());
     
     return (status == WAIT_OBJECT_0)? BentleyApi::BSISUCCESS: BentleyApi::BSIERROR;
     }
@@ -893,8 +899,10 @@ ProcessRunner MstnBridgeTestsFixture::StartImodelBankServer(BentleyApi::BeFileNa
     DWORD sleepinterval = 1;
     for (int i=0; i<10; ++i)
         {
-        if (bankClient.GetIModelInfo().IsValid()) // The real purpose of calling GetIModelInfo is to make the test wait until the bank server is up and responding.
+        if (bankClient.GetIModelInfo().IsValid()) // Call GetIModelInfo to make the test wait until the bank server is up and responding.
             break;
+
+        BentleyApi::NativeLogging::LoggingManager::GetLogger("MstnBridgeTests")->tracev(L"Server hasn't started yet. Retrying in %d milliseconds...", (int)sleepinterval);
         ::Sleep(sleepinterval);
         sleepinterval *= 2;
         }
