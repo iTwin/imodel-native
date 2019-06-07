@@ -684,6 +684,7 @@ public:
         ElementImportResults (DgnElementP newElement) : m_importedElement(newElement), m_wasDiscarded(false) { m_childElements.clear(); }
         bool            WasDiscarded () { return  m_wasDiscarded; }
         void            SetWasDiscarded (bool discarded) { m_wasDiscarded = discarded; }
+        DgnElementId    GetImportedElementId () const { return m_importedElement.IsValid() ? m_importedElement->GetElementId() : DgnElementId(); }
         DgnElementP     GetImportedElement () { return m_importedElement.IsValid() ? m_importedElement.get() : nullptr; }
         void            SetImportedElement (DgnElementP el) { m_importedElement = el; }
         void            AddChildResults (ElementImportResults& child) { m_childElements.push_back(child); }
@@ -1051,6 +1052,8 @@ protected:
     DWG_EXPORT virtual bool _ArePointsValid (DPoint3dCP checkPoints, size_t numPoints, DwgDbEntityCP entity = nullptr);
     BeFileNameCR            GetRootDwgFileName () const { return m_rootFileName; }
     DWG_EXPORT bool         ValidateDwgFile (BeFileNameCR dwgdxfName);
+    //! When iModelBridge frame updates schemas it requires bridges to release pointers
+    virtual void            _ReleaseDgnDb () { m_dgndb = nullptr; }
 
     //! @name  Change-Detection
     //! @{
@@ -1218,14 +1221,17 @@ protected:
     DWG_EXPORT virtual bool           _FilterEntity (ElementImportInputs& inputs) const;
     //! Should create a DgnElement if there is no geometry at all?
     DWG_EXPORT virtual bool           _SkipEmptyElement (DwgDbEntityCP entity);
+    //! Process the results from the change detector
+    DWG_EXPORT virtual BentleyStatus  _ProcessDetectionResults (IDwgChangeDetector::DetectionResultsR detectionResults, ElementImportResults& elementResults, ElementImportInputs& inputs);
     //! Insert imported DgnElement into DgnDb.  This method is called after _ImportEntity.
     //! @param[in] results Imported element data from a source object
     //! @param[in] source Input source data with pre-calculated provenance
     DWG_EXPORT DgnDbStatus    InsertResults (ElementImportResults& results, DwgSourceAspects::ObjectAspect::SourceDataCR source);
     //! Update existing element from imported element
     //! @param[in] results Imported element data from a source object
+    //! @param[in] existingElementId Input ID of existing element
     //! @param[in] source Input source data with pre-calculated provenance
-    DWG_EXPORT DgnDbStatus    UpdateResults (ElementImportResults& results, DwgSourceAspects::ObjectAspect::SourceDataCR source);
+    DWG_EXPORT DgnDbStatus    UpdateResults (ElementImportResults& results, DgnElementId existingElementId, DwgSourceAspects::ObjectAspect::SourceDataCR source);
     //! Create a new or update an existing element from an entity based on the sync info
     DWG_EXPORT BentleyStatus  ImportOrUpdateEntity (ElementImportInputs& inputs);
 
@@ -1365,7 +1371,7 @@ public:
     DWG_EXPORT static void      TerminateDwgHost ();
     DWG_EXPORT BentleyStatus    OpenDwgFile (BeFileNameCR dwgdxfName);
     DWG_EXPORT void             SetDgnDb (DgnDbR bim);
-    DWG_EXPORT DgnDbR           GetDgnDb () const { return *m_dgndb; }
+    DWG_EXPORT DgnDbR           GetDgnDb () const { BeAssert(m_dgndb!=nullptr); return *m_dgndb; }
     DwgDbDatabaseR              GetDwgDb () { return *m_dwgdb.get(); }
     DwgDbDatabaseP              GetDwgDbP () { return m_dwgdb.get(); }
     DWG_EXPORT BentleyStatus    Process ();

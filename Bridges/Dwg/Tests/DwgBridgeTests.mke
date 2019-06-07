@@ -1,0 +1,98 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------------------------
+programName = DwgBridgeTests
+baseDir = $(_MakeFilePath)
+ImporterTestsDir = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/Dwg/Tests/
+
+#-- Only test RealDwgBridge
+DWGTOOLKIT = RealDwg
+VendorVersion = 2019
+
+%include mdl.mki
+
+dirToSearch = $(BuildContext)SubParts/UnitTests/include
+%include cincapnd.mki
+
+dirToSearch = $(BuildContext)VendorAPI/$(DWGTOOLKIT)$(VendorVersion)/
+%include cincapnd.mki
+
+iModelBridgePrivateAPISrc = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PrivateAPI/
+dirToSearch = $(iModelBridgePrivateAPISrc)
+%include cincapnd.mki
+
+CCompOpts +% -DDWGTOOLKIT_$(DWGTOOLKIT) -DVendorVersion=$(VendorVersion)
+
+# We don't want to run the test from the build location because the dependencies are not there.
+GUNITTEST_NOEXEC = 1
+
+BEGTEST_NAME=$(programName)
+BEGTEST_INPUT=$(baseDir)
+BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
+%include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
+
+TestsHeaders =  \
+    $(baseDir)Tests.h \
+    $(baseDir)ImporterTests.h \
+    $(baseDir)DwgBridgeTestsFixture.h \
+    $(ImporterTestsDir)DwgFileEditor.h
+
+# Let all stand-alone tests share the same gtestmain and TestFixture objects.
+o = $(OutputRootDir)build/DwgBridge/$(programName)/
+
+always:
+    !~@mkdir $(o)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)gtestmain.obj               : $(BEGTEST_INPUT)gtestmain.cpp $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)DwgBridgeTests.obj          : $(BEGTEST_INPUT)DwgBridgeTests.cpp $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)DwgBridgeTestsFixture.obj   : $(BEGTEST_INPUT)DwgBridgeTestsFixture.cpp $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)DwgFileEditor.obj           : $(ImporterTestsDir)DwgFileEditor.cpp $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)FakeRegistry.obj            : $(BEGTEST_INPUT)FakeRegistry.cpp $(TestsHeaders) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+%undef CPchOpts
+%undef CCPchOpts
+
+GUNITTEST_OUT       = $(o)
+GUNITTEST_NAME      = $(programName)
+GUNITTEST_DEST      = $(o)
+GUNITTEST_NTLIBS    = advapi32.lib ole32.lib ws2_32.lib Wininet.lib
+GUNITTEST_PATH      = $(o)
+GUNITTEST_SYMB      = $(o)
+
+GTEST_MAIN_IS_SUPPLIED = 1
+
+LOCAL_GUNITTEST_OBJS + $(MultiCompileObjectList)
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/$(DWGTOOLKIT)$(VendorVersion)/*.lib]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Files/$(DWGTOOLKIT)$(VendorVersion)/*.lib]
+
+%include $(SharedMki)gunittest.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/$(programName).exe=$(o)$(programName).exe"
+
+$(BuildContext)Delivery/$(programName).logging.config.xml : $(baseDir)logging.config.xml
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/DwgBridgeTestData/ : $(baseDir)data/
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+# Create the sqlang database
+SQLANG_OutputDb         = $(o)$(programName)_en-US.sqlang.db3
+SQLANG_DeliveryDir      = $(BuildContext)Delivery/
+SQLANG_XliffWildcard    = $(BuildContext)SubParts/xliffs/*.xliff
+%include $(SrcRoot)bsicommon/sqlang/mki/XliffsToDb.mke

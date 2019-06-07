@@ -1739,6 +1739,17 @@ bool DwgSourceAspects::ObjectAspect::IsProvenanceEqual(ObjectProvenanceCR prov) 
     return  false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void DwgSourceAspects::ObjectAspectIterator::Bind(uint64_t sourceId)
+    {
+    auto idstr = BaseAspect::FormatHexUInt64(sourceId);
+    auto index = GetParameterIndex("idparm");
+    m_stmt->Reset();
+    m_stmt->BindText(index, idstr.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          04/19

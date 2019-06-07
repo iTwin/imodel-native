@@ -322,7 +322,18 @@ END_DWGDB_NAMESPACE
     DwgDbObjectId DwgDb##_tableName_##::GetByName(WStringCR name, bool erased) const                                    \
         {                                                                                                               \
         return T_Super::getAt (OdString(name.c_str()), erased);                                                         \
-        }
+        }                                                                                                               \
+    DwgDbObjectId DwgDb##_tableName_##::GetByName(DwgStringCR name, bool erased) const                                  \
+        {                                                                                                               \
+        return T_Super::getAt (name, erased);                                                                           \
+        }                                                                                                               \
+    DwgDbObjectId DwgDb##_tableName_##::Add(DwgDb##_tableName_##Record* rec)                                            \
+        {                                                                                                               \
+        return T_Super::add (static_cast<OdDb##_tableName_##Record*>(rec));                                             \
+        }                                                                                                               \
+    bool DwgDb##_tableName_##::Has(WStringCR name) const { return T_Super::has(name.c_str()); }                         \
+    bool DwgDb##_tableName_##::Has(DwgStringCR name) const { return T_Super::has(name); }                               \
+    bool DwgDb##_tableName_##::Has(DwgDbObjectIdCR id) const { return T_Super::has(id); }                               \
 
 
 // DwgDb psuedo-database object sub-classed from a toolkit's database object
@@ -330,8 +341,11 @@ END_DWGDB_NAMESPACE
     DwgDb##_classSuffix_##::DwgDb##_classSuffix_## () : T_Super() {;}                                                   \
     ODDB_PSEUDO_DEFINE_MEMBERS(DwgDb##_classSuffix_##,OdDb##_classSuffix_##,OdDb##_classSuffix_##,DBOBJECT_CONSTR)
 
-#define DWGDB_DEFINE_SYMBOLTABLERECORD_GETNAME(_classSuffix_)                           \
-        DwgString DwgDb##_classSuffix_##::GetName() const { return this->getName(); }
+#define DWGDB_DEFINE_SYMBOLTABLERECORD_MEMBERS(_classSuffix_)                               \
+        DwgString DwgDb##_classSuffix_##::GetName() const { return T_Super::getName(); }    \
+        bool DwgDb##_classSuffix_##::IsDependent() const { return T_Super::isDependent(); } \
+        bool DwgDb##_classSuffix_##::IsResolved() const { return T_Super::isResolved(); }   \
+        DwgDbStatus DwgDb##_classSuffix_##::SetName(DwgStringCR n) { T_Super::setName(n); return DwgDbStatus::Success; }
 
 #define DWGDB_DEFINE_GETXDATA_MEMBER(_classSuffix_)                                     \
         DwgResBufIterator DwgDb##_classSuffix_##::GetXData (DwgStringCR regapp) const { return DwgResBufIterator::CreateFrom(T_Super::xData(regapp).get()); }
@@ -453,7 +467,22 @@ END_DWGDB_NAMESPACE
         AcDbObjectId    id;                                                                                                 \
         if (T_Super::getAt(name.c_str(), id, includeErased) != Acad::eOk) id.setNull();                                     \
         return  id;                                                                                                         \
-        }
+        }                                                                                                                   \
+    DwgDbObjectId DwgDb##_tableName_##::GetByName(DwgStringCR name, bool includeErased) const                               \
+        {                                                                                                                   \
+        AcDbObjectId    id;                                                                                                 \
+        if (T_Super::getAt(name.c_str(), id, includeErased) != Acad::eOk) id.setNull();                                     \
+        return  id;                                                                                                         \
+        }                                                                                                                   \
+    DwgDbObjectId DwgDb##_tableName_##::Add(DwgDb##_tableName_##Record* rec)                                                \
+        {                                                                                                                   \
+        AcDbObjectId    id;                                                                                                 \
+        if (rec == nullptr || T_Super::add(id, static_cast<AcDb##_tableName_##Record*>(rec)) != Acad::eOk) id.setNull();    \
+        return  id;                                                                                                         \
+        }                                                                                                                   \
+    bool DwgDb##_tableName_##::Has(WStringCR name) const { return T_Super::has(name.c_str()); }                             \
+    bool DwgDb##_tableName_##::Has(DwgStringCR name) const { return T_Super::has(name.c_str()); }                           \
+    bool DwgDb##_tableName_##::Has(DwgDbObjectIdCR id) const { return T_Super::has(id); }
 
 // DwgDb psuedo-database object sub-classed from a toolkit's database object
 #define DWGDB_PSEUDO_DEFINE_MEMBERS(_classSuffix_)                                                                          \
@@ -473,13 +502,16 @@ END_DWGDB_NAMESPACE
         DwgDb##_classSuffix_##::gpDesc = newAcRxClass (className.kwszPtr(), parentName.kwszPtr());                          \
         }
 
-#define DWGDB_DEFINE_SYMBOLTABLERECORD_GETNAME(_classSuffix_)                           \
+#define DWGDB_DEFINE_SYMBOLTABLERECORD_MEMBERS(_classSuffix_)                           \
         DwgString DwgDb##_classSuffix_##::GetName() const {                             \
             const ACHAR* acName = nullptr;                                              \
             if (Acad::eOk == this->getName(acName))                                     \
                 return  DwgString(acName);                                              \
-            return  DwgString();                                                        \
-            }
+            return  DwgString(); }                                                      \
+        DwgDbStatus DwgDb##_classSuffix_##::SetName(DwgStringCR n) {                    \
+            return ToDwgDbStatus(T_Super::setName(n.c_str())); }                        \
+        bool DwgDb##_classSuffix_##::IsDependent() const { return T_Super::isDependent(); } \
+        bool DwgDb##_classSuffix_##::IsResolved() const { return T_Super::isResolved(); }
 
 #define DWGDB_DEFINE_GETXDATA_MEMBER(_classSuffix_)                                                                         \
         DwgResBufIterator DwgDb##_classSuffix_##::GetXData (DwgStringCR regapp) const                                       \

@@ -107,13 +107,16 @@ BentleyStatus   DwgBridge::GetLogConfigurationFilename(BeFileNameR configFile, W
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgBridge::GetImportConfiguration (BeFileNameR instanceFilePath, BeFileNameCR configurationPath, WCharCP argv0)
     {
+    BeFileName programDir(_GetParams().GetLibraryDir());
+
     if (!configurationPath.empty())
         {
         instanceFilePath.SetName(configurationPath);
         }
     else
         {
-        WString programDir = BeFileName::GetDirectoryName (argv0);
+        if (!programDir.DoesPathExist())
+            programDir.assign (BeFileName::GetDirectoryName(argv0));
         instanceFilePath.SetName(programDir.c_str());
         instanceFilePath.AppendToPath(L"Assets");
         instanceFilePath.AppendToPath(L"ConvertConfig.xml");
@@ -162,7 +165,7 @@ BentleyStatus   DwgBridge::_ConvertToBim (Dgn::SubjectCR jobSubject)
 BentleyStatus   DwgBridge::_MakeSchemaChanges () 
     {
     // create DwgAttributeDefinition shema
-    if (BentleyStatus::SUCCESS != m_importer->MakeSchemaChanges() || m_importer->WasAborted())
+    if (m_importer->WasAborted() || BentleyStatus::SUCCESS != m_importer->MakeSchemaChanges())
         return  BentleyStatus::ERROR;
     return  BentleyStatus::SUCCESS;
     }
@@ -172,7 +175,7 @@ BentleyStatus   DwgBridge::_MakeSchemaChanges ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgBridge::_MakeDefinitionChanges (SubjectCR jobSubject)
     {
-    if (BentleyStatus::SUCCESS != m_importer->MakeDefinitionChanges(jobSubject) || m_importer->WasAborted())
+    if (m_importer->WasAborted() || BentleyStatus::SUCCESS != m_importer->MakeDefinitionChanges(jobSubject))
         return  BentleyStatus::ERROR;
     return  BentleyStatus::SUCCESS;
     }
@@ -188,9 +191,12 @@ BentleyStatus   DwgBridge::_OnOpenBim (DgnDbR bim)
         return  BentleyStatus::BSIERROR;
         }
     // instantiate a new importer to begin a new job
-    m_importer.reset (this->_CreateDwgImporter());
     if (m_importer == nullptr)
-        return  BentleyStatus::BSIERROR;
+        {
+        m_importer.reset (this->_CreateDwgImporter());
+        if (m_importer == nullptr)
+            return  BentleyStatus::BSIERROR;
+        }
     // will save elements into target BIM
     m_importer->SetDgnDb (bim);
     return  BentleyStatus::BSISUCCESS;
@@ -201,8 +207,11 @@ BentleyStatus   DwgBridge::_OnOpenBim (DgnDbR bim)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DwgBridge::_OnCloseBim (BentleyStatus status, iModelBridge::ClosePurpose purpose)
     {
-    // remove the importer
-    m_importer.reset (nullptr);
+    // remove the importer if done, or release pointer help by the importer
+    if (purpose == iModelBridge::ClosePurpose::SchemaUpgrade)
+        m_importer->_ReleaseDgnDb ();
+    else
+        m_importer.reset (nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -219,7 +228,8 @@ DwgImporter*    DwgBridge::_CreateDwgImporter ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DwgBridge::_Terminate (BentleyStatus convertStatus)
     {
-    // terminate the toolkit after DwgDbDatabase is released
+    // remove the importer and terminate the toolkit
+    m_importer.reset (nullptr);
     DwgImporter::TerminateDwgHost ();
     }
 
@@ -285,8 +295,13 @@ BentleyStatus   DwgBridge::_OpenSource ()
     {
     // query DWG input file name
     auto inputFilename = _GetParams().GetInputFileName ();
-    // set it as root file and try opening it
-    auto status = m_importer->OpenDwgFile (inputFilename);
+    auto existingFilename = m_importer->GetRootDwgFileName();
+
+    BentleyStatus   status = inputFilename.DoesPathExist() ? BSISUCCESS : BSIERROR;
+
+    // set it as root file and try opening it, if not already open
+    if (!existingFilename.EqualsI(inputFilename))
+        status = m_importer->OpenDwgFile (inputFilename);
 
     if (BentleyStatus::SUCCESS != status)
         fwprintf (stderr, L"Error opening DWG file %ls!\n", inputFilename.GetName());
@@ -299,6 +314,7 @@ BentleyStatus   DwgBridge::_OpenSource ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    DwgBridge::_CloseSource (BentleyStatus status, iModelBridge::ClosePurpose)
     {
+    // we don't want to close DWG file mainly for the sake of performance
     }
 
 /*---------------------------------------------------------------------------------**//**

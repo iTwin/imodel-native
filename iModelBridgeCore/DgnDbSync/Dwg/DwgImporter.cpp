@@ -1662,7 +1662,6 @@ DwgImporter::DwgImporter (DwgImporter::Options& options) : m_options(options), m
     m_wasAborted = false;
     m_rootFileName.Clear ();
     m_fileCount = 0;
-    m_wasAborted = false;
     m_currIdPolicy = StableIdPolicy::ById;
     m_modelspaceXrefs.clear ();
     m_paperspaceXrefs.clear ();
@@ -1725,6 +1724,8 @@ DwgImporter::~DwgImporter ()
     m_loadedXrefFiles.clear ();
     m_presentationRuleContents.clear ();
     m_reportedIssues.clear ();
+
+    DwgImportHost::GetHost().Terminate ();
 #if defined (BENTLEYCONFIG_PARASOLID)
     PSolidKernelManager::StopSession ();
 #endif

@@ -310,10 +310,9 @@ bool UpdaterChangeDetector::_IsElementChanged (DetectionResults& results, DwgImp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DwgSourceAspects::ObjectAspect::SourceDataCR source)
+DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElementId existingElementId, DwgSourceAspects::ObjectAspect::SourceDataCR source)
     {
     auto importedElement = results.GetImportedElement();
-    auto existingElementId = results.GetExistingElementId();
     if (importedElement == nullptr || !existingElementId.IsValid())
         {
         BeAssert(false && L"invalid element imported!");
@@ -361,6 +360,10 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DwgSource
     // pointer, we have to make a copy.
     results.m_importedElement = ret->CopyForEdit ();
 
+    // tell the change detector that we have seen this element
+    auto& changeDetector = this->_GetChangeDetector ();
+    changeDetector._OnElementSeen (*this, results.m_importedElement->GetElementId());
+
     if (results.m_childElements.empty())
         return  status;
 
@@ -390,7 +393,7 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DwgSource
             auto found = existingChildIdSet.find (existingChildElementId);
             if (found != existingChildIdSet.end())
                 {
-                this->UpdateResults (childResults, source);
+                this->UpdateResults (childResults, existingChildElementId, source);
                 // *** WIP_CONVERTER - bail out if any child update fails?
                 }
             }
@@ -414,16 +417,16 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DwgSource
         {
         // set the parent element as the existing element for children, VSTS 127172:
         auto childResults = results.m_childElements.at(i);
-        childResults.SetExistingElement (results.GetExistingElement());
-        this->UpdateResults (childResults, source);
+        this->UpdateResults (childResults, existingChildren.at(i), source);
         // *** WIP_CONVERTER - bail out if any child update fails?
         }
 
     // insert the left overs as new
     for (; i < results.m_childElements.size(); ++i)
         {
-        this->InsertResults (results.m_childElements.at(i), source);
-        // *** WIP_CONVERTER - bail out if any child insertion fails?
+        auto childResults = results.m_childElements.at(i);
+        this->InsertResults (childResults, source);
+        changeDetector._OnElementSeen (*this, childResults.GetImportedElementId());
         }
 
     return status;
@@ -596,7 +599,7 @@ void UpdaterChangeDetector::_DetectDeletedElements (DwgImporterR importer, DwgSo
 
         // We did not encounter the DWG entity that was mapped to this BIM element. We infer that the DWG entity 
         // was deleted. Therefore, the update to the BIM is to delete the corresponding BIM element.
-        LOG.tracev ("Delete element %lld", previouslyConvertedElementId.GetValue());
+        LOG.tracev ("Delete element %lld [entity %ls]", previouslyConvertedElementId.GetValue(), elementInSyncInfo->GetObjectHandle().AsAscii().c_str());
 
         importer.GetDgnDb().Elements().Delete (previouslyConvertedElementId);
         }

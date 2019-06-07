@@ -3,20 +3,66 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
+// This file is shared by both DwgImporterTests and DwgBridgeTests - header files must be found in both builds
 #include "DwgFileEditor.h"
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWG
 USING_NAMESPACE_DWGDB
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScopedDwgHost::Initialize ()
+    {
+    m_editorHost = nullptr;
+    // if a host already exists use it; otherwise create a new one
+    bool hasHost = DwgImportHost::GetHost()._IsValid();
+    if (!hasHost)
+        {
+        if (m_editorHost == nullptr)
+            m_editorHost = new DwgImporter(m_editorOptions);
+        hasHost = DwgImportHost::GetHost()._IsValid();
+        }
+    ASSERT_TRUE(hasHost) << "DwgImporter host not available!";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+ScopedDwgHost::~ScopedDwgHost ()
+    {
+    if (m_editorHost != nullptr)
+        {
+        delete m_editorHost;
+        DwgImportHost::TerminateToolkit ();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgFileEditor::DwgFileEditor ()
+    {
+    ValidateHost ();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgFileEditor::DwgFileEditor (BeFileNameCR infile, FileShareMode openMode)
     {
-    // check if a DwgImporter has been instantiated.
-    BeAssert (DwgImportHost::GetHost()._IsValid());
+    ValidateHost ();
     OpenFile (infile, openMode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DwgFileEditor::ValidateHost ()
+    {
+    ASSERT_TRUE(DwgImportHost::GetHost()._IsValid()) << "DwgImporter host not available!";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -100,6 +146,76 @@ void DwgFileEditor::AddCircleInDefaultModel ()
     
     // add the circle into modelspace
     AppendEntity (DwgDbEntity::Cast(circle.get()), modelspace.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void DwgFileEditor::AddLineInDefaultModel (DPoint3dCR point1, DPoint3dCR point2)
+    {
+    ASSERT_TRUE (m_dwgdb.IsValid());
+
+    // create a new line
+    DwgDbLinePtr  line = DwgDbLine::Create () ;
+    ASSERT_FALSE (line.IsNull()) << "DwgDbLine cannot be created!";
+
+    ASSERT_DWGDBSUCCESS (line->SetStartPoint(point1));
+    ASSERT_DWGDBSUCCESS (line->SetEndPoint(point2));
+
+    // open modelspace for write
+    DwgDbBlockTableRecordPtr    modelspace (m_dwgdb->GetModelspaceId(), DwgDbOpenMode::ForWrite);
+    ASSERT_DWGDBSUCCESS (modelspace.OpenStatus()) << "Modelspace block cannot be opened for write";
+    
+    // add the circle into modelspace
+    AppendEntity (DwgDbEntity::Cast(line.get()), modelspace.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void DwgFileEditor::AddLayout (DwgStringCR layoutName, DwgDbObjectIdP outId)
+    {
+    ASSERT_TRUE (m_dwgdb.IsValid());
+
+    auto manager = DwgImportHost::GetHost().GetLayoutManager ();
+    ASSERT_TRUE(manager.IsValid()) << "A DwgDbLayoutManager cannot be instantiated from DwgImportHost!";
+
+    // create a new paperspace block
+    DwgDbObjectId   layoutId, paperspaceId;
+    ASSERT_DWGDBSUCCESS(manager->CreateLayout(layoutId, paperspaceId, layoutName, m_dwgdb.get())) << "A DwgDbLayout cannot be created!";
+    ASSERT_TRUE(layoutId.IsValid()) << "The new DwgDbLayout has invalid ID!";
+    ASSERT_TRUE(paperspaceId.IsValid()) << "The new paperspace block has invalid ID!";
+
+    if (outId != nullptr)
+        *outId = paperspaceId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void DwgFileEditor::AddLayer (DwgStringCR layerName, DwgDbObjectIdP outId)
+    {
+    ASSERT_TRUE (m_dwgdb.IsValid());
+
+    // open layer table
+    DwgDbLayerTablePtr  layerTable(m_dwgdb->GetLayerTableId(), DwgDbOpenMode::ForWrite);
+    ASSERT_DWGDBSUCCESS (layerTable.OpenStatus()) << "Layer table cannot be opened for write";
+
+    // create a new layer
+    DwgDbLayerTableRecordPtr    layer = DwgDbLayerTableRecord::Create () ;
+    ASSERT_FALSE (layer.IsNull()) << "DwgDbLayer cannot be created!";
+
+    // append the new layer into the layer table
+    auto layerId = layerTable->Add (layer.get());
+    ASSERT_TRUE(layerId.IsValid()) << "Layer cannot added to DWG";
+
+    ASSERT_DWGDBSUCCESS (layer->SetName(layerName));
+    ASSERT_DWGDBSUCCESS (layer->SetDescription(L"A layer added by DwgBridge tester."));
+    ASSERT_DWGDBSUCCESS (layer->SetIsFrozen(false));
+    ASSERT_DWGDBSUCCESS (layer->SetIsOff(false));
+
+    if (outId != nullptr)
+        *outId = layerId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -324,7 +440,7 @@ void    DwgFileEditor::FindXrefBlock (DwgStringCR blockName)
     DwgDbBlockTablePtr  blockTable(m_dwgdb->GetBlockTableId(), DwgDbOpenMode::ForRead);
     ASSERT_DWGDBSUCCESS (blockTable.OpenStatus()) << "Unable to open DWG's block table!";
 
-    m_currentObjectId = blockTable->GetByName (blockName.c_str(), false);
+    m_currentObjectId = blockTable->GetByName (blockName, false);
     if (m_currentObjectId.IsValid())
         {
         DwgDbBlockTableRecordPtr    block(m_currentObjectId, DwgDbOpenMode::ForRead);

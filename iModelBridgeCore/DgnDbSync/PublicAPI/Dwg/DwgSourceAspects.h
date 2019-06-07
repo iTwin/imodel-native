@@ -62,8 +62,9 @@ public:
             };  // Kind
         static Utf8String FormatDbHandle(DwgDbHandleCR hd) { return "0x"+Utf8String(hd.AsAscii().c_str()); }
         static Utf8String FormatObjectId(DwgDbObjectIdCR id) { return "0x"+Utf8String(id.ToAscii().c_str()); }
-        static Utf8String FormatUInt64(uint64_t i) { Utf8Char str[32]; BeStringUtilities::FormatUInt64(str, i); return str; }
+        static Utf8String FormatHexUInt64(uint64_t i) { return Utf8PrintfString("0x%X", i); }
         static DwgDbHandle ParseDbHandle(Utf8StringCR h) { return DwgDbHandle(BeStringUtilities::ParseHex(h.c_str())); }
+        static uint64_t ParseUInt64(Utf8StringCR h) { return BeStringUtilities::ParseHex(h.c_str()); }
         };  // BaseAspect
 
     //! Information about a file on disk. This struct captures the information that can be extracted from the dwg disk file itself.
@@ -217,8 +218,15 @@ public:
 
     struct ModelAspectIterator : ExternalSourceAspectIterator<ModelAspect>
         {
+        //! Model iterator per scope ID
         ModelAspectIterator(DgnDbR db, DgnElementId scopeId, Utf8CP where=nullptr) : ExternalSourceAspectIterator(db, scopeId, BaseAspect::Kind::Model, where) {}
+        //! Model iterator per scope
         ModelAspectIterator(RepositoryLinkCR scope, Utf8CP where=nullptr) : ExternalSourceAspectIterator(scope.GetDgnDb(), scope.GetElementId(), BaseAspect::Kind::Model, where) {}
+        //! Model iterator by source ID per scope
+        ModelAspectIterator(RepositoryLinkCR scope, DwgDbHandleCR sourceId) : ExternalSourceAspectIterator(scope.GetDgnDb(), scope.GetElementId(), BaseAspect::Kind::Model, "Identifier = :identifier")
+            {
+            GetStatement()->BindText(GetParameterIndex("identifier"), BaseAspect::FormatDbHandle(sourceId).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+            }
         };  // ModelAspectIterator
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(ModelAspectIterator)
 
@@ -396,7 +404,13 @@ public:
 
     struct ObjectAspectIterator : ExternalSourceAspectIterator<ObjectAspect>
         {
+    private:
+        DWG_EXPORT void Bind(uint64_t sourceId);
+    public:
+        // Construct an object iterator per model
         ObjectAspectIterator(DgnModelCR model, Utf8CP where=nullptr) : ExternalSourceAspectIterator(model.GetDgnDb(), model.GetModeledElementId(), BaseAspect::Kind::Element, where) {}
+        // Construct an object iterator per model and source ID
+        ObjectAspectIterator(DgnModelCR model, uint64_t sourceId) : ExternalSourceAspectIterator(model.GetDgnDb(), model.GetModeledElementId(), BaseAspect::Kind::Element, "Identifier=:idparm") { Bind(sourceId); }
         };  // ObjectAspectIterator
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(ObjectAspectIterator)
 
@@ -515,6 +529,10 @@ public:
     //! @param[in] xrefInsert A source xRef instance (nullptr for non-xRef source type)
     //! @param[in] xrefDwg A source DWG database for an xRef (nullptr for non-xRef source type)
     DWG_EXPORT ModelAspect AddModelAspect (DgnModelR model, DwgDbBlockTableRecordCR block, TransformCR trans, DwgDbBlockReferenceCP xrefInsert, DwgDbDatabaseP xrefDwg);
+    //! Create a ModelAspect for a raster attachment
+    //! @param[in] model Target model for which a ModelAspect is to be added
+    //! @param[in] raster Source DWG raster image
+    //! @param[in] trans A transformation matrix applied to the model
     DWG_EXPORT ModelAspect AddModelAspect (DgnModelR model, DwgDbRasterImageCR raster, TransformCR trans);
     //! Get ModelAspect
     DWG_EXPORT ModelAspect FindModelAspect (DwgDbObjectIdCR id, DwgDbDatabaseR dwg, TransformCR trans);

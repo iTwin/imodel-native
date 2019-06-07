@@ -145,12 +145,20 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbBlockChildIterator)
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
 +===============+===============+===============+===============+===============+======*/
+#define DWGDB_DECLARE_SYMBOLTABLERECORD_MEMBERS()   \
+    DWGDB_EXPORT DwgString  GetName () const;       \
+    DWGDB_EXPORT bool       IsDependent () const;   \
+    DWGDB_EXPORT bool       IsResolved () const;    \
+    DWGDB_EXPORT DwgDbStatus SetName (DwgStringCR);
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
 class DwgDbSymbolTableRecord : public DWGDB_EXTENDCLASS(SymbolTableRecord)
     {
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(SymbolTableRecord)
-
-    DWGDB_EXPORT DwgString              GetName () const;
+    DWGDB_DECLARE_SYMBOLTABLERECORD_MEMBERS()
     };  // DwgDbSymbolTableRecord
 DWGDB_DEFINE_OBJECTPTR (SymbolTableRecord)
 
@@ -159,7 +167,12 @@ DWGDB_DEFINE_OBJECTPTR (SymbolTableRecord)
 +===============+===============+===============+===============+===============+======*/
 #define DWGDB_DECLARE_SYMBOLTABLE_MEMBERS(__name__)     \
     DWGDB_EXPORT DwgDbSymbolTableIteratorPtr NewIterator(bool atBeginning = true, bool skipDeleted = true) const;  \
-    DWGDB_EXPORT DwgDbObjectId  GetByName (WStringCR name, bool getErased = false) const;
+    DWGDB_EXPORT DwgDbObjectId  GetByName (WStringCR name, bool getErased = false) const;   \
+    DWGDB_EXPORT DwgDbObjectId  GetByName (DwgStringCR name, bool getErased = false) const;   \
+    DWGDB_EXPORT bool Has (WStringCR name) const;  \
+    DWGDB_EXPORT bool Has (DwgStringCR name) const;  \
+    DWGDB_EXPORT bool Has (DwgDbObjectIdCR id) const;  \
+    DWGDB_EXPORT DwgDbObjectId  Add (DwgDb##__name__##RecordP record);
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
@@ -184,8 +197,8 @@ private:
 //__PUBLISH_SECTION_START__
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(BlockTableRecord)
+    DWGDB_DECLARE_SYMBOLTABLERECORD_MEMBERS()
 
-    DWGDB_EXPORT DwgString                  GetName () const;
     DWGDB_EXPORT DwgString                  GetComments () const;
     DWGDB_EXPORT bool                       IsLayout () const;
     DWGDB_EXPORT DwgDbObjectId              GetLayoutId () const;
@@ -229,8 +242,8 @@ class DwgDbLayerTableRecord : public DWGDB_EXTENDCLASS(LayerTableRecord)
     {
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(LayerTableRecord)
+    DWGDB_DECLARE_SYMBOLTABLERECORD_MEMBERS()
 
-    DWGDB_EXPORT DwgString                  GetName () const;
     DWGDB_EXPORT DwgString                  GetDescription () const;
     DWGDB_EXPORT bool                       IsOff () const;
     DWGDB_EXPORT bool                       IsFrozen () const;
@@ -279,8 +292,8 @@ class DwgDbViewportTableRecord : public DWGDB_EXTENDCLASS(ViewportTableRecord)
     {
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(ViewportTableRecord)
+    DWGDB_DECLARE_SYMBOLTABLERECORD_MEMBERS()
 
-    DWGDB_EXPORT DwgString                  GetName () const;
     DWGDB_EXPORT bool                       IsGridEnabled () const;
     DWGDB_EXPORT bool                       IsUcsIconEnabled () const;
     DWGDB_EXPORT bool                       IsFrontClipEnabled () const;
@@ -337,6 +350,7 @@ class DwgDbTextStyleTableRecord : public DWGDB_EXTENDCLASS(TextStyleTableRecord)
     {
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(TextStyleTableRecord)
+    DWGDB_DECLARE_SYMBOLTABLERECORD_MEMBERS()
 
     DWGDB_EXPORT DwgDbStatus                GetFontInfo (DwgFontInfoR info) const;
     DWGDB_EXPORT WString                    GetFileName () const;
@@ -345,7 +359,6 @@ public:
     DWGDB_EXPORT double                     GetWidthFactor () const;
     DWGDB_EXPORT double                     GetObliqueAngle () const;
     DWGDB_EXPORT bool                       IsVertical () const;
-    DWGDB_EXPORT DwgString                  GetName () const;
     DWGDB_EXPORT bool                       IsShapeFile () const;
     DWGDB_EXPORT bool                       IsActiveTextStyle () const;
     };  // DwgDbTextStyleTableRecord
@@ -369,8 +382,8 @@ class DwgDbLinetypeTableRecord : public DWGDB_EXTENDCLASS(LinetypeTableRecord)
     {
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(LinetypeTableRecord)
+    DWGDB_DECLARE_SYMBOLTABLERECORD_MEMBERS()
 
-    DWGDB_EXPORT DwgString                  GetName () const;
     DWGDB_EXPORT DwgDbStatus                GetComments (DwgStringR comments) const;
     DWGDB_EXPORT uint32_t                   GetNumberOfDashes () const;
     DWGDB_EXPORT double                     GetPatternLength () const;
@@ -408,8 +421,7 @@ class DwgDbRegAppTableRecord : public DWGDB_EXTENDCLASS(RegAppTableRecord)
     {
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(RegAppTableRecord)
-
-    DWGDB_EXPORT DwgString                  GetName () const;
+    DWGDB_DECLARE_SYMBOLTABLERECORD_MEMBERS()
     };  // DwgDbRegAppTableRecord
 DWGDB_DEFINE_OBJECTPTR (RegAppTableRecord)
 

@@ -3324,14 +3324,12 @@ BentleyStatus   DwgImporter::ImportOrUpdateEntity (ElementImportInputs& inputs)
     if (nullptr == object)
         return  BentleyStatus::BSIERROR;
 
-    IDwgChangeDetector& changeDetector = this->_GetChangeDetector ();
     IDwgChangeDetector::DetectionResults    detectionResults;
     ElementImportResults    elementResults;
     BentleyStatus   status = BentleyStatus::SUCCESS;
-    DwgDbHandle objectHandle = object->GetObjectId().GetHandle();
 
     // consult the sync info to see if the entity has been changed, and what action to take:
-    if (changeDetector._IsElementChanged(detectionResults, *this, *object, inputs.GetModelMapping()))
+    if (this->_GetChangeDetector()._IsElementChanged(detectionResults, *this, *object, inputs.GetModelMapping()))
         {
         // set existing element in elementResults
         elementResults.SetExistingElement (detectionResults.GetObjectAspect());
@@ -3342,6 +3340,19 @@ BentleyStatus   DwgImporter::ImportOrUpdateEntity (ElementImportInputs& inputs)
     if (BentleyStatus::SUCCESS != status)
         return  status;
 
+    // action to take based on detected results
+    status = this->_ProcessDetectionResults(detectionResults, elementResults, inputs);
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgImporter::_ProcessDetectionResults (IDwgChangeDetector::DetectionResultsR detectionResults, ElementImportResults& elementResults, ElementImportInputs& inputs)
+    {
+    auto& changeDetector = this->_GetChangeDetector ();
+    auto objectHandle = inputs.GetEntityId().GetHandle();
+
     // act based on change detector results:
     switch (detectionResults.GetChangeType())
         {
@@ -3350,6 +3361,10 @@ BentleyStatus   DwgImporter::ImportOrUpdateEntity (ElementImportInputs& inputs)
             // no change - just update input entity for output results
             elementResults.SetExistingElement (detectionResults.GetObjectAspect());
             changeDetector._OnElementSeen (*this, detectionResults.GetExistingElementId());
+            // add children into the element seen list
+            auto allFromSameSource = iModelExternalSourceAspect::GetSelectFromSameSource(*m_dgndb, detectionResults.GetObjectAspect(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+            while(BE_SQLITE_ROW == allFromSameSource->Step())
+                changeDetector._OnElementSeen (*this, allFromSameSource->GetValueId<DgnElementId>(0));
             break;
             }
 
@@ -3358,8 +3373,6 @@ BentleyStatus   DwgImporter::ImportOrUpdateEntity (ElementImportInputs& inputs)
             // new entity - insert results into BIM, with an ExternalSourceAspect from previously calculated prevenance
             DwgSourceAspects::ObjectAspect::SourceData source(objectHandle, inputs.GetTargetModel().GetModelId(), detectionResults.GetCurrentProvenance(), Utf8String());
             this->InsertResults (elementResults, source);
-            if (elementResults.GetImportedElement() != nullptr)
-                changeDetector._OnElementSeen (*this, elementResults.GetImportedElement()->GetElementId());
             break;
             }
 
@@ -3367,8 +3380,8 @@ BentleyStatus   DwgImporter::ImportOrUpdateEntity (ElementImportInputs& inputs)
             {
             // existing element along with an ExternalSourceAspect needs update
             DwgSourceAspects::ObjectAspect::SourceData source(objectHandle, inputs.GetTargetModel().GetModelId(), detectionResults.GetCurrentProvenance(), Utf8String());
-            this->UpdateResults (elementResults, source);
-            changeDetector._OnElementSeen (*this, detectionResults.GetExistingElementId());
+            auto existingElementId = detectionResults.GetExistingElementId ();
+            this->UpdateResults (elementResults, existingElementId, source);
             break;
             }
 
@@ -3376,7 +3389,7 @@ BentleyStatus   DwgImporter::ImportOrUpdateEntity (ElementImportInputs& inputs)
             this->ReportError (IssueCategory::Unsupported(), Issue::Message(), "unknown change type ignored by the change detector");
         }
 
-    return  status;
+    return  BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3617,6 +3630,9 @@ DgnDbStatus     DwgImporter::InsertResults (ElementImportResults& results, DwgSo
         LOG_ENTITY.tracev ("Inserted %s, %s", IssueReporter::FmtElement(*ret).c_str(), ret->GetDisplayLabel().c_str());
 
     DgnElementId    parentId = results.m_importedElement->GetElementId ();
+
+    // tell the change detector that we have seen this element
+    this->_GetChangeDetector()._OnElementSeen (*this, parentId);
 
     // insert the children of the primary elements, if any
     for (ElementImportResults& child : results.m_childElements)

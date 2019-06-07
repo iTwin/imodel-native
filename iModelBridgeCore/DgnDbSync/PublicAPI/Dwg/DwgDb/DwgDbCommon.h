@@ -21,7 +21,9 @@
 #define USING_NAMESPACE_DWGDB   using namespace BentleyApi::DwgDb;
 
 
-#define     UNICODE
+#ifndef UNICODE
+    #define UNICODE
+#endif
 
 #ifdef DWGTOOLKIT_OpenDwg
 

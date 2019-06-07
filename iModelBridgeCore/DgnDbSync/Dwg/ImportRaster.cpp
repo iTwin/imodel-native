@@ -207,6 +207,17 @@ BentleyStatus   DwgRasterImageExt::_ConvertToBim (ProtocolExtensionContext& cont
     // return the raster model back to the caller:
     context.SetResultantModel (model);
     
+    // if the imodel bridge wants to push changes by model, push the layout model now
+    if (status == BSISUCCESS)
+        {
+        auto revOption = importer.GetOptions().GetPushIntermediateRevisions();
+        if (revOption == iModelBridge::Params::PushIntermediateRevisions::ByModel || revOption == iModelBridge::Params::PushIntermediateRevisions::ByFile)
+            {
+            Utf8PrintfString comment("Raster %ls", rasterFilename.GetBaseName().c_str());
+            iModelBridge::PushChanges(importer.GetDgnDb(), importer.GetOptions(), comment.c_str());
+            }
+        }
+
     return  status;
     }
 

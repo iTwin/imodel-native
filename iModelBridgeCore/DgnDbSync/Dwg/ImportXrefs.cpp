@@ -187,6 +187,13 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
         factory.ConvertToBim (results, inputs);
         }
     
+    auto revOption = this->GetOptions().GetPushIntermediateRevisions ();
+    if (revOption == iModelBridge::Params::PushIntermediateRevisions::ByModel || revOption == iModelBridge::Params::PushIntermediateRevisions::ByFile)
+        {
+        Utf8PrintfString comment("xRef %ls", m_currentXref.GetSavedPath().GetBaseName().c_str());
+        iModelBridge::PushChanges(*m_dgndb, this->GetOptions(), comment.c_str());
+        }
+
     // restore current xref
     m_currentXref = savedCurrentXref;
 

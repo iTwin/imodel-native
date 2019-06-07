@@ -150,7 +150,10 @@ public:
     virtual void            _DebugPrintf (WCharCP format, ...) const override;
     virtual bool            _IsValid () const override;
 
-    void                    Initialize (DwgImporter& importer);
+    DwgImportHost () : m_importer(nullptr), m_progressMeter(nullptr) {}
+
+    DWG_EXPORT void         Initialize (DwgImporter& importer);
+    DWG_EXPORT void         Terminate ();
     void                    NewProgressMeter ();
 
     DWG_EXPORT static DwgImportHost& GetHost ();

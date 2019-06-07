@@ -245,6 +245,17 @@ BentleyStatus   DwgImporter::_ImportLayout (ResolvedModelMapping& modelMap, DwgD
     if (resetPDSIZE)
         m_dwgdb->SetPDSIZE (currentPDSIZE);
 
+    // if the imodel bridge wants to push changes by model, push the layout model now
+    auto revOption = this->GetOptions().GetPushIntermediateRevisions ();
+    if (revOption == iModelBridge::Params::PushIntermediateRevisions::ByModel)
+        {
+        Utf8String  layoutName;
+        if (DwgHelper::GetLayoutOrBlockName(layoutName, block) != BSISUCCESS)
+            layoutName.assign ("unnamed");
+        Utf8PrintfString comment("Layout %s", layoutName.c_str());
+        iModelBridge::PushChanges(*m_dgndb, this->GetOptions(), comment.c_str());
+        }
+
     return  BSISUCCESS;
     }
 

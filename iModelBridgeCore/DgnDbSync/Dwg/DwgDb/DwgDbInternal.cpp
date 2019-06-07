@@ -250,6 +250,12 @@ void            UnRegisterDwgDbObjectExtensions ()
 
     // Un-register private DwgGi class extensions
     UnRegisterDwgGiExtensions ();
+
+#elif DWGTOOLKIT_RealDwg
+
+    auto protocalExts = acrxServiceDictionary->remove (NAME_DwgProtocolExtension);
+    if (protocalExts != nullptr)
+        delete protocalExts;
 #endif
     }
 

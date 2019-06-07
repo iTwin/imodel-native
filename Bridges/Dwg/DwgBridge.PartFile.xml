@@ -174,4 +174,48 @@
         <ProductDirectory Name="VendorAPI"              Deliver="false"/>
     </ProductDirectoryList>
 
+
+    <!-- iModelBridge tests for RealDWG bridge -->
+    <Product Name="DwgBridgeTests">
+        <SubProduct ProductName="iModelBridgeFwk" Repository="imodel02" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
+        <SubPart PartName="DwgBridgeTestsExe"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <Directories DirectoryListName="RealDwgConverterDirList"  PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <Directories DirectoryListName="DwgAppCommonDirList"  PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <Directories DirectoryListName="Tests" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <Directories DirectoryListName="TestDirList"/>
+    </Product>
+
+    <Part Name="RunDwgBridgeTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DwgBridgeTests -dGTEST_NAME=DwgBridgeTests">
+        <SubProduct ProductName="DwgBridgeTests"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DwgBridgeTests.log</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="DwgBridgeTestsExe" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DwgBridgeTests.mke">
+        <SubPart PartName="DgnDbTestUtils" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="DgnPlatformSqlang" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="DgnPlatformUnitTestHelpers" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="RealDwgImportExe" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="google_gtest_lib" PartFile="iModelCore/util/gtest/gtest" Repository="imodel02"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
+        <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <Bindings>
+            <Files ProductDirectoryName="DwgImporterTestsExe">Delivery/DwgBridgeTests.exe</Files>
+            <Files ProductDirectoryName="DwgImporterTestsExe">Delivery/DwgBridgeTests.logging.config.xml</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/DwgBridgeTests_en-US.sqlang.db3</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="Ignore">Delivery/ignore_list.txt</Files>
+            <Directory SourceName="Delivery/DwgBridgeTestData"  SubPartDirectory="TestData"  ProductDirectoryName="ImportTestData" Required="false"/>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="TestDirList">
+        <ProductDirectory Name="ApplicationRoot"        Path=""/>
+        <ProductDirectory Name="UnitTests-Assets"       RelativeTo="ApplicationRoot" Path="Assets" LibType="dynamic"/>
+        <ProductDirectory Name="UnitTests-Assets"       RelativeTo="ApplicationRoot" Path="Assets" LibType="static"/>
+        <ProductDirectory Name="UnitTests-Objects"      Deliver="false"/>
+        <ProductDirectory Name="UnitTests-IgnoreList"   Deliver="false"/>
+    </ProductDirectoryList>
+
 </BuildContext>

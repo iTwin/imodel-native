@@ -84,6 +84,7 @@ DgnElementId    FindModelElement (uint64_t dwgModelId, DgnDbR db, DwgSourceAspec
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbHandle AddCircle (uint64_t& dwgModelId) const
     {
+    ScopedDwgHost   host(m_options);
     DwgFileEditor   editor(m_dwgFileName);
     editor.AddCircleInDefaultModel ();
 
@@ -102,6 +103,7 @@ DwgDbHandle AddCircle (uint64_t& dwgModelId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DeleteEntity (DwgDbHandleCR entityHandle, uint64_t& modelspaceId) const
     {
+    ScopedDwgHost   host(m_options);
     DwgFileEditor   editor(m_dwgFileName);
     editor.DeleteEntity (entityHandle);
     modelspaceId = editor.GetModelspaceId().ToUInt64 ();
@@ -149,6 +151,7 @@ void ExtractPlacementOrigins (DPoint3dArrayR origins, T_EntityHandles handles) c
     auto db = OpenExistingDgnDb (m_dgnDbFileName, Db::OpenMode::Readonly);
     EXPECT_TRUE (db.IsValid());
 
+    ScopedDwgHost   host(m_options);
     DwgFileEditor   editor(m_dwgFileName);
 
     auto modelspaceId = editor.GetModelspaceId().ToUInt64 ();
@@ -174,6 +177,7 @@ void ExtractPlacementOrigins (DPoint3dArrayR origins, T_EntityHandles handles) c
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CheckDwgEntity (size_t expectedCount, DwgDbHandleCR entityHandle, bool shouldExist) const
     {
+    ScopedDwgHost   host(m_options);
     DwgFileEditor   editor(m_dwgFileName);
     bool    foundEntity = false;
     size_t  numEntities = editor.CountAndCheckModelspaceEntity (foundEntity, entityHandle);
@@ -186,6 +190,7 @@ void CheckDwgEntity (size_t expectedCount, DwgDbHandleCR entityHandle, bool shou
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MoveEntitiesBy (T_EntityHandles const& handles, DPoint3dCR delta) const
     {
+    ScopedDwgHost host(m_options);
     DwgFileEditor editor (m_dwgFileName);
     editor.TransformEntitiesBy (handles, Transform::From(delta));
     editor.SaveFile ();
@@ -197,6 +202,7 @@ void MoveEntitiesBy (T_EntityHandles const& handles, DPoint3dCR delta) const
 void CheckXrefAttached (BeFileNameCR masterFilename, DwgStringCR xrefBlockname)
     {
     // check xref instance in the modelspace
+    ScopedDwgHost   host(m_options);
     DwgFileEditor   editor(masterFilename);
     editor.FindXrefInsert (xrefBlockname);
 
@@ -218,6 +224,7 @@ void CheckXrefNested (BeFileNameCR masterFilename, DwgStringCR xrefBlockname)
     When this happens, the nested xref block is not seen in the block table in the master file.
     This may all be a RealDWG2018 bug, but we workaround it by opening the master file as read-only.
     -----------------------------------------------------------------------------------*/
+    ScopedDwgHost   host(m_options);
     DwgFileEditor   editor(masterFilename, FileShareMode::DenyWrite);
     editor.FindXrefBlock (xrefBlockname);
 
@@ -524,6 +531,7 @@ TEST_F (BasicTests, AddAndUpdateGroup)
     DwgDbObjectIdArray  members;
 
     // create a group dictionary named "TestGroup" in file basictype.dwg, adding all modelspace entities as members:
+    ScopedDwgHost   host(m_options);
     DwgFileEditor   editor (m_dwgFileName);
     editor.GetModelspaceEntities (members);
     editor.CreateGroup ("TestGroup", members);
