@@ -84,12 +84,12 @@ void AddSegments (CurveVectorR cv, int numSegment, DSegment3dCR segment0, DVec3d
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVector,RangeTree)
-{
-CurveVectorPtr cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
-AddSegments (*cv, 5, DSegment3d::From (DPoint3d::From (0,0,0), DPoint3d::From (1,1,0)), DVec3d::From (2,0,0));
-CurveVectorRangeData cvRanges;
-cvRanges.Install (cv);
-}
+    {
+    CurveVectorPtr cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    AddSegments (*cv, 5, DSegment3d::From (DPoint3d::From (0,0,0), DPoint3d::From (1,1,0)), DVec3d::From (2,0,0));
+    CurveVectorRangeData cvRanges;
+    cvRanges.Install (cv);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
@@ -785,4 +785,75 @@ TEST (CurveOffset, RebarUnion)
     );
 
     Check::ClearGeometry ("UnionAll");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(CurveVector, RangeTreeA)
+    {
+    CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+    AddSegments(*cv, 5, DSegment3d::From(DPoint3d::From(0, 0, 0), DPoint3d::From(1, 1, 0)), DVec3d::From(2, 0, 0));
+    CurveVectorRangeData cvRanges;
+    cvRanges.Install(cv);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(CCI,RangeCheck)
+    {
+    auto v = Check::SetMaxVolume (1000);
+    auto arc = ICurvePrimitive::CreateArc(DEllipse3d::From(
+        5, 5, 0,
+        5, 0, 0,
+        0, 5, 0,
+        0, Angle::TwoPi()));
+    double lineFraction = 0.323423;
+    for (DVec3d vectorA :   // to become the full length vector along the segment.
+        {
+        DVec3d::From (0,1,0),
+        DVec3d::From (1,2,4),
+        DVec3d::From (1,0,0),
+        DVec3d::From (0,0,1),
+        DVec3d::From (2,1,0.0001)})
+        {
+        Check::StartScope ("Line Vector", vectorA);
+        for (double arcFraction :  {0.0, 1.0, 0.5, 0.2, 0.6})
+            {
+            Check::StartScope ("arcFraction", arcFraction);
+            DPoint3d commonPoint;
+            arc->FractionToPoint (arcFraction, commonPoint);
+            auto line = ICurvePrimitive::CreateLine (DSegment3d::From (
+                    commonPoint - (1.0 - lineFraction) * vectorA,
+                    commonPoint + lineFraction * vectorA));
+            auto pointsOnA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+            auto pointsOnB = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+            CurveCurve::CloseApproach (*pointsOnA, *pointsOnB, line.get (), arc.get (),
+                        1.0e-8);
+            if (Check::True(pointsOnA->size() > 0, "At least one point reported for CC approach"))
+                {
+                uint32_t numMatch = 0;
+                for (uint32_t i = 0; i < pointsOnA->size (); i++)
+                    {
+                    DPoint3d xyz;
+                    auto p = pointsOnA->at (i);
+                    p->GetStartPoint (xyz);
+                    if (xyz.AlmostEqual(commonPoint))
+                        numMatch++;
+                    }
+                Check::True(numMatch > 0, "Expected intersection point found by closest approach");
+                }
+/*
+auto pointsOnAXY = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+            auto pointsOnBXY = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+
+            CurveCurve::IntersectionsXY (*pointsOnAXY, *pointsOnBXY, line.get (), arc.get (), nullptr, false);
+            printf("\n     CurveCurve::IntersectionsXY counts %d %d \n", (int)pointsOnAXY->size(), (int)pointsOnBXY->size());
+*/
+            Check::EndScope ();
+            }
+        Check::EndScope ();
+        }
+    Check::SetMaxVolume (v);
     }
