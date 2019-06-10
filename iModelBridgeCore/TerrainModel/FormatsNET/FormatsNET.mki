@@ -1,0 +1,18 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+#
+
+%include $(SharedMki)CommonCompileLinkPolicy.mki
+
+BentleyFormatsNetObj       = $(terrainModelBuildDir_)Bentley.TerrainModelNET.Formats/
+
+OPTIMIZE_FOR_SPEED=1
+
+%if defined (DEBUG) && !defined (DISABLE_HANDLE_CHECKS)
+    nameToDefine = DEBUG_BREAKS
+    %include cdefapnd.mki
+%endif
+
