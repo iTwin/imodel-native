@@ -57,6 +57,8 @@ $(o)VolumeAspect$(oext) : $(_MakeFilePath)VolumeAspect.cpp ${MultiCompileDepends
 
 $(o)WallAspect$(oext) : $(_MakeFilePath)WallAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\WallAspect.h
 
+$(o)WindowAspect$(oext) : $(_MakeFilePath)WindowAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\WindowAspect.h
+
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
 
