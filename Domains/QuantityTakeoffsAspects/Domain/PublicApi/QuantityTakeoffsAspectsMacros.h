@@ -33,6 +33,7 @@
 
 
 #define QUANTITYTAKEOFFSASPECTS_CLASS_DimensionsAspect              "DimensionsAspect"
+#define QUANTITYTAKEOFFSASPECTS_CLASS_DoorAspect                    "DoorAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_EnergyPerformanceAspect       "EnergyPerformanceAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_MaterialAspect                "MaterialAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_PerimeterAspect               "PerimeterAspect"
@@ -49,9 +50,12 @@
 #define QUANTITYTAKEOFFSASPECTS_CLASS_WallAspect                    "WallAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_WindowAspect                  "WindowAspect"
 
+
 #define QUANTITYTAKEOFFSASPECTS_DIMENSIONSASPECT_Height             "Height"
 #define QUANTITYTAKEOFFSASPECTS_DIMENSIONSASPECT_Length             "Length"
 #define QUANTITYTAKEOFFSASPECTS_DIMENSIONSASPECT_Width              "Width"
+
+#define QUANTITYTAKEOFFSASPECTS_DOORASPECT_Type                    "Type"
 
 #define QUANTITYTAKEOFFSASPECTS_ENERGYPERFORMANCEASPECT_Rating      "Rating"
 

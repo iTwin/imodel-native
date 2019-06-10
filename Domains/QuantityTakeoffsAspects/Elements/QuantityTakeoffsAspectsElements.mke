@@ -27,6 +27,8 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)DimensionsAspect$(oext) : $(_MakeFilePath)DimensionsAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\DimensionsAspect.h
 
+$(o)DoorAspect$(oext) : $(_MakeFilePath)DoorAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\DoorAspect.h
+
 $(o)EnergyPerformanceAspect$(oext) : $(_MakeFilePath)EnergyPerformanceAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\EnergyPerformanceAspect.h
 
 $(o)MaterialAspect$(oext) : $(_MakeFilePath)MaterialAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\MaterialAspect.h
