@@ -46,7 +46,7 @@
 #define QUANTITYTAKEOFFSASPECTS_CLASS_SurfaceAreaAspect             "SurfaceAreaAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_ThicknessAspect               "ThicknessAspect"
 #define QUANTITYTAKEOFFSASPECTS_CLASS_VolumeAspect                  "VolumeAspect"
-
+#define QUANTITYTAKEOFFSASPECTS_CLASS_WallAspect                    "WallAspect"
 
 #define QUANTITYTAKEOFFSASPECTS_DIMENSIONSASPECT_Height             "Height"
 #define QUANTITYTAKEOFFSASPECTS_DIMENSIONSASPECT_Length             "Length"
@@ -95,3 +95,5 @@
 
 #define QUANTITYTAKEOFFSASPECTS_VOLUMEASPECT_GrossVolume            "GrossVolume"
 #define QUANTITYTAKEOFFSASPECTS_VOLUMEASPECT_NetVolume              "NetVolume"
+
+#define QUANTITYTAKEOFFSASPECTS_WALLASPECT_Type                     "Type"

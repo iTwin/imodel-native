@@ -55,6 +55,8 @@ $(o)ThicknessAspect$(oext) : $(_MakeFilePath)ThicknessAspect.cpp ${MultiCompileD
 
 $(o)VolumeAspect$(oext) : $(_MakeFilePath)VolumeAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\VolumeAspect.h
 
+$(o)WallAspect$(oext) : $(_MakeFilePath)WallAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\WallAspect.h
+
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
 
