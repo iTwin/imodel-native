@@ -593,6 +593,7 @@ BentleyStatus BisClassConverter::DoConvertECClass(SchemaConversionContext& conte
             //to aspect naming convention.
             if (BisConversionRule::ToAspectOnly == bisConversionRule) 
                 {
+                LOG.debugv("Renaming class %s to %s as the ConversionRule to ToAspectOnly", inputClass.GetFullName(), elementAspectClassName.c_str());
                 if (ECN::ECObjectsStatus::Success != targetSchema.RenameClass(inputClass, elementAspectClassName.c_str()))
                     {
                     context.ReportIssue(Converter::IssueSeverity::Fatal, "ECSchema BISification failed. Could not rename v8 ECClass '%s' to ElementAspect class '%s' in target schema.",
@@ -605,6 +606,8 @@ BentleyStatus BisClassConverter::DoConvertECClass(SchemaConversionContext& conte
             else
                 {
                 elementAspectClass = nullptr;
+                LOG.debugv("Creating new aspect class %s for %s as there already is an Element class for it", elementAspectClassName.c_str(), inputClass.GetFullName());
+
                 ECN::ECObjectsStatus stat = targetSchema.CopyClass(elementAspectClass, inputClass, elementAspectClassName);
                 if (ECN::ECObjectsStatus::Success != stat || nullptr == elementAspectClass)
                     {
@@ -617,7 +620,7 @@ BentleyStatus BisClassConverter::DoConvertECClass(SchemaConversionContext& conte
         }
 
     if (toAspect)
-        return context.AddClassMapping(inputClass, *elementAspectClass, toAspect, *elementAspectBisBaseClass);
+        return context.AddClassMapping(inputClass, *elementAspectClass, true, *elementAspectBisBaseClass);
     return BSISUCCESS;
     }
 
@@ -854,207 +857,15 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
             constraint.SetMultiplicity(BECN::RelationshipMultiplicity::ZeroMany());
         }
 
-    if (ContainsAnyClass(constraint.GetConstraintClasses()))
-        {
-        constraint.RemoveConstraintClasses();
-        Utf8String msg;
-        msg.Sprintf("ECRelationshipClass '%s' contains 'AnyClass' as a constraint.  AnyClass is no longer supported and will be replaced with '%s.'",
-                    relClass.GetFullName(), defaultConstraintClass->GetName().c_str());
-        context.ReportIssue(Converter::IssueSeverity::Info, msg.c_str());
-        }
-    
-    // If the constraint is the source, replace all aspect constraints with the element class it modifies
-    // If the constraint is the target, and the first constraint class is an element, replace any subsequent aspect class with the corresponding element class
-    bool haveFirstType = false;
-    bool firstIsElement = true;
-    bvector<ECClassCP> constraintsToRemove;
-    for (auto constraintClass : constraint.GetConstraintClasses())
-        {
-        if (!haveFirstType)
-            {
-            haveFirstType = true;
-            firstIsElement = constraintClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
-            }
-        if (isSource)
-            {
-            if (!constraintClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
-                constraintsToRemove.push_back(constraintClass);
-            }
-        else if (firstIsElement != constraintClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
-            constraintsToRemove.push_back(constraintClass);
-        }
+    // All we care about is allowing existing relationships to be inserted into the db.  Therefore, it doesn't matter how lax the constraints are since we're only
+    // inserting relationships that were created under the proper constraints and are not creating new ones.
 
-    for (ECClassCP ecClass : constraintsToRemove)
-        constraint.RemoveClass(*ecClass->GetEntityClassCP());
-
-    // If we removed any aspect classes as a constraint, then we need to add the base Element class as a constraint.  This is because we are 
-    // using the element that owns the aspect as the relationship constraint but we have no way of knowing what class that is.  Therefore, we
-    // can only use the most generic class as the constraint.
-    if (constraintsToRemove.size() > 0 && firstIsElement)
-        {
-        constraint.AddClass(*defaultConstraintClass);
-        constraint.SetIsPolymorphic(true);
-        }
+    constraint.RemoveConstraintClasses();
+    constraint.AddClass(*defaultConstraintClass);
+    constraint.SetIsPolymorphic(true);
 
     if (isSource && constraint.IsAbstractConstraintDefined() && !constraint.GetAbstractConstraint()->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
         constraint.RemoveAbstractConstraint();
-
-    constraintsToRemove.clear();
-    bvector<ECClassCP> constraintsToAdd;
-
-    if (constraint.GetIsPolymorphic())
-        {
-        bmap<Utf8String, ECN::ECSchemaP> const& contextSchemas = context.GetSchemas();
-        // In the case of flattened schemas, we have broken polymorphism so need to fix that
-        for (auto constraintClass : constraint.GetConstraintClasses())
-            {
-            ECN::ECClassP nonConstConstraint = const_cast<ECN::ECClassP>(constraintClass);
-            // Need to find a common base class between this constraint and any derived classes that were removed
-            ECN::IECInstancePtr droppedInstance = constraintClass->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldDerivedClasses");
-            if (droppedInstance.IsValid())
-                {
-                ECN::ECValue v;
-                droppedInstance->GetValue(v, "Classes");
-                if (!v.IsNull())
-                    {
-                    bvector<Utf8String> classNames;
-                    BeStringUtilities::Split(v.GetUtf8CP(), ";", classNames);
-                    bvector<ECN::ECClassCP> searchClasses;
-                    for (Utf8String className : classNames)
-                        {
-                        bvector<Utf8String> components;
-                        BeStringUtilities::Split(className.c_str(), ":", components);
-                        if (components.size() != 2)
-                            continue;
-                        bmap<Utf8String, ECN::ECSchemaP>::const_iterator iter = contextSchemas.find(components[0]);
-                        if (contextSchemas.end() != iter)
-                            {
-                            ECN::ECSchemaP droppedSchema = iter->second;
-                            ECN::ECClassP dropped = droppedSchema->GetClassP(components[1].c_str());
-                            if (nullptr != dropped)
-                                {
-                                if (dropped->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect))
-                                    {
-                                    searchClasses.push_back(defaultConstraintClass);
-                                    }
-                                else
-                                    {
-                                    ECN::ECClassP nonConst = const_cast<ECN::ECClassP>(dropped);
-                                    searchClasses.push_back(nonConst);
-                                    }
-                                }
-                            }
-                        }
-                    ECN::ECEntityClassCP commonClass = nullptr;
-                    ECN::ECClass::FindCommonBaseClass(commonClass, constraintClass->GetEntityClassCP(), searchClasses);
-                    if (commonClass != nullptr)
-                        {
-                        constraintsToRemove.push_back(nonConstConstraint);
-                        constraintsToAdd.push_back(commonClass);
-                        }
-                    }
-                }
-            }
-        for (ECClassCP toRemove : constraintsToRemove)
-            constraint.RemoveClass(*toRemove->GetEntityClassCP());
-        for (ECClassCP toAdd : constraintsToAdd)
-            {
-            if (ECObjectsStatus::RelationshipConstraintsNotCompatible == constraint.AddClass(*toAdd->GetEntityClassCP()))
-                {
-                constraint.RemoveAbstractConstraint();
-                constraint.AddClass(*toAdd->GetEntityClassCP());
-                }
-            }
-        }
-
-    if (0 == constraint.GetConstraintClasses().size())
-        {
-        if (relClass.HasBaseClasses())
-            {
-            ECRelationshipClassCP baseClass = relClass.GetBaseClasses()[0]->GetRelationshipClassCP();
-            ECRelationshipConstraintR baseConstraint = (isSource) ? baseClass->GetSource() : baseClass->GetTarget();
-            ECEntityClassCP baseConstraintClass = baseConstraint.GetConstraintClasses()[0]->GetEntityClassCP();
-            ECObjectsStatus status = constraint.AddClass(*(baseConstraintClass));
-            if (ECObjectsStatus::SchemaNotFound == status)
-                {
-                relClass.GetSchemaR().AddReferencedSchema(const_cast<ECSchemaR>(baseConstraintClass->GetSchema()));
-                constraint.AddClass(*(baseConstraintClass));
-                }
-            else if (ECObjectsStatus::RelationshipConstraintsNotCompatible == status && RelationshipMultiplicity::Compare(constraint.GetMultiplicity(), baseConstraint.GetMultiplicity()) == -1)
-                {
-                constraint.SetMultiplicity(baseConstraint.GetMultiplicity());
-                status = constraint.AddClass(*(baseConstraintClass));
-                }
-            }
-        else
-            {
-            constraint.RemoveAbstractConstraint();
-            ECObjectsStatus status = constraint.AddClass(*defaultConstraintClass);
-            if (ECObjectsStatus::SchemaNotFound == status)
-                {
-                relClass.GetSchemaR().AddReferencedSchema(defaultConstraintClass->GetSchemaR());
-                constraint.AddClass(*defaultConstraintClass);
-                }
-            }
-        }
-    else if (relClass.HasBaseClasses())
-        {
-        ECRelationshipClassCP baseClass = relClass.GetBaseClasses()[0]->GetRelationshipClassCP();
-        ECRelationshipConstraintR baseConstraint = (isSource) ? baseClass->GetSource() : baseClass->GetTarget();
-
-        bool removed = false;
-        for (auto constraintClass : constraint.GetConstraintClasses())
-            {
-            for (auto baseConstraintClass : baseConstraint.GetConstraintClasses())
-                {
-                if (!constraintClass->Is(baseConstraintClass))
-                    {
-                    removed = true;
-                    relClass.RemoveBaseClass(*baseClass);
-                    break;
-                    }
-                }
-            if (removed)
-                break;
-            }
-        }
-
-    IECInstancePtr dropConstraintCA = constraint.GetCustomAttribute("DropConstraints");
-    if (dropConstraintCA.IsValid())
-        {
-        ECValue drop;
-        if (ECObjectsStatus::Success == dropConstraintCA->GetValue(drop, "Drop"))
-            {
-            bvector<Utf8String> tokens;
-            BeStringUtilities::Split(drop.GetUtf8CP(), ";", tokens);
-            for (Utf8StringCR token : tokens)
-                {
-                bvector<Utf8String> components;
-                BeStringUtilities::Split(token.c_str(), ":", components);
-                ECClassCP constraintClassToDrop = nullptr;
-                if (components.size() == 1)
-                    constraintClassToDrop = relClass.GetSchema().GetClassCP(components[0].c_str());
-                else
-                    {
-                    ECSchemaCP referencedSchema = relClass.GetSchema().GetSchemaByAliasP(components[0]);
-                    if (nullptr == referencedSchema)
-                        {
-                        Utf8PrintfString error("DropConstraints custom attribute on %s constraint on %s defines %s.  A schema by this alias could not be found.  Constraint class not dropped.  This could cause validation issues.", isSource ? "source" : "target", relClass.GetFullName(), token.c_str());
-                        context.ReportIssue(Converter::IssueSeverity::Error, error.c_str());
-                        }
-                    else
-                        constraintClassToDrop = referencedSchema->GetClassCP(components[1].c_str());
-                    }
-                if (nullptr != constraintClassToDrop)
-                    {
-                    if (BECN::ECObjectsStatus::Success != constraint.RemoveClass(*constraintClassToDrop->GetEntityClassCP()))
-                        {
-                        context.ReportIssue(Converter::IssueSeverity::Error, "Failed to remove constraint class %s from %s constraint on relationship %s.  This could cause validation issues with the schema.", constraintClassToDrop->GetFullName(), isSource ? "source" : "target", relClass.GetFullName());
-                        }
-                    }
-                }
-            }
-        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1135,8 +946,11 @@ BentleyStatus BisClassConverter::FinalizeConversion(SchemaConversionContext& con
                     return BSIERROR;
                     }
 
-                ECN::ECClassP nonConstBase = const_cast<ECN::ECClassP>(baseClass);
-                AddDroppedDerivedClass(nonConstBase, aspectOnlyClass);
+                if (!baseClass->GetSchema().GetName().Equals(BIS_ECSCHEMA_NAME))
+                    {
+                    ECN::ECClassP nonConstBase = const_cast<ECN::ECClassP>(baseClass);
+                    AddDroppedDerivedClass(nonConstBase, aspectOnlyClass);
+                    }
                 }
             }
         }
@@ -1313,7 +1127,7 @@ BentleyStatus BisClassConverter::ValidateClassProperties(SchemaConversionContext
         if (arrayProp != nullptr)
             {
             arrayProp->SetMinOccurs(0);
-            arrayProp->SetMaxOccurs(UINT_MAX);
+            arrayProp->SetMaxOccurs(INT_MAX);
 
             if (arrayProp->GetIsStructArray())
                 structType = &arrayProp->GetAsStructArrayProperty()->GetStructElementType();

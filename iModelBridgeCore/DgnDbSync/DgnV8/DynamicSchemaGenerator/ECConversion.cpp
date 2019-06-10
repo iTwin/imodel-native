@@ -8,6 +8,7 @@
 #include "ECDiff.h"
 #include <regex>
 #include <ECObjects/StandardCustomAttributeHelper.h>
+// #include <ECObjects/SchemaComparer.h>
 #include <Units/Units.h>
 #include <Formatting/FormattingApi.h>
 
@@ -350,7 +351,7 @@ ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IE
             ReplaceWithKOQ(schema, prop, "ANGLE", "RAD", getAngleUnitName(m_angle), *context);
             break;
         default:
-            LOG.warningv("Found an ExtendType custom attribute on an ECProperty, '%s.%s', with an unknown standard value %d.  Only values 7-11 are supported.",
+            LOG.infov("Found an ExtendType custom attribute on an ECProperty, '%s.%s', with an unknown standard value %d.  Only values 7-11 are supported.",
                          prop->GetClass().GetFullName(), prop->GetName().c_str());
             prop->RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
             prop->RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
@@ -1317,10 +1318,10 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 
         targetSchemaNames.insert(schemaName);
         Utf8CP schemaXml = entry.GetSchemaXml();
-        if (isDynamic)
+        //if (isDynamic)
             schemaXmlDeserializer.AddSchemaXml(schemaName.c_str(), key, schemaXml);
-        else
-            schemaXmlDeserializer.AddSchemaXml(key.GetFullSchemaName().c_str(), key, schemaXml);
+        //else
+            //schemaXmlDeserializer.AddSchemaXml(key.GetFullSchemaName().c_str(), key, schemaXml);
 
 #ifdef EXPORT_V8SCHEMA_XML
         WString fileName;
@@ -1656,6 +1657,10 @@ BentleyStatus DynamicSchemaGenerator::CopyFlatCustomAttributes(ECN::IECCustomAtt
     for (ECN::IECInstancePtr instance : sourceContainer.GetCustomAttributes(true))
         {
         if (instance->GetClass().GetName().Equals("CalculatedECPropertySpecification") && instance->GetClass().GetSchema().GetName().Equals("Bentley_Standard_CustomAttributes"))
+            continue;
+
+        // Don't copy customattributes if the customattribute comes from a baseclass still on the target.
+        if (targetContainer.GetCustomAttribute(instance->GetClass()).IsValid())
             continue;
 
         ECN::ECSchemaPtr flatCustomAttributeSchema = m_flattenedRefs[instance->GetClass().GetSchema().GetName()];
@@ -2525,8 +2530,8 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConvertToBisBasedECSchemas()
             ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(), errorMsg.c_str());
             return BentleyApi::BSIERROR;
             }
-        Bentley::WString schemaName(schema->GetName().c_str());
-        if (DgnV8Api::ItemTypeLibrary::IsItemTypeSchema(schemaName) && !schema->IsDynamicSchema())
+        // Every single schema that we import from v8 needs to be tagged as dynamic.  This allows for looser update and audit rules
+        if (!schema->IsDynamicSchema())
             {
             ECN::IECInstancePtr dynamicInstance = ECN::CoreCustomAttributeHelper::CreateCustomAttributeInstance("DynamicSchema");
             if (!ECN::ECSchema::IsSchemaReferenced(*schema, dynamicInstance->GetClass().GetSchema()))
@@ -2692,6 +2697,37 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         }
     }
 #endif
+    // If we're either updating or mapping a new file, need to see if this schema already exists in the db and if so, increment the minor version
+    for (BECN::ECSchemaCP schema : constSchemas)
+        {
+        BECN::ECSchemaCP existing = GetDgnDb().Schemas().GetSchema(schema->GetName());
+        if (nullptr == existing)
+            continue;
+
+        /*
+        ** Include SchemaComparer causes compiler errors related to the template in the comparer and DPoint3d
+        BECN::SchemaComparer comparer;
+        //We do not require detail if schema is added or deleted. the name and version suffices.
+        ECN::SchemaComparer::Options options = ECN::SchemaComparer::Options(ECN::SchemaComparer::DetailLevel::NoSchemaElements, ECN::SchemaComparer::DetailLevel::NoSchemaElements);
+        bvector<ECN::ECSchemaCP> existingSet = {existing};
+        bvector<ECN::ECSchemaCP> newSet = {schema};
+        ECN::SchemaDiff diff;
+        if (SUCCESS == comparer.Compare(diff, existingSet, newSet, options))
+            {
+            if (diff.Changes().IsChanged())
+                {
+                ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
+                nonConst->SetVersionMinor(nonConst->GetVersionMinor() + 1);
+                }
+            }
+        }
+        */
+        auto diff = ECDiff::Diff(*existing, *schema);
+        if (diff->GetStatus() == DiffStatus::Success && diff->IsEmpty())
+            continue;
+        ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
+        nonConst->SetVersionMinor(existing->GetVersionMinor() + 1);
+        }
 
     auto importStatus = GetDgnDb().ImportV8LegacySchemas(constSchemas);
     if (SchemaStatus::Success != importStatus)
