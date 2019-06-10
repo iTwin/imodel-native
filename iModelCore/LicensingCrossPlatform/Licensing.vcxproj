@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Licensing\AccessKeyClient.cpp" />
+    <ClCompile Include="Licensing\Client.cpp" />
+    <ClCompile Include="Licensing\SaasClient.cpp" />
+    <ClCompile Include="Licensing\SaasClientImpl.cpp" />
+    <ClCompile Include="Licensing\ClientImpl.cpp" />
+    <ClCompile Include="Licensing\AccessKeyClientImpl.cpp" />
+    <ClCompile Include="Licensing\Policy.cpp" />
+    <ClCompile Include="Licensing\PolicyToken.cpp" />
+    <ClCompile Include="Licensing\Providers\AuthHandlerProvider.cpp" />
+    <ClCompile Include="Licensing\Providers\UlasProvider.cpp" />
+    <ClCompile Include="Licensing\LicensingDb.cpp" />
+    <ClCompile Include="Licensing\Providers\BuddiProvider.cpp" />
+    <ClCompile Include="Licensing\GenerateSID.cpp" />
+    <ClCompile Include="Licensing\Utils\FeatureEvent.cpp" />
+    <ClCompile Include="Licensing\Utils\FeatureUserDataMap.cpp" />
+    <ClCompile Include="Licensing\Utils\InMemoryJsonLocalState.cpp" />
+    <ClCompile Include="Licensing\Utils\JWToken.cpp" />
+    <ClCompile Include="Licensing\Utils\LogFileHelper.cpp" />
+    <ClCompile Include="Licensing\Providers\PolicyProvider.cpp" />
+    <ClCompile Include="Licensing\Utils\SCVWritter.cpp" />
+    <ClCompile Include="Licensing\Utils\UrlSafeBase64Utilities.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Licensing\SaasClientImpl.h" />
+    <ClInclude Include="Licensing\ClientImpl.h" />
+    <ClInclude Include="Licensing\AccessKeyClientImpl.h" />
+    <ClInclude Include="Licensing\ISaasClient.h" />
+    <ClInclude Include="Licensing\ILicensingDb.h" />
+    <ClInclude Include="Licensing\Providers\AuthHandlerProvider.h" />
+    <ClInclude Include="Licensing\Providers\BuddiProvider.h" />
+    <ClInclude Include="Licensing\Providers\IAuthHandlerProvider.h" />
+    <ClInclude Include="Licensing\Providers\IBuddiProvider.h" />
+    <ClInclude Include="Licensing\Providers\IUlasProvider.h" />
+    <ClInclude Include="Licensing\Providers\UlasProvider.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\FeatureEvent.h" />
+    <ClInclude Include="PublicAPI\Licensing\AccessKeyClient.h" />
+    <ClInclude Include="PublicAPI\Licensing\AuthType.h" />
+    <ClInclude Include="PublicAPI\Licensing\SaasClient.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\DateHelper.h" />
+    <ClInclude Include="Licensing\FreeApplicationPolicyHelper.h" />
+    <ClInclude Include="Licensing\Logging.h" />
+    <ClInclude Include="Licensing\Policy.h" />
+    <ClInclude Include="Licensing\PolicyHelper.h" />
+    <ClInclude Include="Licensing\PolicyToken.h" />
+    <ClInclude Include="Licensing\LicensingDb.h" />
+    <ClInclude Include="Licensing\Providers\IPolicyProvider.h" />
+    <ClInclude Include="Licensing\Providers\PolicyProvider.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\UsageJsonHelper.h" />
+    <ClInclude Include="PublicAPI\Licensing\Client.h" />
+    <ClInclude Include="PublicAPI\Licensing\LicenseStatus.h" />
+    <ClInclude Include="PublicAPI\Licensing\Licensing.h" />
+    <ClInclude Include="Licensing\GenerateSID.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\FeatureUserDataMap.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\InMemoryJsonLocalState.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\JWToken.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\LogFileHelper.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\SCVWritter.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\TimeRetriever.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\UrlSafeBase64Utilities.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DeliverPublicAPI.mke" />
+    <None Include="Licensing.mke" />
+    <None Include="Licensing.mki" />
+    <None Include="Licensing.VC.db" />
+    <None Include="LicensingCompileOptions.mki" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="LicensingCrossPlatform.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+  </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+  </PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{D553727E-7978-4194-A322-4C2B946EA25C}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeOutput>
+    </NMakeOutput>
+    <NMakePreprocessorDefinitions>DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb re Licensing</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb re Licensing -s</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb re Licensing -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <IncludePath>$(SrcRoot)licensingcrossplatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);$(SrcRoot)licensing\LicensingCrossPlatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)crossplatformlic\out\Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
+    <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
