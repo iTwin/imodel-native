@@ -67,6 +67,8 @@ LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(lib
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)Licensing$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
 
 %if $(TARGET_PLATFORM)=="Windows"
     LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)ldclientapi$(libext)

@@ -18,6 +18,7 @@
 
 BEGIN_BENTLEY_NAMESPACE namespace WebServices {
 typedef std::shared_ptr<struct ClientInfo> ClientInfoPtr;
+typedef std::shared_ptr<struct IConnectTokenProvider> IConnectTokenProviderPtr;
 } END_BENTLEY_NAMESPACE
 
 #ifdef __IMODEL_BRIDGE_BUILD__
@@ -542,6 +543,7 @@ struct iModelBridge
         DgnElementId m_jobSubjectId;
         Utf8String   m_jobRunCorrelationId;
         IDmsSupport* m_dmsSupport;
+        WebServices::IConnectTokenProviderPtr m_oidcTokenProvider;
         bvector<WString> m_additionalFiles;
         Utf8String                              m_repositoryName;     //!< A repository in the iModelHub project
         int                                     m_environment;    //!< Connect environment. Should match UrlProvider::Environment
@@ -654,6 +656,8 @@ struct iModelBridge
         bool DoDetectDeletedModelsAndElements() const {return m_doDetectDeletedModelsAndElements;}
         void SetDoDetectDeletedModelsAndElements(bool b) {m_doDetectDeletedModelsAndElements=b;}
         void SetDmsSupportLibrary (IDmsSupport* dmsAccessor) { m_dmsSupport  = dmsAccessor;}
+        void SetConnectTokenProvider(WebServices::IConnectTokenProviderPtr provider) { m_oidcTokenProvider = provider; }
+        WebServices::IConnectTokenProviderPtr GetConnectTokenProvider() const { return m_oidcTokenProvider; }
         IDmsSupport* GetDmsSupportLibrary() { return m_dmsSupport; }
 
         Utf8String GetiModelName() const { return m_repositoryName; }
@@ -1082,10 +1086,11 @@ public:
     //! Test whether to enable launch darkly flag
     IMODEL_BRIDGE_EXPORT bool TestFeatureFlag(CharCP featureFlag);
 
-    //! Test whether to enable launch darkly flag
-    IMODEL_BRIDGE_EXPORT bool TrackUsage(CharCP featureString);
+    //! Report usage from the bridge to ULAS
+    IMODEL_BRIDGE_EXPORT BentleyStatus TrackUsage();
 
-    IMODEL_BRIDGE_EXPORT bool MarkFeature(CharCP featureString);
+    //! Report usage of a feature from the bridge to ULAS
+    IMODEL_BRIDGE_EXPORT BentleyStatus MarkFeature(CharCP featureString);
     //! @}
     };
 
