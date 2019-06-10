@@ -1,0 +1,26 @@
+{
+    "instances": [
+        {
+            "instanceId": "14812",
+            "schemaName": "RealityModeling",
+            "className": "RealityDataRelationship",
+            "properties": {
+                "RealityDataId": "f4425509-55c4-4e03-932a-d67b87ace30f",
+                "RelatedId": "504fc784-2b2d-465f-b1d9-de58bf6cf0f2",
+                "RelationType": "CONNECT-Project"
+            },
+            "eTag": "gZIS2SFbXqohdwLlTRXkJOTCHz0="
+        },
+        {
+            "instanceId": "14813",
+            "schemaName": "RealityModeling",
+            "className": "RealityDataRelationship",
+            "properties": {
+                "RealityDataId": "8411d048-78ec-495a-b263-cad44dba7a17",
+                "RelatedId": "73597d7f-e2fe-4704-8ee9-be37ed1f3d37",
+                "RelationType": "CONNECT-Project"
+            },
+            "eTag": "gZIS2SFbXqohdwLlTRXkJOTCHz0="
+        }
+    ]
+}
