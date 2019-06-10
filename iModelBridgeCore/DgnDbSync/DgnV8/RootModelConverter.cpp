@@ -83,8 +83,10 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     DgnV8Api::DgnFileStatus openStatus;    
     m_rootFile = OpenDgnV8File(openStatus, rootFileName);
     if (!m_rootFile.IsValid())
+        {
+        LOG.errorv("Error opening the file %d", openStatus);
         return openStatus;
-
+        }
 
     //  Identify the root model
     auto rootModelId = _GetRootModelId();
@@ -951,8 +953,22 @@ void RootModelConverter::_ConvertSpatialLevels()
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2019
+//---------------+---------------+---------------+---------------+---------------+-------
 void RootModelConverter::_ConvertDrawingLevels()
     {
+    // Need to create these categories upfront since we don't know whether we'll need them until we're converting the data and that is too late to create categories
+    if (!m_nonSpatialModelsInModelIndexOrder.empty())
+        {
+        GetOrCreateDrawingCategoryId(*GetJobDefinitionModel(), CATEGORY_NAME_Attachments);
+        GetExtractionCategoryId(Converter::V8NamedViewType::Other);
+        GetExtractionCategoryId(Converter::V8NamedViewType::Section);
+        GetExtractionCategoryId(Converter::V8NamedViewType::Plan);
+        GetExtractionCategoryId(Converter::V8NamedViewType::Elevation);
+        GetExtractionCategoryId(Converter::V8NamedViewType::Detail);
+        }
+
     for (auto v8Model : m_nonSpatialModelsInModelIndexOrder)
         {
         if (!IsFileAssignedToBridge(*v8Model->GetDgnFileP()))

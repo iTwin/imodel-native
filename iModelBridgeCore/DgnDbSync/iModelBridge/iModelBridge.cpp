@@ -11,6 +11,7 @@
 #include <Bentley/BeNumerical.h>
 #include "iModelBridgeHelpers.h"
 #include "iModelBridgeLdClient.h"
+#include <Licensing/SaasClient.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -292,6 +293,34 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, SubjectCR jobsubj,
     if (RepositoryStatus::Success != response.Result())
         {
         LOG.fatalv("DoConvertToExistingBim Failed to acquire locks and/or codes with error %x", response.Result());
+        return BSIERROR;
+        }
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridge::DoOnAllDocumentsProcessed(DgnDbR db)
+    {
+    BeAssert(!db.BriefcaseManager().IsBulkOperation());
+
+    db.BriefcaseManager().StartBulkOperation();
+    bool runningInBulkMode = db.BriefcaseManager().IsBulkOperation();
+
+    if (BSISUCCESS != _OnAllDocumentsProcessed())
+        {
+        LOG.fatalv("_ConvertToBim failed");
+        return BSIERROR; // caller must call abandon changes
+        }
+
+    // Must either succeed in getting all required locks and codes ... or abort the whole txn.
+    BeAssert(!runningInBulkMode || db.BriefcaseManager().IsBulkOperation());
+    auto response = db.BriefcaseManager().EndBulkOperation();
+    if (RepositoryStatus::Success != response.Result())
+        {
+        LOG.fatalv("DoOnAllDocumentsProcessed Failed to acquire locks and/or codes with error %x", response.Result());
         return BSIERROR;
         }
 
@@ -657,6 +686,19 @@ bool iModelBridge::Params::IsFileAssignedToBridge(BeFileNameCR fn) const
     if (nullptr == m_documentPropertiesAccessor) // if there is no checker assigned, then assume that this is a standalone converter. It converts everything fed to it.
         return true;
     return m_documentPropertiesAccessor->_IsFileAssignedToBridge(fn, m_thisBridgeRegSubKey.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson              08/17
+//---------------------------------------------------------------------------------------
+void iModelBridge::Params::QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns) const
+    {
+    if (nullptr == m_documentPropertiesAccessor)
+        {
+        fns.push_back(GetInputFileName());
+        return;
+        }
+    return m_documentPropertiesAccessor->_QueryAllFilesAssignedToBridge(fns, m_thisBridgeRegSubKey.c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1129,3 +1171,42 @@ BentleyStatus iModelBridge::_ParseCommandLine(int argc, WCharCP argv[])
     // return doParseCommandLine(argc, argv);
     return BSISUCCESS;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static Licensing::SaasClientPtr GetUlasClientInstance(WebServices::ClientInfoPtr clientInfo)
+	{
+	static Licensing::SaasClientPtr s_instance;
+	if (nullptr != s_instance)
+		return s_instance;
+
+	if (nullptr == clientInfo)
+		return nullptr;
+	
+    int productId = atoi(clientInfo->GetApplicationProductId().c_str());
+    s_instance = Licensing::SaasClient::Create(productId, clientInfo->GetApplicationGUID().c_str());
+    return s_instance;
+	}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus	iModelBridge::TrackUsage()
+	{
+    WebServices::ClientInfoPtr clientInfo = _GetParams().GetClientInfo();
+    if (nullptr == clientInfo)
+        return ERROR;
+
+    WebServices::IConnectTokenProviderPtr  tokenProvider = _GetParams().GetConnectTokenProvider();
+    if (nullptr == tokenProvider)
+        return ERROR;
+
+    auto tokenPtr = tokenProvider->GetToken();
+    if (nullptr == tokenPtr)
+        return ERROR;
+
+    Licensing::SaasClientPtr client = GetUlasClientInstance(clientInfo);
+    client->TrackUsage(tokenPtr->ToAuthorizationString(),clientInfo->GetApplicationVersion(),_GetParams().GetProjectGuid());
+    return SUCCESS;
+	}

@@ -17,6 +17,7 @@
 
 BEGIN_BENTLEY_NAMESPACE namespace WebServices {
 typedef std::shared_ptr<struct ClientInfo> ClientInfoPtr;
+typedef std::shared_ptr<struct IConnectTokenProvider> IConnectTokenProviderPtr;
 } END_BENTLEY_NAMESPACE
 
 #ifdef __IMODEL_BRIDGE_BUILD__
@@ -478,6 +479,11 @@ struct iModelBridge
         //! @param guid The the default docguid should docprops not exist for fn
         //! @return non-zero error status if assignment of this file to the registry database failed.
         virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey, BeSQLite::BeGuidCP guid) = 0;
+
+        //! Query all files assigned to this bridge.
+        //! @param fns   The names of all files that are assignd to this bridge.
+        //! @param bridgeRegSubKey The registry subkey that identifies the bridge
+        virtual void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) = 0;
         };
 
     //! Interface to enable bridges to perform briefcase operations, such as push while they run.
@@ -536,6 +542,7 @@ struct iModelBridge
         DgnElementId m_jobSubjectId;
         Utf8String   m_jobRunCorrelationId;
         IDmsSupport* m_dmsSupport;
+        WebServices::IConnectTokenProviderPtr m_oidcTokenProvider;
         bvector<WString> m_additionalFiles;
         Utf8String                              m_repositoryName;     //!< A repository in the iModelHub project
         int                                     m_environment;    //!< Connect environment. Should match UrlProvider::Environment
@@ -648,6 +655,8 @@ struct iModelBridge
         bool DoDetectDeletedModelsAndElements() const {return m_doDetectDeletedModelsAndElements;}
         void SetDoDetectDeletedModelsAndElements(bool b) {m_doDetectDeletedModelsAndElements=b;}
         void SetDmsSupportLibrary (IDmsSupport* dmsAccessor) { m_dmsSupport  = dmsAccessor;}
+        void SetConnectTokenProvider(WebServices::IConnectTokenProviderPtr provider) { m_oidcTokenProvider = provider; }
+        WebServices::IConnectTokenProviderPtr GetConnectTokenProvider() const { return m_oidcTokenProvider; }
         IDmsSupport* GetDmsSupportLibrary() { return m_dmsSupport; }
 
         Utf8String GetiModelName() const { return m_repositoryName; }
@@ -669,6 +678,9 @@ struct iModelBridge
 
 	    //! Check if the specified file is assigned to this bridge or not.
 	    IMODEL_BRIDGE_EXPORT bool IsFileAssignedToBridge(BeFileNameCR fn) const;
+
+        //! Get all files assigned to this bridge.
+        IMODEL_BRIDGE_EXPORT void QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns) const;
 
 	    //! Get the document GUID for the specified file, if available.
 	    //! @param localFileName    The filename of the source file.
@@ -724,6 +736,8 @@ struct iModelBridge
     //! @note The caller must check the return status and call SaveChanges on success or AbandonChanges on error.
     //! @see OpenBimAndMergeSchemaChanges
     IMODEL_BRIDGE_EXPORT BentleyStatus DoConvertToExistingBim(DgnDbR db, SubjectCR jobsubj, bool detectDeletedFiles);
+
+    IMODEL_BRIDGE_EXPORT BentleyStatus DoOnAllDocumentsProcessed(DgnDbR db);
 
     IMODEL_BRIDGE_EXPORT BentleyStatus DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR db);
 
@@ -904,6 +918,10 @@ public:
     //! @see _OnOpenBim
     virtual BentleyStatus _ConvertToBim(SubjectCR jobSubject) = 0;
 
+    //! Called after all calls to this bridge have been made (either on all masterfiles in a full run or all changed masterfiles in an incremental run).
+    //! This is not a request to convert anything. In fact, the inputFile property of Params may be empty.
+    virtual BentleyStatus _OnAllDocumentsProcessed() {return BSISUCCESS;}
+
     //! Query if the bridge must have exclusive access to the iModel while converting data.
     virtual bool _ConvertToBimRequiresExclusiveLock() {return false;}
 
@@ -1067,10 +1085,11 @@ public:
     //! Test whether to enable launch darkly flag
     IMODEL_BRIDGE_EXPORT bool TestFeatureFlag(CharCP featureFlag);
 
-    //! Test whether to enable launch darkly flag
-    IMODEL_BRIDGE_EXPORT bool TrackUsage(CharCP featureString);
+    //! Report usage from the bridge to ULAS
+    IMODEL_BRIDGE_EXPORT BentleyStatus TrackUsage();
 
-    IMODEL_BRIDGE_EXPORT bool MarkFeature(CharCP featureString);
+    //! Report usage of a feature from the bridge to ULAS
+    IMODEL_BRIDGE_EXPORT BentleyStatus MarkFeature(CharCP featureString);
     //! @}
     };
 

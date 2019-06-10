@@ -654,6 +654,9 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
 
     SetSyncState(SyncState::Initial);
     LogPerformance(releaseLockTimer, "Briefcase_ReleaseAllPublicLocks to iModelHub");
+
+    BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
+
     return BSISUCCESS;
     }
 
@@ -718,7 +721,12 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
     else
         {
         if (m_useIModelHub)
-            m_client = new IModelHubClient(*m_iModelHubArgs, clientInfo);
+            {
+            IModelHubClient* client = new IModelHubClient(*m_iModelHubArgs, clientInfo);
+            if (nullptr != m_bridge)
+                m_bridge->_GetParams().SetConnectTokenProvider(client->GetTokenProvider());
+            m_client = client;
+            }
         else
             m_client = new IModelBankClient(*m_iModelBankArgs, clientInfo);
         }

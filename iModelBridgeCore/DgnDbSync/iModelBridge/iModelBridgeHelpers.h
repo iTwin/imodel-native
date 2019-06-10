@@ -58,6 +58,47 @@ struct iModelBridgeCallOpenCloseFunctions
     bool IsReady() const {return (BSISUCCESS==m_bstatus) && (BSISUCCESS==m_sstatus);}
     };
 
+/*=================================================================================**//**
+* Helper class to ensure that bridge briefcase open/close functions only are called
+* @bsiclass                                                     Sam.Wilson      05/19
++===============+===============+===============+===============+===============+======*/
+struct iModelBridgeBriefcaseCallOpenCloseFunctions
+    {
+    BentleyStatus m_bstatus;
+    iModelBridge& m_bridge;
+    BentleyStatus m_status = BSIERROR;  // The status to pass to _OnCloseBim
+
+    iModelBridgeBriefcaseCallOpenCloseFunctions(iModelBridge& bridge, DgnDbR db) : m_bridge(bridge)
+        {
+        CallOpenFunctions(db);
+        }
+
+    ~iModelBridgeBriefcaseCallOpenCloseFunctions()
+        {
+        CallCloseFunctions(iModelBridge::ClosePurpose::Finished);
+        }
+
+    void CallOpenFunctions(DgnDbR db)
+        {
+        StopWatch stopWatch(true);
+        m_bstatus = m_bridge._OnOpenBim(db);
+
+        iModelBridgeFwk::LogPerformance(stopWatch, "Time required to open sBIM");
+        }
+
+    void CallCloseFunctions(iModelBridge::ClosePurpose purpose)
+        {
+        StopWatch stopWatch(true);
+        if (BSISUCCESS != m_bstatus)    // If I never opened the BIM, then don't make any callbacks
+            return;
+        
+        m_bridge._OnCloseBim(m_status, purpose); // close the bim
+
+        iModelBridgeFwk::LogPerformance(stopWatch, "Time required to close BIM");
+        }
+
+    bool IsReady() const {return (BSISUCCESS==m_bstatus);}
+    };
 
 /*=================================================================================**//**
 * Helper class to ensure that bridge _Terminate function is called

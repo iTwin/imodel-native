@@ -70,7 +70,7 @@ struct ConverterTestBaseFixture : public testing::Test
     void SetV8LevelColor(BentleyApi::Utf8CP levelname, uint32_t v8ColorId, BentleyApi::BeFileNameCR v8FileNameIn = BentleyApi::BeFileName());
 
     void DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input);
-    void DoUpdate(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool expectFailure = false, bool expectUpdate = true, bool doDetectDeletedDocuments = false);
+    void DoUpdate(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool expectFailure = false, bool expectUpdate = true, bool doDetectDeletedDocuments = false, bool onAllDocsProcessed = false);
 
     void TestElementChanges(BentleyApi::BeFileNameCR rootV8FileName, BentleyApi::BeFileNameCR editV8FileName, size_t nModelsExpected);
     DgnClassId getBisClassId(DgnDbR db, Utf8CP className);
