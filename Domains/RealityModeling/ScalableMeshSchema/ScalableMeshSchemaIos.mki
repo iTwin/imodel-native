@@ -1,0 +1,23 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+appName         = ScalableMeshSchema
+o               = $(OutBuildDir)ScalableMeshSchema/
+
+DLM_NAME    = $(appName)
+CCompPDBName = $(appName)
+
+MultiCompileIntermediatePdbFile=$(o)$(CCompPDBName).pdb
+IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+
+#----------------------------------------------------------------------
+# We're building the ScalableMeshSchema lib
+#----------------------------------------------------------------------
+nameToDefine = __SCALABLEMESH_SCHEMA_BUILD__
+%include cdefapnd.mki
+
+nameToDefine = LINUX_SCALABLEMESH_BUILD
+%include cdefapnd.mki
+
