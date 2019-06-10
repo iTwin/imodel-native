@@ -15,3 +15,13 @@ NamedGroupTests.NamedGroupAcrossReference # Sam broke this with switch to aspect
 
 ConverterTests.UseConverterAsLibrary # Sam - decide if we want to support the "record level mapping" feature of ConverterLibrary or not
 
+ConverterTests.DetectDeletionsInEmbeddedFiles
+    # [ RUN      ] ConverterTests.DetectDeletionsInEmbeddedFiles
+    # F:\hg-imodel02\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(400): error:       Expected: BentleyApi::SUCCESS
+    #       Which is: 0
+    # To be equal to: updater.InitRootModel()
+    #       Which is: 86018
+    # F:\hg-imodel02\src\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1501): error: Value of: db->Models().GetModel(ref__1__ModelId).IsValid()
+    #   Actual: true
+    # Expected: false
+    # [  FAILED  ] ConverterTests.DetectDeletionsInEmbeddedFiles (1041 ms)
