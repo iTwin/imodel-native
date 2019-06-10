@@ -1,0 +1,153 @@
+#--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------+
+%include mdl.mki
+%include $(SrcRoot)DgnDomains/Profiles/Profiles/ProfilesDomainDLL.mki
+
+#--------------------------------------------------------------------------------------
+#   Macros
+#--------------------------------------------------------------------------------------
+appSrc = $(_MakeFilePath)src\\
+appPublicApi = $(appSrc)PublicAPI\\
+appPrivateApi = $(appSrc)PrivateAPI\\
+
+MultiCompileDepends = $(_MakeFileSpec) $(appSrc)ProfilesPch.h $(appPublicApi)ProfilesApi.h $(appPrivateApi)
+PublicApiIncludes = -I${BuildContext}\PrivateAPI\ -I${BuildContext}\PublicAPI\ -I${BuildContext}\VendorAPI\\
+
+always:
+!~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Pre - compiled header
+#----------------------------------------------------------------------
+PchCompiland = $(appSrc)ProfilesPch.cpp
+PchOutputDir = $(o)
+PchExtraOptions = -Zm160
+PchExplicitDepends = $(MultiCompileDepends)
+
+% if defined(winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
+# Avoid internal compiler error in GCC using windows ndk toolchain
+GCC_NO_PRE_COMPILED_HEADER = 1
+% endif
+
+# CompileOptionsMki will be included by PreCompileHeader.mki
+CompileOptionsMki = $(_MakeFilePath)ProfilesDomainDLL.mki
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts = $(UsePrecompiledHeaderOptions)
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)ProfilesCardinalPoints$(oext) : $(appSrc)ProfilesCardinalPoints.cpp ${MultiCompileDepends} $(appPrivateApi)ProfilesCardinalPoints.h
+
+$(o)ProfilesGeometry$(oext) : $(appSrc)ProfilesGeometry.cpp ${MultiCompileDepends} $(appPrivateApi)ProfilesGeometry.h
+
+$(o)ProfilesProperty$(oext) : $(appSrc)ProfilesProperty.cpp ${MultiCompileDepends} $(appPrivateApi)ProfilesProperty.h
+
+$(o)ProfilesQuery$(oext) : $(appSrc)ProfilesQuery.cpp ${MultiCompileDepends} $(appPrivateApi)ProfilesQuery.h
+
+$(o)StandardCatalogCodeAspect$(oext) : $(appSrc)StandardCatalogCodeAspect.cpp ${MultiCompileDepends} $(appPrivateApi)StandardCatalogCodeAspect.h
+
+$(o)AsymmetricIShapeProfile$(oext) : $(appSrc)AsymmetricIShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)AsymmetricIShapeProfile.h
+
+$(o)BentPlateProfile$(oext) : $(appSrc)BentPlateProfile.cpp ${MultiCompileDepends} $(appPublicApi)BentPlateProfile.h
+
+$(o)CShapeProfile$(oext) : $(appSrc)CShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)CShapeProfile.h
+
+$(o)CapsuleProfile$(oext) : $(appSrc)CapsuleProfile.cpp ${MultiCompileDepends} $(appPublicApi)CapsuleProfile.h
+
+$(o)CenterLineCShapeProfile$(oext) : $(appSrc)CenterLineCShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)CenterLineCShapeProfile.h
+
+$(o)CenterLineLShapeProfile$(oext) : $(appSrc)CenterLineLShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)CenterLineLShapeProfile.h
+
+$(o)CenterLineZShapeProfile$(oext) : $(appSrc)CenterLineZShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)CenterLineZShapeProfile.h
+
+$(o)ParametricProfile$(oext) : $(appSrc)ParametricProfile.cpp ${MultiCompileDepends} $(appPublicApi)ParametricProfile.h
+
+$(o)CompositeProfile$(oext) : $(appSrc)CompositeProfile.cpp ${MultiCompileDepends} $(appPublicApi)CompositeProfile.h
+
+$(o)ArbitraryCenterLineProfile$(oext) : $(appSrc)ArbitraryCenterLineProfile.cpp ${MultiCompileDepends} $(appPublicApi)ArbitraryCenterLineProfile.h
+
+$(o)ArbitraryCompositeProfile$(oext) : $(appSrc)ArbitraryCompositeProfile.cpp ${MultiCompileDepends} $(appPublicApi)ArbitraryCompositeProfile.h
+
+$(o)ArbitraryCompositeProfileAspect$(oext) : $(appSrc)ArbitraryCompositeProfileAspect.cpp ${MultiCompileDepends} $(appPrivateApi)ArbitraryCompositeProfileAspect.h
+
+$(o)ArbitraryShapeProfile$(oext) : $(appSrc)ArbitraryShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)ArbitraryShapeProfile.h
+
+$(o)DerivedProfile$(oext) : $(appSrc)DerivedProfile.cpp ${MultiCompileDepends} $(appPublicApi)DerivedProfile.h
+
+$(o)DoubleCShapeProfile$(oext) : $(appSrc)DoubleCShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)DoubleCShapeProfile.h
+
+$(o)DoubleLShapeProfile$(oext) : $(appSrc)DoubleLShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)DoubleLShapeProfile.h
+
+$(o)EllipseProfile$(oext) : $(appSrc)EllipseProfile.cpp ${MultiCompileDepends} $(appPublicApi)EllipseProfile.h
+
+$(o)CircleProfile$(oext) : $(appSrc)CircleProfile.cpp ${MultiCompileDepends} $(appPublicApi)CircleProfile.h
+
+$(o)HollowCircleProfile$(oext) : $(appSrc)HollowCircleProfile.cpp ${MultiCompileDepends} $(appPublicApi)HollowCircleProfile.h
+
+$(o)HollowRectangleProfile$(oext) : $(appSrc)HollowRectangleProfile.cpp ${MultiCompileDepends} $(appPublicApi)HollowRectangleProfile.h
+
+$(o)IShapeProfile$(oext) : $(appSrc)IShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)IShapeProfile.h
+
+$(o)LShapeProfile$(oext) : $(appSrc)LShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)LShapeProfile.h
+
+$(o)Profile$(oext) : $(appSrc)Profile.cpp ${MultiCompileDepends} $(appPublicApi)Profile.h
+
+$(o)ICenterLineProfile$(oext) : $(appSrc)ICenterLineProfile.cpp ${MultiCompileDepends} $(appPublicApi)ICenterLineProfile.h
+
+$(o)ProfilesDomain$(oext) : $(appSrc)ProfilesDomain.cpp ${MultiCompileDepends} $(appPublicApi)ProfilesDomain.h
+
+$(o)RectangleProfile$(oext) : $(appSrc)RectangleProfile.cpp ${MultiCompileDepends} $(appPublicApi)RectangleProfile.h
+
+$(o)RegularPolygonProfile$(oext) : $(appSrc)RegularPolygonProfile.cpp ${MultiCompileDepends} $(appPublicApi)RegularPolygonProfile.h
+
+$(o)RoundedRectangleProfile$(oext) : $(appSrc)RoundedRectangleProfile.cpp ${MultiCompileDepends} $(appPublicApi)RoundedRectangleProfile.h
+
+$(o)SchifflerizedLShapeProfile$(oext) : $(appSrc)SchifflerizedLShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)SchifflerizedLShapeProfile.h
+
+$(o)SinglePerimeterProfile$(oext) : $(appSrc)SinglePerimeterProfile.cpp ${MultiCompileDepends} $(appPublicApi)SinglePerimeterProfile.h
+
+$(o)TShapeProfile$(oext) : $(appSrc)TShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)TShapeProfile.h
+
+$(o)TTShapeProfile$(oext) : $(appSrc)TTShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)TTShapeProfile.h
+
+$(o)TrapeziumProfile$(oext) : $(appSrc)TrapeziumProfile.cpp ${MultiCompileDepends} $(appPublicApi)TrapeziumProfile.h
+
+$(o)ZShapeProfile$(oext) : $(appSrc)ZShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)ZShapeProfile.h
+
+$(o)MaterialProfileDefinition$(oext) : $(appSrc)MaterialProfileDefinition.cpp ${MultiCompileDepends} $(appPublicApi)MaterialProfileDefinition.h
+
+$(o)MaterialProfile$(oext) : $(appSrc)MaterialProfile.cpp ${MultiCompileDepends} $(appPublicApi)MaterialProfile.h
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME = $(appName)
+DLM_OBJECT_FILES = $(MultiCompileObjectList)
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_PCH = $(o)ProfilesPch$(oext)
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_NOENTRY = 1
+DLM_CONTEXT_LOCATION = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES = $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+
+% include $(sharedMki)linkLibrary.mki
