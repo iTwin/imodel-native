@@ -1,0 +1,101 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<ConvertConfig
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="urn:schemas-bentley-com:xml-dgndbimportconfiguration ConvertConfig.xsd"
+    >
+    <Layers copy="Never"/> <!-- Never is the default -->
+    <Models>
+        <UnspecifiedUnits units="Meters" />
+        <ImportRules>
+            <If name="Model">
+                <Then newName="Model[%file]"/>
+            </If>
+            <If name="Layout1">
+                <Then newName="Layout1[%file]"/>
+            </If>
+            <If name="Layout2">
+                <Then newName="Layout2[%file]"/>
+            </If>
+        </ImportRules>
+    </Models>
+    <Raster ImportAttachments="true" />
+    <PointClouds ImportPointClouds="true" LevelOfDetails="3" />
+    <Materials>
+        <SearchPaths>
+            <!-- 
+            Folders to be searched for material textures, one folder per entry, for example:
+            <Path name="\\MyServer\Materials\Textures" />
+            <Path name="C:\Program Files (x86)\Common Files\Autodesk Shared\Materials\Textures\1\Mats" />
+            -->
+        </SearchPaths>
+            <!--
+            Option IncludeDwgPath tells the importer whether or not to also search the input DWG folder
+            for materials, in addition to above explicitly listed folders.
+            -->
+        <SearchOptions IncludeDwgPath="true" />
+    </Materials>
+    <ObjectEnablers>
+        <PreLoadModules>
+            <!--
+            Usually an ObjectDBX module is demand-loaded when RealDWG encounters its object while reading
+            a DWG file, therefore this section is not needed.  However, some object enablers may not be
+            implemented for demand loading.  Also, if this is a Teigha/OpenDWG importer, explicit loading 
+            is always required.  For these reasons, this section may be used.
+
+            Specify object enablers that require pre or explicit loading, with file extensions, for example:
+
+            <Module name="SampleEnabler.dbx" />
+            -->
+        </PreLoadModules>
+    </ObjectEnablers>
+    <Thumbnails viewTypes="Physical Sheet" pixelResolution="768" renderModeOverride="None"/>
+    <Fonts searchPaths="$(AppRoot)Fonts/">
+        <!--
+        Wild cards can be used for defaults; any explicitly-named entry takes precedence over wildcards.
+        Wild cards cannot be used to specify EmbedAction=Always; such fonts must be explicitly listed.
+        Name wildcards take precedence over type wildcards.
+        First in wins if duplicates exist.
+        -->
+        <Font type="SHX" name="*">
+            <EmbedAction>IfUsed</EmbedAction>
+        </Font>
+        <Font type="*" name="*">
+            <EmbedAction>Never</EmbedAction>
+        </Font>
+    </Fonts>
+    <LineWeightMapping>
+        <MapEntry DwgWeight="0.00mm" DgnWeight="0" />
+        <MapEntry DwgWeight="0.05mm" DgnWeight="0" />
+        <MapEntry DwgWeight="0.09mm" DgnWeight="1" />
+        <MapEntry DwgWeight="0.13mm" DgnWeight="1" />
+        <MapEntry DwgWeight="0.15mm" DgnWeight="2" />
+        <MapEntry DwgWeight="0.18mm" DgnWeight="2" />
+        <MapEntry DwgWeight="0.20mm" DgnWeight="2" />
+        <MapEntry DwgWeight="0.25mm" DgnWeight="3" />
+        <MapEntry DwgWeight="0.30mm" DgnWeight="3" />
+        <MapEntry DwgWeight="0.35mm" DgnWeight="4" />
+        <MapEntry DwgWeight="0.40mm" DgnWeight="4" />
+        <MapEntry DwgWeight="0.50mm" DgnWeight="5" />
+        <MapEntry DwgWeight="0.53mm" DgnWeight="5" />
+        <MapEntry DwgWeight="0.60mm" DgnWeight="6" />
+        <MapEntry DwgWeight="0.70mm" DgnWeight="7" />
+        <MapEntry DwgWeight="0.80mm" DgnWeight="8" />
+        <MapEntry DwgWeight="0.90mm" DgnWeight="9" />
+        <MapEntry DwgWeight="1.00mm" DgnWeight="10" />
+        <MapEntry DwgWeight="1.06mm" DgnWeight="11" />
+        <MapEntry DwgWeight="1.20mm" DgnWeight="12" />
+        <MapEntry DwgWeight="1.40mm" DgnWeight="15" />
+        <MapEntry DwgWeight="1.58mm" DgnWeight="18" />
+        <MapEntry DwgWeight="2.00mm" DgnWeight="20" />
+        <MapEntry DwgWeight="2.11mm" DgnWeight="31" />
+    </LineWeightMapping>
+    <Options>
+        <OptionBool name="PreferRenderableGeometry" value="false"/> <!--"true" to tell object enablers to create renderable geometry; "false" to use the active view settings. -->
+        <OptionBool name="SyncBlockChanges" value="false"/>         <!--Save & analyze DWG block contents to track changes, but with a performance penalty -->
+        <OptionBool name="SyncDwgVersionGuid" value="false"/>       <!--Use DWG VersionGuid to tell if a file is changed. Set to "true" if AutoCAD based products are the only DWG file editors for the sake of performance. -->
+        <OptionBool name="SyncAsmBodyInFull" value="false"/>        <!--Save & analyze Autodesk ShapeManager data in full to track changes, with a preformance penalty. -->
+        <OptionBool name="ConvertAsmAsParasolid" value="true"/>     <!--"true" to convert SOLID3D, BODY, RESION & SURFACE entities as Parasolid elements as many as possible; "false" to create mesh only. -->
+        <OptionBool name="ConvertBlockSharedParts" value="true"/>   <!--"true" to convert blocks using shared parts resulting in smaller file size; "false" to not use shared parts. -->
+    </Options>
+</ConvertConfig>
