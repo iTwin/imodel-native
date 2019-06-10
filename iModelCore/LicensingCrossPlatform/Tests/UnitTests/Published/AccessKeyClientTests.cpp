@@ -297,10 +297,10 @@ TEST_F(AccessKeyClientTests, WithKeyStartApplication_StopApplication_Success)
     EXPECT_EQ(1, GetLicensingDbMock().OpenOrCreateCount());
     EXPECT_LE(1, GetLicensingDbMock().AddOrUpdatePolicyFileCount());
     EXPECT_LE(1, GetLicensingDbMock().DeleteAllOtherPolicyFilesByKeyCount());
-    EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(testAccessKey));
-    EXPECT_EQ(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
-    EXPECT_EQ(1, GetPolicyProviderMock().GetPolicyWithKeyCalls());
-    EXPECT_EQ(1, GetUlasProviderMock().GetAccessKeyInfoCalls());
+    EXPECT_LE(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(testAccessKey));
+    EXPECT_LE(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
+    EXPECT_LE(1, GetPolicyProviderMock().GetPolicyWithKeyCalls());
+    EXPECT_LE(1, GetUlasProviderMock().GetAccessKeyInfoCalls());
 
     EXPECT_SUCCESS(client->StopApplication());
     EXPECT_EQ(1, GetLicensingDbMock().CloseCount());
