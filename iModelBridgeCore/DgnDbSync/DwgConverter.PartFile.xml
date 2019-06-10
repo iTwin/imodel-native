@@ -39,14 +39,6 @@
         </Bindings>
     </Part>
 
-    <!-- Build our Windows version filter module to be shared by both importers -->
-    <Part Name="WinVerWrapper" BentleyBuildMakeFile="Dwg/WinVerWrapper.mke" ApiNumber="M02">
-        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"   Repository="imodel02"/>
-        <Bindings>
-            <Assemblies ProductDirectoryName="Assemblies">Delivery/$(shlibprefix)WinVerWrapper$(ApiNumber)$(shlibext)</Assemblies>
-        </Bindings>
-    </Part>
-
 
     <!-- Build DwgImporter using OpenDWG Toolkit -->
     <Product Name="OpenDwgImporter" SaveProduct="true" AddIn="true">
@@ -86,7 +78,6 @@
         <SubPart PartName="ECPresentation"      PartFile="iModelCore/ECPresentation/ECPresentation"       Repository="imodel02"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
         <SubPart PartName="OpenDwgDb"/>
-        <SubPart PartName="WinVerWrapper"/>
         <Bindings>
             <Files ProductDirectoryName="OpenDwgImportAssemblies" SubPartDirectory="Files\OpenDwg">Delivery/OpenDwgImporter/DwgImporter$(ApiNumber)$(shlibext)</Files>
             <Files ProductDirectoryName="OpenDwgDbLibs" SubPartDirectory="Files\OpenDwg" Required="false">Delivery/OpenDwgImporter/$(libprefix)DwgImporter$(libext)</Files>
@@ -157,7 +148,6 @@
         <SubPart PartName="ECPresentation"      PartFile="iModelCore/ECPresentation/ECPresentation"       Repository="imodel02"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
         <SubPart PartName="RealDwgDb"/>
-        <SubPart PartName="WinVerWrapper"/>
         <Bindings>
             <Files ProductDirectoryName="RealDwgImportAssemblies" SubPartDirectory="Files\RealDwg2019">Delivery/RealDwg2019Importer/$(shlibprefix)DwgImporter$(ApiNumber)$(shlibext)</Files>
             <Files ProductDirectoryName="RealDwgDbLibs" SubPartDirectory="Files\RealDwg2019" Required="false">Delivery/RealDwg2019Importer/$(libprefix)DwgImporter$(libext)</Files>

@@ -156,6 +156,8 @@ private:
 public:
     // The constructor
     ImportXDataSample () : T_Super() {}
+    // Override this method to set CONNECTION Client infomation to track product usage etc
+    void           _SetClientInfo () override;
     // Override this method to parse command arguments specific for this sample app:
     iModelBridge::CmdLineArgStatus _ParseCommandLineArg (int iArg, int argc, WCharCP argv[]) override;
     void           _PrintUsage () override;

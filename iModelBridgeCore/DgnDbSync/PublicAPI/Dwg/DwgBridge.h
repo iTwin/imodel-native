@@ -18,6 +18,7 @@
 
 #include <Dwg/DwgImporter.h>
 #include <iModelBridge/iModelBridgeBimHost.h>
+#include <WebServices/Client/ClientInfo.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_DWG
@@ -38,6 +39,11 @@ private:
 protected:
     // Instantiate a new DwgImporter - consumer to override with a customer importer:
     DWG_EXPORT virtual DwgImporter* _CreateDwgImporter ();
+    //! Set CONNECTION Client info to track product usage etc. The default implementation sets base product info:
+    //! Product name: iModelBridgeService-Dwg
+    //! Product GUID: 977E6087-1F14-420E-B51C-C1BC0F128BC4
+    //! Product PRGID: 2706
+    DWG_EXPORT virtual void _SetClientInfo ();
 
     // iModelBridge overrides
     DWG_EXPORT WString        _SupplySqlangRelPath () override;

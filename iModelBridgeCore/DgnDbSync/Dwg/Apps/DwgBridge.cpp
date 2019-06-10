@@ -6,6 +6,8 @@
 #include    <Dwg/DwgBridge.h>
 #include    <Dwg/DwgHelper.h>
 #include    <iModelBridge/iModelBridgeSacAdapter.h>
+#include    <WebServices/Client/ClientInfo.h>
+#include    "prg.h" // generated header with build version number
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWG
@@ -259,6 +261,8 @@ BentleyStatus   DwgBridge::_Initialize (int argc, WCharCP argv[])
     // Set dir prefix to be dropped from filenames when coming up with unique but portable filenames in syncinfo
     GetImportOptions().SetInputRootDir (_GetParams().GetInputFileName().GetDirectoryName());
 
+    _SetClientInfo ();
+
     return BentleyStatus::SUCCESS;
     }
 
@@ -382,6 +386,22 @@ BentleyStatus   DwgBridge::RunAsStandaloneExe (int argc, WCharCP argv[])
     status = iModelBridgeSacAdapter::Execute (*this, params);
 
     return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void DwgBridge::_SetClientInfo ()
+    {
+    static constexpr char s_bridgeName[] = "iModelBridgeService-Dwg";
+    static constexpr char s_bridgeGuid[] = "977E6087-1F14-420E-B51C-C1BC0F128BC4";
+    static constexpr char s_bridgePrgId[] = "2706";
+
+    BeVersion bridgeVersion(REL_V "." MAJ_V "." MIN_V "." SUBMIN_V);
+    auto& params = this->_GetParams();
+    auto clientInfo = WebServices::ClientInfo::Create(s_bridgeName, bridgeVersion, s_bridgeGuid, s_bridgePrgId, params.GetDefaultHeaderProvider());
+
+    params.SetClientInfo (clientInfo);
     }
 
 END_DWG_NAMESPACE

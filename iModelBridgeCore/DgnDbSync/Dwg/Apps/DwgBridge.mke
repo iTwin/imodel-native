@@ -40,6 +40,7 @@ $(o)DwgBridge.obj       : $(baseDir)DwgBridge.cpp $(DwgImportAppDepends) ${Multi
 LINKER_LIBRARIES    = $(ContextDeliveryDir)DwgImporter$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)iModelBridge$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeSQLite$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)WebServicesClient$(libext)
 
 LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)Bentley$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnPlatform$(libext)

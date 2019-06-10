@@ -46,6 +46,11 @@ CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -I$(DwgVendorAPI)
 
 %endif
 
+#--------------------------------------------------------------------------------------
+#   Create prg.h header with build version numbers
+#--------------------------------------------------------------------------------------
+%include $(SharedMki)CreateBuildVersionHeader.mki
+
 #----------------------------------------------------------------------
 #   Compile SampleAffinity
 #----------------------------------------------------------------------
@@ -112,6 +117,7 @@ LINKER_LIBRARIES    + $(ContextSubpartsLibs)DgnPlatform$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeJsonCpp$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)ECObjects$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)iModelBridge$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)WebServicesClient$(libext)
 %if $(DWGTOOLKIT) == "RealDwg"
 LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acdb$(RealDwgSuffix)$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acpal$(libext)

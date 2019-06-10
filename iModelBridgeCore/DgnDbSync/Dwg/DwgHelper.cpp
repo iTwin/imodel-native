@@ -4,7 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
-#include    <VersionHelpers.h>
+#include    "prg.h"
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
@@ -17,9 +17,6 @@ struct EscapeCode
     EscapeCode (size_t i, WChar c) : m_index(i), m_code(c) {}
     };
 typedef bvector<EscapeCode>     T_CodeList;
-
-typedef BentleyStatus (*ExtractFileVersionFuncPtr)(Utf8StringR, BeFileNameCR);
-static ExtractFileVersionFuncPtr    s_pExtractFileVersion = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
@@ -1886,44 +1883,14 @@ uint32_t    DwgHelper::GetDwgImporterVersion ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgHelper::GetImporterModuleVersion (Utf8StringR versionString)
     {
-    BentleyStatus   status = BSIERROR;
-#ifdef BENTLEY_WIN32
-    // workaround Win7 failure of loading api-ms-win-core-libraryloader-l1-2-0.dll due to use of mincore.dll!
-    if (::IsWindows8OrGreater())
-        {
-        // get our wrapper function pointer from WinVerWrapperM02.dll if not already loaded
-        if (s_pExtractFileVersion == nullptr)
-            {
-            uint32_t    v1 = 0;
-            char        v2[8] = {0};
-            Utf8String  filterDllName;
-            if (::sscanf(DLM_API_NUMBER, "%u%s", &v1, v2) == 2)
-                filterDllName.Sprintf("WinVerWrapper%s.dll", v2);
-            else
-                filterDllName.assign("WinVerWrapperM02.dll");
-
-            // load WinVerWrapperM02.dll
-            static HMODULE  s_WinVerWrapperDllHandle = ::LoadLibraryA(filterDllName.c_str());
-            if (s_WinVerWrapperDllHandle == nullptr)
-                return  status;
-
-            // get the function pointer from WinVerWrapperM0.dll and call it
-            s_pExtractFileVersion = reinterpret_cast<BentleyStatus(*)(Utf8StringR,BeFileNameCR)>(::GetProcAddress(s_WinVerWrapperDllHandle, "?ExtractFileVersion@@YA?AW4BentleyStatus@BentleyM0200@@AEAUUtf8String@2@AEBUBeFileName@2@@Z"));
-            }
-
-        if (s_pExtractFileVersion != nullptr)
-            {
-            // get the file path of this DLL
-            wchar_t currDllPath[MAX_PATH] = {0};
-            if(::GetModuleFileNameW(nullptr, currDllPath, MAX_PATH) <= 0)
-                return  status;
-            
-            // call our wrapper function
-            status = (*s_pExtractFileVersion)(versionString, BeFileName(currDllPath));
-            }
-        }
-#endif  // BENTLEY_WIN32
-    return  status;
+    BentleyStatus   status;
+#ifdef REL_V
+    status = versionString.Sprintf("%s.%s.%s.%s", REL_V, MAJ_V, MIN_V, SUBMIN_V);
+#else
+    status = BSIERROR;
+    BeAssert (false && "Build version macros not defined (missing in prg.h?)");
+#endif
+    return  BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

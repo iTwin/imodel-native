@@ -91,6 +91,11 @@ CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -D__DWGIMPORTER_BUILD__
     cIncs + -I$(ToolkitSub2Inc)
 %endif
 
+#--------------------------------------------------------------------------------------
+# Create prg.h header with build version numbers
+#--------------------------------------------------------------------------------------
+%include $(SharedMki)CreateBuildVersionHeader.mki
+
 #----------------------------------------------------------------------
 #       Inform user of compile options
 #----------------------------------------------------------------------
