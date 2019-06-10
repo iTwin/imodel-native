@@ -1,0 +1,10 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+%include GraphiteSDK.mki
+
+always:
+   ~linkdir "$(BuildContext)VendorAPI/$(GRAPHITE_VER)=${DgnClientFxVersionedApiDir}"

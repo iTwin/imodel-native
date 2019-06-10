@@ -1,0 +1,53 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------
+#   To get GEOMLIBS to a particular stamp your environment should set GEOMLIBS_STAMP
+#-------------------------------------------------------------------------------
+%ifdef GEOMLIBS_STAMP
+  BSI_STAMP = $(GEOMLIBS_STAMP)
+%endif
+
+%include mdl.mki
+%include bsicvs.mki
+
+#-------------------------------------------------------------------------------
+#   Get BASEGEOMETRY Shared Part
+#-------------------------------------------------------------------------------
+SHAREDPART_NAME = BASEGEOMETRY
+SHAREDPART_HARVEST_MODE = STANDALONE_BUILD
+SHAREDPART_STAMP = $(GEOMLIBS_STAMP)
+SHAREDPART_GET = 1
+%include sharedPartInclude.mki
+
+#-------------------------------------------------------------------------------
+#   Get BSIVU Shared Part
+#-------------------------------------------------------------------------------
+SHAREDPART_NAME = BSIVU
+SHAREDPART_HARVEST_MODE = STANDALONE_BUILD
+SHAREDPART_STAMP = $(GEOMLIBS_STAMP)
+SHAREDPART_GET = 1
+%include sharedPartInclude.mki
+
+always:
+    ~mkdir $(SrcRoot)bsitools/
+
+REPOSITORY_SERVER   = bsitools-hg
+REPOSITORY_TO_PULL  = winX86
+LOCAL_LOCATION      = $(SrcRoot)bsitools/winX86
+
+%include PullHgRepos.mki
+
+REPOSITORY_SERVER   = bsitools-hg
+REPOSITORY_TO_PULL  = anycpu
+LOCAL_LOCATION      = $(SrcRoot)bsitools/anycpu
+
+%include PullHgRepos.mki
+
+
+#-------------------------------------------------------------------------------
+#   End
+#-------------------------------------------------------------------------------

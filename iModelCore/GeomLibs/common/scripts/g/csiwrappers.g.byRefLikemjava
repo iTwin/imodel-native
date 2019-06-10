@@ -1,0 +1,102 @@
+!
+! gema patterns to pluck out C-sharpish instance methods.
+!
+
+@define{@read{@getenv{GEMADIR}g\\domains.g}}
+@define{@read{@getenv{GEMADIR}g\\needswork.g}}
+@define{@read{@getenv{GEMADIR}g\\convertbody.g}}
+
+! Place "@dllName name" (probably in a comment) to get away from the default jmdlgeom lib name.
+@set{dllName;jmdlgeom}
+\@dllName <I> =@set{dllName;$1}
+
+! DOMAIN: Default
+! PATTERN: <Comment block> + Public + func type and name + arglist
+! ACTION:
+!     Echo the comment
+!   Make an instance method which does nothing but call the static method (follows)
+!   Make a static method linked to the native code.
+!
+\/\* METHOD(<I>,<I>,none) \*\/=
+
+!                           $1=csName   $2=comments        #3=retType #4=cName $5=arglist
+\/\*\WCSIMETHOD\W(\W<I>\W)\W\*\/<u>\n\WPublic <I> <I>\W(<arglist>)=\
+\n\/\/ BEGIN_NONEDITABLE_CODE\
+@ConvertComment{$2}\n\
+public @ConvertReturnType{$3} @ConvertMethodName{$1}\n\
+@set{LineFeed;\n\ \ \ \ }\
+@RenameTypes{\
+    @ConvertToRef{\
+            @InstanceArgsFromFullArgs{(@ConvertCSArgs{$5})}}}@var{LineFeed}\
+\{@var{LineFeed}\
+@ReturnDirective{$3}_@ConvertMethodName{$1}\
+            @ArglistSigToCallArgs{@CallFirstArgThis{($5)\;}}@var{LineFeed}\
+\}\n@var{LineFeed}\
+\[@var{LineFeed}\
+DllImport(\@\"jmdlgeom.dll\",@var{LineFeed}\
+EntryPoint\=\"$4\",@var{LineFeed}\
+CharSet=CharSet.Ansi,@var{LineFeed}\
+ExactSpelling=true,@var{LineFeed}\
+CallingConvention=CallingConvention.Cdecl)@var{LineFeed}\
+\]\n\
+public extern static @ConvertReturnType{$3} _@ConvertMethodName{$1}\n\
+@RenameTypes{\
+    @ConvertToRef{\
+            (@ConvertCSArgs{$5})\
+}}\;\n\
+\/\/ END_NONEDITABLE_CODE\n
+
+RenameTypes:\IRotMatrix\I=DMatrix3d
+RenameTypes:\ITransform\I=DTransform3d
+RenameTypes:?=?
+
+ReturnDirective:\Wvoid\I\W=@end
+ReturnDirective:<u>=return\
+
+ConvertCSArgs:\Iconst\I\W=
+ConvertCSArgs:\*=
+ConvertCSArgs:\n\W=\n
+ConvertCSArgs:?=?
+
+ArglistSigToCallArgs:const\W<I>\W\*\W<I><ArgTerminator>=ref $2$3
+ArglistSigToCallArgs:<I>\W\*\W<I><ArgTerminator>=ref $2$3
+ArglistSigToCallArgs:<I> <I><ArgTerminator>=$2$3
+ArglistSigToCallArgs:\W=
+ArglistSigToCallArgs:?=?
+
+ArgTerminator:\W,\W=,\ @end
+ArgTerminator:\W)\W=)@end
+ArgTerminator:=@fail
+
+ConvertToRef:\IDPlane3d\I=ref DPlane3d
+ConvertToRef:\IDPoint4d\I=ref DPoint4d
+ConvertToRef:\IDPoint3d\I=ref DPoint3d
+ConvertToRef:\IDPoint2d\I=ref DPoint3d
+ConvertToRef:\IRotMatrix\I=ref RotMatrix
+ConvertToRef:\ITransform\I=ref Transform
+ConvertToRef:\IDMatrix3d\I=ref DMatrix3d
+ConvertToRef:\IDTransform3d\I=ref DTransform3d
+ConvertToRef:\IDEllipse3d\I=ref DEllipse3d
+ConvertToRef:?=?
+
+! Value params are EZ, yes?
+ConvertToValueParam:?=?
+
+CallFirstArgThis:<I>\W,<u>=this,$2
+CallFirstArgThis:<I>\W)=this)
+CallFirstArgThis:?=?
+
+InstanceArgsFromFullArgs:\W(\W<I> <I>\W)\W=(\n)
+InstanceArgsFromFullArgs:\W(\W<I> <I>\W,<u>=($3
+InstanceArgsFromFullArgs:\W(\W<I> <I>\W)\W=(\n)
+InstanceArgsFromFullArgs:\W(\W<I> <I>\W,<u>=($3
+InstanceArgsFromFullArgs:<u>=\/\/Translation error InstanceArgsFromFullArgs\[$0\]\n
+
+ConvertComment:\/\*\WMETHOD\W(<I>,<I>,<I>)\W\*\/\n=
+
+! PATTERN: Everything else in the file
+! ACTION:  swallow
+?=
+
+! (additional patterns in domains.g)
+FixTypes:Dpoint3d=DPoint3d
