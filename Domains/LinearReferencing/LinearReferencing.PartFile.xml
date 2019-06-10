@@ -12,7 +12,6 @@
     </Part>
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="LinearReferencing.prewire.mke">
-        <SubPart PartName="Core" PartFile="BisSchemas" Repository="BisSchemas"/>
         <Bindings>
             <PublicAPI Domain="LinearReferencing"/>
         </Bindings>
