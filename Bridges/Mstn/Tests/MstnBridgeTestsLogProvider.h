@@ -22,8 +22,24 @@ struct MstnBridgeTestsLogProvider : BentleyApi::NativeLogging::Provider::ILogPro
 
     MstnBridgeTestsLogProvider()
         {
-        m_sev = [](BentleyApi::Utf8StringCR, BentleyApi::NativeLogging::SEVERITY) {return false/*true*/;};
-        m_proc = [](BentleyApi::Utf8StringCR ns, BentleyApi::NativeLogging::SEVERITY sev, BentleyApi::Utf8StringCR msg) {/*printf("[%d] %s - %s\n", (int)sev, ns.c_str(), msg.c_str());*/};
+        m_sev = [](BentleyApi::Utf8StringCR ns, BentleyApi::NativeLogging::SEVERITY sev)
+            {
+            if (ns.Equals("MstnBridgeTests"))
+                return true;
+            if (ns.Equals("BeSQLite") || ns.Equals("Performance"))
+                return false;
+            /*
+            if (ns.Equals("Bentley.Tasks") || ns.Equals("ECObjectsNative") || ns.Equals("DgnCore"))
+                return sev >= BentleyApi::NativeLogging::LOG_WARNING;
+            return sev >= BentleyApi::NativeLogging::LOG_INFO;
+            */
+            return sev >= BentleyApi::NativeLogging::LOG_ERROR;
+            };
+        m_proc = [](BentleyApi::Utf8StringCR ns, BentleyApi::NativeLogging::SEVERITY sev, BentleyApi::Utf8StringCR msg)
+            {
+            auto strm = (sev >= BentleyApi::NativeLogging::LOG_ERROR)? stderr: stdout;
+            fprintf(strm, "[%d] %s - %s\n", (int)sev, ns.c_str(), msg.c_str());
+            };
         }
 
     int STDCALL_ATTRIBUTE Initialize() override {return SUCCESS;}
@@ -55,7 +71,6 @@ struct MstnBridgeTestsLogProvider : BentleyApi::NativeLogging::Provider::ILogPro
 
     int  STDCALL_ATTRIBUTE SetSeverity(BentleyApi::WCharCP nameSpace, BentleyApi::NativeLogging::SEVERITY severity) override
         {
-        BeAssert(false && "only the app (in TypeScript) sets severities");
         return ERROR;
         }
 
