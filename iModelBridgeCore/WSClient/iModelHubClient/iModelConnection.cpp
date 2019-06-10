@@ -721,9 +721,9 @@ BriefcasesInfoTaskPtr iModelConnection::QueryBriefcaseInfoInternal(WSQuery const
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             06/2016
+//@bsimethod                                     Andrius.Zonys                   05/2019
 //---------------------------------------------------------------------------------------
-StatusTaskPtr iModelConnection::QueryCodesLocksInternal
+StatusTaskPtr iModelConnection::QueryCodesLocksByChunks
 (
 WSQuery query,
 CodeLockSetResultInfoPtr codesLocksOut,
@@ -731,30 +731,62 @@ CodeLocksSetAddFunction addFunction,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    const Utf8String methodName = "iModelConnection::QueryCodesLocksInternal";
+    const Utf8String methodName = "iModelConnection::QueryCodesLocksByChunks";
     auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
 
-    return ExecuteWithRetry<void>([=]()
+    query.SetTop(m_codesLocksPageSize);
+
+    SkipTokenResultPtr result;
+    Utf8String nextSkipToken = nullptr;
+    do
+        {
+        result = ExecuteAsync(QueryCodesLocksInternal(query, nextSkipToken, codesLocksOut, addFunction, requestOptions, cancellationToken));
+        if (!result->IsSuccess())
+            {
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result->GetError().GetMessage().c_str());
+            return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(result->GetError()));
+            }
+        nextSkipToken = result->GetValue();
+        } while (!nextSkipToken.empty());
+
+    return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             06/2016
+//---------------------------------------------------------------------------------------
+SkipTokenTaskPtr iModelConnection::QueryCodesLocksInternal
+(
+WSQueryCR query,
+Utf8StringCR skipToken,
+CodeLockSetResultInfoPtr codesLocksOut,
+CodeLocksSetAddFunction addFunction,
+IWSRepositoryClient::RequestOptionsPtr requestOptions,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "iModelConnection::QueryCodesLocksInternal";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
+
+    return ExecuteWithRetry<Utf8String>([=]()
         {
         //Execute query
-        return m_wsRepositoryClient->SendQueryRequestWithOptions(query, "", "", requestOptions, cancellationToken)->Then<StatusResult>
+        return m_wsRepositoryClient->SendQueryRequestWithOptions(query, "", skipToken, requestOptions, cancellationToken)->Then<SkipTokenResult>
             ([=](const WSObjectsResult& result)
             {
-            if (result.IsSuccess())
-                {
-                if (!result.GetValue().GetRapidJsonDocument().IsNull())
-                    {
-                    for (auto const& value : result.GetValue().GetInstances())
-                        {
-                        addFunction(value, codesLocksOut);
-                        }
-                    //NEEDSWORK: log an error
-                    }
-                return StatusResult::Success();
-                }
+            if (!result.IsSuccess())
+                return SkipTokenResult::Error(result.GetError());
 
-            return StatusResult::Error(result.GetError());
+            if (!result.GetValue().GetRapidJsonDocument().IsNull())
+                {
+                for (auto const& value : result.GetValue().GetInstances())
+                    {
+                    addFunction(value, codesLocksOut);
+                    }
+                //NEEDSWORK: log an error
+                }
+            return SkipTokenResult::Success(result.GetValue().GetSkipToken());
             });
         });
     }
@@ -773,7 +805,7 @@ void AddCodes(const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr c
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Benas.Kikutis                01/2018
+//@bsimethod                                     Benas.Kikutis                   01/2018
 //---------------------------------------------------------------------------------------
 void AddMultiCodes(const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksSetOut)
     {
@@ -792,7 +824,20 @@ void AddMultiCodes(const WSObjectsReader::Instance& value, CodeLockSetResultInfo
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Benas.Kikutis                01/2018
+//@bsimethod                                     Andrius.Zonys                   03/2019
+//---------------------------------------------------------------------------------------
+void AddLocks(const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksSetOut)
+    {
+    DgnLock        lock;
+    BeBriefcaseId  briefcaseId;
+    Utf8String     changeSetId;
+
+    if (GetLockFromServerJson(value.GetProperties(), lock, briefcaseId, changeSetId))
+        codesLocksSetOut->AddLock(lock, briefcaseId, changeSetId);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Benas.Kikutis                   01/2018
 //---------------------------------------------------------------------------------------
 void AddMultiLocks(const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksSetOut)
     {
@@ -831,7 +876,7 @@ ICancellationTokenPtr cancellationToken
 
     query.AddFilterIdsIn(queryIds, nullptr, 0, 0);
 
-    return QueryCodesLocksInternal(query, codesLocksOut, AddCodes, cancellationToken);
+    return QueryCodesLocksByChunks(query, codesLocksOut, AddCodes, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -847,12 +892,9 @@ ICancellationTokenPtr cancellationToken
     BeAssert(briefcaseId.IsValid() && "Query by invalid briefcase id is not supported.");
     
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::MultiCode);
+    query.SetFilter(Utf8PrintfString("%s+eq+%u", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue()));
 
-    Utf8String filter;
-    filter.Sprintf("(%s+eq+%u)", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue());
-    query.SetFilter(filter);
-
-    return QueryCodesLocksInternal(query, codesLocksOut, AddMultiCodes, cancellationToken);
+    return QueryCodesLocksByChunks(query, codesLocksOut, AddMultiCodes, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -865,13 +907,10 @@ CodeLockSetResultInfoPtr codesLocksOut,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Code);
+    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::MultiCode);
+    query.SetFilter(Utf8PrintfString("%s+ne+%u", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue()));
 
-    Utf8String filter;
-    filter.Sprintf("%s+ne+%u", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue());
-    query.SetFilter(filter);
-
-    return QueryCodesLocksInternal(query, codesLocksOut, AddCodes, cancellationToken);
+    return QueryCodesLocksByChunks(query, codesLocksOut, AddMultiCodes, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -888,6 +927,7 @@ ICancellationTokenPtr cancellationToken
     BeAssert(0 != locks.size() && "Query Ids in empty array is not supported.");
 
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Lock);
+    query.SetFilter(Utf8PrintfString("%s+gt+%u", ServerSchema::Property::LockLevel, LockLevel::None));
 
     std::deque<ObjectId> queryIds;
     for (auto& lock : locks)
@@ -895,20 +935,7 @@ ICancellationTokenPtr cancellationToken
 
     query.AddFilterIdsIn(queryIds, nullptr, 0, 0);
 
-    auto addLocksCallback = [&](const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksSetOut)
-        {
-        DgnLock        lock;
-        BeBriefcaseId  briefcaseId;
-        Utf8String     changeSetId;
-
-        if (GetLockFromServerJson(value.GetProperties(), lock, briefcaseId, changeSetId))
-            {
-            if (lock.GetLevel() != LockLevel::None)
-                codesLocksSetOut->AddLock(lock, briefcaseId, changeSetId);
-            }
-        };
-
-    return QueryCodesLocksInternal(query, codesLocksOut, addLocksCallback, cancellationToken);
+    return QueryCodesLocksByChunks(query, codesLocksOut, AddLocks, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -924,12 +951,9 @@ ICancellationTokenPtr cancellationToken
     BeAssert(briefcaseId.IsValid() && "Query by invalid briefcase id is not supported.");
 
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::MultiLock);
+    query.SetFilter(Utf8PrintfString("%s+eq+%u", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue()));
 
-    Utf8String filter;
-    filter.Sprintf("(%s+eq+%u)", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue());
-    query.SetFilter(filter);
-
-    return QueryCodesLocksInternal(query, codesLocksOut, AddMultiLocks, cancellationToken);
+    return QueryCodesLocksByChunks(query, codesLocksOut, AddMultiLocks, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -943,32 +967,12 @@ CodeLockSetResultInfoPtr codesLocksOut,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Lock);
+    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::MultiLock);
+    query.SetFilter(Utf8PrintfString("%s+ne+%u+and+(%s+gt+%u+or+%s+gt+%u)", ServerSchema::Property::BriefcaseId,
+                                     briefcaseId.GetValue(), ServerSchema::Property::LockLevel, LockLevel::None,
+                                     ServerSchema::Property::ReleasedWithChangeSetIndex, lastChangeSetIndex));
 
-    Utf8String filter;
-    Utf8String locksFilter;
-    locksFilter.Sprintf("%s+gt+%u+or+%s+gt+%u", ServerSchema::Property::LockLevel, LockLevel::None,
-                        ServerSchema::Property::ReleasedWithChangeSetIndex, lastChangeSetIndex);
-
-    filter.Sprintf("%s+ne+%u+and+(%s)", ServerSchema::Property::BriefcaseId,
-                   briefcaseId.GetValue(), locksFilter.c_str());
-
-    query.SetFilter(filter);
-
-
-    auto addLocksCallback = [&](const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksSetOut)
-        {
-        DgnLock        lock;
-        BeBriefcaseId  briefcaseId;
-        Utf8String     changeSetId;
-
-        if (GetLockFromServerJson(value.GetProperties(), lock, briefcaseId, changeSetId))
-            {
-            codesLocksSetOut->AddLock(lock, briefcaseId, changeSetId);
-            }
-        };
-
-    return QueryCodesLocksInternal(query, codesLocksOut, addLocksCallback, cancellationToken);
+    return QueryCodesLocksByChunks(query, codesLocksOut, AddMultiLocks, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1254,82 +1258,51 @@ ICancellationTokenPtr       cancellationToken
     auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
 
-    Utf8String originalFilter = query.GetFilter();
     query.SetOrderBy(ServerSchema::Property::Index);
-    query.SetTop(m_pageSize);
+    query.SetTop(m_changeSetsPageSize);
 
     ChangeSetsInfoResultPtr finalResult = std::make_shared<ChangeSetsInfoResult>();
     finalResult->SetSuccess(bvector<ChangeSetInfoPtr>());
 
-    return GetChangeSetsFromQueryByChunksRecursively(std::make_shared<WSQuery>(query), parseFileAccessKey, originalFilter, finalResult, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Andrius.Zonys                   03/2019
-//---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr iModelConnection::GetChangeSetsFromQueryByChunksRecursively
-(
-WSQueryPtr query,
-bool parseFileAccessKey,
-Utf8StringCR originalFilter,
-ChangeSetsInfoResultPtr finalResult,
-ICancellationTokenPtr cancellationToken
-) const
-    {
-    const Utf8String methodName = "iModelConnection::GetChangeSetsFromQueryByChunksRecursively";
-    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
-
-    return ChangeSetsFromQueryInternal(*query, parseFileAccessKey, cancellationToken)->Then([=](ChangeSetsInfoResultCR changeSetsResult)
+    SkipTokenResultPtr result;
+    Utf8String nextSkipToken = nullptr;
+    do
         {
-        if (!changeSetsResult.IsSuccess())
+        result = ExecuteAsync(ChangeSetsFromQueryInternal(query, nextSkipToken, parseFileAccessKey, finalResult, requestOptions, cancellationToken));
+        if (!result->IsSuccess())
             {
-            finalResult->SetError(changeSetsResult.GetError());
-            LogHelper::Log(SEVERITY::LOG_WARNING, "iModelConnection::GetChangeSetsFromQueryByChunksRecursively", changeSetsResult.GetError().GetMessage().c_str());
-            return;
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result->GetError().GetMessage().c_str());
+            return CreateCompletedAsyncTask<ChangeSetsInfoResult>(ChangeSetsInfoResult::Error(result->GetError()));
             }
+        nextSkipToken = result->GetValue();
+        } while (!nextSkipToken.empty());
 
-        bvector<ChangeSetInfoPtr> changeSets = changeSetsResult.GetValue();
-        finalResult->GetValue().insert(finalResult->GetValue().end(), changeSets.begin(), changeSets.end());
-
-        if (changeSets.size() != m_pageSize)
-            return;
-
-        uint64_t lastIndex = changeSets.rbegin()->get()->GetIndex();
-        if (originalFilter.empty())
-            query->SetFilter(Utf8PrintfString("%s+gt+%u", ServerSchema::Property::Index, lastIndex));
-        else
-            query->SetFilter(Utf8PrintfString("(%s)+and+%s+gt+%u", originalFilter.c_str(), ServerSchema::Property::Index, lastIndex));
-
-        GetChangeSetsFromQueryByChunksRecursively(query, parseFileAccessKey, originalFilter, finalResult, cancellationToken);
-        })->Then<ChangeSetsInfoResult>([=]
-            {
-            return *finalResult;
-            });
+    return CreateCompletedAsyncTask<ChangeSetsInfoResult>(ChangeSetsInfoResult::Success(finalResult->GetValue()));
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-ChangeSetsInfoTaskPtr iModelConnection::ChangeSetsFromQueryInternal
+SkipTokenTaskPtr iModelConnection::ChangeSetsFromQueryInternal
 (
-const WebServices::WSQuery& query,
+WSQueryCR                   query,
+Utf8StringCR                skipToken,
 bool                        parseFileAccessKey,
+ChangeSetsInfoResultPtr     finalResult,
+IWSRepositoryClient::RequestOptionsPtr requestOptions,
 ICancellationTokenPtr       cancellationToken
 ) const
     {
     const Utf8String methodName = "iModelConnection::ChangeSetsFromQueryInternal";
-    auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
 
-    return ExecuteWithRetry<bvector<ChangeSetInfoPtr>>([=]()
+    return ExecuteWithRetry<Utf8String>([=]()
         {
-        return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, nullptr, requestOptions, cancellationToken)->Then<ChangeSetsInfoResult>
+        return m_wsRepositoryClient->SendQueryRequestWithOptions(query, nullptr, skipToken, requestOptions, cancellationToken)->Then<SkipTokenResult>
             ([=](const WSObjectsResult& changeSetsInfoResult)
             {
             if (changeSetsInfoResult.IsSuccess())
                 {
-                bvector<ChangeSetInfoPtr> indexedChangeSets;
                 if (!changeSetsInfoResult.GetValue().GetRapidJsonDocument().IsNull())
                     {
                     for (auto const& value : changeSetsInfoResult.GetValue().GetInstances())
@@ -1341,15 +1314,15 @@ ICancellationTokenPtr       cancellationToken
                             changeSetInfo->SetFileAccessKey(fileAccessKey);
                             }
 
-                        indexedChangeSets.push_back(changeSetInfo);
+                        finalResult->GetValue().push_back(changeSetInfo);
                         }
                     }
-                return ChangeSetsInfoResult::Success(indexedChangeSets);
+                return SkipTokenResult::Success(changeSetsInfoResult.GetValue().GetSkipToken());
                 }
             else
                 {
                 LogHelper::Log(SEVERITY::LOG_WARNING, methodName, requestOptions, changeSetsInfoResult.GetError().GetMessage().c_str());
-                return ChangeSetsInfoResult::Error(changeSetsInfoResult.GetError());
+                return SkipTokenResult::Error(changeSetsInfoResult.GetError());
                 }
             });
         });
@@ -2652,8 +2625,8 @@ ICancellationTokenPtr cancellationToken
     WSQuery queryCodes(ServerSchema::Schema::iModel, ServerSchema::Class::MultiCode);
     WSQuery queryLocks(ServerSchema::Schema::iModel, ServerSchema::Class::MultiLock);
 
-    tasks.insert(QueryCodesLocksInternal(queryCodes, finalValue, AddMultiCodes, cancellationToken));
-    tasks.insert(QueryCodesLocksInternal(queryLocks, finalValue, AddMultiLocks, cancellationToken));
+    tasks.insert(QueryCodesLocksByChunks(queryCodes, finalValue, AddMultiCodes, cancellationToken));
+    tasks.insert(QueryCodesLocksByChunks(queryLocks, finalValue, AddMultiLocks, cancellationToken));
 
     return ExecuteCodesLocksQueryTasks(tasks, finalValue);
     }
@@ -2754,7 +2727,7 @@ ICancellationTokenPtr cancellationToken
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::MultiCode);
     CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
 
-    auto result = ExecuteAsync(QueryCodesLocksInternal(query, finalValue, AddMultiCodes, cancellationToken));
+    auto result = ExecuteAsync(QueryCodesLocksByChunks(query, finalValue, AddMultiCodes, cancellationToken));
 
     if (result->IsSuccess())
         return CreateCompletedAsyncTask(CodeInfoSetResult::Success(finalValue->GetCodeStates()));
@@ -2853,7 +2826,7 @@ ICancellationTokenPtr cancellationToken
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::MultiLock);
     CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
 
-    auto result = ExecuteAsync(QueryCodesLocksInternal(query, finalValue, AddMultiLocks, cancellationToken));
+    auto result = ExecuteAsync(QueryCodesLocksByChunks(query, finalValue, AddMultiLocks, cancellationToken));
 
     if (result->IsSuccess())
         return CreateCompletedAsyncTask(LockInfoSetResult::Success(finalValue->GetLockStates()));
@@ -2952,55 +2925,36 @@ ICancellationTokenPtr cancellationToken
     CHECK_BRIEFCASEID(briefcaseId, CodeLockSetResult);
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    std::shared_ptr<CodeLockSetResult> finalResult = std::make_shared<CodeLockSetResult>();
-    return ExecuteWithRetry<CodeLockSetResultInfo>([=]()
+
+    auto changeSetResult = ExecuteAsync(GetChangeSetById(lastChangeSetId, cancellationToken));
+    uint64_t changeSetIndex = 0;
+    if (changeSetResult->IsSuccess())
         {
-        return GetChangeSetById(lastChangeSetId, cancellationToken)->Then([=](ChangeSetInfoResultCR changeSetResult)
-            {
-            uint64_t changeSetIndex = 0;
-            if (!changeSetResult.IsSuccess() && changeSetResult.GetError().GetId() != Error::Id::InvalidChangeSet)
-                {
-                finalResult->SetError(changeSetResult.GetError());
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetResult.GetError().GetMessage().c_str());
-                return;
-                }
-            else if (changeSetResult.IsSuccess())
-                {
-                changeSetIndex = changeSetResult.GetValue()->GetIndex();
-                }
+        changeSetIndex = changeSetResult->GetValue()->GetIndex();
+        }
+    else if (changeSetResult->GetError().GetId() != Error::Id::InvalidChangeSet)
+        {
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetResult->GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<CodeLockSetResult>(CodeLockSetResult::Error(changeSetResult->GetError()));
+        }
 
-            CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
-            bset<StatusTaskPtr> tasks;
+    CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
+    bset<StatusTaskPtr> tasks;
 
-            auto task = QueryUnavailableCodesInternal(briefcaseId, finalValue, cancellationToken);
-            tasks.insert(task);
-            task = QueryUnavailableLocksInternal(briefcaseId, changeSetIndex, finalValue, cancellationToken);
-            tasks.insert(task);
+    tasks.insert(QueryUnavailableCodesInternal(briefcaseId, finalValue, cancellationToken));
+    tasks.insert(QueryUnavailableLocksInternal(briefcaseId, changeSetIndex, finalValue, cancellationToken));
 
-            AsyncTask::WhenAll(tasks)
-                ->Then([=]
-                {
-                for (auto task : tasks)
-                    {
-                    auto taskResult = ExecuteAsync(task);
-                    if (!taskResult->IsSuccess())
-                        {
-                        finalResult->SetError(taskResult->GetError());
-                        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, taskResult->GetError().GetMessage().c_str());
-                        return;
-                        }
-                    }
+    auto tasksResult = ExecuteCodesLocksQueryTasks(tasks, finalValue)->GetResult();
+    
+    if (!tasksResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, tasksResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<CodeLockSetResult>(CodeLockSetResult::Error(tasksResult.GetError()));
+        }
 
-                finalResult->SetSuccess(*finalValue);
-                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-                });
-
-            })->Then<CodeLockSetResult>([=]()
-                {
-                return *finalResult;
-                });
-        });
+    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+    return CreateCompletedAsyncTask<CodeLockSetResult>(CodeLockSetResult::Success(tasksResult.GetValue()));
     }
 
 //---------------------------------------------------------------------------------------

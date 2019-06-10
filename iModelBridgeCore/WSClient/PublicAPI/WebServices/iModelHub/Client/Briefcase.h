@@ -82,7 +82,7 @@ public:
     //! Pull incomming ChangeSets.
     //! @param[in] callback Download progress callback.
     //! @param[in] cancellationToken
-    //! @return Asynchronous task that returns success or an error and list of pulled ChangeSets.
+    //! @return Blocking task that returns success or an error and list of pulled ChangeSets.
     IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr Pull(Http::Request::ProgressCallbackCR callback = nullptr,
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
