@@ -47,6 +47,29 @@ static void logMessageToJobUtility(Utf8CP msg)
     method({ msgJS });
     }
 
+static void setBriefcaseIdJobUtility(uint32_t bcid) 
+    {
+    auto env = s_jobUtility.Env();
+    Napi::HandleScope scope(env);
+
+    Utf8CP fname = "setBriefcaseId";
+
+    auto method = s_jobUtility.Get(fname).As<Napi::Function>();
+    if (method == env.Undefined())
+        {
+        //Napi::Error::New(IModelJsNative::JsInterop::Env(), "Invalid Logger").ThrowAsJavaScriptException();
+        return;
+        }
+
+    WPrintfString str(L"%u", bcid);        
+    Utf8String tempsUtf8String(str);
+    Utf8CP msg = tempsUtf8String.c_str();
+  
+    auto msgJS = toJsString(env, msg);
+
+    method({ msgJS });
+    }    
+
 static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
     {
     auto env = s_logger.Env();
@@ -328,9 +351,14 @@ int RunBridge(Env env, const char* jsonString)
         // Executed the bridge process
         status = app.Run(argc, argv);
 
+        // Relay the briefcaseId to the calling node.js TypeScript
+        uint32_t bcid = app.GetBriefcaseId().GetValue();
+
+        setBriefcaseIdJobUtility(bcid);
+
         {
             char buffer [MAX_PATH];
-            sprintf(buffer, "BridgeAddon.cpp: RunBridge() Run completed with status = %d", status);
+            sprintf(buffer, "BridgeAddon.cpp: RunBridge() Run completed with status = %d briefcaseId = %d", status, bcid);
             logMessageToJobUtility(buffer);   
             LogTrace(buffer);          
         }

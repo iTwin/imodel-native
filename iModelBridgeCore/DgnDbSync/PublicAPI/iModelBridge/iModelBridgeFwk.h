@@ -403,7 +403,7 @@ public:
             }
         }
 
-    BeSQLite::BeBriefcaseId GetBriefcaseId();
+    IMODEL_BRIDGE_FWK_EXPORT BeSQLite::BeBriefcaseId GetBriefcaseId();
 };
 
 END_BENTLEY_DGN_NAMESPACE
