@@ -17,7 +17,11 @@ SlabAspect::SlabAspect()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-SlabAspect::SlabAspect(SlabDirectionType slabDirection) : m_slabDirection(slabDirection)
+SlabAspect::SlabAspect
+(
+SlabDirectionType slabDirection,
+SlabType type
+) : m_slabDirection(slabDirection), m_type(type)
     {
     }
 
@@ -27,7 +31,9 @@ SlabAspect::SlabAspect(SlabDirectionType slabDirection) : m_slabDirection(slabDi
 Dgn::DgnDbStatus SlabAspect::_LoadProperties(Dgn::DgnElementCR el)
     {
     BeSQLite::EC::CachedECSqlStatementPtr select = el.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT " QUANTITYTAKEOFFSASPECTS_SLABASPECT_SlabDirection
+        "SELECT "
+            QUANTITYTAKEOFFSASPECTS_SLABASPECT_SlabDirection ", "
+            QUANTITYTAKEOFFSASPECTS_SLABASPECT_Type
         " FROM " QUANTITYTAKEOFFSASPECTS_SCHEMA(QUANTITYTAKEOFFSASPECTS_CLASS_SlabAspect)
         " WHERE Element.Id=?");
 
@@ -40,6 +46,7 @@ Dgn::DgnDbStatus SlabAspect::_LoadProperties(Dgn::DgnElementCR el)
         return Dgn::DgnDbStatus::ReadError;
 
     m_slabDirection = static_cast<SlabDirectionType>(select->GetValueInt(0));
+    m_type = static_cast<SlabType>(select->GetValueInt(1));
 
     return Dgn::DgnDbStatus::Success;
     }
@@ -55,14 +62,17 @@ BeSQLite::EC::ECCrudWriteToken const* writeToken
     {
     BeSQLite::EC::CachedECSqlStatementPtr update = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(
         "UPDATE " QUANTITYTAKEOFFSASPECTS_SCHEMA(QUANTITYTAKEOFFSASPECTS_CLASS_SlabAspect)
-        " SET " QUANTITYTAKEOFFSASPECTS_SLABASPECT_SlabDirection "=?"
+        " SET " 
+            QUANTITYTAKEOFFSASPECTS_SLABASPECT_SlabDirection "=?, "
+            QUANTITYTAKEOFFSASPECTS_SLABASPECT_Type "=?"
         " WHERE Element.Id=?", writeToken);
 
     if (!update.IsValid())
         return Dgn::DgnDbStatus::WriteError;
 
     update->BindInt(1, static_cast<uint32_t>(m_slabDirection));
-    update->BindId(2, el.GetElementId());
+    update->BindInt(2, static_cast<uint32_t>(m_type));
+    update->BindId(3, el.GetElementId());
 
     if (BeSQLite::BE_SQLITE_DONE != update->Step())
         return Dgn::DgnDbStatus::WriteError;
@@ -80,11 +90,19 @@ Utf8CP propertyName,
 Dgn::PropertyArrayIndex const& arrayIndex
 ) const
     {
-    if (0 != strcmp(propertyName, QUANTITYTAKEOFFSASPECTS_SLABASPECT_SlabDirection))
-        return Dgn::DgnDbStatus::BadArg;
+    if (0 == strcmp(propertyName, QUANTITYTAKEOFFSASPECTS_SLABASPECT_SlabDirection))
+        {
+        value.SetInteger(static_cast<uint32_t>(m_slabDirection));
+        return Dgn::DgnDbStatus::Success;
+        }
 
-    value.SetInteger(static_cast<uint32_t>(m_slabDirection));
-    return Dgn::DgnDbStatus::Success;
+    if (0 == strcmp(propertyName, QUANTITYTAKEOFFSASPECTS_SLABASPECT_Type))
+        {
+        value.SetInteger(static_cast<uint32_t>(m_type));
+        return Dgn::DgnDbStatus::Success;
+        }
+
+    return Dgn::DgnDbStatus::BadArg;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -97,19 +115,27 @@ ECN::ECValueCR value,
 Dgn::PropertyArrayIndex const& arrayIndex
 )
     {
-    if (0 != strcmp(propertyName, QUANTITYTAKEOFFSASPECTS_SLABASPECT_SlabDirection))
-        return Dgn::DgnDbStatus::BadArg;
+    if (0 == strcmp(propertyName, QUANTITYTAKEOFFSASPECTS_SLABASPECT_SlabDirection))
+        {
+        m_slabDirection = static_cast<SlabDirectionType>(value.GetInteger());
+        return Dgn::DgnDbStatus::Success;
+        }
 
-    m_slabDirection = static_cast<SlabDirectionType>(value.GetInteger());
-    return Dgn::DgnDbStatus::Success;
+    if (0 == strcmp(propertyName, QUANTITYTAKEOFFSASPECTS_SLABASPECT_Type))
+        {
+        m_type = static_cast<SlabType>(value.GetInteger());
+        return Dgn::DgnDbStatus::Success;
+        }
+
+    return Dgn::DgnDbStatus::BadArg;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-SlabAspectPtr SlabAspect::Create(SlabDirectionType slabDirection)
+SlabAspectPtr SlabAspect::Create(SlabDirectionType slabDirection, SlabType type)
     {
-    return new SlabAspect(slabDirection);
+    return new SlabAspect(slabDirection, type);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -158,6 +184,22 @@ SlabDirectionType SlabAspect::GetSlabDirection() const
 void SlabAspect::SetSlabDirection(SlabDirectionType newSlabDirection)
     {
     m_slabDirection = newSlabDirection;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+SlabType SlabAspect::GetType() const
+    { 
+    return m_type;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void SlabAspect::SetType(SlabType newType)
+    {
+    m_type = newType;
     }
 
 END_QUANTITYTAKEOFFSASPECTS_NAMESPACE

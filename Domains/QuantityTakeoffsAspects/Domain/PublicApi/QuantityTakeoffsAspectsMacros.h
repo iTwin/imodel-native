@@ -77,6 +77,7 @@
 #define QUANTITYTAKEOFFSASPECTS_SIDEAREASASPECT_TopNetArea          "TopNetArea"
 
 #define QUANTITYTAKEOFFSASPECTS_SLABASPECT_SlabDirection            "SlabDirection"
+#define QUANTITYTAKEOFFSASPECTS_SLABASPECT_Type                     "Type"
 
 #define QUANTITYTAKEOFFSASPECTS_SLOPEASPECT_Slope                   "Slope"
 

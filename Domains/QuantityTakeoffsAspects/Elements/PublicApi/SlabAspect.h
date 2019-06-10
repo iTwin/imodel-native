@@ -20,17 +20,28 @@ enum class SlabDirectionType: int
     TwoWay = 2
     };
 
+enum class SlabType : int
+    {
+    Floor = 0,
+    Roof = 1,
+    Landing = 2,
+    BaseSlab = 3,
+    UserDefined = 4,
+    NotDefined = 5,
+    };
+
 struct SlabAspect : QuantityTakeoffAspect
     {
     DGNASPECT_DECLARE_MEMBERS(QUANTITYTAKEOFFSASPECTS_SCHEMA_NAME, QUANTITYTAKEOFFSASPECTS_CLASS_SlabAspect, QuantityTakeoffAspect);
 
     private:
         SlabDirectionType m_slabDirection = SlabDirectionType::Unknown;
+        SlabType m_type = SlabType::NotDefined;
 
         friend struct SlabAspectHandler;
 
         QUANTITYTAKEOFFSASPECTS_EXPORT SlabAspect();
-        SlabAspect(SlabDirectionType slabDirection);
+        SlabAspect(SlabDirectionType slabDirection, SlabType type);
 
     protected:
         QUANTITYTAKEOFFSASPECTS_EXPORT virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR, const BeSQLite::EC::ECCrudWriteToken*);
@@ -41,8 +52,9 @@ struct SlabAspect : QuantityTakeoffAspect
     public:
         //! Create a SlabAspect
         //! @param[in]  slabDirection  Slab direction
+        //! @param[in]  type  Slab type
         //! @return  Created SlabAspect
-        QUANTITYTAKEOFFSASPECTS_EXPORT static SlabAspectPtr Create(SlabDirectionType slabDirection);
+        QUANTITYTAKEOFFSASPECTS_EXPORT static SlabAspectPtr Create(SlabDirectionType slabDirection, SlabType type);
 
         //! Query SlabAspect's ECClassId from the database
         //! @param[in]  db  Reference to the database
@@ -71,6 +83,14 @@ struct SlabAspect : QuantityTakeoffAspect
         //! Set SlabAspect's slab direction
         //! @param[in]  newSlabDirection  Slab direction
         QUANTITYTAKEOFFSASPECTS_EXPORT void SetSlabDirection(SlabDirectionType newSlabDirection);
+
+        //! Get SlabAspect's type
+        //! @return  Slab type
+        QUANTITYTAKEOFFSASPECTS_EXPORT SlabType GetType() const;
+
+        //! Set SlabAspect's type
+        //! @param[in]  newType  Slab type
+        QUANTITYTAKEOFFSASPECTS_EXPORT void SetType(SlabType newType);
     };
 
 END_QUANTITYTAKEOFFSASPECTS_NAMESPACE
