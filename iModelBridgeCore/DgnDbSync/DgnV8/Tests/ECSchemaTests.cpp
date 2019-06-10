@@ -978,7 +978,7 @@ TEST_F(ECSchemaTests, RelsWithAnyClassConstraint)
     BentleyApi::ECN::ECRelationshipClassCP relationshipClass = ecSchema->GetClassCP("Rel11")->GetRelationshipClassCP();
     ASSERT_TRUE(relationshipClass != nullptr);
     // AnyClass on Target side of (0-1, 0-1) relationship should be replaced with default BIS class, resulting multiplicity should remain the same
-    EXPECT_STREQ("ClassA", relationshipClass->GetSource().GetConstraintClasses().front()->GetName().c_str());
+    EXPECT_STREQ("Element", relationshipClass->GetSource().GetConstraintClasses().front()->GetName().c_str());
     EXPECT_STREQ("Element", relationshipClass->GetTarget().GetConstraintClasses().front()->GetName().c_str());
     EXPECT_EQ(BentleyApi::ECN::ECRelatedInstanceDirection::Forward, relationshipClass->GetStrengthDirection());
     EXPECT_TRUE(0 == BentleyApi::ECN::RelationshipMultiplicity::Compare(BentleyApi::ECN::RelationshipMultiplicity::ZeroMany(), relationshipClass->GetSource().GetMultiplicity()));
@@ -988,7 +988,7 @@ TEST_F(ECSchemaTests, RelsWithAnyClassConstraint)
     ASSERT_TRUE(relationshipClass != nullptr);
     // AnyClass on Source side of (1-1, 0-N) relationship should be replaced with default BIS class, resulting multiplicity should remain the same
     EXPECT_STREQ("Element", relationshipClass->GetSource().GetConstraintClasses().front()->GetName().c_str());
-    EXPECT_STREQ("ClassA", relationshipClass->GetTarget().GetConstraintClasses().front()->GetName().c_str());
+    EXPECT_STREQ("Element", relationshipClass->GetTarget().GetConstraintClasses().front()->GetName().c_str());
     EXPECT_EQ(BentleyApi::ECN::ECRelatedInstanceDirection::Forward, relationshipClass->GetStrengthDirection());
     EXPECT_TRUE(0 == BentleyApi::ECN::RelationshipMultiplicity::Compare(BentleyApi::ECN::RelationshipMultiplicity::ZeroMany(), relationshipClass->GetSource().GetMultiplicity()));
     EXPECT_TRUE(0 == BentleyApi::ECN::RelationshipMultiplicity::Compare(BentleyApi::ECN::RelationshipMultiplicity::ZeroMany(), relationshipClass->GetTarget().GetMultiplicity()));
