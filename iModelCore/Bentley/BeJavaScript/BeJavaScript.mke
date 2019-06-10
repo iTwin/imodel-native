@@ -1,0 +1,114 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+%if defined (RUNNINGINDOCKER)
+
+    TypeScriptCompile = c:/devtools/nodejs/node.exe ${APPDATA}/npm/node_modules/typescript/lib/tsc.js
+#    TypeScriptCompile = c:/devtools/nodejs/node.exe c:/Users/ContainerAdministrator/AppData/Roaming/npm/node_modules/typescript/lib/tsc.js
+%else
+    TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node$(toolchainExeext) $(BuildContext)SubParts/TypeScript/tsc.js
+%endif
+
+baseDir                  = $(_MakeFilePath)
+beJavaScriptPublicApiSrc = $(baseDir)PublicAPI/BeJavaScript/
+appName                  = BeJavaScript
+o                        = $(PartBuildDir)
+CCompPDBName             = BeJavaScript
+
+always:
+    !~@mkdir $(o)
+
+$(BuildContext)PublicAPI/BeJavaScript : $(baseDir)PublicAPI/BeJavaScript
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)Delivery/mergeJsSourceDeliveryFiles.py : $(baseDir)tools/mergeJsSourceDeliveryFiles.py
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/createJavaScriptNativeProjection.py : $(baseDir)tools/createJavaScriptNativeProjection.py
+    $(LinkFirstDepToFirstTarget)
+
+#--------------------------------------------------------------------------------------
+#   
+#--------------------------------------------------------------------------------------
+cDefs + -DUSING_V8_SHARED
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+beJavaScriptDepends = $(_MakeFileSpec) \
+                      $(beJavaScriptPublicApiSrc)BeJavaScript.h
+
+%if $(TARGET_PLATFORM) == "Windows" || $(TARGET_PLATFORM) == "Android"
+    beJavaScriptDepends + $(baseDir)V8InspectorManager.h            \
+                          $(baseDir)V8InspectorClientProxy.h        \
+                          $(baseDir)JsDebugServer.h
+
+%endif
+
+#--------------------------------------------------------------------------------------
+#   JavaScript
+#--------------------------------------------------------------------------------------
+tsSourceFiles = $(baseDir)js/BeJavaScript/_references.ts
+
+always:
+    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 \
+                                          --noImplicitAny \
+                                          --removeComments \
+                                          --declaration \
+                                          %if !defined(NDEBUG)
+                                          --sourceMap \
+                                          --mapRoot $(o) \
+                                          %endif
+                                          --out $(o)bejavascript.js
+    python $(baseDir)tools/mergeJsSourceDeliveryFiles.py --jsSourceFiles "___BEJAVASCRIPTJS__=$(o)bejavascript.js" \
+                                                         --nativeSourceFile $(baseDir)js/BeJavaScriptJs.cpp \
+                                                         --outputPath $(o)BeJavaScriptJs.cpp
+
+# websocketpp triggers this warning in a system header in Android NDK r18b
+%if $(BUILD_TOOLSET) == "ANDROID_CLANG")
+    ClangCommonCompOpts + -Wno-unused-function
+%endif
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)  $(beJavaScriptPublicApiSrc)BeJavaScript.h
+
+%include MultiCppCompileRule.mki
+
+$(o)BeJavaScript$(oext)   : $(baseDir)BeJavaScript.cpp ${MultiCompileDepends}
+
+$(o)BeJavaScriptJs$(oext) : $(o)BeJavaScriptJs.cpp ${MultiCompileDepends}
+
+%if $(TARGET_PLATFORM) == "Windows" || $(TARGET_PLATFORM) == "Android"
+    $(o)V8InspectorClientProxy$(oext) : $(baseDir)V8InspectorClientProxy.cpp $(beJavaScriptDepends) ${MultiCompileDepends}
+
+    $(o)JsDebugServer$(oext) : $(baseDir)JsDebugServer.cpp $(beJavaScriptDepends) ${MultiCompileDepends}
+%endif
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+LIB_OBJS                = $(MultiCompileObjectList)
+LIB_NAME                = $(appName)
+LIB_DEST                = $(o)
+LIB_TMP_DIR             = $(o)
+LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+LIB_EXPORT_NAME         = $(stlibprefix)$(LIB_NAME)$(stlibext)
+
+%include creatlib.mki
+
+$(BuildContext)Delivery/BeJavaScriptTypes.ts : $(baseDir)js/BeJavaScript/BeJavaScriptTypes.ts
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/bejavascript.d.ts : $(o)bejavascript.d.ts
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/V8InspectorManager.h : $(baseDir)V8InspectorManager.h
+    $(LinkFirstDepToFirstTarget)
