@@ -31,6 +31,9 @@ $(o)DoorAspectHandler$(oext) : $(_MakeFilePath)DoorAspectHandler.cpp ${MultiComp
 
 $(o)EnergyPerformanceAspectHandler$(oext) : $(_MakeFilePath)EnergyPerformanceAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/EnergyPerformanceAspectHandler.h
 
+$(o)FoundationAspectHandler$(oext) : $(_MakeFilePath)FoundationAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/FoundationAspectHandler.h
+
+
 $(o)MaterialAspectHandler$(oext) : $(_MakeFilePath)MaterialAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/MaterialAspectHandler.h
 
 $(o)PerimeterAspectHandler$(oext) : $(_MakeFilePath)PerimeterAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PerimeterAspectHandler.h

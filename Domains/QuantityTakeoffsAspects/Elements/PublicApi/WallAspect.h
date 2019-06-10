@@ -14,7 +14,7 @@ QUANTITYTAKEOFFSASPECTS_REFCOUNTED_PTR_AND_TYPEDEFS(WallAspect)
 BEGIN_QUANTITYTAKEOFFSASPECTS_NAMESPACE
 
 enum class WallType : int
-{
+    {
     Movable = 0,
     Parapet = 1,
     Partitioning = 2,
@@ -26,7 +26,7 @@ enum class WallType : int
     ElementedWall = 8,
     UserDefined = 9,
     NotDefined = 10,
-};
+    };
 
 struct WallAspect : QuantityTakeoffAspect
     {

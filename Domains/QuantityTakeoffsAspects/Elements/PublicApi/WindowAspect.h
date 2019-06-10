@@ -14,14 +14,14 @@ QUANTITYTAKEOFFSASPECTS_REFCOUNTED_PTR_AND_TYPEDEFS(WindowAspect)
 BEGIN_QUANTITYTAKEOFFSASPECTS_NAMESPACE
 
 enum class WindowType : int
-{
+    {
     Casement = 0,
     SingleHung = 1,
     DoubleHung = 2,
     Awning = 3,
     Hopper = 4,
     Sliding = 5,
-};
+    };
 
 struct WindowAspect : QuantityTakeoffAspect
     {

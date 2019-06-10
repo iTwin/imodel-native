@@ -14,7 +14,7 @@ QUANTITYTAKEOFFSASPECTS_REFCOUNTED_PTR_AND_TYPEDEFS(DoorAspect)
 BEGIN_QUANTITYTAKEOFFSASPECTS_NAMESPACE
 
 enum class DoorType : int
-{
+    {
     Flush = 0,
     FullGlass = 1,
     HalfGlass = 2,
@@ -26,7 +26,7 @@ enum class DoorType : int
     LouverTop = 8,
     HalfGlassWithLouver = 9,
     NarrowViewWithLouver = 10,
-};
+    };
 
 struct DoorAspect : QuantityTakeoffAspect
     {

@@ -31,6 +31,8 @@ $(o)DoorAspect$(oext) : $(_MakeFilePath)DoorAspect.cpp ${MultiCompileDepends} $(
 
 $(o)EnergyPerformanceAspect$(oext) : $(_MakeFilePath)EnergyPerformanceAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\EnergyPerformanceAspect.h
 
+$(o)FoundationAspect$(oext) : $(_MakeFilePath)FoundationAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\FoundationAspect.h
+
 $(o)MaterialAspect$(oext) : $(_MakeFilePath)MaterialAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\MaterialAspect.h
 
 $(o)PerimeterAspect$(oext) : $(_MakeFilePath)PerimeterAspect.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\PerimeterAspect.h

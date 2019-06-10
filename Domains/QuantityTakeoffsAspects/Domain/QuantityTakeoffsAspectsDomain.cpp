@@ -8,6 +8,7 @@
 #include <QuantityTakeoffsAspects/Handlers/DimensionsAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/DoorAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/EnergyPerformanceAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/FoundationAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/MaterialAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/PerimeterAspectHandler.h>
 #include <QuantityTakeoffsAspects/Handlers/PileAspectHandler.h>
@@ -38,6 +39,7 @@ QuantityTakeoffsAspectsDomain::QuantityTakeoffsAspectsDomain() : DgnDomain(QUANT
     RegisterHandler(DimensionsAspectHandler::GetHandler());
     RegisterHandler(DoorAspectHandler::GetHandler());
     RegisterHandler(EnergyPerformanceAspectHandler::GetHandler());
+    RegisterHandler(FoundationAspectHandler::GetHandler());
     RegisterHandler(MaterialAspectHandler::GetHandler());
     RegisterHandler(PerimeterAspectHandler::GetHandler());
     RegisterHandler(PileAspectHandler::GetHandler());
