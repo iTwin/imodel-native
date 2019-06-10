@@ -233,9 +233,9 @@ TEST_F(FormatTest, VerifyDefaults)
     EXPECT_FALSE(nfs->HasFormatTraits());
     EXPECT_EQ(Formatting::FormatTraits::None, nfs->GetFormatTraits());
     EXPECT_FALSE(nfs->HasDecimalSeparator());
-    EXPECT_EQ('.', nfs->GetDecimalSeparator());
+    EXPECT_EQ(std::use_facet<std::numpunct<Utf8Char>>(std::locale("")).decimal_point(), nfs->GetDecimalSeparator());
     EXPECT_FALSE(nfs->HasThousandsSeparator());
-    EXPECT_EQ(',', nfs->GetThousandSeparator());
+    EXPECT_EQ(std::use_facet<std::numpunct<Utf8Char>>(std::locale("")).thousands_sep(), nfs->GetThousandSeparator());
     EXPECT_FALSE(nfs->HasUomSeparator());
     EXPECT_STRCASEEQ(" ", nfs->GetUomSeparator());
     EXPECT_FALSE(nfs->HasStationSeparator());
