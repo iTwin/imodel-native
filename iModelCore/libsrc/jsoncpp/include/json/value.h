@@ -747,6 +747,7 @@ class JSON_API Value
       typedef unsigned int size_t;
       typedef int difference_type;
       typedef ValueIteratorBase SelfType;
+      typedef std::bidirectional_iterator_tag iterator_category;
 
       ValueIteratorBase();
       explicit ValueIteratorBase(const Value::ObjectValues::iterator &current);
@@ -792,6 +793,7 @@ class JSON_API Value
       friend class Value;
    public:
       typedef unsigned int size_t;
+      typedef const Value value_type;
       typedef int difference_type;
       typedef JsonValueCR reference;
       typedef JsonValueCP pointer;
@@ -844,6 +846,7 @@ class JSON_API Value
       friend class Value;
    public:
       typedef unsigned int size_t;
+      typedef Value value_type;
       typedef int difference_type;
       typedef JsonValueR reference;
       typedef Value *pointer;
