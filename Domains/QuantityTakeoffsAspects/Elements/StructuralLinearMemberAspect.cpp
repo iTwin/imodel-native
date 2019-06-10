@@ -21,7 +21,7 @@ StructuralLinearMemberAspect::StructuralLinearMemberAspect
 (
 double crossSectionalArea,
 Utf8StringCR sectionName,
-Utf8StringCR type
+StructuralFramingType type
 ) : m_crossSectionalArea(crossSectionalArea), m_sectionName(sectionName), m_type(type)
     {
     }
@@ -49,7 +49,7 @@ Dgn::DgnDbStatus StructuralLinearMemberAspect::_LoadProperties(Dgn::DgnElementCR
 
     m_crossSectionalArea = select->GetValueDouble(0);
     m_sectionName = select->GetValueText(1);
-    m_type = select->GetValueText(2);
+    m_type = static_cast<StructuralFramingType>(select->GetValueInt(2));
 
     return Dgn::DgnDbStatus::Success;
     }
@@ -76,7 +76,7 @@ BeSQLite::EC::ECCrudWriteToken const* writeToken
 
     update->BindDouble(1, m_crossSectionalArea);
     update->BindText(2, m_sectionName.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    update->BindText(3, m_type.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    update->BindInt(3, static_cast<uint32_t>(m_type));
     update->BindId(4, el.GetElementId());
 
     if (BeSQLite::BE_SQLITE_DONE != update->Step())
@@ -109,7 +109,7 @@ Dgn::PropertyArrayIndex const& arrayIndex
 
     if (0 == strcmp(propertyName, QUANTITYTAKEOFFSASPECTS_STRUCTURALLINEARMEMBERASPECT_Type))
         {
-        value.SetUtf8CP(m_type.c_str());
+        value.SetInteger(static_cast<uint32_t>(m_type));
         return Dgn::DgnDbStatus::Success;
         }
 
@@ -140,7 +140,7 @@ Dgn::PropertyArrayIndex const& arrayIndex
 
     if (0 == strcmp(propertyName, QUANTITYTAKEOFFSASPECTS_STRUCTURALLINEARMEMBERASPECT_Type))
         {
-        m_type = value.GetUtf8CP();
+        m_type = static_cast<StructuralFramingType>(value.GetInteger());
         return Dgn::DgnDbStatus::Success;
         }
 
@@ -154,7 +154,7 @@ StructuralLinearMemberAspectPtr StructuralLinearMemberAspect::Create
 (
 double crossSectionalArea,
 Utf8StringCR sectionName,
-Utf8StringCR type
+StructuralFramingType type
 )
     {
     return new StructuralLinearMemberAspect(crossSectionalArea, sectionName, type);
@@ -227,15 +227,15 @@ void StructuralLinearMemberAspect::SetSectionName(Utf8StringCR newSectionName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCP StructuralLinearMemberAspect::GetType() const
+StructuralFramingType StructuralLinearMemberAspect::GetType() const
     { 
-    return &m_type;
+    return m_type;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StructuralLinearMemberAspect::SetType(Utf8StringCR newType)
+void StructuralLinearMemberAspect::SetType(StructuralFramingType newType)
     {
     m_type = newType;
     }

@@ -13,6 +13,18 @@ QUANTITYTAKEOFFSASPECTS_REFCOUNTED_PTR_AND_TYPEDEFS(StructuralLinearMemberAspect
 
 BEGIN_QUANTITYTAKEOFFSASPECTS_NAMESPACE
 
+enum class StructuralFramingType : int
+{
+    Beam = 0,
+    Column = 1,
+    VerticalBrace = 2,
+    HorizontalBrace = 3,
+    Pier = 4,
+    Pile = 5,
+    Purlin = 6,
+    Cladding = 7
+};
+
 struct StructuralLinearMemberAspect : QuantityTakeoffAspect
     {
     DGNASPECT_DECLARE_MEMBERS(QUANTITYTAKEOFFSASPECTS_SCHEMA_NAME, QUANTITYTAKEOFFSASPECTS_CLASS_StructuralLinearMemberAspect, QuantityTakeoffAspect);
@@ -20,12 +32,12 @@ struct StructuralLinearMemberAspect : QuantityTakeoffAspect
     private:
         double m_crossSectionalArea = 0.0f;
         Utf8String m_sectionName = "";
-        Utf8String m_type = "";
+        StructuralFramingType m_type = StructuralFramingType::Beam;
 
         friend struct StructuralLinearMemberAspectHandler;
 
         QUANTITYTAKEOFFSASPECTS_EXPORT StructuralLinearMemberAspect();
-        StructuralLinearMemberAspect(double crossSectionalArea, Utf8StringCR sectionName, Utf8StringCR type);
+        StructuralLinearMemberAspect(double crossSectionalArea, Utf8StringCR sectionName, StructuralFramingType type);
 
     protected:
         QUANTITYTAKEOFFSASPECTS_EXPORT virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR, const BeSQLite::EC::ECCrudWriteToken*);
@@ -39,7 +51,7 @@ struct StructuralLinearMemberAspect : QuantityTakeoffAspect
         //! @param[in]  sectionName  Section name
         //! @param[in]  type  Type
         //! @return  Created StructuralLinearMemberAspect
-        QUANTITYTAKEOFFSASPECTS_EXPORT static StructuralLinearMemberAspectPtr Create(double crossSectionalArea, Utf8StringCR sectionName, Utf8StringCR type);
+        QUANTITYTAKEOFFSASPECTS_EXPORT static StructuralLinearMemberAspectPtr Create(double crossSectionalArea, Utf8StringCR sectionName, StructuralFramingType type);
 
         //! Query StructuralLinearMemberAspect's ECClassId from the database
         //! @param[in]  db  Reference to the database
@@ -79,11 +91,11 @@ struct StructuralLinearMemberAspect : QuantityTakeoffAspect
 
         //! Get StructuralLinearMemberAspect's type
         //! @return  Type
-        QUANTITYTAKEOFFSASPECTS_EXPORT Utf8StringCP GetType() const;
+        QUANTITYTAKEOFFSASPECTS_EXPORT StructuralFramingType GetType() const;
 
         //! Set StructuralLinearMemberAspect's type
         //! @param[in]  newType  Type
-        QUANTITYTAKEOFFSASPECTS_EXPORT void SetType(Utf8StringCR newType);
+        QUANTITYTAKEOFFSASPECTS_EXPORT void SetType(StructuralFramingType newType);
     };
 
 END_QUANTITYTAKEOFFSASPECTS_NAMESPACE
