@@ -144,6 +144,10 @@ public:
     //! Note that the method does not validate the class is part of the schema.
     REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetECClassName() const;
 
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetUserAgent() const;
+    REALITYDATAPLATFORM_EXPORT virtual void SetUserAgent(Utf8StringCR userAgent);
+
+
     //! The id of the object requested. If the request does not require
     //! an identifier then this field should remain empty
     REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetId() const;
@@ -226,6 +230,7 @@ protected:
     Utf8String m_schema;
     Utf8String m_className;
     Utf8String m_repoId;
+    mutable Utf8String m_userAgent;
     mutable Utf8String m_id;
     mutable Utf8String m_encodedId;
 

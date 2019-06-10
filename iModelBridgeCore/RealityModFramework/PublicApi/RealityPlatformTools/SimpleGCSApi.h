@@ -27,6 +27,9 @@ struct GCSRequestManager : public WSGRequestManager
     //! when querying data from the RDS server, some entries will only be visible to users on the same project
     REALITYDATAPLATFORM_EXPORT static void SetProjectId(Utf8StringCR projectId);
 
+    //! Sets the usetr agent
+    REALITYDATAPLATFORM_EXPORT static void SetUserAgent(Utf8StringCR userAgent);
+
     //! Download files from GCS
     //! @param[in] footprint points representing the polygon of interest. Last point must be the same as the first
     //! @param[in] classes of interest

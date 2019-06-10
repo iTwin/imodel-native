@@ -125,6 +125,7 @@ class RealityPlatformClient
 
         // Only required to change the target server to development, otherwise default values connect to the official service
         GeoCoordinationService.SetServerComponents("https://dev-contextservices.bentley.com/", "2.4", "IndexECPlugin-Server", "RealityModeling");
+        GeoCoordinationService.SetUserAgent("RealityPlatformGloabalExample - dummy user agent");
 
         // Define the project extent
         bvector<GeoPoint2D> myProjectAreaInLatLong;
@@ -217,6 +218,8 @@ class RealityPlatformClient
 
         // Only required to change the target server to development, otherwise default values connect to the official service
         GeoCoordinationService.SetServerComponents("https://dev-contextservices.bentley.com/", "2.4", "IndexECPlugin-Server", "RealityModeling");
+        GeoCoordinationService.SetUserAgent("RealityPlatformGloabalExample - dummy user agent");
+
 
         // Obtaint he project extent
         bvector<GeoPoint2D> myProjectAreaInLatLong;
@@ -271,6 +274,8 @@ class RealityPlatformClient
 
         // Only required to change the target server to development, otherwise default values connect to the official service
         GeoCoordinationService.SetServerComponents("https://dev-contextservices.bentley.com/", "2.4", "IndexECPlugin-Server", "RealityModeling");
+        GeoCoordinationService.SetUserAgent("RealityPlatformGloabalExample - dummy user agent");
+
 
         // Obtaint he project extent
         bvector<GeoPoint2D> myProjectAreaInLatLong;

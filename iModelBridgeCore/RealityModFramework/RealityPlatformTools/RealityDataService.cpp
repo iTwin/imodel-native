@@ -122,6 +122,7 @@ struct RealityDataFileTransfer : public RealityDataUrl
         Utf8String              m_chunkNumberString;
 
         Utf8String              m_blockList;
+        size_t                  m_blockListTransfered;
         char*                   m_fileBuffer;
         size_t                  m_sizeTransfered;
     };
@@ -471,6 +472,8 @@ Utf8StringCR RealityDataUrl::GetSchema() const { return RealityDataService::GetS
 
 Utf8StringCR RealityDataUrl::GetRepoId() const { return RealityDataService::GetRepoName(); }
 
+Utf8StringCR RealityDataUrl::GetUserAgent() const { return RealityDataService::GetUserAgent(); }
+
 void RealityDataUrl::EncodeId() const 
     {
     m_id.ReplaceAll("/", "~2F");
@@ -483,6 +486,7 @@ void RealityDataUrl::EncodeId() const
 void RealityDataUrl::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServerName();
+    m_userAgent = RealityDataService::GetUserAgent();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append(Utf8PrintfString("v%s/Repositories/%s/%s", RealityDataService::GetWSGProtocol().c_str(), RealityDataService::GetRepoName().c_str(), RealityDataService::GetSchemaName().c_str()));
     }
@@ -1022,6 +1026,7 @@ Utf8StringCR RealityDataPagedRequest::GetServerName() const { return RealityData
 Utf8StringCR RealityDataPagedRequest::GetVersion() const { return RealityDataService::GetWSGProtocol(); }
 Utf8StringCR RealityDataPagedRequest::GetSchema() const { return RealityDataService::GetSchemaName(); }
 Utf8StringCR RealityDataPagedRequest::GetRepoId() const { return RealityDataService::GetRepoName(); }
+Utf8StringCR RealityDataPagedRequest::GetUserAgent() const { return RealityDataService::GetUserAgent(); }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
@@ -1029,6 +1034,7 @@ Utf8StringCR RealityDataPagedRequest::GetRepoId() const { return RealityDataServ
 void RealityDataPagedRequest::_PrepareBaseRequestString() const
     {
     m_serverName = RealityDataService::GetServerName();
+    m_userAgent = RealityDataService::GetUserAgent();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("v");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
@@ -1145,6 +1151,14 @@ void RealityDataPagedRequest::SetProject(Utf8StringCR project)
     { 
     m_project = BeStringUtilities::UriEncode(project.c_str());
     }
+
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              05/2019
+//=====================================================================================
+void RealityDataPagedRequest::SetUserAgent(Utf8StringCR userAgent)
+{
+    m_userAgent = BeStringUtilities::UriEncode(userAgent.c_str());
+}
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
@@ -1508,6 +1522,7 @@ bool RealityDataFileUpload::FinishedSending()
     if(!m_moreToSend)
         {
         m_chunkSize = m_blockList.length();
+        m_blockListTransfered = 0;
         m_validRequestString = false;
         }
     else
@@ -1528,10 +1543,19 @@ void RealityDataFileUpload::UpdateTransferedSize()
 //=====================================================================================
 size_t RealityDataFileUpload::OnReadData(char* buffer, size_t size)
     {
+    // This is a patch to transfer the final control block. The proper way would be to change
+    // the read call back for this final block but I do not want to restructure everything as
+    //. we are considering changing transfer for and to Azure blob to AzCopy.
     if(!m_blockList.empty())
         {
-        memcpy(buffer, m_blockList.c_str(), m_blockList.length());
-        return (uint32_t)m_blockList.length();
+        if (m_blockList.length() == m_blockListTransfered)
+            return 0;
+        size_t maxBuffer = m_blockList.length() - m_blockListTransfered;
+        if (maxBuffer > size) 
+            maxBuffer = size;
+        memcpy(buffer, m_blockList.c_str() + m_blockListTransfered, maxBuffer);
+        m_blockListTransfered += maxBuffer;
+        return maxBuffer;
         }
     
     if(size > (m_chunkSize - m_sizeTransfered))
@@ -1822,6 +1846,7 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
             navString = navNode.GetNavString();
             }
         WSGNavNodeRequest* getRequest = new WSGNavNodeRequest(RealityDataService::GetServerName(), RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName(), navString);
+        getRequest->SetUserAgent(RealityDataService::GetUserAgent());
         RawServerResponse idResponse;
         if ((idResponse = RealityDataService::BasicRequest((RealityDataUrl*)getRequest)).status == RequestStatus::BADREQ) //file does not exist, need POST Create
             {
@@ -2338,6 +2363,7 @@ static Utf8String s_realityDataRepoName = "S3MXECPlugin--Server";
 static Utf8String s_realityDataRepoNameWProjectId = "";
 static Utf8String s_realityDataSchemaName = "S3MX";
 static Utf8String s_projectId = "";
+static Utf8String s_realityDataUserAgent = "Undefined User Agent through RDS C++ SDK";
 static bool       s_initializedParams = false;
 
 static bool       s_verifyPeer = false;
@@ -2349,6 +2375,8 @@ Utf8StringCR RealityDataService::GetSchemaName()      { return s_realityDataSche
 const bool   RealityDataService::GetVerifyPeer()      { return s_verifyPeer; } //TODO: verify when possible...
 Utf8StringCR RealityDataService::GetCertificatePath() { return s_realityDataCertificatePath; }
 Utf8StringCR RealityDataService::GetProjectId()       { return s_projectId; }
+Utf8StringCR RealityDataService::GetUserAgent()       { return s_realityDataUserAgent; }
+
 const bool   RealityDataService::AreParametersSet()   { return s_initializedParams; }
 
 Utf8StringCR RealityDataService::GetRepoName()        
@@ -2396,6 +2424,11 @@ void RealityDataService::SetProjectId(Utf8StringCR projectId)
     {
     s_projectId = projectId;
     }
+
+void RealityDataService::SetUserAgent(Utf8StringCR userAgent)
+{
+    s_realityDataUserAgent = userAgent;
+}
 
 static void defaultErrorCallback(Utf8String basicMessage, const RawServerResponse& rawResponse)
     {
@@ -3214,5 +3247,7 @@ void RealityDataServiceHelper::ResetServerComponents()
     s_realityDataRepoName = "S3MXECPlugin--Server";
     s_realityDataRepoNameWProjectId = "";
     s_realityDataSchemaName = "S3MX";
+    s_realityDataUserAgent = "Undefined User Agent through RDS C++ SDK";
+   
     s_projectId = "";
     }
