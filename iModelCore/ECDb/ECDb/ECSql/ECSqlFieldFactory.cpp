@@ -232,7 +232,15 @@ ECSqlSelectPreparedStatement& ECSqlFieldFactory::GetPreparedStatement(ECSqlPrepa
 //static
 ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoFromPropertyNameExp(ECSqlPrepareContext const& ctx, PropertyNameExp const& propertyNameExp)
     {
-    PropertyPath const& internalPropPath = propertyNameExp.GetPropertyPath();
+    PropertyNameExp const* resolvedPropertyName = &propertyNameExp;
+    if (propertyNameExp.IsPropertyRef())
+        {
+        BeAssert(propertyNameExp.GetPropertyRef()->IsPure());
+        BeAssert(propertyNameExp.GetPropertyRef()->GetEndPointDerivedProperty().GetExpression()->GetType() == Exp::Type::PropertyName);
+        resolvedPropertyName = propertyNameExp.GetPropertyRef()->GetEndPointDerivedProperty().GetExpression()->GetAsCP<PropertyNameExp>();
+        }
+
+    PropertyPath const& internalPropPath = resolvedPropertyName->GetPropertyPath();
     size_t entryCount = internalPropPath.Size();
     ECSqlPropertyPath ecsqlPropPath;
     for (size_t i = 0; i < entryCount; i++)
@@ -246,8 +254,8 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoFromPropertyNameExp(ECSqlPrep
     ECClassCR rootClass = internalPropPath.GetClassMap()->GetClass();
     ECPropertyCP leafProp = ecsqlPropPath.GetLeafEntry().GetProperty();
     const bool isSystem = leafProp != nullptr && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*leafProp).IsSystemProperty();
-    DbTableSpace const& tableSpace = propertyNameExp.GetPropertyMap().GetClassMap().GetSchemaManager().GetTableSpace();
-    return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, false, std::move(ecsqlPropPath), ECSqlColumnInfo::RootClass(rootClass, tableSpace.GetName().c_str(), propertyNameExp.GetClassName()));
+    DbTableSpace const& tableSpace = resolvedPropertyName->GetPropertyMap().GetClassMap().GetSchemaManager().GetTableSpace();
+    return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, false, std::move(ecsqlPropPath), ECSqlColumnInfo::RootClass(rootClass, tableSpace.GetName().c_str(), resolvedPropertyName->GetClassName()));
     }
 
 //-----------------------------------------------------------------------------------------

@@ -7,7 +7,6 @@
 //__PUBLISH_SECTION_START__
 #include <Bentley/Bentley.h>
 #include <chrono>
-#include <thread>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
@@ -37,7 +36,7 @@ struct ConcurrentQueryManager final
     enum class PostStatus
         {
         NotInitalized = 0,
-        Done = 1,
+    Done = 1,
         QueueSizeExceded = 2,
         };
 
@@ -54,9 +53,8 @@ struct ConcurrentQueryManager final
             std::chrono::seconds MaxTimeAllowed() const noexcept { return m_timeLimit; }
             uint32_t MaxMemoryAllowed() const noexcept { return m_memoryLimit; }
             bool IsEmpty() const { return m_memoryLimit == 0 && m_timeLimit == std::chrono::seconds(0); }
-            ECDB_EXPORT void ToJson(Json::Value&) const;
-            ECDB_EXPORT Quota& FromJson(Json::Value const&);
         };
+
     struct Config final
         {
         private:
@@ -68,34 +66,29 @@ struct ConcurrentQueryManager final
             std::chrono::seconds m_completedTaskExpires;
             std::function<void(Db const&)> m_afterConnectionOpenned;
             std::function<void(Db const&)> m_beforeConnectionClosed;
+            bool m_useSharedCache;
+            bool m_useUncommitedRead;
             Quota m_quota;
         public:
             ECDB_EXPORT Config(const Config&& rhs);
             ECDB_EXPORT Config(const Config& rhs);
             ECDB_EXPORT Config& operator = (const Config&& rhs);
             ECDB_EXPORT Config& operator = (const Config& rhs);
-
-            Config() :
-                m_concurrent(std::thread::hardware_concurrency()),
-                m_cacheStatementsPerThread(20),
-                m_maxQueueSize(std::thread::hardware_concurrency() * 1000),
-                m_idleCleanupTime(20min),
-                m_minMonitorInterval(1s),
-                m_completedTaskExpires(1min),
-                m_quota()
-                {}
+            ECDB_EXPORT Config();
             ~Config() {}
+            // get
             Quota const& GetQuota() const noexcept { return m_quota; }
             unsigned int GetConcurrent() const noexcept { return m_concurrent; }
             unsigned int GetMaxQueueSize() const noexcept { return m_maxQueueSize; }
-            unsigned int GetCacheStatementPerThread() const noexcept { return m_cacheStatementsPerThread; }
+            unsigned int GetCacheStatementPerThread() const noexcept { return m_cacheStatementsPerThread; }            
+            unsigned int GetUseSharedCache() const noexcept { return m_useSharedCache; }
+            unsigned int GetUseUncommitedRead() const noexcept { return m_useUncommitedRead; }
             std::chrono::seconds GetMinMonitorInterval() const noexcept { return m_minMonitorInterval; }
-            std::chrono::seconds GetIdolCleanupTime() const noexcept { return m_idleCleanupTime; }
+            std::chrono::seconds GetIdleCleanupTime() const noexcept { return m_idleCleanupTime; }
             std::chrono::seconds GetAutoExpireTimeForCompletedQuery() const { return m_completedTaskExpires; }
-
             std::function<void(Db const&)> const& GetAfterConnectionOpenedCallback() const noexcept { return  m_afterConnectionOpenned; }
             std::function<void(Db const&)> const& GetBeforeConnectionClosedCallback() const noexcept { return  m_beforeConnectionClosed; }
-
+            // set
             Config& SetAutoExpireTimeForCompletedQuery(std::chrono::seconds seconds) noexcept { m_completedTaskExpires = seconds; return *this; }
             Config& SetConcurrent(unsigned int v) noexcept { m_concurrent = v; return *this; }
             Config& SetCacheStatementsPerThread(unsigned int v) noexcept { m_cacheStatementsPerThread = v; return *this; }
@@ -105,9 +98,8 @@ struct ConcurrentQueryManager final
             Config& SetQuota(Quota quota) noexcept { m_quota = quota;  return *this; }
             Config& SetAfterConnectionOpenned(std::function<void(Db const&)> callback) noexcept { m_afterConnectionOpenned = callback;  return *this; }
             Config& SetBeforeConnectionClosed(std::function<void(Db const&)> callback) noexcept { m_beforeConnectionClosed = callback;  return *this; }
-
-            ECDB_EXPORT void ToJson(Json::Value&) const;
-            ECDB_EXPORT Config& FromJson(Json::Value const&);
+            Config& SetUseSharedCache(bool v) noexcept { m_useSharedCache = v;  return *this; }
+            Config& SetUseUncommitedRead(bool v) noexcept { m_useUncommitedRead = v;  return *this; }
         };
     struct Limit final
         {
@@ -118,8 +110,6 @@ struct ConcurrentQueryManager final
             Limit(int64_t count = -1, int64_t offset = -1) : m_count(count), m_offset(offset) {}
             int64_t GetCount() const { return m_count; }
             int64_t GetOffset() const { return m_offset; }
-            ECDB_EXPORT void ToJson(Json::Value&) const;
-            ECDB_EXPORT Limit& FromJson(Json::Value const&);
         };
     public:
         struct Impl;

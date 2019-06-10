@@ -86,9 +86,8 @@ struct JsonAdaptorCache final
                 {
                 if (!m_adaptor)
                     {
-                    auto options = JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar,
-                                                                         ECN::ECJsonInt64Format::AsHexadecimalString, JsonECSqlSelectAdapter::BlobMode::Base64String, true);
-                    options.SetBase64Header(BASE64_HEADER);
+                    auto options = JsonECSqlSelectAdapter::FormatOptions();
+                    options.SetRowFormat(JsonECSqlSelectAdapter::RowFormat::IModelJs);
                     m_adaptor = std::unique_ptr<JsonECSqlSelectAdapter>(new JsonECSqlSelectAdapter(*m_stmt, options));
                     }
 
@@ -160,7 +159,6 @@ struct QueryTask final
         void SetPartial();
         void SetDone();
         BentleyStatus BindPrimitive(ECSqlStatement* stmt, Json::Value const& v, int index);
-
     public:
         QueryTask(const QueryTask& rhs) = delete;
         QueryTask& operator = (const QueryTask& rhs) = delete;
@@ -214,8 +212,9 @@ struct QueryWorker final
         QueryWorkerPool& GetPool() { return m_workerPool; }
         Db const& GetConnection() const { return m_db; }
         explicit QueryWorker(QueryWorkerPool& workerPool);
-        void Join() { return m_thread.join(); }
+        void Join() { m_thread.join(); }
         void FreeMemory();
+        bool IsDbOpen() const { return m_db.IsDbOpen(); }
         ~QueryWorker();
     };
 
@@ -248,6 +247,8 @@ struct QueryWorkerPool final
         bool m_stop;
         unsigned int m_maxWorkers;
         ConcurrentQueryManager::Impl* m_mgr;
+        bool m_isInitialized;
+        void Shutdown();
 
     public:
         explicit QueryWorkerPool(ConcurrentQueryManager::Impl* mgr);
@@ -255,6 +256,8 @@ struct QueryWorkerPool final
         bool Enqueue(QueryTask* task);
         void Remove(QueryTask* task);
         void FreeMemory();
+        size_t GetUnSafeSize() const { return m_queue.size(); }
+        bool IsInitialized() const { return m_isInitialized; }
         bool Empty() const { std::lock_guard<std::mutex> lock(m_mutex); return m_queue.empty(); }
         ~QueryWorkerPool();
     };

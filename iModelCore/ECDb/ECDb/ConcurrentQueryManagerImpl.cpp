@@ -10,112 +10,26 @@ using namespace std::chrono_literals;
 using namespace std::chrono;
 #define LIMIT_VAR_COUNT "sys_ecdb_count"
 #define LIMIT_VAR_OFFSET "sys_ecdb_offset"
-static constexpr Json::StaticString json_autoExpireTimeForCompletedQuery() { return Json::StaticString("autoExpireTimeForCompletedQuery"); }
-static constexpr Json::StaticString json_concurrent() { return Json::StaticString("concurrent"); }
-static constexpr Json::StaticString json_cachedStatementsPerWorker() { return Json::StaticString("cachedStatementsPerWorker"); }
-static constexpr Json::StaticString json_maxQueueSize() { return Json::StaticString("maxQueueSize"); }
-static constexpr Json::StaticString json_minMonitorInterval() { return Json::StaticString("minMonitorInterval"); }
-static constexpr Json::StaticString json_idleCleanupTime() { return Json::StaticString("idleCleanupTime"); }
-static constexpr Json::StaticString json_completedTaskExpires() { return Json::StaticString("completedTaskExpires"); }
-static constexpr Json::StaticString json_quota_timeLimit() { return Json::StaticString("timeLimit"); }
-static constexpr Json::StaticString json_quota_memoryLimit() { return Json::StaticString("memoryLimit"); }
-static constexpr Json::StaticString json_quota() { return Json::StaticString("quota"); }
-static constexpr Json::StaticString json_limit_offset() { return Json::StaticString("offset"); }
-static constexpr Json::StaticString json_limit_count() { return Json::StaticString("count"); }
+static BentleyApi::NativeLogging::ILogger *s_logger = NativeLogging::LoggingManager::GetLogger(L"ECDb.ConcurrentQuery");
+#define CQLOG (*s_logger)
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                             Affan.Khan             05/2019
-//---------------------------------------------------------------------------------------
-void ConcurrentQueryManager::Limit::ToJson(Json::Value& v) const
-    {
-    v = Json::Value(Json::ValueType::objectValue);
-    v[json_limit_offset()] = static_cast<int>(m_offset);
-    v[json_limit_count()] = static_cast<int>(m_count);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                             Affan.Khan             05/2019
-//---------------------------------------------------------------------------------------
-ConcurrentQueryManager::Limit& ConcurrentQueryManager::Limit::FromJson(Json::Value const& v)
-    {
-    if (v.isMember(json_limit_offset()))
-        m_offset = v[json_limit_offset()].asInt();
-
-    if (v.isMember(json_limit_count()))
-        m_count = v[json_limit_count()].asInt();
-
-    return *this;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                             Affan.Khan             05/2019
-//---------------------------------------------------------------------------------------
-void ConcurrentQueryManager::Quota::ToJson(Json::Value& v) const
-    {
-    v = Json::Value(Json::ValueType::objectValue);
-    v[json_quota_timeLimit()] = static_cast<int>(m_timeLimit.count());
-    v[json_quota_memoryLimit()] = m_memoryLimit;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                             Affan.Khan             05/2019
-//---------------------------------------------------------------------------------------
-ConcurrentQueryManager::Quota& ConcurrentQueryManager::Quota::FromJson(Json::Value const& v)
-    {
-    if (v.isMember(json_quota_timeLimit()))
-        m_timeLimit = seconds(v[json_quota_timeLimit()].asInt());
-
-    if (v.isMember(json_quota_memoryLimit()))
-        m_memoryLimit = v[json_quota_memoryLimit()].asInt();
-
-    return *this;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                             Affan.Khan             05/2019
-//---------------------------------------------------------------------------------------
-void ConcurrentQueryManager::Config::ToJson(Json::Value& v) const
-    {
-    v = Json::Value(Json::ValueType::objectValue);
-    v[json_idleCleanupTime()] = static_cast<int>(m_idleCleanupTime.count());
-    v[json_minMonitorInterval()] = static_cast<int>(m_minMonitorInterval.count());
-    v[json_completedTaskExpires()] = static_cast<int>(m_completedTaskExpires.count());
-    v[json_cachedStatementsPerWorker()] = static_cast<int>(m_cacheStatementsPerThread);
-    v[json_maxQueueSize()] = static_cast<int>(m_maxQueueSize);
-    v[json_concurrent()] = static_cast<int>(m_concurrent);
-    v[json_autoExpireTimeForCompletedQuery()] = static_cast<int>(m_completedTaskExpires.count());
-    m_quota.ToJson(v[json_quota()]);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                             Affan.Khan             05/2019
-//---------------------------------------------------------------------------------------
-ConcurrentQueryManager::Config& ConcurrentQueryManager::Config::FromJson(Json::Value const& v)
-    {
-    if (v.isMember(json_idleCleanupTime()))
-        m_idleCleanupTime = seconds(v[json_idleCleanupTime()].asInt());
-
-    if (v.isMember(json_minMonitorInterval()))
-        m_minMonitorInterval = seconds(v[json_minMonitorInterval()].asInt());
-
-    if (v.isMember(json_completedTaskExpires()))
-        m_completedTaskExpires = seconds(v[json_completedTaskExpires()].asInt());
-
-    if (v.isMember(json_cachedStatementsPerWorker()))
-        m_cacheStatementsPerThread = static_cast<unsigned int>(v[json_cachedStatementsPerWorker()].asInt());
-
-    if (v.isMember(json_maxQueueSize()))
-        m_maxQueueSize = static_cast<unsigned int>(v[json_maxQueueSize()].asInt());
-
-    if (v.isMember(json_concurrent()))
-        m_concurrent = static_cast<unsigned int>(v[json_concurrent()].asInt());
-
-    if (v.isMember(json_autoExpireTimeForCompletedQuery()))
-        m_completedTaskExpires = seconds(v[json_autoExpireTimeForCompletedQuery()].asInt());
-
-    return *this;
-    }
 //****************************ConcurrentQueryManager::Config*****************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Affan.Khan             05/2019
+//---------------------------------------------------------------------------------------
+ConcurrentQueryManager::Config::Config():
+    m_concurrent(std::thread::hardware_concurrency()),
+    m_cacheStatementsPerThread(20),
+    m_maxQueueSize(std::thread::hardware_concurrency() * 1000),
+    m_idleCleanupTime(20min),
+    m_minMonitorInterval(1s),
+    m_completedTaskExpires(1min),
+    m_quota(),
+    m_useSharedCache(false),
+    m_useUncommitedRead(true)
+    {}
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Affan.Khan             05/2019
 //---------------------------------------------------------------------------------------
@@ -128,7 +42,9 @@ ConcurrentQueryManager::Config::Config(const Config&& rhs)
     m_quota(std::move(rhs.m_quota)),
     m_idleCleanupTime(std::move(rhs.m_idleCleanupTime)),
     m_minMonitorInterval(std::move(rhs.m_minMonitorInterval)),
-    m_completedTaskExpires(std::move(rhs.m_completedTaskExpires))
+    m_completedTaskExpires(std::move(rhs.m_completedTaskExpires)),
+    m_useSharedCache(std::move(rhs.m_useSharedCache)),
+    m_useUncommitedRead(std::move(rhs.m_useUncommitedRead))
     {
     }
 
@@ -144,7 +60,9 @@ ConcurrentQueryManager::Config::Config(const Config& rhs)
     m_quota(rhs.m_quota),
     m_idleCleanupTime(rhs.m_idleCleanupTime),
     m_minMonitorInterval(rhs.m_minMonitorInterval),
-    m_completedTaskExpires(rhs.m_completedTaskExpires)
+    m_completedTaskExpires(rhs.m_completedTaskExpires),
+    m_useSharedCache(rhs.m_useSharedCache),
+    m_useUncommitedRead(rhs.m_useUncommitedRead)
     {
     }
 
@@ -164,6 +82,8 @@ ConcurrentQueryManager::Config& ConcurrentQueryManager::Config::operator= (const
         m_idleCleanupTime = rhs.m_idleCleanupTime;
         m_minMonitorInterval = rhs.m_minMonitorInterval;
         m_completedTaskExpires = rhs.m_completedTaskExpires;
+        m_useSharedCache = rhs.m_useSharedCache;
+        m_useUncommitedRead = rhs.m_useUncommitedRead;
         }
     return *this;
     }
@@ -184,6 +104,8 @@ ConcurrentQueryManager::Config& ConcurrentQueryManager::Config::operator= (const
         m_idleCleanupTime = rhs.m_idleCleanupTime;
         m_minMonitorInterval = rhs.m_minMonitorInterval;
         m_completedTaskExpires = rhs.m_completedTaskExpires;
+        m_useSharedCache = std::move(rhs.m_useSharedCache);
+        m_useUncommitedRead = std::move(rhs.m_useUncommitedRead);
         }
     return *this;
     }
@@ -292,10 +214,10 @@ void QueryTask::Run(JsonAdaptorCache& cache, QueryInterruptor& interruptor)
     auto entry = cache.Get(m_ecsql.c_str());
     if (entry == nullptr)
         {
-        m_state.store(State::Error);
+        SetError(interruptor.GetLastError().c_str());
         return;
         }
-
+    ECSqlStatement* pstmt = entry->GetStatement();
     if (!m_bindings.empty())
         {
         const auto userBindings = Json::Value::From(m_bindings);
@@ -303,7 +225,7 @@ void QueryTask::Run(JsonAdaptorCache& cache, QueryInterruptor& interruptor)
             {
             for (auto& mb : userBindings.getMemberNames())
                 {
-                const int idx = entry->GetStatement()->GetParameterIndex(mb.c_str());
+                const int idx = pstmt->GetParameterIndex(mb.c_str());
                 if (idx < 1)
                     {
                     SetError(SqlPrintfString("Failed to find parameter '%s'", mb.c_str()));
@@ -311,7 +233,7 @@ void QueryTask::Run(JsonAdaptorCache& cache, QueryInterruptor& interruptor)
                     }
 
                 auto& v = userBindings[mb];
-                if (BindPrimitive(entry->GetStatement(), v, idx) != SUCCESS)
+                if (BindPrimitive(pstmt, v, idx) != SUCCESS)
                     return;
                 }
             }
@@ -328,7 +250,7 @@ void QueryTask::Run(JsonAdaptorCache& cache, QueryInterruptor& interruptor)
                     }
                 else
                     {
-                    if (BindPrimitive(entry->GetStatement(), v, i + 1) != SUCCESS)
+                    if (BindPrimitive(pstmt, v, i + 1) != SUCCESS)
                         return;
                     }
                 }
@@ -340,16 +262,16 @@ void QueryTask::Run(JsonAdaptorCache& cache, QueryInterruptor& interruptor)
             }
         }
 
-    const auto idxCount = entry->GetStatement()->GetParameterIndex(LIMIT_VAR_COUNT);
-    const auto idxOffset = entry->GetStatement()->GetParameterIndex(LIMIT_VAR_OFFSET);
+    const auto idxCount = pstmt->GetParameterIndex(LIMIT_VAR_COUNT);
+    const auto idxOffset = pstmt->GetParameterIndex(LIMIT_VAR_OFFSET);
     // bind limit
-    entry->GetStatement()->BindInt64(idxCount, m_limit.GetCount());
-    entry->GetStatement()->BindInt64(idxOffset, m_limit.GetOffset());
+    pstmt->BindInt64(idxCount, m_limit.GetCount());
+    pstmt->BindInt64(idxOffset, m_limit.GetOffset());
     Json::Value rows(Json::ValueType::objectValue);
     bool firstRow = true;
     m_result.reserve(QUERY_WORKER_RESULT_RESERVE_BYTES);
     m_result = "[";
-    DbResult rc = entry->GetStatement()->Step();
+    DbResult rc = pstmt->Step();
     while (rc == BE_SQLITE_ROW)
         {
         if (entry->GetJsonAdaptor()->GetRow(rows) != SUCCESS)
@@ -375,7 +297,7 @@ void QueryTask::Run(JsonAdaptorCache& cache, QueryInterruptor& interruptor)
             return;
             }
 
-        rc = entry->GetStatement()->Step();
+        rc = pstmt->Step();
         }
 
     if (rc == BE_SQLITE_INTERRUPT)
@@ -418,6 +340,13 @@ JsonAdaptorCache::CacheEntry* JsonAdaptorCache::Get(Utf8CP ecsql)
     CacheEntry entry;    
     ecdb.GetImpl().GetMutex().Enter();
     auto rc = entry.GetStatement()->Prepare(ecdb.Schemas(), workerConn, ecsql);
+    if (rc != ECSqlStatus::Success && CQLOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
+        {
+        if (rc == ECSqlStatus::InvalidECSql)
+            CQLOG.errorv("Invalid ECSql : %s", ecsql);
+        if (rc.IsSQLiteError())
+            CQLOG.errorv("Failed to prepare ECSql : %s, Sqlite Error: %s", ecsql, workerConn.GetLastError().c_str());
+        }
     ecdb.GetImpl().GetMutex().Leave();
     if (rc != ECSqlStatus::Success)
         return nullptr;
@@ -476,7 +405,7 @@ void QueryWorker::Run(QueryWorker* worker)
                 auto nextTask = pool.m_queue.top();
                 pool.m_queue.pop();
                 if (nextTask->GetState() == QueryTask::State::Inqueue)
-                    task = nextTask;                    
+                    task = nextTask;
                 }
             }
 
@@ -484,6 +413,7 @@ void QueryWorker::Run(QueryWorker* worker)
         if (task != nullptr)
             {
             QueryInterruptor interruptor(worker->m_db);
+            Savepoint txn(worker->m_db, "QueryWorker::Run");
             task->Run(worker->m_stmtCache, interruptor);
             }
         }
@@ -495,16 +425,35 @@ void QueryWorker::Run(QueryWorker* worker)
 void QueryWorker::Init()
     {
     m_retryHandler = new RetryHandler();
-    auto rc = m_db.OpenBeSQLiteDb(m_workerPool.GetMgr()->GetECDb().GetDbFileName(), Db::OpenParams((Db::OpenMode)((int) Db::OpenMode::Readonly), DefaultTxn::Yes, m_retryHandler.get()));
-
+    const auto isErrorEnabled = CQLOG.isSeverityEnabled(NativeLogging::LOG_ERROR);
+    const auto txn =  DefaultTxn::No;
+    const auto openMode = (Db::OpenMode)(m_workerPool.GetMgr()->GetConfig().GetUseSharedCache() ? (int)Db::OpenMode::Readonly | (int)Db::OpenMode::SharedCache : (int)Db::OpenMode::Readonly);
+    auto rc = m_db.OpenBeSQLiteDb(m_workerPool.GetMgr()->GetECDb().GetDbFileName(), Db::OpenParams(openMode, txn, m_retryHandler.get()));
     if (rc != BE_SQLITE_OK)
         {
-        BeAssert(rc != BE_SQLITE_OK);
-        }
+        if (isErrorEnabled) 
+            CQLOG.errorv("Failed to open SQLite connection: %s", m_db.GetLastError().c_str());
 
+        BeAssert(rc != BE_SQLITE_OK);
+        return;
+        }
+    if ( m_workerPool.GetMgr()->GetConfig().GetUseUncommitedRead())
+        {
+        rc = m_db.TryExecuteSql("PRAGMA read_uncommitted=true");
+        if (rc != BE_SQLITE_OK)
+            {
+            if (isErrorEnabled)
+                CQLOG.errorv("Failed to apply read uncommitted flag: %s", m_db.GetLastError().c_str());
+            m_db.CloseDb();
+            BeAssert(rc != BE_SQLITE_OK);
+            return;
+            }
+        }
     auto& cb = m_workerPool.m_mgr->GetConfig().GetAfterConnectionOpenedCallback();
     if (cb)
+        {
         cb(m_db);
+        }
 
     m_thread = std::thread(Run, this);
     m_started.get_future().wait();
@@ -530,18 +479,37 @@ QueryWorker::~QueryWorker()
 // @bsimethod                                             Affan.Khan             05/2019
 //---------------------------------------------------------------------------------------
 QueryWorkerPool::QueryWorkerPool(ConcurrentQueryManager::Impl* mgr)
-    :m_mgr(mgr),m_stop(false)
+    :m_mgr(mgr),m_stop(false), m_isInitialized(false)
     {
     m_maxWorkers = std::max(1u, std::min(m_mgr->GetConfig().GetConcurrent(), std::thread::hardware_concurrency()));
-    for (unsigned int i = 0; i < m_maxWorkers; i++)
-        m_workers.push_back(std::unique_ptr<QueryWorker>(new QueryWorker(*this)));
-    }
+    const auto isTraceEnabled = CQLOG.isSeverityEnabled(NativeLogging::LOG_TRACE);
+    if (isTraceEnabled)
+        CQLOG.tracev("Starting WorkerPool %" PRIu32, m_maxWorkers);
 
+    for (unsigned int i = 0; i < m_maxWorkers; i++) 
+        {
+        m_workers.push_back(std::unique_ptr<QueryWorker>(new QueryWorker(*this)));
+        if (!m_workers.back()->IsDbOpen()) 
+            {
+            const auto isErrorEnabled = CQLOG.isSeverityEnabled(NativeLogging::LOG_ERROR);
+            if (isErrorEnabled)
+                CQLOG.errorv("Failed to start query worker [id=%" PRIu32 "]", i);
+
+            Shutdown();
+            return;
+            }
+        }
+    m_isInitialized = true;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Affan.Khan             05/2019
 //---------------------------------------------------------------------------------------
-QueryWorkerPool::~QueryWorkerPool()
+void QueryWorkerPool::Shutdown()
     {
+    const auto isTraceEnabled = CQLOG.isSeverityEnabled(NativeLogging::LOG_TRACE);
+    if (isTraceEnabled)
+        CQLOG.trace("Shutting down WorkerPool");
+
     if (true)
         {
         std::lock_guard<std::mutex> lock(m_mutex);
@@ -552,7 +520,18 @@ QueryWorkerPool::~QueryWorkerPool()
         }
 
     for (auto& worker : m_workers)
-        worker->Join();
+        {
+        if (worker->IsDbOpen())
+            worker->Join();
+        }    
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Affan.Khan             05/2019
+//---------------------------------------------------------------------------------------
+QueryWorkerPool::~QueryWorkerPool()
+    {
+    Shutdown();
     }
 
 //---------------------------------------------------------------------------------------
@@ -660,11 +639,15 @@ ConcurrentQueryManager::PollStatus ConcurrentQueryManager::PollQuery(Utf8StringR
 //---------------------------------------------------------------------------------------
 void ConcurrentQueryManager::Impl::Monitor(ConcurrentQueryManager::Impl* mgr)
     {
+    const auto isTraceEnabled = CQLOG.isSeverityEnabled(NativeLogging::LOG_TRACE);
+    if (isTraceEnabled)
+        CQLOG.trace("Monitor started");
+
     const auto minIntervalTime = mgr->GetConfig().GetMinMonitorInterval();
     for (;;)
         {
         if (mgr->m_stop)
-            return;
+            break;
         
         auto nextTimeoutToWakeUp = mgr->GetConfig().GetMinMonitorInterval();
         //check if any inqueue task has expired
@@ -672,8 +655,11 @@ void ConcurrentQueryManager::Impl::Monitor(ConcurrentQueryManager::Impl* mgr)
             {
             std::lock_guard<std::mutex> lock(mgr->m_mutex);
             seconds timeElapsed = duration_cast<seconds>(steady_clock::now() - mgr->m_lastTimeActive);
-            if (timeElapsed > mgr->m_config.GetIdolCleanupTime())
+            if (timeElapsed > mgr->m_config.GetIdleCleanupTime())
                 {
+                if (isTraceEnabled)
+                    CQLOG.trace("Idle Cleanup");
+
                  mgr->GetWorkerPool().FreeMemory();
                  mgr->m_lastTimeActive = steady_clock::now();
                 }
@@ -726,6 +712,8 @@ void ConcurrentQueryManager::Impl::Monitor(ConcurrentQueryManager::Impl* mgr)
             }
         std::this_thread::sleep_for(nextTimeoutToWakeUp);
         }
+    if (isTraceEnabled)
+        CQLOG.trace("Monitor shutdown");
     }
 
 //---------------------------------------------------------------------------------------
@@ -744,8 +732,25 @@ bool ConcurrentQueryManager::Impl::Initalize(Config config)
     if (m_initalized)
         return false;
 
+    if (!m_ecdb.IsDbOpen())
+        {
+        if (CQLOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
+            CQLOG.error("Primary connection state must be open");
+
+        return false;
+        }
     m_config = config;
     m_workerPool = std::make_unique< QueryWorkerPool>(this);
+    m_initalized = m_workerPool->IsInitialized();
+    if (!m_initalized) 
+        {
+        if (CQLOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
+            CQLOG.error("Failed to initialize worker pool");
+
+        m_config = Config();
+        m_workerPool = nullptr;
+        return false;
+        }
     m_monitor = std::thread(Monitor, this);
     m_initalized = true;
     return true;
@@ -776,6 +781,9 @@ ConcurrentQueryManager::PostStatus ConcurrentQueryManager::Impl::PostQuery(TaskI
     {
     if (!m_initalized)
         return PostStatus::NotInitalized;
+
+    if (CQLOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
+        CQLOG.trace("Failed to initialize");
 
     // remove semicolon in the end so this query can be but as subquery of another
     Utf8String trimedECSql = ecsql;
@@ -823,6 +831,9 @@ ConcurrentQueryManager::PostStatus ConcurrentQueryManager::Impl::PostQuery(TaskI
         }
    
     m_tasks.erase(task->GetId());
+    if (CQLOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
+        CQLOG.errorv("QueueSizeExceded [current=%" PRIu64 "] [max=%" PRIu64 "]",m_workerPool->GetUnSafeSize(), m_config.GetMaxQueueSize());
+
     return PostStatus::QueueSizeExceded;
     }
 

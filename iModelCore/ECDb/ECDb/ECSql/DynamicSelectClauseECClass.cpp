@@ -65,7 +65,7 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
         }
 
     //exp that are no prop name exps (e.g. constants or A+B, prop refs (ref to property in a nested select) or alias items always need generated prop
-    const bool needsToGenerate = selectClauseItemPropNameExp == nullptr || !columnAlias.empty() || selectClauseItemPropNameExp->IsPropertyRef();
+    const bool needsToGenerate = selectClauseItemPropNameExp == nullptr || !columnAlias.empty() || (selectClauseItemPropNameExp->IsPropertyRef() && !selectClauseItemPropNameExp->GetPropertyRef()->IsPure());
     if (needsToGenerate)
         {
         if (isDuplicateName)
@@ -99,7 +99,7 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
         }
     
     // Propagate system property by setting the generated property id to leaf property id which would be check when column info is created.
-    if (selectClauseItemPropNameExp && selectClauseItemPropNameExp->IsPropertyRef())
+    if (generatedProperty && selectClauseItemPropNameExp && selectClauseItemPropNameExp->IsPropertyRef())
         {
 
         DerivedPropertyExp const& first = selectClauseItemPropNameExp->GetPropertyRef()->GetEndPointDerivedProperty();

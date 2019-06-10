@@ -442,6 +442,20 @@ DerivedPropertyExp const& PropertyNameExp::PropertyRef::GetEndPointDerivedProper
     return LinkedTo();
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       06/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+bool PropertyNameExp::PropertyRef::IsPure() const
+    {
+    if (!LinkedTo().GetColumnAlias().empty() || LinkedTo().GetExpression()->GetType() != Exp::Type::PropertyName)
+        return false;
+
+    PropertyNameExp const& next = LinkedTo().GetExpression()->GetAs<PropertyNameExp>();
+    if (next.IsPropertyRef())
+        return next.GetPropertyRef()->IsPure();
+
+    return true;
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013

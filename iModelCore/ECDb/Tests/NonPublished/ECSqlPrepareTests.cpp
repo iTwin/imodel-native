@@ -237,7 +237,107 @@ TEST_F(ECSqlSelectPrepareTests, AndOrPrecedence)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.TH3 WHERE S1 IS NULL AND S2 IS NOT NULL OR 1=1"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.TH3 WHERE S1 IS NULL AND (S2 IS NOT NULL OR 1=1)"));
     }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                          Affan.Khan                  06/19
+// This test ensure if a property was not renamed by using alias then the ECProperty backing 
+// it up is not generated but is the orignal property. This happen when property is returned 
+// from a nested query.
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlSelectPrepareTests, PureNestedProperty)
+    {
+    if (true)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ecsql.PSA"));
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";;
+            }
+        }
+    if (true)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT * FROM ecsql.PSA)"));
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";;
+            }
+        }        
+    if (true)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM  (SELECT I, L, S FROM ecsql.PSA)"));
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";;
+            }
+        }        
+    if (true)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I, L, S FROM  (SELECT I, L, S FROM ecsql.PSA)"));
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";;
+            }
+        }   
+    if (true)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT test.I, test.L, test.S FROM  (SELECT I, L, S FROM ecsql.PSA) test"));
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";;
+            }
+        }
+    if (true)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT test.* FROM  (SELECT I, L, S FROM ecsql.PSA) test"));
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";;
+            }
+        }
+    if (true)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT test.I as i1, test.L as l1, test.S as s1 FROM  (SELECT I, L, S FROM ecsql.PSA) test"));
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_TRUE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is not generated";;
+            }
+        }
+    if (true)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT test.* FROM  (SELECT I as I1, L as L1, S as S1 FROM ecsql.PSA) test"));
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_TRUE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is not generated";
+            }
+        }
+    if (true)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM  (SELECT ECInstanceId, ECClassId, P.id, P.RelECClassId FROM ecsql.PSA)"));
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_FALSE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is generated";
+                ASSERT_TRUE(stmt.GetColumnInfo(i).IsSystemProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is not system";
+            }
+        }
+    if (true)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM  (SELECT ECInstanceId as id, ECClassId as cid, P.id as rid, P.RelECClassId as rcid FROM ecsql.PSA)"));
+        for (int i=0; i< stmt.GetColumnCount(); i++)
+            {
+                ASSERT_TRUE(stmt.GetColumnInfo(i).IsGeneratedProperty()) << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is not generated";
+                ASSERT_TRUE(stmt.GetColumnInfo(i).IsSystemProperty())  << stmt.GetColumnInfo(i).GetPropertyPath().ToString().c_str() << "is not system";
+            }
+        }
+    }
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------

@@ -144,8 +144,12 @@ struct JsonECSqlSelectAdapter final
         enum class BlobMode
             {
             ArrayOfInt,
-            Base64String
-            
+            Base64String            
+            };
+        enum class RowFormat
+            {
+            Custom,
+            IModelJs
             };
         struct FormatOptions final
             {
@@ -153,8 +157,8 @@ struct JsonECSqlSelectAdapter final
                 MemberNameCasing m_memberNameCasing = MemberNameCasing::KeepOriginal;
                 ECN::ECJsonInt64Format m_int64Format = ECN::ECJsonInt64Format::AsDecimalString;
                 BlobMode m_blobMode = BlobMode::Base64String;
-                bool m_onlyApplyInt64FormatToSystemProperties = false;
                 Utf8String m_base64Header;
+                RowFormat m_rowFormat = RowFormat::Custom;
             public:
                 //! Initializes a default FormatOptions object
                 //! with MemberCasingMode::KeepOriginal and ECJsonInt64Format::AsDecimalString
@@ -163,23 +167,24 @@ struct JsonECSqlSelectAdapter final
                 //!@param[in] memberNameCasing Defines how the member names in the resulting JSON will be formatted.
                 //!           Casing of system member names is not affected by this.
                 //!@param[in] int64Format Defines how ECProperty values of type Int64 / Long will be formatted
-                FormatOptions(MemberNameCasing memberNameCasing, ECN::ECJsonInt64Format int64Format, BlobMode blobMode = BlobMode::Base64String, bool onlyApplyInt64FormatToSystemProperties = false) : m_memberNameCasing(memberNameCasing), m_int64Format(int64Format), m_onlyApplyInt64FormatToSystemProperties(onlyApplyInt64FormatToSystemProperties), m_blobMode(blobMode) {}
-                void SetBase64Header(Utf8CP header) { m_base64Header = header; }
+                FormatOptions(MemberNameCasing memberNameCasing, ECN::ECJsonInt64Format int64Format, BlobMode blobMode = BlobMode::Base64String)
+                    :m_memberNameCasing(memberNameCasing), m_int64Format(int64Format), m_blobMode(blobMode), m_rowFormat(RowFormat::Custom)
+                    {}
+                ECDB_EXPORT void SetRowFormat(RowFormat fmt);
+                RowFormat GetRowFormat() const { return m_rowFormat; }
                 MemberNameCasing GetMemberCasingMode() const { return m_memberNameCasing; }
                 BlobMode GetBlobMode() const { return m_blobMode; }
                 ECN::ECJsonInt64Format GetInt64Format() const { return m_int64Format; }
-                bool OnlyApplyInt64FormatToSystemProperties() const { return m_onlyApplyInt64FormatToSystemProperties; }
                 Utf8StringCR GetBase64Header() const { return m_base64Header; }
             };
 
     private:
-
+        struct CacheImpl;
         ECSqlStatement const& m_ecsqlStatement;
         uint64_t m_ecsqlHash;
         FormatOptions m_formatOptions;
         bool m_copyMemberNames = true;
-        mutable bvector<Utf8String> m_memberNames;
-        mutable bvector<Utf8String> m_uniqueMemberNames;
+        CacheImpl* m_cacheImpl;
         //not copyable
         JsonECSqlSelectAdapter(JsonECSqlSelectAdapter const&) = delete;
         JsonECSqlSelectAdapter& operator=(JsonECSqlSelectAdapter const&) = delete;
@@ -193,8 +198,8 @@ struct JsonECSqlSelectAdapter final
         //!            This can be used for a performance and memory optimization, but callers must make sure the
         //!            the adapter object lives at least as long as the generated JSON objects 
         //! @see ECSqlStatement
-        JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, FormatOptions const& formatOptions = FormatOptions(), bool copyMemberNames = true): m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions), m_copyMemberNames(copyMemberNames), m_ecsqlHash(ecsqlStatement.GetHashCode()) {}
-        ~JsonECSqlSelectAdapter() {}
+        ECDB_EXPORT JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, FormatOptions const& formatOptions = FormatOptions(), bool copyMemberNames = true);
+        ECDB_EXPORT~JsonECSqlSelectAdapter();
 
         //! Gets the current row as JSON object with pairs of property name value for each
         //! item in the ECSQL select clause.

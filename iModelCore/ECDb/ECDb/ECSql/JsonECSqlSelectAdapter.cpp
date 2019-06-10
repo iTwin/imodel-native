@@ -11,7 +11,19 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+struct JsonECSqlSelectAdapter::CacheImpl
+    {
+    mutable bvector<bpair<Utf8String, ECSqlSystemPropertyInfo>> m_memberNames;
+    mutable bvector<bpair<Utf8String, ECSqlSystemPropertyInfo>> m_uniqueMemberNames;
+    };
+JsonECSqlSelectAdapter::JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, FormatOptions const& formatOptions, bool copyMemberNames ) 
+    : m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions), m_copyMemberNames(copyMemberNames), m_ecsqlHash(ecsqlStatement.GetHashCode()), m_cacheImpl(new CacheImpl())
+    {}
 
+JsonECSqlSelectAdapter::~JsonECSqlSelectAdapter()
+    {
+    delete m_cacheImpl;
+    }
 //=======================================================================================
 // @bsiclass                                               Krischan.Eberle      11/2018
 //+===============+===============+===============+===============+===============+======
@@ -117,8 +129,8 @@ struct AdapterHelper final
         AdapterHelper() = delete;
         ~AdapterHelper() = delete;
 
-        static BentleyStatus DetermineMemberNames(bvector<Utf8String>& memberNames, ECSqlStatement const&, uint64_t ecsqlHash, JsonECSqlSelectAdapter::MemberNameCasing);
-        static BentleyStatus DetermineUniqueMemberNames(bvector<Utf8String>& uniqueMemberNames, ECSqlStatement const&, uint64_t ecsqlHash, JsonECSqlSelectAdapter::MemberNameCasing);
+        static BentleyStatus DetermineMemberNames(bvector<bpair<Utf8String, ECSqlSystemPropertyInfo>>&, ECSqlStatement const&, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const&);
+        static BentleyStatus DetermineUniqueMemberNames(bvector<bpair<Utf8String, ECSqlSystemPropertyInfo>>&, ECSqlStatement const&, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const&);
 
         static BentleyStatus SelectClauseItemToJson(JsonRef&, IECSqlValue const&, ECSqlSystemPropertyInfo const&, SchemaManager const&, JsonECSqlSelectAdapter::FormatOptions const&);
         static BentleyStatus PropertyValueToJson(JsonRef&, IECSqlValue const&, SchemaManager const&, JsonECSqlSelectAdapter::FormatOptions const&);
@@ -128,9 +140,9 @@ struct AdapterHelper final
         static BentleyStatus StructArrayToJson(JsonRef&, IECSqlValue const&, SchemaManager const&, JsonECSqlSelectAdapter::FormatOptions const&);
         static BentleyStatus PrimitiveToJson(JsonRef&, IECSqlValue const&, ECN::PrimitiveType, JsonECSqlSelectAdapter::FormatOptions const&);
 
-        static ECSqlSystemPropertyInfo const& DetermineTopLevelSystemPropertyInfo(SchemaManager const&, ECSqlColumnInfoCR);
-        static Utf8String MemberNameFromSelectClauseItem(ECDbSystemSchemaHelper const& systemSchemaHelper, ECSqlColumnInfoCR, ECSqlSystemPropertyInfo const&, JsonECSqlSelectAdapter::MemberNameCasing);
-
+        static ECSqlSystemPropertyInfo const& DetermineTopLevelSystemPropertyInfo(SchemaManager const&, ECSqlColumnInfoCR, JsonECSqlSelectAdapter::FormatOptions const&);
+        static Utf8String MemberNameFromSelectClauseItemCustom(ECDbSystemSchemaHelper const&, ECSqlColumnInfoCR, ECSqlSystemPropertyInfo const&, JsonECSqlSelectAdapter::MemberNameCasing);
+        static Utf8String MemberNameFromSelectClauseItemIModelJs(ECDbSystemSchemaHelper const&, ECSqlColumnInfo const& colInfo, ECSqlSystemPropertyInfo const& sysPropInfo, JsonECSqlSelectAdapter::MemberNameCasing);
         static void FormatMemberName(Utf8String&, JsonECSqlSelectAdapter::MemberNameCasing);
         static bool NeedsMemberNameReformatting(JsonECSqlSelectAdapter::MemberNameCasing);
 
@@ -153,8 +165,8 @@ struct AdapterHelper final
         static bool IsValid(ECSqlStatement const&);
 
     public:
-        static BentleyStatus GetRow(JsonRef&, bvector<Utf8String>& uniqueMemberNames, bool appendToRow, ECSqlStatement const&, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const&, bool copyMemberNames);
-        static BentleyStatus GetRowInstance(JsonRef&, bvector<Utf8String>& memberNames, ECN::ECClassId, ECSqlStatement const&, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const&);
+        static BentleyStatus GetRow(JsonRef&, bvector<bpair<Utf8String, ECSqlSystemPropertyInfo>>&, bool appendToRow, ECSqlStatement const&, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const&, bool copyMemberNames);
+        static BentleyStatus GetRowInstance(JsonRef&, bvector<bpair<Utf8String, ECSqlSystemPropertyInfo>>&, ECN::ECClassId, ECSqlStatement const&, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const&);
     };
 
 //--------------------------------------------------------------------------------------
@@ -163,7 +175,7 @@ struct AdapterHelper final
 BentleyStatus JsonECSqlSelectAdapter::GetRow(JsonValueR rowJson, bool appendToJson) const
     {
     JsonRef json(rowJson);
-    return AdapterHelper::GetRow(json, m_uniqueMemberNames, appendToJson, m_ecsqlStatement, m_ecsqlHash, m_formatOptions, m_copyMemberNames);
+    return AdapterHelper::GetRow(json, m_cacheImpl->m_uniqueMemberNames, appendToJson, m_ecsqlStatement, m_ecsqlHash, m_formatOptions, m_copyMemberNames);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -172,7 +184,7 @@ BentleyStatus JsonECSqlSelectAdapter::GetRow(JsonValueR rowJson, bool appendToJs
 BentleyStatus JsonECSqlSelectAdapter::GetRow(JsonValueR rowJson, ECSqlStatement const& stmt, bool appendToJson) const
     {
     JsonRef json(rowJson);
-    return AdapterHelper::GetRow(json, m_uniqueMemberNames, appendToJson, stmt, stmt.GetHashCode(), m_formatOptions, m_copyMemberNames);
+    return AdapterHelper::GetRow(json, m_cacheImpl->m_uniqueMemberNames, appendToJson, stmt, stmt.GetHashCode(), m_formatOptions, m_copyMemberNames);
     }
 
 //--------------------------------------------------------------------------------------
@@ -181,7 +193,7 @@ BentleyStatus JsonECSqlSelectAdapter::GetRow(JsonValueR rowJson, ECSqlStatement 
 BentleyStatus JsonECSqlSelectAdapter::GetRow(RapidJsonValueR rowJson, rapidjson::MemoryPoolAllocator<>& allocator, bool appendToJson) const
     {
     JsonRef json(rowJson, allocator);
-    return AdapterHelper::GetRow(json, m_uniqueMemberNames, appendToJson, m_ecsqlStatement, m_ecsqlHash, m_formatOptions, m_copyMemberNames);
+    return AdapterHelper::GetRow(json, m_cacheImpl->m_uniqueMemberNames, appendToJson, m_ecsqlStatement, m_ecsqlHash, m_formatOptions, m_copyMemberNames);
     }
 
 //---------------------------------------------------------------------------------
@@ -190,7 +202,7 @@ BentleyStatus JsonECSqlSelectAdapter::GetRow(RapidJsonValueR rowJson, rapidjson:
 BentleyStatus JsonECSqlSelectAdapter::GetRowInstance(JsonValueR rowJson, ECClassId classId) const
     {
     JsonRef json(rowJson);
-    return AdapterHelper::GetRowInstance(json, m_memberNames, classId, m_ecsqlStatement, m_ecsqlHash, m_formatOptions);
+    return AdapterHelper::GetRowInstance(json, m_cacheImpl->m_memberNames, classId, m_ecsqlStatement, m_ecsqlHash, m_formatOptions);
     }
 
 //---------------------------------------------------------------------------------
@@ -199,7 +211,7 @@ BentleyStatus JsonECSqlSelectAdapter::GetRowInstance(JsonValueR rowJson, ECClass
 BentleyStatus JsonECSqlSelectAdapter::GetRowInstance(RapidJsonValueR rowJson, ECClassId classId, rapidjson::MemoryPoolAllocator<>& allocator) const
     {
     JsonRef json(rowJson, allocator);
-    return AdapterHelper::GetRowInstance(json, m_memberNames, classId, m_ecsqlStatement, m_ecsqlHash, m_formatOptions);
+    return AdapterHelper::GetRowInstance(json, m_cacheImpl->m_memberNames, classId, m_ecsqlStatement, m_ecsqlHash, m_formatOptions);
     }
 
 //******************************************************************************************
@@ -229,9 +241,9 @@ bool AdapterHelper::IsValid(ECSqlStatement const& stmt)
 // @bsimethod                                 Krischan.Eberle                 11/2018
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus AdapterHelper::GetRow(JsonRef& rowJson, bvector<Utf8String>& uniqueMemberNames, bool appendToJson, ECSqlStatement const& stmt, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const& formatOptions, bool copyMemberNames)
+BentleyStatus AdapterHelper::GetRow(JsonRef& rowJson, bvector<bpair<Utf8String, ECSqlSystemPropertyInfo>>& uniqueMemberNames, bool appendToJson, ECSqlStatement const& stmt, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const& formatOptions, bool copyMemberNames)
     {
-    if (SUCCESS != DetermineUniqueMemberNames(uniqueMemberNames, stmt, ecsqlHash, formatOptions.GetMemberCasingMode()))
+    if (SUCCESS != DetermineUniqueMemberNames(uniqueMemberNames, stmt, ecsqlHash, formatOptions))
         return ERROR;
    
     if (appendToJson)
@@ -251,10 +263,10 @@ BentleyStatus AdapterHelper::GetRow(JsonRef& rowJson, bvector<Utf8String>& uniqu
         if (ecsqlValue.IsNull())
             continue;
 
-        ECSqlColumnInfoCR colInfo = ecsqlValue.GetColumnInfo();
-        Utf8StringCR memberName = uniqueMemberNames[(size_t) columnIndex];
+        auto const& member = uniqueMemberNames[(size_t) columnIndex];
+        Utf8StringCR memberName = member.first;
         JsonRef memberJson = rowJson.GetOrAddMember(memberName.c_str(), copyMemberNames);
-        ECSqlSystemPropertyInfo const& sysPropInfo = DetermineTopLevelSystemPropertyInfo(schemaManager, colInfo);
+        ECSqlSystemPropertyInfo const& sysPropInfo = member.second;
         if (SUCCESS != SelectClauseItemToJson(memberJson, ecsqlValue, sysPropInfo, schemaManager, formatOptions))
             return ERROR;
         }
@@ -265,12 +277,12 @@ BentleyStatus AdapterHelper::GetRow(JsonRef& rowJson, bvector<Utf8String>& uniqu
 //---------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 03/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus AdapterHelper::GetRowInstance(JsonRef& rowJson, bvector<Utf8String>& memberNames, ECClassId classId, ECSqlStatement const& stmt, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const& formatOptions)
+BentleyStatus AdapterHelper::GetRowInstance(JsonRef& rowJson, bvector<bpair<Utf8String, ECSqlSystemPropertyInfo>>& memberNames, ECClassId classId, ECSqlStatement const& stmt, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const& formatOptions)
     {
     if (!classId.IsValid())
         return ERROR;
 
-    if (SUCCESS != DetermineMemberNames(memberNames, stmt, ecsqlHash, formatOptions.GetMemberCasingMode()))
+    if (SUCCESS != DetermineMemberNames(memberNames, stmt, ecsqlHash, formatOptions))
         return ERROR;
 
     rowJson.SetObject();
@@ -298,8 +310,9 @@ BentleyStatus AdapterHelper::GetRowInstance(JsonRef& rowJson, bvector<Utf8String
         foundMatchingSelectClauseItems = true;
 
         BeAssert(colInfo.GetProperty() != nullptr);
-        ECSqlSystemPropertyInfo const& sysPropInfo = DetermineTopLevelSystemPropertyInfo(schemaManager, colInfo);
-        Utf8StringCR memberName = memberNames[(size_t) columnIndex];
+        auto const& member = memberNames[(size_t) columnIndex];
+        ECSqlSystemPropertyInfo const& sysPropInfo = member.second;
+        Utf8StringCR memberName = member.first;
         JsonRef memberJson = rowJson.GetOrAddMember(memberName.c_str(), true);
         if (SUCCESS != SelectClauseItemToJson(memberJson, ecsqlValue, sysPropInfo, schemaManager, formatOptions))
             return ERROR;
@@ -317,7 +330,7 @@ BentleyStatus AdapterHelper::GetRowInstance(JsonRef& rowJson, bvector<Utf8String
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle            11/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus AdapterHelper::DetermineUniqueMemberNames(bvector<Utf8String>& uniqueMemberNames, ECSqlStatement const& stmt, uint64_t ecsqlHash, JsonECSqlSelectAdapter::MemberNameCasing casing)
+BentleyStatus AdapterHelper::DetermineUniqueMemberNames(bvector<bpair<Utf8String, ECSqlSystemPropertyInfo>>& uniqueMemberNames, ECSqlStatement const& stmt, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const& formatOptions)
     {
     if (!IsValid(stmt))
         return ERROR;
@@ -341,11 +354,14 @@ BentleyStatus AdapterHelper::DetermineUniqueMemberNames(bvector<Utf8String>& uni
             LOG.errorv("JsonECSqlSelectAdapter does not support array accessors in an ECSQL select clause: %s", stmt.GetECSql());
             return ERROR;
             }
-
+        
         BeAssert(colInfo.GetProperty() != nullptr);
-        ECSqlSystemPropertyInfo const& sysPropInfo = DetermineTopLevelSystemPropertyInfo(schemaManager, colInfo);
-        uniqueMemberNames.push_back(MemberNameFromSelectClauseItem(schemaManager.Main().GetSystemSchemaHelper(), colInfo, sysPropInfo, casing));
-        Utf8StringR memberName = uniqueMemberNames.back();
+        ECSqlSystemPropertyInfo const& sysPropInfo = DetermineTopLevelSystemPropertyInfo(schemaManager, colInfo, formatOptions);
+        if (formatOptions.GetRowFormat() == JsonECSqlSelectAdapter::RowFormat::Custom)
+            uniqueMemberNames.push_back(make_bpair(MemberNameFromSelectClauseItemCustom(schemaManager.Main().GetSystemSchemaHelper(), colInfo, sysPropInfo, formatOptions.GetMemberCasingMode()), sysPropInfo));
+        else
+            uniqueMemberNames.push_back(make_bpair(MemberNameFromSelectClauseItemIModelJs(schemaManager.Main().GetSystemSchemaHelper(), colInfo, sysPropInfo, formatOptions.GetMemberCasingMode()), sysPropInfo));
+        Utf8StringR memberName = uniqueMemberNames.back().first;
         if (memberName.empty())
             {
             uniqueMemberNames.clear();
@@ -375,7 +391,7 @@ BentleyStatus AdapterHelper::DetermineUniqueMemberNames(bvector<Utf8String>& uni
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle            11/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus AdapterHelper::DetermineMemberNames(bvector<Utf8String>& memberNames, ECSqlStatement const& stmt, uint64_t ecsqlHash, JsonECSqlSelectAdapter::MemberNameCasing casing)
+BentleyStatus AdapterHelper::DetermineMemberNames(bvector<bpair<Utf8String, ECSqlSystemPropertyInfo>>& memberNames, ECSqlStatement const& stmt, uint64_t ecsqlHash, JsonECSqlSelectAdapter::FormatOptions const& formatOptions)
     {
     if (!IsValid(stmt))
         return ERROR;
@@ -400,9 +416,13 @@ BentleyStatus AdapterHelper::DetermineMemberNames(bvector<Utf8String>& memberNam
             }
 
         BeAssert(colInfo.GetProperty() != nullptr);
-        ECSqlSystemPropertyInfo const& sysPropInfo = DetermineTopLevelSystemPropertyInfo(schemaManager, colInfo);
-        memberNames.push_back(MemberNameFromSelectClauseItem(schemaManager.Main().GetSystemSchemaHelper(), colInfo, sysPropInfo, casing));
-        Utf8StringR memberName = memberNames.back();
+        ECSqlSystemPropertyInfo const& sysPropInfo = DetermineTopLevelSystemPropertyInfo(schemaManager, colInfo, formatOptions);
+        if (formatOptions.GetRowFormat() == JsonECSqlSelectAdapter::RowFormat::Custom)
+            memberNames.push_back(make_bpair(MemberNameFromSelectClauseItemCustom(schemaManager.Main().GetSystemSchemaHelper(), colInfo, sysPropInfo, formatOptions.GetMemberCasingMode()), sysPropInfo));
+        else
+            memberNames.push_back(make_bpair(MemberNameFromSelectClauseItemIModelJs(schemaManager.Main().GetSystemSchemaHelper(), colInfo, sysPropInfo, formatOptions.GetMemberCasingMode()), sysPropInfo));
+
+        Utf8StringR memberName = memberNames.back().first;
         if (memberName.empty())
             {
             memberNames.clear();
@@ -422,7 +442,7 @@ BentleyStatus AdapterHelper::SelectClauseItemToJson(JsonRef& json, IECSqlValue c
 
     if (!sysPropInfo.IsSystemProperty())
         return PropertyValueToJson(json, ecsqlValue, schemaManager, formatOptions);
-
+    
     BeAssert(ecsqlValue.GetId<BeInt64Id>().IsValid());
 
     if (sysPropInfo.GetType() == ECSqlSystemPropertyInfo::Type::Class)
@@ -698,17 +718,7 @@ BentleyStatus AdapterHelper::PrimitiveToJson(JsonRef& jsonValue, IECSqlValue con
             }
             case PRIMITIVETYPE_Integer:
             {
-            const int val = ecsqlValue.GetInt();
-            if (jsonValue.IsRapidJson())
-                jsonValue.RapidJson().SetInt(val);
-            else
-                jsonValue.JsonCpp() = val;
-
-            return SUCCESS;
-            }
-            case PRIMITIVETYPE_Long:
-            {            
-            if (formatOptions.OnlyApplyInt64FormatToSystemProperties())
+            if (formatOptions.GetRowFormat() == JsonECSqlSelectAdapter::RowFormat::Custom)
                 {
                 const int val = ecsqlValue.GetInt();
                 if (jsonValue.IsRapidJson())
@@ -718,11 +728,32 @@ BentleyStatus AdapterHelper::PrimitiveToJson(JsonRef& jsonValue, IECSqlValue con
                 }
             else
                 {
+                const double val = std::trunc(ecsqlValue.GetDouble());
+                if (jsonValue.IsRapidJson())
+                    jsonValue.RapidJson().SetDouble(val);
+                else
+                    jsonValue.JsonCpp() = val;
+                }
+            return SUCCESS;
+            }
+            case PRIMITIVETYPE_Long:
+            {            
+            const auto isId = ecsqlValue.GetColumnInfo().GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().EqualsIAscii("Id");
+            if (formatOptions.GetRowFormat() == JsonECSqlSelectAdapter::RowFormat::Custom || isId )
+                {
                 const int64_t val = ecsqlValue.GetInt64();
                 if (jsonValue.IsRapidJson())
                     ECJsonUtilities::Int64ToJson(jsonValue.RapidJson(), val, jsonValue.Allocator(), formatOptions.GetInt64Format());
                 else
                     ECJsonUtilities::Int64ToJson(jsonValue.JsonCpp(), val, formatOptions.GetInt64Format());
+                }
+            else
+                {
+                const double val =std::trunc(ecsqlValue.GetDouble());
+                if (jsonValue.IsRapidJson())
+                    jsonValue.RapidJson().SetDouble(val);
+                else
+                    jsonValue.JsonCpp() = val;
                 }
             return SUCCESS;
             }
@@ -777,11 +808,35 @@ BentleyStatus AdapterHelper::PrimitiveToJson(JsonRef& jsonValue, IECSqlValue con
 // @bsimethod                                    Krischan.Eberle                 09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlSystemPropertyInfo const& AdapterHelper::DetermineTopLevelSystemPropertyInfo(SchemaManager const& schemaManager, ECSqlColumnInfoCR colInfo)
+ECSqlSystemPropertyInfo const& AdapterHelper::DetermineTopLevelSystemPropertyInfo(SchemaManager const& schemaManager, ECSqlColumnInfoCR colInfo, JsonECSqlSelectAdapter::FormatOptions const& formatOptions)
     {
     if (colInfo.IsGeneratedProperty() && !colInfo.IsSystemProperty())
         return ECSqlSystemPropertyInfo::NoSystemProperty();
-
+    if (colInfo.IsGeneratedProperty() && formatOptions.GetRowFormat() == JsonECSqlSelectAdapter::RowFormat::IModelJs)
+        {
+        T_Utf8StringVector accessStringV;
+        Utf8String displayLabel = colInfo.GetProperty()->GetDisplayLabel();
+        BeStringUtilities::Split(displayLabel.ToLower().c_str(), ".", accessStringV);
+        auto &leafEntry = accessStringV.back();
+        if (leafEntry == ("id"))
+            return ECSqlSystemPropertyInfo::NavigationId();
+        else if (leafEntry == ("relecclassid"))
+            return ECSqlSystemPropertyInfo::NavigationRelECClassId();
+        else if (leafEntry == ("ecinstanceid"))
+            return ECSqlSystemPropertyInfo::ECInstanceId();
+        else if (leafEntry == ("ecclassid"))
+            return ECSqlSystemPropertyInfo::ECClassId();
+        else if (leafEntry == ("sourceecinstanceid"))
+            return ECSqlSystemPropertyInfo::SourceECInstanceId();
+        else if (leafEntry == ("sourceecclassid"))
+            return ECSqlSystemPropertyInfo::SourceECClassId();
+        else if (leafEntry == ("targetecinstanceid"))
+            return ECSqlSystemPropertyInfo::TargetECInstanceId();
+        else if (leafEntry == ("targetecclassid"))
+            return ECSqlSystemPropertyInfo::TargetECClassId();
+        else
+            return ECSqlSystemPropertyInfo::NoSystemProperty();
+        }
     BeAssert(colInfo.GetProperty() != nullptr && "Must be checked before");
     ECSqlSystemPropertyInfo const& sysPropInfo = schemaManager.Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*colInfo.GetProperty());
     if (sysPropInfo.GetType() == ECSqlSystemPropertyInfo::Type::Class || sysPropInfo.GetType() == ECSqlSystemPropertyInfo::Type::Relationship || sysPropInfo.GetType() == ECSqlSystemPropertyInfo::Type::Navigation)
@@ -790,10 +845,81 @@ ECSqlSystemPropertyInfo const& AdapterHelper::DetermineTopLevelSystemPropertyInf
     return ECSqlSystemPropertyInfo::NoSystemProperty();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                 06/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+void JsonECSqlSelectAdapter::FormatOptions::SetRowFormat(RowFormat fmt)
+    {
+    m_rowFormat = fmt;
+    if (fmt == RowFormat::IModelJs)
+        {
+        m_int64Format = ECN::ECJsonInt64Format::AsHexadecimalString;
+        m_memberNameCasing = MemberNameCasing::LowerFirstChar;
+        m_blobMode = BlobMode::Base64String;
+        m_base64Header = "encoding=base64;";
+        }
+    else
+        {
+        m_base64Header.clear();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                 06/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String AdapterHelper::MemberNameFromSelectClauseItemIModelJs(ECDbSystemSchemaHelper const& systemSchemaHelper, ECSqlColumnInfo const& colInfo, ECSqlSystemPropertyInfo const& sysPropInfo, JsonECSqlSelectAdapter::MemberNameCasing casing)
+    {
+    // This is based on E:\BSW\temp\imodeljs\core\common\src\ECSqlTypes.ts
+    T_Utf8StringVector accessStringV;
+    if (colInfo.IsGeneratedProperty())
+        BeStringUtilities::Split(colInfo.GetProperty()->GetDisplayLabel().c_str(), ".", accessStringV);
+    else
+        {
+        for (auto const& it : colInfo.GetPropertyPath())
+            accessStringV.push_back(it->GetProperty()->GetName().c_str());
+        }
+
+    if (accessStringV.size() == 1)
+        {
+        if (colInfo.IsGeneratedProperty())
+            {
+            Utf8String name(colInfo.GetProperty()->GetDisplayLabel());
+            BeAssert(!name.empty());
+            FormatMemberName(name, casing);
+            return name;
+            }
+
+        return MemberNameFromSelectClauseItemCustom(systemSchemaHelper, colInfo, sysPropInfo, casing);
+        }
+    else
+        {
+        FormatMemberName(accessStringV.front(), casing);
+        Utf8String tmp = accessStringV.front() + ".";
+        for (int i = 1; i < accessStringV.size() - 1; ++i)
+            tmp += accessStringV[i] + ".";
+
+        auto &leafEntry = accessStringV.back();
+        if (leafEntry == "Id")
+            tmp += ECJsonSystemNames::Id();
+        else if (leafEntry == "RelECClassId")
+            tmp += ECJsonSystemNames::Navigation::RelClassName();
+        else if (leafEntry == "X")
+            tmp += ECJsonSystemNames::Point::X();
+        else if (leafEntry == "Y")
+            tmp += ECJsonSystemNames::Point::Y();
+        else if (leafEntry == "Z")
+            tmp += ECJsonSystemNames::Point::Z();
+        else
+            tmp += leafEntry;
+ 
+        return tmp;
+        }
+    }
+
 //---------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String AdapterHelper::MemberNameFromSelectClauseItem(ECDbSystemSchemaHelper const& systemSchemaHelper, ECSqlColumnInfo const& colInfo, ECSqlSystemPropertyInfo const& sysPropInfo, JsonECSqlSelectAdapter::MemberNameCasing casing)
+Utf8String AdapterHelper::MemberNameFromSelectClauseItemCustom(ECDbSystemSchemaHelper const& systemSchemaHelper, ECSqlColumnInfo const& colInfo, ECSqlSystemPropertyInfo const& sysPropInfo, JsonECSqlSelectAdapter::MemberNameCasing casing)
     {
     //if property is generated, the display label contains the select clause item as is.
     //The property name in contrast would have encoded special characters of the select clause item.
@@ -807,7 +933,6 @@ Utf8String AdapterHelper::MemberNameFromSelectClauseItem(ECDbSystemSchemaHelper 
         FormatMemberName(name, casing);
         return name;
         }
-
     if (!sysPropInfo.IsSystemProperty())
         {
         Utf8String name(colInfo.GetPropertyPath().ToString());
@@ -815,32 +940,18 @@ Utf8String AdapterHelper::MemberNameFromSelectClauseItem(ECDbSystemSchemaHelper 
         FormatMemberName(name, casing);
         return name;
         }
-
+  
     if (sysPropInfo.GetType() == ECSqlSystemPropertyInfo::Type::Class)
         {
         switch (sysPropInfo.GetClass())
             {
-                case ECSqlSystemPropertyInfo::Class::ECInstanceId:
-                    if (colInfo.GetProperty()->GetName() == systemSchemaHelper.GetSystemProperty(ECSqlSystemPropertyInfo::ECInstanceId())->GetName())
-                        return ECJsonSystemNames::Id(); 
-                    else
-                        {
-                        Utf8String name(colInfo.GetProperty()->GetName());
-                        FormatMemberName(name, casing);
-                        return name;
-                        }
-                case ECSqlSystemPropertyInfo::Class::ECClassId:
-                    if (colInfo.GetProperty()->GetName() == systemSchemaHelper.GetSystemProperty(ECSqlSystemPropertyInfo::ECClassId())->GetName())
-                        return ECJsonSystemNames::ClassName();
-                    else
-                        {
-                        Utf8String name(colInfo.GetProperty()->GetName());
-                        FormatMemberName(name, casing);
-                        return name;
-                        }
-                default:
-                    BeAssert(false);
-                    return Utf8String();
+            case ECSqlSystemPropertyInfo::Class::ECInstanceId:
+                return ECJsonSystemNames::Id(); 
+            case ECSqlSystemPropertyInfo::Class::ECClassId:
+                return ECJsonSystemNames::ClassName();
+            default:
+                BeAssert(false);
+                return Utf8String();
             }
         }
 
@@ -848,73 +959,30 @@ Utf8String AdapterHelper::MemberNameFromSelectClauseItem(ECDbSystemSchemaHelper 
         {
         switch (sysPropInfo.GetNavigation())
             {
-                case ECSqlSystemPropertyInfo::Navigation::Id:
-                    if (colInfo.GetProperty()->GetName() == systemSchemaHelper.GetSystemProperty(ECSqlSystemPropertyInfo::NavigationId())->GetName())
-                        return ECJsonSystemNames::Navigation::Id();
-                    else
-                        {
-                        Utf8String name(colInfo.GetProperty()->GetName());
-                        FormatMemberName(name, casing);
-                        return name;
-                        }
-                case ECSqlSystemPropertyInfo::Navigation::RelECClassId:
-                    if (colInfo.GetProperty()->GetName() == systemSchemaHelper.GetSystemProperty(ECSqlSystemPropertyInfo::NavigationRelECClassId())->GetName())
-                        return ECJsonSystemNames::Navigation::RelClassName();
-                    else
-                        {
-                        Utf8String name(colInfo.GetProperty()->GetName());
-                        FormatMemberName(name, casing);
-                        return name;
-                        }
-                default:
-                    BeAssert(false);
-                    return Utf8String();
+            case ECSqlSystemPropertyInfo::Navigation::Id:
+                return ECJsonSystemNames::Navigation::Id();
+            case ECSqlSystemPropertyInfo::Navigation::RelECClassId:
+                return ECJsonSystemNames::Navigation::RelClassName();
+            default:
+                BeAssert(false);
+                return Utf8String();
             }
         }
     if (sysPropInfo.GetType() == ECSqlSystemPropertyInfo::Type::Relationship)
         {
         switch (sysPropInfo.GetRelationship())
             {
-                case ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId:
-                    if (colInfo.GetProperty()->GetName() == systemSchemaHelper.GetSystemProperty(ECSqlSystemPropertyInfo::SourceECInstanceId())->GetName())
-                        return ECJsonSystemNames::SourceId();
-                    else
-                        {
-                        Utf8String name(colInfo.GetProperty()->GetName());
-                        FormatMemberName(name, casing);
-                        return name;
-                        }
-                case ECSqlSystemPropertyInfo::Relationship::SourceECClassId:
-                    if (colInfo.GetProperty()->GetName() == systemSchemaHelper.GetSystemProperty(ECSqlSystemPropertyInfo::SourceECClassId())->GetName())
-                        return ECJsonSystemNames::SourceClassName();
-                    else
-                        {
-                        Utf8String name(colInfo.GetProperty()->GetName());
-                        FormatMemberName(name, casing);
-                        return name;
-                        }
-                case ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId:
-                    if (colInfo.GetProperty()->GetName() == systemSchemaHelper.GetSystemProperty(ECSqlSystemPropertyInfo::TargetECInstanceId())->GetName())
-                        return ECJsonSystemNames::TargetId();
-                    else
-                        {
-                        Utf8String name(colInfo.GetProperty()->GetName());
-                        FormatMemberName(name, casing);
-                        return name;
-                        }
-                case ECSqlSystemPropertyInfo::Relationship::TargetECClassId:
-                    if (colInfo.GetProperty()->GetName() == systemSchemaHelper.GetSystemProperty(ECSqlSystemPropertyInfo::TargetECClassId())->GetName())
-                        return ECJsonSystemNames::TargetClassName();
-                    else
-                        {
-                        Utf8String name(colInfo.GetProperty()->GetName());
-                        FormatMemberName(name, casing);
-                        return name;
-                        }
-
-                default:
-                    BeAssert(false);
-                    return Utf8String();
+            case ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId:
+                return ECJsonSystemNames::SourceId();
+            case ECSqlSystemPropertyInfo::Relationship::SourceECClassId:
+                return ECJsonSystemNames::SourceClassName();
+            case ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId:
+                return ECJsonSystemNames::TargetId();
+            case ECSqlSystemPropertyInfo::Relationship::TargetECClassId:
+                return ECJsonSystemNames::TargetClassName();
+            default:
+                BeAssert(false);
+                return Utf8String();
             }
         }
 
