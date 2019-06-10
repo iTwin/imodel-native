@@ -1,0 +1,42 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)PresentationManager$(oext)      : $(SourceDirectory)PresentationManager.cpp $(ECPresentationDependencies)
+
+$(o)NavNode$(oext)                  : $(SourceDirectory)NavNode.cpp $(ECPresentationDependencies)
+
+$(o)Content$(oext)                  : $(SourceDirectory)Content.cpp $(ECPresentationDependencies)
+
+$(o)KeySet$(oext)                   : $(SourceDirectory)KeySet.cpp $(ECPresentationDependencies)
+
+$(o)Connection$(oext)               : $(SourceDirectory)Connection.cpp $(ECPresentationDependencies)
+
+$(o)Selection$(oext)                : $(SourceDirectory)Selection.cpp $(ECPresentationDependencies)
+
+$(o)ECDbBasedCache$(oext)           : $(SourceDirectory)ECDbBasedCache.cpp $(ECPresentationDependencies)
+
+$(o)ValueHelpers$(oext)             : $(SourceDirectory)ValueHelpers.cpp $(ECPresentationDependencies)
+
+$(o)RelatedClass$(oext)             : $(SourceDirectory)RelatedClass.cpp $(ECPresentationDependencies)
+
+$(o)ContentFieldEditors$(oext)      : $(SourceDirectory)ContentFieldEditors.cpp $(ECPresentationDependencies)
+
+$(o)IECPresentationSerializer$(oext): $(SourceDirectory)IECPresentationSerializer.cpp $(ECPresentationDependencies)
+
+$(o)DefaultECPresentationSerializer$(oext) : $(SourceDirectory)DefaultECPresentationSerializer.cpp $(ECPresentationDependencies)
+
+$(o)Localization$(oext)             : $(SourceDirectory)Localization.cpp $(ECPresentationDependencies)
+
+%include MultiCppCompileGo.mki
+
+ECPresentationObjs =
+%ifdef MultiCompileObjectList
+    ECPresentationObjs +% $(MultiCompileObjectList)
+%endif
+
+# Rules Driven ECPresentation
+%include RulesDriven/RulesDrivenECPresentation.mki

@@ -1,0 +1,39 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(_MakeFilePath)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/ECPresentationTestData : $(_MakeFilePath)Data
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)Delivery/UnitTests/ECPresentationTest.h : $(_MakeFilePath)TestHelpers/ECPresentationTest.h
+    $(LinkFirstDepToFirstTarget)
+    
+$(BuildContext)Delivery/UnitTests/TestECPresentationManager.h : $(_MakeFilePath)TestHelpers/TestECPresentationManager.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/TestConnectionCache.h : $(_MakeFilePath)TestHelpers/TestConnectionCache.h
+    $(LinkFirstDepToFirstTarget)
+    
+$(BuildContext)Delivery/UnitTests/TestRuleSetLocater.h : $(_MakeFilePath)TestHelpers/TestRuleSetLocater.h
+    $(LinkFirstDepToFirstTarget)
+    
+$(BuildContext)Delivery/UnitTests/TestUserSettings.h : $(_MakeFilePath)TestHelpers/TestUserSettings.h
+    $(LinkFirstDepToFirstTarget)
+    
+$(BuildContext)Delivery/UnitTests/IssueReporter.h : $(_MakeFilePath)TestHelpers/IssueReporter.h
+    $(LinkFirstDepToFirstTarget)
+    
+$(BuildContext)Delivery/UnitTests/PresentationRulesetTest.h : $(_MakeFilePath)TestHelpers/PresentationRulesetTest.h
+    $(LinkFirstDepToFirstTarget)
+    
+$(BuildContext)Delivery/UnitTests/TestSelectionProvider.h : $(_MakeFilePath)TestHelpers/TestSelectionProvider.h
+    $(LinkFirstDepToFirstTarget)
+    
+$(BuildContext)Delivery/ExpectedNavNodes.jsd : $(_MakeFilePath)TestHelpers/ExpectedNavNodes.jsd
+    $(LinkFirstDepToFirstTarget)
