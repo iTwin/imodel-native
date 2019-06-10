@@ -1859,7 +1859,11 @@ double          *interiorKnots      /* => interior knots (if nonuniform) */
     memcpy (knotVector, interiorKnots, (params->numPoles + params->order) * sizeof (double));
     return SUCCESS;
     }
-
+static void mapDoubles(double *data, int n, double origin, double factor)
+    {
+    for (int i = 0; i < n; i++)
+        data[i] = (data[i] - origin) * factor;
+    }
 /*----------------------------------------------------------------------+
 |                                                                       |
 | name          bspknot_normalizeKnotVector                             |
@@ -1886,9 +1890,18 @@ int             closed
     divisor = (closed ? knotVector[numPoles+order-1] : knotVector[numPoles]) - root;
     if (fabs (divisor) < KNOT_TOLERANCE_BASIS)
         return MDLERR_BADPARAMETER;
-
-    for (i=0, kP0=knotVector; i < numKnots; i++, kP0++)
-        *kP0 = (*kP0 - root) / divisor;
+        // EDL (With help from Phil McGraw)
+        //  The one-by-one loop below the mapDoubles is optimized (?) to 
+        // a blocks of 8, then 4, then 2, then 1 (in order to use special register blocks?)
+        // In addition to the blocking effect, the optimization did some blocks as the division
+        // and some as multiplication by reciprocal.
+        // This produced "last bit" differences so that 3 consecutive identical inputs
+        // (with one in an early block, 2 in a later block) led to output values (a,b,b) where 
+        // b is slightly less than a.
+        // 
+    mapDoubles(knotVector, numKnots, root, 1.0 / divisor);
+//    for (i=0, kP0=knotVector; i < numKnots; i++, kP0++)
+//        *kP0 = (*kP0 - root) / divisor;
 
     /* Note...This shouldn't be necessary, but PC cant seem to divide a number by
        itself (due to different precision of double on FPU stack) and get 1.0 */
