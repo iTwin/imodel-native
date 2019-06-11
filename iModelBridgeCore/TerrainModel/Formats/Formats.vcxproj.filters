@@ -273,6 +273,9 @@
     <ClInclude Include="PublicAPI\InroadsExporter.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\TwelvedXMLImporter.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bcdtmEsri.cpp">
@@ -571,6 +574,9 @@
     </ClCompile>
     <ClCompile Include="InroadsTM\InroadsTM.cpp">
       <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="TwelvedXMLImporter.cpp">
+      <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -233,7 +233,37 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>__BENTLEYDTM_BUILD__</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb -p Core -f  TerrainModel -r  TerrainModel re  Core -x64   </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>set BMakeExportedMacros=
+set BC_Assemblies=
+set BC_DESKTOP=
+set BC_LIB=
+set CustomAfterMicrosoftCommonTargets=
+set CustomBeforeMicrosoftCommonTargets=
+set IDEGlobalProperties=
+set MSBuildLoadMicrosoftTargetsReadOnly=
+set PkgDefApplicationConfigFile=
+set BCOPY_TEMP=
+set FrameworkDir=
+set FrameworkSDKDir=
+set FrameworkVersion=
+set TARGETFRAMEWORKVERSION=
+set ASSEMBLY_TARGET_VERSION=
+set INCLUDE=
+set LIB=
+set LIBPATH=
+set MSVCDir=
+set ToolSetPathsInjected=
+set USING_TARGET_ARCHITECTURE=
+set BUILD_USING_VS2012=
+set BUILD_USING_VS2013=
+set BUILD_USING_VS2015=
+set BUILD_USING_VS2017=
+set  ASSEMBLY_TARGET_DISPLAYNAME=
+set VisualStudioDir=
+set VisualStudioEdition=
+set VisualStudioVersion=
+set PartFileName=
+bb -N0 re  Core</NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\Core\BentleyTerrainModel.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakeCleanCommandLine>bb -p Core -f  TerrainModel -r  TerrainModel re  Core -x64 -c</NMakeCleanCommandLine>

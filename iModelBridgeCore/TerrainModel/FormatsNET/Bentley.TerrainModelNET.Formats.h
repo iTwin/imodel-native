@@ -1,6 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|     $Source: FormatsNET/Bentley.TerrainModelNET.Formats.h $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,6 +16,7 @@
 #include <TerrainModel/Formats/InroadsExporter.h>
 #include <TerrainModel/Formats/LandXMLImporter.h>
 #include <TerrainModel/Formats/LandXMLExporter.h>
+#include <TerrainModel/Formats/TwelvedXMLImporter.h>
 #include <TerrainModel/Formats/LidarImporter.h>
 #include <TerrainModel/Formats/MX.h>
 #include <TerrainModel/Core/bcDTMClass.h>

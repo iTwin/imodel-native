@@ -1,6 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|     $Source: Core/2d/bcdtmTin.cpp $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/Core/bcDTMBaseDef.h>
@@ -1847,7 +1849,7 @@ BENTLEYDTM_Private int bcdtmTin_getPointerAndOffsetToNextDtmFeatureTypeOccurrenc
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long feature ;
- thread_local static long lastFeature=-1 ;
+ long lastFeature=*dtmFeatureNumP;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Write Entry Message

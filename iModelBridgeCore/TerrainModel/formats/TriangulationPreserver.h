@@ -62,12 +62,20 @@ class TriangulationPreserver
             BeAssert (m_ptIdTolocalId[ptId] != -1);
             return m_ptIdTolocalId[ptId];
             }
-        //int FindPointNum (DPoint3dCR pt);
-        //void AddTriangle (DPoint3dCP pts, int numPts);
-        //void AddTriangle (const long* pts, int numPts);
-        BcDTMPtr Finish ();
 
+        BcDTMPtr Finish ();
         void CheckTriangle (long* ptNums, int numPoints);
+        DPoint3d* GetPointsFromTriangleIndex(int triangleIndex);
+        DPoint3d* GetTrianglePoints(int* ptNums, int numPoints);
+
+        const bvector<int> GetPointIndexes()
+            {
+            return m_pointIndex;
+            }
+        const bvector<DPoint3d> GetPointsVector()
+            {
+            return m_pts;
+            }
     private:
         void MatchEdges();
     };

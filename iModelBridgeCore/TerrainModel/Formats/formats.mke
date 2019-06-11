@@ -1,10 +1,10 @@
 #------------------------------------------------------------------------------------
 #    $RCSfile: cppwrappers.mke,v $
 #   $Revision: 1.123.2.1 $
-#   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #     $Author: Daryl.Holmwood $
 #
-#   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 #NEEDSWORK_VS2015: WIP, remove these warning suppress
@@ -38,6 +38,7 @@ $(basedir)PublicAPI\TerrainImporter.h \
 $(basedir)PublicAPI\TerrainExporter.h \
 $(basedir)MXModelFile.h \
 $(basedir)TriangulationPreserver.h \
+$(basedir)PublicAPI\TwelvedXMLImporter.h \
 
 DependsOnHeaders = \
 
@@ -74,6 +75,8 @@ MultiCompileDepends=$(_MakeFileSpec)
 $(o)LandXMLImporter$(oext) : $(baseDir)LandXMLImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 $(o)LandXMLExporter$(oext) : $(baseDir)LandXMLExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)TwelvedXMLImporter$(oext) : $(baseDir)TwelvedXMLImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 $(o)bcdtmMX$(oext) : $(baseDir)bcdtmMX.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
