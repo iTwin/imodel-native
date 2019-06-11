@@ -404,7 +404,7 @@ double a01,
 double a11
 )
     {
-    static double relTol = 1.0e-14;
+    static double relTol = 1.0e-10;
     double epsilon = relTol * (fabs (a00) + fabs(a01) + fabs(a11));
     double A = a00 - a01 + a11;
     double B;

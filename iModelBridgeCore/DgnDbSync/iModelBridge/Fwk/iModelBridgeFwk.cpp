@@ -1100,6 +1100,11 @@ BentleyStatus iModelBridgeFwk::InitBridge()
 
     SetBridgeParams(m_bridge->_GetParams(), m_repoAdmin);    // make sure that MY definition of these params is used!
 
+	if (BSISUCCESS != m_bridge->TrackUsage())
+		{
+		LOG.error("Bridge Usage tracking failed. Please ignore if OIDC is not initialized.");
+		}
+
     if (BSISUCCESS != m_bridge->_Initialize((int)m_bargptrs.size(), m_bargptrs.data()))
         return BentleyStatus::ERROR;
 
@@ -1824,8 +1829,20 @@ int iModelBridgeFwk::OnAllDocsProcessed()
         return RETURN_STATUS_LOCAL_ERROR;
         }
 
-    BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
-    BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));
+    if (iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb))
+        {
+        BeAssert(false);
+        GetLogger().error("OnAllDocsProcessed detected that this briefcase is holding the Schema Lock! That is an error. OnAllDocsProcessed should not be called while holding the schema lock, and there should not have been any pending schema imports or upgrades to process.");
+        return RETURN_STATUS_CONVERTER_ERROR;
+        }
+
+    if (iModelBridge::AnyTxns(*m_briefcaseDgnDb))
+        {
+        BeAssert(false);
+        GetLogger().error("All local changes should have been pushed before calling OnAllDocsProcessed");
+        return RETURN_STATUS_CONVERTER_ERROR;
+        }
+
     GetLogger().infov("bridge:%s iModel:%s - OnAllDocsProcessed.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
     BentleyStatus bridgeCvtStatus = m_bridge->DoOnAllDocumentsProcessed(*m_briefcaseDgnDb);

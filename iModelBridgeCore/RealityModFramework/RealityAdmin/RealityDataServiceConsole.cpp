@@ -392,6 +392,7 @@ void RealityDataConsole::Run(Utf8String server, Utf8String projectId)
     m_server = WSGServer(server, false);
     RawServerResponse versionResp = RawServerResponse();
     RealityDataService::SetServerComponents(server, m_server.GetVersion(versionResp), "S3MXECPlugin--Server", "S3MX", "", projectId);
+    RealityDataService::SetUserAgent("RealityDataConsole application 1.0");
     DisplayInfo(Utf8PrintfString("Console started with server: %s and projectId: %s\n", server.c_str(), projectId.c_str()), DisplayOption::Tip);
     _Run();
     }
@@ -790,10 +791,12 @@ void RealityDataConsole::ConfigureServer()
         std::string input;
         std::getline(*s_inputSource, input);
         RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath, Utf8String(input.c_str()).Trim());
+        RealityDataService::SetUserAgent("RealityDataConsole application 1.0");
         }
     else if (str.length() == 36) //they input the project id right away
         {
         RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath, Utf8String(str.c_str()).Trim());
+        RealityDataService::SetUserAgent("RealityDataConsole application 1.0");
         }
     else 
         {
@@ -802,6 +805,9 @@ void RealityDataConsole::ConfigureServer()
             RealityDataService::SetServerComponents(server, version, repo, schema, certificatePath);
         else
             RealityDataService::SetServerComponents(server, version, repo, schema);
+
+        RealityDataService::SetUserAgent("RealityDataConsole application 1.0");
+
         }
 
     DisplayInfo("Server successfully configured, ready for use. Type \"help\" for list of commands\n", DisplayOption::Tip);

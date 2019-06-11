@@ -327,7 +327,8 @@ TEST_F(CodesTests, CodesWithSpecialSymbols)
     //Prapare imodel and acquire briefcases
     auto briefcase = AcquireAndOpenBriefcase();
     DgnDbR db = briefcase->GetDgnDb();
-    auto manager = IntegrationTestsBase::_GetRepositoryManager(db);
+    iModelManager* manager = (iModelManager*)_GetRepositoryManager(db);
+    manager->GetiModelConnectionPtr()->SetCodesLocksPageSize(1);
 
     DgnCode code1 = MakeStyleCode("1*1", db);
     DgnCode code2 = MakeStyleCode("\t*\n", db);

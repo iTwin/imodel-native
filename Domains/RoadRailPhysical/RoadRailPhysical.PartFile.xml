@@ -12,7 +12,7 @@
     </Part>
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="RoadRailPhysical.prewire.mke">
-        <SubPart PartName="RoadRailPhysicalSchema" PartFile="BisSchemas" Repository="BisSchemas"/>
+        <SubPart PartName="RoadRailPhysicalSchema" PartFile="BisSchemasIModelCore" Repository="BisSchemas"/>
         <Bindings>
             <PublicAPI Domain="RoadRailPhysical"/>
         </Bindings>

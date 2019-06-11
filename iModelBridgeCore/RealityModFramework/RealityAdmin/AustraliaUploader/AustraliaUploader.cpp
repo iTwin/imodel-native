@@ -440,6 +440,8 @@ int main(int argc, char *argv[])
         server = MakeBuddiCall(0);
     
     RealityDataService::SetServerComponents(server, "2.5", "S3MXECPlugin--Server", "S3MX");
+    RealityDataService::SetUserAgent("Bentley System Australia Uploader version 1.0");
+
 
     std::cout << "Please enter the source folder on the local machine (must be existing folder)" << std::endl;
     Utf8String uploadPathUtf8;

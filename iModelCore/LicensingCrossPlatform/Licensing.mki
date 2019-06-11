@@ -21,7 +21,6 @@ Headers + $(PublicApiDir)AccessKeyClient.h
 Headers + $(PublicApiDir)SaasClient.h
 Headers + $(PublicApiDir)LicenseStatus.h
 Headers + $(PublicApiDir)Licensing.h
-Headers + $(PublicApiDir)Utils/DelayedExecutor.h
 Headers + $(PublicApiDir)Utils/FeatureUserDataMap.h
 Headers + $(PublicApiDir)Utils/InMemoryJsonLocalState.h
 Headers + $(PublicApiDir)Utils/JWToken.h
@@ -68,8 +67,6 @@ $(o)JWToken$(oext)                   : $(SourceDir)Utils/JWToken.cpp $(Headers) 
 $(o)InMemoryJsonLocalState$(oext)    : $(SourceDir)Utils/InMemoryJsonLocalState.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)UrlSafeBase64Utilities$(oext)    : $(SourceDir)Utils/UrlSafeBase64Utilities.cpp $(Headers) ${MultiCompileDepends}
-
-$(o)DelayedExecutor$(oext)           : $(SourceDir)Utils/DelayedExecutor.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)LogFileHelper$(oext)             : $(SourceDir)Utils/LogFileHelper.cpp $(Headers) ${MultiCompileDepends}
 

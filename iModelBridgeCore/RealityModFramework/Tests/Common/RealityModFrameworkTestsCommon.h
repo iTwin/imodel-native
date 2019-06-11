@@ -117,6 +117,8 @@ public:
         s_mockWSGInstance = new MockWSGRequest();
         s_realityDataService = new RealityDataService();
         s_realityDataService->SetServerComponents("myserver.com", "9.9", "myRepo", "mySchema", "zz:\\mycertificate.pfx", "myProjectID");
+        s_realityDataService->SetUserAgent("RealityModFrameworkTest - dummy user agent");
+
 
         }
 
@@ -153,6 +155,7 @@ public:
         s_mockWSGInstance = new MockWSGRequest();
         s_geoCoordinateService = new GeoCoordinationService();
         s_geoCoordinateService->SetServerComponents("example.com", "99", "Dummy-Server", "VirtualModeling");
+        s_geoCoordinateService->SetUserAgent("MockGeoCoordinationServiceFixture - dummy user agent");
         s_errorClass = new ErrorClass();
         s_geoCoordinateService->SetErrorCallback(mockErrorCallBack);
         }

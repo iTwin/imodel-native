@@ -27,6 +27,11 @@ DwgImportAppDepends = $(DwgPublicAPI)DwgBridge.h                \
 CompileOptionsMki   = $(DwgRootDir)DwgCompileOptions.mki
 %include $(CompileOptionsMki)
 
+#--------------------------------------------------------------------------------------
+# Create prg.h header with build version numbers
+#--------------------------------------------------------------------------------------
+%include $(SharedMki)CreateBuildVersionHeader.mki
+
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 

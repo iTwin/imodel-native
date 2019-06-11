@@ -471,8 +471,8 @@ StatusInt RealityDataServicePerformanceTests::ConfigureServerTest(Utf8String ser
         }
 
     RealityDataService::SetServerComponents(serverName, version, repo, schema);
+    RealityDataService::SetUserAgent("RealityData ServicePerformanceTest-  dummy user agent");
     m_server = WSGServer(RealityDataService::GetServerName(), verifyCertificate);
-
    
     // End time
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);

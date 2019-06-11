@@ -457,3 +457,14 @@ StatusInt       IModelClientBase::RestoreBriefcase(BeFileNameCR bcFileName, Utf8
     m_lastServerError = result.GetError();
     return ERROR;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+WebServices::IConnectTokenProviderPtr IModelClientBase::GetTokenProvider()
+    {
+    if (nullptr == m_oidcMgr)
+        return nullptr;
+
+    return m_oidcMgr->GetTokenProvider("");
+    }

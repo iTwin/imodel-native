@@ -2093,7 +2093,11 @@ BentleyStatus Converter::GetECContentOfElement(V8ElementECContent& content, DgnV
                 continue;
                 }
 
-            if (BisConversionRuleHelper::IsSecondaryInstance(conversionRule) || V8ElementSecondaryECClassInfo::TryFind(GetDgnDb(), v8eh, v8ClassName))
+            // In the situation where a class can be used as both a primary instance and a secondary instance, the conversionRule is going to come back is the Element rule and not ToAspectOnly.
+            // Therefore, if we already have a primary instance set and the hasSecondary flag indicates that this ecClass also has ToAspect rule, then we just set it as a secondaryInstance.
+
+            if (BisConversionRuleHelper::IsSecondaryInstance(conversionRule) || (hasSecondary && !DgnV8Api::DgnECManager::GetManager().GetPrimaryInstanceId(v8eh, false, true).Equals(v8Instance->GetInstanceId())))
+            //if (BisConversionRuleHelper::IsSecondaryInstance(conversionRule) || (hasSecondary && content.HasPrimaryInstance()))
                 {
                 content.m_secondaryV8Instances.push_back(std::make_pair(v8Instance, BisConversionRule::ToAspectOnly));
                 }
