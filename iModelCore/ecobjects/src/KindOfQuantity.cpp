@@ -16,7 +16,7 @@ ECObjectsStatus KindOfQuantity::SetName(Utf8CP name)
     if (!m_validatedName.SetValidName(name, false))
         return ECObjectsStatus::InvalidName;
 
-    m_fullName = GetSchema().GetName() + ":" + GetName();
+    m_fullName.RecomputeName(*this);
     return ECObjectsStatus::Success;
     }
 
@@ -65,10 +65,7 @@ bool KindOfQuantity::Verify() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR KindOfQuantity::GetFullName() const
     {
-    if (m_fullName.size() == 0)
-        m_fullName = GetSchema().GetName() + ":" + GetName();
-
-    return m_fullName;
+    return m_fullName.GetName(*this);
     }
 
 //--------------------------------------------------------------------------------------

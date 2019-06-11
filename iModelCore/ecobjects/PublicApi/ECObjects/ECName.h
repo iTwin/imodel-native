@@ -6,6 +6,8 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
+#include <ECObjects/ECObjects.h>
+
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -94,6 +96,30 @@ public:
     //! Checks whether a character is valid for use in an ECName, e.g. alphanumeric, plus '_'
     static bool IsValidAlphaNumericCharacter(WChar c) {return (((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'));}
     static bool IsValidAlphaNumericCharacter(Utf8Char c) {return (((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'));}
+};
+
+//=======================================================================================
+//! The full name of some item belonging to an ECSchema, formatted as
+//! "SchemaName:ItemName".
+// @bsistruct                                                   Paul.Connelly   03/19
+//=======================================================================================
+struct CachedSchemaQualifiedName : CachedUtf8String
+{
+private:
+    template<typename NamedItem> static Utf8String ComputeName(NamedItem const& item)
+        {
+        return item.GetSchema().GetName() + ":" + item.GetName();
+        }
+public:
+    template<typename NamedItem> Utf8StringCR GetName(NamedItem const& item) const
+        {
+        return Get([&]() { return ComputeName(item); });
+        }
+
+    template<typename NamedItem> void RecomputeName(NamedItem const& item) const
+        {
+        Set(ComputeName(item));
+        }
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

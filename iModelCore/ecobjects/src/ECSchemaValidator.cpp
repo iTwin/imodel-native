@@ -317,6 +317,13 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
                 }
             }
 
+        if (prop->GetCustomAttributeLocal("CustomHandledProperty").IsValid() && ecClass.GetCustomAttributeLocal("ClassHasHandler").IsNull())
+            {
+            LOG.errorv("Property '%s.%s' cannot have CustomAttribute 'CustomHandledProperty'. Class '%s' must define CustomAttribute 'ClassHasHandler' and not derive it from a base class.",
+                       ecClass.GetFullName(), prop->GetName().c_str(), ecClass.GetFullName());
+            status = ECObjectsStatus::Error;
+            }
+
         if (prop->HasExtendedType())
             {
             static auto const IsValidExtendedType = [] (Utf8StringCR eType) -> bool

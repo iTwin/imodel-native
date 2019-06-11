@@ -143,7 +143,7 @@ private:
     int                               m_propertyIndexOfTargetECPointer;
     int                               m_uniqueId;
     mutable CompatibleClassLayoutsMap m_compatibleClassLayouts;
-    mutable uint32_t                  m_checkSum;
+    CachedValue<uint32_t>             m_checkSum;
 
     void                            CheckForECPointers (Utf8CP accessString);
 
