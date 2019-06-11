@@ -30,6 +30,11 @@ CCompOpts +% -D__DWGIMPORTER_BUILD__=1
 CompileOptionsMki   = $(DwgRootDir)DwgCompileOptions.mki
 %include $(CompileOptionsMki)
 
+#--------------------------------------------------------------------------------------
+# Create prg.h header with build version numbers
+#--------------------------------------------------------------------------------------
+%include $(SharedMki)CreateBuildVersionHeader.mki
+
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 

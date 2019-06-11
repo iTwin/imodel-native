@@ -24,6 +24,11 @@ always:
 CompileOptionsMki   = $(baseDir)DwgCompileOptions.mki
 %include $(CompileOptionsMki)
 
+#--------------------------------------------------------------------------------------
+# Create prg.h header with build version numbers
+#--------------------------------------------------------------------------------------
+%include $(SharedMki)CreateBuildVersionHeader.mki
+
 DwgDepends          = $(DwgDbPubApi)DwgDbCommon.h           \
                       $(DwgDbPubApi)DwgDbHost.h             \
                       $(DwgDbPubApi)DwgDbDatabase.h         \
