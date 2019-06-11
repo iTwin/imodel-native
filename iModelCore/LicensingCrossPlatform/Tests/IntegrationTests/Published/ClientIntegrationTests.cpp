@@ -69,6 +69,9 @@ void ClientIntegrationTests::SetUpTestCase()
     {
     // This is only an example of how to set logging severity and see info logs. Usually should be set more globally than in TestCase SetUp
     // NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_DEBUG);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_TRACE);
 
     BeFileName asssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(asssetsDir);

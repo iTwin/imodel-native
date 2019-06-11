@@ -22,6 +22,10 @@ struct RDSRequestManager : public WSGRequestManager
     //! otherwise (if the ConnectionClient is available) the serverUrl will be determined automatically
     //! serverUrl format example "https://connect-realitydataservices.bentley.com/"
     REALITYDATAPLATFORM_EXPORT static void Setup(Utf8String serverUrl = "");
+
+    //! Sets the Reality Data Service user agent.
+    REALITYDATAPLATFORM_EXPORT void SetUserAgent(Utf8StringCR userAgent);
+
     };
 
 struct ConnectedNavNode : public NavNode

@@ -36,6 +36,7 @@ public:
         s_mockWSGInstance = new MockWSGRequest();
         s_realityDataServices = new RealityDataService();
         s_realityDataServices->SetServerComponents("myserver.com", "9.9", "myRepo", "mySchema", "zz:\\mycertificate.pfx", "myProjectID");
+        s_realityDataServices->SetUserAgent("My User Agent 1.0");
         }
 
     static void TearDownTestCase()
@@ -82,6 +83,7 @@ TEST_F(SimpleRDSFixture, BuddiTest)
     ASSERT_TRUE(!RealityDataService::GetWSGProtocol().empty());
     ASSERT_EQ(RealityDataService::GetRepoName(), "S3MXECPlugin--Server");
     ASSERT_EQ(RealityDataService::GetSchemaName(), "S3MX");
+    ASSERT_EQ(RealityDataService::GetUserAgent(), "My User Agent");
     }*/
 
 //=====================================================================================

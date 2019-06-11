@@ -23,9 +23,8 @@
 #include <RealityPlatformTools/RealityDataService.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include "RulesetEmbedder.h"
-#ifdef USE_TERRAIN_ELEMENT_HANDLER
 #include <VersionedDgnV8Api/TerrainModel/ElementHandler/DTMElementHandlerManager.h>
-#endif
+
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 
@@ -638,9 +637,7 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
         DgnV8Api::ElementHandlerManager::RegisterHandler(DgnV8Api::ElementHandlerId(ScalableMeshElementHandler::XATTRIBUTEID_ScalableMeshAttachment, 0), ScalableMeshElementHandler::GetInstance());
 
         Converter::RegisterForeignFileTypes (dllDirectory, realdwgDirectory);
-#ifdef USE_TERRAIN_ELEMENT_HANDLER
         Bentley::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
-#endif
         }
     // Directly register basic DgnV8 converter extensions here (that platform owns).
     // In the future, may need an extensibility point here to allow apps and/or arbitrary DLLs to participate in this process.

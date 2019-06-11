@@ -239,13 +239,13 @@ TEST_F(BriefcasePullTests, UpdateBriefcaseToVersion)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                              Robertas.Maleckas      11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(BriefcasePullTests, SuccessfulAcquireBriefcaseAfterMergeJob)
+TEST_F(BriefcasePullTests, SuccessfulAcquireBriefcaseAfterCheckpointJob)
     {
     //This test will merge the imodel, making it no longer usable for this test fixture
     IWSRepositoryClientPtr projectClient = nullptr;
     iModelHubHelpers::CreateContextWSClient(projectClient, *s_client, s_projectId);
     ASSERT_TRUE(nullptr != projectClient);
-    Utf8StringCR mergeJobId = LRPJobBackdoorAPI::ScheduleLRPJob(projectClient, "MergeJob", s_info->GetId());
+    Utf8StringCR mergeJobId = LRPJobBackdoorAPI::ScheduleLRPJob(projectClient, "CheckpointJob", s_info->GetId());
 
     bool mergeJobSuccessful = LRPJobBackdoorAPI::WaitForLRPJobToFinish(projectClient, mergeJobId);
     EXPECT_TRUE(mergeJobSuccessful);

@@ -263,6 +263,74 @@ void ProcessLineLine(
         TestEndPoints (curveA, curveB, bReverseOrder);
         }
     }
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+void ProcessLineArc(
+    ICurvePrimitiveP curveA, DSegment3dCR segmentA,
+    ICurvePrimitiveP curveB, DEllipse3dCR arcB,
+    bool bReverseOrder) override
+    {
+    auto segmentDirection = segmentA.VectorStartToEnd();
+    BentleyApi::Transform arcToWorld, worldToArc;
+    if (arcB.GetLocalFrame(arcToWorld, worldToArc))
+        {
+        auto arcZ = arcToWorld.ColumnZ();
+        if (arcZ.IsPerpendicularTo(segmentDirection))
+            {
+            // The segment is parallel to (but possibly above or below) the plane of the arc.
+            // find intersections of the swept arc with the segment.
+            // These are closest approaches
+            double segmentFractions[10];
+            DPoint3d arcXYZ[10];
+            DPoint3d points[10];
+            auto numIntersection = arcB.IntersectSweptDSegment3dBounded (points, arcXYZ, segmentFractions, segmentA);
+            for (int i = 0; i < numIntersection; i++)
+                {
+                double fractionSegment = segmentFractions[i];
+                double fractionArc = arcB.AngleToFraction (
+                            atan2 (arcXYZ[i].y, arcXYZ[i].x));
+                DPoint3d xyzArc = arcB.FractionToPoint (fractionArc);
+                DPoint3d xyzSegment = segmentA.FractionToPoint (fractionSegment);
+                CollectApproach(
+                    curveA, curveB,
+                    fractionSegment, fractionArc,
+                    xyzSegment, xyzArc,
+                    bReverseOrder);
+
+                }
+            return;
+            }
+        }
+    RotMatrix localToWorldMatrix = RotMatrix::From1Vector(segmentDirection, 2, true);
+    auto localToWorld = BentleyApi::Transform::From(localToWorldMatrix, segmentA.point[0]);
+    BentleyApi::Transform worldToLocal;
+    if (worldToLocal.InverseOf(localToWorld))
+        {
+        DEllipse3d arcBLocal;
+        // convert to local frame with segment as z axis.
+        worldToLocal.Multiply(arcBLocal, arcB);
+        DPoint3d closestPointLocal;
+        double fractionArc, distanceXY;
+        // find closest point in the projection
+        if (arcBLocal.ClosestPointBoundedXY(closestPointLocal, fractionArc, distanceXY,
+            DPoint3d::From(0, 0, 0), nullptr, false, false))
+            {
+            // Evaluate 3d ellipse point.
+            auto closePointArc = arcB.FractionToPoint(fractionArc);
+            // project back to segment (within the extend of the segment)
+            DPoint3d closePointSegment;
+            double fractionSegment;
+            segmentA.ProjectPointBounded(closePointSegment, fractionSegment, closePointArc, false, false);
+            CollectApproach(
+                curveA, curveB, 
+                fractionSegment, fractionArc,
+                closePointSegment, closePointArc,
+                bReverseOrder);
+            }
+        }
+    }
+
 };
 
 

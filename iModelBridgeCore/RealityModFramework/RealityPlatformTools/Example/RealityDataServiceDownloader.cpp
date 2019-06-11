@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
     WSGServer wsgServer = WSGServer(argv[1], false);
     Utf8String version = wsgServer.GetVersion(rawResponse);
     RealityDataService::SetServerComponents(argv[1], version, argv[2], argv[3]);
+    RealityDataService::SetUserAgent("RealityDataServiceDownloader application");
     RealityDataService::SetProjectId(argv[6]);
 
     Utf8String sourceOnServer = Utf8String(argv[4]);

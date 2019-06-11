@@ -55,30 +55,6 @@ public:
         }
     };
 
-struct TestDelayedExecutor : IDelayedExecutor
-    {
-private:
-    std::queue<folly::Promise<folly::Unit>> m_promises;
-
-public:
-    static std::shared_ptr<TestDelayedExecutor> Create()
-        {
-        return std::shared_ptr<TestDelayedExecutor>(new TestDelayedExecutor());
-        }
-
-    virtual folly::Future<folly::Unit> Delayed(uint64_t ms) override
-        {
-        m_promises.emplace();
-        return m_promises.back().getFuture();
-        }
-
-    void Execute()
-        {
-        m_promises.front().setValue();
-        m_promises.pop();
-        }
-    };
-
 BeFileName GetLicensingDbPath()
     {
     BeFileName path;
@@ -129,7 +105,9 @@ void ClientTests::TearDown()
 void ClientTests::SetUpTestCase()
     {
     // This is only an example of how to set logging severity and see info logs. Usually should be set more globally than in TestCase SetUp
-    // NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
+    //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
+    //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_DEBUG);
+    //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_TRACE);
 
     BeFileName asssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(asssetsDir);
@@ -290,7 +268,7 @@ TEST_F(ClientTests, StartApplicationStopApplication_Success)
     EXPECT_SUCCESS(client->StopApplication());
     EXPECT_LE(1, GetUlasProviderMock().PostUsageLogsCalls());
     EXPECT_LE(1, GetUlasProviderMock().PostFeatureLogsCalls());
-    EXPECT_EQ(1, GetLicensingDbMock().RecordUsageCount()); // called in usage heartbeat
+    EXPECT_LE(1, GetLicensingDbMock().RecordUsageCount()); // called in usage heartbeat
     EXPECT_LE(1, GetLicensingDbMock().GetUsageRecordCountCount());
     EXPECT_LE(1, GetLicensingDbMock().GetFeatureRecordCountCount());
     EXPECT_LE(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
@@ -740,22 +718,41 @@ TEST_F(ClientTests, MarkFeature_Success)
     GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
     GetLicensingDbMock().MockRecordFeature(SUCCESS);
 
+    // called in usage heartbeat
+    GetLicensingDbMock().MockRecordUsage(SUCCESS);
+
+    // LogPosting heartbeat
+    GetLicensingDbMock().MockGetUsageRecordCount(1);
+    GetLicensingDbMock().MockGetFeatureRecordCount(1);
+
+    GetUlasProviderMock().MockPostUsageLogs(SUCCESS);
+    GetUlasProviderMock().MockPostFeatureLogs(SUCCESS);
+
+    // called in Policy heartbeat
+    GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
+
     FeatureUserDataMapPtr featureAttribute = std::make_shared<FeatureUserDataMap>();
 
     featureAttribute->AddAttribute("Manufacturer", "Bentley Systems, Inc.");
     featureAttribute->AddAttribute("Website", "https://www.w3schools.com");
     featureAttribute->AddAttribute("Title", "Mobile App");
 
-    EXPECT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+
     EXPECT_SUCCESS(client->MarkFeature("FeatureId", featureAttribute));
     EXPECT_EQ(1, GetPolicyProviderMock().GetPolicyCalls());
     EXPECT_EQ(1, GetLicensingDbMock().AddOrUpdatePolicyFileCount());
     EXPECT_EQ(1, GetLicensingDbMock().DeleteAllOtherPolicyFilesByUserCount());
     EXPECT_EQ(2, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     EXPECT_EQ(1, GetLicensingDbMock().OpenOrCreateCount());
-    EXPECT_LE(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
+    EXPECT_EQ(1, GetLicensingDbMock().RecordFeatureCount());
 
     EXPECT_SUCCESS(client->StopApplication());
+    EXPECT_LE(1, GetUlasProviderMock().PostUsageLogsCalls());
+    EXPECT_LE(1, GetUlasProviderMock().PostFeatureLogsCalls());
+    EXPECT_LE(1, GetLicensingDbMock().RecordUsageCount()); // called in usage heartbeat
+    EXPECT_LE(1, GetLicensingDbMock().GetUsageRecordCountCount());
+    EXPECT_LE(1, GetLicensingDbMock().GetFeatureRecordCountCount());
+    EXPECT_LE(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
     EXPECT_EQ(1, GetLicensingDbMock().CloseCount());
     }
-

@@ -30,6 +30,7 @@ public:
     MOCK_CONST_METHOD0(GetVersion, Utf8StringCR());
     MOCK_CONST_METHOD0(GetSchema, Utf8StringCR());
     MOCK_CONST_METHOD0(GetRepoId, Utf8StringCR());
+    MOCK_CONST_METHOD0(GetUserAgent, Utf8StringCR());
     MOCK_METHOD2(errorCallback, void(Utf8String basicMessage, const RawServerResponse& rawResponse));
     MOCK_CONST_METHOD0(_PrepareHttpRequestStringAndPayload, void());
 
@@ -37,6 +38,7 @@ public:
         :GeoCoordinationServiceRequest()
         {
         m_serverName = GeoCoordinationService::GetServerName();
+        m_userAgent = GeoCoordinationService::GetUserAgent();
         m_validRequestString = true;
         m_httpRequestString.append("/test/test.aspx");
 
@@ -53,6 +55,7 @@ public:
     MOCK_CONST_METHOD0(GetVersion, Utf8StringCR());
     MOCK_CONST_METHOD0(GetSchema, Utf8StringCR());
     MOCK_CONST_METHOD0(GetRepoId, Utf8StringCR());
+    MOCK_CONST_METHOD0(GetUserAgent, Utf8StringCR());
     MOCK_METHOD2(errorCallback, void(Utf8String basicMessage, const RawServerResponse& rawResponse));
     MOCK_CONST_METHOD0(_PrepareHttpRequestStringAndPayload, void());
     MOCK_CONST_METHOD0(AdvancePage, void());
@@ -61,6 +64,7 @@ public:
         :GeoCoordinationServicePagedRequest()
         {
         m_serverName = GeoCoordinationService::GetServerName();
+        m_userAgent = GeoCoordinationService::GetUserAgent();
         m_validRequestString = true;
         m_httpRequestString.append("/test/test.aspx");
 
@@ -94,10 +98,12 @@ TEST(GeoCoordinationService, SetServerComponentsCorrectly)
     {
     auto serviceUnderTest = GeoCoordinationService();
     serviceUnderTest.SetServerComponents("Server", "WSGProtocol", "RepoName", "SchemaName");
+    serviceUnderTest.SetUserAgent("Some User Agent");
     ASSERT_STREQ(serviceUnderTest.GetServerName().c_str(), "Server");
     ASSERT_STREQ(serviceUnderTest.GetWSGProtocol().c_str(), "WSGProtocol");
     ASSERT_STREQ(serviceUnderTest.GetRepoName().c_str(), "RepoName");
     ASSERT_STREQ(serviceUnderTest.GetSchemaName().c_str(), "SchemaName");
+    ASSERT_STREQ(serviceUnderTest.GetUserAgent().c_str(), "Some User Agent");
     }
 
 //=====================================================================================

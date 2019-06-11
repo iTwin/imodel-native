@@ -22,6 +22,7 @@ TEST(WSGURLBase, ConstructorWithURL)
     EXPECT_STREQ(wsgUrlToTest.GetSchema().c_str(), "");
     EXPECT_STREQ(wsgUrlToTest.GetECClassName().c_str(), "");
     EXPECT_STREQ(wsgUrlToTest.GetId().c_str(), "");
+    EXPECT_STREQ(wsgUrlToTest.GetUserAgent().c_str(), "");
 
     EXPECT_STREQ(wsgUrlToTest.GetRequestHeaders().c_str(), "");
     EXPECT_STREQ(wsgUrlToTest.GetRequestPayload().c_str(), "");
@@ -34,6 +35,7 @@ TEST(WSGURLBase, ConstructorWithURL)
 TEST(WSGURLBase, ConstructorWithFullDetails)
     {
     auto wsgUrlToTest = WSGURL("myserver.com", "Version1", "RepoID", "schema", "MyClassName", "MyID");
+    wsgUrlToTest.SetUserAgent("My dummy User Agent");
 
     EXPECT_TRUE(wsgUrlToTest.GetRequestType() == WSGURL::HttpRequestType::GET_Request);
     EXPECT_STREQ(wsgUrlToTest.GetHttpRequestString().c_str(), "https://myserver.com/");
@@ -43,6 +45,7 @@ TEST(WSGURLBase, ConstructorWithFullDetails)
     EXPECT_STREQ(wsgUrlToTest.GetSchema().c_str(), "schema");
     EXPECT_STREQ(wsgUrlToTest.GetECClassName().c_str(), "MyClassName");
     EXPECT_STREQ(wsgUrlToTest.GetId().c_str(), "MyID");
+    EXPECT_STREQ(wsgUrlToTest.GetUserAgent().c_str(), "My dummy User Agent");
 
     EXPECT_STREQ(wsgUrlToTest.GetRequestHeaders().c_str(), "");
     EXPECT_STREQ(wsgUrlToTest.GetRequestPayload().c_str(), "");
@@ -78,7 +81,8 @@ TEST(WSGURLBase, Setter)
 	EXPECT_STREQ(wsgUrlToTest.GetVersion().c_str(), "myversion");
 	EXPECT_STREQ(wsgUrlToTest.GetSchema().c_str(), "myschema");
 	EXPECT_STREQ(wsgUrlToTest.GetECClassName().c_str(), "myECClass");
-	EXPECT_STREQ(wsgUrlToTest.GetRepoId().c_str(), "myRepo");
+    EXPECT_STREQ(wsgUrlToTest.GetRepoId().c_str(), "myRepo");
+    EXPECT_STREQ(wsgUrlToTest.GetUserAgent().c_str(), "");
 
 	wsgUrlToTest.SetId("myNewID");
 	EXPECT_STREQ(wsgUrlToTest.GetId().c_str(), "myNewID");
@@ -90,6 +94,7 @@ TEST(WSGURLBase, Setter)
 TEST(WSGURLBase, AssignmentOperator)
 	{
 	auto basedURL = WSGURL("myserver.com", "Version1", "RepoID", "schema", "MyClassName", "MyID");
+    basedURL.SetUserAgent("My dummy User Agent");
 
 	WSGURL wsgUrlToTest;
 	
@@ -103,6 +108,7 @@ TEST(WSGURLBase, AssignmentOperator)
     EXPECT_STREQ(wsgUrlToTest.GetSchema().c_str(), "schema");
     EXPECT_STREQ(wsgUrlToTest.GetECClassName().c_str(), "MyClassName");
     EXPECT_STREQ(wsgUrlToTest.GetId().c_str(), "MyID");
+    EXPECT_STREQ(wsgUrlToTest.GetUserAgent().c_str(), "My dummy User Agent");
 
     EXPECT_STREQ(wsgUrlToTest.GetRequestHeaders().c_str(), "");
     EXPECT_STREQ(wsgUrlToTest.GetRequestPayload().c_str(), "");

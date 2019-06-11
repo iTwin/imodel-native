@@ -7,11 +7,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Mocks\AuthHandlerProviderMock.cpp" />
-    <ClCompile Include="Mocks\BuddiProviderMock.cpp" />
-    <ClCompile Include="Mocks\LicensingDbMock.cpp" />
-    <ClCompile Include="Mocks\PolicyProviderMock.cpp" />
-    <ClCompile Include="Mocks\UlasProviderMock.cpp" />
     <ClCompile Include="Published\AccessKeyClientTests.cpp" />
     <ClCompile Include="Published\BuddiProviderTests.cpp" />
     <ClCompile Include="Published\ClientTests.cpp" />
@@ -30,26 +25,14 @@
     <ClCompile Include="Published\SaasClientTests.cpp" />
     <ClCompile Include="Published\TestsHelper.cpp" />
     <ClCompile Include="Published\UlasProviderTests.cpp" />
-    <ClCompile Include="Published\Utils\DelayedExecutorTests.cpp" />
     <ClCompile Include="Published\Utils\FeatureUserDataMapTests.cpp" />
     <ClCompile Include="Published\Utils\JWTokenTests.cpp" />
     <ClCompile Include="Published\Utils\LogFileHelperTests.cpp" />
     <ClCompile Include="Published\Utils\MockHttpHandler.cpp" />
     <ClCompile Include="Published\Utils\SCVWritterTests.cpp" />
     <ClCompile Include="Published\Utils\UrlSafeBase64UtilitiesTests.cpp" />
-    <ClCompile Include="Utils\FeatureUserDataMapTests.cpp" />
-    <ClCompile Include="Utils\JWTokenTests.cpp" />
-    <ClCompile Include="Utils\LogFileHelperTests.cpp" />
-    <ClCompile Include="Utils\MockHttpHandler.cpp" />
-    <ClCompile Include="Utils\SCVWritterTests.cpp" />
-    <ClCompile Include="Utils\UrlSafeBase64UtilitiesTests.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Mocks\AuthHandlerProviderMock.h" />
-    <ClInclude Include="Mocks\BuddiProviderMock.h" />
-    <ClInclude Include="Mocks\PolicyProviderMock.h" />
-    <ClInclude Include="Mocks\UlasProviderMock.h" />
-    <ClInclude Include="Mocks\LicensingDbMock.h" />
     <ClInclude Include="Published\AccessKeyClientTests.h" />
     <ClInclude Include="Published\BuddiProviderTests.h" />
     <ClInclude Include="Published\ClientTests.h" />
@@ -68,20 +51,12 @@
     <ClInclude Include="Published\SaasClientTests.h" />
     <ClInclude Include="Published\TestsHelper.h" />
     <ClInclude Include="Published\UlasProviderTests.h" />
-    <ClInclude Include="Published\Utils\DelayedExecutorTests.h" />
     <ClInclude Include="Published\Utils\FeatureUserDataMapTests.h" />
     <ClInclude Include="Published\Utils\JWTokenTests.h" />
     <ClInclude Include="Published\Utils\LogFileHelperTests.h" />
     <ClInclude Include="Published\Utils\MockHttpHandler.h" />
     <ClInclude Include="Published\Utils\SCVWritterTests.h" />
     <ClInclude Include="Published\Utils\UrlSafeBase64UtilitiesTests.h" />
-    <ClInclude Include="Utils\DelayedExecutorTests.h" />
-    <ClInclude Include="Utils\FeatureUserDataMapTests.h" />
-    <ClInclude Include="Utils\JWTokenTests.h" />
-    <ClInclude Include="Utils\LogFileHelperTests.h" />
-    <ClInclude Include="Utils\MockHttpHandler.h" />
-    <ClInclude Include="Utils\SCVWritterTests.h" />
-    <ClInclude Include="Utils\UrlSafeBase64UtilitiesTests.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />

@@ -26,6 +26,11 @@ void RDSRequestManager::Setup(Utf8String serverUrl)
     RealityDataService::SetServerComponents(serverName, version, "S3MXECPlugin--Server", "S3MX", WSGRequest::GetInstance().GetCertificatePath().GetNameUtf8());
     }
 
+void RDSRequestManager::SetUserAgent(Utf8StringCR userAgent)
+    {
+    RealityDataService::SetUserAgent(userAgent);
+    }
+
 ConnectedNavNode::ConnectedNavNode(const NavNode& node)
     {
     Clone(node);

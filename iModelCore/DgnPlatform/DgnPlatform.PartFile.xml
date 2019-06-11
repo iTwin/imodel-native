@@ -20,6 +20,7 @@
     <Part Name="PsolidShim">
         <SubPart PartName="PsolidShim_AndroidARM64"/>
         <SubPart PartName="PsolidShim_iOSArm64"/>
+        <SubPart PartName="PsolidShim_iOSx64"/>
         <SubPart PartName="PsolidShim_LinuxX64"/>
         <SubPart PartName="PsolidShim_MacOSx64"/>
         <SubPart PartName="PsolidShim_x64"/>
@@ -29,6 +30,9 @@
     </Part>
     <Part Name="PsolidShim_iOSArm64" OnlyPlatforms="iOSARM64">
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_iOSArm64"/>
+    </Part>
+    <Part Name="PsolidShim_iOSx64" OnlyPlatforms="iOSx64">
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_iOSx64"/>
     </Part>
     <Part Name="PsolidShim_LinuxX64" OnlyPlatforms="LinuxX64">
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_LinuxX64"/>

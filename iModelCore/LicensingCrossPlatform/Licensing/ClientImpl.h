@@ -13,7 +13,6 @@
 #include "Policy.h"
 
 #include <Licensing/Utils/TimeRetriever.h>
-#include <Licensing/Utils/DelayedExecutor.h>
 #include <Licensing/Utils/FeatureUserDataMap.h>
 
 #include <folly/BeFolly.h>
@@ -56,7 +55,6 @@ protected:
 	WebServices::ConnectSignInManager::UserInfo m_userInfo;
     BeFileName m_dbPath;
     ITimeRetrieverPtr m_timeRetriever;
-    IDelayedExecutorPtr m_delayedExecutor;
     ILicensingDbPtr m_licensingDb;
     Utf8String m_featureString;
     Utf8String m_projectId;
@@ -78,38 +76,38 @@ protected:
     int64_t GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString);
 
     // Usage heartbeat
-    int64_t m_lastRunningUsageheartbeatStartTime = 0;
+    std::atomic_int64_t m_lastRunningUsageHeartbeatStartTime{ 0 };
     bool m_startUsageHeartbeat = true;
-    bool m_stopUsageHeartbeat = false;
-    bool m_usageHeartbeatStopped = false;
+    std::atomic_bool m_stopUsageHeartbeatThread{ false };
+    std::atomic_bool m_usageHeartbeatThreadStopped{ false };
 
-    void UsageHeartbeat(int64_t currentTime);
+    void UsageHeartbeat();
     void StopUsageHeartbeat();
     BentleyStatus RecordUsage();
 
     // Log Posting heartbeat
-    int64_t m_lastRunningLogPostingheartbeatStartTime = 0;
+    std::atomic_int64_t m_lastRunningLogPostingHeartbeatStartTime{ 0 };
     bool m_startLogPostingHeartbeat = true;
-    bool m_stopLogPostingHeartbeat = false;
-    bool m_logPostingHeartbeatStopped = false;
+    std::atomic_bool m_stopLogPostingHeartbeatThread{ false };
+    std::atomic_bool m_logPostingHeartbeatThreadStopped{ false };
     int64_t m_logsPostingInterval = 60 * 60 * 1000; // one hour in milliseconds
 
-    void LogPostingHeartbeat(int64_t currentTime);
+    void LogPostingHeartbeat();
     void StopLogPostingHeartbeat();
-    //BentleyStatus PostUsageLogs();
-    //BentleyStatus PostFeatureLogs();
 
     // Policy heartbeat
-    int64_t m_lastRunningPolicyheartbeatStartTime = 0;
+    std::atomic_int64_t m_lastRunningPolicyHeartbeatStartTime{ 0 };
     bool m_startPolicyHeartbeat = true;
-    bool m_stopPolicyHeartbeat = false;
-    bool m_policyHeartbeatStopped = false;
+    std::atomic_bool m_stopPolicyHeartbeatThread{ false };
+    std::atomic_bool m_policyHeartbeatThreadStopped{ false };
 
-    virtual void PolicyHeartbeat(int64_t currentTime);
+    virtual void PolicyHeartbeat();
     void StopPolicyHeartbeat();
 
     // Get the logging post source as a string
     Utf8String GetLoggingPostSource() const;
+
+    void CallOnInterval(std::atomic_bool& stopThread, std::atomic_bool& isFinished, std::atomic_int64_t& lastRunStartTime, size_t interval, std::function<void(void)> func);
 
 public:
 	LICENSING_EXPORT ClientImpl() {};
@@ -130,11 +128,9 @@ public:
     // Usages
     LICENSING_EXPORT LicenseStatus StartApplication();
     LICENSING_EXPORT BentleyStatus StopApplication();
-    //LICENSING_EXPORT folly::Future<folly::Unit> SendUsageLogs(BeFileNameCR usageCSV, Utf8StringCR ultId);
 
     //Features
     LICENSING_EXPORT BentleyStatus MarkFeature(Utf8StringCR featureId, FeatureUserDataMapPtr featureUserData);
-    //LICENSING_EXPORT folly::Future<folly::Unit> SendFeatureLogs(BeFileNameCR featureCSV, Utf8StringCR ultId);
 
     // Policy
     LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicy();
@@ -144,7 +140,7 @@ public:
 
     // Used in tests
     LICENSING_EXPORT ILicensingDb& GetLicensingDb();
-	LICENSING_EXPORT void AddPolicyToDb(std::shared_ptr<Policy> policy) { StorePolicyInLicensingDb(policy); };
+    LICENSING_EXPORT void AddPolicyToDb(std::shared_ptr<Policy> policy);
 	LICENSING_EXPORT std::shared_ptr<Policy> GetPolicyWithId(Utf8StringCR policyId);
 
 	// clean up policies; used internally, but also used in unit tests

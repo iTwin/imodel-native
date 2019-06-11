@@ -8,7 +8,6 @@
 #include "ISaasClient.h"
 
 #include <Licensing/Utils/TimeRetriever.h>
-#include <Licensing/Utils/DelayedExecutor.h>
 #include <Licensing/Utils/FeatureEvent.h>
 
 #include <WebServices/Client/ClientInfo.h>

@@ -41,6 +41,7 @@ TEST_F(RealityDataServiceFixture, SetServerComponents)
     EXPECT_STREQ(s_realityDataService->GetRepoName().c_str(), "myRepo");
     EXPECT_STREQ(s_realityDataService->GetSchemaName().c_str(), "mySchema");
     EXPECT_STREQ(s_realityDataService->GetProjectId().c_str(), "myProjectID");
+    EXPECT_STREQ(s_realityDataService->GetUserAgent().c_str(), "My User Agent 1.0");
     EXPECT_TRUE(s_realityDataService->AreParametersSet());
 
     s_realityDataService->SetProjectId("newProjectID");
@@ -61,7 +62,8 @@ TEST_F(RealityDataServiceFixture, RealityDataUrl)
     EXPECT_STREQ(dataURL.GetVersion().c_str(), "9.9");
     EXPECT_STREQ(dataURL.GetRepoId().c_str(), "myRepo");
     EXPECT_STREQ(dataURL.GetSchema().c_str(), "mySchema");
-    }
+    EXPECT_STREQ(dataURL.GetUserAgent().c_str(), "My User Agent 1.0");
+}
 
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              05/2017
@@ -184,6 +186,7 @@ TEST_F(RealityDataServiceFixture, RealityDataPagedRequestBasic)
     EXPECT_STREQ(requestUT.GetVersion().c_str(), "9.9");
     EXPECT_STREQ(requestUT.GetRepoId().c_str(), "myRepo");
     EXPECT_STREQ(requestUT.GetSchema().c_str(), "mySchema");
+    EXPECT_STREQ(requestUT.GetUserAgent().c_str(), "My User Agent");
 
     EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData?$skip=0&$top=25");
     }

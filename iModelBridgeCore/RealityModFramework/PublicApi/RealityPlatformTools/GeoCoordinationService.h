@@ -62,6 +62,8 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUserAgent() const override;
     
     REALITYDATAPLATFORM_EXPORT virtual ~GeoCoordinationServiceRequest(){}
 protected:
@@ -121,6 +123,8 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVersion() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUserAgent() const override;
+
 
     REALITYDATAPLATFORM_EXPORT GeoCoordinationServicePagedRequest() 
         { 
@@ -506,6 +510,12 @@ public:
     //! Sets the GUID for the associated project
     REALITYDATAPLATFORM_EXPORT static void SetProjectId(Utf8StringCR projectId);
 
+    //! Returns the user agent
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetUserAgent();
+
+    //! Sets the user agent
+    REALITYDATAPLATFORM_EXPORT static void SetUserAgent(Utf8StringCR userAgent);
+
     enum class InformationSource
         {
         USGS_NationalMap = 0x01,
@@ -569,6 +579,7 @@ public:
     static Utf8String s_geoCoordinationRepoNameWProjectId;
     static Utf8String s_geoCoordinationSchemaName;
     static Utf8String s_geoCoordinationProjectId;
+    static Utf8String s_geoCoordinationUserAgent;
 
     static bool s_verifyPeer;
     static Utf8String s_certificatePath;

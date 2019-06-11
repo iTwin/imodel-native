@@ -148,6 +148,9 @@ void WSGURL::SetECClassName(Utf8String className) { m_className = className; }
 Utf8StringCR WSGURL::GetId() const { return m_id; }
 void WSGURL::SetId(Utf8String id) { m_id = id; }
 
+Utf8StringCR WSGURL::GetUserAgent() const { return m_userAgent; }
+void WSGURL::SetUserAgent(Utf8StringCR userAgent) { m_userAgent = userAgent; }
+
 WSGURL::HttpRequestType WSGURL::GetRequestType() const { return m_requestType; }
 
 Utf8StringCR WSGURL::GetRepoId() const { return m_repoId; }
@@ -169,6 +172,9 @@ void WSGURL::_PrepareHttpRequestStringAndPayload() const
         m_httpRequestString.append("/");
 
     m_requestHeader.clear();
+
+    if (m_userAgent.size() > 0)
+        m_requestHeader.push_back(Utf8PrintfString("User-Agent: %s", m_userAgent.c_str()).c_str());
 
     EncodeId();
 

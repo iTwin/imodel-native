@@ -47,7 +47,6 @@ m_licensingDb(licensingDb)
 
     m_correlationId = BeSQLite::BeGuid(true).ToString();
     m_timeRetriever = TimeRetriever::Get();
-    m_delayedExecutor = DelayedExecutor::Get();
 
     if (Utf8String::IsNullOrEmpty(projectId.c_str()))
         m_projectId = "00000000-0000-0000-0000-000000000000";
@@ -92,12 +91,6 @@ LicenseStatus ClientImpl::StartApplication()
         return LicenseStatus::Error;
         }
 
-    if (m_delayedExecutor == nullptr)
-        {
-        LOG.error("StartApplication ERROR - Delayed executor object is null.");
-        return LicenseStatus::Error;
-        }
-
     if (m_licensingDb == nullptr)
         {
         LOG.error("ClientImpl::StartApplication ERROR - Database object is null.");
@@ -126,11 +119,10 @@ LicenseStatus ClientImpl::StartApplication()
         (LicenseStatus::Offline == licStatus) ||
         (LicenseStatus::Trial == licStatus))
         {
-        int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-
-        UsageHeartbeat(currentTimeUnixMs);
-        LogPostingHeartbeat(currentTimeUnixMs);
-        PolicyHeartbeat(currentTimeUnixMs);
+        // TODO: try function pointers as there is less overhead than std::function
+        CallOnInterval(m_stopUsageHeartbeatThread, m_usageHeartbeatThreadStopped, m_lastRunningUsageHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return UsageHeartbeat(); });
+        CallOnInterval(m_stopLogPostingHeartbeatThread, m_logPostingHeartbeatThreadStopped, m_lastRunningLogPostingHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return LogPostingHeartbeat(); });
+        CallOnInterval(m_stopPolicyHeartbeatThread, m_policyHeartbeatThreadStopped, m_lastRunningPolicyHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this](){ return PolicyHeartbeat(); });
         }
     else
         {
@@ -153,45 +145,74 @@ BentleyStatus ClientImpl::StopApplication()
 
     m_licensingDb->Close();
 
+    LOG.debug("Application stopped");
+
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                         Jason.Wichert 5/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClientImpl::CallOnInterval(std::atomic_bool& stopThread, std::atomic_bool& isFinished, std::atomic_int64_t& lastRunStartTime, size_t interval, std::function<void(void)> func)
+    {
+    // run a function on a loop, after the first call delay the call by an interval of time each iteration
+
+    // all variables used in this thread and the main thread, and modified anywhere must be atomic so there is no race condition
+    std::thread th([=, &stopThread, &isFinished, &lastRunStartTime]
+        {
+        if (lastRunStartTime.load() == 0)
+            {
+            // to get rid of "not used" errors on Android. lastRunStartTime is the reference to each heartbeat's respective lastRun variable
+            // TODO: Refactor this to not need this hack. Perhaps have each heartbeat create a thread rather than a generic function
+            //       creating the heartbeat threads.
+            }
+
+        // first heartbeat without waiting
+        func();
+
+        // loop the heartbeat until stopped
+        while (!stopThread.load())
+            {
+            std::this_thread::sleep_for(std::chrono::milliseconds(interval));
+            if (!stopThread.load())
+                {
+                func();
+                }
+            }
+
+        isFinished.store(true);
+        });
+
+    th.detach();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientImpl::UsageHeartbeat(int64_t currentTime)
+void ClientImpl::UsageHeartbeat()
     {
     LOG.debug("ClientImpl::UsageHeartbeat");
 
+    int64_t currentTime = m_timeRetriever->GetCurrentTimeAsUnixMillis();
+
+    // on first heartbeat run
     if (m_startUsageHeartbeat)
         {
-        RecordUsage();
+        // update start time first here so an immediate StopApplication call still triggers the thread to end
+        m_lastRunningUsageHeartbeatStartTime.store(currentTime);
         m_startUsageHeartbeat = false;
-        m_lastRunningUsageheartbeatStartTime = currentTime;
+        RecordUsage();
         }
 
-    m_delayedExecutor->Delayed(HEARTBEAT_THREAD_DELAY_MS).then([this, currentTime]
+    int64_t heartbeatInterval = m_policy->GetHeartbeatInterval(m_clientInfo->GetApplicationProductId(), m_featureString);
+
+    int64_t time_elapsed = currentTime - m_lastRunningUsageHeartbeatStartTime.load();
+
+    if (time_elapsed >= heartbeatInterval)
         {
-        int64_t heartbeatInterval = m_policy->GetHeartbeatInterval(m_clientInfo->GetApplicationProductId(), m_featureString);
-
-        int64_t time_elapsed = currentTime - m_lastRunningUsageheartbeatStartTime;
-
-        if (time_elapsed >= heartbeatInterval)
-            {
-            RecordUsage();
-            m_lastRunningUsageheartbeatStartTime = currentTime;
-            }
-
-        if (!m_stopUsageHeartbeat)
-            {
-            int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-            UsageHeartbeat(currentTimeUnixMs);
-            }
-        else
-            {
-            m_usageHeartbeatStopped = true;
-            }
-        });
+        RecordUsage();
+        m_lastRunningUsageHeartbeatStartTime.store(currentTime);
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -201,74 +222,67 @@ void ClientImpl::StopUsageHeartbeat()
     {
     LOG.debug("ClientImpl::StopUsageHeartbeat");
 
-    if (m_lastRunningUsageheartbeatStartTime == 0)
+    if (m_lastRunningUsageHeartbeatStartTime.load() == 0)
         return;
 
-    m_stopUsageHeartbeat = true;
+    m_stopUsageHeartbeatThread.store(true);
 
-    while (!m_usageHeartbeatStopped)
+    while (!m_usageHeartbeatThreadStopped.load())
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
     // Reset
-    m_lastRunningUsageheartbeatStartTime = 0;
+    m_lastRunningUsageHeartbeatStartTime.store(0);
     m_startUsageHeartbeat = true;
-    m_stopUsageHeartbeat = false;
-    m_usageHeartbeatStopped = false;
+    m_stopUsageHeartbeatThread.store(false);
+    m_usageHeartbeatThreadStopped.store(false);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientImpl::PolicyHeartbeat(int64_t currentTime)
+void ClientImpl::PolicyHeartbeat()
     {
     LOG.debug("ClientImpl::PolicyHeartbeat");
 
+    int64_t currentTime = m_timeRetriever->GetCurrentTimeAsUnixMillis();
+
+    // on first heartbeat run
     if (m_startPolicyHeartbeat)
         {
-        // TODO: try to get policy token here
-        m_lastRunningPolicyheartbeatStartTime = currentTime;
+        // TODO: try to get policy token here, or try earlier than policyInterval
+
+        // update start time first here so an immediate StopApplication call still triggers the thread to end
+        m_lastRunningPolicyHeartbeatStartTime.store(currentTime);
         m_startPolicyHeartbeat = false;
         }
 
-    m_delayedExecutor->Delayed(HEARTBEAT_THREAD_DELAY_MS).then([this, currentTime]
+    // repeat every time the heartbeat is called
+    int64_t policyInterval = m_policy->GetPolicyInterval(m_clientInfo->GetApplicationProductId(), m_featureString);
+
+    int64_t time_elapsed = currentTime - m_lastRunningPolicyHeartbeatStartTime.load();
+
+    if (time_elapsed >= policyInterval)
         {
-        int64_t policyInterval = m_policy->GetPolicyInterval(m_clientInfo->GetApplicationProductId(), m_featureString);
-
-        int64_t time_elapsed = currentTime - m_lastRunningPolicyheartbeatStartTime;
-
-        if (time_elapsed >= policyInterval)
+        auto policyToken = GetPolicyToken();
+        // check if offline grace period should start
+        if (policyToken == nullptr)
             {
-            auto policyToken = GetPolicyToken();
-            // check if offline grace period should start
-            if (policyToken == nullptr)
-                {
-                if (!HasOfflineGracePeriodStarted())
-                    m_licensingDb->SetOfflineGracePeriodStart(DateHelper::GetCurrentTime());
-                }
-            // otherwise, refresh policy and check if offline grace period should be reset
-            else
-                {
-                m_policy = policyToken;
-
-                if (HasOfflineGracePeriodStarted())
-                    m_licensingDb->ResetOfflineGracePeriod();
-                }
-            CleanUpPolicies();
-            m_lastRunningPolicyheartbeatStartTime = currentTime;
+            if (!HasOfflineGracePeriodStarted())
+                m_licensingDb->SetOfflineGracePeriodStart(DateHelper::GetCurrentTime());
             }
-
-        if (!m_stopPolicyHeartbeat)
-            {
-            int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-            PolicyHeartbeat(currentTimeUnixMs);
-            }
+        // otherwise, refresh policy and check if offline grace period should be reset
         else
             {
-            m_policyHeartbeatStopped = true;
+            m_policy = policyToken;
+
+            if (HasOfflineGracePeriodStarted())
+                m_licensingDb->ResetOfflineGracePeriod();
             }
-        });
+        CleanUpPolicies();
+        m_lastRunningPolicyHeartbeatStartTime.store(currentTime);
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -278,74 +292,58 @@ void ClientImpl::StopPolicyHeartbeat()
     {
     LOG.debug("ClientImpl::StopPolicyHeartbeat");
 
-    if (m_lastRunningPolicyheartbeatStartTime == 0)
+    if (m_lastRunningPolicyHeartbeatStartTime.load() == 0)
         return;
 
-    m_stopPolicyHeartbeat = true;
+    m_stopPolicyHeartbeatThread.store(true);
 
-    while (!m_policyHeartbeatStopped)
+    while (!m_policyHeartbeatThreadStopped.load())
         {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
     // Reset
-    m_lastRunningPolicyheartbeatStartTime = 0;
+    m_lastRunningPolicyHeartbeatStartTime.store(0);
     m_startPolicyHeartbeat = true;
-    m_stopPolicyHeartbeat = false;
-    m_policyHeartbeatStopped = false;
+    m_stopPolicyHeartbeatThread.store(false);
+    m_policyHeartbeatThreadStopped.store(false);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientImpl::LogPostingHeartbeat(int64_t currentTime)
+void ClientImpl::LogPostingHeartbeat()
     {
     LOG.debug("ClientImpl::LogPostingHeartbeat");
+
+    int64_t currentTime = m_timeRetriever->GetCurrentTimeAsUnixMillis();
 
     // first call of LogPostingHeartbeat
     if (m_startLogPostingHeartbeat)
         {
-        m_lastRunningLogPostingheartbeatStartTime = currentTime;
+        // update start time first here so an immediate StopApplication call still triggers the thread to end
+        m_lastRunningLogPostingHeartbeatStartTime.store(currentTime);
         m_startLogPostingHeartbeat = false;
 
         // post logs if there are any left over from a previous session that didn't get posted
         if (m_licensingDb->GetUsageRecordCount() > 0)
-            m_ulasProvider->PostUsageLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy);
+            m_ulasProvider->PostUsageLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy); // TODO: check status of post
 
         if (m_licensingDb->GetFeatureRecordCount() > 0)
-            m_ulasProvider->PostFeatureLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy);
+            m_ulasProvider->PostFeatureLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy); // TODO: check status of post
         }
 
-    m_delayedExecutor->Delayed(HEARTBEAT_THREAD_DELAY_MS).then([this, currentTime]
+    int64_t policyLogsPostingInterval = m_policy->GetTimeToKeepUnSentLogs(m_clientInfo->GetApplicationProductId(), m_featureString);
+
+    int64_t time_elapsed = currentTime - m_lastRunningLogPostingHeartbeatStartTime.load();
+
+    // post when the shorter of the two log posting intervals elapses
+    if (time_elapsed >= policyLogsPostingInterval || time_elapsed >= m_logsPostingInterval)
         {
-        int64_t policyLogsPostingInterval = m_policy->GetTimeToKeepUnSentLogs(m_clientInfo->GetApplicationProductId(), m_featureString);
-
-        int64_t time_elapsed = currentTime - m_lastRunningLogPostingheartbeatStartTime;
-
-        // post when the shorter of the two log posting intervals elapses
-        if (time_elapsed >= policyLogsPostingInterval || time_elapsed >= m_logsPostingInterval)
-            {
-            m_ulasProvider->PostUsageLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy);
-            m_ulasProvider->PostFeatureLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy);
-            m_lastRunningLogPostingheartbeatStartTime = currentTime;
-            }
-
-        if (!m_stopLogPostingHeartbeat)
-            {
-            int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-            LogPostingHeartbeat(currentTimeUnixMs);
-            }
-        else
-            {
-            if (m_licensingDb->GetUsageRecordCount() > 0)
-                m_ulasProvider->PostUsageLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy);
-
-            if (m_licensingDb->GetFeatureRecordCount() > 0)
-                m_ulasProvider->PostFeatureLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy);
-
-            m_logPostingHeartbeatStopped = true;
-            }
-        });
+        m_ulasProvider->PostUsageLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy);
+        m_ulasProvider->PostFeatureLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy);
+        m_lastRunningLogPostingHeartbeatStartTime.store(currentTime);
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -355,21 +353,28 @@ void ClientImpl::StopLogPostingHeartbeat()
     {
     LOG.debug("ClientImpl::StopLogPostingHeartbeat");
 
-    if (m_lastRunningLogPostingheartbeatStartTime == 0)
+    if (m_lastRunningLogPostingHeartbeatStartTime.load() == 0)
         return;
 
-    m_stopLogPostingHeartbeat = true;
+    m_stopLogPostingHeartbeatThread.store(true);
 
-    while (!m_logPostingHeartbeatStopped)
+    while (!m_logPostingHeartbeatThreadStopped.load())
         {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
+    // post outstanding usage logs
+    if (m_licensingDb->GetUsageRecordCount() > 0)
+        m_ulasProvider->PostUsageLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy); // TODO: check status of post
+
+    if (m_licensingDb->GetFeatureRecordCount() > 0)
+        m_ulasProvider->PostFeatureLogs(m_clientInfo, m_dbPath, *m_licensingDb, m_policy); // TODO: check status of post
+
     // Reset
-    m_lastRunningLogPostingheartbeatStartTime = 0;
+    m_lastRunningLogPostingHeartbeatStartTime.store(0);
     m_startLogPostingHeartbeat = true;
-    m_stopLogPostingHeartbeat = false;
-    m_logPostingHeartbeatStopped = false;
+    m_stopLogPostingHeartbeatThread.store(false);
+    m_logPostingHeartbeatThreadStopped.store(false);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -751,6 +756,23 @@ void ClientImpl::DeleteAllOtherPoliciesByUser(std::shared_ptr<Policy> policy)
 	m_licensingDb->DeleteAllOtherPolicyFilesByUser(policy->GetPolicyId(),
 		policy->GetUserData()->GetUserId());
 	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                        Jason.Wichert 5/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClientImpl::AddPolicyToDb(std::shared_ptr<Policy> policy)
+    {
+    //This function is for testing, allows you to put policies in the database without being entitled, etc.
+    LOG.debug("ClientImpl::AddPolicyToDb");
+
+    if (SUCCESS != m_licensingDb->OpenOrCreate(m_dbPath))
+        {
+        LOG.error("ClientImpl::AddPolicyToDb ERROR - Database creation failed.");
+        return;
+        }
+
+    StorePolicyInLicensingDb(policy);
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod

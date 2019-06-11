@@ -117,6 +117,11 @@ void GCSRequestManager::SetProjectId(Utf8StringCR projectId)
     GeoCoordinationService::SetProjectId(projectId);
     }
 
+void GCSRequestManager::SetUserAgent(Utf8StringCR userAgent)
+{
+    GeoCoordinationService::SetUserAgent(userAgent);
+}
+
 void GCSRequestManager::SetDownloadFunction(RPT_DownloadFunction downloadCallback)
     {
     s_downloadFunction = downloadCallback;

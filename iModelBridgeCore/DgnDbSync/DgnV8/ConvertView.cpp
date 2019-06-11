@@ -732,13 +732,11 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     DgnElementId externalSourceAspectScope = GetRepositoryLinkId(*viewInfo.GetRootDgnFileP());
     if (IsUpdating())
         {
-        double lastModified;
         SyncInfo::ViewDefinitionExternalSourceAspect aspect(nullptr);
         std::tie(aspect, existingViewId) = SyncInfo::ViewDefinitionExternalSourceAspect::GetAspectBySourceId(externalSourceAspectScope, viewInfo, GetDgnDb());
         if (existingViewId.IsValid())
             {
             v8ViewName = aspect.GetV8ViewName();
-            lastModified = iModelExternalSourceAspect::DoubleFromString(aspect.GetSourceState().m_version.c_str());
             }
         else
             {
@@ -832,11 +830,14 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         }
 
     auto v8displayStyle = parms.m_viewInfo.GetDisplayStyleCP();
-    DisplayStyleCPtr existingStyle;
+    DisplayStylePtr existingStyle;
     if (v8displayStyle)
         {
         Utf8String styleName = Utf8String(v8displayStyle->GetName().c_str());   
-        existingStyle = m_dgndb->Elements().Get<DisplayStyle>(m_dgndb->Elements().QueryElementIdByCode(DisplayStyle::CreateCode(*definitionModel, styleName)));
+        existingStyle = m_dgndb->Elements().GetForEdit<DisplayStyle>(m_dgndb->Elements().QueryElementIdByCode(DisplayStyle::CreateCode(*definitionModel, styleName)));
+        // Need to ensure that the json value holds a uint, not an int
+        if (existingStyle.IsValid())
+            existingStyle->SetBackgroundColor(existingStyle->GetBackgroundColor());
         if (existingStyle.IsValid() && (existingStyle->Is3d() == parms.m_dstyle->Is3d())) // only share display styles if the same dimension (V8 doesn't care)
             parms.m_dstyle = existingStyle->MakeCopy<DisplayStyle>();
         else
@@ -845,17 +846,16 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
                 parms.m_dstyle->SetCode(DisplayStyle::CreateCode(*definitionModel, styleName));
             ConvertDisplayStyle(*parms.m_dstyle, *v8displayStyle);
             }
-        // Need to ensure that the json value holds a uint, not an int
-        parms.m_dstyle->SetBackgroundColor(parms.m_dstyle->GetBackgroundColor());
         }
     else if (existingDef.IsValid())
         {
-        existingStyle = m_dgndb->Elements().Get<DisplayStyle>(existingDef->GetDisplayStyleId());
-        if (existingStyle.IsValid() && (existingStyle->Is3d() == parms.m_dstyle->Is3d())) // only share display styles if the same dimension (V8 doesn't care)
+        existingStyle = m_dgndb->Elements().GetForEdit<DisplayStyle>(existingDef->GetDisplayStyleId());
+        if (existingStyle.IsValid())
             {
-            parms.m_dstyle = existingStyle->MakeCopy<DisplayStyle>();
             // Need to ensure that the json value holds a uint, not an int
-            parms.m_dstyle->SetBackgroundColor(parms.m_dstyle->GetBackgroundColor());
+            existingStyle->SetBackgroundColor(existingStyle->GetBackgroundColor());
+            if (existingStyle->Is3d() == parms.m_dstyle->Is3d()) // only share display styles if the same dimension (V8 doesn't care)
+                parms.m_dstyle = existingStyle->MakeCopy<DisplayStyle>();
             }
         }
 
@@ -896,7 +896,7 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
 
     if (existingViewId.IsValid())
         {
-        if (!view->EqualState(*existingDef) || view->GetName() != existingDef->GetName())
+        if ((!view->EqualState(*existingDef) && !GetChangeDetector()._AreContentsOfModelUnChanged(*this, modelMapping)) || view->GetName() != existingDef->GetName())
             {
             auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::GetAspectForEdit(*view);
             if (aspect.IsValid())
@@ -907,6 +907,12 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
                 ReportError(IssueCategory::CorruptData(), Issue::Error(), name.c_str());
                 return BSIERROR;
                 }
+
+            // VSTS#130050 - if 2 models have different Uor settings, and also have a background map, then on every
+            // update we'll try to update the ground bias to the other model's settings.  So, even if the display style is different,
+            // need to check if the file has actually changed.
+            if (existingStyle.IsValid() && !existingStyle->EqualState(view->GetDisplayStyle()))
+                view->GetDisplayStyle().Update();
             }
         }
     else
