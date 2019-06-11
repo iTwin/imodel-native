@@ -14,6 +14,9 @@ xcopy /QYIS %OutRoot%Winx64\imodeljsnodeaddon_pkgs\imodeljs-native %destDir%
 xcopy /QYIS %OutRoot%Winx64\imodeljsnodeaddon_pkgs\imodeljs-win32-x64 %destDir%\imodeljs-win32-x64
 @echo off
 
+REM Copy the LICENSE.md mastered in the iModelJsNodeAddon repository into the imodeljs repository so that we can link to it when imodeljs is posted to GitHub
+copy %OutRoot%Winx64\imodeljsnodeaddon_pkgs\imodeljs-native\LICENSE.md %tempDir%\core\backend\src\imodeljs-native-LICENSE.md
+
 REM Create a semaphore file that identifies that this is a dev build, and helps bypass version checks
 set libDir=%tempDir%\core\backend\lib
 if not exist %libDir% mkdir %libDir%
