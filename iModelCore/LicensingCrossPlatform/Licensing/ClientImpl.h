@@ -76,7 +76,7 @@ protected:
     int64_t GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString);
 
     // Usage heartbeat
-    std::atomic_int64_t m_lastRunningUsageHeartbeatStartTime{ 0 };
+    std::atomic<int64_t> m_lastRunningUsageHeartbeatStartTime{ 0 };
     bool m_startUsageHeartbeat = true;
     std::atomic_bool m_stopUsageHeartbeatThread{ false };
     std::atomic_bool m_usageHeartbeatThreadStopped{ false };
@@ -86,7 +86,7 @@ protected:
     BentleyStatus RecordUsage();
 
     // Log Posting heartbeat
-    std::atomic_int64_t m_lastRunningLogPostingHeartbeatStartTime{ 0 };
+    std::atomic<int64_t> m_lastRunningLogPostingHeartbeatStartTime{ 0 };
     bool m_startLogPostingHeartbeat = true;
     std::atomic_bool m_stopLogPostingHeartbeatThread{ false };
     std::atomic_bool m_logPostingHeartbeatThreadStopped{ false };
@@ -96,7 +96,7 @@ protected:
     void StopLogPostingHeartbeat();
 
     // Policy heartbeat
-    std::atomic_int64_t m_lastRunningPolicyHeartbeatStartTime{ 0 };
+    std::atomic<int64_t> m_lastRunningPolicyHeartbeatStartTime{ 0 };
     bool m_startPolicyHeartbeat = true;
     std::atomic_bool m_stopPolicyHeartbeatThread{ false };
     std::atomic_bool m_policyHeartbeatThreadStopped{ false };
@@ -107,7 +107,7 @@ protected:
     // Get the logging post source as a string
     Utf8String GetLoggingPostSource() const;
 
-    void CallOnInterval(std::atomic_bool& stopThread, std::atomic_bool& isFinished, std::atomic_int64_t& lastRunStartTime, size_t interval, std::function<void(void)> func);
+    void CallOnInterval(std::atomic_bool& stopThread, std::atomic_bool& isFinished, std::atomic<int64_t>& lastRunStartTime, size_t interval, std::function<void(void)> func);
 
 public:
 	LICENSING_EXPORT ClientImpl() {};
