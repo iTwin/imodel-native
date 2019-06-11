@@ -4782,7 +4782,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     if (dynamic_cast<SMMeshIndex<POINT,EXTENT>*>(this->m_SMIndex)->m_isInsertingClips) return;
 
     bool expected = false;
-    while (!this->m_isClipping.compare_exchange_weak(expected, true)) {}
+    while (!this->m_isClipping.compare_exchange_weak(expected, true)) 
         {
         expected = false;
         }
@@ -4790,7 +4790,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 
     if (!diffSetPtr.IsValid())
     {
-        expected = true;
+        this->m_isClipping = false;
         while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
         return;
     }
@@ -5110,7 +5110,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         }
     assert(m_nbClips > 0 || diffSetPtr->size() == 0);
 
-     expected = true;
+    this->m_isClipping = false;
     while (!this->m_isClipping.compare_exchange_weak(expected, false)) {}
 
     //std::cout << "Merged clips for " << this->GetBlockID().m_integerID << " we have " << diffSetPtr->size() << "clips" << std::endl;
