@@ -376,7 +376,7 @@ RootNodeRuleSpecificationsList RulesPreprocessor::_GetRootNodeSpecifications(Roo
     {
     bool handled = false;
     RootNodeRuleSpecificationsList specs;
-    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb());
+    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb(), &m_statementCache);
     std::function<ExpressionContextPtr()> contextPreparer = [&]()
         {
         ECExpressionContextsProvider::NodeRulesContextParameters contextParams(nullptr, m_connection, m_locale,
@@ -395,7 +395,7 @@ ChildNodeRuleSpecificationsList RulesPreprocessor::_GetChildNodeSpecifications(C
     bool handled = false;
     bool stopProcessing = false;
     ChildNodeRuleSpecificationsList specs;
-    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb());
+    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb(), &m_statementCache);
     std::function<ExpressionContextPtr()> contextPreparer = [&]()
         {
         ECExpressionContextsProvider::NodeRulesContextParameters contextParams(&params.GetParentNode(), m_connection, m_locale,
@@ -482,7 +482,7 @@ static bvector<TRule const*> GetCustomizationRules(NavNodeCR node, PresentationR
 +---------------+---------------+---------------+---------------+---------------+------*/
 LabelOverrideCP RulesPreprocessor::_GetLabelOverride(CustomizationRuleParametersCR params)
     {
-    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb());
+    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb(), &m_statementCache);
     std::function<ExpressionContextPtr()> contextPreparer = [&]()
         {
         ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(params.GetNode(), params.GetParentNode(), 
@@ -507,7 +507,7 @@ LabelOverrideCP RulesPreprocessor::_GetLabelOverride(CustomizationRuleParameters
 +---------------+---------------+---------------+---------------+---------------+------*/
 StyleOverrideCP RulesPreprocessor::_GetStyleOverride(CustomizationRuleParametersCR params)
     {
-    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb());
+    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb(), &m_statementCache);
     std::function<ExpressionContextPtr()> contextPreparer = [&]() 
         {
         ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(params.GetNode(), params.GetParentNode(),
@@ -590,7 +590,7 @@ LocalizationResourceKeyDefinitionCP RulesPreprocessor::GetLocalizationResourceKe
 +---------------+---------------+---------------+---------------+---------------+------*/
 ImageIdOverrideCP RulesPreprocessor::_GetImageIdOverride(CustomizationRuleParametersCR params)
     {
-    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb());
+    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb(), &m_statementCache);
     std::function<ExpressionContextPtr()> contextPreparer = [&]() 
         {
         ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(params.GetNode(), params.GetParentNode(),
@@ -612,7 +612,7 @@ ImageIdOverrideCP RulesPreprocessor::_GetImageIdOverride(CustomizationRuleParame
 +---------------+---------------+---------------+---------------+---------------+------*/
 CheckBoxRuleCP RulesPreprocessor::_GetCheckboxRule(CustomizationRuleParametersCR params)
     {
-    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb());
+    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb(), &m_statementCache);
     std::function<ExpressionContextPtr()> contextPreparer = [&]()
         {
         ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(params.GetNode(), params.GetParentNode(),
@@ -634,7 +634,7 @@ CheckBoxRuleCP RulesPreprocessor::_GetCheckboxRule(CustomizationRuleParametersCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<ExtendedDataRuleCP> RulesPreprocessor::_GetExtendedDataRules(CustomizationRuleParametersCR params)
     {
-    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb());
+    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb(), &m_statementCache);
     std::function<ExpressionContextPtr()> contextPreparer = [&]()
         {
         ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(params.GetNode(), params.GetParentNode(),
@@ -657,7 +657,7 @@ bvector<ExtendedDataRuleCP> RulesPreprocessor::_GetExtendedDataRules(Customizati
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentRuleInputKeysList RulesPreprocessor::_GetContentSpecifications(ContentRuleParametersCR params)
     {
-    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb());
+    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb(), &m_statementCache);
 
     ContentRuleInputKeysList specs;
     bset<NavNodeKeyCP> handledNodes;

@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
 #define HIERARCHY_REQUEST_PAGE_SIZE 20
-#define PAGE_LOAD_THRESHOLD 0.5
+#define PAGE_LOAD_THRESHOLD 0.2
 #define REPORT_FILE_SEPARATOR L","
 
 /*=================================================================================**//**
@@ -34,7 +34,7 @@ struct HierarchyPerformanceAnalysis : ECPresentationTest
                 Utf8String nodePathLabels = "";
                 for (NavNodeCP node : nodePath)
                     nodePathLabels = nodePathLabels.append("::").append(node->GetLabel());
-                
+
                 return nodePathLabels;
                 }
 
@@ -67,8 +67,9 @@ struct HierarchyPerformanceAnalysis : ECPresentationTest
     struct HierarchyPerformanceResults
         {
         private:
-            Utf8String m_dataset;
-            Utf8String m_rulesetId;
+            WString m_datasetFileName;
+            WString m_rulesetFileName;
+            double m_schemasLoadTime;
             double m_threshold;
 
             bvector<double> m_firstPageLoadDurations;
@@ -86,6 +87,7 @@ struct HierarchyPerformanceAnalysis : ECPresentationTest
                 WCharCP csvFormat =
                     L"%s"       REPORT_FILE_SEPARATOR   /*Dataset*/
                     L"%s"       REPORT_FILE_SEPARATOR   /*Ruleset ID*/
+                    L"%.4f"     REPORT_FILE_SEPARATOR   /*Time to load all schemas*/
                     L"%" PRIu64 REPORT_FILE_SEPARATOR   /*Total nodes*/
                     L"%.4f"     REPORT_FILE_SEPARATOR   /*Total time*/
                     L"%d"       REPORT_FILE_SEPARATOR   /*Pages above threshold count*/
@@ -93,8 +95,10 @@ struct HierarchyPerformanceAnalysis : ECPresentationTest
                     L"%.4f";                            /*Max time for not first page*/
 
                 WString asCSV = L"";
-                asCSV.Sprintf(csvFormat, WString(m_dataset.c_str(), BentleyCharEncoding::Locale).c_str(),
-                    WString(m_rulesetId.c_str(), BentleyCharEncoding::Locale).c_str(),
+                asCSV.Sprintf(csvFormat,
+                    m_datasetFileName.c_str(),
+                    m_rulesetFileName.c_str(),
+                    m_schemasLoadTime,
                     m_totalNodes,
                     m_timerTotal.GetElapsedSeconds(),
                     m_pagesAboveThreshold.size(),
@@ -112,16 +116,14 @@ struct HierarchyPerformanceAnalysis : ECPresentationTest
                 if (!path.DoesPathExist())
                     BeFileName::CreateNewDirectory(path.GetName());
 
-                WString caseFileName = L"";
                 WCharCP caseFormat = L"%s.%s.csv"; // Dataset.Ruleset.csv
-                caseFileName.Sprintf(caseFormat, WString(m_dataset.c_str(), BentleyCharEncoding::Locale).c_str(),
-                    WString(m_rulesetId.c_str(), BentleyCharEncoding::Locale).c_str());
+                WPrintfString caseFileName(caseFormat, m_datasetFileName.c_str(), m_rulesetFileName.c_str());
 
                 path.AppendToPath(caseFileName.c_str());
 
                 BeFileStatus status;
                 BeTextFilePtr pagesFile = BeTextFile::Open(status, path.GetName(), TextFileOpenType::Write, TextFileOptions::None);
-                ASSERT_EQ(BeFileStatus::Success, status);
+                EXPECT_EQ(BeFileStatus::Success, status);
 
                 WCharCP headers =
                     L"Parent node path"    REPORT_FILE_SEPARATOR
@@ -136,11 +138,9 @@ struct HierarchyPerformanceAnalysis : ECPresentationTest
                 }
 
         public:
-            HierarchyPerformanceResults() 
-                : m_dataset(L""), m_rulesetId(""), m_totalNodes(0) {}
-
-            HierarchyPerformanceResults(WCharCP dataset, Utf8String rulesetId, double threshold) 
-                : m_dataset(Utf8String(dataset)), m_rulesetId(rulesetId), m_threshold(threshold), m_totalNodes(0) {}
+            HierarchyPerformanceResults(WString datasetName, WString rulesetName, double schemasLoadTime, double threshold)
+                : m_datasetFileName(datasetName), m_rulesetFileName(rulesetName), m_schemasLoadTime(schemasLoadTime), m_threshold(threshold), m_totalNodes(0)
+                {}
 
             void StartPageLoad(PageInfo page)
                 {
@@ -152,7 +152,7 @@ struct HierarchyPerformanceAnalysis : ECPresentationTest
                 {
                 m_timerPageLoad.Stop();
                 double duration = m_timerPageLoad.GetElapsedSeconds();
-                
+
                 if (0 == m_currentPage.GetPageIndex())
                     m_firstPageLoadDurations.push_back(duration);
                 else
@@ -172,7 +172,9 @@ struct HierarchyPerformanceAnalysis : ECPresentationTest
 
             void LogReport()
                 {
-                NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Dataset: %s, Ruleset: %s", m_dataset.c_str(), m_rulesetId.c_str());
+                NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Dataset: %s, Ruleset: %s",
+                    Utf8String(m_datasetFileName.c_str()).c_str(), Utf8String(m_rulesetFileName.c_str()).c_str());
+                NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Time to load all ECSchemas: %.4f", m_schemasLoadTime);
                 NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Total nodes: %" PRIu64, m_totalNodes);
                 NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Total time: %.4f", m_timerTotal.GetElapsedSeconds());
                 NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("First pages loaded: %d", m_firstPageLoadDurations.size());
@@ -188,7 +190,7 @@ struct HierarchyPerformanceAnalysis : ECPresentationTest
             void ReportCase(BeTextFile& reportFile)
                 {
                 reportFile.PutLine(ToCSV().c_str(), true);
-                
+
                 if (m_pagesAboveThreshold.size() > 0)
                     ReportPages();
                 }
@@ -206,11 +208,12 @@ struct HierarchyPerformanceAnalysis : ECPresentationTest
                 BeFileStatus status;
                 BeTextFilePtr reportFile = BeTextFile::Open(status, path.GetName(), TextFileOpenType::Write, TextFileOptions::None);
 
-                WCharCP headers = 
-                    L"Dataset"                  REPORT_FILE_SEPARATOR 
-                    L"Ruleset ID"               REPORT_FILE_SEPARATOR 
-                    L"Total nodes"              REPORT_FILE_SEPARATOR 
-                    L"Total time"               REPORT_FILE_SEPARATOR 
+                WCharCP headers =
+                    L"Dataset"                  REPORT_FILE_SEPARATOR
+                    L"Ruleset ID"               REPORT_FILE_SEPARATOR
+                    L"Time to load all schemas" REPORT_FILE_SEPARATOR
+                    L"Total nodes"              REPORT_FILE_SEPARATOR
+                    L"Total time"               REPORT_FILE_SEPARATOR
                     L"Pages above threshold"    REPORT_FILE_SEPARATOR
                     L"Max time for first page"  REPORT_FILE_SEPARATOR
                     L"Max time for not first page";
@@ -227,6 +230,7 @@ struct HierarchyPerformanceAnalysis : ECPresentationTest
     void GetAllNodes(HierarchyPerformanceResults& results, ECDbR project, bvector<NavNodeCP> nodePath, Utf8String rulesetId);
     NavNodesContainer GetNodes(ECDbR project, PageOptions const& pageOptions, Json::Value const& options, NavNodeCP parentNode);
     virtual void SetUp() override;
+    virtual void TearDown() override;
     static void SetUpTestCase();
     };
 
@@ -258,6 +262,16 @@ void HierarchyPerformanceAnalysis::SetUp()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void HierarchyPerformanceAnalysis::TearDown()
+    {
+    DELETE_AND_CLEAR(m_manager);
+    m_locater = nullptr;
+    ECPresentationTest::TearDown();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Haroldas.Vitunskas              01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HierarchyPerformanceAnalysis::GetAllNodes(HierarchyPerformanceResults& results, ECDbR project, bvector<NavNodeCP> nodePath, Utf8String rulesetId)
@@ -268,7 +282,7 @@ void HierarchyPerformanceAnalysis::GetAllNodes(HierarchyPerformanceResults& resu
     size_t nodesCount = 0;
 
     results.StartPageLoad(PageInfo(nodePath, 0));
-    
+
     if (nodePath.empty())
         nodesCount = m_manager->GetRootNodesCount(project, options).get();
     else
@@ -297,6 +311,8 @@ void HierarchyPerformanceAnalysis::GetAllNodes(HierarchyPerformanceResults& resu
                 }
             }
         }
+
+    results.StopPageLoad();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -318,7 +334,7 @@ TEST_F(HierarchyPerformanceAnalysis, AnalyseAllCases)
     // Set up
     BeTextFilePtr reportFile = HierarchyPerformanceResults::CreateReportFile(L"HierarchyPerformanceReport.csv");
     ASSERT_TRUE(reportFile.IsValid());
-    
+
     BeFileName datasetsPath;
     BeTest::GetHost().GetDocumentsRoot(datasetsPath);
     datasetsPath.AppendToPath(L"Performance");
@@ -346,7 +362,9 @@ TEST_F(HierarchyPerformanceAnalysis, AnalyseAllCases)
         m_connections.NotifyConnectionOpened(project);
 
         // we want to make sure all schemas in the dataset are fully loaded so that's not included in our performance test results
+        StopWatch schemasLoadTime(true);
         project.Schemas().GetSchemas(true);
+        schemasLoadTime.Stop();
 
         BeDirectoryIterator rulesets(rulesetsPath);
         BeFileName rulesetPath;
@@ -356,11 +374,18 @@ TEST_F(HierarchyPerformanceAnalysis, AnalyseAllCases)
                 continue;
 
             // Load ruleset
-            // WIP: should be able to load either XML or JSON
-            PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromXmlFile(rulesetPath);
+            PresentationRuleSetPtr ruleset;
+            if (rulesetPath.GetExtension().EqualsI(L"xml"))
+                ruleset = PresentationRuleSet::ReadFromXmlFile(rulesetPath);
+            else if (rulesetPath.GetExtension().EqualsI(L"json"))
+                ruleset = PresentationRuleSet::ReadFromJsonFile(rulesetPath);
+            if (ruleset.IsNull())
+                continue;
+
             m_locater->AddRuleSet(*ruleset);
 
-            HierarchyPerformanceResults results(dataSetPath.GetFileNameWithoutExtension().c_str(), ruleset->GetRuleSetId(), PAGE_LOAD_THRESHOLD);
+            HierarchyPerformanceResults results(dataSetPath.GetFileNameWithoutExtension(),
+                rulesetPath.GetFileNameWithoutExtension(), schemasLoadTime.GetElapsed().ToSeconds(), PAGE_LOAD_THRESHOLD);
             results.StartTotalTime();
             GetAllNodes(results, project, bvector<NavNodeCP>(), ruleset->GetRuleSetId());
             results.StopTotalTime();
@@ -370,6 +395,6 @@ TEST_F(HierarchyPerformanceAnalysis, AnalyseAllCases)
 
         project.CloseDb();
         }
-    
+
     reportFile->Close();
     }

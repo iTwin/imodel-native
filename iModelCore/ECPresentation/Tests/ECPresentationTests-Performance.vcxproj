@@ -71,10 +71,10 @@
     <NMakeIncludeSearchPath>$(SrcRoot)Bentley\PublicAPI\;$(SrcRoot)libsrc\jsoncpp\PublicAPI;$(SrcRoot)libsrc\jsoncpp\include;$(SrcRoot)libsrc\libxml2\BeXml\PublicApi;$(SrcRoot)libsrc\libxml2\include;$(SrcRoot)libsrc\rapidjson\include\;$(SrcRoot)libsrc\facebook\VendorApi\;$(SrcRoot)BeGTest\PublicAPI\;$(SrcRoot)util\gtest\include;$(SrcRoot)BeSQLite\PublicAPI;$(SrcRoot)ecobjects\PublicApi;$(SrcRoot)GeomLibs\PublicAPI;$(SrcRoot)ECDb\PublicAPI\;$(SrcRoot)ECPresentation\PublicAPI;$(OutRoot)Winx64\BuildContexts\ECPresentation\SubParts\UnitTests\include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeBuildCommandLine>bb -r ECPresentation -f ECPresentation -p ECPresentation-Gtest-Performance build</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-Gtest-Performance build</NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\Product\ECPresentation-Gtest-Performance\ECPresentationTest-Performance.exe</NMakeOutput>
-    <NMakeCleanCommandLine>bb -r ECPresentation -f ECPresentation -p ECPresentation-Gtest-Performance clean ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-Performance ECPresentation:Gtest-Performance</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>bb -r ECPresentation -f ECPresentation -p ECPresentation-Gtest-Performance rebuild ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-Performance ECPresentation:Gtest-Performance</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-Gtest-Performance rebuild ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-Performance ECPresentation:Gtest-Performance -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-Gtest-Performance rebuild ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-Performance ECPresentation:Gtest-Performance</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(SrcRoot)Bentley\PublicAPI\;$(SrcRoot)libsrc\jsoncpp\PublicAPI;$(SrcRoot)libsrc\jsoncpp\include;$(SrcRoot)libsrc\libxml2\BeXml\PublicApi;$(SrcRoot)libsrc\libxml2\include;$(SrcRoot)libsrc\rapidjson\include\;$(SrcRoot)libsrc\facebook\VendorApi\;$(SrcRoot)BeGTest\PublicAPI\;$(SrcRoot)util\gtest\include;$(SrcRoot)BeSQLite\PublicAPI;$(SrcRoot)ecobjects\PublicApi;$(SrcRoot)GeomLibs\PublicAPI;$(SrcRoot)ECDb\PublicAPI\;$(SrcRoot)ECPresentation\PublicAPI;$(OutRoot)Winx64\BuildContexts\ECPresentation\SubParts\UnitTests\include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
@@ -98,6 +98,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Performance\RulesEngine\ContentPerformanceTests.cpp" />
+    <ClCompile Include="Performance\RulesEngine\HierarchyPerformanceAnalysis.cpp" />
     <ClCompile Include="Performance\RulesEngine\HierarchyPerformanceTests.cpp" />
     <ClCompile Include="Performance\RulesEngine\RulesEnginePerformanceTests.cpp" />
   </ItemGroup>

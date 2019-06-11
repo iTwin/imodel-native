@@ -1179,17 +1179,18 @@ private:
             return false;
             }
 
-        static Utf8CP s_fmt = "%s.[ECInstanceId] IN ("
-            "SELECT [relationship].[%s] "
-            "FROM [%s].[%s] relationship, [%s].[%s] related "
-            "WHERE [relationship].[%s] = [related].[ECClassId] AND [relationship].[%s] = [related].[ECInstanceId]"
+        static Utf8CP s_fmt = " EXISTS ("
+            "SELECT 1 "
+            "FROM [%s].[%s] relationship "
+            "JOIN [%s].[%s] related ON [relationship].[%s] = [related].[ECClassId] AND [relationship].[%s] = [related].[ECInstanceId] "
+            "WHERE [relationship].[%s] = %s.[ECInstanceId]"
             ")";
         Utf8String prefix = GetCallNodePrefix(node);
-        Utf8PrintfString ecsql(s_fmt, 
-            prefix.c_str(), info.ThisColumn.InstanceIdColumnName.c_str(),
+        Utf8PrintfString ecsql(s_fmt,
             info.RelationshipNames.SchemaName.c_str(), info.RelationshipNames.ClassName.c_str(),
             info.RelatedClassNames.SchemaName.c_str(), info.RelatedClassNames.ClassName.c_str(),
-            info.RelatedColumn.ClassIdColumnName.c_str(), info.RelatedColumn.InstanceIdColumnName.c_str());
+            info.RelatedColumn.ClassIdColumnName.c_str(), info.RelatedColumn.InstanceIdColumnName.c_str(),
+            info.ThisColumn.InstanceIdColumnName.c_str(), prefix.c_str());
         m_ecsql.append(ecsql);
         m_ignoreNextArguments = true;
         return true;

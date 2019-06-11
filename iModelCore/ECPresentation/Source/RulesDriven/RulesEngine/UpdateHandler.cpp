@@ -758,7 +758,7 @@ void HierarchyUpdater::CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>& subTask
 void HierarchyUpdater::CustomizeNode(JsonNavNodeCP oldNode, JsonNavNodeR nodeToCustomize, NavNodesProviderCR newNodeProvider) const
     {
     bool nodeChanged = false;
-    DataSourceRelatedSettingsUpdater updater(newNodeProvider.GetContext());
+    DataSourceRelatedSettingsUpdater updater(newNodeProvider.GetContext(), &nodeToCustomize);
 
     // if the old node was customized, we have to customize the new one as well;
     // otherwise the comparison is incorrect

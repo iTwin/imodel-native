@@ -111,6 +111,12 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
         return;
         }
     _l = nullptr;
+
+    /*if (true) // wip: check severity
+        {
+        Utf8String plan = GetConnection().GetECDb().ExplainQuery(statement->GetNativeSql());
+        LoggingHelper::LogMessage(Log::Default, plan.c_str(), LOG_INFO);
+        }*/
     
     // bind query variables
     _l = LoggingHelper::CreatePerformanceLogger(Log::Default, "[QueryExecutor] Binding query variable values", NativeLogging::LOG_TRACE);
@@ -126,11 +132,15 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
     // read the records
     m_readStarted = true;
     _l = LoggingHelper::CreatePerformanceLogger(Log::Default, "[QueryExecutor] Reading and caching new records", NativeLogging::LOG_TRACE);
-    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb());
+    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb(), &m_statementCache);
     DbResult result = DbResult::BE_SQLITE_ERROR;
     uint32_t recordsRead = 0;
     while (DbResult::BE_SQLITE_ROW == (result = statement->Step()))
         {
+        /*if (0 == recordsRead)
+            {
+            }*/
+
         _ReadRecord(*statement);
         recordsRead++;
 

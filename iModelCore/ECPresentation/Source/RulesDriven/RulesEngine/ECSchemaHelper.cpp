@@ -386,7 +386,8 @@ ECClassSet ECSchemaHelper::GetECClasses(ECSchemaSet const& schemas) const
         if (nullptr == schema)
             continue;
 
-        ECClassContainerCR classContainer = schema->GetClasses();
+        ECSchemaCP loadedSchema = GetConnection().GetECDb().Schemas().GetSchema(schema->GetName(), true);
+        ECClassContainerCR classContainer = loadedSchema->GetClasses();
         for (auto iter = classContainer.begin(); iter != classContainer.end(); ++iter)
             {
             if (nullptr != (*iter)->GetRelationshipClassCP())
@@ -497,7 +498,7 @@ ECSchemaSet ECSchemaHelper::GetECSchemas(Utf8StringCR supportedSchemasStr) const
         return schemas;
 
     // no schemas means all schemas (except some specific ones)
-    bvector<ECSchemaCP> allSchemas = m_connection.GetECDb().Schemas().GetSchemas();
+    bvector<ECSchemaCP> allSchemas = m_connection.GetECDb().Schemas().GetSchemas(false);
 
     ECSchemaSet allSupportedSchemas;
     for (ECSchemaCP schema : allSchemas)

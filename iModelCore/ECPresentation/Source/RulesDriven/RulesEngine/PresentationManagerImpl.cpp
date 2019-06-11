@@ -419,7 +419,8 @@ private:
     NavNodesProviderPtr CreateProvider(NavNodesProviderContextR context, JsonNavNodeCP parent) const
         {
         RulesPreprocessor preprocessor(m_manager.m_connections, context.GetConnection(), context.GetRuleset(),
-            context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
+            context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener(), 
+            context.GetECExpressionsCache(), context.GetStatementCache());
         NavNodesProviderPtr provider;
         if (nullptr == parent)
             {
@@ -964,7 +965,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
 
     // get content specifications
     _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentProvider] Get specifications", NativeLogging::LOG_TRACE);
-    RulesPreprocessor preprocessor(m_connections, connection, *ruleset, options.GetLocale(), settings, &context->GetUsedSettingsListener(), ecexpressionsCache);
+    RulesPreprocessor preprocessor(m_connections, connection, *ruleset, options.GetLocale(), settings, &context->GetUsedSettingsListener(), ecexpressionsCache, statementsCache);
     RulesPreprocessor::ContentRuleParameters params(inputKeys, key.GetPreferredDisplayType(), selectionInfo, m_nodesCache);
     ContentRuleInputKeysList specs = preprocessor.GetContentSpecifications(params);
     _l2 = nullptr;
@@ -1253,6 +1254,8 @@ IRulesPreprocessorPtr RulesDrivenECPresentationManagerImpl::_GetRulesPreprocesso
 
     IUserSettings const& settings = GetUserSettingsManager().GetSettings(ruleset->GetRuleSetId().c_str());
     ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
+    ECSqlStatementCache& statementsCache = m_ecdbCaches->GetStatementsCache(connection);
 
-    return new RulesPreprocessor(m_connections, connection, *ruleset, locale, settings, usedSettingsListener, ecexpressionsCache);
+    return new RulesPreprocessor(m_connections, connection, *ruleset, locale, settings, usedSettingsListener, 
+        ecexpressionsCache, statementsCache);
     }

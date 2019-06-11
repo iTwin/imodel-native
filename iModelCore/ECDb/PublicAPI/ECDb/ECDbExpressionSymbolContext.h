@@ -31,12 +31,14 @@ struct ECDbExpressionSymbolContext final
 {
 private:
     ECN::IECSymbolProvider* m_provider;
+    ECSqlStatementCache const* m_statementCache;
+    bool m_ownsStatementCache;
 public:
     //! Constructor. Registers the symbol provider for the specified ECDb.
-    ECDB_EXPORT explicit ECDbExpressionSymbolContext(ECDbCR ecdb);
+    ECDB_EXPORT explicit ECDbExpressionSymbolContext(ECDbCR ecdb, ECSqlStatementCache const* statementCache = nullptr);
 
     //! Destructor. Unregisters the registered symbol provider.
-    ~ECDbExpressionSymbolContext() { LeaveContext(); }
+    ECDB_EXPORT ~ECDbExpressionSymbolContext();
 
     //! Unregisters the registered symbol provider.
     ECDB_EXPORT void LeaveContext();

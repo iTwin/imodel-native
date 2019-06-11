@@ -22,6 +22,7 @@ private:
     IUserSettings const& m_userSettings;
     IUsedUserSettingsListener* m_usedSettingsListener;
     ECExpressionsCache& m_ecexpressionsCache;
+    ECSqlStatementCache const& m_statementCache;
 
 private:
     static bool VerifyCondition(Utf8CP, ECExpressionsCache&, OptimizedExpressionsParameters const*, std::function<ExpressionContextPtr()>);
@@ -51,9 +52,10 @@ protected:
 
 public:
     RulesPreprocessor(IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8String locale,
-        IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener, ECExpressionsCache& ecexpressionsCache)
+        IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener, ECExpressionsCache& ecexpressionsCache,
+        ECSqlStatementCache const& statementCache)
         : m_connections(connections), m_connection(connection), m_ruleset(ruleset), m_locale(locale), m_userSettings(userSettings),
-        m_usedSettingsListener(usedSettingsListener), m_ecexpressionsCache(ecexpressionsCache)
+        m_usedSettingsListener(usedSettingsListener), m_ecexpressionsCache(ecexpressionsCache), m_statementCache(statementCache)
         {}
 
 /** @name Rule sets */

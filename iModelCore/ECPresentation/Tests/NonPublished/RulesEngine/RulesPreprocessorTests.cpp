@@ -28,6 +28,7 @@ protected:
     RuleSetLocaterManager m_locaterManager;
     TestUserSettings m_userSettings;
     ECExpressionsCache m_expressionsCache;
+    ECSqlStatementCache m_statementsCache;
     Utf8String m_locale;
 
 public:
@@ -42,7 +43,7 @@ public:
         DELETE_AND_CLEAR(s_project);
         }
 
-    RulesPreprocessorTests() : m_locaterManager(m_connections) {}
+    RulesPreprocessorTests() : m_locaterManager(m_connections), m_statementsCache(10) {}
 
     void SetUp() override
         {
@@ -61,7 +62,8 @@ public:
 
     RulesPreprocessor GetTestRulesPreprocessor(PresentationRuleSetCR ruleset)
         {
-        return RulesPreprocessor(m_connections, *m_connection, ruleset, m_locale, m_userSettings, nullptr, m_expressionsCache);
+        return RulesPreprocessor(m_connections, *m_connection, ruleset, m_locale, m_userSettings, nullptr, 
+            m_expressionsCache, m_statementsCache);
         }
 };
 ECDbTestProject* RulesPreprocessorTests::s_project = nullptr;

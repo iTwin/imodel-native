@@ -52,20 +52,12 @@ public:
     bvector<NavNodesProviderPtr> const& GetNodeProviders() const {return m_nodeProviders;}
 };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-DataSourceRelatedSettingsUpdater::DataSourceRelatedSettingsUpdater(NavNodesProviderContextCR context)
-    : m_context(context), m_node(nullptr)
-    {
-    m_relatedSettingsCountBefore = m_context.GetRelatedSettings().size();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataSourceRelatedSettingsUpdater::DataSourceRelatedSettingsUpdater(NavNodesProviderContextCR context, JsonNavNodeCR node)
-    : m_context(context), m_node(&node)
+DataSourceRelatedSettingsUpdater::DataSourceRelatedSettingsUpdater(NavNodesProviderContextCR context, JsonNavNodeCP node)
+    : m_context(context), m_node(node)
     {
     m_relatedSettingsCountBefore = m_context.GetRelatedSettings().size();
     }
@@ -153,6 +145,7 @@ void NavNodesProviderContext::Init()
     m_usedClassesListener = nullptr;
     m_isUpdateContext = false;
     m_isUpdatesDisabled = false;
+    m_isCheckingChildren = false;
     m_providerIndexAllocator = nullptr;
     }
 
@@ -329,16 +322,6 @@ void NavNodesProviderContext::SetUpdateContext(NavNodesProviderContextCR other)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool NavNodesProviderContext::IsFullNodesLoadDisabled() const {return m_isFullLoadDisabled;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool NavNodesProviderContext::IsUpdatesDisabled() const {return m_isUpdatesDisabled;}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 HierarchyLevelInfo const& NavNodesProviderContext::GetHierarchyLevelInfo() const
@@ -459,6 +442,47 @@ static NavNodesProviderContextPtr CreateContextForSameHierarchyLevel(NavNodesPro
     return ctx;
     }
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                06/2019
++===============+===============+===============+===============+===============+======*/
+struct NodesChildrenCheckContext
+    {
+    NavNodesProviderCR m_provider;
+    bool m_wasCheckingChildren;
+    NodesChildrenCheckContext(NavNodesProviderCR provider)
+        : m_provider(provider)
+        {
+        m_wasCheckingChildren = m_provider.GetContext().IsCheckingChildren();
+        m_provider.GetContextR().SetIsCheckingChildren(true);
+        }
+    ~NodesChildrenCheckContext() { m_provider.GetContextR().SetIsCheckingChildren(m_wasCheckingChildren); }
+    };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                06/2019
++===============+===============+===============+===============+===============+======*/
+struct OptimizationFlagsCarrier
+    {
+    private:
+        NavNodesProviderR m_childProvider;
+        bool m_wasCheckingChildren;
+        bool m_wasFullNodesLoadDisabled;
+    public:
+        OptimizationFlagsCarrier(NavNodesProviderCR parentProvider, NavNodesProviderR childProvider)
+            : m_childProvider(childProvider)
+            {
+            m_wasFullNodesLoadDisabled = m_childProvider.GetContext().IsFullNodesLoadDisabled();
+            m_wasCheckingChildren = m_childProvider.GetContext().IsCheckingChildren();
+            m_childProvider.GetContextR().SetDisableFullLoad(parentProvider.GetContext().IsFullNodesLoadDisabled());
+            m_childProvider.GetContextR().SetIsCheckingChildren(parentProvider.GetContext().IsCheckingChildren());
+            }
+        ~OptimizationFlagsCarrier()
+            {
+            m_childProvider.GetContextR().SetDisableFullLoad(m_wasFullNodesLoadDisabled);
+            m_childProvider.GetContextR().SetIsCheckingChildren(m_wasCheckingChildren);
+            }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -480,6 +504,7 @@ bool NavNodesProvider::HasNodes() const
         if (_GetInitializationStrategy() == ProviderNodesInitializationStrategy::Automatic)
             InitializeNodes();
 
+        NodesChildrenCheckContext checkingNodes(*this);
         m_cachedHasNodesFlag = _HasNodes();
         m_hasCachedHasNodesFlag = true;
         }
@@ -497,7 +522,14 @@ size_t NavNodesProvider::GetNodesCount() const
             InitializeNodes();
 
         m_cachedNodesCount = _GetNodesCount();
-        m_hasCachedNodesCount = true;
+
+        if (!GetContext().IsCheckingChildren())
+            {
+            // note: if we're counting just to check whether provider has any nodes,
+            // we should not trust this result to be exact - some providers can
+            // return early as soon as they find there's at least one node
+            m_hasCachedNodesCount = true;
+            }
         }
     return m_cachedNodesCount;
     }
@@ -563,7 +595,7 @@ void NavNodesProvider::FinalizeNode(JsonNavNodeR node, bool customizeLabel) cons
     if (!GetContext().NeedsFullLoad())
         return;
 
-    DataSourceRelatedSettingsUpdater updater(GetContext(), node);
+    DataSourceRelatedSettingsUpdater updater(GetContext(), &node);
     bool changed = false;
     
     // make sure the node is customized
@@ -773,7 +805,7 @@ size_t CustomNodesProvider::_GetNodesCount() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 QueryBasedNodesProvider::QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds) 
     : MultiNavNodesProvider(context), m_query(&query), m_executor(context.GetNodesFactory(), context.GetConnection(), GetLocale(context), context.GetStatementCache(), query), 
-    m_executorIndex(0), m_inProvidersRequest(false), m_usedClassIds(usedClassIds)
+    m_executorIndex(0), m_usedClassIds(usedClassIds)
     { }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1009,7 +1041,7 @@ bool QueryBasedNodesProvider::_InitializeNodes()
     NavNodesProviderPtr cachedProvider = GetCachedProvider();
     if (cachedProvider.IsValid())
         {
-        //AddProvider(*cachedProvider);
+        DisabledFullNodesLoadContext doNotCustomizeCachedNodes(*cachedProvider);
         size_t cachedIndex = 0;
         JsonNavNodePtr cachedNode;
         while (cachedProvider->GetNode(cachedNode, cachedIndex++))
@@ -1031,7 +1063,7 @@ bool QueryBasedNodesProvider::_InitializeNodes()
     bvector<UserSettingEntry> relatedSettings = GetContext().GetRelatedSettings();
     GetContext().GetNodesCache().Update(GetContext().GetDataSourceInfo(), &dsFilter, &m_usedClassIds, &relatedSettings);
 
-    DataSourceRelatedSettingsUpdater updater(GetContext());
+    DataSourceRelatedSettingsUpdater updater(GetContext(), virtualParent.get());
 
     // set up the custom functions context
     CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(), 
@@ -1372,6 +1404,7 @@ size_t MultiSpecificationNodesProvider::_GetNodesCount() const
 
     size_t count = MultiNavNodesProvider::_GetNodesCount();
     JsonNavNodePtr node;
+    DisabledFullNodesLoadContext doNotCustomize(*this);
     if (1 == count && MultiNavNodesProvider::_GetNode(node, 0) && node->GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode))
         {
         GetContext().GetNodesCache().MakeVirtual(*node);
@@ -1391,6 +1424,7 @@ bool MultiNavNodesProvider::_GetNode(JsonNavNodePtr& node, size_t index) const
         if (provider.IsNull())
             continue;
 
+        OptimizationFlagsCarrier useOptimizationFlags(*this, *provider);
         size_t count = provider->GetNodesCount();
         if (index < count)
             return provider->GetNode(node, index);
@@ -1409,6 +1443,7 @@ bool MultiNavNodesProvider::_HasNodes() const
         if (provider.IsNull())
             continue;
 
+        OptimizationFlagsCarrier useOptimizationFlags(*this, *provider);
         if (provider->HasNodes())
             return true;
         }
@@ -1426,7 +1461,14 @@ size_t MultiNavNodesProvider::_GetNodesCount() const
         if (provider.IsNull())
             continue;
 
+        OptimizationFlagsCarrier useOptimizationFlags(*this, *provider);
         count += provider->GetNodesCount();
+
+        if (GetContext().IsCheckingChildren())
+            {
+            if (count > 0)
+                break;
+            }
         }
     return count;
     }

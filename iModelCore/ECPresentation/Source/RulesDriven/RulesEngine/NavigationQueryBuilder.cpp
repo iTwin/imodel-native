@@ -1119,7 +1119,8 @@ private:
         GroupingSpecificationsVisitor visitor(m_groupingHandlers, m_schemaHelper, m_specification.GetDoNotSort());
         RulesPreprocessor preprocessor(m_queryBuilderParams.GetConnections(), m_queryBuilderParams.GetConnection(),
             GetQueryBuilderParams().GetRuleset(), GetQueryBuilderParams().GetLocale(), GetQueryBuilderParams().GetUserSettings(),
-            GetQueryBuilderParams().GetUsedSettingsListener(), GetQueryBuilderParams().GetECExpressionsCache());
+            GetQueryBuilderParams().GetUsedSettingsListener(), GetQueryBuilderParams().GetECExpressionsCache(),
+            GetQueryBuilderParams().GetSchemaHelper().GetStatementCache());
         RulesPreprocessor::AggregateCustomizationRuleParameters params(m_parentInstanceNode.get(), m_specificationHash);
         bvector<GroupingRuleCP> groupingRules = preprocessor.GetGroupingRules(params);
         for (GroupingRuleCP rule : groupingRules)
@@ -1584,6 +1585,7 @@ private:
     IUserSettings const& m_userSettings;
     IUsedUserSettingsListener* m_usedSettingsListener;
     ECExpressionsCache& m_ecexpressionsCache;
+    ECSqlStatementCache const& m_statementCache;
     Utf8StringCR m_specificationHash;
 
 private:
@@ -1591,7 +1593,8 @@ private:
         {
         if (nullptr == m_sortingRules)
             {
-            RulesPreprocessor preprocessor(GetConnections(), GetConnection(), GetRuleset(), GetLocale(), m_userSettings, m_usedSettingsListener, m_ecexpressionsCache);
+            RulesPreprocessor preprocessor(GetConnections(), GetConnection(), GetRuleset(), GetLocale(), m_userSettings, 
+                m_usedSettingsListener, m_ecexpressionsCache, m_statementCache);
             RulesPreprocessor::AggregateCustomizationRuleParameters params(GetParentInstanceNode(), m_specificationHash);
             m_sortingRules = new bvector<SortingRuleCP>(preprocessor.GetSortingRules(params));
             }
@@ -1651,9 +1654,9 @@ private:
 protected:
     ECInstanceSortingQueryContext(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset,
         Utf8StringCR locale, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener, ECExpressionsCache& ecexpressionsCache,
-        JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode, bool doNotSort, Utf8StringCR specicificationHash)
+        ECSqlStatementCache const& statementCache, JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode, bool doNotSort, Utf8StringCR specicificationHash)
         : ECInstanceQueryContext(schemaHelper, connections, connection, ruleset, locale, parentNode, parentInstanceNode), m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener),
-        m_ecexpressionsCache(ecexpressionsCache), m_sortingRules(nullptr), m_doNotSort(doNotSort), m_specificationHash(specicificationHash)
+        m_ecexpressionsCache(ecexpressionsCache), m_sortingRules(nullptr), m_doNotSort(doNotSort), m_specificationHash(specicificationHash), m_statementCache(statementCache)
         {}
     ~ECInstanceSortingQueryContext() {DELETE_AND_CLEAR(m_sortingRules);}
 
@@ -1822,10 +1825,10 @@ protected:
 public:
     static IQueryContextPtr Create(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset,
         Utf8StringCR locale, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener, ECExpressionsCache& ecexpressionsCache,
-        JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode, bool doNotSort, Utf8StringCR specicificationHash)
+        ECSqlStatementCache const& statementCache, JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode, bool doNotSort, Utf8StringCR specicificationHash)
         {
         return new ECInstanceSortingQueryContext(schemaHelper, connections, connection, ruleset, locale, userSettings, usedSettingsListener,
-            ecexpressionsCache, parentNode, parentInstanceNode, doNotSort, specicificationHash);
+            ecexpressionsCache, statementCache, parentNode, parentInstanceNode, doNotSort, specicificationHash);
         }
 };
 
@@ -2162,8 +2165,8 @@ static MultiQueryContextPtr CreateQueryContext(GroupingResolver const& resolver,
     IQueryContextPtr context = ECInstanceSortingQueryContext::Create(resolver.GetSchemaHelper(), resolver.GetQueryBuilderParams().GetConnections(),
         resolver.GetQueryBuilderParams().GetConnection(), resolver.GetQueryBuilderParams().GetRuleset(), resolver.GetQueryBuilderParams().GetLocale(),
         resolver.GetQueryBuilderParams().GetUserSettings(), resolver.GetQueryBuilderParams().GetUsedSettingsListener(),
-        resolver.GetQueryBuilderParams().GetECExpressionsCache(), resolver.GetParentNode(), resolver.GetParentInstanceNode(),
-        resolver.GetSpecification().GetDoNotSort(), resolver.GetSpecificationHash());
+        resolver.GetQueryBuilderParams().GetECExpressionsCache(), resolver.GetQueryBuilderParams().GetSchemaHelper().GetStatementCache(),
+        resolver.GetParentNode(), resolver.GetParentInstanceNode(), resolver.GetSpecification().GetDoNotSort(), resolver.GetSpecificationHash());
     context = PostProcessQueryContext::Create(*context, resolver.GetSpecification());
     return MultiQueryContext::Create(*context, resolver, isSearchContext);
     }
@@ -2179,7 +2182,6 @@ Utf8String NavigationQueryBuilder::GetSupportedSchemas(SpecificationType const& 
 
     return m_params.GetRuleset().GetSupportedSchemas();
     }
-
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2016
@@ -2363,7 +2365,7 @@ static void ProcessQueryClassesBasedOnCustomizationRules(bvector<SelectQueryInfo
         }
 
     RulesPreprocessor preprocessor(params.GetConnections(), params.GetConnection(), params.GetRuleset(), params.GetLocale(),
-        params.GetUserSettings(), params.GetUsedSettingsListener(), params.GetECExpressionsCache());
+        params.GetUserSettings(), params.GetUsedSettingsListener(), params.GetECExpressionsCache(), params.GetSchemaHelper().GetStatementCache());
     RulesPreprocessor::AggregateCustomizationRuleParameters preprocessorParams(parentNode, resolver.GetSpecificationHash());
     CallbackOnRuleClasses<SortingRule>(preprocessor.GetSortingRules(preprocessorParams), params.GetSchemaHelper(),
         [&customizationRuleInfos](SortingRuleCR rule, ECEntityClassCR ecClass)

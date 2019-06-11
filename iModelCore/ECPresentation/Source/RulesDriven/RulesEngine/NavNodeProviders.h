@@ -58,6 +58,7 @@ private:
     // optimization flags
     bool m_isFullLoadDisabled;
     bool m_isUpdatesDisabled;
+    bool m_isCheckingChildren;
 
     // root nodes context
     bool m_isRootNodeContext;
@@ -111,11 +112,13 @@ public:
     void SetProviderIndexAllocator(IProviderIndexAllocator* allocator) {m_providerIndexAllocator = allocator;}
 
     // optimization flags
-    bool IsFullNodesLoadDisabled() const;
+    bool IsFullNodesLoadDisabled() const {return m_isFullLoadDisabled;}
     void SetDisableFullLoad(bool value) {m_isFullLoadDisabled = value;}
-    bool IsUpdatesDisabled() const;
+    bool IsUpdatesDisabled() const {return m_isUpdatesDisabled;}
     void SetIsUpdatesDisabled(bool value) { m_isUpdatesDisabled = value; }
     bool NeedsFullLoad() const {return !IsFullNodesLoadDisabled();}
+    bool IsCheckingChildren() const {return m_isCheckingChildren;}
+    void SetIsCheckingChildren(bool value) {m_isCheckingChildren = value;}
     
     // root nodes context
     ECPRESENTATION_EXPORT void SetRootNodeContext(RootNodeRuleCR);
@@ -190,8 +193,7 @@ struct DataSourceRelatedSettingsUpdater
     JsonNavNodeCP m_node;
     size_t m_relatedSettingsCountBefore;
 
-    DataSourceRelatedSettingsUpdater(NavNodesProviderContextCR context);
-    DataSourceRelatedSettingsUpdater(NavNodesProviderContextCR context, JsonNavNodeCR node);
+    DataSourceRelatedSettingsUpdater(NavNodesProviderContextCR context, JsonNavNodeCP node);
     ~DataSourceRelatedSettingsUpdater();
     };
 
@@ -360,10 +362,8 @@ struct MultiNavNodesProvider : NavNodesProvider
 {
 private:
     bvector<NavNodesProviderPtr> m_providers;
-    // mutable size_t m_cachedNodesCount;
-    // mutable bool m_hasCachedNodesCount;
 protected:
-    MultiNavNodesProvider(NavNodesProviderContextCR context) : NavNodesProvider(context) /*, m_cachedNodesCount(0), m_hasCachedNodesCount(false) */ {}
+    MultiNavNodesProvider(NavNodesProviderContextCR context) : NavNodesProvider(context) {}
     void AddProvider(NavNodesProvider& provider) {m_providers.push_back(&provider);}
     void RemoveProvider(NavNodesProvider& provider) {m_providers.erase(std::find(m_providers.begin(), m_providers.end(), &provider));}
     void SetProviders(bvector<NavNodesProviderPtr> const& providers) {m_providers = providers;}
@@ -457,7 +457,6 @@ private:
     bmap<ECClassId, bool> m_usedClassIds;
     NavigationQueryExecutor m_executor;
     size_t m_executorIndex;
-    mutable bool m_inProvidersRequest;
 
 private:
     ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bmap<ECClassId, bool> const&);

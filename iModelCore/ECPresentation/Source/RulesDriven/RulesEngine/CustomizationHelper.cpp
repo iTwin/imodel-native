@@ -33,7 +33,7 @@ bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride(bool customizeLabel)
     {
     bool didOverride = false;
     RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
-        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache(), m_context.GetStatementCache());
     RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
     LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
     if (nullptr != labelOverride)
@@ -65,7 +65,7 @@ bool NavNodeCustomizer::ApplyStyleOverride()
     {
     bool didOverride = false;
     RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
-        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache(), m_context.GetStatementCache());
     RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
     StyleOverrideCP styleOverride = preprocessor.GetStyleOverride(params);
     if (nullptr != styleOverride)
@@ -104,7 +104,7 @@ bool NavNodeCustomizer::ApplyImageIdOverride()
     {
     bool didOverride = false;
     RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
-        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache(), m_context.GetStatementCache());
     RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
     ImageIdOverrideCP imageIdOverride = preprocessor.GetImageIdOverride(params);
     if (nullptr != imageIdOverride)
@@ -158,7 +158,7 @@ bool NavNodeCustomizer::ApplyLocalization()
 bool NavNodeCustomizer::ApplyCheckboxRules()
     {
     RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
-        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache(), m_context.GetStatementCache());
     RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
     CheckBoxRuleCP rule = preprocessor.GetCheckboxRule(params);
     if (nullptr == rule)
@@ -217,7 +217,7 @@ bool NavNodeCustomizer::ApplyCheckboxRules()
 bool NavNodeCustomizer::ApplyExtendedDataRules()
     {
     RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
-        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
+        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache(), m_context.GetStatementCache());
     RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
     bvector<ExtendedDataRuleCP> rules = preprocessor.GetExtendedDataRules(params);
     bool didAddExtendedData = false;
@@ -245,7 +245,7 @@ NavNodeCustomizer::NavNodeCustomizer(RulesDrivenProviderContextCR context, JsonN
     : m_context(context), m_node(node), m_parentNode(parentNode), m_setter(setter), m_ecdbSymbolsContext(nullptr)
     {
     if (m_context.IsQueryContext())
-        m_ecdbSymbolsContext = new ECDbExpressionSymbolContext(m_context.GetConnection().GetECDb());
+        m_ecdbSymbolsContext = new ECDbExpressionSymbolContext(m_context.GetConnection().GetECDb(), &m_context.GetStatementCache());
     }
 
 /*---------------------------------------------------------------------------------**//**

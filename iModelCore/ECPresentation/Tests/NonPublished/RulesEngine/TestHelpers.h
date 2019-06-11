@@ -661,7 +661,7 @@ private:
         {
         NavNodesProviderPtr provider;
         RulesPreprocessor preprocessor(context.GetConnections(), context.GetConnection(), context.GetRuleset(),
-            context.GetLocale(), context.GetUserSettings(), nullptr, context.GetECExpressionsCache());
+            context.GetLocale(), context.GetUserSettings(), nullptr, context.GetECExpressionsCache(), context.GetStatementCache());
         if (nullptr == parent)
             {
             RulesPreprocessor::RootNodeRuleParameters params(TargetTree_MainTree);

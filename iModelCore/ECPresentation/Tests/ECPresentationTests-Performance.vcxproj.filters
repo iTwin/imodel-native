@@ -24,6 +24,9 @@
     <ClCompile Include="Performance\RulesEngine\RulesEnginePerformanceTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Performance\RulesEngine\HierarchyPerformanceAnalysis.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\RulesEngine\RulesEnginePerformanceTests.h">

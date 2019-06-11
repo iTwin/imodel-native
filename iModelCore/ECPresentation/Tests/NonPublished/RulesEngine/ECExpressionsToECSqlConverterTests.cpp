@@ -167,10 +167,11 @@ TEST_F(ECExpressionsToECSqlConverterTests, GetECClassIdFunctionSpecialCase)
 TEST_F(ECExpressionsToECSqlConverterTests, HasRelatedInstanceSpecialCase_Forward)
     {
     Utf8String ecsql = m_helper.ConvertToECSql("this.HasRelatedInstance(\"TestSchema1:RelationshipName\", \"Forward\", \"TestSchema2:RelatedClassName\")");
-    ASSERT_STREQ("[this].[ECInstanceId] IN ("
-        "SELECT [relationship].[SourceECInstanceId] "
-        "FROM [TestSchema1].[RelationshipName] relationship, [TestSchema2].[RelatedClassName] related "
-        "WHERE [relationship].[TargetECClassId] = [related].[ECClassId] AND [relationship].[TargetECInstanceId] = [related].[ECInstanceId]"
+    ASSERT_STREQ(" EXISTS ("
+        "SELECT 1 "
+        "FROM [TestSchema1].[RelationshipName] relationship "
+        "JOIN [TestSchema2].[RelatedClassName] related ON [relationship].[TargetECClassId] = [related].[ECClassId] AND [relationship].[TargetECInstanceId] = [related].[ECInstanceId] "
+        "WHERE [relationship].[SourceECInstanceId] = [this].[ECInstanceId]"
         ")", 
         ecsql.c_str());
     }
@@ -181,10 +182,11 @@ TEST_F(ECExpressionsToECSqlConverterTests, HasRelatedInstanceSpecialCase_Forward
 TEST_F(ECExpressionsToECSqlConverterTests, HasRelatedInstanceSpecialCase_Backward)
     {
     Utf8String ecsql = m_helper.ConvertToECSql("this.HasRelatedInstance(\"TestSchema1:RelationshipName\", \"Backward\", \"TestSchema2:RelatedClassName\")");
-    ASSERT_STREQ("[this].[ECInstanceId] IN ("
-        "SELECT [relationship].[TargetECInstanceId] "
-        "FROM [TestSchema1].[RelationshipName] relationship, [TestSchema2].[RelatedClassName] related "
-        "WHERE [relationship].[SourceECClassId] = [related].[ECClassId] AND [relationship].[SourceECInstanceId] = [related].[ECInstanceId]"
+    ASSERT_STREQ(" EXISTS ("
+        "SELECT 1 "
+        "FROM [TestSchema1].[RelationshipName] relationship "
+        "JOIN [TestSchema2].[RelatedClassName] related ON [relationship].[SourceECClassId] = [related].[ECClassId] AND [relationship].[SourceECInstanceId] = [related].[ECInstanceId] "
+        "WHERE [relationship].[TargetECInstanceId] = [this].[ECInstanceId]"
         ")", 
         ecsql.c_str());
     }

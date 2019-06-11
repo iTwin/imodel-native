@@ -15,8 +15,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct ECDbExpressionSymbolProvider final : ECN::IECSymbolProvider
 {
+    struct ECDbExpressionEvaluationContext;
+
 private:
-    ECDbCR m_db;
+    ECDbExpressionEvaluationContext* m_context;
 
     static ECN::ExpressionStatus GetRelatedInstanceQueryFormatOld(Utf8StringR, ECN::ECEntityClassCP&, ECDbCR, ECN::ECInstanceListCR, ECN::EvaluationResult const&);
     static ECN::ExpressionStatus GetRelatedInstanceQueryFormatNew(Utf8StringR, ECDbCR, ECN::ECInstanceListCR, ECN::EvaluationResultVector& args);
@@ -31,7 +33,8 @@ private:
     void _PublishSymbols(ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override;
 
 public:
-    explicit ECDbExpressionSymbolProvider(ECDbCR db) : ECN::IECSymbolProvider(), m_db(db) {}
+    ECDbExpressionSymbolProvider(ECDbCR db, ECSqlStatementCache const& statementCache);
+    ~ECDbExpressionSymbolProvider();
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

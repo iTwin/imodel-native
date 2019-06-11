@@ -10,18 +10,38 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Grigas.Petraitis                02/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ECDbExpressionSymbolContext::ECDbExpressionSymbolContext(ECDbCR ecdb)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDbExpressionSymbolContext::ECDbExpressionSymbolContext(ECDbCR ecdb, ECSqlStatementCache const* statementCache)
     {
-    m_provider = new ECDbExpressionSymbolProvider(ecdb);
+    if (nullptr != statementCache)
+        {
+        m_statementCache = statementCache;
+        m_ownsStatementCache = false;
+        }
+    else
+        {
+        m_statementCache = new ECSqlStatementCache(4, "ECDbExpressionSymbolContext");
+        m_ownsStatementCache = true;
+        }
+    m_provider = new ECDbExpressionSymbolProvider(ecdb, *m_statementCache);
     InternalECSymbolProviderManager::GetManager().RegisterSymbolProvider(*m_provider);
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Grigas.Petraitis                02/2016
-//+---------------+---------------+---------------+---------------+---------------+------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDbExpressionSymbolContext::~ECDbExpressionSymbolContext()
+    {
+    LeaveContext();
+    if (m_ownsStatementCache)
+        DELETE_AND_CLEAR(m_statementCache);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbExpressionSymbolContext::LeaveContext()
     {
     if (nullptr == m_provider)
@@ -57,17 +77,48 @@ public:
     static RefCountedPtr<ECDbExpressionContext> Create(ECDbCR db) {return new ECDbExpressionContext(db);}
 };
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Grigas.Petraitis                02/2016
-//+---------------+---------------+---------------+---------------+---------------+------
+//=======================================================================================
+// @bsiclass                                      Grigas.Petraitis              06/2019
+//+===============+===============+===============+===============+===============+======
+struct ECDbExpressionSymbolProvider::ECDbExpressionEvaluationContext
+{
+private:
+    ECDbCR m_db;
+    ECSqlStatementCache const& m_statementCache;
+public:
+    ECDbExpressionEvaluationContext(ECDbCR db, ECSqlStatementCache const& statementCache)
+        : m_db(db), m_statementCache(statementCache)
+        {}
+    ECDbCR GetECDb() const { return m_db; }
+    ECSqlStatementCache const& GetStatementCache() const { return m_statementCache; }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDbExpressionSymbolProvider::ECDbExpressionSymbolProvider(ECDbCR db, ECSqlStatementCache const& statementCache)
+    : ECN::IECSymbolProvider(), m_context(new ECDbExpressionEvaluationContext(db, statementCache))
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDbExpressionSymbolProvider::~ECDbExpressionSymbolProvider()
+    {
+    DELETE_AND_CLEAR(m_context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbExpressionSymbolProvider::_PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const
     {
-    context.AddSymbol(*ContextSymbol::CreateContextSymbol("ECDb", *ECDbExpressionContext::Create(m_db)));
-    context.AddSymbol(*MethodSymbol::Create("GetECClassId", &GetClassId, nullptr, const_cast<ECDb*>(&m_db)));
-    context.AddSymbol(*MethodSymbol::Create("GetRelatedInstancesCount", nullptr, &GetRelatedInstancesCount, const_cast<ECDb*>(&m_db)));
-    context.AddSymbol(*MethodSymbol::Create("GetRelatedInstance", nullptr, &GetRelatedInstance, const_cast<ECDb*>(&m_db)));
-    context.AddSymbol(*MethodSymbol::Create("HasRelatedInstance", nullptr, &HasRelatedInstance, const_cast<ECDb*>(&m_db)));
-    context.AddSymbol(*MethodSymbol::Create("GetRelatedValue", nullptr, &GetRelatedValue, const_cast<ECDb*>(&m_db)));
+    context.AddSymbol(*ContextSymbol::CreateContextSymbol("ECDb", *ECDbExpressionContext::Create(m_context->GetECDb())));
+    context.AddSymbol(*MethodSymbol::Create("GetECClassId", &GetClassId, nullptr, m_context));
+    context.AddSymbol(*MethodSymbol::Create("GetRelatedInstancesCount", nullptr, &GetRelatedInstancesCount, m_context));
+    context.AddSymbol(*MethodSymbol::Create("GetRelatedInstance", nullptr, &GetRelatedInstance, m_context));
+    context.AddSymbol(*MethodSymbol::Create("HasRelatedInstance", nullptr, &HasRelatedInstance, m_context));
+    context.AddSymbol(*MethodSymbol::Create("GetRelatedValue", nullptr, &GetRelatedValue, m_context));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -254,7 +305,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ECDbExpressionSymbolProvider::HasRelatedInstance(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
+ExpressionStatus ECDbExpressionSymbolProvider::HasRelatedInstance(EvaluationResult& evalResult, void* contextP, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (3 != args.size())
         {
@@ -262,10 +313,10 @@ ExpressionStatus ECDbExpressionSymbolProvider::HasRelatedInstance(EvaluationResu
         return ExpressionStatus::WrongNumberOfArguments;
         }
 
-    ECDbCR db = *reinterpret_cast<ECDb const*>(context);
+    ECDbExpressionEvaluationContext const& context = *reinterpret_cast<ECDbExpressionEvaluationContext const*>(contextP);
 
     Utf8String queryFormat;
-    ExpressionStatus stat = GetRelatedInstanceQueryFormatNew(queryFormat, db, instanceData, args);
+    ExpressionStatus stat = GetRelatedInstanceQueryFormatNew(queryFormat, context.GetECDb(), instanceData, args);
     if (ExpressionStatus::Success != stat)
         return stat;
 
@@ -273,9 +324,8 @@ ExpressionStatus ECDbExpressionSymbolProvider::HasRelatedInstance(EvaluationResu
         {
         Utf8PrintfString query(queryFormat.c_str(), ECDBSYS_PROP_ECInstanceId, instance->GetClass().GetECSqlName().c_str());
         
-        ECSqlStatement stmt;
-        ECSqlStatus status = stmt.Prepare(db, query.c_str());
-        if (!status.IsSuccess())
+        CachedECSqlStatementPtr stmt = context.GetStatementCache().GetPreparedStatement(context.GetECDb(), query.c_str());
+        if (stmt.IsNull())
             {
             BeAssert(false);
             continue;
@@ -283,14 +333,14 @@ ExpressionStatus ECDbExpressionSymbolProvider::HasRelatedInstance(EvaluationResu
         
         ECInstanceId id;
         ECInstanceId::FromString(id, instance->GetInstanceId().c_str());
-        status = stmt.BindId(1, id);
+        ECSqlStatus status = stmt->BindId(1, id);
         if (!status.IsSuccess())
             {
             BeAssert(false);
             continue;
             }
 
-        if (DbResult::BE_SQLITE_ROW == stmt.Step())
+        if (DbResult::BE_SQLITE_ROW == stmt->Step())
             {
             evalResult.InitECValue().SetBoolean(true);
             ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ECDbExpressionSymbolProvider::HasRelatedInstance: Result: %s", evalResult.ToString().c_str()).c_str());
@@ -306,7 +356,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::HasRelatedInstance(EvaluationResu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
+ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResult& evalResult, void* contextP, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (1 != args.size())
         {
@@ -314,11 +364,11 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResu
         return ExpressionStatus::WrongNumberOfArguments;
         }
 
-    ECDbCR db = *reinterpret_cast<ECDb const*>(context);
+    ECDbExpressionEvaluationContext const& context = *reinterpret_cast<ECDbExpressionEvaluationContext const*>(contextP);
 
     Utf8String queryFormat;
     ECEntityClassCP relatedClass;
-    ExpressionStatus stat = GetRelatedInstanceQueryFormatOld(queryFormat, relatedClass, db, instanceData, args[0]);
+    ExpressionStatus stat = GetRelatedInstanceQueryFormatOld(queryFormat, relatedClass, context.GetECDb(), instanceData, args[0]);
     if (ExpressionStatus::Success != stat)
         return stat;    
 
@@ -327,9 +377,8 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResu
         {
         Utf8PrintfString query(queryFormat.c_str(), "*", instance->GetClass().GetECSqlName().c_str());
 
-        ECSqlStatement stmt;
-        ECSqlStatus status = stmt.Prepare(db, query.c_str());
-        if (!status.IsSuccess())
+        CachedECSqlStatementPtr stmt = context.GetStatementCache().GetPreparedStatement(context.GetECDb(), query.c_str());
+        if (stmt.IsNull())
             {
             BeAssert(false);
             continue;
@@ -337,15 +386,15 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResu
         
         ECInstanceId id;
         ECInstanceId::FromString(id, instance->GetInstanceId().c_str());
-        status = stmt.BindId(1, id);
+        ECSqlStatus status = stmt->BindId(1, id);
         if (!status.IsSuccess())
             {
             BeAssert(false);
             continue;
             }
 
-        ECInstanceECSqlSelectAdapter adapter(stmt);
-        if (DbResult::BE_SQLITE_ROW == stmt.Step())
+        ECInstanceECSqlSelectAdapter adapter(*stmt);
+        if (DbResult::BE_SQLITE_ROW == stmt->Step())
             {
             relatedInstance = adapter.GetInstance();
             break;
@@ -364,7 +413,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstancesCount(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
+ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstancesCount(EvaluationResult& evalResult, void* contextP, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (3 != args.size())
         {
@@ -372,10 +421,10 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstancesCount(Evaluati
         return ExpressionStatus::WrongNumberOfArguments;
         }
 
-    ECDbCR db = *reinterpret_cast<ECDb const*>(context);
+    ECDbExpressionEvaluationContext const& context = *reinterpret_cast<ECDbExpressionEvaluationContext const*>(contextP);
 
     Utf8String queryFormat;
-    ExpressionStatus stat = GetRelatedInstanceQueryFormatNew(queryFormat, db, instanceData, args);
+    ExpressionStatus stat = GetRelatedInstanceQueryFormatNew(queryFormat, context.GetECDb(), instanceData, args);
     if (ExpressionStatus::Success != stat)
         return stat;
 
@@ -385,9 +434,8 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstancesCount(Evaluati
         Utf8PrintfString nestedQuery(queryFormat.c_str(), ECDBSYS_PROP_ECInstanceId, instance->GetClass().GetECSqlName().c_str());
         Utf8PrintfString query("SELECT COUNT(1) FROM (%s)", nestedQuery.c_str());
         
-        ECSqlStatement stmt;
-        ECSqlStatus status = stmt.Prepare(db, query.c_str());
-        if (!status.IsSuccess())
+        CachedECSqlStatementPtr stmt = context.GetStatementCache().GetPreparedStatement(context.GetECDb(), query.c_str());
+        if (stmt.IsNull())
             {
             BeAssert(false);
             continue;
@@ -395,15 +443,15 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstancesCount(Evaluati
         
         ECInstanceId id;
         ECInstanceId::FromString(id, instance->GetInstanceId().c_str());
-        status = stmt.BindId(1, id);
+        ECSqlStatus status = stmt->BindId(1, id);
         if (!status.IsSuccess())
             {
             BeAssert(false);
             continue;
             }
 
-        if (DbResult::BE_SQLITE_ROW == stmt.Step())
-            count += stmt.GetValueUInt64(0);
+        if (DbResult::BE_SQLITE_ROW == stmt->Step())
+            count += stmt->GetValueUInt64(0);
         }
     
     evalResult.InitECValue().SetLong(count);
@@ -443,7 +491,7 @@ static ECValue GetECValueFromSqlValue(IECSqlValue const& sqlValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedValue(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
+ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedValue(EvaluationResult& evalResult, void* contextP, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     if (4 != args.size())
         {
@@ -451,10 +499,10 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedValue(EvaluationResult&
         return ExpressionStatus::WrongNumberOfArguments;
         }
 
-    ECDbCR db = *reinterpret_cast<ECDb const*>(context);
+    ECDbExpressionEvaluationContext const& context = *reinterpret_cast<ECDbExpressionEvaluationContext const*>(contextP);
 
     Utf8String queryFormat;
-    ExpressionStatus stat = GetRelatedInstanceQueryFormatNew(queryFormat, db, instanceData, args);
+    ExpressionStatus stat = GetRelatedInstanceQueryFormatNew(queryFormat, context.GetECDb(), instanceData, args);
     if (ExpressionStatus::Success != stat)
         return stat;    
 
@@ -470,9 +518,8 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedValue(EvaluationResult&
         {
         Utf8PrintfString query(queryFormat.c_str(), propertyNameArg.GetECValue()->GetUtf8CP(), instance->GetClass().GetECSqlName().c_str());
 
-        ECSqlStatement stmt;
-        ECSqlStatus status = stmt.Prepare(db, query.c_str());
-        if (!status.IsSuccess())
+        CachedECSqlStatementPtr stmt = context.GetStatementCache().GetPreparedStatement(context.GetECDb(), query.c_str());
+        if (stmt.IsNull())
             {
             BeAssert(false);
             continue;
@@ -480,16 +527,16 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedValue(EvaluationResult&
 
         ECInstanceId id;
         ECInstanceId::FromString(id, instance->GetInstanceId().c_str());
-        status = stmt.BindId(1, id);
+        ECSqlStatus status = stmt->BindId(1, id);
         if (!status.IsSuccess())
             {
             BeAssert(false);
             continue;
             }
 
-        if (DbResult::BE_SQLITE_ROW == stmt.Step())
+        if (DbResult::BE_SQLITE_ROW == stmt->Step())
             {
-            evalResult.InitECValue() = GetECValueFromSqlValue(stmt.GetValue(0));
+            evalResult.InitECValue() = GetECValueFromSqlValue(stmt->GetValue(0));
             ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ECDbExpressionSymbolProvider::GetRelatedValue: Result: %s", evalResult.ToString().c_str()).c_str());
             return ExpressionStatus::Success;
             }

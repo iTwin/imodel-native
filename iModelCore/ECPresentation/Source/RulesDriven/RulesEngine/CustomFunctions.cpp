@@ -120,9 +120,9 @@ private:
         NavNodesHelper::AddRelatedInstanceInfo(*thisNode, relatedInstanceInfo);
 
         // look for label override
-        ECDbExpressionSymbolContext ecdbSymbols(GetContext().GetSchemaHelper().GetConnection().GetECDb());
+        ECDbExpressionSymbolContext ecdbSymbols(GetContext().GetSchemaHelper().GetConnection().GetECDb(), &GetContext().GetSchemaHelper().GetStatementCache());
         RulesPreprocessor preprocessor(GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetLocale(),
-            GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
+            GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache(), GetContext().GetSchemaHelper().GetStatementCache());
         RulesPreprocessor::CustomizationRuleParameters params(*thisNode, GetContext().GetParentNode());
         LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
         if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
@@ -284,7 +284,7 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, Utf8
             thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
 
             RulesPreprocessor preprocessor(GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetLocale(),
-                GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
+                GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache(), GetContext().GetSchemaHelper().GetStatementCache());
             RulesPreprocessor::CustomizationRuleParameters params(*thisNode, GetContext().GetParentNode());
             LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
             if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
@@ -476,7 +476,7 @@ public:
             // create temporary node key
             thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
             RulesPreprocessor preprocessor(GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetLocale(),
-                GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
+                GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache(), GetContext().GetSchemaHelper().GetStatementCache());
             RulesPreprocessor::CustomizationRuleParameters params(*thisNode, GetContext().GetParentNode());
             LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
             if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
