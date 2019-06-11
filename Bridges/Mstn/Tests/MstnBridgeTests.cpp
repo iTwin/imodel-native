@@ -1326,6 +1326,7 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
     
     putenv("iModelBridge_MatchOnEmbeddedFileBasename=1");     // TODO: Replace this with a settings service parameter check
     putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=0"); // must disable pw caching, as we copy new files on top of old ones too quickly
+    static const uint32_t s_v8PasswordCacheLifetime = 2*1000; // the timeout is 1 second. Wait for 2 to be safe.
 
     BentleyApi::BeFileName inputStagingDir = GetOutputDir();
 
@@ -1412,6 +1413,9 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
         ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_1_v2.c_str(), master1.c_str()));
         ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_2_v2.c_str(), master2.c_str()));
 
+        // NEEDS WORK temporary work-around for V8 password cache entry lifetime
+        BentleyApi::BeThreadUtilities::BeSleep(s_v8PasswordCacheLifetime);
+
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
         RunTheBridge(args);
         
@@ -1436,6 +1440,9 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
 
         ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_1_v3.c_str(), master1.c_str()));
         ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_2_v3.c_str(), master2.c_str()));
+
+        // NEEDS WORK temporary work-around for V8 password cache entry lifetime
+        BentleyApi::BeThreadUtilities::BeSleep(s_v8PasswordCacheLifetime);
 
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
         RunTheBridge(args);
