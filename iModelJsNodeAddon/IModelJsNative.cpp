@@ -4603,15 +4603,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         BeConditionVariable m_waiter;
         ECPresentationResult m_result;
         BeAtomic<bool> m_hasResult;
-        DateTime m_startTime;
-    private:
-        uint64_t GetElapsedTime() const
-            {
-            int64_t start, end;
-            m_startTime.ToUnixMilliseconds(start);
-            DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(end);
-            return end - start;
-            }
+        uint64_t m_startTime;
     protected:
         void Execute() override
             {
@@ -4620,7 +4612,8 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             }
         void OnOK() override
             {
-            JsInterop::LogMessageInContext("ECPresentation.Node", NativeLogging::LOG_DEBUG, Utf8PrintfString("Sending success response (took %" PRIu64 " ms)", GetElapsedTime()), m_requestContext);
+            JsInterop::LogMessageInContext("ECPresentation.Node", NativeLogging::LOG_DEBUG, Utf8PrintfString("Sending success response (took %" PRIu64 " ms)", 
+                (BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_startTime)), m_requestContext);
             Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), m_result, true)});
             }
         void OnError(Napi::Error const& e) override
@@ -4630,10 +4623,49 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             }
     public:
         ResponseSender(Napi::Function& callback) 
-            : Napi::AsyncWorker(callback), m_requestContext(JsInterop::GetCurrentClientRequestContextForMainThread()), m_hasResult(false), m_startTime(DateTime::GetCurrentTimeUtc())
+            : Napi::AsyncWorker(callback), m_requestContext(JsInterop::GetCurrentClientRequestContextForMainThread()), m_hasResult(false), m_startTime(BeTimeUtilities::GetCurrentTimeAsUnixMillis())
             {}
         void SetResult(ECPresentationResult&& result) {m_result = std::move(result); m_hasResult.store(true); m_waiter.notify_all();}
     };
+
+    //=======================================================================================
+    //! @bsiclass
+    //=======================================================================================
+    struct SchemasLoader : Napi::AsyncWorker
+        {
+        private:
+            JsInterop::ObjectReferenceClaimCheck m_requestContext;
+            DgnDbPtr m_dgndb;
+            uint64_t m_startTime;
+        protected:
+            void Execute() override
+                {
+                m_startTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+                JsInterop::SetCurrentClientRequestContextForWorkerThread(m_requestContext);
+                if (!m_dgndb->IsDbOpen())
+                    {
+                    SetError("iModel not open");
+                    return;
+                    }
+                NativeLogging::LoggingManager::GetLogger("ECPresentation.Node")->info("Preloading ECSchemas");
+                m_dgndb->Schemas().GetSchemas(true);
+                }
+            void OnOK() override
+                {
+                JsInterop::LogMessageInContext("ECPresentation.Node", NativeLogging::LOG_DEBUG, Utf8PrintfString("Preloading ECSchemas took %" PRIu64 " ms", 
+                    (BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_startTime)), m_requestContext);
+                Callback().MakeCallback(Receiver().Value(), { Napi::Number::New(Env(), (int)ECPresentationStatus::Success) });
+                }
+            void OnError(Napi::Error const& e) override
+                {
+                JsInterop::LogMessageInContext("ECPresentation.Node", NativeLogging::LOG_ERROR, "Error preloading ECSchemas", m_requestContext);
+                Callback().MakeCallback(Receiver().Value(), { Napi::Number::New(Env(), (int)ECPresentationStatus::Error) });
+                }
+        public:
+            SchemasLoader(Napi::Function& callback, DgnDb& db)
+                : Napi::AsyncWorker(callback), m_dgndb(&db), m_requestContext(JsInterop::GetCurrentClientRequestContextForMainThread()), m_startTime(0)
+                {}
+        };
 
     /*=================================================================================**//**
     * @bsiclass                                     Aidas.Kililnskas                05/2018
@@ -4700,16 +4732,17 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "ECPresentationManager", {
-          InstanceMethod("setupRulesetDirectories", &NativeECPresentationManager::SetupRulesetDirectories),
-          InstanceMethod("setupLocaleDirectories", &NativeECPresentationManager::SetupLocaleDirectories),
-          InstanceMethod("setRulesetVariableValue", &NativeECPresentationManager::SetRulesetVariableValue),
-          InstanceMethod("getRulesetVariableValue", &NativeECPresentationManager::GetRulesetVariableValue),
-          InstanceMethod("getRulesets", &NativeECPresentationManager::GetRulesets),
-          InstanceMethod("addRuleset", &NativeECPresentationManager::AddRuleset),
-          InstanceMethod("removeRuleset", &NativeECPresentationManager::RemoveRuleset),
-          InstanceMethod("clearRulesets", &NativeECPresentationManager::ClearRulesets),
-          InstanceMethod("handleRequest", &NativeECPresentationManager::HandleRequest),
-          InstanceMethod("dispose", &NativeECPresentationManager::Terminate)
+            InstanceMethod("forceLoadSchemas", &NativeECPresentationManager::ForceLoadSchemas),
+            InstanceMethod("setupRulesetDirectories", &NativeECPresentationManager::SetupRulesetDirectories),
+            InstanceMethod("setupLocaleDirectories", &NativeECPresentationManager::SetupLocaleDirectories),
+            InstanceMethod("setRulesetVariableValue", &NativeECPresentationManager::SetRulesetVariableValue),
+            InstanceMethod("getRulesetVariableValue", &NativeECPresentationManager::GetRulesetVariableValue),
+            InstanceMethod("getRulesets", &NativeECPresentationManager::GetRulesets),
+            InstanceMethod("addRuleset", &NativeECPresentationManager::AddRuleset),
+            InstanceMethod("removeRuleset", &NativeECPresentationManager::RemoveRuleset),
+            InstanceMethod("clearRulesets", &NativeECPresentationManager::ClearRulesets),
+            InstanceMethod("handleRequest", &NativeECPresentationManager::HandleRequest),
+            InstanceMethod("dispose", &NativeECPresentationManager::Terminate)
         });
 
         exports.Set("ECPresentationManager", t);
@@ -4831,6 +4864,18 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             {
             responseSender->SetResult(ECPresentationResult(ECPresentationStatus::Error, "Unknown error creating request"));
             }
+        }
+
+    void ForceLoadSchemas(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db, );
+        REQUIRE_ARGUMENT_FUNCTION(1, responseCallback, );
+        if (!db->IsOpen())
+            {
+            THROW_TYPE_EXCEPTION_AND_RETURN("NativeECPresentationManager::ForceLoadSchemas: iModel not open", );
+            return;
+            }
+        (new SchemasLoader(responseCallback, db->GetDgnDb()))->Queue();
         }
 
     Napi::Value SetupRulesetDirectories(Napi::CallbackInfo const& info)
