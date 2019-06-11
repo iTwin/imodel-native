@@ -13,7 +13,7 @@
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="SourceInfoSchemaPrewire"/>
         <SubPart PartName="LaunchDarkly" Repository="bsicommon" PartFile="Libsrc-Nugets"/>
-        <SubPart PartName="Licensing" Repository="licensingcrossplatform" PartFile="licensingcrossplatform"/>
+        <SubPart PartName="Licensing" Repository="imodel02" PartFile="iModelCore/LicensingCrossPlatform/licensingcrossplatform"/>
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)iModelBridge$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)iModelBridge$(ApiNumber)$(shlibext)</Assemblies>
