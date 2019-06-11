@@ -861,7 +861,11 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
     // inserting relationships that were created under the proper constraints and are not creating new ones.
 
     constraint.RemoveConstraintClasses();
-    constraint.AddClass(*defaultConstraintClass);
+    if (ECObjectsStatus::SchemaNotFound == constraint.AddClass(*defaultConstraintClass))
+        {
+        relClass.GetSchemaR().AddReferencedSchema(const_cast<ECSchemaR>(defaultConstraintClass->GetSchema()));
+        constraint.AddClass(*defaultConstraintClass);
+        }
     constraint.SetIsPolymorphic(true);
 
     if (isSource && constraint.IsAbstractConstraintDefined() && !constraint.GetAbstractConstraint()->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
