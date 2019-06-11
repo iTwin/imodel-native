@@ -1471,7 +1471,7 @@ bool VertexKey::operator<(VertexKeyCR rhs) const
 
     if (m_paramValid)
         {
-        constexpr double s_paramTolerance  = .1;
+        constexpr double s_paramTolerance  = .0001;
         COMPARE_VALUES_TOLERANCE (m_param.x, rhs.m_param.x, s_paramTolerance);
         COMPARE_VALUES_TOLERANCE (m_param.y, rhs.m_param.y, s_paramTolerance);
         }
