@@ -1568,8 +1568,6 @@ TEST_F(ECSchemaTests, SequentialProcessing)
     // 'ClassA'.  On a subsequent update (or second bridge), the same TestSchema is found (but in an unprocessed file) from which an instance of the unused 'SecondClass' is found.
     // The schema should be re-analyzed an imported, thereby properly classifying 'SecondClass'
 
-    // Unfortunately, this doesn't work because the schemas are not updated in this workflow.  The logic does not look at the checksums of the schemas to see if they have changed, only the
-    // version numbers.
     LineUpFiles(L"SequentialProcessing.bim", L"Test3d.dgn", false);
     ECObjectsV8::ECSchemaPtr schema = ReadSchema(TestSchema);
     ECObjectsV8::ECClassP ecClass;
@@ -1603,7 +1601,7 @@ TEST_F(ECSchemaTests, SequentialProcessing)
     DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
     DgnV8Api::DgnElementECInstancePtr createdDgnECInstance2;
     EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor2.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor2.m_defaultModel, L"TestSchema", L"ClassB"));
-    //EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor2.CreateInstanceOnElement(createdDgnECInstance2, *((DgnV8Api::ElementHandle*)&eh), v8editor2.m_defaultModel, L"TestSchema", L"SecondClass"));
+    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor2.CreateInstanceOnElement(createdDgnECInstance2, *((DgnV8Api::ElementHandle*)&eh), v8editor2.m_defaultModel, L"TestSchema", L"SecondClass"));
 
     DoConvert(m_dgnDbFileName, secondV8File);
     {
@@ -1613,7 +1611,7 @@ TEST_F(ECSchemaTests, SequentialProcessing)
     auto rlink2 = FindRepositoryLinkIdByFilename(*db, secondV8File);
 
     VerifyElement(eid2, "ClassB", true, rlink2); 
-    //VerifyElement(eid2, "SecondClass", false);
+    VerifyElement(eid2, "SecondClass", false);
     }
 
     }
