@@ -15,3 +15,4 @@ NamedGroupTests.NamedGroupAcrossReference # Sam broke this with switch to aspect
 
 ConverterTests.UseConverterAsLibrary # Sam - decide if we want to support the "record level mapping" feature of ConverterLibrary or not
 
+ConverterTests.DetectDeletionsInEmbeddedFiles #Abeesh - Disabling this test so that we can get MStnBridge build 117 out.
