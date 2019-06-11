@@ -28,6 +28,35 @@ TEST_F(ECSqlExecutionFrameworkTests, Select)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan Khan                   06/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlExecutionFrameworkTests, CorrelatedSubqueries_Exists)
+    {
+    ECTEST_SETUP("ECSqlStatementTests", "ECSqlStatementTests.01.00.00.ecschema.xml", "Select.ecdb");
+    STATEMENT_PREPARE_SUCCESS("INSERT INTO ECST.Supplier(ContactName,Country,Phone) VALUES('John Snow','England',12345)");
+    STATEMENT_EXECUTE_SUCCESS();
+    STATEMENT_PREPARE_SUCCESS("INSERT INTO ECST.Supplier(ContactName,Country,Phone) VALUES('Maha Nasir','Pakistan',2400)");
+    STATEMENT_EXECUTE_SUCCESS();
+    STATEMENT_PREPARE_SUCCESS("SELECT ContactName FROM ECST.Supplier S WHERE EXISTS(SELECT 1 FROM ECST.Supplier WHERE Phone = 12345 AND ECInstanceId = S.ECInstanceId)");
+    ASSERT_STATEMENT_EXECUTE(DbResult::BE_SQLITE_ROW);
+    ASSERT_TEXT(0, "John Snow");
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan Khan                   06/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlExecutionFrameworkTests, CorrelatedSubqueries_Not_Exists)
+    {
+    ECTEST_SETUP("ECSqlStatementTests", "ECSqlStatementTests.01.00.00.ecschema.xml", "Select.ecdb");
+    STATEMENT_PREPARE_SUCCESS("INSERT INTO ECST.Supplier(ContactName,Country,Phone) VALUES('John Snow','England',12345)");
+    STATEMENT_EXECUTE_SUCCESS();
+    STATEMENT_PREPARE_SUCCESS("INSERT INTO ECST.Supplier(ContactName,Country,Phone) VALUES('Maha Nasir','Pakistan',2400)");
+    STATEMENT_EXECUTE_SUCCESS();
+    STATEMENT_PREPARE_SUCCESS("SELECT ContactName FROM ECST.Supplier S WHERE NOT EXISTS(SELECT 1 FROM ECST.Supplier WHERE Phone = 12345 AND ECInstanceId = S.ECInstanceId)");
+    ASSERT_STATEMENT_EXECUTE(DbResult::BE_SQLITE_ROW);
+    ASSERT_TEXT(0, "Maha Nasir");
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlExecutionFrameworkTests, CountWithDistinctClause)

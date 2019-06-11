@@ -165,7 +165,17 @@ TEST_F(ECSqlPrepareTestFixture, ReservedTokens)
 
 
 struct ECSqlSelectPrepareTests : ECSqlPrepareTestFixture {};
-
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Affan.Khan                      10/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlSelectPrepareTests, CorrelatedSubqueries)
+    {
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.PSA psa1 WHERE EXISTS(SELECT 1 FROM ecsql.PSA WHERE ECInstanceId = psa1.ECInstanceId)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.PSA psa1 WHERE NOT EXISTS(SELECT 1 FROM ecsql.PSA WHERE ECInstanceId = psa1.ECInstanceId)"));
+    // Not supported
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.PSA psa1 WHERE UNIQUE(SELECT 1 FROM ecsql.PSA WHERE ECInstanceId = psa1.ECInstanceId)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.PSA psa1 WHERE NOT UNIQUE(SELECT 1 FROM ecsql.PSA WHERE ECInstanceId = psa1.ECInstanceId)"));
+    }
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                      10/13
 //+---------------+---------------+---------------+---------------+---------------+------

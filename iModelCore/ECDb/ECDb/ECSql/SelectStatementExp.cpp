@@ -904,7 +904,7 @@ void SubqueryTestExp::_ToECSql(ECSqlRenderContext& ctx) const
     if (HasParentheses())
         ctx.AppendToECSql("(");
 
-    ctx.AppendToECSql(ExpHelper::ToSql(m_op)).AppendToECSql(" ").AppendToECSql(*GetQuery());
+    ctx.AppendToECSql(ExpHelper::ToSql(m_op)).AppendToECSql(" ").AppendToECSql(*GetSubquery());
 
     if (HasParentheses())
         ctx.AppendToECSql(")");

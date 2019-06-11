@@ -272,7 +272,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBooleanExp(NativeSqlBuilder::List& nativeSq
             case Exp::Type::BooleanFactor:
                 return PrepareBooleanFactorExp(nativeSqlSnippets, ctx, exp.GetAs<BooleanFactorExp>());
             case Exp::Type::SubqueryTest:
-                return PrepareSubqueryTestExp(ctx, exp.GetAs<SubqueryTestExp>());
+                return PrepareSubqueryTestExp(nativeSqlSnippets, ctx, exp.GetAs<SubqueryTestExp>());
             case Exp::Type::UnaryPredicate:
                 return PrepareUnaryPredicateExp(nativeSqlSnippets, ctx, exp.GetAs<UnaryPredicateExp>());
 
@@ -1435,10 +1435,25 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryRefExp(ECSqlPrepareContext& ctx, Su
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareSubqueryTestExp(ECSqlPrepareContext& ctx, SubqueryTestExp const& exp)
+ECSqlStatus ECSqlExpPreparer::PrepareSubqueryTestExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SubqueryTestExp const& exp)
     {
-    ctx.Issues().Report("SubqueryTest expression not supported.");
-    return ECSqlStatus::InvalidECSql;
+    if (exp.GetOperator() == SubqueryTestOperator::Unique)
+        {
+        ctx.Issues().Report("UNIQUE (subquery) expression not supported.");
+        return ECSqlStatus::InvalidECSql;
+        }
+    NativeSqlBuilder nativeSqlBuilder;
+    nativeSqlBuilder.Append("EXISTS");
+    nativeSqlBuilder.AppendParenLeft();
+    ctx.GetSqlBuilder().Push();
+    ECSqlStatus status = ECSqlSelectPreparer::Prepare(ctx, *exp.GetSubquery()->GetQuery());
+    if (!status.IsSuccess())
+        return status;
+
+    nativeSqlBuilder.Append(ctx.GetSqlBuilder().Pop());
+    nativeSqlBuilder.AppendParenRight();
+    nativeSqlSnippets.push_back(nativeSqlBuilder);
+    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------

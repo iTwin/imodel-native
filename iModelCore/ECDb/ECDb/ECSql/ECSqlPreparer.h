@@ -70,7 +70,7 @@ struct ECSqlExpPreparer final
         static ECSqlStatus PrepareRelationshipJoinExp(ECSqlPrepareContext&, ECRelationshipJoinExp const&);
         static ECSqlStatus PrepareSubqueryExp(ECSqlPrepareContext&, SubqueryExp const&);
         static ECSqlStatus PrepareSubqueryRefExp(ECSqlPrepareContext&, SubqueryRefExp const&);
-        static ECSqlStatus PrepareSubqueryTestExp(ECSqlPrepareContext&, SubqueryTestExp const&);
+        static ECSqlStatus PrepareSubqueryTestExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, SubqueryTestExp const&);
         static ECSqlStatus PrepareSubqueryValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, SubqueryValueExp const&);
         static ECSqlStatus PrepareUnaryPredicateExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, UnaryPredicateExp const&);
         static ECSqlStatus PrepareUnaryValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, UnaryValueExp const&);

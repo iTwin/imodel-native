@@ -458,7 +458,7 @@ struct SubqueryTestExp final : BooleanExp
     public:
         SubqueryTestExp(SubqueryTestOperator op, std::unique_ptr<SubqueryExp> subquery);
 
-        QueryExp const* GetQuery() const { return GetChild<QueryExp>(0); }
+        SubqueryExp const* GetSubquery() const { return GetChild<SubqueryExp>(0); }
         SubqueryTestOperator  GetOperator() const { return m_op; }
     };
 
