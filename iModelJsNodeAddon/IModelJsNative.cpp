@@ -4787,7 +4787,11 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         JsInterop::ObjectReferenceClaimCheck requestContext = JsInterop::GetCurrentClientRequestContextForMainThread();
         return PresentationTaskNotificationsContext([requestContext]()
             {
-            JsInterop::SetCurrentClientRequestContextForWorkerThread(requestContext);
+            if (!JsInterop::IsMainThread())
+                {
+                // WIP: Seems like on MacOS _only_ we somehow get here on the main thread. Needs investigation.
+                JsInterop::SetCurrentClientRequestContextForWorkerThread(requestContext);
+                }
             });
         }
 
