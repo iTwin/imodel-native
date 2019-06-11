@@ -2984,6 +2984,17 @@ struct ConvertScalableMeshAttachment : ConvertToDgnDbElementExtension
 };
 
 //=======================================================================================
+// @bsiclass                                                    Mathieu.St-Pierre 07/17
+//=======================================================================================
+struct ConvertDTMElement : ConvertScalableMeshAttachment
+    {
+    static void Register();
+#ifdef DTMUSING3MX
+    Result DoConvert(DgnV8EhCR v8el, WCharCP url, Converter& converter, ResolvedModelMapping const& v8mm);
+#endif
+    Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override;
+    };
+//=======================================================================================
 // @bsiclass                                                    Sam.Wilson      09/2016
 //=======================================================================================
 struct ConvertDetailingSymbolExtension: ConvertToDgnDbElementExtension, IFinishConversion

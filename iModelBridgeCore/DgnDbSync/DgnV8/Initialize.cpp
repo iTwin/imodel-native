@@ -652,6 +652,7 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
     ConvertV8Lights::Register();
     ConvertThreeMxAttachment::Register();
     ConvertScalableMeshAttachment::Register();
+    ConvertDTMElement::Register();
     ConvertDetailingSymbolExtension::Register();
     CifSheetExaggeratedViewHandlerStandin::Register();
 

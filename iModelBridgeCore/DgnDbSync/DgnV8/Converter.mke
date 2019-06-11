@@ -233,6 +233,7 @@ LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)VisEdgesLib.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DwgDgnIO.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acpal.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acdb$(RDVSuffix).lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)TerrainModelCore.lib
 
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)TerrainModelElementHandler.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)TerrainModelCore.lib
