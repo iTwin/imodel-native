@@ -2037,3 +2037,27 @@ bool DwgHelper::IsElementOwnedByJobSubject(DgnDbCR db, DgnElementId checkId, Dgn
         }
     return  false;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+SubjectCPtr DwgHelper::FindModelSubject(SubjectCR parent, Utf8StringCR modelName, Json::Value const& modelProps, DgnDbCR db)
+    {
+    for (auto id : parent.QueryChildren())
+        {
+        auto childSubject = db.Elements().Get<Subject>(id);
+        if (childSubject.IsValid())
+            {
+            auto name = childSubject->GetCode().GetValue();
+            auto props = childSubject->GetSubjectJsonProperties().GetMember(Subject::json_Model());
+            if (name.Equals(modelName.c_str()) && props == modelProps)
+                return childSubject;
+
+            // drill into the child subject
+            auto found = DwgHelper::FindModelSubject(*childSubject, modelName, modelProps, db);
+            if (found.IsValid())
+                return  found;
+            }
+        }
+    return  nullptr;
+    }

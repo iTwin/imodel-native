@@ -99,6 +99,7 @@ public:
     DWG_EXPORT static rapidjson::Value GetJsonFromDoubleArray (double const* array, size_t count, rapidjson::MemoryPoolAllocator<>& allocator);
     DWG_EXPORT static void             GetDoubleArrayFromJson (double* array, size_t count, rapidjson::Value const& jsonValue);
     DWG_EXPORT static bool             IsElementOwnedByJobSubject (DgnDbCR db, DgnElementId checkId, DgnElementId jobSubjectId);
+    DWG_EXPORT static SubjectCPtr      FindModelSubject(SubjectCR parent, Utf8StringCR modelName, Json::Value const& modelProps, DgnDbCR db);
     };  // DwgHelper
 
 END_DWG_NAMESPACE

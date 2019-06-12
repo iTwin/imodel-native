@@ -263,7 +263,7 @@ struct DwgImporter
     {
 //__PUBLISH_SECTION_END__
     friend struct DwgBridge;
-    friend struct DwgSyncInfo;
+    friend struct UpdaterChangeDetector;
     friend struct DwgSourceAspects;
     friend struct DwgImportHost;
     friend struct ViewportFactory;
@@ -1455,6 +1455,7 @@ private:
     DgnModelIdSet       m_newlyDiscoveredModels;
     bset<DgnViewId>     m_viewsSeen;
     DgnElementIdSet     m_groupsSeen;
+    DgnElementIdSet     m_subjectsToRemove;
     uint32_t            m_elementsDiscarded;
 
     bool    IsUpdateRequired (DetectionResults& results, DwgImporter& importer, DwgDbObjectCR obj) const;

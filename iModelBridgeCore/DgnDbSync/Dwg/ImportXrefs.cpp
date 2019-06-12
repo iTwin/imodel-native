@@ -43,6 +43,7 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
         return  BSISUCCESS;
 
     auto xrefInsertId = xrefInsert->GetObjectId ();
+    auto xrefInsertHandle = xrefInsertId.GetHandle ();
 
     // save currentXref before recurse into a nested xref:
     DwgXRefHolder   savedCurrentXref = m_currentXref;
@@ -61,6 +62,17 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
         else
             this->ReportError (IssueCategory::UnexpectedData(), Issue::ModelFilteredOut(), Utf8PrintfString("%ls, INSERT ID=%ls", xrefBlock->GetPath().c_str(), xrefInsertId.ToAscii().c_str()).c_str());
         return  BSIERROR;
+        }
+
+    // save current xRef hierarchy node as the parent of its nested xRef nodes:
+    auto currentParentSubject = this->GetSpatialParentSubject();
+    if (currentParentSubject.IsValid())
+        {
+        // get & set the reference hierarchy node for this xRef model:
+        auto modelName = this->_ComputeModelName(*xrefBlock.get(), &xrefInsertHandle);
+        auto xrefsSubject = this->GetOrCreateModelSubject(*currentParentSubject, modelName, ModelSubjectType::References);
+        if (xrefsSubject.IsValid())
+            this->SetSpatialParentSubject(*xrefsSubject);
         }
 
     // get or create a model for the xRefBlock with the blockReference's transformation:
@@ -196,6 +208,9 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
 
     // restore current xref
     m_currentXref = savedCurrentXref;
+    // restore current references hierarchy node
+    if (currentParentSubject.IsValid())
+        this->SetSpatialParentSubject(*currentParentSubject);
 
     return  BSISUCCESS;
     }

@@ -43,6 +43,7 @@ void UpdaterChangeDetector::_Cleanup (DwgImporter& importer)
     m_viewsSeen.clear ();
     m_dwgModelsSkipped.clear ();
     m_newlyDiscoveredModels.clear ();
+    m_subjectsToRemove.clear ();
     m_elementsDiscarded = 0;
 
     s_loggedFileNames.clear ();
@@ -537,6 +538,8 @@ void UpdaterChangeDetector::_DetectDeletedModels(DwgImporterR importer, DwgSourc
     // *** NB: This alogorithm *infers* that a model was deleted in DWG if we did not see it or its file during processing.
     //          This inference is valid only if we know that a) we saw all models and/or files, and b) they were all registered in Files/ModelsSkipped or m_dwgModelsSeen.
 
+    auto rootSubject = importer.GetSpatialParentSubject ();
+
     // iterate over all of the previously found models to determine if any of 
     // them were missing this time around. Those models and their constituent Models must to be deleted.
     for (auto wasModel=iter.begin(); wasModel!=iter.end(); ++wasModel)
@@ -557,10 +560,20 @@ void UpdaterChangeDetector::_DetectDeletedModels(DwgImporterR importer, DwgSourc
                 continue;
 
             // not found, delete this model
-            auto    name = wasModel->GetDwgModelName ();
-            LOG.tracev("Delete model %lld [%s]", wasModel->GetModelId().GetValue(), name.empty() ? "no name" : name.c_str());
+            auto name = model->GetName ();
+            LOG.tracev("Delete model %lld [%s]", modelId.GetValue(), name.empty() ? "no name" : name.c_str());
             model->Delete();
             importer.GetDgnDb().Elements().Delete(modelElementId);
+
+            // if this is an xRef model, find & save the references subject referring to the model for future deletion
+            if (wasModel->GetSourceType() == DwgSourceAspects::ModelAspect::SourceType::XRefAttachment)
+                {
+                Json::Value modelProps(Json::nullValue);
+                modelProps["Type"] = "References";
+                auto subject = DwgHelper::FindModelSubject (*rootSubject, name, modelProps, importer.GetDgnDb());
+                if (subject.IsValid())
+                    m_subjectsToRemove.insert (subject->GetElementId());
+                }
             }
         }
     }
@@ -804,9 +817,19 @@ void UpdaterChangeDetector::_DetectDetachedXrefs (DwgImporter& importer)
 
             BeFileName  filename(file.GetDwgName().c_str());
 
-            LOG.tracev ("Deleting xRef entry %ls from syncInfo", filename.c_str());
-            importer.GetDgnDb().Elements().Delete (rlinkId);
+            LOG.tracev ("Delete repository link %lld of xRef %ls", rlinkId.GetValue(), filename.c_str());
+            db.Elements().Delete (rlinkId);
             }
+        }
+
+    // now delete references subjects whose xRef models have been deleted
+    for (auto id : m_subjectsToRemove)
+        {
+        auto subject = db.Elements().Get<Subject>(id);
+        if (!subject.IsValid() || !subject->IsPersistent())
+            continue;
+        LOG.tracev ("Delete references subject %lld [%s]", id.GetValue(), subject->GetCode().GetValueUtf8CP());
+        db.Elements().Delete (*subject);
         }
     }
 
