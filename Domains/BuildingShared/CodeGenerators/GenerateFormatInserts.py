@@ -19,7 +19,7 @@ Options:
 
 fileTemplate = """/*--------------------------------------------------------------------------------------+
 |
-|  {dollarSign}Source: Domain/GeneratedInserts/{generatedFileName} {dollarSign}
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 //===========================================================================================
