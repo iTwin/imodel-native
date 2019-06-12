@@ -19,6 +19,7 @@
 
     <Part Name="QuantityTakeoffsAspectsApi" BentleyBuildMakeFile="QuantityTakeoffsAspectsApi.prewire.mke">
         <Bindings>
+            <Directory SourceName="PublicApi/QuantityTakeoffsAspects" ProductDirectoryName="QuantityTakeoffsAspectsIncludes" />
             <PublicAPI Domain="QuantityTakeoffsAspects"/>
         </Bindings>
     </Part>
@@ -82,6 +83,7 @@
         <ProductDirectory Name="Gtest-Assets" Path="Assets" LibType="Static"/>
         <ProductDirectory Name="VendorNotices" Deliver="false" />
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+        <ProductDirectory Name="QuantityTakeoffsAspectsIncludes" Path="QuantityTakeoffs" />
         <ProductDirectory Name="UnitTests-Objects" Path="unittests" />
     </ProductDirectoryList>
 
