@@ -664,8 +664,6 @@ struct RealityDataFilterCreator
     REALITYDATAPLATFORM_EXPORT static RDSFilter GroupFiltersOR(bvector<RDSFilter> filters);
     };
 
-
-
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert                    12/2016
 //! This class represents a spatial request for Reality Data class object.
@@ -695,7 +693,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetFilter(RDSFilter const& filter);
     REALITYDATAPLATFORM_EXPORT void SetQuery(Utf8StringCR query);
     REALITYDATAPLATFORM_EXPORT void SetProject(Utf8StringCR project);
-    REALITYDATAPLATFORM_EXPORT void SetUserAgent(Utf8StringCR userAgent);
+    REALITYDATAPLATFORM_EXPORT void SetUserAgent(Utf8StringCR userAgent) override;
 
 
     //! Sets the sort order for the list. This sorting is performed server-side.
