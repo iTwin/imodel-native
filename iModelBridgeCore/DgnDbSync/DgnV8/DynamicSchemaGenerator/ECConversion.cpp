@@ -683,8 +683,9 @@ BentleyStatus V8ECClassInfo::InsertOrUpdate(DynamicSchemaGenerator& converter, D
             }
         else if (existingRule != BisConversionRule::ToDefaultBisBaseClass)
             {
-            Utf8PrintfString info("Ambiguous conversion rules found for ECClass '%s': %s versus %s. Keeping the previous one", v8ClassName.GetClassFullName().c_str(), BisConversionRuleHelper::ToString(existingRule), BisConversionRuleHelper::ToString(rule));
+            Utf8PrintfString info("Ambiguous conversion rules found for ECClass '%s': %s versus %s. Keeping the previous one and creating a secondary Aspect class.", v8ClassName.GetClassFullName().c_str(), BisConversionRuleHelper::ToString(existingRule), BisConversionRuleHelper::ToString(rule));
             converter.ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), info.c_str());
+            Save(converter.GetDgnDb(), v8ClassName, existingRule, true);
             return BSISUCCESS;
             }
         return Save(converter.GetDgnDb(), v8ClassName, rule, hasSecondary);
@@ -3683,10 +3684,11 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
                 failingEndStr = !sourceInstanceKey.IsValid() ? "source ECInstance" : "target ECInstance";
 
             Utf8String errorMsg;
-            errorMsg.Sprintf("Could not find %s for relationship '%s' (Source: %s|%s Target %s|%s).",
+            errorMsg.Sprintf("Could not find %s for relationship '%s' (Source: %s|%s Target %s|%s) from element %" PRIu64 " in file '%s'.",
                              failingEndStr, v8RelFullClassName.c_str(),
                              v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
-                             v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId());
+                             v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                             v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str());
             ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), errorMsg.c_str());
             continue;
             }

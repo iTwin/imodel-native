@@ -2213,7 +2213,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
     GetECContentOfElement(ecContent, v8eh, v8mm, isNewElement);
 
     bool hasPrimaryInstance = ecContent.m_primaryV8Instance != nullptr;
-    const bool hasSecondaryInstances = !ecContent.m_secondaryV8Instances.empty();
+    bool hasSecondaryInstances = !ecContent.m_secondaryV8Instances.empty();
 
     DgnModelR targetModel = v8mm.GetDgnModel();
 
@@ -2290,7 +2290,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
             }
         if (wouldBe3dMismatch(results, v8mm))
             {
-            ReportIssue(IssueSeverity::Error, IssueCategory::Unsupported(), Issue::UnsupportedPrimaryInstance(), IssueReporter::FmtElement(v8eh).c_str());
+            ReportIssue(IssueSeverity::Info, IssueCategory::Unsupported(), Issue::UnsupportedPrimaryInstance(), IssueReporter::FmtElement(v8eh).c_str());
             elementClassId = ComputeElementClassIgnoringEcContent(v8eh, v8mm);
             auto was = m_skipECContent;
             m_skipECContent= true;
@@ -2299,6 +2299,8 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
             hasPrimaryInstance = false;
             auto res = _CreateElementAndGeom(results, v8mm, elementClassId, hasPrimaryInstance, categoryId, elementCode, v8eh);
             m_skipECContent = was;
+            ecContent.m_secondaryV8Instances.push_back(std::make_pair(ecContent.m_primaryV8Instance, BisConversionRule::ToAspectOnly));
+            hasSecondaryInstances = true;
             if (BentleyApi::SUCCESS != res)
                 {
                 LOG.debugv("Failed to create element and geom after 3d mismatch for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
