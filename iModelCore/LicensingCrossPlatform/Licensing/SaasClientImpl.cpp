@@ -37,17 +37,31 @@ SaasClientImpl::SaasClientImpl
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Jason.Wichert           3/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId)
+folly::Future<BentleyStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId)
     {
     LOG.debug("UlasProvider::RealtimeTrackUsage");
-    return m_ulasProvider->RealtimeTrackUsage(accessToken, m_productId, m_featureString, m_deviceId, version, projectId);
+
+    // override system device id if it is specified here
+    if (!deviceId.empty())
+        {
+        m_deviceId = deviceId;
+        }
+
+    return m_ulasProvider->RealtimeTrackUsage(accessToken, m_productId, m_featureString, m_deviceId, version, projectId, usageType, correlationId);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Jason.Wichert            3/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> SaasClientImpl::MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent)
+folly::Future<BentleyStatus> SaasClientImpl::MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId)
     {
     LOG.debug("SaasClientImpl::MarkFeature");
-    return m_ulasProvider->RealtimeMarkFeature(accessToken, featureEvent, m_productId, m_featureString, m_deviceId);
+
+    // override system device id if it is specified here
+    if (!deviceId.empty())
+        {
+        m_deviceId = deviceId;
+        }
+
+    return m_ulasProvider->RealtimeMarkFeature(accessToken, featureEvent, m_productId, m_featureString, m_deviceId, usageType, correlationId);
     }

@@ -43,6 +43,7 @@
     <ClInclude Include="Licensing\Providers\IUlasProvider.h" />
     <ClInclude Include="Licensing\Providers\UlasProvider.h" />
     <ClInclude Include="PublicAPI\Licensing\ApplicationInfo.h" />
+    <ClInclude Include="PublicAPI\Licensing\UsageType.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\FeatureEvent.h" />
     <ClInclude Include="PublicAPI\Licensing\AccessKeyClient.h" />
     <ClInclude Include="PublicAPI\Licensing\AuthType.h" />

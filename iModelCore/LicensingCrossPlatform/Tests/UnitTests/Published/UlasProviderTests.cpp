@@ -320,7 +320,7 @@ TEST_F(UlasProviderTests, RealtimeTrackUsage_Success)
         return MockHttpHandler::StubHttpResponse();
         });
 
-    EXPECT_SUCCESS(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId").get());
+    EXPECT_SUCCESS(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId", UsageType::Production, "").get());
     }
 
 TEST_F(UlasProviderTests, RealtimeTrackUsage_Failure)
@@ -338,7 +338,7 @@ TEST_F(UlasProviderTests, RealtimeTrackUsage_Failure)
         return MockHttpHandler::StubHttpFailureResponse();
         });
 
-    EXPECT_ERROR(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId").get());
+    EXPECT_ERROR(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId", UsageType::Production, "").get());
     }
 
 TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Success)
@@ -359,7 +359,7 @@ TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Success)
         return MockHttpHandler::StubHttpResponse();
         });
 
-    EXPECT_SUCCESS(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId").get());
+    EXPECT_SUCCESS(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId", UsageType::Production, "").get());
     }
 
 TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Failure)
@@ -380,7 +380,7 @@ TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Failure)
         return MockHttpHandler::StubHttpFailureResponse();
         });
 
-    EXPECT_ERROR(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId").get());
+    EXPECT_ERROR(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId", UsageType::Production, "").get());
     }
 
 TEST_F(UlasProviderTests, RealtimeTrackUsageWithUserData_Success)
@@ -406,7 +406,7 @@ TEST_F(UlasProviderTests, RealtimeTrackUsageWithUserData_Success)
         return MockHttpHandler::StubHttpResponse();
         });
 
-    EXPECT_SUCCESS(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId").get());
+    EXPECT_SUCCESS(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId", UsageType::Production, "").get());
     }
 
 TEST_F(UlasProviderTests, GetAccessKeyInfo_Success)

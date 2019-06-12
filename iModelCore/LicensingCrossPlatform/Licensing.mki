@@ -22,6 +22,7 @@ Headers + $(PublicApiDir)SaasClient.h
 Headers + $(PublicApiDir)LicenseStatus.h
 Headers + $(PublicApiDir)Licensing.h
 Headers + $(PublicApiDir)ApplicationInfo.h
+Headers + $(PublicApiDir)UsageType.h
 Headers + $(PublicApiDir)Utils/FeatureUserDataMap.h
 Headers + $(PublicApiDir)Utils/InMemoryJsonLocalState.h
 Headers + $(PublicApiDir)Utils/JWToken.h

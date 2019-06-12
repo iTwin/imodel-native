@@ -17,6 +17,7 @@
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
 
 #include <Licensing/Utils/FeatureEvent.h>
+#include <Licensing/UsageType.h>
 //#include <Licensing/Utils/FeatureUserDataMap.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
@@ -52,12 +53,12 @@ public:
     //! @param[in] accessToken OIDC token of user to track usage against
     //! @param[in] version version for this usage
     //! @param[in] projectId projectId of this usage
-    LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
+    LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId, Utf8StringCR deviceId = "", UsageType usageType = UsageType::Production, Utf8StringCR correlationId = "");
 
     //! Mark realtime feature
     //! @param[in] accessToken OIDC token of user to mark feature against
     //! @param[in] featureEvent The feature event to mark
-    LICENSING_EXPORT folly::Future<BentleyStatus> MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent);
+    LICENSING_EXPORT folly::Future<BentleyStatus> MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, Utf8StringCR deviceId = "", UsageType usageType = UsageType::Production, Utf8StringCR correlationId = "");
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

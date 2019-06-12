@@ -9,6 +9,8 @@
 
 #include <Licensing/Licensing.h>
 #include <Licensing/Utils/DateHelper.h>
+#include <Licensing/UsageType.h>
+
 #include <Bentley/BeVersion.h>
 #include <BeSQLite/BeSQLite.h>
 
@@ -19,7 +21,7 @@ struct UsageJsonHelper
 private:
 
 public:
-	static Utf8String CreateJsonRandomGuids(Utf8StringCR deviceID, Utf8StringCR featureString, BeVersionCR version, Utf8StringCR projectID, int productId)
+	static Utf8String CreateJsonRandomGuids(Utf8StringCR deviceID, Utf8StringCR featureString, BeVersionCR version, Utf8StringCR projectID, int productId, UsageType usageType, Utf8StringCR correlationId)
 	{
 		Utf8String jsonString;
 
@@ -39,11 +41,24 @@ public:
 		ver.Sprintf("\"ver\": %" PRIu64 ",", versionNumber);
 		jsonString += ver; // application version [NUMBER]
 		jsonString += "\"projID\": \"" + projectID + "\","; // project ID [GUID or UNDEFINED]
-		jsonString += "\"corID\": \"" + BeSQLite::BeGuid(true).ToString() + "\","; // FreeApplicationPolicyHelper::GetRandomGUID() << "\","; // correlation GUID [GUID]
+		jsonString += "\"corID\": \"" + (correlationId == "" ? BeSQLite::BeGuid(true).ToString() : correlationId) + "\","; // correlation GUID [GUID] new GUID if not specified
 		jsonString += "\"evTimeZ\": \"" + DateHelper::GetCurrentTime() + "\","; // event time (current UTC time) [STRING]
 		jsonString += "\"lVer\": 1,"; // version of scheme of this log [NUMBER]
 		jsonString += "\"lSrc\": \"RealTime\","; // source of usage log entry: RealTime, Offline, Checkout [STRING]
-		jsonString += "\"uType\": \"Production\"}"; // usage type: Production, Trial, Beta, HomeUse, PreActivation [STRING]
+
+        Utf8String usageTypeString;
+        switch (usageType)
+            {
+            case UsageType::Production: {usageTypeString = "Production"; } break;
+            case UsageType::Trial: {usageTypeString = "Trial"; } break;
+            case UsageType::Beta: {usageTypeString = "Beta"; } break;
+            case UsageType::HomeUse: {usageTypeString = "HomeUse"; } break;
+            case UsageType::PreActivation: {usageTypeString = "PreActivation"; } break;
+            case UsageType::Evaluation: {usageTypeString = "Evaluation"; } break;
+            case UsageType::Academic: {usageTypeString = "Academic"; } break;
+            default: {usageTypeString = "Production"; } break;
+            }
+		jsonString += "\"uType\": \"" + usageTypeString + "\"}"; // usage type: Production, Trial, Beta, HomeUse, PreActivation, Evaluation, Academic [STRING]
 		return jsonString;
 	};
 
