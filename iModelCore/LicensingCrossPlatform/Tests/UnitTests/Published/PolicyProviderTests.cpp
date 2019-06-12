@@ -49,11 +49,11 @@ PolicyProviderTests::PolicyProviderTests() :
     m_buddiMock(std::make_shared<BuddiProviderMock>()),
     m_authProviderMock(std::make_shared<AuthHandlerProviderMock>())
     {
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", "2545");
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", "2545");
 
     GetAuthHandlerProviderMock().MockGetAuthHandler(m_httpHandlerMock);
 
-    m_policyProvider = std::make_shared<PolicyProvider>(m_buddiMock, clientInfo, m_httpHandlerMock, AuthType::SAML, m_authProviderMock);
+    m_policyProvider = std::make_shared<PolicyProvider>(m_buddiMock, appInfo, m_httpHandlerMock, AuthType::SAML, m_authProviderMock);
     }
 
 PolicyProvider& PolicyProviderTests::GetPolicyProvider() const

@@ -8,6 +8,7 @@
 
 #include <Licensing/Licensing.h>
 #include <Licensing/LicenseStatus.h>
+#include <Licensing/ApplicationInfo.h>
 
 #include "LicensingDb.h"
 #include "Policy.h"
@@ -19,7 +20,6 @@
 #include <folly/futures/Future.h>
 
 #include <WebServices/Connect/IConnectAuthenticationProvider.h>
-#include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
 
 #include "Providers/IBuddiProvider.h"
@@ -51,8 +51,8 @@ protected:
         Utf8String featureUserData;
         };
 
-	WebServices::ClientInfoPtr m_clientInfo;
-	WebServices::ConnectSignInManager::UserInfo m_userInfo;
+    ApplicationInfoPtr m_applicationInfo;
+    WebServices::ConnectSignInManager::UserInfo m_userInfo;
     BeFileName m_dbPath;
     ITimeRetrieverPtr m_timeRetriever;
     ILicensingDbPtr m_licensingDb;
@@ -114,8 +114,8 @@ public:
 
     LICENSING_EXPORT ClientImpl
         (
-		const WebServices::ConnectSignInManager::UserInfo& userInfo,
-        WebServices::ClientInfoPtr clientInfo,
+        const WebServices::ConnectSignInManager::UserInfo& userInfo,
+        ApplicationInfoPtr applicationInfo,
         BeFileNameCR db_path,
         bool offlineMode,
         IPolicyProviderPtr policyProvider,

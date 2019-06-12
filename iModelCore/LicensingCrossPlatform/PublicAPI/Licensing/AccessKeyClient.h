@@ -7,6 +7,7 @@
  //__PUBLISH_SECTION_START__
 
 #include <Licensing/Licensing.h>
+#include <Licensing/ApplicationInfo.h>
 
 #include "LicenseStatus.h"
 
@@ -43,15 +44,34 @@ struct AccessKeyClient
         //! @param[in] featureString product feature string, defaults to an empty string
         //! @param[in] customHttpHandler CustomHttpHandler, defaults to a nullptr
         LICENSING_EXPORT static AccessKeyClientPtr Create
-        (
+            (
             Utf8StringCR accessKey,
-			WebServices::ClientInfoPtr clientInfo,
+            WebServices::ClientInfoPtr clientInfo,
             BeFileNameCR dbPath,
             bool offlineMode,
             Utf8StringCR projectId = "",
             Utf8StringCR featureString = "",
             Http::IHttpHandlerPtr customHttpHandler = nullptr
-        );
+            );
+
+        //! Creates a client that uses accesskey
+        //! @param[in] accessKey Access key generated for the ultimate to track usage against
+        //! @param[in] applicationInfo ApplicationInfoPtr
+        //! @param[in] dbPath Path for LicenseClient database
+        //! @param[in] offlineMode ignored for now, no usage in this client yet
+        //! @param[in] projectId ProjectID string, defaults to an empty string
+        //! @param[in] featureString product feature string, defaults to an empty string
+        //! @param[in] customHttpHandler CustomHttpHandler, defaults to a nullptr
+        LICENSING_EXPORT static AccessKeyClientPtr Create
+            (
+            Utf8StringCR accessKey,
+            ApplicationInfoPtr applicationInfo,
+            BeFileNameCR dbPath,
+            bool offlineMode,
+            Utf8StringCR projectId = "",
+            Utf8StringCR featureString = "",
+            Http::IHttpHandlerPtr customHttpHandler = nullptr
+            );
 
         //! StartApplication performs actions and creates threads required for usage posting and policy requests, returns LicenseStatus
         // TODO: Return more than BentleyStatus to indicate to the app if the user has rights to use this app or it's crippled etc...

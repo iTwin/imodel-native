@@ -8,6 +8,7 @@
 
 #include <Licensing/Licensing.h>
 #include <Licensing/AuthType.h>
+#include <Licensing/ApplicationInfo.h>
 
 #include "LicenseStatus.h"
 
@@ -36,6 +37,7 @@ private:
 
 public:
     //! Initializes an instance of Client, returns a ClientPtr to the prepared Client instance.
+    //! DEPRECIATED - it is preferred to use Create that takes ApplicationInfo instead of this one that takes ClientInfo
     //! @param[in] userInfo signed in user's info
     //! @param[in] clientInfo ClientInfoPtr from WSClient
     //! @param[in] authenticationProvider To get tokens to make rest calls
@@ -48,7 +50,30 @@ public:
     LICENSING_EXPORT static ClientPtr Create
         (
         const WebServices::ConnectSignInManager::UserInfo& userInfo,
-		WebServices::ClientInfoPtr clientInfo,
+        WebServices::ClientInfoPtr clientInfo,
+        std::shared_ptr<WebServices::IConnectAuthenticationProvider> authenticationProvider,
+        BeFileNameCR dbPath,
+        bool offlineMode,
+        Utf8StringCR projectId = "",
+        Utf8StringCR featureString = "",
+        Http::IHttpHandlerPtr customHttpHandler = nullptr,
+        AuthType authType = AuthType::SAML
+        );
+
+    //! Initializes an instance of Client, returns a ClientPtr to the prepared Client instance.
+    //! @param[in] userInfo signed in user's info
+    //! @param[in] applicationInfo Contains information about the application
+    //! @param[in] authenticationProvider To get tokens to make rest calls
+    //! @param[in] dbPath Path for LicenseClient database
+    //! @param[in] offlineMode If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream
+    //! @param[in] projectId ProjectID string, defaults to an empty string
+    //! @param[in] featureString product feature string, defaults to an empty string
+    //! @param[in] customHttpHandler CustomHttpHandler, defaults to a nullptr
+    //! @param[in] authType auth type of token. defaults to SAML
+    LICENSING_EXPORT static ClientPtr Create
+        (
+        const WebServices::ConnectSignInManager::UserInfo& userInfo,
+        ApplicationInfoPtr applicationInfo,
         std::shared_ptr<WebServices::IConnectAuthenticationProvider> authenticationProvider,
         BeFileNameCR dbPath,
         bool offlineMode,

@@ -8,12 +8,12 @@
 #include <Licensing/Licensing.h>
 #include <Licensing/LicenseStatus.h>
 #include <Licensing/AuthType.h>
+#include <Licensing/ApplicationInfo.h>
 
 #include "IBuddiProvider.h"
 #include "IPolicyProvider.h"
 //#include "../Policy.h"
 
-#include <WebServices/Client/ClientInfo.h>
 #include "IAuthHandlerProvider.h"
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
@@ -21,7 +21,7 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 struct PolicyProvider : IPolicyProvider
     {
 protected:
-	WebServices::ClientInfoPtr m_clientInfo;
+    ApplicationInfoPtr m_applicationInfo;
     IBuddiProviderPtr m_buddiProvider;
     Http::IHttpHandlerPtr m_httpHandler;
     std::shared_ptr<IAuthHandlerProvider> m_authHandlerProvider;
@@ -31,7 +31,7 @@ public:
     LICENSING_EXPORT PolicyProvider
         (
         IBuddiProviderPtr buddiProvider,
-		WebServices::ClientInfoPtr clientInfo,
+        ApplicationInfoPtr applicationInfo,
         Http::IHttpHandlerPtr httpHandler,
         AuthType authType,
         std::shared_ptr<IAuthHandlerProvider> authHandlerProvider = nullptr // allow creation of non-authorized PolicyProvider
@@ -41,8 +41,9 @@ public:
     LICENSING_EXPORT folly::Future<Utf8String> GetCertificate();
     LICENSING_EXPORT folly::Future<Utf8String> PerformGetPolicyRequest();
     LICENSING_EXPORT folly::Future<Utf8String> PerformGetPolicyWithKeyRequest(Utf8StringCR accessKey);
+
 private:
-	WebServices::IConnectAuthenticationProvider::HeaderPrefix GetHeaderPrefix(AuthType authType);
+    WebServices::IConnectAuthenticationProvider::HeaderPrefix GetHeaderPrefix(AuthType authType);
     };
 
 END_BENTLEY_LICENSING_NAMESPACE
