@@ -114,11 +114,15 @@ public:
     REALITYDATAPLATFORM_EXPORT static SpatialEntityServerPtr JsonToSpatialEntityServer(Json::Value properties);
     REALITYDATAPLATFORM_EXPORT static SpatialEntityMetadataPtr JsonToSpatialEntityMetadata(Json::Value properties);
 
+
+    REALITYDATAPLATFORM_EXPORT static BeFileName CreateUrlDownloadFolder(Utf8StringCR uri, uint64_t filesize, BeFileNameCR folder);
+
+
     //! Utility methods that convert a file containing a GeoCoordinationService package, the package itself or a string containing the package
-    //! and produces a download list according tot he package content including alternate data sources as mirror sites and so on.
-    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageStringToDownloadOrder(Utf8CP source, WStringP pParseError = NULL, BeFileNameCR destinationFolder = BeFileName(), bool skipStreams = true);
-    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageFileToDownloadOrder(BeFileNameCR filename, WStringP pParseError = NULL, BeFileNameCR destinationFolder = BeFileName(), bool skipStreams = true);
-    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageToDownloadOrder(RealityPlatform::RealityDataPackagePtr package, BeFileNameCR destinationFolder = BeFileName(), bool skipStreams = true);
+    //! and produces a download list according to the package content including alternate data sources as mirror sites and so on.
+    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageStringToDownloadOrder(Utf8CP source, WStringP pParseError = NULL, BeFileNameCR destinationFolder = BeFileName(), bool skipStreams = true, bool createSubFolder = false);
+    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageFileToDownloadOrder(BeFileNameCR filename, WStringP pParseError = NULL, BeFileNameCR destinationFolder = BeFileName(), bool skipStreams = true, bool createSubFolder = false);
+    REALITYDATAPLATFORM_EXPORT static RealityDataDownload::Link_File_wMirrors_wSisters PackageToDownloadOrder(RealityPlatform::RealityDataPackagePtr package, BeFileNameCR destinationFolder = BeFileName(), bool skipStreams = true, bool createSubFolder = false);
 
     REALITYDATAPLATFORM_EXPORT static RealityDataDownload::sisterFileVector SpatialEntityDataSourceToSisterVector(RealityPlatform::SpatialEntityDataSourceCR dataSource, BeFileNameCR destinationFolder);
 

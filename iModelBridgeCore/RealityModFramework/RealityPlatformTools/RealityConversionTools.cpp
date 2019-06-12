@@ -6,6 +6,8 @@
 
 #include <RealityPlatformTools/RealityConversionTools.h>
 
+#include <RealityPlatform/md5.h>
+
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 
@@ -1514,27 +1516,27 @@ SpatialEntityMetadataPtr RealityConversionTools::JsonToSpatialEntityMetadata(Jso
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
-RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageStringToDownloadOrder(Utf8CP pSource, WStringP pParseError, BeFileNameCR destinationFolder, bool skipStreams)
+RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageStringToDownloadOrder(Utf8CP pSource, WStringP pParseError, BeFileNameCR destinationFolder, bool skipStreams, bool createSubFolder)
     {
     RealityPlatform::RealityPackageStatus status = RealityPlatform::RealityPackageStatus::UnknownError;
 
     RealityPlatform::RealityDataPackagePtr package = RealityPlatform::RealityDataPackage::CreateFromString(status, pSource, pParseError);
     BeAssert(status == RealityPlatform::RealityPackageStatus::Success);
     
-    return PackageToDownloadOrder(package, destinationFolder, skipStreams);
+    return PackageToDownloadOrder(package, destinationFolder, skipStreams, createSubFolder);
     }
 
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
-RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageFileToDownloadOrder(BeFileNameCR filename, WStringP pParseError, BeFileNameCR destinationFolder, bool skipStreams)
+RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageFileToDownloadOrder(BeFileNameCR filename, WStringP pParseError, BeFileNameCR destinationFolder, bool skipStreams, bool createSubFolder)
     {
     RealityPlatform::RealityPackageStatus status = RealityPlatform::RealityPackageStatus::UnknownError;
 
     RealityPlatform::RealityDataPackagePtr package = RealityPlatform::RealityDataPackage::CreateFromFile(status, filename, pParseError);
     BeAssert(status == RealityPlatform::RealityPackageStatus::Success);
 
-    return PackageToDownloadOrder(package, destinationFolder, skipStreams);
+    return PackageToDownloadOrder(package, destinationFolder, skipStreams, createSubFolder);
     }
 
 /*----------------------------------------------------------------------------------**//**
@@ -1578,10 +1580,61 @@ RealityDataDownload::sisterFileVector RealityConversionTools::SpatialEntityDataS
     return sfVector;
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Francis Boily                   09/2015
+//+---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName RealityConversionTools::CreateUrlDownloadFolder(Utf8StringCR uri, uint64_t filesize, BeFileNameCR folder)
+    {
+    WString filename;
+    RealityDataDownload::ExtractFileName(filename, uri);
+    bvector<WString> filenameComponents;
+    BeStringUtilities::Split(filename.c_str(), L".", filenameComponents);
+
+    // Creating one directory per file because we'll need to unzip it into the directory
+    WString filenameTemp = filenameComponents[0];
+
+    // Creating the MD5 hash
+    MD5Context md5c;
+    MD5Init(&md5c);
+
+    //Adding the filesize to the hash
+    Utf8String hashWithFilesize = uri;
+    hashWithFilesize.append(Utf8PrintfString("%d", filesize));
+
+    // Append that data to the MD5 buffer 
+    MD5Update(&md5c, (const unsigned char*) hashWithFilesize.c_str(), (int) strlen(uri.c_str()));
+    // Calculate the hash of the current fragment
+    unsigned char signature[16];
+    MD5Final(signature, &md5c);
+
+    WString finalHashValue;
+    char tempHashFragment[3];
+    // Write the resulting hashed strings in the result vector
+    for (int j = 0; j < sizeof signature; ++j)
+        {
+        // Bytes are written one by one (one byte equals 2 hex characters)
+        sprintf_s(tempHashFragment, sizeof(tempHashFragment), "%02X", signature[j]);
+        finalHashValue.AppendA(tempHashFragment);
+        }
+
+    // Appending the hash to the current directory
+    filenameTemp.AppendUtf8("_");
+    filenameTemp.append(finalHashValue.c_str());
+
+    BeFileName separatedDirectoryForZip(folder.c_str());
+    separatedDirectoryForZip.AppendToPath(filenameTemp.c_str());
+    separatedDirectoryForZip.AppendSeparator();
+
+    if (!BeFileName::DoesPathExist(separatedDirectoryForZip))
+        BeFileName::CreateNewDirectory(separatedDirectoryForZip);
+
+    return separatedDirectoryForZip;
+    }
+
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
-RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageToDownloadOrder(RealityPlatform::RealityDataPackagePtr package, BeFileNameCR destinationFolder, bool skipStreams)
+RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::PackageToDownloadOrder(RealityPlatform::RealityDataPackagePtr package, BeFileNameCR destinationFolder, bool skipStreams, bool createSubFolder)
     {
     RealityDataDownload::Link_File_wMirrors_wSisters downloadOrder = RealityDataDownload::Link_File_wMirrors_wSisters();
     
@@ -1599,17 +1652,21 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
             {
             RealityPlatform::SpatialEntityDataSourceR mirror = file->GetDataSource(i);
 
+            BeFileName finalFolder = destinationFolder;
+            if (createSubFolder)
+                finalFolder = CreateUrlDownloadFolder(mirror.GetUri().ToString(), mirror.GetSize(), destinationFolder);
+
             RealityPlatform::MultiBandSource* mbSource = dynamic_cast<RealityPlatform::MultiBandSource*>(&mirror);
             
             if(mbSource != nullptr)
                 {
-                RealityDataDownload::sisterFileVector subVector = SpatialEntityDataSourceToSisterVector(*mbSource->GetRedBand(), destinationFolder);
+                RealityDataDownload::sisterFileVector subVector = SpatialEntityDataSourceToSisterVector(*mbSource->GetRedBand(), finalFolder);
                 sfVector.insert(sfVector.end(), subVector.begin(), subVector.end());
-                subVector = SpatialEntityDataSourceToSisterVector(*mbSource->GetBlueBand(), destinationFolder);
+                subVector = SpatialEntityDataSourceToSisterVector(*mbSource->GetBlueBand(), finalFolder);
                 sfVector.insert(sfVector.end(), subVector.begin(), subVector.end());
-                subVector = SpatialEntityDataSourceToSisterVector(*mbSource->GetGreenBand(), destinationFolder);
+                subVector = SpatialEntityDataSourceToSisterVector(*mbSource->GetGreenBand(), finalFolder);
                 sfVector.insert(sfVector.end(), subVector.begin(), subVector.end());
-                subVector = SpatialEntityDataSourceToSisterVector(*mbSource->GetPanchromaticBand(), destinationFolder);
+                subVector = SpatialEntityDataSourceToSisterVector(*mbSource->GetPanchromaticBand(), finalFolder);
                 sfVector.insert(sfVector.end(), subVector.begin(), subVector.end());
                 }
             /*else if (wmsSource != nullptr)
@@ -1618,7 +1675,7 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
                 {}*/
             else
                 {
-                sfVector = SpatialEntityDataSourceToSisterVector(mirror, destinationFolder);
+                sfVector = SpatialEntityDataSourceToSisterVector(mirror, finalFolder);
                 }
             mVector.push_back(sfVector);
             }
@@ -1629,14 +1686,30 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
     bvector<PackageRealityDataPtr> terrainFiles = package->GetTerrainGroup();
 
     for (PackageRealityDataPtr file : terrainFiles)
-        downloadOrder.push_back(RealityDataToMirrorVector(*file, destinationFolder));
+        {
+        if (file->GetDataSourceCount() <= 0)
+            continue;
+
+        BeFileName finalFolder = destinationFolder;
+        if (createSubFolder)
+            finalFolder = CreateUrlDownloadFolder(file->GetDataSource(0).GetUri().ToString(), file->GetDataSource(0).GetSize(), destinationFolder);
+
+        downloadOrder.push_back(RealityDataToMirrorVector(*file, finalFolder));
+        }
 
     bvector<PackageRealityDataPtr> modelFiles = package->GetModelGroup();
 
     RealityDataDownload::mirrorWSistersVector mVector;
     for (PackageRealityDataPtr file : modelFiles)
         {
-        mVector = RealityDataToMirrorVector(*file, destinationFolder, skipStreams);
+        if (file->GetDataSourceCount() <= 0)
+            continue;
+
+        BeFileName finalFolder = destinationFolder;
+        if (createSubFolder)
+            finalFolder = CreateUrlDownloadFolder(file->GetDataSource(0).GetUri().ToString(), file->GetDataSource(0).GetSize(), destinationFolder);
+
+        mVector = RealityDataToMirrorVector(*file, finalFolder, skipStreams);
         if(!mVector.empty())
             downloadOrder.push_back(mVector);
         }
@@ -1645,7 +1718,14 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
 
     for (PackageRealityDataPtr file : pinnedFiles)
         {
-        mVector = RealityDataToMirrorVector(*file, destinationFolder, skipStreams);
+        if (file->GetDataSourceCount() <= 0)
+            continue;
+
+        BeFileName finalFolder = destinationFolder;
+        if (createSubFolder)
+            finalFolder = CreateUrlDownloadFolder(file->GetDataSource(0).GetUri().ToString(), file->GetDataSource(0).GetSize(), destinationFolder);
+
+        mVector = RealityDataToMirrorVector(*file, finalFolder, skipStreams);
         if (!mVector.empty())
             downloadOrder.push_back(mVector);
         }
@@ -1654,7 +1734,14 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
 
 	for (PackageRealityDataPtr file : undefinedfiles)
         {
-        mVector = RealityDataToMirrorVector(*file, destinationFolder, skipStreams);
+        if (file->GetDataSourceCount() <= 0)
+            continue;
+
+        BeFileName finalFolder = destinationFolder;
+        if (createSubFolder)
+            finalFolder = CreateUrlDownloadFolder(file->GetDataSource(0).GetUri().ToString(), file->GetDataSource(0).GetSize(), destinationFolder);
+
+        mVector = RealityDataToMirrorVector(*file, finalFolder, skipStreams);
         if (!mVector.empty())
 		    downloadOrder.push_back(mVector);
         }
