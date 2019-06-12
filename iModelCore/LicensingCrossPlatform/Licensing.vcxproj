@@ -49,7 +49,6 @@
     <ClInclude Include="PublicAPI\Licensing\AuthType.h" />
     <ClInclude Include="PublicAPI\Licensing\SaasClient.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\DateHelper.h" />
-    <ClInclude Include="Licensing\FreeApplicationPolicyHelper.h" />
     <ClInclude Include="Licensing\Logging.h" />
     <ClInclude Include="Licensing\Policy.h" />
     <ClInclude Include="Licensing\PolicyHelper.h" />

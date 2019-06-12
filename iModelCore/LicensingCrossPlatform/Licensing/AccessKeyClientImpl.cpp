@@ -7,7 +7,6 @@
 #include "GenerateSID.h"
 #include "Logging.h"
 #include "LicensingDb.h"
-#include "FreeApplicationPolicyHelper.h"
 
 #include <Licensing/Utils/LogFileHelper.h>
 #include <Licensing/Utils/UsageJsonHelper.h>
@@ -89,9 +88,6 @@ LicenseStatus AccessKeyClientImpl::StartApplication()
         {
         // Begin heartbeat
         CallOnInterval(m_stopPolicyHeartbeatThread, m_policyHeartbeatThreadStopped, m_lastRunningPolicyHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return PolicyHeartbeat(); });
-
-        //int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-        //PolicyHeartbeat(currentTimeUnixMs);     // refresh policy
         }
     else
         {

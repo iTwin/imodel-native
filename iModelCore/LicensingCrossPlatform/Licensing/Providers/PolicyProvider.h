@@ -12,7 +12,6 @@
 
 #include "IBuddiProvider.h"
 #include "IPolicyProvider.h"
-//#include "../Policy.h"
 
 #include "IAuthHandlerProvider.h"
 
@@ -25,7 +24,7 @@ protected:
     IBuddiProviderPtr m_buddiProvider;
     Http::IHttpHandlerPtr m_httpHandler;
     std::shared_ptr<IAuthHandlerProvider> m_authHandlerProvider;
-	WebServices::IConnectAuthenticationProvider::HeaderPrefix m_headerPrefix;
+    WebServices::IConnectAuthenticationProvider::HeaderPrefix m_headerPrefix;
 
 public:
     LICENSING_EXPORT PolicyProvider

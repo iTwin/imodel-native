@@ -16,9 +16,9 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UrlSafeBase64Utilities
-{
+    {
 public:
     LICENSING_EXPORT static Utf8String ToBase64(Utf8StringCR urlSafeBase64);
-};
+    };
 
 END_BENTLEY_LICENSING_NAMESPACE

@@ -41,7 +41,15 @@ SaasClientPtr SaasClient::Create
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> SaasClient::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId)
+folly::Future<BentleyStatus> SaasClient::TrackUsage
+    (
+    Utf8StringCR accessToken,
+    BeVersionCR version,
+    Utf8StringCR projectId,
+    Utf8StringCR deviceId,
+    UsageType usageType,
+    Utf8StringCR correlationId
+    )
     {
     return m_impl->TrackUsage(accessToken, version, projectId, deviceId, usageType, correlationId);
     }
@@ -49,7 +57,14 @@ folly::Future<BentleyStatus> SaasClient::TrackUsage(Utf8StringCR accessToken, Be
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> SaasClient::MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId)
+folly::Future<BentleyStatus> SaasClient::MarkFeature
+    (
+    Utf8StringCR accessToken,
+    FeatureEvent featureEvent,
+    Utf8StringCR deviceId,
+    UsageType usageType,
+    Utf8StringCR correlationId
+    )
     {
     return m_impl->MarkFeature(accessToken, featureEvent, deviceId, usageType, correlationId);
     }

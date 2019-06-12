@@ -24,8 +24,8 @@ PolicyProvider::PolicyProvider
     m_httpHandler(httpHandler),
     m_authHandlerProvider(authHandlerProvider)
     {
-	m_headerPrefix = GetHeaderPrefix(authType);
-	}
+    m_headerPrefix = GetHeaderPrefix(authType);
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod

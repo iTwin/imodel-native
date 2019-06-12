@@ -15,7 +15,6 @@ Headers + $(SourceDir)GenerateSID.h
 Headers + $(SourceDir)Policy.h
 Headers + $(SourceDir)ILicensingDb.h
 Headers + $(SourceDir)LicensingDb.h
-Headers + $(SourceDir)FreeApplicationPolicyHelper.h
 Headers + $(PublicApiDir)Client.h
 Headers + $(PublicApiDir)AccessKeyClient.h
 Headers + $(PublicApiDir)SaasClient.h

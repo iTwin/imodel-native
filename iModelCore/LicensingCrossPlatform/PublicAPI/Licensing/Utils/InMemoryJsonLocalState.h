@@ -1,4 +1,3 @@
-#pragma once
 /*--------------------------------------------------------------------------------------+
 |
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
@@ -16,7 +15,7 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct InMemoryJsonLocalState : IJsonLocalState
-{
+    {
 private:
     bmap<Utf8String, Utf8String> m_state;
 
@@ -27,6 +26,6 @@ protected:
 
 public:
     virtual ~InMemoryJsonLocalState() {};
-};
+    };
 
 END_BENTLEY_LICENSING_NAMESPACE

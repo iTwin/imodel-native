@@ -7,7 +7,6 @@
 #include "GenerateSID.h"
 #include "Logging.h"
 #include "LicensingDb.h"
-#include "FreeApplicationPolicyHelper.h"
 
 #include <Licensing/Utils/LogFileHelper.h>
 

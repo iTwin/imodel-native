@@ -23,24 +23,24 @@ USING_NAMESPACE_BENTLEY_LICENSING
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientImpl::ClientImpl
-(
-const ConnectSignInManager::UserInfo& userInfo,
-ApplicationInfoPtr applicationInfo,
-BeFileNameCR dbPath,
-bool offlineMode,
-IPolicyProviderPtr policyProvider,
-IUlasProviderPtr ulasProvider,
-Utf8StringCR projectId,
-Utf8StringCR featureString,
-ILicensingDbPtr licensingDb
-) :
-m_userInfo(userInfo),
-m_applicationInfo(applicationInfo),
-m_dbPath(dbPath),
-m_featureString(featureString),
-m_policyProvider(policyProvider),
-m_ulasProvider(ulasProvider),
-m_licensingDb(licensingDb)
+    (
+    const ConnectSignInManager::UserInfo& userInfo,
+    ApplicationInfoPtr applicationInfo,
+    BeFileNameCR dbPath,
+    bool offlineMode,
+    IPolicyProviderPtr policyProvider,
+    IUlasProviderPtr ulasProvider,
+    Utf8StringCR projectId,
+    Utf8StringCR featureString,
+    ILicensingDbPtr licensingDb
+    ) :
+    m_userInfo(userInfo),
+    m_applicationInfo(applicationInfo),
+    m_dbPath(dbPath),
+    m_featureString(featureString),
+    m_policyProvider(policyProvider),
+    m_ulasProvider(ulasProvider),
+    m_licensingDb(licensingDb)
     {
     if(m_licensingDb == nullptr) // either pass in a mock, or initialize here
         m_licensingDb = std::make_unique<LicensingDb>();
@@ -646,116 +646,116 @@ Utf8String ClientImpl::GetLoggingPostSource() const
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClientImpl::CleanUpPolicies()
-	{
+    {
     LOG.debug("ClientImpl::CleanUpPolicies");
 
-	for (auto policy : GetPolicies())
-		{
-		// if policy is not valid, remove it from the database; no point in keeping it
-		if (!policy->IsValid())
-			{
-			m_licensingDb->DeletePolicyFile(policy->GetPolicyId());
-			}
-		}
-	}
+    for (auto policy : GetPolicies())
+        {
+        // if policy is not valid, remove it from the database; no point in keeping it
+        if (!policy->IsValid())
+            {
+            m_licensingDb->DeletePolicyFile(policy->GetPolicyId());
+            }
+        }
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy> ClientImpl::GetPolicyWithId(Utf8StringCR policyId)
-	{
+    {
     LOG.debug("ClientImpl::GetPolicyWithId");
 
-	auto jsonpolicy = m_licensingDb->GetPolicyFile(policyId);
-	if (jsonpolicy == Json::Value::GetNull())
-		return nullptr;
-	return Policy::Create(jsonpolicy);
-	}
+    auto jsonpolicy = m_licensingDb->GetPolicyFile(policyId);
+    if (jsonpolicy == Json::Value::GetNull())
+        return nullptr;
+    return Policy::Create(jsonpolicy);
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::list<std::shared_ptr<Policy>> ClientImpl::GetPolicies()
-	{
+    {
     LOG.debug("ClientImpl::GetPolicies");
 
     std::list<std::shared_ptr<Policy>> policyList;
-	auto jsonpolicies = m_licensingDb->GetPolicyFiles();
-	for (auto json : jsonpolicies)
-		{
-		auto policy = Policy::Create(json);
-		policyList.push_back(policy);
-		}
-	return policyList;
-	}
+    auto jsonpolicies = m_licensingDb->GetPolicyFiles();
+    for (auto json : jsonpolicies)
+        {
+        auto policy = Policy::Create(json);
+        policyList.push_back(policy);
+        }
+    return policyList;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::list<std::shared_ptr<Policy>> ClientImpl::GetUserPolicies()
-	{
+    {
     LOG.debug("ClientImpl::GetUserPolicies");
 
     std::list<std::shared_ptr<Policy>> policyList;
-	auto jsonpolicies = m_licensingDb->GetPolicyFilesByUser(m_userInfo.userId);
-	for (auto json : jsonpolicies)
-		{
-		auto policy = Policy::Create(json);
-		if (!policy->IsValid())
-			continue;
-		if (policy->GetAppliesToUserId().Equals(m_userInfo.userId))
-			{
-			policyList.push_back(policy);
-			}
-		}
-	return policyList;
-	}
+    auto jsonpolicies = m_licensingDb->GetPolicyFilesByUser(m_userInfo.userId);
+    for (auto json : jsonpolicies)
+        {
+        auto policy = Policy::Create(json);
+        if (!policy->IsValid())
+            continue;
+        if (policy->GetAppliesToUserId().Equals(m_userInfo.userId))
+            {
+            policyList.push_back(policy);
+            }
+        }
+    return policyList;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy> ClientImpl::SearchForPolicy(Utf8String requestedProductId)
-	{
+    {
     LOG.debug("ClientImpl::SearchForPolicy");
 
-	std::shared_ptr<Policy> matchingPolicy = nullptr;
-	// get all of user's policies
-	auto policies = GetUserPolicies();
-	// find policy that contains appropriate productId and featureString
-	Utf8String productId;
-	if (requestedProductId.Equals(""))
-		productId = m_applicationInfo->GetProductId();
-	else
-		productId = requestedProductId;
+    std::shared_ptr<Policy> matchingPolicy = nullptr;
+    // get all of user's policies
+    auto policies = GetUserPolicies();
+    // find policy that contains appropriate productId and featureString
+    Utf8String productId;
+    if (requestedProductId.Equals(""))
+        productId = m_applicationInfo->GetProductId();
+    else
+        productId = requestedProductId;
 
-	for (auto policy : policies)
-		{
-		// policy assumed to be valid due to IsValid check in GetUserPolicies()
-		// look for a securable that matches productId and featureString
-		for (auto securable : policy->GetSecurableData())
-			{
-			if (Utf8String(std::to_string(securable->GetProductId()).c_str()).Equals(productId) &&
-				securable->GetFeatureString().Equals(m_featureString))
-				{
-				// if matches, return this policy
-				return policy;
-				}
-			}
-		}
+    for (auto policy : policies)
+        {
+        // policy assumed to be valid due to IsValid check in GetUserPolicies()
+        // look for a securable that matches productId and featureString
+        for (auto securable : policy->GetSecurableData())
+            {
+            if (Utf8String(std::to_string(securable->GetProductId()).c_str()).Equals(productId) &&
+                securable->GetFeatureString().Equals(m_featureString))
+                {
+                // if matches, return this policy
+                return policy;
+                }
+            }
+        }
 
-	return matchingPolicy;
-	}
+    return matchingPolicy;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClientImpl::DeleteAllOtherPoliciesByUser(std::shared_ptr<Policy> policy)
-	{
+    {
     LOG.debug("ClientImpl::DeleteAllOtherPoliciesByUser");
 
-	m_licensingDb->DeleteAllOtherPolicyFilesByUser(policy->GetPolicyId(),
-		policy->GetUserData()->GetUserId());
-	}
+    m_licensingDb->DeleteAllOtherPolicyFilesByUser(policy->GetPolicyId(),
+        policy->GetUserData()->GetUserId());
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                        Jason.Wichert 5/19
@@ -778,71 +778,71 @@ void ClientImpl::AddPolicyToDb(std::shared_ptr<Policy> policy)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClientImpl::StorePolicyInLicensingDb(std::shared_ptr<Policy> policy)
-	{
+    {
     LOG.debug("ClientImpl::StorePolicyInLicensingDb");
 
     auto expiration = policy->GetPolicyExpiresOn();
-	auto lastUpdate = policy->GetRequestData()->GetClientDateTime();
+    auto lastUpdate = policy->GetRequestData()->GetClientDateTime();
     auto accessKey = policy->GetRequestData()->GetAccessKey();
     m_licensingDb->AddOrUpdatePolicyFile(policy->GetPolicyId(),
         policy->GetAppliesToUserId(),
         accessKey,
-		expiration,
-		lastUpdate,
-		policy->GetJson());
-	}
+        expiration,
+        lastUpdate,
+        policy->GetJson());
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ClientImpl::HasOfflineGracePeriodStarted()
-	{
+    {
     LOG.debug("ClientImpl::HasOfflineGracePeriodStarted");
 
-	auto graceStartString = m_licensingDb->GetOfflineGracePeriodStart();
-	return graceStartString != "";
-	}
+    auto graceStartString = m_licensingDb->GetOfflineGracePeriodStart();
+    return graceStartString != "";
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 int64_t ClientImpl::GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString)
-	{
+    {
     LOG.debug("ClientImpl::GetDaysLeftInOfflineGracePeriod");
 
     Utf8String graceStartString = m_licensingDb->GetOfflineGracePeriodStart();
-	if (graceStartString == "")
-	{
-		return 0;
-	}
-	// check if online usage is allowed;
-	auto offlineDurationDays = policy->GetOfflineDuration(productId, featureString);
-	auto gracePeriodEndTime = DateHelper::AddDaysToTime(graceStartString, offlineDurationDays);
-	auto daysLeft = DateHelper::GetDaysLeftUntilTime(gracePeriodEndTime);
-	return daysLeft;
-	}
+    if (graceStartString == "")
+        {
+        return 0;
+        }
+    // check if online usage is allowed;
+    auto offlineDurationDays = policy->GetOfflineDuration(productId, featureString);
+    auto gracePeriodEndTime = DateHelper::AddDaysToTime(graceStartString, offlineDurationDays);
+    auto daysLeft = DateHelper::GetDaysLeftUntilTime(gracePeriodEndTime);
+    return daysLeft;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 LicenseStatus ClientImpl::GetLicenseStatus()
-	{
+    {
     LOG.debug("ClientImpl::GetLicenseStatus");
 
     const auto productId = m_applicationInfo->GetProductId();
 
-	auto policy = SearchForPolicy(productId);
+    auto policy = SearchForPolicy(productId);
 
     if (policy == nullptr)
-		{
-		return LicenseStatus::NotEntitled;
-		}
+        {
+        return LicenseStatus::NotEntitled;
+        }
 
     // if policy not valid, return LicenseStatus::DisabledByPolicy
-	if (policy->GetPolicyStatus() != Policy::PolicyStatus::Valid)
-		{
-		return LicenseStatus::DisabledByPolicy;
-		}
+    if (policy->GetPolicyStatus() != Policy::PolicyStatus::Valid)
+        {
+        return LicenseStatus::DisabledByPolicy;
+        }
 
     const auto productStatus = policy->GetProductStatus(productId, m_featureString, m_applicationInfo->GetVersion());
 

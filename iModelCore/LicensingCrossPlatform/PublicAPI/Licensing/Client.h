@@ -37,7 +37,7 @@ private:
 
 public:
     //! Initializes an instance of Client, returns a ClientPtr to the prepared Client instance.
-    //! DEPRECIATED - it is preferred to use Create that takes ApplicationInfo instead of this one that takes ClientInfo
+    //! DEPRECIATED - it is preferred to use the Create that takes ApplicationInfo instead of this one that takes ClientInfo
     //! @param[in] userInfo signed in user's info
     //! @param[in] clientInfo ClientInfoPtr from WSClient
     //! @param[in] authenticationProvider To get tokens to make rest calls
