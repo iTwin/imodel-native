@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Grids\Domain\GridsDomain.cpp" />
+    <ClCompile Include="Grids\Elements\DrivingSurface.cpp" />
+    <ClCompile Include="Grids\Elements\GridArc.cpp" />
+    <ClCompile Include="Grids\Elements\GridArcSurface.cpp" />
+    <ClCompile Include="Grids\Elements\GridAxis.cpp" />
+    <ClCompile Include="Grids\Elements\GridCurve.cpp" />
+    <ClCompile Include="Grids\Elements\GridCurveBundle.cpp" />
+    <ClCompile Include="Grids\Elements\GridCurveBundleCreatesGridCurveHandler.cpp" />
+    <ClCompile Include="Grids\Elements\GridCurvesSet.cpp" />
+    <ClCompile Include="Grids\Elements\GridDrivesGridSurfaceHandler.cpp" />
+    <ClCompile Include="Grids\Elements\GridLine.cpp" />
+    <ClCompile Include="Grids\Elements\GridPlaneSurface.cpp" />
+    <ClCompile Include="Grids\Elements\GridPortion.cpp" />
+    <ClCompile Include="Grids\Elements\GridSpline.cpp" />
+    <ClCompile Include="Grids\Elements\GridSplineSurface.cpp" />
+    <ClCompile Include="Grids\Elements\GridSurface.cpp" />
+    <ClCompile Include="Grids\Elements\GridSurfaceDrivesGridCurveBundleHandler.cpp" />
+    <ClCompile Include="Grids\Elements\IntersectionCurve.cpp" />
+    <ClCompile Include="Grids\Elements\OrthogonalGridPortion.cpp" />
+    <ClCompile Include="Grids\Elements\PublicApi\GridLabel.cpp" />
+    <ClCompile Include="Grids\Elements\RadialGridPortion.cpp" />
+    <ClCompile Include="Grids\Elements\SketchGridPortion.cpp" />
+    <ClCompile Include="Grids\Elements\SurfaceSet.cpp" />
+    <ClCompile Include="Grids\Handlers\DrivingSurfaceHandler.cpp" />
+    <ClCompile Include="Grids\Handlers\GridArcSurfaceHandler.cpp" />
+    <ClCompile Include="Grids\Handlers\GridCurveBundleHandler.cpp" />
+    <ClCompile Include="Grids\Handlers\GridHandlers.cpp" />
+    <ClCompile Include="Grids\Handlers\GridLabelHandler.cpp" />
+    <ClCompile Include="Grids\Handlers\GridPlaneSurfaceHandler.cpp" />
+    <ClCompile Include="Grids\Handlers\GridSurfaceHandler.cpp" />
+    <ClCompile Include="Grids\Handlers\IntersectionCurveHandlers.cpp" />
+    <ClCompile Include="Grids\Handlers\PortionHandlers.cpp" />
+    <ClCompile Include="Grids\ManipulatorExtensions\SketchLineGridSurfaceManipulatorExtension.cpp" />
+    <ClCompile Include="Grids\Strategies\ArcGridSurfaceManipulationStrategy.cpp" />
+    <ClCompile Include="Grids\Strategies\ArcGridSurfacePlacementStrategy.cpp" />
+    <ClCompile Include="Grids\Strategies\GridPlanarSurfaceManipulationStrategy.cpp" />
+    <ClCompile Include="Grids\Strategies\LineGridSurfaceManipulationStrategy.cpp" />
+    <ClCompile Include="Grids\Strategies\LineGridSurfacePlacementStrategy.cpp" />
+    <ClCompile Include="Grids\Strategies\SketchGridSurfaceManipulationStrategy.cpp" />
+    <ClCompile Include="Grids\Strategies\SketchGridSurfacePlacementStrategy.cpp" />
+    <ClCompile Include="Grids\Strategies\SplineGridSurfaceManipulationStrategy.cpp" />
+    <ClCompile Include="Grids\Strategies\SplineGridSurfacePlacementStrategy.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Grids\Domain\GridsDomain.mke" />
+    <None Include="Grids\Elements\GridElements.mke" />
+    <None Include="Grids\Grids.mke" />
+    <None Include="Grids\gridsApi.prewire.mke" />
+    <None Include="Grids\Handlers\GridHandlers.mke" />
+    <None Include="Grids\ManipulatorExtensions\GridManipulatorExtensions.mke" />
+    <None Include="Grids\Strategies\GridStrategies.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Grids\Domain\PublicApi\GridsDomain.h" />
+    <ClInclude Include="Grids\Domain\PublicApi\GridsMacros.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\DrivingSurface.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\ForwardDeclarations.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridArc.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridArcSurface.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridAxis.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridCurve.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridCurveBundle.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridCurveBundleCreatesGridCurveHandler.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridCurvesSet.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridDrivesGridSurfaceHandler.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridElementsAPI.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridLabel.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridLine.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridPlaneSurface.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridPortion.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridSpline.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridSplineSurface.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridSurface.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\GridSurfaceDrivesGridCurveBundleHandler.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\IntersectionCurve.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\OrthogonalGridPortion.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\RadialGridPortion.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\SketchGridPortion.h" />
+    <ClInclude Include="Grids\Elements\PublicApi\SurfaceSet.h" />
+    <ClInclude Include="Grids\Handlers\PublicApi\DrivingSurfaceHandler.h" />
+    <ClInclude Include="Grids\Handlers\PublicApi\GridArcSurfaceHandler.h" />
+    <ClInclude Include="Grids\Handlers\PublicApi\GridCurveBundleHandler.h" />
+    <ClInclude Include="Grids\Handlers\PublicApi\GridHandlers.h" />
+    <ClInclude Include="Grids\Handlers\PublicApi\GridHandlersAPI.h" />
+    <ClInclude Include="Grids\Handlers\PublicApi\GridLabelHandler.h" />
+    <ClInclude Include="Grids\Handlers\PublicApi\GridPlaneSurfaceHandler.h" />
+    <ClInclude Include="Grids\Handlers\PublicApi\GridSurfaceHandler.h" />
+    <ClInclude Include="Grids\Handlers\PublicApi\IntersectionCurveHandlers.h" />
+    <ClInclude Include="Grids\Handlers\PublicApi\PortionHandlers.h" />
+    <ClInclude Include="Grids\ManipulatorExtensions\PublicAPI\GridManipulatorsAPI.h" />
+    <ClInclude Include="Grids\ManipulatorExtensions\PublicAPI\SketchLineGridSurfaceManipulatorExtension.h" />
+    <ClInclude Include="Grids\PublicApi\gridsApi.h" />
+    <ClInclude Include="Grids\Strategies\PublicApi\ArcGridSurfaceManipulationStrategy.h" />
+    <ClInclude Include="Grids\Strategies\PublicApi\ArcGridSurfacePlacementStrategy.h" />
+    <ClInclude Include="Grids\Strategies\PublicApi\GridPlanarSurfaceManipulationStrategy.h" />
+    <ClInclude Include="Grids\Strategies\PublicApi\GridStrategies.h" />
+    <ClInclude Include="Grids\Strategies\PublicApi\LineGridSurfaceManipulationStrategy.h" />
+    <ClInclude Include="Grids\Strategies\PublicApi\LineGridSurfacePlacementStrategy.h" />
+    <ClInclude Include="Grids\Strategies\PublicApi\SketchGridSurfaceManipulationStrategy.h" />
+    <ClInclude Include="Grids\Strategies\PublicApi\SketchGridSurfacePlacementStrategy.h" />
+    <ClInclude Include="Grids\Strategies\PublicApi\SplineGridSurfaceManipulationStrategy.h" />
+    <ClInclude Include="Grids\Strategies\PublicApi\SplineGridSurfacePlacementStrategy.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{4510FE59-EF35-487E-ABF6-0FBA7AE0FF51}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakeBuildCommandLine>bb re Grids:Grids -b -s</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)</NMakeOutput>
+    <NMakeCleanCommandLine>bb re Grids:Grids -b -b -s</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb re Grids:Grids -b -s -c &amp;&amp; bb re Grids:Grids -b -s</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <IncludePath>$(OutRoot)Winx64\BuildContexts\Grids\VendorAPI;$(OutRoot)Winx64\BuildContexts\Grids\PrivateAPI;$(OutRoot)Winx64\BuildContexts\Grids\PublicAPI;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeBuildCommandLine>bb re Grids:Grids</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)</NMakeOutput>
+    <NMakeCleanCommandLine>bb re Grids:Grids</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb re Grids:Grids -c &amp;&amp; bb re Grids:Grids</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

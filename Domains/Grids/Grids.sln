@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.489
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Grids", "Grids.vcxproj", "{4510FE59-EF35-487E-ABF6-0FBA7AE0FF51}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GridsTests", "GridsTests.vcxproj", "{2A24D761-D551-4B5F-9E8D-14870498DEEA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Schema", "Schema", "{938682BE-B995-45B3-AA05-59B0C7E50CC8}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\BisSchemas\Domains\Grids\Grids.ecschema.xml = ..\..\BisSchemas\Domains\Grids\Grids.ecschema.xml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4510FE59-EF35-487E-ABF6-0FBA7AE0FF51}.Debug|x64.ActiveCfg = Debug|x64
+		{4510FE59-EF35-487E-ABF6-0FBA7AE0FF51}.Debug|x64.Build.0 = Debug|x64
+		{4510FE59-EF35-487E-ABF6-0FBA7AE0FF51}.Debug|x86.ActiveCfg = Debug|Win32
+		{4510FE59-EF35-487E-ABF6-0FBA7AE0FF51}.Debug|x86.Build.0 = Debug|Win32
+		{4510FE59-EF35-487E-ABF6-0FBA7AE0FF51}.Release|x64.ActiveCfg = Release|x64
+		{4510FE59-EF35-487E-ABF6-0FBA7AE0FF51}.Release|x64.Build.0 = Release|x64
+		{4510FE59-EF35-487E-ABF6-0FBA7AE0FF51}.Release|x86.ActiveCfg = Release|Win32
+		{4510FE59-EF35-487E-ABF6-0FBA7AE0FF51}.Release|x86.Build.0 = Release|Win32
+		{2A24D761-D551-4B5F-9E8D-14870498DEEA}.Debug|x64.ActiveCfg = Debug|x64
+		{2A24D761-D551-4B5F-9E8D-14870498DEEA}.Debug|x64.Build.0 = Debug|x64
+		{2A24D761-D551-4B5F-9E8D-14870498DEEA}.Debug|x86.ActiveCfg = Debug|Win32
+		{2A24D761-D551-4B5F-9E8D-14870498DEEA}.Debug|x86.Build.0 = Debug|Win32
+		{2A24D761-D551-4B5F-9E8D-14870498DEEA}.Release|x64.ActiveCfg = Release|x64
+		{2A24D761-D551-4B5F-9E8D-14870498DEEA}.Release|x64.Build.0 = Release|x64
+		{2A24D761-D551-4B5F-9E8D-14870498DEEA}.Release|x86.ActiveCfg = Release|Win32
+		{2A24D761-D551-4B5F-9E8D-14870498DEEA}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6FFE6FBC-EB6D-4228-9AD0-0D6B68134DA7}
+	EndGlobalSection
+EndGlobal
