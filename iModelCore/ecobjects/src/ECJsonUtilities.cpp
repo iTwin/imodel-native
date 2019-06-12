@@ -77,23 +77,23 @@ void ECJsonUtilities::Int64ToJson(Json::Value& json, int64_t int64Val, ECJsonInt
     {
     switch (int64Format)
         {
-            case ECJsonInt64Format::AsNumber:
-                json = Json::Value(int64Val);
-                return;
+        case ECJsonInt64Format::AsNumber:
+            json = Json::Value(int64Val);
+            return;
 
-            case ECJsonInt64Format::AsDecimalString:
-                json = BeJsonUtilities::StringValueFromInt64(int64Val);
-                return;
+        case ECJsonInt64Format::AsDecimalString:
+            json = BeJsonUtilities::StringValueFromInt64(int64Val);
+            return;
 
-            case ECJsonInt64Format::AsHexadecimalString:
+        case ECJsonInt64Format::AsHexadecimalString:
             {
             BeInt64Id id(int64Val);
             json = id.ToHexStr();
             return;
             }
 
-            default:
-                break;
+        default:
+            break;
         }
 
     BeAssert(false && "Unhandled ECJsonFormatOptions type");
@@ -882,7 +882,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
     Json::ValueType jsonValueType = jsonValue.type();
     switch (primitiveType)
         {
-            case PRIMITIVETYPE_Point2d:
+        case PRIMITIVETYPE_Point2d:
             {
             DPoint2d point2d;
             if (ECJsonUtilities::JsonToPoint2d(point2d, jsonValue))
@@ -890,7 +890,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetPoint2d(point2d);
             }
-            case PRIMITIVETYPE_Point3d:
+        case PRIMITIVETYPE_Point3d:
             {
             DPoint3d point3d;
             if (ECJsonUtilities::JsonToPoint3d(point3d, jsonValue))
@@ -898,7 +898,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetPoint3d(point3d);
             }
-            case PRIMITIVETYPE_Integer:
+        case PRIMITIVETYPE_Integer:
             {
             if (jsonValueType != Json::intValue && jsonValueType != Json::stringValue)
                 return ERROR;
@@ -908,7 +908,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetInteger(std::stoi(jsonValue.asCString()));
             }
-            case PRIMITIVETYPE_Long:
+        case PRIMITIVETYPE_Long:
             {
             int64_t val;
             if (SUCCESS != ECJsonUtilities::JsonToInt64(val, jsonValue))
@@ -916,22 +916,19 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetLong(val);
             }
-            case PRIMITIVETYPE_Double:
+         case PRIMITIVETYPE_Double:
             {
-            if (!jsonValue.isConvertibleTo(Json::ValueType::realValue) && !jsonValue.isString())
-                return ERROR;
-            if (jsonValue.isDouble())
-                return ecValue.SetDouble(jsonValue.asDouble());
-
-            if (jsonValue.isInt())
-                return ecValue.SetDouble((double) jsonValue.asInt());
+            // FIXME: This seems extremely dangerous - there's no guarantee that a string represents a valid double value...
             if (jsonValue.isString())
                 return ecValue.SetDouble(std::stod(jsonValue.asCString()));
+
+            if (jsonValue.isConvertibleTo(Json::ValueType::realValue))
+                return ecValue.SetDouble(jsonValue.asDouble());
 
             BeAssert(false && "Invalid type to convert to double");
             return ERROR;
             }
-            case PRIMITIVETYPE_DateTime:
+        case PRIMITIVETYPE_DateTime:
             {
             if (jsonValueType != Json::stringValue)
                 return ERROR;
@@ -942,21 +939,21 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetDateTime(dateTime);
             }
-            case PRIMITIVETYPE_String:
+        case PRIMITIVETYPE_String:
             {
             if (jsonValueType != Json::stringValue)
                 return ERROR;
 
             return ecValue.SetUtf8CP(jsonValue.asCString(), true);
             }
-            case PRIMITIVETYPE_Boolean:
+        case PRIMITIVETYPE_Boolean:
             {
             if (jsonValueType != Json::booleanValue)
                 return ERROR;
 
             return ecValue.SetBoolean(jsonValue.asBool());
             }
-            case PRIMITIVETYPE_Binary:
+        case PRIMITIVETYPE_Binary:
             {
             bvector<Byte> blob;
             if (SUCCESS != ECJsonUtilities::JsonToBinary(blob, jsonValue))
@@ -964,7 +961,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetBinary(blob.data(), blob.size(), true);
             }
-            case PRIMITIVETYPE_IGeometry:
+        case PRIMITIVETYPE_IGeometry:
             {
             if (jsonValueType == Json::objectValue)
                 {
@@ -986,9 +983,9 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ERROR;
             }
-            default:
-                BeAssert(false);
-                return ERROR;
+        default:
+            BeAssert(false);
+            return ERROR;
         }
     }
 
@@ -1002,8 +999,23 @@ BentleyStatus JsonECInstanceConverter::JsonToArrayECValue(IECInstanceR instance,
 
     const uint32_t length = jsonValue.size();
 
-    if (ECObjectsStatus::Success != instance.AddArrayElements(accessString.c_str(), length))
-        return ERROR;
+    ECValue arrayValue;
+    instance.GetValue(arrayValue, accessString.c_str());
+    uint32_t currentLength = arrayValue.IsNull()? 0: arrayValue.GetArrayInfo().GetCount();
+    if (length < currentLength)
+        {
+        // We need to shorten the array. Start by emptying it out.
+        if (ECObjectsStatus::Success != instance.ClearArray(accessString.c_str()))
+            return ERROR;
+        currentLength = 0;
+        // Now make the array the size we need
+        }
+    if (length > currentLength)
+        {
+        uint32_t xlength = length - currentLength;
+        if (ECObjectsStatus::Success != instance.AddArrayElements(accessString.c_str(), xlength))
+            return ERROR;
+        }
 
     if (property.GetIsStructArray())
         {
@@ -1205,7 +1217,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
     switch (primitiveType)
         {
-            case PRIMITIVETYPE_Point2d:
+        case PRIMITIVETYPE_Point2d:
             {
             DPoint2d point2d;
             if (SUCCESS != ECJsonUtilities::JsonToPoint2d(point2d, jsonValue))
@@ -1213,7 +1225,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetPoint2d(point2d);
             }
-            case PRIMITIVETYPE_Point3d:
+        case PRIMITIVETYPE_Point3d:
             {
             DPoint3d point3d;
             if (SUCCESS != ECJsonUtilities::JsonToPoint3d(point3d, jsonValue))
@@ -1221,7 +1233,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetPoint3d(point3d);
             }
-            case PRIMITIVETYPE_Integer:
+        case PRIMITIVETYPE_Integer:
             {
             if (jsonValue.IsInt())
                 return ecValue.SetInteger(jsonValue.GetInt());
@@ -1232,7 +1244,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
             return ERROR;
             }
 
-            case PRIMITIVETYPE_Long:
+        case PRIMITIVETYPE_Long:
             {
             int64_t val;
             if (SUCCESS != ECJsonUtilities::JsonToInt64(val, jsonValue))
@@ -1240,13 +1252,13 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetLong(val);
             }
-            case PRIMITIVETYPE_Double:
-                if (!jsonValue.IsNumber())
-                    return ERROR;
+        case PRIMITIVETYPE_Double:
+            if (!jsonValue.IsNumber())
+                return ERROR;
 
-                return ecValue.SetDouble(jsonValue.GetDouble());
+            return ecValue.SetDouble(jsonValue.GetDouble());
 
-            case PRIMITIVETYPE_DateTime:
+        case PRIMITIVETYPE_DateTime:
             {
             if (!jsonValue.IsString())
                 return ERROR;
@@ -1258,19 +1270,19 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
             return ecValue.SetDateTime(dt);
             }
 
-            case PRIMITIVETYPE_String:
-                if (!jsonValue.IsString())
-                    return ERROR;
+        case PRIMITIVETYPE_String:
+            if (!jsonValue.IsString())
+                return ERROR;
 
-                return ecValue.SetUtf8CP(jsonValue.GetString(), true);
+            return ecValue.SetUtf8CP(jsonValue.GetString(), true);
 
-            case PRIMITIVETYPE_Boolean:
-                if (!jsonValue.IsBool())
-                    return ERROR;
+        case PRIMITIVETYPE_Boolean:
+            if (!jsonValue.IsBool())
+                return ERROR;
 
-                return ecValue.SetBoolean(jsonValue.GetBool());
+            return ecValue.SetBoolean(jsonValue.GetBool());
 
-            case PRIMITIVETYPE_IGeometry:
+        case PRIMITIVETYPE_IGeometry:
             {
             if (jsonValue.IsObject())
                 {
@@ -1292,7 +1304,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ERROR;
             }
-            case PRIMITIVETYPE_Binary:
+        case PRIMITIVETYPE_Binary:
             {
             bvector<Byte> blob;
             if (SUCCESS != ECJsonUtilities::JsonToBinary(blob, jsonValue))
@@ -1300,8 +1312,8 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetBinary(blob.data(), blob.size(), true);
             }
-            default:
-                return ERROR;
+        default:
+            return ERROR;
         }
     }
 
@@ -1376,10 +1388,23 @@ void JsonEcInstanceWriter::AppendAccessString(Utf8StringR compoundAccessString, 
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Shaun.Sewall                   01/2019
+//---------------------------------------------------------------------------------------
+Utf8String JsonEcInstanceWriter::FormatMemberName(Utf8StringCR propertyName, MemberNameCasing casing)
+    {
+    if (MemberNameCasing::KeepOriginal == casing)
+        return propertyName;
+
+    Utf8String memberName(propertyName);
+    ECJsonUtilities::LowerFirstChar(memberName);
+    return memberName;
+    }
+
+//---------------------------------------------------------------------------------------
 // TODO: add koq process for all data types
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate, Utf8CP propertyName, ECValueCR ecValue, PrimitiveType propertyType, KindOfQuantityCP koq)
+StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate, Utf8CP propertyName, ECValueCR ecValue, PrimitiveType propertyType, KindOfQuantityCP koq, MemberNameCasing casing)
     {
     ECQuantityFormattingStatus status = ECQuantityFormattingStatus::InvalidKOQ;
 
@@ -1397,7 +1422,7 @@ StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate
                 {
                 Utf8String    byteString;
                 Base64Utilities::Encode(byteString, byteData, numBytes);
-                valueToPopulate[propertyName] = byteString.c_str();
+                valueToPopulate[FormatMemberName(propertyName, casing)] = byteString.c_str();
                 }
             return BSISUCCESS;
             }
@@ -1410,7 +1435,7 @@ StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate
             bmap<OrderedIGeometryPtr, BeExtendedData> extendedData;
             Utf8String beCgXml;
             BeXmlCGWriter::Write(beCgXml, *(ecValue.GetIGeometry()), &extendedData);
-            valueToPopulate[propertyName] = beCgXml.c_str();
+            valueToPopulate[FormatMemberName(propertyName, casing)] = beCgXml.c_str();
             return BSISUCCESS;
             }
 
@@ -1419,7 +1444,7 @@ StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate
             if (koq)
                 BeAssert(false && "KOQ not yet support for this type");
 
-            valueToPopulate[propertyName] = ecValue.GetBoolean();
+            valueToPopulate[FormatMemberName(propertyName, casing)] = ecValue.GetBoolean();
             return BSISUCCESS;
             }
 
@@ -1428,7 +1453,7 @@ StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate
             if (koq)
                 BeAssert(false && "KOQ not yet support for this type");
 
-            valueToPopulate[propertyName] = ecValue.ToString();
+            valueToPopulate[FormatMemberName(propertyName, casing)] = ecValue.ToString();
             return BSISUCCESS;
             }
 
@@ -1444,12 +1469,12 @@ StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate
                     quantityValue[json_rawValue()] = ecValue.GetDouble();
                     quantityValue[json_formattedValue()] = formattedVal;
                     quantityValue[json_currentUnit()] = koq->GetDefaultPresentationFormat()->GetName();
-                    valueToPopulate[propertyName] = quantityValue;
+                    valueToPopulate[FormatMemberName(propertyName, casing)] = quantityValue;
                     return BSISUCCESS;
                     }
                 }
 
-            valueToPopulate[propertyName] = ecValue.GetDouble();
+            valueToPopulate[FormatMemberName(propertyName, casing)] = ecValue.GetDouble();
             return BSISUCCESS;
             }
 
@@ -1458,7 +1483,7 @@ StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate
             if (koq)
                 BeAssert(false && "KOQ not yet support for this type");
 
-            valueToPopulate[propertyName] = ecValue.GetInteger();
+            valueToPopulate[FormatMemberName(propertyName, casing)] = ecValue.GetInteger();
             return BSISUCCESS;
             }
 
@@ -1467,7 +1492,7 @@ StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate
             if (koq)
                 BeAssert(false && "KOQ not yet support for this type");
 
-            valueToPopulate[propertyName] = Json::Value(ecValue.GetLong());
+            valueToPopulate[FormatMemberName(propertyName, casing)] = Json::Value(ecValue.GetLong());
             return BSISUCCESS;
             }
 
@@ -1476,7 +1501,7 @@ StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate
             if (koq)
                 BeAssert(false && "KOQ not yet support for this type");
 
-            return ECJsonUtilities::Point2dToJson(valueToPopulate[propertyName], ecValue.GetPoint2d());
+            return ECJsonUtilities::Point2dToJson(valueToPopulate[FormatMemberName(propertyName, casing)], ecValue.GetPoint2d());
             }
 
         case PRIMITIVETYPE_Point3d:
@@ -1484,7 +1509,7 @@ StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate
             if (koq)
                 BeAssert(false && "KOQ not yet support for this type");
 
-            return ECJsonUtilities::Point3dToJson(valueToPopulate[propertyName], ecValue.GetPoint3d());
+            return ECJsonUtilities::Point3dToJson(valueToPopulate[FormatMemberName(propertyName, casing)], ecValue.GetPoint3d());
             }
 
         case PRIMITIVETYPE_String:
@@ -1492,7 +1517,7 @@ StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate
             if (koq)
                 BeAssert(false && "KOQ not yet support for this type");
             
-            valueToPopulate[propertyName] = ecValue.GetUtf8CP();
+            valueToPopulate[FormatMemberName(propertyName, casing)] = ecValue.GetUtf8CP();
             return BSISUCCESS;
             }
 
@@ -1507,7 +1532,7 @@ StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WritePrimitivePropertyValue(Json::Value& valueToPopulate, PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString, bool writeFormattedQuantities, bool serializeNullValues)
+StatusInt JsonEcInstanceWriter::WritePrimitivePropertyValue(Json::Value& valueToPopulate, PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString, bool writeFormattedQuantities, bool serializeNullValues, MemberNameCasing casing)
     {
     ECObjectsStatus     getStatus;
     ECValue             ecValue;
@@ -1534,13 +1559,13 @@ StatusInt JsonEcInstanceWriter::WritePrimitivePropertyValue(Json::Value& valueTo
     if (ecValue.IsNull())
         {
         if (serializeNullValues)
-            valueToPopulate[propertyName.c_str()] = Json::nullValue;
+            valueToPopulate[FormatMemberName(propertyName, casing)] = Json::nullValue;
         return BSISUCCESS;
         }
 
     PrimitiveType propertyType = primitiveProperty.GetType();
 
-    StatusInt status = WritePrimitiveValue(valueToPopulate, propertyName.c_str(), ecValue, propertyType, koq);
+    StatusInt status = WritePrimitiveValue(valueToPopulate, propertyName.c_str(), ecValue, propertyType, koq, casing);
     return status;
     }
 
@@ -1565,7 +1590,7 @@ StatusInt JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopulate
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopulate, ArrayECPropertyR arrayProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString, ECClassLocatorByClassIdCP classLocator, bool writeFormattedQuantities, bool serializeNullValues)
+StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopulate, ArrayECPropertyR arrayProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString, ECClassLocatorByClassIdCP classLocator, bool writeFormattedQuantities, bool serializeNullValues, MemberNameCasing casing)
     {
     ArrayKind arrayKind = arrayProperty.GetKind();
 
@@ -1583,7 +1608,7 @@ StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopu
     if (ecValue.IsNull())
         {
         if (serializeNullValues)
-            valueToPopulate[arrayProperty.GetName().c_str()] = Json::nullValue;
+            valueToPopulate[FormatMemberName(arrayProperty.GetName(), casing)] = Json::nullValue;
         return BSISUCCESS;
         }
 
@@ -1592,7 +1617,7 @@ StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopu
     if (nElements == 0 && !serializeNullValues)
         return BSISUCCESS;
 
-    auto& arrayObj = valueToPopulate[arrayProperty.GetName().c_str()] = Json::arrayValue;
+    auto& arrayObj = valueToPopulate[FormatMemberName(arrayProperty.GetName(), casing)] = Json::arrayValue;
 
     // Serialize an empty array
     if (nElements == 0)
@@ -1619,7 +1644,7 @@ StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopu
                 break;
 
             // write the primitive value
-            if (BSISUCCESS != (ixwStatus = WritePrimitiveValue(entryObj, typeString, ecValue, memberType, koq)))
+            if (BSISUCCESS != (ixwStatus = WritePrimitiveValue(entryObj, typeString, ecValue, memberType, koq, casing)))
                 {
                 BeAssert(false);
                 return ixwStatus;
@@ -1650,7 +1675,7 @@ StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopu
 
             ECClassCR   structClass = structInstance->GetClass();
             StatusInt iwxStatus;
-            if (BSISUCCESS != (iwxStatus = WritePropertyValuesOfClassOrStructArrayMember(entryObj, structClass, *structInstance.get(), nullptr, classLocator, writeFormattedQuantities, serializeNullValues)))
+            if (BSISUCCESS != (iwxStatus = WritePropertyValuesOfClassOrStructArrayMember(entryObj, structClass, *structInstance.get(), nullptr, classLocator, writeFormattedQuantities, serializeNullValues, casing)))
                 {
                 BeAssert(false);
                 return iwxStatus;
@@ -1671,7 +1696,7 @@ StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(Json::Value& valueToPopulate, StructECPropertyR structProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString, bool writeFormattedQuantities, bool serializeNullValues)
+StatusInt JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(Json::Value& valueToPopulate, StructECPropertyR structProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString, bool writeFormattedQuantities, bool serializeNullValues, MemberNameCasing casing)
     {
     Utf8String    structName = structProperty.GetName();
 
@@ -1685,10 +1710,10 @@ StatusInt JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(Json::Value& va
     thisAccessString.append(".");
 
     ECClassCR   structClass = structProperty.GetType();
-    WritePropertyValuesOfClassOrStructArrayMember(structObj, structClass, ecInstance, thisAccessString.c_str(), nullptr, writeFormattedQuantities, serializeNullValues);
+    WritePropertyValuesOfClassOrStructArrayMember(structObj, structClass, ecInstance, thisAccessString.c_str(), nullptr, writeFormattedQuantities, serializeNullValues, casing);
 
     if (!structObj.empty() || serializeNullValues)
-        valueToPopulate[structName.c_str()] = structObj;
+        valueToPopulate[FormatMemberName(structName, casing)] = structObj;
 
     return BSISUCCESS;
     }
@@ -1714,7 +1739,7 @@ StatusInt JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(Json::Va
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                    08/2017
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueToPopulate, NavigationECPropertyR navigationProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString, ECClassLocatorByClassIdCP classLocator, bool writeFormattedQuantities, bool serializeNullValues)
+StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueToPopulate, NavigationECPropertyR navigationProperty, IECInstanceCR ecInstance, Utf8CP baseAccessString, ECClassLocatorByClassIdCP classLocator, bool writeFormattedQuantities, bool serializeNullValues, MemberNameCasing casing)
     {
     Utf8String navName = navigationProperty.GetName();
 
@@ -1734,11 +1759,11 @@ StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueT
     if (value.IsNull())
         {
         if (serializeNullValues)
-            valueToPopulate[navName.c_str()] = Json::nullValue;
+            valueToPopulate[FormatMemberName(navName, casing)] = Json::nullValue;
         return BSISUCCESS;
         }
 
-    auto& navObj = valueToPopulate[navName.c_str()] = Json::objectValue;
+    auto& navObj = valueToPopulate[FormatMemberName(navName, casing)] = Json::objectValue;
 
     ECValue::NavigationInfo const& navInfo = value.GetNavigationInfo();
 
@@ -1771,7 +1796,7 @@ StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueT
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WritePropertyValuesOfClassOrStructArrayMember(Json::Value& valueToPopulate, ECClassCR ecClass, IECInstanceCR ecInstance, Utf8CP baseAccessString, ECClassLocatorByClassIdCP classLocator, bool writeFormattedQuantities, bool serializeNullValues)
+StatusInt JsonEcInstanceWriter::WritePropertyValuesOfClassOrStructArrayMember(Json::Value& valueToPopulate, ECClassCR ecClass, IECInstanceCR ecInstance, Utf8CP baseAccessString, ECClassLocatorByClassIdCP classLocator, bool writeFormattedQuantities, bool serializeNullValues, MemberNameCasing casing, std::function<bool(Utf8CP)> shouldWriteProperty)
     {
     ECPropertyIterableCR    collection = ecClass.GetProperties(true);
     for (ECPropertyP ecProperty : collection)
@@ -1782,14 +1807,17 @@ StatusInt JsonEcInstanceWriter::WritePropertyValuesOfClassOrStructArrayMember(Js
         NavigationECPropertyP   navigationProperty;
         StatusInt               ixwStatus = BSIERROR;
 
+        if ((nullptr != shouldWriteProperty) && !shouldWriteProperty(ecProperty->GetName().c_str()))
+            continue;
+
         if (nullptr != (primitiveProperty = ecProperty->GetAsPrimitivePropertyP()))
-            ixwStatus = WritePrimitivePropertyValue(valueToPopulate, *primitiveProperty, ecInstance, baseAccessString, writeFormattedQuantities, serializeNullValues);
+            ixwStatus = WritePrimitivePropertyValue(valueToPopulate, *primitiveProperty, ecInstance, baseAccessString, writeFormattedQuantities, serializeNullValues, casing);
         else if (nullptr != (arrayProperty = ecProperty->GetAsArrayPropertyP()))
-            ixwStatus = WriteArrayPropertyValue(valueToPopulate, *arrayProperty, ecInstance, baseAccessString, classLocator, writeFormattedQuantities, serializeNullValues);
+            ixwStatus = WriteArrayPropertyValue(valueToPopulate, *arrayProperty, ecInstance, baseAccessString, classLocator, writeFormattedQuantities, serializeNullValues, casing);
         else if (nullptr != (structProperty = ecProperty->GetAsStructPropertyP()))
-            ixwStatus = WriteEmbeddedStructPropertyValue(valueToPopulate, *structProperty, ecInstance, baseAccessString, writeFormattedQuantities, serializeNullValues);
+            ixwStatus = WriteEmbeddedStructPropertyValue(valueToPopulate, *structProperty, ecInstance, baseAccessString, writeFormattedQuantities, serializeNullValues, casing);
         else if (nullptr != (navigationProperty = ecProperty->GetAsNavigationPropertyP()))
-            ixwStatus = WriteNavigationPropertyValue(valueToPopulate, *navigationProperty, ecInstance, baseAccessString, classLocator, writeFormattedQuantities, serializeNullValues);
+            ixwStatus = WriteNavigationPropertyValue(valueToPopulate, *navigationProperty, ecInstance, baseAccessString, classLocator, writeFormattedQuantities, serializeNullValues, casing);
 
         if (BSISUCCESS != ixwStatus)
             {
@@ -1829,6 +1857,14 @@ StatusInt JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopulate
         valueToPopulate[className.c_str()] = instanceObj;
 
     return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Shaun.Sewall                   01/2019
+//---------------------------------------------------------------------------------------
+StatusInt JsonEcInstanceWriter::WritePartialInstanceToJson(Json::Value& jsonValue, IECInstanceCR ecInstance, MemberNameCasing casing, std::function<bool(Utf8CP)> shouldWriteProperty)
+    {
+    return WritePropertyValuesOfClassOrStructArrayMember(jsonValue, ecInstance.GetClass(), ecInstance, nullptr, nullptr, false, false, casing, shouldWriteProperty);
     }
 
 //---------------------------------------------------------------------------------------
