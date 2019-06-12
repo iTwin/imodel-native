@@ -950,7 +950,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
     ECSqlStatementCache& statementsCache = m_ecdbCaches->GetStatementsCache(connection);
 
     // set up the provider context
-    ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, true, options.GetLocale(), key.GetPreferredDisplayType(), inputKeys, *m_nodesCache,
+    ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, true, options.GetLocale(), key.GetPreferredDisplayType(), key.GetContentFlags(), inputKeys, *m_nodesCache,
         GetCategorySupplier(), settings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, *m_nodesFactory, GetLocalState());
     context->SetQueryContext(m_connections, connection, statementsCache, *m_customFunctions);
 
@@ -987,7 +987,8 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentDescriptorCR descriptor, INavNodeKeysContainerCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options)
     {
-    ContentProviderKey key(connection.GetId(), options.GetRulesetId(), descriptor.GetPreferredDisplayType(), options.GetLocale(), inputKeys, selectionInfo);
+    ContentProviderKey key(connection.GetId(), options.GetRulesetId(), descriptor.GetPreferredDisplayType(), descriptor.GetContentFlags(),
+        options.GetLocale(), inputKeys, selectionInfo);
     SpecificationContentProviderCPtr cachedProvider = GetContentProvider(connection, cancelationToken, key, inputKeys, selectionInfo, options);
     if (cachedProvider.IsNull())
         return nullptr;
@@ -1000,7 +1001,8 @@ SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasses(IConnectionCR connection, Utf8CP preferredDisplayType, bvector<ECClassCP> const& classes, ContentOptions const& options, ICancelationTokenCR cancelationToken)
+bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasses(IConnectionCR connection, Utf8CP preferredDisplayType, int contentFlags, 
+    bvector<ECClassCP> const& classes, ContentOptions const& options, ICancelationTokenCR cancelationToken)
     {
     RefCountedPtr<PerformanceLogger> _l = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentClasses]", NativeLogging::LOG_TRACE);
 
@@ -1030,14 +1032,14 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
     // locate the classes
     ECSchemaHelper schemaHelper(connection, &relatedPathsCache, &polymorphicallyRelatedClassesCache, &statementsCache, &ecexpressionsCache);
     ContentClassesLocater::Context locaterContext(schemaHelper, m_connections, connection,
-        *ruleset, options.GetLocale(), preferredDisplayType, settings, ecexpressionsCache, *m_nodesCache);
+        *ruleset, options.GetLocale(), preferredDisplayType, contentFlags, settings, ecexpressionsCache, *m_nodesCache);
     return ContentClassesLocater(locaterContext).Locate(classes);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescriptor(IConnectionCR connection, Utf8CP preferredDisplayType,
+ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescriptor(IConnectionCR connection, Utf8CP preferredDisplayType, int contentFlags,
     KeySetCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken)
     {
     RefCountedPtr<PerformanceLogger> _l = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentDescriptor]", NativeLogging::LOG_TRACE);
@@ -1046,7 +1048,7 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescripto
         preferredDisplayType = ContentDisplayType::Undefined;
 
     INavNodeKeysContainerCPtr nodeKeys = inputKeys.GetAllNavNodeKeys();
-    ContentProviderKey key(connection.GetId(), options.GetRulesetId(), preferredDisplayType, options.GetLocale(), *nodeKeys, selectionInfo);
+    ContentProviderKey key(connection.GetId(), options.GetRulesetId(), preferredDisplayType, contentFlags, options.GetLocale(), *nodeKeys, selectionInfo);
     ContentProviderCPtr provider = GetContentProvider(connection, cancelationToken, key, *nodeKeys, selectionInfo, options);
     return provider.IsValid() ? provider->GetContentDescriptor() : nullptr;
     }
@@ -1117,14 +1119,12 @@ Utf8String RulesDrivenECPresentationManagerImpl::_GetDisplayLabel(IConnectionCR 
     RefCountedPtr<PerformanceLogger> _l = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetDisplayLabel]", NativeLogging::LOG_TRACE);
 
     ContentOptions options(DISPLAY_LABEL_RULESET_ID);
-    ContentDescriptorCPtr descriptor = GetContentDescriptor(connection, ContentDisplayType::List, keys, nullptr, options, cancelationToken);
+    int flags = (int)ContentFlags::NoFields | (int)ContentFlags::ShowLabels | (int)ContentFlags::MergeResults;
+    ContentDescriptorCPtr descriptor = GetContentDescriptor(connection, ContentDisplayType::List, flags, keys, nullptr, options, cancelationToken);
     if (descriptor.IsNull())
         return "";
-
-    ContentDescriptorPtr labelDescriptor = ContentDescriptor::Create(*descriptor);
-    labelDescriptor->SetContentFlags((int)ContentFlags::NoFields | (int)ContentFlags::ShowLabels | (int)ContentFlags::MergeResults);
-
-    ContentCPtr content = GetContent(*labelDescriptor, PageOptions(), cancelationToken);
+    
+    ContentCPtr content = GetContent(*descriptor, PageOptions(), cancelationToken);
     if (content.IsNull())
         return "";
 

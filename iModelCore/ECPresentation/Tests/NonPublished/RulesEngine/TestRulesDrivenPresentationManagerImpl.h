@@ -33,8 +33,8 @@ struct TestRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManag
     typedef std::function<void(IConnectionCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR)> Handler_OnNodeCollapsed;
     typedef std::function<void(IConnectionCR, NavigationOptions const&, ICancelationTokenCR)> Handler_OnAllNodesCollapsed;
 
-    typedef std::function<bvector<SelectClassInfo>(IConnectionCR, Utf8CP, bvector<ECClassCP> const&, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentClasses;
-    typedef std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentDescriptor;
+    typedef std::function<bvector<SelectClassInfo>(IConnectionCR, Utf8CP, int, bvector<ECClassCP> const&, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentClasses;
+    typedef std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentDescriptor;
     typedef std::function<ContentCPtr(ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)> Handler_GetContent;
     typedef std::function<size_t(ContentDescriptorCR, ICancelationTokenCR)> Handler_GetContentSetSize;
     typedef std::function<Utf8String(IConnectionCR, KeySetCR, ICancelationTokenCR)> Handler_GetDisplayLabel;
@@ -158,16 +158,16 @@ protected:
             return m_allNodesCollapsedHandler(connection, options, cancelationToken);
         }
 
-    bvector<SelectClassInfo> _GetContentClasses(IConnectionCR connection, Utf8CP displayType, bvector<ECClassCP> const& inputClasses, ContentOptions const& options, ICancelationTokenCR cancelationToken) override
+    bvector<SelectClassInfo> _GetContentClasses(IConnectionCR connection, Utf8CP displayType, int contentFlags, bvector<ECClassCP> const& inputClasses, ContentOptions const& options, ICancelationTokenCR cancelationToken) override
         {
         if (m_contentClassesHandler)
-            return m_contentClassesHandler(connection, displayType, inputClasses, options, cancelationToken);
+            return m_contentClassesHandler(connection, displayType, contentFlags, inputClasses, options, cancelationToken);
         return bvector<SelectClassInfo>();
         }
-    ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR connection, Utf8CP displayType, KeySetCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) override
+    ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR connection, Utf8CP displayType, int contentFlags, KeySetCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) override
         {
         if (m_contentDescriptorHandler)
-            return m_contentDescriptorHandler(connection, displayType, inputKeys, selectionInfo, options, cancelationToken);
+            return m_contentDescriptorHandler(connection, displayType, contentFlags, inputKeys, selectionInfo, options, cancelationToken);
         return nullptr;
         }
     ContentCPtr _GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOptions, ICancelationTokenCR cancelationToken) override

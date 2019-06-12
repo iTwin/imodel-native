@@ -262,7 +262,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, SetsUp
 
     // get content
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_db, nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
 
     // assert
@@ -295,7 +295,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Unregi
 
     // get content
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_db, nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
 
     // Assert that custom functions are registered
@@ -351,14 +351,14 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
 
     // get content
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_db, nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
 
     // Attempt to trigger a deadlock by importing a schema and ask for content again
     bvector<ECSchemaCP> schemaList = bvector<ECSchemaCP>{ schema.get() };
     m_db.Schemas().ImportSchemas(schemaList);
 
-    descriptor = m_manager->GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    descriptor = m_manager->GetContentDescriptor(m_db, nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     content = m_manager->GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
     }
@@ -512,7 +512,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
     {
     BeAtomic<bool> wasCalled(false);
     uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetContentClassesHandler([&](IConnectionCR, Utf8CP, bvector<ECClassCP> const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentClassesHandler([&](IConnectionCR, Utf8CP, int, bvector<ECClassCP> const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         wasCalled.store(true);
         VERIFY_THREAD_NE(mainThreadId);
@@ -521,7 +521,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
 
     // request and verify
     RulesDrivenECPresentationManager::ContentOptions options("doesnt matter");
-    m_manager->GetContentClasses(s_project->GetECDb(), nullptr, bvector<ECClassCP>(), options.GetJson()).wait();
+    m_manager->GetContentClasses(s_project->GetECDb(), nullptr, 0, bvector<ECClassCP>(), options.GetJson()).wait();
     EXPECT_TRUE(wasCalled.load());
     }
 
@@ -532,7 +532,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
     {
     BeAtomic<bool> wasCalled(false);
     uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         wasCalled.store(true);
         VERIFY_THREAD_NE(mainThreadId);
@@ -541,7 +541,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
 
     // request and verify
     RulesDrivenECPresentationManager::ContentOptions options("doesnt matter");
-    m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).wait();
+    m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).wait();
     EXPECT_TRUE(wasCalled.load());
     }
 
@@ -1237,7 +1237,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsFilteredN
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentClassesRequestWhenManagerIsTerminated)
     {
     // set the request handler
-    m_impl->SetContentClassesHandler([&](IConnectionCR, Utf8CP, bvector<ECClassCP> const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentClassesHandler([&](IConnectionCR, Utf8CP, int, bvector<ECClassCP> const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return bvector<SelectClassInfo>();
@@ -1246,7 +1246,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentCl
     // request and verify
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentClasses(s_project->GetECDb(), nullptr, bvector<ECClassCP>(), options.GetJson()));
+    DoRequest(m_manager->GetContentClasses(s_project->GetECDb(), nullptr, 0, bvector<ECClassCP>(), options.GetJson()));
     TerminateAndVerifyResult();
     }
 
@@ -1256,7 +1256,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentCl
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentClassesRequestWhenConnectionIsClosed)
     {
     // set the request handler
-    m_impl->SetContentClassesHandler([&](IConnectionCR, Utf8CP, bvector<ECClassCP> const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentClassesHandler([&](IConnectionCR, Utf8CP, int, bvector<ECClassCP> const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return bvector<SelectClassInfo>();
@@ -1265,7 +1265,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentCl
     // request and verify
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentClasses(s_project->GetECDb(), nullptr, bvector<ECClassCP>(), options.GetJson()));
+    DoRequest(m_manager->GetContentClasses(s_project->GetECDb(), nullptr, 0, bvector<ECClassCP>(), options.GetJson()));
     CloseConnectionAndVerifyResult();
     }
 
@@ -1275,7 +1275,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentCl
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentClassesRequestWhenRulesetIsDisposed)
     {
     // set the request handler
-    m_impl->SetContentClassesHandler([&](IConnectionCR, Utf8CP, bvector<ECClassCP> const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentClassesHandler([&](IConnectionCR, Utf8CP, int, bvector<ECClassCP> const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return bvector<SelectClassInfo>();
@@ -1284,7 +1284,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentCl
     // request and verify
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentClasses(s_project->GetECDb(), nullptr, bvector<ECClassCP>(), options.GetJson()));
+    DoRequest(m_manager->GetContentClasses(s_project->GetECDb(), nullptr, 0, bvector<ECClassCP>(), options.GetJson()));
     DisposeRulesetAndVerifyResult();
     }
 
@@ -1294,7 +1294,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentCl
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDescriptorRequestWhenManagerIsTerminated)
     {
     // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return nullptr;
@@ -1303,7 +1303,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDe
     // request and verify
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()));
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()));
     TerminateAndVerifyResult();
     }
 
@@ -1313,7 +1313,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDe
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDescriptorRequestWhenConnectionIsClosed)
     {
     // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return nullptr;
@@ -1322,7 +1322,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDe
     // request and verify
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()));
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()));
     CloseConnectionAndVerifyResult();
     }
 
@@ -1332,7 +1332,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDe
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDescriptorRequestWhenRulesetIsDisposed)
     {
     // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return nullptr;
@@ -1341,7 +1341,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDe
     // request and verify
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()));
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()));
     DisposeRulesetAndVerifyResult();
     }
 
@@ -1351,7 +1351,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDe
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescriptorRequestCancelsOtherRequestsWithSameConnectionAndDisplayTypeAndDifferentSelectionTimestamps)
     {
     // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return nullptr;
@@ -1361,12 +1361,12 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     SelectionInfoPtr selectionInfo1 = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 1);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), "Test", *KeySet::Create(), selectionInfo1.get(), options.GetJson()));
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), "Test", 0, *KeySet::Create(), selectionInfo1.get(), options.GetJson()));
     EnsureBlocked();
 
     // make second request
     SelectionInfoPtr selectionInfo2 = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 2);
-    m_manager->GetContentDescriptor(s_project->GetECDb(), "Test", *KeySet::Create(), selectionInfo2.get(), options.GetJson()).wait();
+    m_manager->GetContentDescriptor(s_project->GetECDb(), "Test", 0, *KeySet::Create(), selectionInfo2.get(), options.GetJson()).wait();
 
     // verify
     VerifyCancelation(true, true, 1);
@@ -1378,7 +1378,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescriptorRequestDoesntCancelRequestsWithDifferentSelectionSources)
     {
     // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return nullptr;
@@ -1388,11 +1388,11 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     SelectionInfoPtr selectionInfo1 = SelectionInfo::Create(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 1), false);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), selectionInfo1.get(), options.GetJson()), false);
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), selectionInfo1.get(), options.GetJson()), false);
 
     // make second request
     SelectionInfoPtr selectionInfo2 = SelectionInfo::Create(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 2), false);
-    auto req = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), selectionInfo2.get(), options.GetJson());
+    auto req = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), selectionInfo2.get(), options.GetJson());
 
     // wait until first request gets blocked and abort blocking
     EnsureBlocked();
@@ -1411,7 +1411,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescriptorRequestDoesntCancelRequestsWithSameSelectionTimestamps)
     {
     // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return nullptr;
@@ -1421,10 +1421,10 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     SelectionInfoPtr selectionInfo = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), selectionInfo.get(), options.GetJson()), false);
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), selectionInfo.get(), options.GetJson()), false);
 
     // make second request
-    auto req = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), selectionInfo.get(), options.GetJson());
+    auto req = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), selectionInfo.get(), options.GetJson());
 
     // wait until first request gets blocked and abort blocking
     EnsureBlocked();
@@ -1447,7 +1447,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     RefCountedPtr<TestConnection> connection2 = static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionOpened(project2.GetECDb());
 
     // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return nullptr;
@@ -1457,10 +1457,10 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     SelectionInfoPtr selectionInfo = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), selectionInfo.get(), options.GetJson()), false);
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), selectionInfo.get(), options.GetJson()), false);
 
     // make second request
-    auto req = m_manager->GetContentDescriptor(connection2->GetECDb(), nullptr, *KeySet::Create(), selectionInfo.get(), options.GetJson());
+    auto req = m_manager->GetContentDescriptor(connection2->GetECDb(), nullptr, 0, *KeySet::Create(), selectionInfo.get(), options.GetJson());
 
     // wait until first request gets blocked and abort blocking
     EnsureBlocked();
@@ -1481,7 +1481,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescriptorRequestDoesntCancelRequestsWithDifferentDisplayTypes)
     {
     // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return nullptr;
@@ -1491,10 +1491,10 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     SelectionInfoPtr selectionInfo = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), "Test1", *KeySet::Create(), selectionInfo.get(), options.GetJson()), false);
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), "Test1", 0, *KeySet::Create(), selectionInfo.get(), options.GetJson()), false);
 
     // make second request
-    auto req = m_manager->GetContentDescriptor(s_project->GetECDb(), "Test2", *KeySet::Create(), selectionInfo.get(), options.GetJson());
+    auto req = m_manager->GetContentDescriptor(s_project->GetECDb(), "Test2", 0, *KeySet::Create(), selectionInfo.get(), options.GetJson());
 
     // wait until first request gets blocked and abort blocking
     EnsureBlocked();

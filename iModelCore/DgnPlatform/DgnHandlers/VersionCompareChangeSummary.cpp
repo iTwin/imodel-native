@@ -418,7 +418,7 @@ bvector<SelectClassInfo> VersionCompareChangeSummary::GetContentClasses(Utf8Stri
     
     // TODO: Pass presentation rules as part of Generate call
     RulesDrivenECPresentationManager::ContentOptions options(Utf8String::IsNullOrEmpty(m_rulesetId.c_str()) ? "Items" : m_rulesetId);
-    return IECPresentationManager::GetManager().GetContentClasses(db, ContentDisplayType::PropertyPane, {cls}, options.GetJson()).get();
+    return IECPresentationManager::GetManager().GetContentClasses(db, ContentDisplayType::PropertyPane, 0, {cls}, options.GetJson()).get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -843,7 +843,7 @@ StatusInt   VersionCompareChangeSummary::GetElementContent(DgnDbPtr db, DgnEleme
 
     KeySetPtr inputKeys = KeySet::Create({ECClassInstanceKey(db->Schemas().GetClass(topClassId), topElementId)});
     RulesDrivenECPresentationManager::ContentOptions options (Utf8String::IsNullOrEmpty(m_rulesetId.c_str()) ? "Items" : m_rulesetId);
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(*db, ContentDisplayType::PropertyPane, *inputKeys, nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(*db, ContentDisplayType::PropertyPane, 0, *inputKeys, nullptr, options.GetJson()).get();
     if (descriptor.IsNull())
         return ERROR;
     

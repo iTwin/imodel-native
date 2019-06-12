@@ -518,17 +518,13 @@ folly::Future<folly::Unit> SelectionSyncHandler::_OnSelectionChanged(SelectionCh
 
     // get the default content descriptor
     return IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetECDb(),
-        contentDisplayType, *inputKeys, selectionInfo.get(), contentOptions).then([this, evtGuid, evt = SelectionChangedEventCPtr(&evt)](ContentDescriptorCPtr defaultDescriptor)
+        contentDisplayType, (int)ContentFlags::KeysOnly, *inputKeys, selectionInfo.get(), contentOptions).then([this, evtGuid, evt = SelectionChangedEventCPtr(&evt)](ContentDescriptorCPtr descriptor)
         {
-        if (defaultDescriptor.IsNull())
+        if (descriptor.IsNull())
             {
             GetLogger().debugv("_OnSelectionChanged [%s]: No descriptor", evtGuid.c_str());
             return CallSelectInstances(*evt, bvector<ECClassInstanceKey>());
             }
-
-        // we only care about keys, so ask to not return anything else
-        ContentDescriptorPtr descriptor = ContentDescriptor::Create(*defaultDescriptor);
-        descriptor->AddContentFlag(ContentFlags::KeysOnly);
 
         // request for content
         return IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).then([this, evtGuid, evt](ContentCPtr content)

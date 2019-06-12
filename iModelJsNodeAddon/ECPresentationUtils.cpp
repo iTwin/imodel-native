@@ -1610,6 +1610,11 @@ static Utf8CP GetDisplayType(JsonValueCR params)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static int GetContentFlags(JsonValueCR params) { return params.isMember("contentFlags") ? params["contentFlags"].asInt() : 0; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static KeySetPtr GetKeys(IConnectionCR connection, JsonValueCR params)
@@ -1626,7 +1631,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentDescriptor(IE
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
     Json::Value options = GetContentOptions(params).GetJson();
-    return manager.GetContentDescriptor(db, GetDisplayType(params), *GetKeys(*connection, params), nullptr, options, notificationsContext)
+    return manager.GetContentDescriptor(db, GetDisplayType(params), GetContentFlags(params), *GetKeys(*connection, params), nullptr, options, notificationsContext)
         .then([notificationsContext](ContentDescriptorCPtr descriptor)
             {
             notificationsContext.OnTaskStart();
@@ -1645,7 +1650,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(IECPresentat
     JsonValueCR descriptorOverridesJson = params["descriptorOverrides"];
     PageOptions pageOptions = GetPageOptions(params);
     Json::Value options = GetContentOptions(params).GetJson();
-    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options, notificationsContext)
+    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), GetContentFlags(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options, notificationsContext)
         .then([&manager, descriptorOverridesJson, pageOptions, notificationsContext](ContentDescriptorCPtr descriptor)
             {
             notificationsContext.OnTaskStart();
@@ -1668,7 +1673,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSetSize(IECPr
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
     JsonValueCR descriptorOverridesJson = params["descriptorOverrides"];
     Json::Value options = GetContentOptions(params).GetJson();
-    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options, notificationsContext)
+    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), GetContentFlags(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options, notificationsContext)
         .then([&manager, descriptorOverridesJson, notificationsContext](ContentDescriptorCPtr descriptor) {
             notificationsContext.OnTaskStart();
             if (descriptor.IsNull())
@@ -1697,7 +1702,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPr
     Json::Value options = GetContentOptions(params).GetJson();
     Utf8String fieldName = params["fieldName"].asString();
     int64_t maximumValueCount = params["maximumValueCount"].asInt64();
-    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options, notificationsContext)
+    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), GetContentFlags(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, options, notificationsContext)
         .then([&manager, descriptorOverridesJson, fieldName, maximumValueCount, notificationsContext] (ContentDescriptorCPtr descriptor)
             {
             if (descriptor.IsNull())

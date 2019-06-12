@@ -15,12 +15,12 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String locale, Utf8String preferredDisplayType, 
+ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String locale, Utf8String preferredDisplayType, int contentFlags,
     INavNodeKeysContainerCR inputKeys, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier, 
     IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, 
     JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState) 
     : RulesDrivenProviderContext(ruleset, holdRuleset, locale, userSettings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState), 
-    m_preferredDisplayType(preferredDisplayType), m_nodesLocater(nodesLocater), m_categorySupplier(categorySupplier), m_inputNodeKeys(&inputKeys)
+    m_preferredDisplayType(preferredDisplayType), m_contentFlags(contentFlags), m_nodesLocater(nodesLocater), m_categorySupplier(categorySupplier), m_inputNodeKeys(&inputKeys)
     {
     Init();
     }
@@ -30,7 +30,7 @@ ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, bo
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProviderContext::ContentProviderContext(ContentProviderContextCR other) 
     : RulesDrivenProviderContext(other), m_preferredDisplayType(other.m_preferredDisplayType), m_nodesLocater(other.m_nodesLocater), 
-    m_categorySupplier(other.m_categorySupplier), m_inputNodeKeys(other.m_inputNodeKeys)
+    m_categorySupplier(other.m_categorySupplier), m_inputNodeKeys(other.m_inputNodeKeys), m_contentFlags(other.m_contentFlags)
     {
     Init();
 
@@ -54,7 +54,6 @@ void ContentProviderContext::Init()
     m_isSelectionContext = false;
     m_propertyFormatter = nullptr;
     m_isNestedContent = false;
-    m_createFields = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -642,7 +641,7 @@ public:
         IECPropertyFormatter const* formatter = context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr;
         ILocalizationProvider const* localizationProvider = context.IsLocalizationContext() ? &context.GetLocalizationProvider() : nullptr;
         m_context = new ContentDescriptorBuilder::Context(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(), context.GetRuleset(),
-            context.GetPreferredDisplayType().c_str(), context.GetCategorySupplier(), formatter, localizationProvider, context.GetLocale(), 
+            context.GetPreferredDisplayType().c_str(), context.GetContentFlags(), context.GetCategorySupplier(), formatter, localizationProvider, context.GetLocale(), 
             context.GetInputKeys(), context.GetSelectionInfo());
         m_descriptorBuilder = new ContentDescriptorBuilder(*m_context);
 

@@ -235,8 +235,8 @@ protected:
     ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnAllNodesCollapsed(IConnectionCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
 
     // IECPresentationManager: Content
-    ECPRESENTATION_EXPORT virtual folly::Future<bvector<SelectClassInfo>> _GetContentClasses(IConnectionCR, Utf8CP, bvector<ECClassCP> const&, JsonValueCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR, Utf8CP preferredDisplayType, KeySetCR, SelectionInfo const*, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<bvector<SelectClassInfo>> _GetContentClasses(IConnectionCR, Utf8CP, int, bvector<ECClassCP> const&, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, JsonValueCR, PresentationTaskNotificationsContextCR) override;
     ECPRESENTATION_EXPORT virtual folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR, PageOptionsCR, PresentationTaskNotificationsContextCR) override;
     ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR, PresentationTaskNotificationsContextCR) override;
     ECPRESENTATION_EXPORT virtual folly::Future<Utf8String> _GetDisplayLabel(IConnectionCR, KeySetCR, PresentationTaskNotificationsContextCR) override;

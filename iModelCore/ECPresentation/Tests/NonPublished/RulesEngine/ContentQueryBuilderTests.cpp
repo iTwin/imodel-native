@@ -17,7 +17,7 @@ void ContentQueryBuilderTests::SetUp()
     m_ruleset = PresentationRuleSet::CreateInstance("", 1, 0, false, "", "", "", false);
     m_schemaHelper = new ECSchemaHelper(connection, nullptr, nullptr, nullptr, nullptr);
     m_context = new ContentDescriptorBuilder::Context(*m_schemaHelper, connections,
-        connection, *m_ruleset, ContentDisplayType::Undefined, m_categorySupplier, nullptr, 
+        connection, *m_ruleset, ContentDisplayType::Undefined, 0, m_categorySupplier, nullptr, 
         &m_localizationProvider, "test locale", *NavNodeKeyListContainer::Create(), nullptr);
     m_descriptorBuilder = new ContentDescriptorBuilder(*m_context);
     m_queryBuilder = new ContentQueryBuilder(ContentQueryBuilderParameters(*m_schemaHelper, connections,

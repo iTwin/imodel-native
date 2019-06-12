@@ -391,8 +391,9 @@ public:
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
-void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query, InstanceFilteringParams const& params, RelatedClassPath relatedClassPath)
+InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query, InstanceFilteringParams const& params, RelatedClassPath relatedClassPath)
     {
+    InstanceFilteringResult result = InstanceFilteringResult::Success;
     if (!relatedClassPath.empty())
         relatedClassPath.front().SetTargetClassAlias("this"); // Changed in order instance filtering to work using this keyword
 
@@ -416,6 +417,8 @@ void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query
                 bset<ECInstanceId> ids = recursiveQueries.GetRecursiveChildrenIds(*params.GetInput(), params.GetSelectInfo());
                 IdsFilteringHelper<bset<ECInstanceId>> filteringHelper(ids);
                 query.Where(filteringHelper.CreateWhereClause("[this].[ECInstanceId]").c_str(), filteringHelper.CreateBoundValues());
+                if (ids.empty())
+                    result = InstanceFilteringResult::NoResults;
                 }
             else
                 {
@@ -424,6 +427,8 @@ void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query
                 bvector<ECInstanceId> const& ids = params.GetInput()->GetInstanceIds(*params.GetSelectInfo().GetPrimaryClass());
                 IdsFilteringHelper<bvector<ECInstanceId>> filteringHelper(ids);
                 query.Where(filteringHelper.CreateWhereClause("[related].[ECInstanceId]").c_str(), filteringHelper.CreateBoundValues());
+                if (ids.empty())
+                    result = InstanceFilteringResult::NoResults;
                 }
             }
         }
@@ -433,9 +438,11 @@ void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query
 
     if (params.GetInstanceFilter() && 0 != *params.GetInstanceFilter())
         query.Where(ECExpressionsHelper(params.GetECExpressionsCache()).ConvertToECSql(params.GetInstanceFilter()).c_str(), BoundQueryValuesList());
+
+    return result;
     }
-template void QueryBuilderHelpers::ApplyInstanceFilter<ContentQuery>(ComplexContentQuery&, InstanceFilteringParams const&, RelatedClassPath);
-template void QueryBuilderHelpers::ApplyInstanceFilter<GenericQuery>(ComplexGenericQuery&, InstanceFilteringParams const&, RelatedClassPath);
+template InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter<ContentQuery>(ComplexContentQuery&, InstanceFilteringParams const&, RelatedClassPath);
+template InstanceFilteringResult QueryBuilderHelpers::ApplyInstanceFilter<GenericQuery>(ComplexGenericQuery&, InstanceFilteringParams const&, RelatedClassPath);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
@@ -517,7 +524,12 @@ void QueryBuilderHelpers::ApplyPagingOptions(RefCountedPtr<ContentQuery>& query,
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryBuilderHelpers::ApplyDefaultContentFlags(ContentDescriptorR descriptor, Utf8CP displayType, ContentSpecificationCR spec)
     {
-    BeAssert(0 == descriptor.GetContentFlags());
+    if (0 != descriptor.GetContentFlags())
+        {
+        // do not apply default flags is there's already something set - we don't
+        // want to override whatever is set by the requestor
+        return;
+        }
 
     if (DISPLAY_TYPES_EQUAL(ContentDisplayType::Grid, displayType))
         {
@@ -639,7 +651,7 @@ struct InstanceLabelOverrideSelectFieldsBuilder : InstanceLabelOverrideValueSpec
             }
         void _Visit(InstanceLabelOverrideClassNameValueSpecification const& spec) override
             {
-            m_fields.push_back(PresentationQueryContractFunctionField::Create("/ClassName/", FUNCTION_NAME_GetECClassName, 
+            m_fields.push_back(PresentationQueryContractFunctionField::Create("/ClassName/", FUNCTION_NAME_GetECClassName,
                 {
                 PresentationQueryContractSimpleField::Create("/ClassId/", "ECClassId"),
                 PresentationQueryContractSimpleField::Create("/Full/", spec.ShouldUseFullName() ? "TRUE" : "FALSE")
@@ -687,7 +699,7 @@ struct InstanceLabelOverrideSelectFieldsBuilder : InstanceLabelOverrideValueSpec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryContractFieldPtr QueryBuilderHelpers::CreateInstanceLabelField(Utf8CP name, bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs, 
+PresentationQueryContractFieldPtr QueryBuilderHelpers::CreateInstanceLabelField(Utf8CP name, bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs,
     PresentationQueryContractField const* fallback)
     {
     InstanceLabelOverrideSelectFieldsBuilder builder;

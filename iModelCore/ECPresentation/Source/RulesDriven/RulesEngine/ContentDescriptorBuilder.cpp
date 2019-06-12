@@ -33,6 +33,15 @@ static void ApplyFieldLocalization(ContentDescriptor::Field& field, ContentDescr
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ShouldCreateFields(ContentDescriptorCR descriptor)
+    {
+    return !descriptor.HasContentFlag(ContentFlags::NoFields)
+        && !descriptor.HasContentFlag(ContentFlags::KeysOnly);
+    }
+
 //=======================================================================================
 // @bsiclass                                    Grigas.Petraitis                06/2017
 //=======================================================================================
@@ -423,8 +432,8 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+------*/
     bool _Supports(ECPropertyCR ecProperty) override
         {
-        // don't support any properties if descriptor has NoFields flag
-        if (m_descriptor.HasContentFlag(ContentFlags::NoFields))
+        // don't support any properties if we're not creating fields
+        if (!ShouldCreateFields(m_descriptor))
             return false;
 
         // don't support hidden properties
@@ -479,6 +488,7 @@ private:
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     ContentDescriptorBuilder::Context& GetContext() {return static_cast<ContentDescriptorBuilder::Context&>(ContentSpecificationsHandler::GetContext());}
+    ContentDescriptorBuilder::Context const& GetContext() const { return static_cast<ContentDescriptorBuilder::Context const&>(ContentSpecificationsHandler::GetContext()); }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Aidas.Vaiksnoras                06/2017
@@ -500,7 +510,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool _ShouldIncludeRelatedProperties() const override {return !m_descriptor->HasContentFlag(ContentFlags::NoFields);}
+    bool _ShouldIncludeRelatedProperties() const override {return ShouldCreateFields(*m_descriptor);}
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
@@ -532,7 +542,7 @@ protected:
         {
         m_descriptor->GetSelectClasses().push_back(classInfo);
 
-        if (!m_descriptor->HasContentFlag(ContentFlags::NoFields))
+        if (ShouldCreateFields(*m_descriptor))
             AddCalculatedFieldsFromContentModifiers(classInfo.GetSelectClass());
         }
 
@@ -546,7 +556,7 @@ public:
         {
         RulesDrivenECPresentationManager::ContentOptions options(GetContext().GetRuleset().GetRuleSetId(), GetContext().GetLocale());
         m_descriptor = ContentDescriptor::Create(GetContext().GetConnection(), options.GetJson(), GetContext().GetInputKeys(), GetContext().GetPreferredDisplayType());
-
+        m_descriptor->SetContentFlags(context.GetContentFlags());
         if (nullptr != GetContext().GetSelectionInfo())
             m_descriptor->SetSelectionInfo(*GetContext().GetSelectionInfo());
         if (nullptr != m_specification)
@@ -623,7 +633,7 @@ public:
         if (m_descriptor->GetSelectClasses().empty())
             return nullptr;
 
-        if (nullptr != m_specification && !m_descriptor->HasContentFlag(ContentFlags::NoFields))
+        if (nullptr != m_specification && ShouldCreateFields(*m_descriptor))
             {
             QueryBuilderHelpers::AddCalculatedFields(*m_descriptor, m_specification->GetCalculatedProperties(),
                 GetContext().GetLocalizationProvider(), GetContext().GetLocale(), GetContext().GetRuleset(), nullptr);

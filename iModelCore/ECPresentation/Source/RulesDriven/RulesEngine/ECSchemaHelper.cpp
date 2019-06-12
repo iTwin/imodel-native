@@ -1265,8 +1265,27 @@ RelatedClass ECSchemaHelper::GetForeignKeyClass(ECPropertyCR prop) const
 bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithInstances(ECClassCR sourceClass, Utf8StringCR relationshipNames,
     ECRelatedInstanceDirection direction, Utf8StringCR baseClassNames, RelatedClassPathCR relatedClassPath, InstanceFilteringParams const* filteringParams) const
     {
-    SupportedEntityClassInfos baseClassInfos = GetECClassesFromClassList(baseClassNames, false);
+    bvector<RelatedClassPath> paths;
+    Savepoint txn(m_connection.GetDb(), "ECSchemaHelper::GetPolymorphicallyRelatedClassesWithInstances");
+    BeAssert(txn.IsActive());
 
+    bool isNested = !relatedClassPath.empty();
+    ComplexGenericQueryPtr filteringQuery = ComplexGenericQuery::Create();
+    filteringQuery->SelectContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("ECInstanceId", "ECInstanceId")), isNested ? "nestedRel" : "this");
+    filteringQuery->From(sourceClass, true, isNested ? "nestedRel" : "this");
+    if (nullptr != filteringParams)
+        {
+        if (InstanceFilteringResult::NoResults == QueryBuilderHelpers::ApplyInstanceFilter(*filteringQuery, *filteringParams, relatedClassPath))
+            return paths;
+        }
+    BoundQueryValuesList filterBindings = filteringQuery->GetBoundValues();
+    if (nullptr != filteringParams)
+        {
+        for (RelatedClass const& relatedInstanceClass : filteringParams->GetSelectInfo().GetRelatedInstanceClasses())
+            filteringQuery->Join(relatedInstanceClass);
+        }
+
+    SupportedEntityClassInfos baseClassInfos = GetECClassesFromClassList(baseClassNames, false);
     bvector<ECRelationshipClassCP> relationships;
     if (relationshipNames.empty())
         {
@@ -1295,9 +1314,6 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
         std::transform(relationshipInfos.begin(), relationshipInfos.end(), std::back_inserter(relationships),
             [](SupportedRelationshipClassInfo const& info) { return &info.GetClass(); });
         }
-
-    Savepoint txn(m_connection.GetDb(), "ECSchemaHelper::GetPolymorphicallyRelatedClassesWithInstances");
-    BeAssert(txn.IsActive());
 
     PolymorphicallyRelatedClassesCache::Key key = {&sourceClass, direction, relationships};
     bvector<RelatedClass> const* polymorphicallyRelatedClasses = m_polymorphicallyRelatedClassesCache->Get(key);
@@ -1347,21 +1363,6 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
         polymorphicallyRelatedClasses = &m_polymorphicallyRelatedClassesCache->Add(key, std::move(vec));
         }
 
-    bool isNested = !relatedClassPath.empty();
-    ComplexGenericQueryPtr filteringQuery = ComplexGenericQuery::Create();
-    filteringQuery->SelectContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("ECInstanceId", "ECInstanceId")), isNested ? "nestedRel" : "this");
-    filteringQuery->From(sourceClass, true, isNested ? "nestedRel" : "this");
-    if (nullptr != filteringParams)
-        QueryBuilderHelpers::ApplyInstanceFilter(*filteringQuery, *filteringParams, relatedClassPath);
-    BoundQueryValuesList filterBindings = filteringQuery->GetBoundValues();
-
-    if (nullptr != filteringParams)
-        {
-        for (RelatedClass const& relatedInstanceClass : filteringParams->GetSelectInfo().GetRelatedInstanceClasses())
-            filteringQuery->Join(relatedInstanceClass);
-        }
-
-    bvector<RelatedClassPath> paths;
     for (RelatedClass const& relatedClass : *polymorphicallyRelatedClasses)
         {
         BoundQueryValuesList filterBindingsCopy;

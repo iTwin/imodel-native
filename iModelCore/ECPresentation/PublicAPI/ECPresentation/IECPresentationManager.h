@@ -49,7 +49,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECPresentationManager : public NonCopyableClass
 private:
     static IECPresentationManager* s_instance;
     static IECPresentationSerializer const* s_serializer;
-    
+
 private:
     folly::Future<NodesPathElement> FindNode(ECDbCR, NavNodeCP, ECInstanceKeyCR, JsonValueCR, PresentationTaskNotificationsContextCR);
 
@@ -57,9 +57,9 @@ private:
 private:
     IConnectionManagerR m_connections;
     ILocalizationProvider const* m_localizationProvider = nullptr;
-    
+
 protected:
-/** @name Navigation  
+/** @name Navigation
  *  @{ */
     //! @see GetRootNodes
     virtual folly::Future<NavNodesContainer> _GetRootNodes(IConnectionCR, PageOptionsCR, JsonValueCR, PresentationTaskNotificationsContextCR) = 0;
@@ -72,7 +72,7 @@ protected:
 
     //! @see GetChildrenCount
     virtual folly::Future<size_t> _GetChildrenCount(IConnectionCR, NavNodeCR, JsonValueCR, PresentationTaskNotificationsContextCR) = 0;
-    
+
     //! Checks if node has a child with specified ECInstanceKey.
     virtual folly::Future<bool> _HasChild(IConnectionCR, NavNodeCR, ECInstanceKeyCR, JsonValueCR, PresentationTaskNotificationsContextCR) = 0;
 
@@ -101,29 +101,29 @@ protected:
     virtual folly::Future<folly::Unit> _OnAllNodesCollapsed(IConnectionCR, JsonValueCR, PresentationTaskNotificationsContextCR) = 0;
 /** @} */
 
-/** @name Content  
+/** @name Content
  *  @{ */
     //! Get content classes from the list of supplied input classes.
     //! @see GetContentClasses
-    virtual folly::Future<bvector<SelectClassInfo>> _GetContentClasses(IConnectionCR, Utf8CP, bvector<ECClassCP> const&, JsonValueCR, PresentationTaskNotificationsContextCR) = 0;
+    virtual folly::Future<bvector<SelectClassInfo>> _GetContentClasses(IConnectionCR, Utf8CP, int, bvector<ECClassCP> const&, JsonValueCR, PresentationTaskNotificationsContextCR) = 0;
 
     //! Get the content descriptor based on the supplied parameters.
     //! @see GetContentDescriptor
-    virtual folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, JsonValueCR, PresentationTaskNotificationsContextCR) = 0;
+    virtual folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, JsonValueCR, PresentationTaskNotificationsContextCR) = 0;
 
     //! Get the content.
     //! @see GetContent
     virtual folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR, PageOptionsCR, PresentationTaskNotificationsContextCR) = 0;
 
-    //! Get the content set size. 
+    //! Get the content set size.
     //! @see GetContentSetSize
     virtual folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR, PresentationTaskNotificationsContextCR) = 0;
-    
+
     //! Get display label
     //! @see GetDisplayLabel
     virtual folly::Future<Utf8String> _GetDisplayLabel(IConnectionCR, KeySetCR, PresentationTaskNotificationsContextCR) = 0;
 /** @} */
-    
+
 /** @name Updating
  *  @{ */
     //! Changes an ECInstance(s) value using the specified parameters.
@@ -141,11 +141,11 @@ public:
 
     //! Check whether a registered presentation manager exists.
     ECPRESENTATION_EXPORT static bool IsActive();
-    
+
     //! Get the presentation manager.
     //! @warning @ref IsActive() can be used to verify if a manager is registered.
     ECPRESENTATION_EXPORT static IECPresentationManagerR GetManager();
-    
+
     //! Constructor.
     IECPresentationManager(IConnectionManagerR connections) : m_connections(connections) {}
 
@@ -161,7 +161,7 @@ public:
 
     //! Get ECPresentation objects serializer
     static IECPresentationSerializer const& GetSerializer();
-    
+
     //! Set ECPresentation objects serializer
     ECPRESENTATION_EXPORT void SetLocalizationProvider(ILocalizationProvider const* provider);
 
@@ -169,7 +169,7 @@ public:
     ILocalizationProvider const* GetLocalizationProvider();
 /** @} */
 
-/** @name Navigation  
+/** @name Navigation
  *  @{ */
     //! Retrieves the root nodes.
     //! @param[in] db The db to use for getting the nodes.
@@ -196,7 +196,7 @@ public:
     //! @param[in] parentNode The parent node to get the children for.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
     ECPRESENTATION_EXPORT folly::Future<size_t> GetChildrenCount(ECDbCR db, NavNodeCR parentNode, JsonValueCR extendedOptions = Json::Value(), PresentationTaskNotificationsContextCR = PresentationTaskNotificationsContext());
-    
+
     //! Retrieves the parent node of the specified node.
     //! @param[in] db The db to use for getting the node.
     //! @param[in] childNode The child node to get the parent for.
@@ -208,7 +208,7 @@ public:
     //! @param[in] nodeKey Key of the node to get. @ref NavNodeKey
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
     ECPRESENTATION_EXPORT folly::Future<NavNodeCPtr> GetNode(ECDbCR db, NavNodeKeyCR nodeKey, JsonValueCR extendedOptions = Json::Value(), PresentationTaskNotificationsContextCR = PresentationTaskNotificationsContext());
-    
+
     //! Provided a path of node keys, returns a path of nodes.
     //! @param[in] db The db to use for getting the nodes path.
     //! @param[in] keyPath ECInstanceKey path describing the path from the root node down to the target node.
@@ -221,13 +221,13 @@ public:
     //! @param[in] markedIndex Index of the path which will be marked in the resulting path's list.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
     ECPRESENTATION_EXPORT folly::Future<bvector<NodesPathElement>> GetNodesPath(ECDbCR db, bvector<bvector<ECInstanceKey>> const& keyPaths, int64_t markedIndex, JsonValueCR extendedOptions = Json::Value(), PresentationTaskNotificationsContextCR = PresentationTaskNotificationsContext());
-    
+
     //! Returns filtered nodes paths
     //! @param[in] db The db to use for getting the nodes path.
     //! @param[in] filterText The Text to filter nodes by.
     //! @param[in] options Additional options which depend on the implementation of @ref IECPresentationManager.
     ECPRESENTATION_EXPORT folly::Future<bvector<NodesPathElement>> GetFilteredNodesPaths(ECDbCR db, Utf8CP filterText, JsonValueCR options = Json::Value(), PresentationTaskNotificationsContextCR = PresentationTaskNotificationsContext());
-    
+
     //! Mark node with the specified node key as checked.
     ECPRESENTATION_EXPORT folly::Future<folly::Unit> NotifyNodeChecked(ECDbCR, NavNodeKeyCR nodeKey, JsonValueCR extendedOptions = Json::Value(), PresentationTaskNotificationsContextCR = PresentationTaskNotificationsContext());
     //! Mark node with the specified node key as not checked.
@@ -241,22 +241,24 @@ public:
     ECPRESENTATION_EXPORT folly::Future<folly::Unit> NotifyAllNodesCollapsed(ECDbCR, JsonValueCR options = Json::Value(), PresentationTaskNotificationsContextCR = PresentationTaskNotificationsContext());
 /** @} */
 
-/** @name Content  
+/** @name Content
  *  @{ */
     //! Get content classes from the list of supplied input classes.
     //! @param[in] db The db to use for getting the content.
     //! @param[in] preferredDisplayType The display type that the content will be displayed in. See @ref ContentDisplayType.
+    //! @param[in] contentFlags Content flags to use when generating content. If `0` is supplied, default content flags based on `preferredDisplayType` are used.
     //! @param[in] inputClasses Input classes to get content classes for.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT folly::Future<bvector<SelectClassInfo>> GetContentClasses(ECDbCR db, Utf8CP preferredDisplayType, bvector<ECClassCP> const& inputClasses, JsonValueCR extendedOptions = Json::Value(), PresentationTaskNotificationsContextCR = PresentationTaskNotificationsContext());
+    ECPRESENTATION_EXPORT folly::Future<bvector<SelectClassInfo>> GetContentClasses(ECDbCR db, Utf8CP preferredDisplayType, int contentFlags, bvector<ECClassCP> const& inputClasses, JsonValueCR extendedOptions = Json::Value(), PresentationTaskNotificationsContextCR = PresentationTaskNotificationsContext());
 
     //! Get the content descriptor based on the supplied parameters.
     //! @param[in] db The db to use for getting the content.
     //! @param[in] preferredDisplayType The display type that the content will be displayed in. See @ref ContentDisplayType.
+    //! @param[in] contentFlags Content flags to use when generating content. If `0` is supplied, default content flags based on `preferredDisplayType` are used.
     //! @param[in] inputKeys The keys set to get content descriptor for.
     //! @param[in] selectionInfo Info about the selection.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT folly::Future<ContentDescriptorCPtr> GetContentDescriptor(ECDbCR db, Utf8CP preferredDisplayType, KeySetCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR extendedOptions = Json::Value(), PresentationTaskNotificationsContextCR = PresentationTaskNotificationsContext());
+    ECPRESENTATION_EXPORT folly::Future<ContentDescriptorCPtr> GetContentDescriptor(ECDbCR db, Utf8CP preferredDisplayType, int contentFlags, KeySetCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR extendedOptions = Json::Value(), PresentationTaskNotificationsContextCR = PresentationTaskNotificationsContext());
 
     //! Get the content.
     //! @param[in] descriptor The content descriptor which describes what should be included in the content and how
@@ -268,18 +270,18 @@ public:
     //! @param[in] descriptor The content descriptor which describes what should be included in the content and how
     //!            it should be formatted. To get the default descriptor, use @ref GetContentDescriptor.
     ECPRESENTATION_EXPORT folly::Future<size_t> GetContentSetSize(ContentDescriptorCR descriptor, PresentationTaskNotificationsContextCR = PresentationTaskNotificationsContext());
-    
+
     //! Get display label of specific ECInstance
     //! @param[in] db The db to use for getting the label.
     //! @param[in] key Key of ECInstance to get the label for.
     ECPRESENTATION_EXPORT folly::Future<Utf8String> GetDisplayLabel(ECDbCR db, ECInstanceKeyCR key, PresentationTaskNotificationsContextCR = PresentationTaskNotificationsContext());
-    
+
     //! Get aggregated display label of multiple ECInstances
     //! @param[in] db The db to use for getting the label.
     //! @param[in] keys Set of ECInstance keys to get the label for.
     ECPRESENTATION_EXPORT folly::Future<Utf8String> GetDisplayLabel(ECDbCR db, KeySetCR keys, PresentationTaskNotificationsContextCR = PresentationTaskNotificationsContext());
 /** @} */
-    
+
 /** @name Updating
  *  @{ */
     //! Changes an ECInstance(s) value using the specified parameters.
@@ -297,7 +299,7 @@ public:
     //! @param[in] value The value to change to.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
     ECPRESENTATION_EXPORT folly::Future<bvector<ECInstanceChangeResult>> SaveValueChange(ECDbCR db, bvector<ChangedECInstanceInfo> const& instanceInfos, Utf8CP propertyAccessor, ECValueCR value, JsonValueCR extendedOptions = Json::Value(), PresentationTaskNotificationsContextCR = PresentationTaskNotificationsContext());
-    
+
     //! Changes an ECInstance(s) value using the specified parameters.
     //! @param[in] db The db to change the value in.
     //! @param[in] instanceInfo Info about changed instance.

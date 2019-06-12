@@ -6087,7 +6087,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterECInstanceInsert)
     
     // request content
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     
     // expect 1 record
@@ -6128,7 +6128,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterECInstanceUpdate)
     
     // request content
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     
     // expect 1 record
@@ -6168,7 +6168,7 @@ TEST_F(ContentUpdateTests, UpdatesContentAfterECInstanceDeleteWhenMoreInstancesE
 
     // request content
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     
     // expect 2 records
@@ -6209,7 +6209,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterECInstanceDeleteWhenNoMoreInstanc
     
     // request content
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     
     // expect 1 record
@@ -6248,9 +6248,9 @@ TEST_F (ContentUpdateTests, UpdatesAllContentBasedOnOneRulesetButSendsOnlyOneNot
     
     // request content and expect none
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Graphics, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Graphics, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor1.IsNull());
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Grid, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Grid, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor2.IsNull());
 
     // delete the instance
@@ -6258,9 +6258,9 @@ TEST_F (ContentUpdateTests, UpdatesAllContentBasedOnOneRulesetButSendsOnlyOneNot
     m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
 
     // still expect no content
-    descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Graphics, *KeySet::Create(), nullptr, options.GetJson()).get();
+    descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Graphics, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor1.IsNull());
-    descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Grid, *KeySet::Create(), nullptr, options.GetJson()).get();
+    descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Grid, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor2.IsNull());
 
     // expect one full update record
@@ -6291,12 +6291,12 @@ TEST_F (ContentUpdateTests, UpdatesAllContentBasedOnOneRulesetButSendsOnlyOneNot
     // request content
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Graphics, *inputKeys, nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Graphics, 0, *inputKeys, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor1.IsValid());
     ContentCPtr content1 = IECPresentationManager::GetManager().GetContent(*descriptor1, PageOptions()).get();
     ASSERT_EQ(1, content1->GetContentSet().GetSize());
 
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Grid, *inputKeys, nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Grid, 0, *inputKeys, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor2.IsValid());
     ContentCPtr content2 = IECPresentationManager::GetManager().GetContent(*descriptor2, PageOptions()).get();
     ASSERT_EQ(1, content2->GetContentSet().GetSize());
@@ -6307,9 +6307,9 @@ TEST_F (ContentUpdateTests, UpdatesAllContentBasedOnOneRulesetButSendsOnlyOneNot
     inputKeys = KeySet::Create();
 
     // expect no content in both cases
-    descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Graphics, *inputKeys, nullptr, options.GetJson()).get();
+    descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Graphics, 0, *inputKeys, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor1.IsNull());
-    descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Grid, *inputKeys, nullptr, options.GetJson()).get();
+    descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(m_db, ContentDisplayType::Grid, 0, *inputKeys, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor2.IsNull());
 
     // expect one full update record
@@ -6336,7 +6336,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterCategoriesChange)
     
     // request content
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     
     // expect the fields to have supplied category
     bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
@@ -6350,7 +6350,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterCategoriesChange)
     m_manager->NotifyCategoriesChanged();
 
     // expect the fields to have the new supplied category
-    descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     fields = descriptor->GetVisibleFields();
     for (ContentDescriptor::Field const* field : fields)
         {
@@ -6380,7 +6380,7 @@ TEST_F (ContentUpdateTests, InvalidatesWhenUserSettingChanges_UsedInRuleConditio
 
     // request for root nodes
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
         
     // expect the descriptor to be null because no rules applied
     ASSERT_TRUE(descriptor.IsNull());
@@ -6389,7 +6389,7 @@ TEST_F (ContentUpdateTests, InvalidatesWhenUserSettingChanges_UsedInRuleConditio
     m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
     
     // expect 1 content item
-    descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_EQ(1, content->GetContentSet().GetSize());
@@ -6417,7 +6417,7 @@ TEST_F (ContentUpdateTests, InvalidatesWhenUserSettingChanges_UsedInInstanceFilt
 
     // request for root nodes
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     
     // expect 0 records
@@ -6453,7 +6453,7 @@ TEST_F (ContentUpdateTests, DoesNotInvalidateWhenUnusedUserSettingChanges)
 
     // request for root nodes
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(m_db, nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     
     // expect 1 record

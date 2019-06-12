@@ -274,7 +274,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
     // request and verify
     RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId().c_str());
     ECClassCP inputClass = m_connection->GetECDb().Schemas().GetClass("ECDbMeta", "ECClassDef");
-    bvector<SelectClassInfo> contentClasses = m_impl->GetContentClasses(*m_connection, nullptr, {inputClass}, options, *token);
+    bvector<SelectClassInfo> contentClasses = m_impl->GetContentClasses(*m_connection, nullptr, 0, {inputClass}, options, *token);
     EXPECT_TRUE(contentClasses.empty());
     }
 
@@ -295,7 +295,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
 
     // request and verify
     RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*m_connection, nullptr, *KeySet::Create(), nullptr, options, *token);
+    ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*m_connection, nullptr, 0, *KeySet::Create(), nullptr, options, *token);
     EXPECT_TRUE(descriptor.IsNull());
     }
 
@@ -308,7 +308,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
     
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*m_connection, nullptr, *KeySet::Create(), nullptr, options, *token);
+    ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*m_connection, nullptr, 0, *KeySet::Create(), nullptr, options, *token);
         
     // add a ruleset locater which cancels the request
     RefCountedPtr<TestCallbackRulesetLocater> locater = TestCallbackRulesetLocater::Create();
@@ -333,7 +333,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
     
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*m_connection, nullptr, *KeySet::Create(), nullptr, options, *token);
+    ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*m_connection, nullptr, 0, *KeySet::Create(), nullptr, options, *token);
         
     // add a ruleset locater which cancels the request
     RefCountedPtr<TestCallbackRulesetLocater> locater = TestCallbackRulesetLocater::Create();

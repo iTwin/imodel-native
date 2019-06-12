@@ -44,7 +44,7 @@ void ContentProviderTests::SetUp()
     m_customFunctions = new CustomFunctionsInjector(m_connections, *m_connection);
     m_ruleset = PresentationRuleSet::CreateInstance("ContentProviderTests", 1, 0, false, "", "", "", false);
 
-    m_context = ContentProviderContext::Create(*m_ruleset, true, "locale", ContentDisplayType::Undefined, 
+    m_context = ContentProviderContext::Create(*m_ruleset, true, "locale", ContentDisplayType::Undefined, 0,
         *NavNodeKeyListContainer::Create(), m_nodesLocater, m_categorySupplier,
         m_settings, m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, m_nodesFactory, nullptr);
     m_context->SetQueryContext(m_connections, *m_connection, m_statementCache, *m_customFunctions);

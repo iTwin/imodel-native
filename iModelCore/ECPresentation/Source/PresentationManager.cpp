@@ -93,7 +93,7 @@ folly::Future<NavNodeCPtr> IECPresentationManager::GetParent(ECDbCR db, NavNodeC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<bvector<SelectClassInfo>> IECPresentationManager::GetContentClasses(ECDbCR db, Utf8CP preferredDisplayType, bvector<ECClassCP> const& input, JsonValueCR options, PresentationTaskNotificationsContextCR notificationsContext)
+folly::Future<bvector<SelectClassInfo>> IECPresentationManager::GetContentClasses(ECDbCR db, Utf8CP preferredDisplayType, int contentFlags, bvector<ECClassCP> const& input, JsonValueCR options, PresentationTaskNotificationsContextCR notificationsContext)
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
     if (connection.IsNull())
@@ -101,13 +101,13 @@ folly::Future<bvector<SelectClassInfo>> IECPresentationManager::GetContentClasse
         BeAssert(false && "Unknown connection");
         return bvector<SelectClassInfo>();
         }
-    return _GetContentClasses(*connection, preferredDisplayType, input, options, notificationsContext);
+    return _GetContentClasses(*connection, preferredDisplayType, contentFlags, input, options, notificationsContext);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ContentDescriptorCPtr> IECPresentationManager::GetContentDescriptor(ECDbCR db, Utf8CP preferredDisplayType, KeySetCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR options, PresentationTaskNotificationsContextCR notificationsContext)
+folly::Future<ContentDescriptorCPtr> IECPresentationManager::GetContentDescriptor(ECDbCR db, Utf8CP preferredDisplayType, int contentFlags, KeySetCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR options, PresentationTaskNotificationsContextCR notificationsContext)
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
     if (connection.IsNull())
@@ -115,7 +115,7 @@ folly::Future<ContentDescriptorCPtr> IECPresentationManager::GetContentDescripto
         BeAssert(false && "Unknown connection");
         return folly::makeFuture(ContentDescriptorCPtr(nullptr));
         }
-    return _GetContentDescriptor(*connection, preferredDisplayType, inputKeys, selectionInfo, options, notificationsContext);
+    return _GetContentDescriptor(*connection, preferredDisplayType, contentFlags, inputKeys, selectionInfo, options, notificationsContext);
     }
 
 /*---------------------------------------------------------------------------------**//**

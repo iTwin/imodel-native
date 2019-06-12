@@ -47,6 +47,15 @@ public:
 };
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                06/2019
++===============+===============+===============+===============+===============+======*/
+enum class InstanceFilteringResult
+    {
+    Success,         //!< Filter appied successfully
+    NoResults, //!< Returned when it's clear the query will return no results after applying the filter
+    };
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
 struct QueryBuilderHelpers
@@ -67,7 +76,7 @@ public:
     template<typename T> static RefCountedPtr<T> CreateNestedQueryIfNecessary(T& query, bvector<Utf8CP> const& aliases);
     template<typename T> static RefCountedPtr<ComplexPresentationQuery<T>> CreateComplexNestedQueryIfNecessary(T& query, bvector<Utf8CP> const& aliases);
     
-    template<typename T> static void ApplyInstanceFilter(ComplexPresentationQuery<T>&, InstanceFilteringParams const&, RelatedClassPath);
+    template<typename T> static InstanceFilteringResult ApplyInstanceFilter(ComplexPresentationQuery<T>&, InstanceFilteringParams const&, RelatedClassPath);
     
     template<typename T> static bvector<T> SerializeECClassMapPolymorphically(bmap<ECClassCP, bvector<T>> const& map, ECClassCR ecClass)
         {

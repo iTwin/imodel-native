@@ -35,7 +35,7 @@ TEST_F(LocatingClasses, ReturnsEmptyListWhenRulesetIsEmpty)
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, lookup, options.GetJson()).get();
+    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, 0, lookup, options.GetJson()).get();
     EXPECT_EQ(0, result.size());
     }
 
@@ -60,7 +60,7 @@ TEST_F(LocatingClasses, ReturnsLookupListWhenRulesetHasSelectedNodeInstancesRule
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, lookup, options.GetJson()).get();
+    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, 0, lookup, options.GetJson()).get();
     ASSERT_EQ(lookup.size(), result.size());
     for (size_t i = 0; i < lookup.size(); ++i)
         {
@@ -91,7 +91,7 @@ TEST_F(LocatingClasses, ReturnsFilteredLookupListWhenRulesetHasSelectedNodeInsta
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, lookup, options.GetJson()).get();
+    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, 0, lookup, options.GetJson()).get();
     ASSERT_EQ(2, result.size());
 
     EXPECT_EQ(GetClass("A"), &result[0].GetSelectClass());
@@ -123,7 +123,7 @@ TEST_F(LocatingClasses, ReturnsLookupListWhenRulesetHasInstanceNodesOfSpecificCl
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, lookup, options.GetJson()).get();
+    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, 0, lookup, options.GetJson()).get();
     ASSERT_EQ(lookup.size(), result.size());
     for (size_t i = 0; i < lookup.size(); ++i)
         {
@@ -154,7 +154,7 @@ TEST_F(LocatingClasses, ReturnsFilteredListWhenRulesetHasInstanceNodesOfSpecific
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, lookup, options.GetJson()).get();
+    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, 0, lookup, options.GetJson()).get();
     ASSERT_EQ(2, result.size());
 
     EXPECT_EQ(GetClass("A"), &result[0].GetSelectClass());
@@ -194,7 +194,7 @@ TEST_F(LocatingClasses, ReturnsEmptyListWhenRulesetHasContentRelatedInstancesRul
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, lookup, options.GetJson()).get();
+    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, 0, lookup, options.GetJson()).get();
     EXPECT_EQ(0, result.size());
     }
 
@@ -224,7 +224,7 @@ TEST_F(LocatingClasses, SplitsLookupListClassesByClassesUsedInRuleConditionIsOfC
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, lookup, options.GetJson()).get();
+    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, 0, lookup, options.GetJson()).get();
     ASSERT_EQ(1, result.size());
     EXPECT_EQ(GetClass("D"), &result[0].GetSelectClass());
     }
@@ -255,7 +255,7 @@ TEST_F(LocatingClasses, SplitsLookupListClassesByClassesUsedInRuleConditionClass
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, lookup, options.GetJson()).get();
+    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, 0, lookup, options.GetJson()).get();
     ASSERT_EQ(1, result.size());
     EXPECT_EQ(GetClass("D"), &result[0].GetSelectClass());
     }
@@ -287,7 +287,7 @@ TEST_F(LocatingClasses, SplitsLookupListClassesByClassesUsedInContentModifiers)
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, lookup, options.GetJson()).get();
+    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, 0, lookup, options.GetJson()).get();
     ASSERT_EQ(3, result.size());
     EXPECT_EQ(GetClass("A"), &result[0].GetSelectClass());
     EXPECT_EQ(GetClass("C"), &result[1].GetSelectClass());
@@ -344,7 +344,7 @@ TEST_F(LocatingClasses, SplitsLookupListClassesByClassesWhichHaveNavigationPrope
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, lookup, options.GetJson()).get();
+    bvector<SelectClassInfo> result = IECPresentationManager::GetManager().GetContentClasses(s_project->GetECDb(), nullptr, 0, lookup, options.GetJson()).get();
     ASSERT_EQ(2, result.size());
     EXPECT_EQ(GetClass("A"), &result[0].GetSelectClass());
     EXPECT_EQ(GetClass("C"), &result[1].GetSelectClass());

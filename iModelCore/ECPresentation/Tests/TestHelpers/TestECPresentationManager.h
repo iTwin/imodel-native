@@ -73,7 +73,7 @@ private:
     std::function<bool(IConnectionCR, NavNodeCR parentNode, ECInstanceKeyCR childNodeKey, JsonValueCR)> m_hasChildHandler;
     std::function<bvector<NavNodeCPtr>(IConnectionCR, Utf8CP, JsonValueCR)> m_getFilteredNodesPathsHandler;
     std::function<bvector<ECInstanceChangeResult>(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR)> m_saveValueChangeHandler;
-    std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, JsonValueCR)> m_contentDescriptorHandler;
+    std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, JsonValueCR)> m_contentDescriptorHandler;
     std::function<ContentCPtr(ContentDescriptorCR, PageOptionsCR)> m_contentHandler;
     std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> m_onNodeCheckedHandler;
     std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> m_onNodeUncheckedHandler;
@@ -190,14 +190,14 @@ protected:
         }
 
     // Content
-    folly::Future<bvector<SelectClassInfo>> _GetContentClasses(IConnectionCR db, Utf8CP preferredDisplayType, bvector<ECClassCP> const& classes, JsonValueCR options, PresentationTaskNotificationsContextCR) override
+    folly::Future<bvector<SelectClassInfo>> _GetContentClasses(IConnectionCR db, Utf8CP preferredDisplayType, int contentFlags, bvector<ECClassCP> const& classes, JsonValueCR options, PresentationTaskNotificationsContextCR) override
         {
         return bvector<SelectClassInfo>();
         }
-    folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR db, Utf8CP preferredDisplayType, KeySetCR input, SelectionInfo const* selectionInfo, JsonValueCR options, PresentationTaskNotificationsContextCR) override 
+    folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR db, Utf8CP preferredDisplayType, int contentFlags, KeySetCR input, SelectionInfo const* selectionInfo, JsonValueCR options, PresentationTaskNotificationsContextCR) override
         {
         if (nullptr != m_contentDescriptorHandler)
-            return m_contentDescriptorHandler(db, preferredDisplayType, input, selectionInfo, options);
+            return m_contentDescriptorHandler(db, preferredDisplayType, contentFlags, input, selectionInfo, options);
         return ContentDescriptor::Create(db, options, *NavNodeKeyListContainer::Create());
         }
     folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOptions, PresentationTaskNotificationsContextCR) override
@@ -243,7 +243,7 @@ public:
     void SetHasChildHandler(std::function<bool(IConnectionCR, NavNodeCR, ECInstanceKeyCR, JsonValueCR)> handler) {m_hasChildHandler = handler;}
     void SetGetFilteredNodesPathsHandler(std::function<bvector<NavNodeCPtr>(IConnectionCR, Utf8CP, JsonValueCR)> handler) {m_getFilteredNodesPathsHandler = handler;}
     void SetSaveValueChangeHandler(std::function<bvector<ECInstanceChangeResult>(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR)> handler) {m_saveValueChangeHandler = handler;}
-    void SetContentDescriptorHandler(std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, JsonValueCR)> handler){m_contentDescriptorHandler = handler;}
+    void SetContentDescriptorHandler(std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, JsonValueCR)> handler){m_contentDescriptorHandler = handler;}
     void SetContentHandler(std::function<ContentCPtr(ContentDescriptorCR, PageOptionsCR)> handler){m_contentHandler = handler;}
     void SetOnNodeCheckedHandler(std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> handler) {m_onNodeCheckedHandler = handler;}
     void SetOnNodeUncheckedHandler(std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> handler) {m_onNodeUncheckedHandler = handler;}

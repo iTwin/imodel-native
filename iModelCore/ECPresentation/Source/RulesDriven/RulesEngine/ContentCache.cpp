@@ -11,10 +11,10 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentProviderKey::ContentProviderKey(Utf8String connectionId, Utf8String rulesetId, Utf8String displayType, Utf8String locale,
+ContentProviderKey::ContentProviderKey(Utf8String connectionId, Utf8String rulesetId, Utf8String displayType, int contentFlags, Utf8String locale,
     INavNodeKeysContainerCR inputNodeKeys, SelectionInfo const* selectionInfo)
     : m_connectionId(connectionId), m_rulesetId(rulesetId), m_preferredDisplayType(displayType), m_locale(locale),
-    m_inputNodeKeys(&inputNodeKeys), m_selectionInfo(selectionInfo)
+    m_inputNodeKeys(&inputNodeKeys), m_selectionInfo(selectionInfo), m_contentFlags(contentFlags)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -22,7 +22,7 @@ ContentProviderKey::ContentProviderKey(Utf8String connectionId, Utf8String rules
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProviderKey::ContentProviderKey(ContentProviderKey const& other)
     : m_connectionId(other.m_connectionId), m_rulesetId(other.m_rulesetId), m_preferredDisplayType(other.m_preferredDisplayType), 
-    m_locale(other.m_locale), m_inputNodeKeys(other.m_inputNodeKeys), m_selectionInfo(other.m_selectionInfo)
+    m_locale(other.m_locale), m_inputNodeKeys(other.m_inputNodeKeys), m_selectionInfo(other.m_selectionInfo), m_contentFlags(other.m_contentFlags)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -30,7 +30,7 @@ ContentProviderKey::ContentProviderKey(ContentProviderKey const& other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProviderKey::ContentProviderKey(ContentProviderKey&& other)
     : m_connectionId(std::move(other.m_connectionId)), m_rulesetId(std::move(other.m_rulesetId)), m_preferredDisplayType(std::move(other.m_preferredDisplayType)),
-    m_locale(other.m_locale), m_inputNodeKeys(std::move(other.m_inputNodeKeys)), m_selectionInfo(std::move(other.m_selectionInfo))
+    m_locale(other.m_locale), m_inputNodeKeys(std::move(other.m_inputNodeKeys)), m_selectionInfo(std::move(other.m_selectionInfo)), m_contentFlags(other.m_contentFlags)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -41,6 +41,7 @@ ContentProviderKey& ContentProviderKey::operator=(ContentProviderKey const& othe
     m_connectionId = other.m_connectionId;
     m_rulesetId = other.m_rulesetId;
     m_preferredDisplayType = other.m_preferredDisplayType;
+    m_contentFlags = other.m_contentFlags;
     m_locale = other.m_locale;
     m_inputNodeKeys = other.m_inputNodeKeys;
     m_selectionInfo = other.m_selectionInfo;
@@ -55,6 +56,7 @@ ContentProviderKey& ContentProviderKey::operator=(ContentProviderKey&& other)
     m_connectionId = std::move(other.m_connectionId);
     m_rulesetId = std::move(other.m_rulesetId);
     m_preferredDisplayType = std::move(other.m_preferredDisplayType);
+    m_contentFlags = other.m_contentFlags;
     m_locale = std::move(other.m_locale);
     m_inputNodeKeys = std::move(other.m_inputNodeKeys);
     m_selectionInfo = std::move(other.m_selectionInfo);
@@ -82,6 +84,11 @@ bool ContentProviderKey::operator<(ContentProviderKey const& other) const
     if (displayTypeCompareResult < 0)
         return true;
     if (displayTypeCompareResult > 0)
+        return false;
+
+    if (m_contentFlags < other.m_contentFlags)
+        return true;
+    if (m_contentFlags > other.m_contentFlags)
         return false;
 
     int localeCompareResult = m_locale.compare(other.m_locale);

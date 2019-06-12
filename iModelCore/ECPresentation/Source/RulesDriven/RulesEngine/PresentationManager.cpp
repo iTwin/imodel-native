@@ -658,10 +658,11 @@ folly::Future<bool> RulesDrivenECPresentationManager::_HasChild(IConnectionCR pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetContentClasses(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, bvector<ECClassCP> const& classes, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
+folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetContentClasses(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, int contentFlags,
+    bvector<ECClassCP> const& classes, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
     auto promise = CreateCancelablePromise<bvector<SelectClassInfo>>(*m_cancelableTasks, "Content classes", TaskDependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), displayType = (Utf8String)preferredDisplayType, classes, jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), displayType = (Utf8String)preferredDisplayType, contentFlags, classes, jsonOptions]()
         {
         notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
@@ -669,7 +670,7 @@ folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetCo
 
         ContentOptions options(jsonOptions);
         IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        bvector<SelectClassInfo> contentClasses = m_impl->GetContentClasses(*connection, displayType.c_str(), classes, options, promise->GetCancelationToken());
+        bvector<SelectClassInfo> contentClasses = m_impl->GetContentClasses(*connection, displayType.c_str(), contentFlags, classes, options, promise->GetCancelationToken());
         promise->SetValue(contentClasses);
         });
 
@@ -679,14 +680,15 @@ folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetCo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetContentDescriptor(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, KeySetCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
+folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetContentDescriptor(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, int contentFlags, 
+    KeySetCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
     if (selectionInfo)
         m_cancelableTasks->CancelSelectionDependants(primaryConnection, preferredDisplayType, *selectionInfo);
 
     TaskDependencies dependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId(), preferredDisplayType, selectionInfo);
     auto promise = CreateCancelablePromise<ContentDescriptorCPtr>(*m_cancelableTasks, "Content descriptor", dependencies);
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), displayType = Utf8String(preferredDisplayType), input = KeySetCPtr(&inputKeys), selectionInfo = SelectionInfoCPtr(selectionInfo), jsonOptions]()
+    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), displayType = Utf8String(preferredDisplayType), contentFlags, input = KeySetCPtr(&inputKeys), selectionInfo = SelectionInfoCPtr(selectionInfo), jsonOptions]()
         {
         notificationsContext.OnTaskStart();
         if (promise->IsCanceled())
@@ -694,7 +696,7 @@ folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetConte
 
         ContentOptions options(jsonOptions);
         IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*connection, displayType.c_str(), *input, selectionInfo.get(), options, promise->GetCancelationToken());
+        ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*connection, displayType.c_str(), contentFlags, *input, selectionInfo.get(), options, promise->GetCancelationToken());
         promise->SetValue(descriptor);
         });
 

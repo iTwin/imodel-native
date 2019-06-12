@@ -19,10 +19,10 @@ struct ContentProviderContext : RulesDrivenProviderContext
 private:
     // General
     Utf8String m_preferredDisplayType;
+    int m_contentFlags;
     INavNodeLocaterCR m_nodesLocater;
     IPropertyCategorySupplierR m_categorySupplier;
     bool m_isNestedContent;
-    bool m_createFields;
     INavNodeKeysContainerCPtr m_inputNodeKeys;
 
     // Selection info context
@@ -34,24 +34,25 @@ private:
 
 private:
     void Init();
-    ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, bool, Utf8String, Utf8String, INavNodeKeysContainerCR, INavNodeLocaterCR, IPropertyCategorySupplierR, IUserSettings const&, 
+    ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, bool, Utf8String, Utf8String, int, INavNodeKeysContainerCR, INavNodeLocaterCR, IPropertyCategorySupplierR, IUserSettings const&, 
         ECExpressionsCache&, RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT ContentProviderContext(ContentProviderContextCR other);
     
 public:
-    static ContentProviderContextPtr Create(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String locale, Utf8String preferredDisplayType, INavNodeKeysContainerCR inputKeys, 
+    static ContentProviderContextPtr Create(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String locale, Utf8String preferredDisplayType, int contentFlags, INavNodeKeysContainerCR inputKeys, 
         INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier, IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache, 
         RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, 
         JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
         {
-        return new ContentProviderContext(ruleset, holdRuleset, locale, preferredDisplayType, inputKeys, nodesLocater, categorySupplier, settings, ecexpressionsCache, 
-            relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState);
+        return new ContentProviderContext(ruleset, holdRuleset, locale, preferredDisplayType, contentFlags, inputKeys, nodesLocater, 
+            categorySupplier, settings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState);
         }
     static ContentProviderContextPtr Create(ContentProviderContextCR other) {return new ContentProviderContext(other);}
     ~ContentProviderContext();
 
     // General
     Utf8StringCR GetPreferredDisplayType() const {return m_preferredDisplayType;}
+    int GetContentFlags() const {return m_contentFlags;}
     INavNodeLocaterCR GetNodesLocater() const {return m_nodesLocater;}
     IPropertyCategorySupplierR GetCategorySupplier() const {return m_categorySupplier;}
     bool IsNestedContent() const {return m_isNestedContent;}
