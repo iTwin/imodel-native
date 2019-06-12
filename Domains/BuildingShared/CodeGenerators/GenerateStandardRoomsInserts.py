@@ -20,8 +20,6 @@ fileTemplate = '''/*------------------------------------------------------------
 |
 |  {dollarSign}Source: Domain/GeneratedInserts/{generatedFileName} {dollarSign}
 |
-|  {dollarSign}Copyright: (c) {currentYear} Bentley Systems, Incorporated. All rights reserved. {dollarSign}
-|
 +--------------------------------------------------------------------------------------*/
 //===========================================================================================
 // WARNING: This is an automatically generated code for building classification inserts 
