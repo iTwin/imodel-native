@@ -45,6 +45,7 @@ public:
         Utf8StringCR accessToken,
         BeVersionCR version,
         Utf8StringCR projectId,
+        int productId,
         Utf8StringCR deviceId,
         UsageType usageType,
         Utf8StringCR correlationId
@@ -54,6 +55,7 @@ public:
         (
         Utf8StringCR accessToken,
         FeatureEvent featureEvent,
+        int productId,
         Utf8StringCR deviceId,
         UsageType usageType,
         Utf8StringCR correlationId

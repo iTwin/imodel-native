@@ -36,9 +36,15 @@ SaasClientImpl::SaasClientImpl
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Jason.Wichert           3/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId)
+folly::Future<BentleyStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId, int productId, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId)
     {
     LOG.debug("UlasProvider::RealtimeTrackUsage");
+
+    // override system product id if it is specified here
+    if (productId != -1)
+        {
+        m_productId = productId;
+        }
 
     // override system device id if it is specified here
     if (!deviceId.empty())
@@ -52,9 +58,15 @@ folly::Future<BentleyStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Jason.Wichert            3/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> SaasClientImpl::MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId)
+folly::Future<BentleyStatus> SaasClientImpl::MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, int productId, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId)
     {
     LOG.debug("SaasClientImpl::MarkFeature");
+
+    // override system product id if it is specified here
+    if (productId != -1)
+        {
+        m_productId = productId;
+        }
 
     // override system device id if it is specified here
     if (!deviceId.empty())

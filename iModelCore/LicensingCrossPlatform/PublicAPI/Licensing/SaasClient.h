@@ -54,10 +54,11 @@ public:
     //! @param[in] usageType optional - specify the usage type for this usage
     //! @param[in] correlationId optional - specify the correlationId for this usage, must be a GUID
     LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage
-        (
+    (
         Utf8StringCR accessToken,
         BeVersionCR version,
         Utf8StringCR projectId,
+        int productId = -1,
         Utf8StringCR deviceId = "",
         UsageType usageType = UsageType::Production,
         Utf8StringCR correlationId = ""
@@ -73,6 +74,7 @@ public:
         (
         Utf8StringCR accessToken,
         FeatureEvent featureEvent,
+        int productId = -1,
         Utf8StringCR deviceId = "",
         UsageType usageType = UsageType::Production,
         Utf8StringCR correlationId = ""
