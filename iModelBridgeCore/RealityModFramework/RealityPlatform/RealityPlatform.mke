@@ -57,9 +57,6 @@ $(o)SpatioTemporalData$(oext) : $(baseDir)SpatioTemporalData.cpp $(PublicApiDir)
 
 $(o)RealityDataObjects$(oext) : $(baseDir)RealityDataObjects.cpp $(PublicApiDir)RealityDataObjects.h ${MultiCompileDepends}
 
-$(o)md5$(oext) : $(baseDir)md5.cpp $(PublicApiDir)md5.h ${MultiCompileDepends}
-
-
 %include MultiCppCompileGo.mki
 
 #----------------------------------------------------------------------
