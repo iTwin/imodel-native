@@ -11,14 +11,14 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Aidas.Vaiksnoras                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct CheckBoxRuleTests : PresentationRulesTests
+struct CheckBoxPresRuleTests : PresentationRulesTests
     {
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CheckBoxRuleTests, LoadsFromJson)
+TEST_F(CheckBoxPresRuleTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
         "ruleType": "CheckBox",
@@ -41,7 +41,7 @@ TEST_F(CheckBoxRuleTests, LoadsFromJson)
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CheckBoxRuleTests, LoadsFromJsonWhenIsEnabledIsBoolean)
+TEST_F(CheckBoxPresRuleTests, LoadsFromJsonWhenIsEnabledIsBoolean)
     {
     static Utf8CP jsonString = R"({
         "ruleType": "CheckBox",
@@ -60,7 +60,7 @@ TEST_F(CheckBoxRuleTests, LoadsFromJsonWhenIsEnabledIsBoolean)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CheckBoxRuleTests, WriteToJson)
+TEST_F(CheckBoxPresRuleTests, WriteToJson)
     {
     CheckBoxRule rule("cond", 123, true, "prop", true, true, "a = b");
     Json::Value json = rule.WriteJson();
@@ -80,7 +80,7 @@ TEST_F(CheckBoxRuleTests, WriteToJson)
 /*---------------------------------------------------------------------------------**//**
 * @betest                                   Aidas.Kilinskas                		04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CheckBoxRuleTests, LoadsFromXmlJsonDefaultValues)
+TEST_F(CheckBoxPresRuleTests, LoadsFromXmlJsonDefaultValues)
     {
     static Utf8CP jsonString = R"({
         "ruleType": "CheckBox"
@@ -99,7 +99,7 @@ TEST_F(CheckBoxRuleTests, LoadsFromXmlJsonDefaultValues)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Aidas.Vaiksnoras                08/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(CheckBoxRuleTests, LoadsFromXml)
+TEST_F(CheckBoxPresRuleTests, LoadsFromXml)
     {
    static Utf8CP xmlString = R"(
         <CheckBoxRule PropertyName="checkBoxProperty" UseInversedPropertyValue="false" 
@@ -120,7 +120,7 @@ TEST_F(CheckBoxRuleTests, LoadsFromXml)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Aidas.Vaiksnoras                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CheckBoxRuleTests, LoadsFromXmlWithDefaultValues)
+TEST_F(CheckBoxPresRuleTests, LoadsFromXmlWithDefaultValues)
     {
    static Utf8CP xmlString = "<CheckBoxRule/>";
     BeXmlStatus xmlStatus;
@@ -138,7 +138,7 @@ TEST_F(CheckBoxRuleTests, LoadsFromXmlWithDefaultValues)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Aidas.Vaiksnoras                08/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(CheckBoxRuleTests, WriteToXml)
+TEST_F(CheckBoxPresRuleTests, WriteToXml)
     {
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
