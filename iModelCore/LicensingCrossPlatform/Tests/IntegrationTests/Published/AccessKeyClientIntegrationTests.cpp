@@ -47,9 +47,7 @@ BeFileName AccessKeyClientIntegrationTests::GetLicensingDbPathIntegration() cons
     BeTest::GetHost().GetTempDir(path);
     path.AppendToPath(L"License.db");
 
-    BeFileName hardCodedPath("c:\\dev\\License.db");
-
-    return hardCodedPath;
+    return path;
     }
 
 /*--------------------------------------------------------------------------------------+
