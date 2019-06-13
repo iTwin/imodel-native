@@ -223,9 +223,12 @@ public:
     struct CachedEntry
         {
         ColorDef            color;
+        RenderMaterialId    materialId;
         DgnTextureId        textureId;
+        DgnSubCategoryId    subCategoryId;
         ExportGraphicsMesh  mesh; 
-        CachedEntry(ColorDef c, DgnTextureId id) : color(c), textureId(id) { }
+        CachedEntry(ColorDef c, RenderMaterialId matId, DgnTextureId texId, DgnSubCategoryId subCat)
+            : color(c), materialId(matId), textureId(texId), subCategoryId(subCat)  { }
         };
     bvector<CachedEntry>            m_cachedEntries;
     bool                            m_gotBadPolyface;
@@ -247,40 +250,51 @@ private:
     UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
     UnhandledPreference _GetUnhandledPreference(Render::TriMeshArgsCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
 
+    struct MeshDisplayProps
+    {
+        ColorDef                        color;
+        RenderMaterialId                materialId;
+        // Usually no pattern map, but empty Json::Value constructor shows up in profile if instantiated
+        // for display props lookup. Hide behind unique_ptr to only construct if needed.
+        std::unique_ptr<Json::Value>    patternMap;
+        DgnSubCategoryId                subCategoryId;
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Matt.Gooding    02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<Json::Value> ResolveColorAndMaterial(SimplifyGraphic& sg, ColorDef& outColor)
+void ResolveMeshDisplayProps(SimplifyGraphic& sg, MeshDisplayProps& result)
     {
+    result.subCategoryId = sg.GetCurrentGeometryParams().GetSubCategoryId();
+
     // Resolved fill color as baseline
-    outColor = sg.GetCurrentGraphicParams().GetFillColor();
+    result.color = sg.GetCurrentGraphicParams().GetFillColor();
 
     // GraphicParams material pointer will always be null since we don't have a Render::System.
     // Look up from ID on GeometryParams instead.
-    RenderMaterialId materialId = sg.GetCurrentGeometryParams().GetMaterialId();
-    if (!materialId.IsValid()) return nullptr;
+    result.materialId = sg.GetCurrentGeometryParams().GetMaterialId();
+    if (!result.materialId.IsValid()) return;
 
-    RenderMaterialCPtr matElem = RenderMaterial::Get(m_db, materialId);
-    if (!matElem.IsValid()) return nullptr;
+    RenderMaterialCPtr matElem = RenderMaterial::Get(m_db, result.materialId);
+    if (!matElem.IsValid()) { result.materialId.Invalidate(); return; } // don't return invalid ID
 
     RenderingAssetCR asset = matElem->GetRenderingAsset();
     if (asset.GetBool(RENDER_MATERIAL_FlagHasBaseColor, false))
         {
         RgbFactor diffuseRgb = asset.GetColor(RENDER_MATERIAL_Color);
-        outColor.SetRed((Byte)(diffuseRgb.red * 255.0));
-        outColor.SetGreen((Byte)(diffuseRgb.green * 255.0));
-        outColor.SetBlue((Byte)(diffuseRgb.blue * 255.0));
+        result.color.SetRed((Byte)(diffuseRgb.red * 255.0));
+        result.color.SetGreen((Byte)(diffuseRgb.green * 255.0));
+        result.color.SetBlue((Byte)(diffuseRgb.blue * 255.0));
         }
     if (asset.GetBool(RENDER_MATERIAL_FlagHasTransmit, false))
         {
         double transparency = asset.GetDouble(RENDER_MATERIAL_Transmit, 0.0);
-        outColor.SetAlpha((Byte)(transparency * 255.0));
+        result.color.SetAlpha((Byte)(transparency * 255.0));
         }
 
     auto patternMap = asset.GetPatternMap();
-    if (!patternMap.IsValid()) return nullptr;
-
-    return std::unique_ptr<Json::Value>(new Json::Value(patternMap.m_value));
+    if (patternMap.IsValid())
+        result.patternMap = std::unique_ptr<Json::Value>(new Json::Value(patternMap.m_value));
     }
 
 bool VerifyTriangulationAndZeroBlocking(PolyfaceQueryCR pfQuery)
@@ -291,7 +305,6 @@ bool VerifyTriangulationAndZeroBlocking(PolyfaceQueryCR pfQuery)
         for (uint32_t j = 0; j < 3; ++j) { if (indices[i + j] == 0) { return false; } }
         if (indices[i + 3] != 0) { return false; }
         }
-
     return true;
     }
 
@@ -309,8 +322,8 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
     if (pfQuery.GetMeshStyle() != MESH_ELM_STYLE_INDEXED_FACE_LOOPS) { m_gotBadPolyface = true; return true; }
     if (!VerifyTriangulationAndZeroBlocking(pfQuery)) { m_gotBadPolyface = true; return true; }
 
-    ColorDef color;
-    std::unique_ptr<Json::Value> patternMapJson = ResolveColorAndMaterial(sg, color);
+    MeshDisplayProps displayProps;
+    ResolveMeshDisplayProps(sg, displayProps);
 
     uint32_t indexCount = (uint32_t)pfQuery.GetPointIndexCount();
     uint32_t indexCountWithoutBlocking = indexCount - (indexCount / 4);
@@ -320,7 +333,7 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
     bool isMirrored = localToWorld.Determinant() < 0;
 
     DgnTextureId textureId;
-    if (!patternMapJson.get())
+    if (!displayProps.patternMap.get())
         {
         int computedParamCount = 0;
         int32_t const* srcParamIndices = pfQuery.GetParamIndexCP();
@@ -340,7 +353,7 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
         }
     else
         {
-        RenderingAsset::TextureMap textureMap(*patternMapJson.get(), RenderingAsset::TextureMap::Type::Pattern);
+        RenderingAsset::TextureMap textureMap(*displayProps.patternMap.get(), RenderingAsset::TextureMap::Type::Pattern);
         Render::TextureMapping::Params textureMapParams = textureMap.GetTextureMapParams();
         textureId = textureMap.GetTextureId();
 
@@ -360,18 +373,22 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
             }
         }
 
-    // Bucket polyfaces together by color to save cost on NAPI transition and give users a
+    // Bucket polyfaces together by shared display props to save cost on NAPI transition and give users a
     // minimal number of meshes for each element.
     ExportGraphicsMesh* exportMesh = nullptr;
     for (auto& entry : m_cachedEntries)
         {
-        if (entry.color != color || entry.textureId != textureId) continue;
+        if (entry.color != displayProps.color ||
+            entry.materialId != displayProps.materialId ||
+            entry.textureId != textureId ||
+            entry.subCategoryId != displayProps.subCategoryId)
+            continue;
         exportMesh = &entry.mesh;
         break;
         }
     if (exportMesh == nullptr)
         {
-        m_cachedEntries.emplace_back(color, textureId);
+        m_cachedEntries.emplace_back(displayProps.color, displayProps.materialId, textureId, displayProps.subCategoryId);
         exportMesh = &m_cachedEntries.back().mesh;
         }
 
@@ -547,6 +564,7 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
 
     // TS API specifies that modifying the binding of this function in the callback will be ignored
     Napi::Function onGraphicsCb = exportProps.Get("onGraphics").As<Napi::Function>();
+    Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
 
     for (uint32_t i = 0; i < (uint32_t)jobHandles.size(); ++i)
         {
@@ -565,10 +583,19 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
             cbArgument.Set("elementId", job->m_elementId);
             cbArgument.Set("mesh", convertMesh(Env(), entry.mesh));
             cbArgument.Set("color", Napi::Number::New(Env(), entry.color.GetValue()));
+
+            entry.subCategoryId.ToString(idStrBuffer, BeInt64Id::UseHex::Yes);
+            cbArgument.Set("subCategory", Napi::String::New(Env(), idStrBuffer));
+
+            if (entry.materialId.IsValid())
+                {
+                entry.materialId.ToString(idStrBuffer, BeInt64Id::UseHex::Yes);
+                cbArgument.Set("materialId", Napi::String::New(Env(), idStrBuffer));
+                }
             if (entry.textureId.IsValid())
                 {
-                Utf8String textureIdString = entry.textureId.ToString(BeInt64Id::UseHex::Yes);
-                cbArgument.Set("textureId", Napi::String::New(Env(), textureIdString.c_str()));
+                entry.textureId.ToString(idStrBuffer, BeInt64Id::UseHex::Yes);
+                cbArgument.Set("textureId", Napi::String::New(Env(), idStrBuffer));
                 }
             onGraphicsCb.Call({ cbArgument });
             }
