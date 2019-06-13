@@ -339,10 +339,7 @@ uint32_t ClassLayout::ComputeCheckSum () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t        ClassLayout::GetChecksum () const
     {
-    if (0 == m_checkSum)
-        m_checkSum = ComputeCheckSum ();
-
-    return  m_checkSum;
+    return m_checkSum.Get([&]() { return ComputeCheckSum(); });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -351,7 +348,7 @@ uint32_t        ClassLayout::GetChecksum () const
 void ClassLayout::SetPropertyLayoutModifierData (PropertyLayoutCR layout, uint32_t data)
     {
     const_cast<PropertyLayoutR>(layout).m_modifierData = data;
-    m_checkSum = 0;
+    m_checkSum.Invalidate();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -368,13 +365,9 @@ bool            ClassLayout::Equals (ClassLayoutCR other, bool compareNames) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayout::ClassLayout()
-    :
-    m_sizeOfFixedSection(0), 
-    m_isRelationshipClass(false), m_propertyIndexOfSourceECPointer(-1), m_propertyIndexOfTargetECPointer(-1)
+ClassLayout::ClassLayout() : m_sizeOfFixedSection(0), m_isRelationshipClass(false), m_propertyIndexOfSourceECPointer(-1), m_propertyIndexOfTargetECPointer(-1)
     {
     m_uniqueId = randomValue();
-    m_checkSum = 0;
     };
     
 /*---------------------------------------------------------------------------------**//**
@@ -916,7 +909,7 @@ ClassLayoutPtr    ClassLayout::Factory::DoBuildClassLayout ()
         }
 
     m_underConstruction->FinishLayout ();
-    m_underConstruction->m_checkSum = m_underConstruction->ComputeCheckSum ();
+    m_underConstruction->GetChecksum();
 
     return m_underConstruction;
     }

@@ -1299,7 +1299,7 @@ friend struct SchemaJsonWriter; // needed for the ToJson() method
 
 private:
     ECSchemaCR m_schema;
-    mutable Utf8String m_fullName;
+    CachedSchemaQualifiedName m_fullName;
     ECValidatedName m_validatedName;
     PrimitiveType m_primitiveType;
     Utf8String m_description;
@@ -1404,7 +1404,7 @@ friend struct SchemaJsonWriter; // needed for the ToJson() method
 typedef bvector<bpair<ECUnitCP, Nullable<Utf8String>>> UnitAndLabelPairs;
 private:
     ECSchemaCR m_schema;
-    mutable Utf8String m_fullName; //cached nsprefix:name representation
+    CachedSchemaQualifiedName m_fullName; //cached nsprefix:name representation
     ECValidatedName m_validatedName; //wraps name and displaylabel
     Utf8String m_description;
     mutable bpair<Utf8String, bvector<Utf8String>> m_descriptorCache;
@@ -1595,7 +1595,7 @@ private:
     ECSchemaCR m_schema;
 
     mutable PropertyCategoryId m_propertyCategoryId;
-    mutable Utf8String m_fullName;
+    CachedSchemaQualifiedName m_fullName;
 
     PropertyCategory(ECSchemaCR schema) : m_schema(schema), m_priority(0) {};
     ~PropertyCategory() {};
@@ -1685,8 +1685,8 @@ friend struct ECSchemaConverter;
 
 private:
     const ECClassType               m_classType;
-    mutable Utf8String              m_fullName;
-    mutable Utf8String              m_ecsqlName;
+    CachedSchemaQualifiedName m_fullName;
+    CachedUtf8String        m_ecsqlName;
     Utf8String                      m_description;
     ECValidatedName                 m_validatedName;
     mutable ECClassId               m_ecClassId;
@@ -1697,9 +1697,8 @@ private:
 
     PropertyMap                     m_propertyMap;
     PropertyList                    m_propertyList;
-    mutable bool                    m_propertyCountCached;
-    mutable uint16_t                m_propertyCount;
-    mutable StandaloneECEnablerPtr  m_defaultStandaloneEnabler;
+    CachedValue<uint16_t>   m_propertyCount;
+    CachedValue<StandaloneECEnablerPtr> m_defaultStandaloneEnabler;
     bvector<Utf8String> m_xmlComments;
     bmap<Utf8String, bvector<Utf8String>> m_contentXmlComments;
     bmap<int, bvector<Utf8String>> m_customAttributeXmlComments;

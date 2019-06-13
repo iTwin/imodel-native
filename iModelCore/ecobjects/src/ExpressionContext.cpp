@@ -743,6 +743,34 @@ static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t
         else
             return GetInstanceValue (evalResult, index, primaryList, contextsStack, *arrayVal.GetStruct());
         }
+    else if (TOKEN_Dot == nextOperation && currentProperty->GetIsNavigation())
+        {
+        NodeCP node = primaryList.GetOperatorNode(index);
+        nextOperation = primaryList.GetOperation(++index);
+        if (TOKEN_None != nextOperation || nullptr == dynamic_cast<IdentNodeCP>(node))
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "GetInstanceValue: UnknownError. Can only access 'id' value of navigation properties.");
+            return ExpressionStatus::UnknownMember;
+            }
+        IdentNodeCP identNode = static_cast<IdentNodeCP>(node);
+        if (0 != BeStringUtilities::Stricmp("id", identNode->GetName()))
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "GetInstanceValue: UnknownError. Can only access 'id' value of navigation properties.");
+            return ExpressionStatus::UnknownMember;
+            }
+        ECValue v;
+        ECObjectsStatus evalStatus;
+        if (ECObjectsStatus::Success != (evalStatus = instance.GetValue(v, accessString.c_str())))
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("GetInstanceValue: UnknownError. Failed to get value of property '%s' with status %d", accessString.c_str(), evalStatus).c_str());
+            return ExpressionStatus::UnknownError;
+            }
+        if (v.IsNull())
+            evalResult.InitECValue().SetIsNull(true);
+        else
+            evalResult = ECValue(v.GetNavigationInfo().GetId<BeInt64Id>().GetValue());
+        return ExpressionStatus::Success;
+        }
     else if (TOKEN_Dot == nextOperation || TOKEN_LParen == nextOperation)
         {
         // we get here if we find a dot following something that is not a struct. e.g., 'someArray.Count', 'someArray.Any (x => x < 5)', etc.

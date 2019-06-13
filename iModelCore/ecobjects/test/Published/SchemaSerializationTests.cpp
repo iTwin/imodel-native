@@ -595,6 +595,42 @@ TEST_F(SchemaXmlSerializationTest, ExpectCustomAttributeVersionAsTwoPartWhenEC2)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                              Eimantas.Morkunas     05/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaXmlSerializationTest, ArrayPropertyMinAndMaxOccursSerializesCorrectly)
+    {
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+
+    ECEntityClassP ecClass;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(ecClass, "TestClass"));
+
+    PrimitiveArrayECPropertyP arrayProperty;
+    ASSERT_EQ(ECObjectsStatus::Success, ecClass->CreatePrimitiveArrayProperty(arrayProperty, "TestArrayProperty"));
+
+    arrayProperty->SetMinOccurs(2);
+    arrayProperty->SetMaxOccurs(4);
+
+    Utf8String serializedSchema;
+    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchema));
+
+    ECSchemaPtr deserializedSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(deserializedSchema, serializedSchema.c_str(), *ECSchemaReadContext::CreateContext()));
+
+    ECClassCP deserializedClass = deserializedSchema->GetClassCP("TestClass");
+    ASSERT_TRUE(nullptr != deserializedClass);
+
+    ECPropertyCP deserializedProperty = deserializedClass->GetPropertyP("TestArrayProperty");
+    ASSERT_TRUE(nullptr != deserializedProperty);
+
+    ArrayECPropertyCP deserializedArrayProperty = deserializedProperty->GetAsArrayProperty();
+    ASSERT_TRUE(nullptr != deserializedArrayProperty);
+
+    EXPECT_EQ(2, deserializedArrayProperty->GetMinOccurs());
+    EXPECT_EQ(4, deserializedArrayProperty->GetStoredMaxOccurs());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                           Victor.Cushman                          11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaJsonSerializationTest, SchemaWithNoItems)

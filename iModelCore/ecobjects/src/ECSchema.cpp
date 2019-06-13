@@ -607,6 +607,18 @@ bool ECSchema::Validate(bool resolveIssues)
             isValid = false;
         }
 
+    // Workaround:  This evaluate makes sure that each UnitSymbol is evaluated immediately after deserialization happens.  Otherwise, it could happen whenever
+    // a call to do a conversion happens.  This could lead to a threading issue...
+    for (auto const& unit : GetUnits())
+        {
+        unit->Evaluate();
+        }
+
+    for (auto const& phen : GetPhenomena())
+        {
+        phen->Evaluate();
+        }
+
     if (OriginalECXmlVersionLessThan(ECVersion::V3_1) && resolveIssues && ECClass::SchemaAllowsOverridingArrays(this))
         {
         for (ECClassP ecClass : GetClasses())
@@ -3996,6 +4008,16 @@ bool SchemaNameClassNamePair::Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaR
         }
 
     return remapped;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BeMutex& ECObjectsMutexHolder::GetECObjectsMutex()
+    {
+    // Yes, this is thread-safe since C++11
+    static BeMutex s_mutex;
+    return s_mutex;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

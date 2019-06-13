@@ -203,8 +203,10 @@ struct InstanceExpressionTests : ExpressionTests
     {
 protected:
     ECSchemaPtr         m_schema;
+    uint64_t m_instanceIdCounter;
 public:
-    virtual Utf8String     GetTestSchemaXMLString () = 0;
+    InstanceExpressionTests() : m_instanceIdCounter(0) {}
+    virtual Utf8String     GetTestSchemaXMLString() = 0;
 
     ECSchemaR           GetSchema()
         {
@@ -219,7 +221,10 @@ public:
         }
     IECInstancePtr      CreateInstance (Utf8CP classname)
         {
-        return CreateInstance (classname, GetSchema());
+        IECInstancePtr instance = CreateInstance(classname, GetSchema());
+        if (instance.IsValid())
+            instance->SetInstanceId(BeInt64Id(++m_instanceIdCounter).ToString().c_str());
+        return instance;
         }
     static IECInstancePtr CreateInstance (Utf8CP classname, ECSchemaCR schema)
         {
@@ -238,28 +243,49 @@ public:
         {
         return
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-            "    <ECClass typeName=\"ClassA\" displayLabel=\"Class A\" isDomainClass=\"True\">"
+            "<ECSchema schemaName=\"TestSchema\" alias=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
+            "    <ECEntityClass typeName=\"ClassA\">"
             "        <ECProperty propertyName=\"d\" typeName=\"double\" />"
             "        <ECProperty propertyName=\"s\" typeName=\"string\" />"
-            "    </ECClass>"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName=\"ClassB\">"
+            "        <ECNavigationProperty propertyName=\"n\" relationshipName=\"ClassBPointsToClassA\" direction=\"Backward\" />"
+            "    </ECEntityClass>"
+            "    <ECRelationshipClass typeName=\"ClassBPointsToClassA\" strength=\"referencing\" strengthDirection=\"forward\" modifier=\"None\">"
+            "        <Source multiplicity=\"(0..1)\" polymorphic=\"False\" roleLabel=\"Class A\">"
+            "            <Class class=\"ClassA\" />"
+            "        </Source>"
+            "        <Target multiplicity=\"(0..*)\" polymorphic=\"False\" roleLabel=\"Class B\">"
+            "            <Class class=\"ClassB\" />"
+            "        </Target>"
+            "    </ECRelationshipClass>"
             "</ECSchema>";
         }
 
-    IECInstancePtr  CreateInstance (double d)
+    IECInstancePtr CreateInstanceA(double d)
         {
         auto instance = InstanceExpressionTests::CreateInstance ("ClassA");
         instance->SetValue ("d", ECValue (d));
         return instance;
         }
 
-    IECInstancePtr  CreateInstance (Utf8String& s)
+    IECInstancePtr CreateInstanceA(Utf8String& s)
         {
         auto instance = InstanceExpressionTests::CreateInstance ("ClassA");
         instance->SetValue ("s", ECValue (s.c_str()));
         return instance;
         }
 
+    IECInstancePtr CreateInstanceB(IECInstanceP instanceA = nullptr)
+        {
+        auto instance = InstanceExpressionTests::CreateInstance("ClassB");
+        if (instanceA)
+            {
+            ECRelationshipClassCP rel = GetSchema().GetClassCP("ClassBPointsToClassA")->GetRelationshipClassCP();
+            instance->SetValue("n", ECValue(BeInt64Id::FromString(instanceA->GetInstanceId().c_str()), rel));
+            }
+        return instance;
+        }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -268,7 +294,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LiteralExpressionTests, FloatComparisons)
     {
-    auto instance = CreateInstance (12.000000000001);
+    auto instance = CreateInstanceA(12.000000000001);
     TestExpressionEquals (*instance, "this.d = 12", ECValue (true));
     TestExpressionEquals (*instance, "this.d >= 12", ECValue (true));
     TestExpressionEquals (*instance, "this.d <= 12", ECValue (true));
@@ -276,13 +302,30 @@ TEST_F (LiteralExpressionTests, FloatComparisons)
     TestExpressionEquals (*instance, "this.d > 12", ECValue (false));
     TestExpressionEquals (*instance, "this.d < 12", ECValue (false));
 
-    instance = CreateInstance (12.1);
+    instance = CreateInstanceA(12.1);
     TestExpressionEquals (*instance, "this.d = 12", ECValue (false));
     TestExpressionEquals (*instance, "this.d >= 12", ECValue (true));
     TestExpressionEquals (*instance, "this.d <= 12", ECValue (false));
     TestExpressionEquals (*instance, "this.d <> 12", ECValue (true));
     TestExpressionEquals (*instance, "this.d > 12", ECValue (true));
     TestExpressionEquals (*instance, "this.d < 12", ECValue (false));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LiteralExpressionTests, NavigationProperties)
+    {
+    auto a = CreateInstanceA(0);
+    auto b1 = CreateInstanceB();
+    auto b2 = CreateInstanceB(a.get());
+
+    EvaluationResult result;
+    EXPECT_EQ(ExpressionStatus::UnknownError, EvaluateExpression(result, "this.n", *b1));
+    EXPECT_EQ(ExpressionStatus::UnknownMember, EvaluateExpression(result, "this.n.test", *b1));
+    EXPECT_EQ(ExpressionStatus::UnknownMember, EvaluateExpression(result, "this.n.id.test", *b1));
+    TestExpressionEquals(*b1, "this.n.Id", ECValue());
+    TestExpressionEquals(*b2, "this.n.Id", ECValue(BeInt64Id::FromString(a->GetInstanceId().c_str()).GetValue()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -433,7 +476,7 @@ TEST_F (LiteralExpressionTests, MiscSymbols)
     TestExpressionEquals(requiredSymbolSets, "System.Path.Combine (\"c:\\dir\", \"subdir\\\", \"filename.ext\")", ECValue("c:" TEST_PATH_SEP "dir" TEST_PATH_SEP "subdir" TEST_PATH_SEP "filename.ext"));
 
     Utf8String fileName(L"c:\\dir\\subdir\\filename.ext");
-    auto instance = CreateInstance(fileName);       // set "s" property
+    auto instance = CreateInstanceA(fileName);       // set "s" property
     TestExpressionEquals(requiredSymbolSets, "System.Path.GetDirectoryName(this.s)", ECValue("c:" TEST_PATH_SEP "dir" TEST_PATH_SEP "subdir"), instance.get());
     TestExpressionEquals(requiredSymbolSets, "System.Path.GetExtension(this.s)", ECValue(".ext"), instance.get());
     TestExpressionEquals(requiredSymbolSets, "System.Path.GetFileNameWithoutExtension(this.s)", ECValue("filename"), instance.get());
@@ -451,7 +494,7 @@ TEST_F (LiteralExpressionTests, MiscSymbols)
     TestExpressionEquals (requiredSymbolSets, "System.Path.Combine (\"\\dir\", \"subdir\\\", \"filename.ext\")",           ECValue(TEST_PATH_SEP L"dir" TEST_PATH_SEP L"subdir" TEST_PATH_SEP L"filename.ext"));
 
     Utf8String fileName (L"\\dir\\subdir\\filename.ext");
-    auto instance = CreateInstance (fileName);       // set "s" property
+    auto instance = CreateInstanceA(fileName);       // set "s" property
     TestExpressionEquals (requiredSymbolSets, "System.Path.GetDirectoryName(this.s)",             ECValue(TEST_PATH_SEP L"dir" TEST_PATH_SEP L"subdir"), instance.get());
     TestExpressionEquals (requiredSymbolSets, "System.Path.GetExtension(this.s)",                 ECValue(L".ext"),            instance.get());
     TestExpressionEquals (requiredSymbolSets, "System.Path.GetFileNameWithoutExtension(this.s)",  ECValue(L"filename"),        instance.get());

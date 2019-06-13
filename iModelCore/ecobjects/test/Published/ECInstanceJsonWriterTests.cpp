@@ -6,6 +6,9 @@
 
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
+#include "ECObjects/ECQuantityFormatting.h"
+
+#include <clocale>
 #include <initializer_list>
 #include <unordered_map>
 #include <unordered_set>
@@ -13,9 +16,9 @@
 // Hash implementation for BentleyB0200::Utf8String type
 namespace std
     {
-    template<> struct hash<BentleyB0200::Utf8String>
+    template<> struct hash<Utf8String>
         {
-        typedef BentleyB0200::Utf8String argument_type;
+        typedef Utf8String argument_type;
         typedef size_t result_type;
         result_type operator()(argument_type const& string) const { return hash<std::string>{}(string.c_str()); }
         };
@@ -230,6 +233,33 @@ protected:
         }
 
 public:
+    static void formatJsonObjectLocale(Json::Value &jsonObject) 
+        {
+        if (!jsonObject.isObject())
+            return;
+
+        for (auto &memberName : jsonObject.getMemberNames()) 
+            {
+            if (memberName == "formattedValue" && jsonObject[memberName].isString()) 
+                {
+                auto val = jsonObject[memberName].asString();
+                Utf8Char decimalSeparator = BEF::NumericFormatSpec::DefaultFormat().GetDecimalSeparator();
+                val.ReplaceAll(u8".", Utf8PrintfString("%c", decimalSeparator).c_str());
+                jsonObject[memberName] = val;
+                }
+            else if (memberName != "formattedValue") 
+                {
+                if (jsonObject[memberName].isArray()) 
+                    {
+                    for (auto &memberJson : jsonObject[memberName])
+                        formatJsonObjectLocale(memberJson);
+                    }
+                else
+                    formatJsonObjectLocale(jsonObject[memberName]);
+                }
+            }
+        }
+
     static void SetStructStructProperties(ECInstanceBuilder& innerStructBuilder, Nullable<int> const& intProperty, Nullable<double> const& doubleProperty, Utf8CP stringProperty,
         Utf8CP strictEnumerationProperty, Nullable<int> const& looseEnumerationProperty, int doubleArrayCount, std::initializer_list<double> doubleArray)
         {
@@ -523,6 +553,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
               ]
            }
         })*");
+    formatJsonObjectLocale(expectedJsonValue12);
 
     auto expectedJsonValue34 = Json::Value::From(u8R"*(
         {
@@ -538,6 +569,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
               ]
            }
         })*");
+    formatJsonObjectLocale(expectedJsonValue34);
 
     auto expectedJsonValue5 = Json::Value::From(u8R"*(
         {
@@ -592,6 +624,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueForPresentationTest)
               ]
            }
         })*");
+    formatJsonObjectLocale(expectedJsonValue5);
 
     // Act
 
@@ -815,6 +848,7 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
               "rawValue" : 1.111111
            }
         })");
+    formatJsonObjectLocale(expectedJsonValue2);
 
     auto expectedJsonValue3 = Json::Value::From(u8R"(
         {
@@ -834,16 +868,19 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
               "rawValue" : 3.14
            }
         })");
+    formatJsonObjectLocale(expectedJsonValue7);
 
     auto expectedJsonValue8 = Json::Value::From(u8R"(
         {
            "StringProperty" : "π"
         })");
+    formatJsonObjectLocale(expectedJsonValue8);
 
     auto expectedJsonValue9 = Json::Value::From(u8R"(
         {
            "StrictEnumerationProperty" : "EnumeratorB"
         })");
+    formatJsonObjectLocale(expectedJsonValue9);
 
     auto expectedJsonValue11 = Json::Value::From(u8R"(
         {
@@ -856,6 +893,7 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
            "LooseEnumerationProperty" : 7,
            "StrictEnumerationProperty" : "EnumeratorB"
         })");
+    formatJsonObjectLocale(expectedJsonValue11);
 
     auto expectedJsonValue12 = Json::Value::From(u8R"(
         {
@@ -868,6 +906,7 @@ TEST_F(ECInstanceJsonWriterTests, WritePrimitiveValueForPresentationTest)
            "LooseEnumerationProperty" : 7,
            "StrictEnumerationProperty" : "EnumeratorB"
         })");
+    formatJsonObjectLocale(expectedJsonValue12);
 
     // Act
 
@@ -1248,6 +1287,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
            "ecClass" : "SourceClass",
            "ecSchema" : "Schema.01.00"
         })");
+    formatJsonObjectLocale(expectedJsonValue6);
 
     // Act
 
@@ -1388,6 +1428,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
            "ecSchema" : "Schema.01.00",
            "instanceId" : "sourceInstanceId"
         })*");
+    formatJsonObjectLocale(expectedJsonValue1);
 
     auto expectedJsonValue2 = Json::Value::From(u8R"*(
         {
@@ -1446,6 +1487,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
            "ecClass" : "SourceClass",
            "ecSchema" : "Schema.01.00"
         })*");
+    formatJsonObjectLocale(expectedJsonValue2);
 
     auto expectedJsonValue3 = Json::Value::From(u8R"*(
         {
@@ -1505,6 +1547,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
            "ecClass" : "SourceClass",
            "ecSchema" : "Schema.01.00"
         })*");
+    formatJsonObjectLocale(expectedJsonValue3);
 
     auto expectedJsonValue4 = Json::Value::From(u8R"*(
         {
@@ -1619,6 +1662,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
            "ecSchema" : "Schema.01.00",
            "instanceId" : "targetInstanceId"
         })*");
+    formatJsonObjectLocale(expectedJsonValue4);
 
     auto expectedJsonValue5 = Json::Value::From(u8R"(
         {
@@ -1731,6 +1775,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
            },
            "className" : "Schema.SourceClass"
         })*");
+    formatJsonObjectLocale(expectedJsonValue1);
 
     auto expectedJsonValue23 = Json::Value::From(u8R"*(
         {
@@ -1766,6 +1811,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
            },
            "className" : "Schema.SourceClass"
         })*");
+    formatJsonObjectLocale(expectedJsonValue23);
 
     auto expectedJsonValue4 = Json::Value::From(u8R"*(
         {
@@ -1801,6 +1847,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
            },
            "className" : "Schema.TargetClass"
         })*");
+    formatJsonObjectLocale(expectedJsonValue4);
 
     auto expectedJsonValue5 = Json::Value::From(u8R"*(
         {
@@ -1834,6 +1881,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
               }
            }
         })*");
+    formatJsonObjectLocale(expectedJsonValue5);
 
     // Act
 
