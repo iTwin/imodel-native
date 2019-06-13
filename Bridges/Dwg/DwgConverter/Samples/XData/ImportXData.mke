@@ -7,9 +7,8 @@
 
 appName             = ImportXData
 baseDir             = $(_MakeFilePath)
-DgnDbSyncRootDir    = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/
-DwgRootDir          = $(DgnDbSyncRootDir)Dwg/
-DwgPublicAPI        = $(DgnDbSyncRootDir)PublicAPI/Dwg/
+DwgRootDir          = $(baseDir)../../
+DwgPublicAPI        = $(DwgRootDir)PublicAPI/Dwg/
 DwgVendorAPI        = $(BuildContext)VendorAPI/$(DWGTOOLKIT)$(VendorVersion)/
 DwgImporterDir      = $(BuildContext)Delivery/$(DWGTOOLKIT)$(VendorVersion)Importer/
 
@@ -17,9 +16,9 @@ o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)$(VendorVersion)$(appNa
 always:
     ~mkdir $(o)
 
-ImportXDataDepends  = $(baseDir)ImportXData.h                   \
-                      $(DwgPublicAPI)DwgBridge.h                \
-                      $(DwgPublicAPI)DwgImporter.h              \
+ImportXDataDepends  = $(baseDir)ImportXData.h       \
+                      $(DwgPublicAPI)DwgBridge.h    \
+                      $(DwgPublicAPI)DwgImporter.h  \
                       $(DwgPublicAPI)DwgHelper.h
 
 ### Pass $(DWGTOOLKIT) to compiler

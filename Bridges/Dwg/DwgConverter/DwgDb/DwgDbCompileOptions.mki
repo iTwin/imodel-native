@@ -38,7 +38,12 @@
         OVERRIDE_DEFAULT_VC_TOOLSET = VS2012
     %endif
 
-%else
+    ToolkitRoot         = $(BuildContext)VendorAPI/Realdwg$(VendorVersion)/
+    ToolkitCoreInc      = $(ToolkitRoot)
+    ToolkitBaseInc      = $(ToolkitCoreInc)RealDwg/Base/
+    ToolkitLibs         = $(BuildContext)SubParts/Libs/RealDwg$(VendorVersion)/
+
+%elif $(DWGTOOLKIT) == "OpenDwg"
 
     %if !defined (VendorVersion)
         VendorVersion = 190815
@@ -46,13 +51,6 @@
 
     ## OpenDWG does not have a suffix in its core lib names:
     ToolkitLibSuffix    =
-
-%endif  # DWGTOOLKIT_
-
-DgnDbSyncPubApi     = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/
-DwgDbPubApi         = $(DgnDbSyncPubApi)Dwg/DwgDb/
-
-%if $(DWGTOOLKIT) == "OpenDwg"
 
 %if defined(MSVC_VERSION)
 
@@ -92,7 +90,6 @@ DwgDbPubApi         = $(DgnDbSyncPubApi)Dwg/DwgDb/
 
 %endif  # MSVC_VERSION
 
-
 %if $(VendorVersion) < 40301
     Kernel = Core
     Drawing = Core
@@ -101,14 +98,14 @@ DwgDbPubApi         = $(DgnDbSyncPubApi)Dwg/DwgDb/
     Drawing = Drawing
 %endif
 
-ToolkitRoot         = $(BuildContext)VendorAPI/Teigha/
-ToolkitCoreInc      = $(ToolkitRoot)$(Kernel)/Include/
-ToolkitCoreServices = $(ToolkitRoot)$(Kernel)/Extensions/ExServices/
-ToolkitAecInc       = $(ToolkitRoot)Architecture/
-ToolkitDrawingInc   = $(ToolkitRoot)$(Drawing)/Include/
-ToolkitHostServices = $(ToolkitRoot)$(Drawing)/Extensions/ExServices/
-ToolkitGripPoints   = $(ToolkitRoot)$(Drawing)/Examples/GripPoints/
-ToolkitLibs         = $(BuildContext)SubParts/Libs/Teigha/
+    ToolkitRoot         = $(BuildContext)VendorAPI/Teigha/
+    ToolkitCoreInc      = $(ToolkitRoot)$(Kernel)/Include/
+    ToolkitCoreServices = $(ToolkitRoot)$(Kernel)/Extensions/ExServices/
+    ToolkitAecInc       = $(ToolkitRoot)Architecture/
+    ToolkitDrawingInc   = $(ToolkitRoot)$(Drawing)/Include/
+    ToolkitHostServices = $(ToolkitRoot)$(Drawing)/Extensions/ExServices/
+    ToolkitGripPoints   = $(ToolkitRoot)$(Drawing)/Examples/GripPoints/
+    ToolkitLibs         = $(BuildContext)SubParts/Libs/Teigha/
 
 %if $(TARGET_PLATFORM)=="Windows"
     %if $(VendorVersion) < 190815
@@ -118,18 +115,12 @@ ToolkitLibs         = $(BuildContext)SubParts/Libs/Teigha/
     %endif
 %endif
 
-%elif $(DWGTOOLKIT) == "RealDwg"
-
-ToolkitRoot         = $(BuildContext)VendorAPI/Realdwg$(VendorVersion)/
-ToolkitCoreInc      = $(ToolkitRoot)
-ToolkitBaseInc      = $(ToolkitCoreInc)RealDwg/Base/
-ToolkitLibs         = $(BuildContext)SubParts/Libs/RealDwg$(VendorVersion)/
-
 %else
 
     %error Must define DWGTOOLKIT to either OpenDwg or RealDwg!
 
-%endif  # DWGTOOLKIT
+%endif  # DWGTOOLKIT_
+
 
 CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -DVendorVersion=$(VendorVersion)
 

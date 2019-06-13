@@ -4,5 +4,5 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "..\..\..\iModelBridgeCore\DgnDbSync\Dwg\DwgImportInternal.h"
+#include "..\DwgConverter\DwgImportInternal.h"
 

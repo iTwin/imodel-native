@@ -6,7 +6,7 @@
         <SubProduct ProductName="RealDwgBridge"/>
         <!-- In an effort to reduce CI Pipeline build time, OpenDwgBridge is moved into dev build, until it is needed again -->
         <SubNuGetProduct NuGetProductName="RealDwgBridgeSdkNuget"/>
-        <SubPart PartName="RunDwgImporterTests" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter"/>
+        <SubPart PartName="RunDwgImporterTests" PartFile="Bridges/Dwg/DwgConverter/DwgConverter"/>
         <SubProduct ProductName="DwgBridgeTests"/>
     </Part>
 
@@ -19,7 +19,7 @@
 
     <!-- A product installer for DwgBridge using OpenDWG -->
     <Product Name="OpenDwgBridge" SaveProduct="true" BuildInstallSet="true">
-        <SubPart PartName="OpenDwgImportExe" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter"/>
+        <SubPart PartName="OpenDwgImportExe" PartFile="Bridges/Dwg/DwgConverter/DwgConverter"/>
         <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
         <SubPart PartName="MakePackages" PartFile="iModelBridgeCore/DgnDbSync/bridge-addon"/>
         <SubPart PartName="Eula" PartFile="Eula" Repository="Miscdev-Eula"/>
@@ -27,8 +27,8 @@
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <SubPart PartName="OpenDwgInstallFiles" />
 
-        <Directories DirectoryListName="OpenDwgConverterDirList" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter"/>
-        <Directories DirectoryListName="DwgAppCommonDirList"  PartFile="iModelBridgeCore/DgnDbSync/DwgConverter"/>
+        <Directories DirectoryListName="OpenDwgConverterDirList" PartFile="Bridges/Dwg/DwgConverter/DwgConverter"/>
+        <Directories DirectoryListName="DwgAppCommonDirList"  PartFile="Bridges/Dwg/DwgConverter/DwgConverter"/>
 
         <InstallerWixFile SourceFile="installers\OpenDwgImporter"/>
         <WixBundleFile    SourceFile="installers\OpenDwgBundle"/>
@@ -48,13 +48,13 @@
 
     <!-- An SDK zip delivery for DwgBridge using OpenDWG -->
     <NuGetProduct Name="OpenDwgBridgeSdkNuget" OnlyPlatforms="x64" Description="An iModelBridge-DWG extension SDK based on ODA-Drawing toolkit">
-        <SubPart PartName="OpenDwgImportDLL" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
-        <SubPart PartName="OpenDwgBridgeDLL" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
-        <SubPart PartName="OpenDwgDb" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
-        <SubPart PartName="Docs" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="OpenDwgImportDLL" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="OpenDwgBridgeDLL" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="OpenDwgDb" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="Docs" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
         <SubPart PartName="Docs" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
-        <SubPart PartName="CodeSamples" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
-        <SubPart PartName="DwgResources" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="CodeSamples" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="DwgResources" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
         <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api" Repository="imodel02"/>
         <SubPart PartName="DwgImporterHeaderDelivery"/>
@@ -76,7 +76,7 @@
 
     <!-- A product installer for DwgBridge using RealDWG -->
     <Product Name="RealDwgBridge" SaveProduct="true" BuildInstallSet="true">
-        <SubPart PartName="RealDwgImportExe" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter"/>
+        <SubPart PartName="RealDwgImportExe" PartFile="Bridges/Dwg/DwgConverter/DwgConverter"/>
         <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
         <SubPart PartName="MakePackages" PartFile="iModelBridgeCore/DgnDbSync/bridge-addon"/>
         <SubPart PartName="Redistribute" PartFile="${SrcRoot}bsicommon/CvsPartFiles/realdwg" Repository="bin-realdwg" />
@@ -85,8 +85,8 @@
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <SubPart PartName="RealDwgInstallFiles" />
 
-        <Directories DirectoryListName="RealDwgConverterDirList"  PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
-        <Directories DirectoryListName="DwgAppCommonDirList"  PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <Directories DirectoryListName="RealDwgConverterDirList"  PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <Directories DirectoryListName="DwgAppCommonDirList"  PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
 
         <InstallerWixFile SourceFile="installers\RealDwgImporter"/>
         <WixBundleFile    SourceFile="installers\RealDwgBundle"/>
@@ -107,13 +107,13 @@
 
     <!-- An SDK zip delivery for DwgBridge using RealDWG -->
     <NuGetProduct Name="RealDwgBridgeSdkNuget" OnlyPlatforms="x64" Description="An iModelBridge-DWG extension SDK based on RealDWG toolkit">
-        <SubPart PartName="RealDwgImportDLL" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
-        <SubPart PartName="RealDwgBridgeDLL" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
-        <SubPart PartName="RealDwgDb" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
-        <SubPart PartName="Docs" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="RealDwgImportDLL" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="RealDwgBridgeDLL" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="RealDwgDb" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="Docs" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
         <SubPart PartName="Docs" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
-        <SubPart PartName="CodeSamples" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
-        <SubPart PartName="DwgResources" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="CodeSamples" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="DwgResources" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
         <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api" Repository="imodel02"/>
         <SubPart PartName="DwgImporterHeaderDelivery"/>
@@ -123,7 +123,7 @@
     </NuGetProduct>
 
     <Part Name="DwgImporterHeaderDelivery">
-        <SubPart PartName="PublicAPI" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="PublicAPI" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
         <Bindings>
             <Directory SourceName="PublicAPI/Dwg" ProductDirectoryName="DwgImportHeaders"/>
         </Bindings>
@@ -181,9 +181,9 @@
         <SubProduct ProductName="iModelBridgeFwk" Repository="imodel02" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
         <SubPart PartName="DwgBridgeTestsExe"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
-        <Directories DirectoryListName="RealDwgConverterDirList"  PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
-        <Directories DirectoryListName="DwgAppCommonDirList"  PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
-        <Directories DirectoryListName="Tests" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <Directories DirectoryListName="RealDwgConverterDirList"  PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <Directories DirectoryListName="DwgAppCommonDirList"  PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <Directories DirectoryListName="Tests" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
         <Directories DirectoryListName="TestDirList"/>
     </Product>
 
@@ -198,7 +198,7 @@
         <SubPart PartName="DgnDbTestUtils" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="DgnPlatformSqlang" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="DgnPlatformUnitTestHelpers" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
-        <SubPart PartName="RealDwgImportExe" PartFile="iModelBridgeCore/DgnDbSync/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="RealDwgImportExe" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
         <SubPart PartName="google_gtest_lib" PartFile="iModelCore/util/gtest/gtest" Repository="imodel02"/>
         <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
         <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>

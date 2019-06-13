@@ -13,15 +13,14 @@
 
 appName             = DwgImporter
 baseDir             = $(_MakeFilePath)
-DgnDbSyncRootDir    = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/
-DwgRootDir          = $(DgnDbSyncRootDir)Dwg/
+DwgRootDir          = $(baseDir)../
 DwgPublicAPI        = $(DgnDbSyncRootDir)PublicAPI/Dwg/
 
 o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)$(VendorVersion)Importer/Apps/
 always:
     ~mkdir $(o)
 
-DwgImportAppDepends = $(DwgPublicAPI)DwgBridge.h                \
+DwgImportAppDepends = $(DwgPublicAPI)DwgBridge.h    \
                       $(DwgPublicAPI)DwgImporter.h
 
 CompileOptionsMki   = $(DwgRootDir)DwgCompileOptions.mki
@@ -59,4 +58,3 @@ EXE_TMP_DIR         = $(o)
 
 always:
     ~linkfile "$(ContextDeliveryDir)$(appname)$(exeext)=$(o)$(appname)$(exeext)"
-

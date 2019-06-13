@@ -5,7 +5,7 @@
 #----------------------------------------------------------------------------------------
 programName = DwgBridgeTests
 baseDir = $(_MakeFilePath)
-ImporterTestsDir = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/Dwg/Tests/
+ImporterTestsDir = $(baseDir)../DwgConverter/Tests/
 
 #-- Only test RealDwgBridge
 DWGTOOLKIT = RealDwg

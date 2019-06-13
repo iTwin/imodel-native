@@ -5,8 +5,7 @@
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
 
-baseDir         = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/
-DwgPubApiSrc    = $(baseDir)PublicAPI/Dwg
+DwgPubApiSrc = $(_MakeFilePath)PublicAPI/Dwg
 
 always:
     ~linkdir "$(BuildContext)PublicAPI/Dwg=$(DwgPubApiSrc)"

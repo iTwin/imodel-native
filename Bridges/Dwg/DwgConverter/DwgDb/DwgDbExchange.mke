@@ -34,7 +34,7 @@ VendorNoticeName    = realdwg-notice.txt
 
 appName             = $(DWGTOOLKIT)DbExchange
 baseDir             = $(_MakeFilePath)
-pubApiDir           = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/Dwg/DwgDb/
+DwgDbPublicApiDir   = $(baseDir)../PublicApi/Dwg/DwgDb/
 VendorNoticeDir     = $(baseDir)Notices/
 ContextDeliveryDir  = $(BuildContext)Delivery/$(DeliveryNamespace)/
 
@@ -45,16 +45,16 @@ always:
 CompileOptionsMki   = $(baseDir)DwgDbCompileOptions.mki
 %include $(CompileOptionsMki)
 
-DwgDbDepends        = $(pubApiDir)DwgDbCommon.h                 \
-                      $(pubApiDir)BasicTypes.h                  \
-                      $(pubApiDir)DwgDbObjects.h                \
-                      $(pubApiDir)DwgDbEntities.h               \
-                      $(pubApiDir)DwgDbDatabase.h               \
-                      $(pubApiDir)DwgDbSymbolTables.h           \
-                      $(pubApiDir)DwgDrawables.h                \
-                      $(pubApiDir)DwgRxObjects.h                \
-                      $(pubApiDir)DwgResBuf.h                   \
-                      $(pubApiDir)DwgDbHost.h                   \
+DwgDbDepends        = $(DwgDbPublicApiDir)DwgDbCommon.h         \
+                      $(DwgDbPublicApiDir)BasicTypes.h          \
+                      $(DwgDbPublicApiDir)DwgDbObjects.h        \
+                      $(DwgDbPublicApiDir)DwgDbEntities.h       \
+                      $(DwgDbPublicApiDir)DwgDbDatabase.h       \
+                      $(DwgDbPublicApiDir)DwgDbSymbolTables.h   \
+                      $(DwgDbPublicApiDir)DwgDrawables.h        \
+                      $(DwgDbPublicApiDir)DwgRxObjects.h        \
+                      $(DwgDbPublicApiDir)DwgResBuf.h           \
+                      $(DwgDbPublicApiDir)DwgDbHost.h           \
                       $(baseDir)ToolkitHost.h                   \
                       $(baseDir)DwgDbUtil.h
 
@@ -66,15 +66,15 @@ DwgDbDepends        = $(pubApiDir)DwgDbCommon.h                 \
 %include MultiCppCompileRule.mki
 
 # source files from \Core\Extensions\ExServices\...
-$(o)OdFileBuf$(oext)                    : $(ToolkitCoreServices)OdFileBuf.cpp ${MultiCompileDepends}
+$(o)OdFileBuf$(oext)            : $(ToolkitCoreServices)OdFileBuf.cpp ${MultiCompileDepends}
 
-$(o)ExUndoController$(oext)             : $(ToolkitHostServices)ExUndoController.cpp ${MultiCompileDepends}
+$(o)ExUndoController$(oext)     : $(ToolkitHostServices)ExUndoController.cpp ${MultiCompileDepends}
 
-$(o)ExHostAppServices$(oext)            : $(ToolkitHostServices)ExHostAppServices.cpp ${MultiCompileDepends}
+$(o)ExHostAppServices$(oext)    : $(ToolkitHostServices)ExHostAppServices.cpp ${MultiCompileDepends}
 
-$(o)ExSystemServices$(oext)             : $(ToolkitCoreServices)ExSystemServices.cpp ${MultiCompileDepends}
+$(o)ExSystemServices$(oext)     : $(ToolkitCoreServices)ExSystemServices.cpp ${MultiCompileDepends}
 
-$(o)ExGiRasterImage$(oext)              : $(ToolkitCoreServices)ExGiRasterImage.cpp ${MultiCompileDepends}
+$(o)ExGiRasterImage$(oext)      : $(ToolkitCoreServices)ExGiRasterImage.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

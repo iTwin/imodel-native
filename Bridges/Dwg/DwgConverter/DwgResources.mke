@@ -6,8 +6,8 @@
 %include mdl.mki
 
 baseDir             = $(_MakeFilePath)
-DwgPubApi           = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/Dwg/
-DwgDbPubApi         = $(DwgPubApi)PublicAPI/
+DwgPublicApi        = $(baseDir)PublicAPI/Dwg/
+DwgDbPublicApi      = $(DwgPublicApi)PublicAPI/
 ContextDeliveryDir  = $(BuildContext)Delivery/
 
 o = $(OutputRootDir)Build/DwgResources/
@@ -15,7 +15,7 @@ o = $(OutputRootDir)Build/DwgResources/
 always:
     ~mkdir $(o)
 
-SQLANG_CHeader      = $(DwgPubApi)DwgL10N.h
+SQLANG_CHeader      = $(DwgPublicApi)DwgL10N.h
 SQLANG_Xliff        = $(o)DwgImporter_en.xliff
 
 %include $(sharedMki)CHeaderToXliff.mki

@@ -13,16 +13,15 @@
 
 appName             = DwgBridge
 baseDir             = $(_MakeFilePath)
-DgnDbSyncRootDir    = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/
-DwgRootDir          = $(DgnDbSyncRootDir)Dwg/
-DwgPublicAPI        = $(DgnDbSyncRootDir)PublicAPI/Dwg/
+DwgRootDir          = $(baseDir)../
+DwgPublicAPI        = $(DwgRootDir)PublicAPI/Dwg/
 DwgCommonResDir     = $(OutputRootDir)Build/DwgCommonRes/
 
 o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)$(VendorVersion)Importer/Bridge/
 always:
     ~mkdir $(o)
 
-DwgImportAppDepends = $(DwgPublicAPI)DwgBridge.h                \
+DwgImportAppDepends = $(DwgPublicAPI)DwgBridge.h    \
                       $(DwgPublicAPI)DwgImporter.h
 
 CCompOpts +% -D__DWGIMPORTER_BUILD__=1
@@ -38,7 +37,7 @@ CompileOptionsMki   = $(DwgRootDir)DwgCompileOptions.mki
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)DwgBridge.obj       : $(baseDir)DwgBridge.cpp $(DwgImportAppDepends) ${MultiCompileDepends}
+$(o)DwgBridge.obj   : $(baseDir)DwgBridge.cpp $(DwgImportAppDepends) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

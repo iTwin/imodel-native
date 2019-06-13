@@ -6,7 +6,8 @@
 #pragma once
 #include <DgnPlatform/DgnCoreApi.h>
 #include <Bentley/BeTest.h>
-#include "..\..\..\iModelBridgeCore\DgnDbSync\Dwg\Tests\DwgFileEditor.h"
+// use shared DWG editor from DwgImporter unit tests
+#include "..\DwgConverter\Tests\DwgFileEditor.h"
 
 #define ASSERT_PRESENT(fileName)        ASSERT_TRUE ( BentleyApi::BeFileName::DoesPathExist (fileName))<<L"File is not present at location :"<<fileName;
 #define ASSERT_NOT_PRESENT(fileName)    ASSERT_FALSE( BentleyApi::BeFileName::DoesPathExist (fileName))<<L"File should not be present at location :"<<fileName;

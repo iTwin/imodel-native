@@ -1,55 +1,55 @@
 
-[imodel02\imodelbridgecore\dgndbsync\dwg\importraster.cpp]
+[imodel02\bridges\dwg\dwgconverter\importraster.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\processlogger.cpp]
+[imodel02\bridges\dwg\dwgconverter\processlogger.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\importlinetypes.cpp]
+[imodel02\bridges\dwg\dwgconverter\importlinetypes.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\dwgsourceaspects.cpp]
+[imodel02\bridges\dwg\dwgconverter\dwgsourceaspects.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\importlayers.cpp]
+[imodel02\bridges\dwg\dwgconverter\importlayers.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\dwgimportinternal.h]
+[imodel02\bridges\dwg\dwgconverter\dwgimportinternal.h]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\importmaterials.cpp]
+[imodel02\bridges\dwg\dwgconverter\importmaterials.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\dwgimporter.cpp]
+[imodel02\bridges\dwg\dwgconverter\dwgimporter.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\dwgimportinternal.cpp]
+[imodel02\bridges\dwg\dwgconverter\dwgimportinternal.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\repositorylinks.cpp]
+[imodel02\bridges\dwg\dwgconverter\repositorylinks.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\importbreps.cpp]
+[imodel02\bridges\dwg\dwgconverter\importbreps.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\dwgupdater.cpp]
+[imodel02\bridges\dwg\dwgconverter\dwgupdater.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\dwghelper.cpp]
+[imodel02\bridges\dwg\dwgconverter\dwghelper.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\importpolyline.cpp]
+[imodel02\bridges\dwg\dwgconverter\importpolyline.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\importlights.cpp]
+[imodel02\bridges\dwg\dwgconverter\importlights.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\importpointclouds.cpp]
+[imodel02\bridges\dwg\dwgconverter\importpointclouds.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\importattribute.cpp]
+[imodel02\bridges\dwg\dwgconverter\importattribute.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\importxrefs.cpp]
+[imodel02\bridges\dwg\dwgconverter\importxrefs.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.AttachXrefs:
-[imodel02\imodelbridgecore\dgndbsync\dwg\importblocks.cpp]
+[imodel02\bridges\dwg\dwgconverter\importblocks.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\importentities.cpp]
+[imodel02\bridges\dwg\dwgconverter\importentities.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\importgroups.cpp]
+[imodel02\bridges\dwg\dwgconverter\importgroups.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\importtexts.cpp]
+[imodel02\bridges\dwg\dwgconverter\importtexts.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\importviewports.cpp]
+[imodel02\bridges\dwg\dwgconverter\importviewports.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\dwgimportjob.cpp]
+[imodel02\bridges\dwg\dwgconverter\dwgimportjob.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\dwgimporthost.cpp]
+[imodel02\bridges\dwg\dwgconverter\dwgimporthost.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\importlayouts.cpp]
+[imodel02\bridges\dwg\dwgconverter\importlayouts.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
-[imodel02\imodelbridgecore\dgndbsync\dwg\config\convertconfig.cpp]
+[imodel02\bridges\dwg\dwgconverter\config\convertconfig.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:

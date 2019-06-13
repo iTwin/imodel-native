@@ -11,13 +11,12 @@
     %error RealDWG only supports Windows platform!
 %endif
 
-appName             = DwgImporter
-baseDir             = $(_MakeFilePath)
-DgnDbSyncRoot       = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/
-DwgPublicApi        = $(DgnDbSyncRoot)PublicAPI/Dwg/
-DwgDbPubApi         = $(DwgPublicApi)DwgDb/
+appName         = DwgImporter
+baseDir         = $(_MakeFilePath)
+DwgPublicApi    = $(baseDir)PublicAPI/Dwg/
+DwgDbPublicApi  = $(DwgPublicApi)DwgDb/
 
-o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)$(VendorVersion)Importer/
+o               = $(OutputRootDir)Build/$(DWGTOOLKIT)$(VendorVersion)Importer/
 always:
     ~mkdir $(o)
 
@@ -29,18 +28,18 @@ CompileOptionsMki   = $(baseDir)DwgCompileOptions.mki
 #--------------------------------------------------------------------------------------
 %include $(SharedMki)CreateBuildVersionHeader.mki
 
-DwgDepends          = $(DwgDbPubApi)DwgDbCommon.h           \
-                      $(DwgDbPubApi)DwgDbHost.h             \
-                      $(DwgDbPubApi)DwgDbDatabase.h         \
-                      $(DwgDbPubApi)DwgDbObjects.h          \
-                      $(DwgDbPubApi)DwgDbEntities.h         \
-                      $(DwgDbPubApi)DwgDbSymbolTables.h     \
-                      $(DwgDbPubApi)BasicTypes.h            \
-                      $(DwgPublicApi)DwgSourceAspects.h     \
-                      $(DwgPublicApi)DwgHelper.h            \
-                      $(DwgPublicApi)DwgL10N.h              \
-                      $(DwgPublicApi)DwgImporter.h          \
-                      $(DwgPublicApi)ProtocalExtensions.h
+DwgDepends      = $(DwgDbPublicApi)DwgDbCommon.h        \
+                  $(DwgDbPublicApi)DwgDbHost.h          \
+                  $(DwgDbPublicApi)DwgDbDatabase.h      \
+                  $(DwgDbPublicApi)DwgDbObjects.h       \
+                  $(DwgDbPublicApi)DwgDbEntities.h      \
+                  $(DwgDbPublicApi)DwgDbSymbolTables.h  \
+                  $(DwgDbPublicApi)BasicTypes.h         \
+                  $(DwgPublicApi)DwgSourceAspects.h     \
+                  $(DwgPublicApi)DwgHelper.h            \
+                  $(DwgPublicApi)DwgL10N.h              \
+                  $(DwgPublicApi)DwgImporter.h          \
+                  $(DwgPublicApi)ProtocalExtensions.h
 
 MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
 IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
