@@ -153,7 +153,7 @@ BentleyStatus ClientImpl::StopApplication()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                         Jason.Wichert 5/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientImpl::CallOnInterval(std::atomic_bool& stopThread, std::atomic_bool& isFinished, std::atomic_int64_t& lastRunStartTime, size_t interval, std::function<void(void)> func)
+void ClientImpl::CallOnInterval(std::atomic_bool& stopThread, std::atomic_bool& isFinished, std::atomic<int64_t>& lastRunStartTime, size_t interval, std::function<void(void)> func)
     {
     // run a function on a loop, after the first call delay the call by an interval of time each iteration
 
