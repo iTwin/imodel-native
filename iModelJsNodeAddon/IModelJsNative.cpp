@@ -5027,6 +5027,7 @@ public:
         {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "ImportContext", {
+            InstanceMethod("addClass", &NativeImportContext::AddClass),
             InstanceMethod("addCodeSpecId", &NativeImportContext::AddCodeSpecId),
             InstanceMethod("addElementId", &NativeImportContext::AddElementId),
             InstanceMethod("dispose", &NativeImportContext::Dispose),
@@ -5065,6 +5066,29 @@ public:
             delete m_importContext;
             m_importContext = nullptr;
             }
+        }
+
+    Napi::Value AddClass(Napi::CallbackInfo const& info)
+        {
+        if (nullptr == m_importContext)
+            THROW_TYPE_EXCEPTION_AND_RETURN("Invalid NativeImportContext", Env().Undefined());
+
+        REQUIRE_ARGUMENT_STRING(0, sourceClassFullName, Napi::Number::New(Env(), (int) BentleyStatus::ERROR));
+        REQUIRE_ARGUMENT_STRING(1, targetClassFullName, Napi::Number::New(Env(), (int) BentleyStatus::ERROR));
+        bvector<Utf8String> sourceTokens;
+        bvector<Utf8String> targetTokens;
+        BeStringUtilities::Split(sourceClassFullName.c_str(), ".:", sourceTokens);
+        BeStringUtilities::Split(targetClassFullName.c_str(), ".:", targetTokens);
+        if ((2 != sourceTokens.size()) || (2 != targetTokens.size()))
+            return Napi::Number::New(Env(), (int) DgnDbStatus::InvalidName);
+
+        DgnClassId sourceClassId = m_importContext->GetSourceDb().Schemas().GetClassId(sourceTokens[0].c_str(), sourceTokens[1].c_str());
+        DgnClassId targetClassId = m_importContext->GetDestinationDb().Schemas().GetClassId(targetTokens[0].c_str(), targetTokens[1].c_str());
+        if ((!sourceClassId.IsValid()) || (!targetClassId.IsValid()))
+            return Napi::Number::New(Env(), (int) DgnDbStatus::InvalidName);
+
+        m_importContext->AddClassId(sourceClassId, targetClassId);
+        return Napi::Number::New(Env(), (int) BentleyStatus::SUCCESS);
         }
 
     Napi::Value AddCodeSpecId(Napi::CallbackInfo const& info)

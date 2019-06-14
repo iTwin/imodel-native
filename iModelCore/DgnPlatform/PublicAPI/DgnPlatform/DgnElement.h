@@ -179,6 +179,8 @@ public:
     DgnSubCategoryId AddSubCategory(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that a SubCategory has been imported
     DgnSubCategoryId RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId) {return _RemapSubCategory(destCategoryId, sourceId);}
+    //! Register a remapping of a DgnClassId
+    DgnClassId AddClassId(DgnClassId sourceId, DgnClassId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Make sure that an ECClass has been imported
     DgnClassId RemapClassId(DgnClassId sourceId) {return _RemapClassId(sourceId);}
     //! Look up a copy of a RenderMaterial
