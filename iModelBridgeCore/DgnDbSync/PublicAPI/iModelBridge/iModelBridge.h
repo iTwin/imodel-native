@@ -606,6 +606,7 @@ struct iModelBridge
 
         BE_JSON_NAME(transform);    //!< Linear transform specification
         BE_JSON_NAME(gcs);          //!< GCS definition
+        BE_JSON_NAME(ecef);          //!< GCS definition
 
         //! Get additional parameters from JSON
         //! @see SetTransformJson, SetOffsetJson, SetGcsJson
@@ -734,6 +735,8 @@ struct iModelBridge
 
         bvector<WString> const& GetAdditionalFilePattern() const { return m_additionalFiles; }
         void AddAdditionalFilePattern(WStringCR pattern) { m_additionalFiles.push_back(pattern); }
+
+        EcefLocation GetEcefLocation() const { return m_ecEFLocation; }
         };
 
     private:

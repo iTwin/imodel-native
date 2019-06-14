@@ -1732,6 +1732,7 @@ void Converter::OnCreateComplete()
 
     timer.Start();
     GenerateRealityModelTilesets();
+    //GenerateWebMercatorModel();
     ConverterLogging::LogPerformance(timer, "Creating reality model tilesets");
 
     GetDgnDb().SaveSettings();
