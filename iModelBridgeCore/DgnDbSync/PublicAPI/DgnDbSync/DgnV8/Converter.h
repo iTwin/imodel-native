@@ -824,7 +824,7 @@ struct Converter
         L10N_STRING(FailedToImportLinkError)      // =="Failed to import link on element %llu in file '%s' (new ElementId: %llu)"==
         L10N_STRING(InvalidSheetAttachment)      // =="Sheet [%s] - Unsupported sheet attachment: [%s]"==
         L10N_STRING(UnrecognizedDetailingSymbol) // =="[%s] is an unrecognized kind of detailing symbol. Capturing graphics only."==
-        L10N_STRING(UnsupportedPrimaryInstance)   // =="[%s] has an unsupported primary ECInstance. Capturing graphics only."==
+        L10N_STRING(UnsupportedPrimaryInstance)   // =="[%s] has an unsupported primary ECInstance. Creating a secondary instance instead."==
         L10N_STRING(SchemaLockFailed)           // =="Failed to import schemas due to a problem acquiring lock on the schemas"==
         L10N_STRING(CouldNotAcquireLocksOrCodes) // =="Failed to import schemas due to a problem acquiring lock on codes or schemas"==
         L10N_STRING(ImportTargetECSchemas)      // =="Failed to import V8 ECSchemas"==
