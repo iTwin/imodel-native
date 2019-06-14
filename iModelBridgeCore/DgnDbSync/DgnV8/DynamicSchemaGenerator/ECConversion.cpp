@@ -1015,6 +1015,13 @@ BentleyStatus ECSchemaXmlDeserializer::DeserializeSchemas(BECN::ECSchemaReadCont
                 m_converter.ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), warning.c_str());
                 continue;
                 }
+            else if (m_converter.GetConfig().GetOptionValueBool("AllowSkipFailedSchemas", false))
+                {
+                Utf8String msg;
+                msg.Sprintf("Failed to deserialize v8 ECSchema '%s'. Continuing with de-serialization of other schemas", schemaKey.GetFullSchemaName().c_str());
+                m_converter.ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), msg.c_str());
+                continue;
+                }
             Utf8String error;
             error.Sprintf("Failed to deserialize v8 ECSchema '%s'.", schemaKey.GetFullSchemaName().c_str());
             m_converter.ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
@@ -2832,22 +2839,22 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
         {
         ReportProgress();
 
-        ECObjectsV8::SchemaKey& schemaKey = v8SchemaInfo.GetSchemaKeyR();
-        if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_TRACE))
-            LOG.tracev(L"Schema %ls - File: %ls - Location: %ls - %ls - Provider: %ls", schemaKey.GetFullSchemaName().c_str(),
-                       v8SchemaInfo.GetDgnFile().GetFileName().c_str(),
-                       v8SchemaInfo.GetLocation(),
-                       v8SchemaInfo.IsStoredSchema() ? L"Stored" : L"External",
-                       v8SchemaInfo.GetProviderName());
-
         //TODO: Need to filter out V8/MicroStation specific ECSchemas, not needed in Graphite
 
+        ECObjectsV8::SchemaKey& schemaKey = v8SchemaInfo.GetSchemaKeyR();
         Utf8String fullName(schemaKey.GetFullSchemaName().c_str());
         if (!m_converter.ShouldImportSchema(fullName, v8Model))
             {
             m_skippedSchemas.push_back(Utf8String(schemaKey.GetName().c_str()));
             continue;
             }
+
+        if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_TRACE))
+            LOG.tracev(L"Schema %ls - File: %ls - Location: %ls - %ls - Provider: %ls", schemaKey.GetFullSchemaName().c_str(),
+                       v8SchemaInfo.GetDgnFile().GetFileName().c_str(),
+                       v8SchemaInfo.GetLocation(),
+                       v8SchemaInfo.IsStoredSchema() ? L"Stored" : L"External",
+                       v8SchemaInfo.GetProviderName());
 
         Bentley::Utf8String schemaName(schemaKey.GetName());
 
