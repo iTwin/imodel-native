@@ -39,6 +39,7 @@ private:
     BentleyStatus       BuildGeometryFromShape (GeometryBuilderPtr& builder, DRange3dR outRange, uint32_t segNo, uint32_t shapeNumber);
     size_t              GetString (Utf8StringR out, uint32_t segNo) const;
     DgnFontCP           GetFont (DwgDbTextStyleTableRecordCR textStyle) const;
+    bool                HasValidShapefile (DwgDbTextStyleTableRecordCR textStyle) const;
     bool                IsSymbolSegment (uint32_t segNo) const;
 
 public:
@@ -187,6 +188,23 @@ DgnFontCP       LineStyleFactory::GetFont (DwgDbTextStyleTableRecordCR textStyle
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LineStyleFactory::HasValidShapefile (DwgDbTextStyleTableRecordCR textStyle) const
+    {
+    DwgFontInfo fontInfo;
+    if (DwgDbStatus::Success == textStyle.GetFontInfo(fontInfo) && textStyle.IsShapeFile())
+        {
+        Utf8String  fontName(fontInfo.GetShxFontName());
+        BeFileName  found;
+        if (m_importer.GetLoadedFonts().FindFontPath(found, DgnFontType::Shx, fontName) && found.DoesPathExist())
+            return  true;
+        }
+
+    return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   LineStyleFactory::CreateTextString (TextStringPtr& dgnText, uint32_t segNo)
@@ -288,6 +306,14 @@ BentleyStatus   LineStyleFactory::BuildGeometryFromShape (GeometryBuilderPtr& bu
     if (dbStyle.IsNull())
         return  BSIERROR;
 
+    /*--------------------------------------------------------------------------------------------------
+    Constructing a GiTextStyle will prompt toolkit to search for font by the hostApp, but a linetype does
+    not want just any SHX or the fallback SHX.  A wrong shapefile may result in incorrect geometry.
+    Only allow loaded font to proceed geometry creation.
+    --------------------------------------------------------------------------------------------------*/
+    if (!this->HasValidShapefile(*dbStyle))
+        return  BSIERROR;
+    
     DwgGiTextStyle      giTextstyle;
     if (DwgDbStatus::Success != giTextstyle.CopyFrom(*dbStyle.get()))
         return  BSIERROR;

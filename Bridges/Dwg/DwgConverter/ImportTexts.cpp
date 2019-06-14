@@ -246,7 +246,8 @@ bool            DwgImporter::WorkingFonts::FindFontPath (BeFileNameR path, DgnFo
     {
     T_FontMap const&    loadedFonts = DgnFontType::TrueType == type ? m_truetypeFonts : m_shxFonts;
 
-    Utf8String  fontName = name;
+    // remove file extension name:
+    Utf8String  fontName = DgnFontType::Shx == type ? name.substr(0, name.rfind(".shx")) : name.substr(0, name.rfind(".ttf"));
     fontName.ToLower ();
 
     auto        found = loadedFonts.find (fontName);
@@ -314,7 +315,7 @@ size_t          DwgImporter::WorkingFonts::LoadFonts ()
     this->LoadOSFonts ();
 
     // set fallback fonts
-    auto    fallbackShx = m_shxFonts.find ("simplex.shx");
+    auto    fallbackShx = m_shxFonts.find ("simplex");
     if (fallbackShx == m_shxFonts.end())
         fallbackShx = m_shxFonts.begin ();
     if (fallbackShx != m_shxFonts.end())
@@ -324,9 +325,14 @@ size_t          DwgImporter::WorkingFonts::LoadFonts ()
     if (fallbackTtf == m_truetypeFonts.end())
         fallbackTtf = m_truetypeFonts.begin ();
     if (fallbackTtf != m_truetypeFonts.end())
-        m_dwgImporter.SetFallbackFontPathForText (fallbackTtf->second.m_path, DgnFontType::TrueType);
+        {
+        auto pathOrName = fallbackTtf->second.m_path;
+        if (pathOrName.empty() && fallbackTtf->second.m_font.IsValid())
+            pathOrName.SetNameUtf8(fallbackTtf->second.m_font->GetName());
+        m_dwgImporter.SetFallbackFontPathForText (pathOrName, DgnFontType::TrueType);
+        }
 
-    fallbackShx = m_shxFonts.find ("ltypeshp.shx");
+    fallbackShx = m_shxFonts.find ("ltypeshp");
     if (fallbackShx != m_shxFonts.end())
         m_dwgImporter.SetFallbackFontPathForShape (fallbackShx->second.m_path);
 
