@@ -50,6 +50,7 @@ public:
     //! @param[in] accessToken OIDC token of user to track usage against
     //! @param[in] version version for this usage
     //! @param[in] projectId projectId of this usage
+    //! @param[in] productId optional - specify the productId for this usage
     //! @param[in] deviceId optional - specify the deviceId for this usage
     //! @param[in] usageType optional - specify the usage type for this usage
     //! @param[in] correlationId optional - specify the correlationId for this usage, must be a GUID
@@ -67,6 +68,7 @@ public:
     //! Mark realtime feature
     //! @param[in] accessToken OIDC token of user to mark feature against
     //! @param[in] featureEvent The feature event to mark
+    //! @param[in] productId optional - specify the productId for this usage
     //! @param[in] deviceId optional - specify the deviceId for this usage
     //! @param[in] usageType optional - specify the usage type for this usage
     //! @param[in] correlationId optional - specify the correlationId for this usage, must be a GUID
