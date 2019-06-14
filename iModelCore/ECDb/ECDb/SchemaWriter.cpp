@@ -2143,7 +2143,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
             if (ca.IsNull())
                 {
                 // Not sure why the SchemaComparer found the new CA but it isn't here now; however, we can't fail the import because of this.
-                if ((const_cast<IECCustomAttributeContainer *> (&newContainer))->GetContainerSchema()->IsDynamicSchema())
+                if (ctx.IgnoreIllegalDeletionsAndModifications())
                     continue;
                 return ERROR;
                 }
@@ -2158,7 +2158,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
             IECInstancePtr ca = oldContainer.GetCustomAttribute(schemaName, className);
             if (ca == nullptr)
                 {
-                if ((const_cast<IECCustomAttributeContainer *> (&oldContainer))->GetContainerSchema()->IsDynamicSchema())
+                if (ctx.IgnoreIllegalDeletionsAndModifications())
                     continue;
 
                 BeAssert(false);
@@ -2245,12 +2245,14 @@ BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& ba
                 overrideAllBaseClasses = true;
             else
                 {
-                if (!oldBaseClass->GetSchema().IsDynamicSchema())
+                if (!ctx.IgnoreIllegalDeletionsAndModifications())
                     {
                     ctx.Issues().ReportV("ECSchema Upgrade failed. ECClass %s: Removing a base class from an ECClass is not supported.",
                                          oldClass.GetFullName());
                     return ERROR;
                     }
+                ctx.Issues().ReportV("Ignoring upgrade error: ECSchema Upgrade failed. ECClass %s: Removing a base class from an ECClass is not supported.",
+                                     oldClass.GetFullName());
                 }
             }
         else if (change.GetOpCode() == ECChange::OpCode::New)
@@ -2263,12 +2265,14 @@ BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& ba
                 overrideAllBaseClasses = true;
             else
                 {
-                if (!newBaseClass->GetSchema().IsDynamicSchema())
+                if (!ctx.IgnoreIllegalDeletionsAndModifications())
                     {
                     ctx.Issues().ReportV("ECSchema Upgrade failed. ECClass %s: Adding a new base class to an ECClass is not supported.",
                                          oldClass.GetFullName());
                     return ERROR;
                     }
+                ctx.Issues().ReportV("Ignoring upgrade error: ECSchema Upgrade failed. ECClass %s: Adding a new base class to an ECClass is not supported.",
+                                     oldClass.GetFullName());
                 }
             }
         else if (change.GetOpCode() == ECChange::OpCode::Modified)
@@ -2668,8 +2672,13 @@ BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, 
     {
     if (!ctx.AreMajorSchemaVersionChangesAllowed() || !ctx.IsMajorSchemaVersionChange(deletedClass.GetSchema().GetId()))
         {
-        if (deletedClass.GetSchema().IsDynamicSchema())
+        if (ctx.IgnoreIllegalDeletionsAndModifications())
+            {
+            ctx.Issues().ReportV("Ignoring upgrade error:  ECSchema Upgrade failed. ECSchema %s: Cannot delete ECClass '%s'. This is a major ECSchema change. Either major schema version changes are disabled "
+                                 "or the 'Read' version number of the ECSchema was not incremented.",
+                                 deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
             return SUCCESS;
+            }
 
         ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Cannot delete ECClass '%s'. This is a major ECSchema change. Either major schema version changes are disabled "
                          "or the 'Read' version number of the ECSchema was not incremented.",
@@ -2814,8 +2823,13 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
     
     if (!ctx.AreMajorSchemaVersionChangesAllowed() || !ctx.IsMajorSchemaVersionChange(deletedProperty.GetClass().GetSchema().GetId()))
         {
-        if (deletedProperty.GetClass().GetSchema().IsDynamicSchema())
+        if (ctx.IgnoreIllegalDeletionsAndModifications())
+            {
+            ctx.Issues().ReportV("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: Cannot delete ECProperty '%s.%s'. This is a major ECSchema change. Either major schema version changes are disabled "
+                                 "or the 'Read' version number of the ECSchema was not incremented.",
+                                 ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str());
             return SUCCESS;
+            }
 
         ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Cannot delete ECProperty '%s.%s'. This is a major ECSchema change. Either major schema version changes are disabled "
                              "or the 'Read' version number of the ECSchema was not incremented.",
@@ -3130,9 +3144,12 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(Context& ctx, PropertyCateg
 
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
-            if (oldSchema.IsDynamicSchema())
+            if (ctx.IgnoreIllegalDeletionsAndModifications())
+                {
+                ctx.Issues().ReportV("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: Deleting PropertyCategory from an ECSchema is not supported.",
+                                     oldSchema.GetFullSchemaName().c_str());
                 continue;
-
+                }
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting PropertyCategory from an ECSchema is not supported.",
                             oldSchema.GetFullSchemaName().c_str());
             return ERROR;
@@ -3412,8 +3429,12 @@ BentleyStatus SchemaWriter::UpdateEnumerations(Context& ctx, EnumerationChanges&
 
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
-            if (oldSchema.IsDynamicSchema())
+            if (ctx.IgnoreIllegalDeletionsAndModifications())
+                {
+                ctx.Issues().ReportV("Ignoring upgrade error: ECSchema Upgrade failed. ECSchema %s: Deleting ECEnumerations from an ECSchema is not supported.",
+                                     oldSchema.GetFullSchemaName().c_str());
                 continue;
+                }
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting ECEnumerations from an ECSchema is not supported.",
                                       oldSchema.GetFullSchemaName().c_str());
             return ERROR;
@@ -4041,12 +4062,14 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
 
     if (schemaChange.Alias().IsChanged())
         {
-        if (!oldSchema.IsDynamicSchema())
+        if (!ctx.IgnoreIllegalDeletionsAndModifications())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Modifying the Alias is not supported.",
                                  oldSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
+        ctx.Issues().ReportV("Ignoring upgrade error: ECSchema Upgrade failed. ECSchema %s: Modifying the Alias is not supported.",
+                             oldSchema.GetFullSchemaName().c_str());
         }
 
     if (schemaChange.ECVersion().IsChanged())
