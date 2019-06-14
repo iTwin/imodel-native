@@ -1666,12 +1666,22 @@ void getOutlierElementInfo (const bvector<BeInt64Id>& elementOutliers, DgnDbCP d
                 v8ElementId = estmt.GetValueInt64 (0);
 
             auto v8ModelInfo = std::get <1> (SyncInfo::V8ModelExternalSourceAspect::GetAspect (*outlierElement->GetModel ()));
-            Utf8String sourceModelName = v8ModelInfo.GetV8ModelName ();
-            RepositoryLinkId id = v8ModelInfo.GetRepositoryLinkId ();
-            auto repositoryLinkElement = converter->GetRepositoryLinkElement (id);
-            auto v8FileInfo = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect (*repositoryLinkElement);
-            Utf8String sourceFileName = v8FileInfo.GetFileName ();
-            message.Sprintf (" Element Id: %lld, Model Name: %s, File Name: %s", v8ElementId, sourceModelName.c_str (), sourceFileName.c_str ());
+            Utf8String sourceModelName;
+            Utf8String sourceFileName;
+            if (v8ModelInfo.IsValid())
+                {
+                sourceModelName = v8ModelInfo.GetV8ModelName();
+                RepositoryLinkId id = v8ModelInfo.GetRepositoryLinkId();
+                auto repositoryLinkElement = converter->GetRepositoryLinkElement(id);
+                auto v8FileInfo = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect(*repositoryLinkElement);
+                sourceFileName = v8FileInfo.GetFileName();
+                }
+            else
+                {
+                sourceModelName = "<unknown>";
+                sourceFileName = "<unknown>";
+                }
+            message.Sprintf(" Element Id: %lld, Model Name: %s, File Name: %s", v8ElementId, sourceModelName.c_str(), sourceFileName.c_str());
         }
     }
 }
@@ -1715,6 +1725,7 @@ void Converter::OnCreateComplete()
 
     timer.Start();
     GenerateRealityModelTilesets();
+    //GenerateWebMercatorModel();
     ConverterLogging::LogPerformance(timer, "Creating reality model tilesets");
 
     GetDgnDb().SaveSettings();

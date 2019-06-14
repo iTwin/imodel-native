@@ -14,6 +14,7 @@
 #include <DgnView/DgnViewLib.h>
 #include <iModelBridge/iModelBridgeFwkTypes.h>
 #include <iModelDmsSupport/iModelDmsSupport.h>
+#include <DgnPlatform/DgnDbTables.h>
 
 BEGIN_BENTLEY_NAMESPACE namespace WebServices {
 typedef std::shared_ptr<struct ClientInfo> ClientInfoPtr;
@@ -526,6 +527,8 @@ struct iModelBridge
         GCSDefinition m_inputGcs;
         GCSDefinition m_outputGcs;
         GCSCalculationMethod m_gcsCalculationMethod;
+        
+        EcefLocation m_ecEFLocation; //!< The data does not have GCS information. Use ECEF cordinates to locate it in the map.
         BeFileName m_briefcaseName;
         BeFileName m_assetsDir;
         BeFileName m_geoCoordDir;
@@ -580,6 +583,7 @@ struct iModelBridge
 
         BE_JSON_NAME(transform);    //!< Linear transform specification
         BE_JSON_NAME(gcs);          //!< GCS definition
+        BE_JSON_NAME(ecef);          //!< GCS definition
 
         //! Get additional parameters from JSON
         //! @see SetTransformJson, SetOffsetJson, SetGcsJson
@@ -701,6 +705,8 @@ struct iModelBridge
 
         bvector<WString> const& GetAdditionalFilePattern() const { return m_additionalFiles; }
         void AddAdditionalFilePattern(WStringCR pattern) { m_additionalFiles.push_back(pattern); }
+
+        EcefLocation GetEcefLocation() const { return m_ecEFLocation; }
         };
 
     private:
