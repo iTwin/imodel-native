@@ -212,10 +212,22 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
     Utf8String code = finfo.m_uniqueName;
 
     Utf8String uri = GetDocumentURNforFile(file);
-    if (!iModelBridge::IsNonFileURN(uri))
-        uri.clear();    // don't use file:// pseudo-urns. Nobody wants to see a path on somebody's computer.
+    if (!iModelBridge::IsNonFileURN(uri) || IsEmbeddedFileName(uri) || BentleyApi::BeFileName::DoesPathExist(BentleyApi::WString(uri.c_str(), true).c_str()))
+        uri.clear();    // Don't store filepaths that refer to someone's computer.
 
-    auto rlink = iModelBridge::MakeRepositoryLink(GetDgnDb(), _GetParams(), BeFileName(file.GetFileName().c_str()), code.c_str(), uri.c_str());
+    BeFileName localFileName(file.GetFileName().c_str());
+    if (file.IsEmbeddedFile())
+        {
+        // don't include package name
+        auto endPackage = localFileName.find(L">");
+        if (endPackage != WString::npos)
+            {
+            auto refname = localFileName.substr(endPackage+1);
+            localFileName.assign(refname.c_str());
+            }
+        }
+
+    auto rlink = iModelBridge::MakeRepositoryLink(GetDgnDb(), _GetParams(), localFileName, code.c_str(), uri.c_str());
 
     auto rlinkPersist = GetDgnDb().Elements().Get<RepositoryLink>(rlink->GetElementId());
     if (rlinkPersist.IsValid())
