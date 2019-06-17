@@ -49,14 +49,14 @@ BeFileName GetWithKeyLicensingDbPath()
 
 AccessKeyClientImplPtr CreateWithKeyTestClient(IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb, Utf8StringCR productId = TEST_PRODUCT_ID)
     {
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", productId);
 
     BeFileName dbPath = GetWithKeyLicensingDbPath();
 
     return std::make_shared<AccessKeyClientImpl>
         (
         TEST_ACCESSKEY,
-        clientInfo,
+        appInfo,
         dbPath,
         true,
         policyProvider,

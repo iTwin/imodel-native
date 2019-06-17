@@ -19,6 +19,26 @@ struct UnitsDeserializationTests : ECTestFixture {};
 struct InvertedUnitsDeserializationTests: ECTestFixture {};
 struct ConstantDeserializationTests: ECTestFixture {};
 
+template<class T> typename std::enable_if<!std::numeric_limits<T>::is_integer, bool>::type
+static almost_equal(const T x, const T y, int ulp)
+    {
+    // the machine epsilon has to be scaled to the magnitude of the values used
+    // and multiplied by the desired precision in ULPs (units in the last place)
+    return fabs(x - y) < std::numeric_limits<T>::epsilon() * fabs(x + y) * ulp
+        // unless the result is subnormal
+        || fabs(x - y) < std::numeric_limits<T>::min();
+    }
+
+static void CompareValues(double expected, double actual, int ulpPower, Utf8CP message)
+    {
+    if (!almost_equal<double>(expected, actual, int(pow(10,ulpPower))))
+        {
+        Utf8PrintfString formattedText("%s\nExpected: %.17g \nActual:   %.17g \nDiff:     %.17g   Diff/Exp: %.17g   ULP: %d\n",
+                                       message, expected, actual, actual - expected, (actual - expected) / expected, pow(10,ulpPower));
+        EXPECT_FALSE(true) << formattedText;
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                  04/2018
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -60,6 +80,30 @@ TEST_F(UnitConversionTests, UnitConversionsMatchOldConversions)
         fromSchema->Convert(converted, orig, toSchema);
         ASSERT_DOUBLE_EQ(converted, conv);
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  05/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitConversionTests, VolumetricFlowUnitConversions)
+    {
+    ECUnitCP gallonPerHour = ECTestFixture::GetUnitsSchema()->GetUnitCP("GALLON_PER_HR");
+    ECUnitCP imperialGallonPerHour = ECTestFixture::GetUnitsSchema()->GetUnitCP("GALLON_IMPERIAL_PER_HR");
+    ECUnitCP cubicMeterPerSecond = ECTestFixture::GetUnitsSchema()->GetUnitCP("CUB_M_PER_SEC");
+    double expected = 1.0515032733e-6; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    double actual;
+    gallonPerHour->Convert(actual, 1.0, cubicMeterPerSecond);
+    CompareValues(expected, actual, 6, "Conversion from Gallon per Hour to cubic meter per second not as expected");
+
+    expected = 1.2628027778e-6; // Value from: http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
+    imperialGallonPerHour->Convert(actual, 1.0, cubicMeterPerSecond);
+    CompareValues(expected, actual, 6, "Conversion from Imperial Gallon per Hour to cubic meter per second not as expected");
+
+    expected = 60;
+    ECTestFixture::GetUnitsSchema()->GetUnitCP("GALLON_PER_MIN")->Convert(actual, 1.0, gallonPerHour);
+    EXPECT_DOUBLE_EQ(expected, actual) << "Conversion from Gallon per Hour to gallon per minute not as expected";
+    ECTestFixture::GetUnitsSchema()->GetUnitCP("GALLON_IMPERIAL_PER_MIN")->Convert(actual, 1.0, imperialGallonPerHour);
+    EXPECT_DOUBLE_EQ(expected, actual) << "Conversion from imperial gallon per Hour to imperial gallon per minute not as expected";
     }
 
 //---------------------------------------------------------------------------------------

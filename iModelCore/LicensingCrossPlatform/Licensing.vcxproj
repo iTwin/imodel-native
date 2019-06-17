@@ -8,6 +8,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Licensing\AccessKeyClient.cpp" />
+    <ClCompile Include="Licensing\ApplicationInfo.cpp" />
     <ClCompile Include="Licensing\Client.cpp" />
     <ClCompile Include="Licensing\SaasClient.cpp" />
     <ClCompile Include="Licensing\SaasClientImpl.cpp" />
@@ -41,12 +42,13 @@
     <ClInclude Include="Licensing\Providers\IBuddiProvider.h" />
     <ClInclude Include="Licensing\Providers\IUlasProvider.h" />
     <ClInclude Include="Licensing\Providers\UlasProvider.h" />
+    <ClInclude Include="PublicAPI\Licensing\ApplicationInfo.h" />
+    <ClInclude Include="PublicAPI\Licensing\UsageType.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\FeatureEvent.h" />
     <ClInclude Include="PublicAPI\Licensing\AccessKeyClient.h" />
     <ClInclude Include="PublicAPI\Licensing\AuthType.h" />
     <ClInclude Include="PublicAPI\Licensing\SaasClient.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\DateHelper.h" />
-    <ClInclude Include="Licensing\FreeApplicationPolicyHelper.h" />
     <ClInclude Include="Licensing\Logging.h" />
     <ClInclude Include="Licensing\Policy.h" />
     <ClInclude Include="Licensing\PolicyHelper.h" />

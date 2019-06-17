@@ -20,9 +20,9 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct LicensingDb : ILicensingDb
-{
+    {
 private:
-	BeSQLite::Db m_db;
+    BeSQLite::Db m_db;
 
     const Utf8String GRACESTART = "GRACESTART";
 
@@ -85,6 +85,6 @@ public:
                                                  Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType, Utf8StringCR featureId,
                                                  Utf8StringCR startDate, Utf8String endDate, Utf8String userData);
 
-};
+    };
 
 END_BENTLEY_LICENSING_NAMESPACE

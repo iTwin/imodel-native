@@ -2067,15 +2067,30 @@ BentleyStatus SchemaWriter::UpdateRelationshipConstraint(Context& ctx, ECContain
     if (constraintChange.RoleLabel().IsChanged())
         {
         updater.AddSetExp("RoleLabel", constraintChange.RoleLabel().GetNew().Value().c_str());
+
+        updater.AddWhereExp("RelationshipEnd", isSource ? ECRelationshipEnd_Source : ECRelationshipEnd_Target);
+        updater.AddWhereExp("RelationshipClassId", containerId.GetValue());
+        if (updater.ExecuteSql(ctx.GetECDb()) != SUCCESS)
+            return ERROR;
         }
 
-    updater.AddWhereExp("RelationshipEnd", isSource ? ECRelationshipEnd_Source : ECRelationshipEnd_Target);
-    updater.AddWhereExp("RelationshipClassId", containerId.GetValue());
-    if (updater.ExecuteSql(ctx.GetECDb()) != SUCCESS)
+    const SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType = isSource ? SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint : SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint;
+
+    // containerId is the ECRelationshipClass - we need the id of the constraint
+    CachedStatementPtr stmt = ctx.GetCachedStatement("SELECT Id FROM main." TABLE_RelationshipConstraint " WHERE RelationshipClassId = ? AND RelationshipEnd = ?");
+    if (stmt == nullptr)
         return ERROR;
 
-    const SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType = isSource ? SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint : SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint;
-    return UpdateCustomAttributes(ctx, containerType, containerId, constraintChange.CustomAttributes(), oldConstraint, newConstraint);
+    stmt->BindId(1, containerId);
+    stmt->BindInt(2, isSource ? 0 : 1);
+
+    if (stmt->Step() != BE_SQLITE_ROW)
+        {
+        return ERROR;
+        }
+    ECContainerId constraintId = stmt->GetValueId<ECContainerId>(0);
+
+    return UpdateCustomAttributes(ctx, containerType, constraintId, constraintChange.CustomAttributes(), oldConstraint, newConstraint);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2126,8 +2141,12 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
             IECInstancePtr ca = newContainer.GetCustomAttribute(schemaName, className);
             BeAssert(ca.IsValid());
             if (ca.IsNull())
+                {
+                // Not sure why the SchemaComparer found the new CA but it isn't here now; however, we can't fail the import because of this.
+                if (ctx.IgnoreIllegalDeletionsAndModifications())
+                    continue;
                 return ERROR;
-
+                }
             if (ImportClass(ctx, ca->GetClass()) != SUCCESS)
                 return ERROR;
 
@@ -2139,6 +2158,9 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
             IECInstancePtr ca = oldContainer.GetCustomAttribute(schemaName, className);
             if (ca == nullptr)
                 {
+                if (ctx.IgnoreIllegalDeletionsAndModifications())
+                    continue;
+
                 BeAssert(false);
                 return ERROR;
                 }
@@ -2223,9 +2245,14 @@ BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& ba
                 overrideAllBaseClasses = true;
             else
                 {
-                ctx.Issues().ReportV("ECSchema Upgrade failed. ECClass %s: Removing a base class from an ECClass is not supported.",
-                                oldClass.GetFullName());
-                return ERROR;
+                if (!ctx.IgnoreIllegalDeletionsAndModifications())
+                    {
+                    ctx.Issues().ReportV("ECSchema Upgrade failed. ECClass %s: Removing a base class from an ECClass is not supported.",
+                                         oldClass.GetFullName());
+                    return ERROR;
+                    }
+                ctx.Issues().ReportV("Ignoring upgrade error: ECSchema Upgrade failed. ECClass %s: Removing a base class from an ECClass is not supported.",
+                                     oldClass.GetFullName());
                 }
             }
         else if (change.GetOpCode() == ECChange::OpCode::New)
@@ -2238,9 +2265,14 @@ BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& ba
                 overrideAllBaseClasses = true;
             else
                 {
-                ctx.Issues().ReportV("ECSchema Upgrade failed. ECClass %s: Adding a new base class to an ECClass is not supported.",
-                                oldClass.GetFullName());
-                return ERROR;
+                if (!ctx.IgnoreIllegalDeletionsAndModifications())
+                    {
+                    ctx.Issues().ReportV("ECSchema Upgrade failed. ECClass %s: Adding a new base class to an ECClass is not supported.",
+                                         oldClass.GetFullName());
+                    return ERROR;
+                    }
+                ctx.Issues().ReportV("Ignoring upgrade error: ECSchema Upgrade failed. ECClass %s: Adding a new base class to an ECClass is not supported.",
+                                     oldClass.GetFullName());
                 }
             }
         else if (change.GetOpCode() == ECChange::OpCode::Modified)
@@ -2394,7 +2426,7 @@ BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, 
                 return ERROR;
 
         if (classChange.Target().IsChanged())
-            if (UpdateRelationshipConstraint(ctx, classId, classChange.Target(), newRel->GetSource(), oldRel->GetTarget(), false, oldRel->GetFullName()) == ERROR)
+            if (UpdateRelationshipConstraint(ctx, classId, classChange.Target(), newRel->GetTarget(), oldRel->GetTarget(), false, oldRel->GetFullName()) == ERROR)
                 return ERROR;
         }
 
@@ -2640,6 +2672,14 @@ BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, 
     {
     if (!ctx.AreMajorSchemaVersionChangesAllowed() || !ctx.IsMajorSchemaVersionChange(deletedClass.GetSchema().GetId()))
         {
+        if (ctx.IgnoreIllegalDeletionsAndModifications())
+            {
+            ctx.Issues().ReportV("Ignoring upgrade error:  ECSchema Upgrade failed. ECSchema %s: Cannot delete ECClass '%s'. This is a major ECSchema change. Either major schema version changes are disabled "
+                                 "or the 'Read' version number of the ECSchema was not incremented.",
+                                 deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+            return SUCCESS;
+            }
+
         ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Cannot delete ECClass '%s'. This is a major ECSchema change. Either major schema version changes are disabled "
                          "or the 'Read' version number of the ECSchema was not incremented.",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
@@ -2783,6 +2823,14 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
     
     if (!ctx.AreMajorSchemaVersionChangesAllowed() || !ctx.IsMajorSchemaVersionChange(deletedProperty.GetClass().GetSchema().GetId()))
         {
+        if (ctx.IgnoreIllegalDeletionsAndModifications())
+            {
+            ctx.Issues().ReportV("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: Cannot delete ECProperty '%s.%s'. This is a major ECSchema change. Either major schema version changes are disabled "
+                                 "or the 'Read' version number of the ECSchema was not incremented.",
+                                 ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str());
+            return SUCCESS;
+            }
+
         ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Cannot delete ECProperty '%s.%s'. This is a major ECSchema change. Either major schema version changes are disabled "
                              "or the 'Read' version number of the ECSchema was not incremented.",
                              ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str());
@@ -3096,6 +3144,12 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(Context& ctx, PropertyCateg
 
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
+            if (ctx.IgnoreIllegalDeletionsAndModifications())
+                {
+                ctx.Issues().ReportV("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: Deleting PropertyCategory from an ECSchema is not supported.",
+                                     oldSchema.GetFullSchemaName().c_str());
+                continue;
+                }
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting PropertyCategory from an ECSchema is not supported.",
                             oldSchema.GetFullSchemaName().c_str());
             return ERROR;
@@ -3375,6 +3429,12 @@ BentleyStatus SchemaWriter::UpdateEnumerations(Context& ctx, EnumerationChanges&
 
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
+            if (ctx.IgnoreIllegalDeletionsAndModifications())
+                {
+                ctx.Issues().ReportV("Ignoring upgrade error: ECSchema Upgrade failed. ECSchema %s: Deleting ECEnumerations from an ECSchema is not supported.",
+                                     oldSchema.GetFullSchemaName().c_str());
+                continue;
+                }
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting ECEnumerations from an ECSchema is not supported.",
                                       oldSchema.GetFullSchemaName().c_str());
             return ERROR;
@@ -4002,9 +4062,14 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
 
     if (schemaChange.Alias().IsChanged())
         {
-        ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Modifying the Alias is not supported.",
+        if (!ctx.IgnoreIllegalDeletionsAndModifications())
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Modifying the Alias is not supported.",
+                                 oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+        ctx.Issues().ReportV("Ignoring upgrade error: ECSchema Upgrade failed. ECSchema %s: Modifying the Alias is not supported.",
                              oldSchema.GetFullSchemaName().c_str());
-        return ERROR;
         }
 
     if (schemaChange.ECVersion().IsChanged())

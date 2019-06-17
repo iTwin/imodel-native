@@ -26,7 +26,7 @@ UlasProvider::UlasProvider
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UlasProvider::PostUsageLogs(ClientInfoPtr clientInfo, BeFileNameCR dbPath, ILicensingDb& licensingDb, std::shared_ptr<Policy> policy)
+BentleyStatus UlasProvider::PostUsageLogs(ApplicationInfoPtr applicationInfo, BeFileNameCR dbPath, ILicensingDb& licensingDb, std::shared_ptr<Policy> policy)
     {
     LOG.debug("UlasProvider::PostUsageLogs");
 
@@ -59,7 +59,7 @@ BentleyStatus UlasProvider::PostUsageLogs(ClientInfoPtr clientInfo, BeFileNameCR
             {
             try
                 {
-                SendUsageLogs(clientInfo, BeFileName(logFile), ultimateId).get(); // .get() waits and then return the value or throws the exception
+                SendUsageLogs(applicationInfo, BeFileName(logFile), ultimateId).get(); // .get() waits and then return the value or throws the exception
                 }
             catch (...)
                 {
@@ -81,13 +81,13 @@ BentleyStatus UlasProvider::PostUsageLogs(ClientInfoPtr clientInfo, BeFileNameCR
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> UlasProvider::SendUsageLogs(ClientInfoPtr clientInfo, BeFileNameCR usageCSV, Utf8StringCR ultId)
+folly::Future<folly::Unit> UlasProvider::SendUsageLogs(ApplicationInfoPtr applicationInfo, BeFileNameCR usageCSV, Utf8StringCR ultId)
     {
     LOG.debug("UlasProvider::SendUsageLogs");
 
     auto url = m_buddiProvider->UlasLocationBaseUrl();
-    url += Utf8PrintfString("/usageLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), clientInfo->GetApplicationProductId().c_str(),
-        clientInfo->GetLanguage().c_str());
+    url += Utf8PrintfString("/usageLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), applicationInfo->GetProductId().c_str(),
+        applicationInfo->GetLanguage().c_str());
 
     LOG.debugv("UlasProvider::SendUsageLogs - UsageLoggingServiceLocation: %s", url.c_str());
 
@@ -129,7 +129,7 @@ folly::Future<folly::Unit> UlasProvider::SendUsageLogs(ClientInfoPtr clientInfo,
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UlasProvider::PostFeatureLogs(ClientInfoPtr clientInfo, BeFileNameCR dbPath, ILicensingDb& licensingDb, std::shared_ptr<Policy> policy)
+BentleyStatus UlasProvider::PostFeatureLogs(ApplicationInfoPtr applicationInfo, BeFileNameCR dbPath, ILicensingDb& licensingDb, std::shared_ptr<Policy> policy)
     {
     LOG.debug("UlasProvider::PostFeatureLogs");
 
@@ -162,7 +162,7 @@ BentleyStatus UlasProvider::PostFeatureLogs(ClientInfoPtr clientInfo, BeFileName
             {
             try
                 {
-                SendFeatureLogs(clientInfo, BeFileName(logFile), ultimateId).get(); // .get() waits and then return the value or throws the exception
+                SendFeatureLogs(applicationInfo, BeFileName(logFile), ultimateId).get(); // .get() waits and then return the value or throws the exception
                 }
             catch (...)
                 {
@@ -184,13 +184,13 @@ BentleyStatus UlasProvider::PostFeatureLogs(ClientInfoPtr clientInfo, BeFileName
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> UlasProvider::SendFeatureLogs(ClientInfoPtr clientInfo, BeFileNameCR featureCSV, Utf8StringCR ultId)
+folly::Future<folly::Unit> UlasProvider::SendFeatureLogs(ApplicationInfoPtr applicationInfo, BeFileNameCR featureCSV, Utf8StringCR ultId)
     {
     LOG.debug("UlasProvider::SendFeatureLogs");
 
     auto url = m_buddiProvider->UlasLocationBaseUrl();
-    url += Utf8PrintfString("/featureLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), clientInfo->GetApplicationProductId().c_str(),
-        clientInfo->GetLanguage().c_str());
+    url += Utf8PrintfString("/featureLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), applicationInfo->GetProductId().c_str(),
+        applicationInfo->GetLanguage().c_str());
 
     LOG.debugv("UlasProvider::SendFeatureLogs - UsageLoggingServiceLocation: %s", url.c_str());
 
@@ -232,7 +232,7 @@ folly::Future<folly::Unit> UlasProvider::SendFeatureLogs(ClientInfoPtr clientInf
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage(Utf8StringCR accessToken, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, BeVersionCR version, Utf8StringCR projectId)
+folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage(Utf8StringCR accessToken, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, BeVersionCR version, Utf8StringCR projectId, UsageType usageType, Utf8StringCR correlationId)
     {
     LOG.debug("UlasProvider::RealtimeTrackUsage");
     // Send real time usage
@@ -247,13 +247,15 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage(Utf8StringCR acces
 
     // create Json body
     auto jsonBody = UsageJsonHelper::CreateJsonRandomGuids
-    (
+        (
         deviceId,
         featureString,
         version,
         projectId,
-        productId
-    );
+        productId,
+        usageType,
+        correlationId
+        );
 
     uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
 
@@ -272,7 +274,7 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage(Utf8StringCR acces
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, int productId, Utf8StringCR featureString, Utf8StringCR deviceId)
+folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId)
     {
     LOG.debug("UlasProvider::RealtimeMarkFeature");
     //LOG.tracev("MarkFeature - Called with featureId: %s, version: %s, projectId: %s", featureEvent.m_featureId.c_str(), featureEvent.m_version.ToString().c_str(), featureEvent.m_projectId.c_str());
@@ -288,7 +290,9 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature(Utf8StringCR acce
     (
         productId,
         featureString,
-        deviceId
+        deviceId,
+        usageType,
+        correlationId
     );
 
     uploadRequest.SetRequestBody(HttpStringBody::Create(jsonBody));
@@ -309,7 +313,7 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature(Utf8StringCR acce
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<Json::Value> UlasProvider::GetAccessKeyInfo(ClientInfoPtr clientInfo, Utf8StringCR accessKey)
+folly::Future<Json::Value> UlasProvider::GetAccessKeyInfo(ApplicationInfoPtr applicationInfo, Utf8StringCR accessKey)
     {
     LOG.debug("UlasProvider::GetAccessKeyInfo");
 
@@ -324,7 +328,7 @@ folly::Future<Json::Value> UlasProvider::GetAccessKeyInfo(ClientInfoPtr clientIn
     GenerateSID gsid;
 
     requestJson["accesskey"] = accessKey;
-    requestJson["cSID"] = gsid.GetMachineSID(clientInfo->GetDeviceId()); // need hash
+    requestJson["cSID"] = gsid.GetMachineSID(applicationInfo->GetDeviceId()); // need hash
 
     Utf8String jsonBody = Json::FastWriter().write(requestJson);
 

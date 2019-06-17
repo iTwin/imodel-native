@@ -15,12 +15,13 @@ Headers + $(SourceDir)GenerateSID.h
 Headers + $(SourceDir)Policy.h
 Headers + $(SourceDir)ILicensingDb.h
 Headers + $(SourceDir)LicensingDb.h
-Headers + $(SourceDir)FreeApplicationPolicyHelper.h
 Headers + $(PublicApiDir)Client.h
 Headers + $(PublicApiDir)AccessKeyClient.h
 Headers + $(PublicApiDir)SaasClient.h
 Headers + $(PublicApiDir)LicenseStatus.h
 Headers + $(PublicApiDir)Licensing.h
+Headers + $(PublicApiDir)ApplicationInfo.h
+Headers + $(PublicApiDir)UsageType.h
 Headers + $(PublicApiDir)Utils/FeatureUserDataMap.h
 Headers + $(PublicApiDir)Utils/InMemoryJsonLocalState.h
 Headers + $(PublicApiDir)Utils/JWToken.h
@@ -59,6 +60,8 @@ $(o)LicensingDb$(oext)               : $(SourceDir)LicensingDb.cpp $(Headers) ${
 $(o)Policy$(oext)                    : $(SourceDir)Policy.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)GenerateSID$(oext)               : $(SourceDir)GenerateSID.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)ApplicationInfo$(oext)           : $(SourceDir)ApplicationInfo.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)SCVWritter$(oext)                : $(SourceDir)Utils/SCVWritter.cpp $(Headers) ${MultiCompileDepends}
 

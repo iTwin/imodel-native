@@ -225,6 +225,16 @@ void RootModelConverter::_ConvertDrawings()
                                              v8mm.GetDgnModel().GetName().c_str(),
                                              convertedElementCount);
 
+            if (GetChangeDetector()._AreContentsOfModelUnChanged(*this, v8mm))
+                {
+                m_unchangedModels.insert(v8mm.GetDgnModel().GetModelId());
+                }
+            else
+                {
+                v8mm.GetV8Model().FillSections(DgnV8Api::DgnModelSections::Model);
+                ConvertElementList(v8mm.GetV8Model().GetControlElementsP(), v8mm);
+                }
+
             }
 
         if (_GetParams().GetPushIntermediateRevisions() == iModelBridge::Params::PushIntermediateRevisions::ByFile)

@@ -23,6 +23,7 @@
 #include "../iModelBridgeLdClient.h"
 #include "iModelCrashProcessor.h"
 #include "iModelBridgeErrorHandling.h"
+#include <regex>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -993,6 +994,55 @@ static BeFileName findBridgeAssetsDir(BeFileNameCR bridgeLibDir)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void setEmbeddedFileIdRecipe(iModelBridge::Params& params)
+    {
+    auto tempVarCheck = getenv("iModelBridge_MatchOnEmbeddedFileBasename");     // TODO: Replace this with a settings service parameter check
+    if ((nullptr == tempVarCheck) || (*tempVarCheck == '0'))
+        return;
+
+    bool isRegex = false;
+    if (*tempVarCheck != '1')
+        {
+        // assume user has supplied a suffix regex to be used in a recipe.
+        try {
+            // but first make sure it's valid.
+            std::regex rgx(tempVarCheck);
+            // If no exception, then go ahead with it.
+            isRegex = true;
+            }
+        catch (...)
+            {
+            LOG.errorv(L"%s is an invalid regular expression. This was found as the value of the iModelBridge_MatchOnEmbeddedFileBasename environment variable.", tempVarCheck);
+            isRegex = false; // default to old behavior - maybe the user set envvar to Yes or True or something
+            }
+        }
+
+    if (!isRegex)
+        {
+        // Set up the recipe that we had been using
+        iModelBridge::Params::FileIdRecipe recipe;
+        recipe.m_ignorePackage = true;
+        recipe.m_ignoreCase = false;
+        recipe.m_ignoreExtension = false;
+        recipe.m_ignorePwDocId = false;
+        recipe.m_suffixRegex = "";
+        params.SetEmbeddedFileIdRecipe(recipe);
+        return;
+        }
+    
+    // Set up a recipe with the new features, including a suffix recognizer
+    iModelBridge::Params::FileIdRecipe recipe;
+    recipe.m_ignorePackage = true;
+    recipe.m_ignoreCase = true;
+    recipe.m_ignoreExtension = true;
+    recipe.m_ignorePwDocId = true;
+    recipe.m_suffixRegex = tempVarCheck;
+    params.SetEmbeddedFileIdRecipe(recipe);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin* ra)
@@ -1024,9 +1074,9 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
 	if (!m_jobEnvArgs.m_jobSubjectName.empty())
 		params.SetBridgeJobName(m_jobEnvArgs.m_jobSubjectName);
     params.SetMergeDefinitions(m_jobEnvArgs.m_mergeDefinitions);
-    auto tempVarCheck = getenv("iModelBridge_MatchOnEmbeddedFileBasename");     // TODO: Replace this with a settings service parameter check
-    if (tempVarCheck && *tempVarCheck == '1')
-        params.SetMatchOnEmbeddedFileBasename(true);
+
+    setEmbeddedFileIdRecipe(params);
+
     if (m_useIModelHub)
         {
         params.SetUrlEnvironment(m_iModelHubArgs->m_environment);

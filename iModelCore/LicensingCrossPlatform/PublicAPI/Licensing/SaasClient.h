@@ -6,8 +6,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-
-// TODO: check includes to make sure we need everything
 #include <Licensing/Licensing.h>
 
 #include "LicenseStatus.h"
@@ -17,7 +15,7 @@
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
 
 #include <Licensing/Utils/FeatureEvent.h>
-//#include <Licensing/Utils/FeatureUserDataMap.h>
+#include <Licensing/UsageType.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
@@ -52,12 +50,37 @@ public:
     //! @param[in] accessToken OIDC token of user to track usage against
     //! @param[in] version version for this usage
     //! @param[in] projectId projectId of this usage
-    LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
+    //! @param[in] productId optional - specify the productId for this usage
+    //! @param[in] deviceId optional - specify the deviceId for this usage
+    //! @param[in] usageType optional - specify the usage type for this usage
+    //! @param[in] correlationId optional - specify the correlationId for this usage, must be a GUID
+    LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage
+    (
+        Utf8StringCR accessToken,
+        BeVersionCR version,
+        Utf8StringCR projectId,
+        int productId = -1,
+        Utf8StringCR deviceId = "",
+        UsageType usageType = UsageType::Production,
+        Utf8StringCR correlationId = ""
+        );
 
     //! Mark realtime feature
     //! @param[in] accessToken OIDC token of user to mark feature against
     //! @param[in] featureEvent The feature event to mark
-    LICENSING_EXPORT folly::Future<BentleyStatus> MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent);
+    //! @param[in] productId optional - specify the productId for this usage
+    //! @param[in] deviceId optional - specify the deviceId for this usage
+    //! @param[in] usageType optional - specify the usage type for this usage
+    //! @param[in] correlationId optional - specify the correlationId for this usage, must be a GUID
+    LICENSING_EXPORT folly::Future<BentleyStatus> MarkFeature
+        (
+        Utf8StringCR accessToken,
+        FeatureEvent featureEvent,
+        int productId = -1,
+        Utf8StringCR deviceId = "",
+        UsageType usageType = UsageType::Production,
+        Utf8StringCR correlationId = ""
+        );
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

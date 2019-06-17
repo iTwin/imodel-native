@@ -186,7 +186,7 @@ void GCSRequestManager::SimpleFileDownload(BeFileName xrdpPath, BeFileName downl
     BeFileName certificatePath, RealityDataDownload_ProxyCallBack proxyCallback)
     {
     WString parseError = L"";
-    RealityDataDownload::Link_File_wMirrors_wSisters downloadOrder = RealityConversionTools::PackageFileToDownloadOrder(xrdpPath, &parseError, downloadPath);
+    RealityDataDownload::Link_File_wMirrors_wSisters downloadOrder = RealityConversionTools::PackageFileToDownloadOrder(xrdpPath, &parseError, downloadPath, true, true);
 
     if(!parseError.empty())
         {

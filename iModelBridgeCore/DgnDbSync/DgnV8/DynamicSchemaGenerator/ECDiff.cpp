@@ -2686,7 +2686,7 @@ MergeStatus ECSchemaMergeTool::AppendPropertyToMerge(ECN::ECClassR mergeClass, E
             newProperty = newPrimitiveProp;
             }
         newProperty->SetMinOccurs( srcProperty->GetMinOccurs());
-        newProperty->SetMaxOccurs( srcProperty->GetMaxOccurs());
+        newProperty->SetMaxOccurs( srcProperty->GetStoredMaxOccurs());
         mergeProperty = newProperty;
         }
     if (property->GetIsDisplayLabelDefined())
@@ -2749,7 +2749,18 @@ ECN::ECClassCP ECSchemaMergeTool::ResolveClass (Utf8StringCR classFullName)
     BeAssert (!classFullName.empty());
     //First priority is merged schema see if can find it there
     Utf8String::size_type n = classFullName.find (":");
-    BeAssert (n != Utf8String::npos);
+
+    // if n == Utf8String::npos, that means the struct comes from the same schema as the property
+    if (n == Utf8String::npos)
+        {
+        // In which case, our only option is to hope to find it in the merged schema
+        ECN::ECClassCP ecClass = GetMerged().GetClassCP(classFullName.c_str());
+        if (ecClass != NULL)
+            return ecClass;
+        if (ResolveClassFromMergeContext(ecClass, classFullName.c_str()) == MergeStatus::Success)
+            return ecClass;
+        return NULL;
+        }
     Utf8String className = classFullName.substr (n + 1);
     Utf8String schemaName = classFullName.substr(0, n);
     if (schemaName.Equals(GetMerged().GetName()))

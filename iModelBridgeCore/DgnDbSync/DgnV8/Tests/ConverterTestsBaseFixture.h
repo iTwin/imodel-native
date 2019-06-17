@@ -69,7 +69,7 @@ struct ConverterTestBaseFixture : public testing::Test
     void AddV8Level(BentleyApi::Utf8CP levelname, BentleyApi::BeFileNameCR v8FileName = BentleyApi::BeFileName());
     void SetV8LevelColor(BentleyApi::Utf8CP levelname, uint32_t v8ColorId, BentleyApi::BeFileNameCR v8FileNameIn = BentleyApi::BeFileName());
 
-    void DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input);
+    void DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool wantExternalDataModels = true);
     void DoUpdate(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool expectFailure = false, bool expectUpdate = true, bool doDetectDeletedDocuments = false, bool onAllDocsProcessed = false);
 
     void TestElementChanges(BentleyApi::BeFileNameCR rootV8FileName, BentleyApi::BeFileNameCR editV8FileName, size_t nModelsExpected);

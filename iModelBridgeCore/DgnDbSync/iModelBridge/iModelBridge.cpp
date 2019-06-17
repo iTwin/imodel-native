@@ -521,7 +521,7 @@ BentleyStatus iModelBridge::Params::ParseJsonArgs(JsonValueCR obj, bool isForInp
         {
         if (propName.EqualsI(json_transform()))
             {
-            if (obj.isMember(json_gcs()))
+            if (obj.isMember(json_gcs())|| obj.isMember(json_ecef()))
                 {
                 BeAssert(false);
                 fprintf(stderr, "Specify transform or GCS, but not both\n");
@@ -533,7 +533,7 @@ BentleyStatus iModelBridge::Params::ParseJsonArgs(JsonValueCR obj, bool isForInp
             }
         else if (propName.EqualsI(json_gcs()))
             {
-            if (obj.isMember(json_transform()))
+            if (obj.isMember(json_transform()) || obj.isMember(json_ecef()))
                 {
                 BeAssert(false);
                 fprintf(stderr, "Specify transform or GCS, but not both\n");
@@ -551,6 +551,17 @@ BentleyStatus iModelBridge::Params::ParseJsonArgs(JsonValueCR obj, bool isForInp
 
             if (BSISUCCESS != status)
                 return status;
+            }
+        else if (propName.EqualsI(json_ecef()))
+            {
+            if (obj.isMember(json_transform()) || obj.isMember(json_gcs()))
+                {
+                BeAssert(false);
+                fprintf(stderr, "Specify transform or GCS, but not both\n");
+                return BSIERROR;
+                }
+            m_ecEFLocation.FromJson(obj[json_ecef()]);
+            return m_ecEFLocation.m_isValid ? SUCCESS : ERROR;
             }
         else
             {

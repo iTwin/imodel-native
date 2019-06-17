@@ -824,7 +824,7 @@ struct Converter
         L10N_STRING(FailedToImportLinkError)      // =="Failed to import link on element %llu in file '%s' (new ElementId: %llu)"==
         L10N_STRING(InvalidSheetAttachment)      // =="Sheet [%s] - Unsupported sheet attachment: [%s]"==
         L10N_STRING(UnrecognizedDetailingSymbol) // =="[%s] is an unrecognized kind of detailing symbol. Capturing graphics only."==
-        L10N_STRING(UnsupportedPrimaryInstance)   // =="[%s] has an unsupported primary ECInstance. Capturing graphics only."==
+        L10N_STRING(UnsupportedPrimaryInstance)   // =="[%s] has an unsupported primary ECInstance. Creating a secondary instance instead."==
         L10N_STRING(SchemaLockFailed)           // =="Failed to import schemas due to a problem acquiring lock on the schemas"==
         L10N_STRING(CouldNotAcquireLocksOrCodes) // =="Failed to import schemas due to a problem acquiring lock on codes or schemas"==
         L10N_STRING(ImportTargetECSchemas)      // =="Failed to import V8 ECSchemas"==
@@ -1114,7 +1114,7 @@ public:
     static bool IsEmbeddedFileName(Utf8StringCR fullName) {return IsEmbeddedFileName0(WString(fullName.c_str(), true).c_str());}
     static bool IsEmbeddedFileName(WStringCR fullName) {return IsEmbeddedFileName0(fullName.c_str());}
 
-    DGNDBSYNC_EXPORT Utf8String ComputeEffectiveEmbeddedFileName(Utf8StringCR fullName);
+    DGNDBSYNC_EXPORT Utf8String ComputeEffectiveEmbeddedFileName(Utf8StringCR fullName, iModelBridge::Params::FileIdRecipe const* recipe);
 
     //! Open the specified V8File
     DGNDBSYNC_EXPORT static DgnFilePtr OpenDgnV8File(DgnV8Api::DgnFileStatus&, BeFileNameCR, Utf8CP password);
@@ -1128,9 +1128,6 @@ public:
     DGNDBSYNC_EXPORT static void InitializeDllPath(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void GetAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,WCharCP affinityLibraryPathStr, WCharCP sourceFileNameStr);
-    
-    //! Compute the code value and URI that should be used for a RepositoryLink to the specified file
-    void ComputeRepositoryLinkCodeValueAndUri(Utf8StringR Code, Utf8StringR uri, DgnV8FileR file);
     
     DGNDBSYNC_EXPORT static Utf8String GetPwUrnFromFileProvenance(DgnV8FileCR);
 

@@ -1273,14 +1273,14 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     static SchemaKey unitsKey("Units", 1, 0, 0); // These can be static since we already know the name and version we need to be able to locate.
     static SchemaKey formatsKey("Formats", 1, 0, 0);
 
-    ECSchemaPtr unitSchema = context->LocateSchema(unitsKey, SchemaMatchType::Latest);
+    ECSchemaPtr unitSchema = context->LocateSchema(unitsKey, SchemaMatchType::LatestReadCompatible);
     if (!unitSchema.IsValid())
         {
         LOG.errorv("Unable to locate the %s necessary for converting a UnitSpecification custom attribute", unitsKey.GetFullSchemaName().c_str());
         return ECObjectsStatus::SchemaNotFound;
         }
 
-    ECSchemaPtr formatSchema = context->LocateSchema(formatsKey, SchemaMatchType::Latest);
+    ECSchemaPtr formatSchema = context->LocateSchema(formatsKey, SchemaMatchType::LatestReadCompatible);
     if (!formatSchema.IsValid())
         {
         LOG.errorv("Unable to locate the %s necessary for converting a UnitSpecification custom attribute", formatsKey.GetFullSchemaName().c_str());

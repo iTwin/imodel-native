@@ -7,7 +7,6 @@
 #include "GenerateSID.h"
 #include "Logging.h"
 #include "LicensingDb.h"
-#include "FreeApplicationPolicyHelper.h"
 
 #include <Licensing/Utils/LogFileHelper.h>
 #include <Licensing/Utils/UsageJsonHelper.h>
@@ -22,7 +21,7 @@ USING_NAMESPACE_BENTLEY_LICENSING
 AccessKeyClientImpl::AccessKeyClientImpl
     (
     Utf8StringCR accessKey,
-    ClientInfoPtr clientInfo,
+    ApplicationInfoPtr applicationInfo,
     BeFileNameCR db_path,
     bool offlineMode,
     IPolicyProviderPtr policyProvider,
@@ -35,7 +34,7 @@ AccessKeyClientImpl::AccessKeyClientImpl
     m_userInfo = ConnectSignInManager::UserInfo();
 
     m_accessKey = accessKey;
-    m_clientInfo = clientInfo;
+    m_applicationInfo = applicationInfo;
     m_dbPath = db_path;
     m_offlineMode = offlineMode;
     m_policyProvider = policyProvider;
@@ -89,9 +88,6 @@ LicenseStatus AccessKeyClientImpl::StartApplication()
         {
         // Begin heartbeat
         CallOnInterval(m_stopPolicyHeartbeatThread, m_policyHeartbeatThreadStopped, m_lastRunningPolicyHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return PolicyHeartbeat(); });
-
-        //int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-        //PolicyHeartbeat(currentTimeUnixMs);     // refresh policy
         }
     else
         {
@@ -128,7 +124,7 @@ bool AccessKeyClientImpl::ValidateAccessKey()
             }
         }
 
-    auto responseJson = m_ulasProvider->GetAccessKeyInfo(m_clientInfo, m_accessKey).get();
+    auto responseJson = m_ulasProvider->GetAccessKeyInfo(m_applicationInfo, m_accessKey).get();
 
     if (Json::Value::GetNull() == responseJson)
         {
@@ -178,7 +174,7 @@ std::shared_ptr<Policy> AccessKeyClientImpl::GetPolicyToken()
         // http call failed, offline support below
         LOG.info("AccessKeyClientImpl::GetPolicyToken: Call to entitlements failed, getting policy from DB");
 
-        const auto productId = m_clientInfo->GetApplicationProductId();
+        const auto productId = m_applicationInfo->GetProductId();
         auto policy = SearchForPolicy(productId);
 
         // start offline grace period if there is a cached policy

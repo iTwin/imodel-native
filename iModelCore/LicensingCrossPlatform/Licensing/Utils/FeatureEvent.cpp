@@ -42,7 +42,9 @@ Utf8String FeatureEvent::ToJson
     (
     int productId,
     Utf8StringCR featureString,
-    Utf8StringCR deviceId
+    Utf8StringCR deviceId,
+    UsageType usageType,
+    Utf8StringCR correlationId
     )
     {
     const uint64_t versionNumber = UINT64_C(1000000000000) * m_version.GetMajor() + UINT64_C(100000000) * m_version.GetMinor() + UINT64_C(10000) * m_version.GetSub1() + ((uint64_t) m_version.GetSub2());
@@ -83,11 +85,24 @@ Utf8String FeatureEvent::ToJson
     featureLogJson["ftrID"] = m_featureId; // feature Id [STRING]
     featureLogJson["ver"] = ver; // application version [NUMBER]
     featureLogJson["projID"] = m_projectId; // project ID [GUID or UNDEFINED]
-    featureLogJson["corID"] = BeSQLite::BeGuid(true).ToString(); // correlation GUID [GUID]
+    featureLogJson["corID"] = correlationId == "" ? BeSQLite::BeGuid(true).ToString() : correlationId; // correlation GUID [GUID] new GUID if correleationId not specified
     featureLogJson["evTimeZ"] = DateHelper::GetCurrentTime(); // event time (current UTC time) [STRING]
     featureLogJson["lVer"] = 1; // version of scheme of this log [NUMBER]
     featureLogJson["lSrc"] = "RealTime"; // source of usage log entry: RealTime, Offline, Checkout [STRING]
-    featureLogJson["uType"] = "Production"; // usage type: Production, Trial, Beta, HomeUse, PreActivation [STRING]
+
+    Utf8String usageTypeString;
+    switch (usageType)
+        {
+        case UsageType::Production: {usageTypeString = "Production"; } break;
+        case UsageType::Trial: {usageTypeString = "Trial"; } break;
+        case UsageType::Beta: {usageTypeString = "Beta"; } break;
+        case UsageType::HomeUse: {usageTypeString = "HomeUse"; } break;
+        case UsageType::PreActivation: {usageTypeString = "PreActivation"; } break;
+        case UsageType::Evaluation: {usageTypeString = "Evaluation"; } break;
+        case UsageType::Academic: {usageTypeString = "Academic"; } break;
+        default: {usageTypeString = "Production"; } break;
+        }
+    featureLogJson["uType"] = usageTypeString; // usage type: Production, Trial, Beta, HomeUse, PreActivation, Evaluation, Academic [STRING]
     featureLogJson["uData"] = userDataJson;
 
     requestJson.append(featureLogJson); // the input to ULAS is an array of FeatureLogEntries

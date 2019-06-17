@@ -264,7 +264,7 @@ BentleyStatus ElementAspectConverter::ConvertToAspect(SyncInfo::V8ElementExterna
         {
         Utf8String error;
         error.Sprintf("Inserting aspect for %s failed. Could not find target aspect ECClass in the DgnDb file.", ToInstanceLabel(v8Instance).c_str());
-        m_converter.ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Error(), error.c_str());
+        m_converter.ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Error(), error.c_str());
         return BSIERROR;
         }
 

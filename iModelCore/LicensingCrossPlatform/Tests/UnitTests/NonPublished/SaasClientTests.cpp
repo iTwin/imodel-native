@@ -131,7 +131,7 @@ TEST_F(SaasClientTests, SaasClientTrackUsage_Success)
     GetUlasProviderMock().MockRealtimeTrackUsage(BentleyStatus::SUCCESS);
 
     Utf8String projectId = "00000000-0000-0000-0000-000000000000";
-    EXPECT_SUCCESS(client->TrackUsage(accessToken, version, projectId).get());
+    EXPECT_SUCCESS(client->TrackUsage(accessToken, version, projectId, std::atoi(TEST_PRODUCT_ID), "", UsageType::Production, "").get());
     EXPECT_EQ(1, GetUlasProviderMock().RealtimeTrackUsageCalls());
     }
 
@@ -147,6 +147,6 @@ TEST_F(SaasClientTests, SaasClientMarkFeatureNoDataNoProject_Success)
 
     GetUlasProviderMock().MockRealtimeMarkFeature(BentleyStatus::SUCCESS);
 
-    EXPECT_SUCCESS(client->MarkFeature(accessToken, featureEvent).get());
+    EXPECT_SUCCESS(client->MarkFeature(accessToken, featureEvent, std::atoi(TEST_PRODUCT_ID), "", UsageType::Production, "").get());
     EXPECT_EQ(1, GetUlasProviderMock().RealtimeMarkFeatureCalls());
     }

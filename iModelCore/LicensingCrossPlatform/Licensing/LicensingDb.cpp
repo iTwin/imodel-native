@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus LicensingDb::OpenOrCreate(BeFileNameCR filePath)
     {
-    LOG.info("OpenorCreate");
+    LOG.trace("LicensingDb::OpenOrCreate");
 
     if (m_db.IsDbOpen())
         {
@@ -26,8 +26,46 @@ BentleyStatus LicensingDb::OpenOrCreate(BeFileNameCR filePath)
         m_db.CloseDb();
         }
 
-	if (filePath.DoesPathExist())
-        return OpenDb(filePath);
+    if (filePath.DoesPathExist())
+        {
+        auto result = OpenDb(filePath);
+        if (result == ERROR)
+            {
+            LOG.info("Database file is invalid or corrupted, attempting to delete file and re-create as a Database");
+
+            // attempt to delete .db and .db-journal and recreate the db
+            if (filePath.BeDeleteFile() == BeFileNameStatus::Success)
+                {
+                LOG.info("Successfully deleted .db file");
+
+                BeFileName journalPath(filePath.GetDirectoryName());
+                journalPath.AppendToPath(filePath.GetFileNameWithoutExtension().c_str());
+                journalPath.AppendExtension(L"db-journal");
+                if (journalPath.DoesPathExist())
+                    {
+                    if (journalPath.BeDeleteFile() == BeFileNameStatus::Success)
+                        {
+                        LOG.info("Successfully deleted .db-journal file");
+                        }
+                    else
+                        {
+                        LOG.info("Failed to delete .db-journal file");
+                        return ERROR;
+                        }
+                    }
+
+                // attempt to create database after deleting .db and .db-journal files
+                return CreateDb(filePath);
+                }
+            else
+                {
+                LOG.info("Failed to delete the .db file");
+                return ERROR;
+                }
+            }
+
+        return result;
+        }
 
     return CreateDb(filePath);
     }
@@ -69,6 +107,7 @@ BentleyStatus LicensingDb::CreateDb(BeFileNameCR filePath)
     LOG.debug("CreateDb");
 
     DbResult result = m_db.CreateNewDb(filePath);
+    LOG.debugv("CreateDb result: %d", (int)result);
 
     if (result != DbResult::BE_SQLITE_OK)
         return ERROR;

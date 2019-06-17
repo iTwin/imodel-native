@@ -17,9 +17,9 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct LogFileHelper
-{
+    {
 public:
     LICENSING_EXPORT bvector<WString> GetLogFiles(Utf8StringCR logFilesDir);
-};
+    };
 
 END_BENTLEY_LICENSING_NAMESPACE

@@ -19,7 +19,7 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct JWToken
-{
+    {
 private:
     Json::Value m_header;
     Json::Value m_payload;
@@ -40,6 +40,6 @@ public:
     LICENSING_EXPORT static std::shared_ptr<JWToken> Create(Utf8StringCR token, Utf8StringCR certificate = nullptr);
 
     LICENSING_EXPORT Utf8String GetClaim(Utf8StringCR claim) const;
-};
+    };
 
 END_BENTLEY_LICENSING_NAMESPACE

@@ -15,6 +15,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <iModelBridge/iModelBridgeFwkTypes.h>
 #include <iModelDmsSupport/iModelDmsSupport.h>
+#include <DgnPlatform/DgnDbTables.h>
 
 BEGIN_BENTLEY_NAMESPACE namespace WebServices {
 typedef std::shared_ptr<struct ClientInfo> ClientInfoPtr;
@@ -508,6 +509,28 @@ struct iModelBridge
         {
         enum PushIntermediateRevisions {None=0, ByModel=1, ByFile=2};
 
+        //! Instructions for how the unique identifier of a file should be formed. The unique identifier
+        //! is stored in the iModel in RepositoryLinks and ExternalSourceAspects. It is used by bridges
+        //! to recognize a file the second time it sees it. Unique identifiers can be constructed so that 
+        //! many input files all appear to be equally good copies of the same file, so that only a single 
+        //! copy is converted.
+        struct FileIdRecipe
+            {
+            //! Ignore the package portion of the filename (V8 embedded files only).
+            bool m_ignorePackage = true;
+            //! Ignore the case of the filename (unique identifiers are based on the upper-cased filename)
+            bool m_ignoreCase = true;
+            //! Ignore the file extension (unique identifiers will omit the extension)
+            bool m_ignoreExtension = true;
+            //! Ignore the ProjectWise Document ID, if present. Normally, a doc ID is the preferred identifier for a document.
+            //! Set this to true when multiple copies of the same file have been checked into different ProjectWise
+            //! folders, and all should be regarded as representing the same file. In that case, the unique identifier
+            //! for the file will be based on the filename, not the doc ID of each individual copy.
+            bool m_ignorePwDocId = true;
+            //! Optional ECMAScript regular expression that is used to recognize a suffix that should be removed.
+            Utf8String m_suffixRegex; 
+            };
+
       protected:
         friend struct iModelBridge;
         friend struct iModelBridgeFwk;
@@ -518,7 +541,8 @@ struct iModelBridge
         bool m_wantThumbnails = true;
         bool m_doDetectDeletedModelsAndElements =  true;
         bool m_mergeDefinitions = true;  // WIP make this default to false
-        bool m_matchOnEmbeddedFileBasename = false;
+        bool m_hasEmbeddedFileIdRecipe = false;
+        FileIdRecipe m_embeddedFileIdRecipe;
         PushIntermediateRevisions m_pushIntermediateRevisions = PushIntermediateRevisions::None;
         BeFileName m_inputFileName;
         BeFileName m_drawingsDirs;
@@ -527,6 +551,8 @@ struct iModelBridge
         GCSDefinition m_inputGcs;
         GCSDefinition m_outputGcs;
         GCSCalculationMethod m_gcsCalculationMethod;
+        
+        EcefLocation m_ecEFLocation; //!< The data does not have GCS information. Use ECEF cordinates to locate it in the map.
         BeFileName m_briefcaseName;
         BeFileName m_assetsDir;
         BeFileName m_geoCoordDir;
@@ -581,6 +607,7 @@ struct iModelBridge
 
         BE_JSON_NAME(transform);    //!< Linear transform specification
         BE_JSON_NAME(gcs);          //!< GCS definition
+        BE_JSON_NAME(ecef);          //!< GCS definition
 
         //! Get additional parameters from JSON
         //! @see SetTransformJson, SetOffsetJson, SetGcsJson
@@ -636,8 +663,15 @@ struct iModelBridge
         bool WantThumbnails() const {return m_wantThumbnails;}
         void SetMergeDefinitions(bool b) {m_mergeDefinitions = b;}
         bool GetMergeDefinitions() const {return m_mergeDefinitions;}
-        void SetMatchOnEmbeddedFileBasename(bool b) {m_matchOnEmbeddedFileBasename=b;}
-        bool GetMatchOnEmbeddedFileBasename() const {return m_matchOnEmbeddedFileBasename;}
+        void SetEmbeddedFileIdRecipe(FileIdRecipe const& v) {m_embeddedFileIdRecipe=v; m_hasEmbeddedFileIdRecipe=true;} //!< Optional. Set the rules for how to construct unique identifer for V8 embedded files.
+        FileIdRecipe const* GetEmbeddedFileIdRecipe() const {return m_hasEmbeddedFileIdRecipe? &m_embeddedFileIdRecipe: nullptr;} //!< Get the optional rules for how to construct unique identifer for V8 embedded files.
+        void SetMatchOnEmbeddedFileBasename(bool b)
+            {
+            if (!b)
+                m_hasEmbeddedFileIdRecipe = false;
+            else
+                SetEmbeddedFileIdRecipe(FileIdRecipe());
+            }
         void SetBridgeJobName(Utf8StringCR str) {m_converterJobName=str;}
         Utf8String GetBridgeJobName() const {return m_converterJobName;}
         void SetBridgeRegSubKey(WStringCR str) {m_thisBridgeRegSubKey=str;}
@@ -702,6 +736,8 @@ struct iModelBridge
 
         bvector<WString> const& GetAdditionalFilePattern() const { return m_additionalFiles; }
         void AddAdditionalFilePattern(WStringCR pattern) { m_additionalFiles.push_back(pattern); }
+
+        EcefLocation GetEcefLocation() const { return m_ecEFLocation; }
         };
 
     private:
