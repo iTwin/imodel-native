@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BuildTests.mke" />
+    <None Include="Prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Published\AccessKeyClientIntegrationTests.cpp" />
+    <ClCompile Include="Published\ClientIntegrationTests.cpp" />
+    <ClCompile Include="Published\DummyPolicyHelper.cpp" />
+    <ClCompile Include="Published\SaasClientIntegrationTests.cpp" />
+    <ClCompile Include="Published\TestsHelper.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Published\AccessKeyClientIntegrationTests.h" />
+    <ClInclude Include="Published\ClientIntegrationTests.h" />
+    <ClInclude Include="Published\DummyPolicyHelper.h" />
+    <ClInclude Include="Published\SaasClientIntegrationTests.h" />
+    <ClInclude Include="Published\TestsHelper.h" />
+  </ItemGroup>
+</Project>
