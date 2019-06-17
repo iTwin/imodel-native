@@ -26,7 +26,6 @@
 /* Brutally hacked by John Walker back from ANSI C to K&R (no
    prototypes) to maintain the tradition that Netfone will compile
    with Sun's original "cc". */
-#pragma once
 
 #include <RealityPlatform/md5.h>
 #include <memory.h>		 /* for memcpy() */
@@ -85,7 +84,7 @@ void MD5Init(MD5Context *ctx)
 */
 void MD5Transform(uint32_t *buf, uint32_t *in)
 {
-    register uint32_t a, b, c, d;
+    uint32_t a, b, c, d;
 
     a = buf[0];
     b = buf[1];
@@ -257,7 +256,7 @@ void MD5Final(unsigned char digest[16], MD5Context *ctx)
     //MD5Transform((uint32_t *) ctx->buf, (uint32_t *)ctx->in);
     byteReverse((unsigned char *) ctx->buf, 4);
     memcpy(digest, ctx->buf, 16);
-    memset(ctx, 0, sizeof(ctx));        /* In case it's sensitive */
+    memset(ctx, 0, sizeof(MD5Context));        /* In case it's sensitive */
 }
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

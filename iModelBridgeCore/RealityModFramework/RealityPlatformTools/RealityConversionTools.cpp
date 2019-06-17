@@ -1613,7 +1613,7 @@ BeFileName RealityConversionTools::CreateUrlDownloadFolder(Utf8StringCR uri, uin
     for (int j = 0; j < sizeof signature; ++j)
         {
         // Bytes are written one by one (one byte equals 2 hex characters)
-        sprintf_s(tempHashFragment, sizeof(tempHashFragment), "%02X", signature[j]);
+        snprintf(tempHashFragment, sizeof(tempHashFragment), "%02X", signature[j]);
         finalHashValue.AppendA(tempHashFragment);
         }
 
