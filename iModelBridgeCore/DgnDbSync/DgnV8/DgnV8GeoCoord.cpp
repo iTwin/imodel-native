@@ -576,14 +576,26 @@ DgnV8Api::DgnFileStatus SpatialConverterBase::_ComputeCoordinateSystemTransform(
             m_outputDgnGcs = sourceGcs;
             m_outputDgnGcs->Store(GetDgnDb());
             }
-
+        else
+            {// Check whether we have an ECFlocation
+            auto    ecefLocation = m_dgndb->GeoLocation().GetEcefLocation();
+            if (!ecefLocation.m_isValid )//Do not overwrite if it is already defined.
+                {
+                auto newLocation = _GetSpatialParams().GetEcefLocation();
+                if (newLocation.m_isValid)
+                    m_dgndb->GeoLocation().SetEcefLocation(_GetSpatialParams().GetEcefLocation());
+			    return DgnV8Api::DGNFILE_STATUS_Success;
+                }
+            }
 /*<==*/ return DgnV8Api::DGNFILE_STATUS_Success;
         }
 
     // If we get here, the BIM file has a GCS, either pre-existing or specified.
     if (!sourceGcs.IsValid())             
         {
-        // No sourceGcs from either the model or command line. We must assume that root DGN model's origin lines up with 0,0,0 of the BIM file. Just apply units scaling.
+        // No sourceGcs from either the model or command line. 
+        //We must assume that root DGN model's origin lines up with 0,0,0 of the BIM file. Just apply units scaling.
+        
         ComputeTransformAndGlobalOriginFromRootModel (*rootModel, true);
 /*<==*/ return DgnV8Api::DGNFILE_STATUS_Success;
         }

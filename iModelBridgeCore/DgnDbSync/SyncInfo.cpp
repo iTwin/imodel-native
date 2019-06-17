@@ -148,6 +148,18 @@ BentleyStatus SyncInfo::DiskFileInfo::GetInfo(BeFileNameCR fileName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SyncInfo::GetUniqueNameForFile(DgnV8FileCR file)
     {
+    auto isEmbedded = file.IsEmbeddedFile();
+    iModelBridge::Params::FileIdRecipe const* embeddedFileIdRecipe = isEmbedded? m_converter.GetParams().GetEmbeddedFileIdRecipe(): nullptr;
+    if (isEmbedded && (nullptr != embeddedFileIdRecipe))
+        {
+        // If this is an empbedded file with a recipe, and if the recipe says to ignore PW doc IDs, then 
+        // use the recipe to transform the filename into an identifier. Don't use the PW doc ID.
+        if (embeddedFileIdRecipe->m_ignorePwDocId)
+            {
+            return m_converter.ComputeEffectiveEmbeddedFileName(Utf8String(file.GetFileName().c_str()), embeddedFileIdRecipe);
+            }
+        }
+
     // If we have a DMS URN for the document corresponding to this file, that is the unique name.
     Utf8String urn = GetConverter().GetDocumentURNforFile(file);
     if (!urn.empty())
@@ -160,8 +172,14 @@ Utf8String SyncInfo::GetUniqueNameForFile(DgnV8FileCR file)
         GetConverter().GetDocumentProperties(docProps, BeFileName(file.GetFileName().c_str()));
         if (!docProps.m_docGuid.empty())
             return docProps.m_docGuid;
+        }
 
-        return m_converter.ComputeEffectiveEmbeddedFileName(urn.ToLower());
+    // We'll have to use the filename itself.
+
+    if (isEmbedded && (nullptr != embeddedFileIdRecipe))
+        {
+        // If this is an empbedded file and if we have a recipe, then use the recipe to transform the filename into an identifier
+        return m_converter.ComputeEffectiveEmbeddedFileName(Utf8String(file.GetFileName().c_str()), embeddedFileIdRecipe);
         }
 
     // If we do not have a DMS URN or a doc GUID, we try to compute a stable unique name from the filename.

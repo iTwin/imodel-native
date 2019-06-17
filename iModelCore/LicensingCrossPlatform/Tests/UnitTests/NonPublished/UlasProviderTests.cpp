@@ -98,7 +98,7 @@ Utf8String UlasProviderTests::MockUlasUrl()
 
 TEST_F(UlasProviderTests, PostUsageLogs_Success)
     {
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", TEST_PRODUCT_ID);
     BeFileName dbPath("TestPath");
     auto userId = "UserId";
     auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
@@ -115,7 +115,7 @@ TEST_F(UlasProviderTests, PostUsageLogs_Success)
     Utf8String expectedUploadUrl = epUri + Utf8PrintfString(sharedAccessSignature);
 
     // does not call SendUsageLogs since there are no logs in the CSV
-    GetUlasProvider().PostUsageLogs(clientInfo, dbPath, GetLicensingDbMock(), validPolicy);
+    GetUlasProvider().PostUsageLogs(appInfo, dbPath, GetLicensingDbMock(), validPolicy);
 
     EXPECT_EQ(1, GetLicensingDbMock().WriteUsageToCSVFileCount());
     EXPECT_EQ(1, GetLicensingDbMock().CleanUpUsagesCount());
@@ -123,7 +123,7 @@ TEST_F(UlasProviderTests, PostUsageLogs_Success)
 
 TEST_F(UlasProviderTests, SendUsageLogs_Success)
     {
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", TEST_PRODUCT_ID);
     BeFileName dbPath("TestPath");
 
     const auto mockUrl = MockUlasUrl();
@@ -151,12 +151,12 @@ TEST_F(UlasProviderTests, SendUsageLogs_Success)
         return MockHttpHandler::StubHttpResponse();
         });
 
-    GetUlasProvider().SendUsageLogs(clientInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
+    GetUlasProvider().SendUsageLogs(appInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
     }
 
 TEST_F(UlasProviderTests, SendUsageLogs_Failure)
     {
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", TEST_PRODUCT_ID);
     BeFileName dbPath("TestPath");
 
     const auto mockUrl = MockUlasUrl();
@@ -185,7 +185,7 @@ TEST_F(UlasProviderTests, SendUsageLogs_Failure)
         });
     try
         {
-        const auto result = GetUlasProvider().SendUsageLogs(clientInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
+        const auto result = GetUlasProvider().SendUsageLogs(appInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
         FAIL() << "Expected an execption to be thrown";
         }
     catch (HttpError error)
@@ -202,7 +202,7 @@ TEST_F(UlasProviderTests, SendUsageLogs_Failure)
 
 TEST_F(UlasProviderTests, PostFeatureLogs_Success)
     {
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", TEST_PRODUCT_ID);
     BeFileName dbPath("TestPath");
     auto userId = "UserId";
     auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
@@ -219,7 +219,7 @@ TEST_F(UlasProviderTests, PostFeatureLogs_Success)
     Utf8String expectedUploadUrl = epUri + Utf8PrintfString(sharedAccessSignature);
 
     // does not call SendFeatureLogs since there are no logs in the CSV
-    GetUlasProvider().PostFeatureLogs(clientInfo, dbPath, GetLicensingDbMock(), validPolicy);
+    GetUlasProvider().PostFeatureLogs(appInfo, dbPath, GetLicensingDbMock(), validPolicy);
 
     EXPECT_EQ(1, GetLicensingDbMock().WriteFeatureToCSVFileCount());
     EXPECT_EQ(1, GetLicensingDbMock().CleanUpFeaturesCount());
@@ -227,7 +227,7 @@ TEST_F(UlasProviderTests, PostFeatureLogs_Success)
 
 TEST_F(UlasProviderTests, SendFeatureLogs_Success)
     {
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", TEST_PRODUCT_ID);
     BeFileName dbPath("TestPath");
 
     const auto mockUrl = MockUlasUrl();
@@ -255,12 +255,12 @@ TEST_F(UlasProviderTests, SendFeatureLogs_Success)
         return MockHttpHandler::StubHttpResponse();
         });
 
-    GetUlasProvider().SendFeatureLogs(clientInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
+    GetUlasProvider().SendFeatureLogs(appInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
     }
 
 TEST_F(UlasProviderTests, SendFeatureLogs_Failure)
     {
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", TEST_PRODUCT_ID);
     BeFileName dbPath("TestPath");
 
     const auto mockUrl = MockUlasUrl();
@@ -290,7 +290,7 @@ TEST_F(UlasProviderTests, SendFeatureLogs_Failure)
 
     try
         {
-        const auto result = GetUlasProvider().SendFeatureLogs(clientInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
+        const auto result = GetUlasProvider().SendFeatureLogs(appInfo, BeFileName("TestName"), Utf8String("1004175881")).get();
         FAIL() << "Expected an execption to be thrown";
         }
     catch (HttpError error)
@@ -320,7 +320,7 @@ TEST_F(UlasProviderTests, RealtimeTrackUsage_Success)
         return MockHttpHandler::StubHttpResponse();
         });
 
-    EXPECT_SUCCESS(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId").get());
+    EXPECT_SUCCESS(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId", UsageType::Production, "").get());
     }
 
 TEST_F(UlasProviderTests, RealtimeTrackUsage_Failure)
@@ -338,7 +338,7 @@ TEST_F(UlasProviderTests, RealtimeTrackUsage_Failure)
         return MockHttpHandler::StubHttpFailureResponse();
         });
 
-    EXPECT_ERROR(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId").get());
+    EXPECT_ERROR(GetUlasProvider().RealtimeTrackUsage("AccessToken", std::atoi(TEST_PRODUCT_ID), "", "DeviceId", BeVersion(1, 0), "ProjectId", UsageType::Production, "").get());
     }
 
 TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Success)
@@ -359,7 +359,7 @@ TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Success)
         return MockHttpHandler::StubHttpResponse();
         });
 
-    EXPECT_SUCCESS(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId").get());
+    EXPECT_SUCCESS(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId", UsageType::Production, "").get());
     }
 
 TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Failure)
@@ -380,7 +380,7 @@ TEST_F(UlasProviderTests, RealtimeTrackUsageNoFeatureUserData_Failure)
         return MockHttpHandler::StubHttpFailureResponse();
         });
 
-    EXPECT_ERROR(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId").get());
+    EXPECT_ERROR(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId", UsageType::Production, "").get());
     }
 
 TEST_F(UlasProviderTests, RealtimeTrackUsageWithUserData_Success)
@@ -406,12 +406,12 @@ TEST_F(UlasProviderTests, RealtimeTrackUsageWithUserData_Success)
         return MockHttpHandler::StubHttpResponse();
         });
 
-    EXPECT_SUCCESS(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId").get());
+    EXPECT_SUCCESS(GetUlasProvider().RealtimeMarkFeature("AccessToken", featureEvent, std::atoi(TEST_PRODUCT_ID), "", "DeviceId", UsageType::Production, "").get());
     }
 
 TEST_F(UlasProviderTests, GetAccessKeyInfo_Success)
     {
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", TEST_PRODUCT_ID);
     Utf8String accessKey = "TestAccessKey";
     Utf8String mockUrl("https://ulasaccesskeymockurl.bentley.com");
 
@@ -434,12 +434,12 @@ TEST_F(UlasProviderTests, GetAccessKeyInfo_Success)
         return MockHttpHandler::StubHttpResponse(testJsonString);
         });
 
-    EXPECT_NE(Json::Value::GetNull(), GetUlasProvider().GetAccessKeyInfo(clientInfo, accessKey).get());
+    EXPECT_NE(Json::Value::GetNull(), GetUlasProvider().GetAccessKeyInfo(appInfo, accessKey).get());
     }
 
 TEST_F(UlasProviderTests, GetAccessKeyInfo_Failure)
     {
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", TEST_PRODUCT_ID);
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", TEST_PRODUCT_ID);
     Utf8String accessKey = "TestAccessKey";
     Utf8String mockUrl("https://ulasaccesskeymockurl.bentley.com");
 
@@ -462,5 +462,5 @@ TEST_F(UlasProviderTests, GetAccessKeyInfo_Failure)
         return MockHttpHandler::StubHttpFailureResponse();
         });
 
-    EXPECT_EQ(Json::Value::GetNull(), GetUlasProvider().GetAccessKeyInfo(clientInfo, accessKey).get());
+    EXPECT_EQ(Json::Value::GetNull(), GetUlasProvider().GetAccessKeyInfo(appInfo, accessKey).get());
     }

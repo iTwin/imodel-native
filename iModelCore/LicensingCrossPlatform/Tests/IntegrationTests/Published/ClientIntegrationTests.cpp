@@ -149,15 +149,16 @@ ClientImplPtr ClientIntegrationTests::CreateTestClientImpl(bool signIn, Utf8Stri
 
     AuthType authType = AuthType::SAML;
 
+    ApplicationInfoPtr applicationInfo = std::make_shared<ApplicationInfo>(clientInfo->GetApplicationVersion(), clientInfo->GetDeviceId(), clientInfo->GetApplicationProductId());
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
     IAuthHandlerProviderPtr authHandlerProvider = std::make_shared<AuthHandlerProvider>(manager, proxy);
-    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, clientInfo, proxy, authType, authHandlerProvider);
+    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, applicationInfo, proxy, authType, authHandlerProvider);
     IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, proxy);
 
     return std::make_shared<ClientImpl>
         (
         manager->GetUserInfo(),
-        clientInfo,
+        applicationInfo,
         dbPath,
         true,
         policyProvider,

@@ -90,7 +90,7 @@ ECSchemaPtr ECTestFixture::GetUnitsSchema(bool recreate)
         { 
         ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
         SchemaKey key("Units", 1, 0, 0);
-        s_unitsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
+        s_unitsSchema = context->LocateSchema(key, SchemaMatchType::LatestReadCompatible);
         }
     return s_unitsSchema;
     }
@@ -104,7 +104,7 @@ ECSchemaPtr ECTestFixture::GetFormatsSchema(bool recreate)
         {
         ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
         SchemaKey key("Formats", 1, 0, 0);
-        s_formatsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
+        s_formatsSchema = context->LocateSchema(key, SchemaMatchType::LatestReadCompatible);
         }
     return s_formatsSchema;
     }

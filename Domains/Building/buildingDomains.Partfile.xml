@@ -26,6 +26,7 @@
         <SubPart PartName="BuildingPhysicalPublicAPI"/>
         <SubPart PartName="AecUnitsDomain"             PartFile="Domains/AecUnits/AecUnits"              Repository="imodel02"/>
         <SubPart PartName="BuildingSpatialDomain" Repository="imodel02" PartFile="Domains/BuildingSpatial/BuildingSpatial" />
+        <SubPart PartName="QuantityTakeoffsAspectsDomain" Repository="DgnDomains-QuantityTakeoffsAspects" PartFile="QuantityTakeoffsAspects" />
         <SubPart PartName="SpatialCompositionDomain" Repository="imodel02" PartFile="Domains/SpatialComposition/SpatialComposition" />
         <SubPart PartName="ClassificationSystemsDomain" Repository="imodel02" PartFile="Domains/ClassificationSystems/ClassificationSystems" />
         <SubPart PartName="GeometryManipulationStrategies" Repository="imodel02" PartFile="Domains/BuildingShared/BuildingShared" />
@@ -139,6 +140,7 @@
         <!--<SubPart PartName="SpacePlanningDomain"             PartFile="BuildingSpacePlanning"    Repository="DgnDomains-BuildingSpacePlanning"/> -->
         <SubPart PartName="ClassificationSystemsDomain" Repository="imodel02" PartFile="Domains/ClassificationSystems/ClassificationSystems" />
         <SubPart PartName="BuildingSpatialDomain"           Repository="imodel02" PartFile="Domains/BuildingSpatial/BuildingSpatial" />
+        <SubPart PartName="QuantityTakeoffsAspectsDomain" Repository="DgnDomains-QuantityTakeoffsAspects" PartFile="QuantityTakeoffsAspects" />
         <SubPart PartName="SpatialCompositionDomain"        Repository="imodel02" PartFile="Domains/SpatialComposition/SpatialComposition" />
         <SubPart PartName="StructuralDomainDLL"             PartFile="Domains/Structural/StructuralDomains"        Repository="imodel02"/>
         <SubPart PartName="ProfilesDomainDLL"               PartFile="Domains/Profiles/ProfilesDomain"           Repository="imodel02"/>
@@ -173,6 +175,7 @@
         <ProductDirectory Name="FormsDomainIncludes"                     Deliver="true" RelativeTo="Root"   Path="Include/FormsDomain"/>
         <ProductDirectory Name="BuildingSpacePlanningDomainIncludes"     Deliver="true" RelativeTo="Root"   Path="Include/BuildingSpacePlanningDomain"/>
         <ProductDirectory Name="GridsIncludes"                           Deliver="true" RelativeTo="Root"   Path="Include/Grids"/>
+        <ProductDirectory Name="QuantityTakeoffsAspectsIncludes"         Deliver="true" RelativeTo="Root"   Path="Include/QuantityTakeoffsAspects"/>
         <ProductDirectory Name="ConstraintSystemIncludes"                Deliver="true" RelativeTo="Root"   Path="Include/ConstraintSystem"/>
         <ProductDirectory Name="PlantDomainSchemasDir"                   Deliver="true" RelativeTo="Root"   Path="Assets/ECSchemas/Domain"/>
         <ProductDirectory Name="PlantDomainAssembliesDir"                Deliver="true" RelativeTo="Root"   Path="Assemblies"/>

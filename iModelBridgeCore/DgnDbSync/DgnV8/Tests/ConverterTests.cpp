@@ -999,6 +999,61 @@ TEST_F(ConverterTests, CommonReferences)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConverterTests, CommonReferencesWithRecipe)
+    {
+    // The input files to this test have PW doc GUIDs. That is how we detect the common (embedded) reference.
+    const Utf8CP s_master1Name = "master_common";
+    const Utf8CP s_master2Name = "master_common-v1";
+    const Utf8CP s_refName = "commonref";
+    const Utf8CP s_refName_v1 = "commonref-v1";
+    BentleyApi::BeFileName masterPackageFile1 = GetInputFileName(L"master_common.i.dgn");
+    BentleyApi::BeFileName masterPackageFile2 = GetInputFileName(L"master_common-v1.i.dgn");
+
+    m_dgnDbFileName = GetOutputFileName(L"CommonReferencesWithRecipe.bim");
+    DeleteExistingDgnDb(m_dgnDbFileName);
+    MakeWritableCopyOf(m_dgnDbFileName, m_seedDgnDbFileName, m_dgnDbFileName.GetFileNameAndExtension().c_str());
+
+    m_params.SetMatchOnEmbeddedFileBasename(true);  // Must opt into this filename-based matching. It is off by default.
+    iModelBridge::Params::FileIdRecipe recipe;
+    recipe.m_suffixRegex = "-v[0-9]$";
+    m_params.SetEmbeddedFileIdRecipe(recipe);
+    ASSERT_TRUE(m_params.GetEmbeddedFileIdRecipe() != nullptr);
+
+
+    m_v8FileName = masterPackageFile1;
+    DoConvert(m_dgnDbFileName, m_v8FileName, /*wantExternalDataModels*/false);
+    if (true)
+        {
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+        ASSERT_TRUE(db.IsValid());
+        ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
+        ASSERT_EQ(0, getModelsByName(*db, s_master2Name).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_refName).size());
+        ASSERT_EQ(0, getModelsByName(*db, s_refName_v1).size());
+        CheckNoDupXsas(*db, SyncInfo::ExternalSourceAspect::Kind::Element);
+        countModels(*db, 0, 2);
+        }
+
+    m_v8FileName = masterPackageFile2;
+    DoConvert(m_dgnDbFileName, m_v8FileName, /*wantExternalDataModels*/false);
+    if (true)
+        {
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+        ASSERT_TRUE(db.IsValid());
+        ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_master2Name).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_refName).size());
+        ASSERT_EQ(0, getModelsByName(*db, s_refName_v1).size());
+        CheckNoDupXsas(*db, SyncInfo::ExternalSourceAspect::Kind::Element);
+        countModels(*db, 0, 3);
+        }
+
+    m_params.SetMatchOnEmbeddedFileBasename(false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConverterTests, CommonReferencesNoDocGuids)
     {
     // The input files to this test DO NOT have PW doc GUIDs. So, we have to use the common embedded reference file's basename to detect that it's common.
@@ -1041,6 +1096,8 @@ TEST_F(ConverterTests, CommonReferencesNoDocGuids)
         ASSERT_EQ(1, getModelsByName(*db, s_refName).size()) << "Since both master files reference the same commonref (by name), there should be only one copy of commonref in the iModel";
         CheckNoDupXsas(*db, SyncInfo::ExternalSourceAspect::Kind::Element);
         }
+
+    m_params.SetMatchOnEmbeddedFileBasename(false);
     }
 
 //========================================================================================
@@ -1414,6 +1471,7 @@ extern "C" iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey
 TEST_F(ConverterTests, DetectDeletionsInEmbeddedFiles)
     {
     putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=0");
+    static const uint32_t s_v8PasswordCacheLifetime = 2*1000; // the timeout is 1 second. Wait for 2 to be safe.
     m_params.SetMatchOnEmbeddedFileBasename(true);
 
     m_dgnDbFileName = GetOutputFileName(L"DetectDeletionsInEmbeddedFiles.bim");
@@ -1483,6 +1541,10 @@ TEST_F(ConverterTests, DetectDeletionsInEmbeddedFiles)
     // Update from v2 
     //  In v2, Ref1.i.dgn was deleted, and element #621 was removed from Ref2.i.dgn
     ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(v2InputName.c_str(), m_v8FileName.c_str()));
+
+    // NEEDS WORK temporary work-around for V8 password cache entry lifetime
+    BentleyApi::BeThreadUtilities::BeSleep(s_v8PasswordCacheLifetime);
+
     DoUpdate(m_dgnDbFileName, m_v8FileName, /*expectFailure*/false, /*expectUpdate*/true, /*detectDeletedDocuments*/true, /*onAllDocsProcessed*/true);
 
     if (true)
@@ -1519,4 +1581,56 @@ TEST_F(ConverterTests, DetectDeletionsInEmbeddedFiles)
         ASSERT_FALSE(db->Elements().GetElement(ref__2___621).IsValid());
         ASSERT_FALSE(FindV8ElementInDgnDb(*db, 621, ref__2__RepositoryLinkId).IsValid());
         }
+
+    m_params.SetMatchOnEmbeddedFileBasename(false);
+    putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=0");
+    }
+
+TEST_F(ConverterTests, EmbeddedFileIdRecipe)
+    {
+    LineUpFiles(L"EmbeddedFileIdRecipe.bim", L"Test3d.dgn", false);  // just so that I can bootstrap a RootModelConverter
+
+    RootModelConverter::RootModelSpatialParams params(m_params);
+    params.SetKeepHostAlive(true);
+    params.SetInputFileName(m_v8FileName);
+    params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
+
+    RootModelConverter converter(params);
+    auto db = OpenExistingDgnDb(m_dgnDbFileName);
+    converter.SetDgnDb(*db);
+    converter.SetIsUpdating(false);
+    converter.AttachSyncInfo();
+
+    iModelBridge::Params::FileIdRecipe recipe;
+    recipe.m_ignoreCase = true;
+    recipe.m_ignoreExtension = true;
+    recipe.m_ignorePackage = true;
+    recipe.m_ignorePwDocId = true;
+    recipe.m_suffixRegex = "";
+    ASSERT_STREQ("abc", converter.ComputeEffectiveEmbeddedFileName("abc.ext", &recipe).c_str());
+    ASSERT_STREQ("abc", converter.ComputeEffectiveEmbeddedFileName("def<111>abc.ext", &recipe).c_str());
+    ASSERT_STREQ("abc", converter.ComputeEffectiveEmbeddedFileName(">abc.ext", &recipe).c_str());
+    ASSERT_STREQ("abc", converter.ComputeEffectiveEmbeddedFileName(">abc.z", &recipe).c_str());
+    ASSERT_STREQ("abc", converter.ComputeEffectiveEmbeddedFileName(">abc", &recipe).c_str());
+    ASSERT_STREQ("abc", converter.ComputeEffectiveEmbeddedFileName(">ABC.EXT", &recipe).c_str());
+
+    recipe.m_ignoreCase = false;
+    ASSERT_STREQ("ABC", converter.ComputeEffectiveEmbeddedFileName(">ABC.EXT", &recipe).c_str());
+
+    recipe.m_ignoreExtension = false;
+    ASSERT_STREQ("ABC.EXT", converter.ComputeEffectiveEmbeddedFileName(">ABC.EXT", &recipe).c_str());
+
+    recipe.m_ignorePackage = false;
+    ASSERT_STREQ(">ABC.EXT", converter.ComputeEffectiveEmbeddedFileName(">ABC.EXT", &recipe).c_str());
+
+    recipe.m_ignoreCase = true;
+    recipe.m_ignoreExtension = true;
+    recipe.m_ignorePackage = true;
+    recipe.m_ignorePwDocId = true;
+
+    recipe.m_suffixRegex = "_P[0-9]*\\-[0-9]*_S[0-9]*$";
+    ASSERT_STRCASEEQ("133735_2A-EWR-OXD-OB_33-M3-CE-010001", converter.ComputeEffectiveEmbeddedFileName("133735_2A-EWR-OXD-OB_33-M3-CE-010001.dgn.i.dgn", &recipe).c_str());
+    ASSERT_STRCASEEQ("133735_2A-EWR-OXD-OB_33-M3-CE-010001", converter.ComputeEffectiveEmbeddedFileName("133735_2A-EWR-OXD-OB_33-M3-CE-010001_P02-01_S2.dgn.i.dgn", &recipe).c_str());
+
+    ASSERT_STRCASEEQ("Ph1-BBV-HS2SG1 Routewide LOD 3d", converter.ComputeEffectiveEmbeddedFileName("1MC08-BBV-DS-DMB-NS01_NL01-100001.i.dgn<24>Ph1-BBV-HS2SG1 Routewide LOD 3d.dgn.i.dgn", &recipe).c_str());
     }

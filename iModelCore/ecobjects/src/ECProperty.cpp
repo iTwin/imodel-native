@@ -1651,19 +1651,12 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
 SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     bvector<bpair<Utf8CP, Utf8CP>> additionalAttributes;
-    char    valueString[128];
-    BeStringUtilities::Snprintf (valueString, _countof (valueString), "%u", m_minOccurs);
 
-    additionalAttributes.push_back(make_bpair(MIN_OCCURS_ATTRIBUTE, valueString));
-    if (m_maxOccurs != INT_MAX)
-        {
-        BeStringUtilities::Snprintf (valueString, _countof (valueString), "%u", m_maxOccurs);
-        additionalAttributes.push_back(make_bpair(MAX_OCCURS_ATTRIBUTE, valueString));
-        }
-    else
-        {
-        additionalAttributes.push_back(make_bpair(MAX_OCCURS_ATTRIBUTE, "unbounded"));
-        }
+    Utf8PrintfString minOccursString("%u", m_minOccurs);
+    additionalAttributes.push_back({ MIN_OCCURS_ATTRIBUTE, minOccursString.c_str() });
+
+    Utf8String maxOccursString = m_maxOccurs != INT_MAX ? Utf8PrintfString("%u", m_maxOccurs) : Utf8String("unbounded");
+    additionalAttributes.push_back({ MAX_OCCURS_ATTRIBUTE, maxOccursString.c_str() });
 
     // This is needed to keep the qualified name in scope for calling the super class below....
     Utf8String koqQualifiedName;

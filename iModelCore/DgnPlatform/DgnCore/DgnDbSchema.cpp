@@ -637,7 +637,8 @@ SchemaStatus DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas)
 
     if (schemasToImport.empty())
         return SchemaStatus::Success;
-    return Domains().DoImportSchemas(schemasToImport, SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues);
+    SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues | SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications;
+    return Domains().DoImportSchemas(schemasToImport, options);
     }
 
 /*---------------------------------------------------------------------------------**//**

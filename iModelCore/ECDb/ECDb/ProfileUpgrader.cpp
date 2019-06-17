@@ -419,7 +419,7 @@ BentleyStatus ProfileUpgrader_4002::DeserializeUnitsAndFormatsSchemas(KoqConvers
 
     BeAssert(readCtx->GetCache().GetCount() == 2);
     SchemaKey unitsSchemaKey(UnitsSchemaName, 1, 0, 0);
-    auto it = ctx.m_formatsSchema->GetReferencedSchemas().Find(unitsSchemaKey, SchemaMatchType::Exact);
+    auto it = ctx.m_formatsSchema->GetReferencedSchemas().Find(unitsSchemaKey, SchemaMatchType::LatestReadCompatible);
     if (it == ctx.m_formatsSchema->GetReferencedSchemas().end())
         {
         LOG.error("ECDb profile upgrade failed: Deserializing standard Units and Formats ECSchemas failed.");

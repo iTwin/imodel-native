@@ -16,7 +16,7 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SCVWritter
-{
+    {
 private:
     std::stringstream m_sstr;
 
@@ -47,6 +47,6 @@ public:
     LICENSING_EXPORT Utf8String ToString();
 
     LICENSING_EXPORT BentleyStatus WriteToFile(BeFileNameCR filePath);
-};
+    };
 
 END_BENTLEY_LICENSING_NAMESPACE

@@ -122,19 +122,19 @@ bool ECSchemaDownConverter::Convert(ECSchemaR schema)
         }
 
     static SchemaKey unitsKey = SchemaKey("Units", 1, 0, 0);
-    auto unitsSchema = schema.FindSchema(unitsKey, SchemaMatchType::Latest);
+    auto unitsSchema = schema.FindSchema(unitsKey, SchemaMatchType::LatestReadCompatible);
     static SchemaKey formatsKey = SchemaKey("Formats", 1, 0, 0);
-    auto formatsSchema = schema.FindSchema(formatsKey, SchemaMatchType::Latest);
+    auto formatsSchema = schema.FindSchema(formatsKey, SchemaMatchType::LatestReadCompatible);
     if(nullptr != unitsSchema && schema.IsSchemaReferenced(schema, *unitsSchema))
         {
         LOG.warningv("Force removing reference to schema %s even though it may be used by KoQs. They are not available in EC2", unitsSchema->GetFullSchemaName().c_str());
-        schema.m_refSchemaList.erase(schema.m_refSchemaList.find(unitsKey));
+        schema.m_refSchemaList.erase(schema.m_refSchemaList.find(unitsSchema->GetSchemaKey()));
         }
 
     if(nullptr != formatsSchema && schema.IsSchemaReferenced(schema, *formatsSchema))
         {
         LOG.warningv("Force removing reference to schema %s even though it may be used by KoQs. They are not available in EC2", formatsSchema->GetFullSchemaName().c_str());
-        schema.m_refSchemaList.erase(schema.m_refSchemaList.find(formatsKey));
+        schema.m_refSchemaList.erase(schema.m_refSchemaList.find(formatsSchema->GetSchemaKey()));
         }
 
     schema.RemoveUnusedSchemaReferences();

@@ -74,7 +74,8 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
             {
             None = 0,
             DoNotFailSchemaValidationForLegacyIssues = 1, //! Not needed by regular caller
-            DisallowMajorSchemaUpgrade = 2  //!< If specified, schema upgrades where the major version has changed, are not supported.
+            DisallowMajorSchemaUpgrade = 2,  //!< If specified, schema upgrades where the major version has changed, are not supported.
+            DoNotFailForDeletionsOrModifications = 3 //! This is for the case of domain schemas that differ between files even though the schema name and versions are unchanged.  In such a case, we only want to merge in acceptable changes, not delete anything
             };
 
 #if !defined (DOCUMENTATION_GENERATOR)

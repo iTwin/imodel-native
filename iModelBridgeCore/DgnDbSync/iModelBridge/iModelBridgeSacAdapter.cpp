@@ -631,12 +631,6 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
         return iModelBridge::CmdLineArgStatus::Success;
         }
 
-    if (argv[iArg] == wcsstr(argv[iArg], L"--match-on-embedded-file-basename"))
-        {
-        bparams.SetMatchOnEmbeddedFileBasename(true);
-        return iModelBridge::CmdLineArgStatus::Success;
-        }
-
     return iModelBridge::CmdLineArgStatus::NotRecognized;
     }
 

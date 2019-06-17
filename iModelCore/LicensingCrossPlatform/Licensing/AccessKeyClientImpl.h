@@ -28,7 +28,7 @@ public:
     LICENSING_EXPORT AccessKeyClientImpl
         (
         Utf8StringCR accessKey,
-        WebServices::ClientInfoPtr clientInfo,
+        ApplicationInfoPtr applicationInfo,
         BeFileNameCR db_path,
         bool offlineMode,
         IPolicyProviderPtr policyProvider,
