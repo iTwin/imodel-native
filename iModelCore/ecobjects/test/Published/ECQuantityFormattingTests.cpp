@@ -146,8 +146,10 @@ TEST_F(ECQuantityFormattingTest, FormatPersistedValueUsingKoQPersistenceUnit)
     ECQuantityFormattingStatus status;
     // TODO where to handle case where we have no presentation units but we have a persistence unit that we'd like to use as an input unit 
     // for defaultrealU
+    BEF::NumericFormatSpec format = BEF::NumericFormatSpec::DefaultFormat();
     Utf8String formatString = ECQuantityFormatting::FormatPersistedValue(5, koq, &status);
-    EXPECT_STREQ("5.0 m", formatString.c_str());
+    Utf8String expectedFormat = Utf8PrintfString("5%c0 m", format.GetDecimalSeparator());
+    EXPECT_STREQ(expectedFormat.c_str(), formatString.c_str());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -1110,7 +1110,7 @@ TEST_F(SchemaCopyTest, CopyKindOfQuantityIncludingReferences)
     ECSchemaPtr schemaCopyTo;
     ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
     SchemaKey key("Units", 1, 0, 0);
-    schemaCopyTo->AddReferencedSchema(*schemaContext->LocateSchema(key, SchemaMatchType::Exact));
+    schemaCopyTo->AddReferencedSchema(*schemaContext->LocateSchema(key, SchemaMatchType::LatestReadCompatible));
 
     KindOfQuantityP koq;
     EC_EXPECT_SUCCESS(schemaCopyTo->CopyKindOfQuantity(koq, *schemaCopyFrom->GetKindOfQuantityCP("KindOfQuantity"), true));
@@ -1159,7 +1159,7 @@ TEST_F(SchemaCopyTest, CopyKindOfQuantityWithReferencedPresentationUnitSchema)
     ECSchemaPtr schemaCopyTo;
     ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
     SchemaKey key("Units", 1, 0, 0);
-    schemaCopyTo->AddReferencedSchema(*schemaContext->LocateSchema(key, SchemaMatchType::Exact));
+    schemaCopyTo->AddReferencedSchema(*schemaContext->LocateSchema(key, SchemaMatchType::LatestReadCompatible));
 
     KindOfQuantityP koq;
     EC_EXPECT_SUCCESS(schemaCopyTo->CopyKindOfQuantity(koq, *schemaCopyFrom->GetKindOfQuantityCP("KindOfQuantity"), true));
@@ -1198,7 +1198,7 @@ TEST_F(SchemaCopyTest, CopyKindOfQuantityWithReferencedSourceSchema)
     ECSchemaPtr schemaCopyTo;
     ECSchema::CreateSchema(schemaCopyTo, "testSchema", "ts", 2, 0, 0);
     SchemaKey key("Units", 1, 0, 0);
-    schemaCopyTo->AddReferencedSchema(*schemaContext->LocateSchema(key, SchemaMatchType::Exact));
+    schemaCopyTo->AddReferencedSchema(*schemaContext->LocateSchema(key, SchemaMatchType::LatestReadCompatible));
 
     KindOfQuantityP koq;
     EC_EXPECT_SUCCESS(schemaCopyTo->CopyKindOfQuantity(koq, *schemaCopyFrom->GetKindOfQuantityCP("KindOfQuantity"), false));

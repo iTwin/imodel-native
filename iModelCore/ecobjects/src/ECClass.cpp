@@ -30,9 +30,7 @@ void ECClass::SetErrorHandling (bool doAssert)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECClass::ECClass (ECClassType classType, ECSchemaCR schema)
-    : m_classType(classType), m_schema(schema), m_modifier(ECClassModifier::None), m_xmlComments(), m_contentXmlComments(), m_propertyCountCached(false), m_propertyCount(0)
-    {};
+ECClass::ECClass (ECClassType classType, ECSchemaCR schema) : m_classType(classType), m_schema(schema), m_modifier(ECClassModifier::None), m_xmlComments(), m_contentXmlComments() { }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -51,7 +49,7 @@ ECClass::~ECClass ()
     
     m_propertyMap.clear();
 
-    m_defaultStandaloneEnabler = nullptr;
+    m_defaultStandaloneEnabler.Invalidate();
     }
 
 //---------------------------------------------------------------------------------------
@@ -59,10 +57,8 @@ ECClass::~ECClass ()
 //---------------+---------------+---------------+---------------+---------------+-------
 Utf8CP ECClass::GetFullName () const
     {
-    if (m_fullName.empty())
-        m_fullName = GetSchema().GetName() + ":" + GetName();
-        
-    return m_fullName.c_str();
+    auto const& fullName = m_fullName.GetName(*this);
+    return fullName.c_str();
     }
 
 //--------------------------------------------------------------------------------------
@@ -70,10 +66,12 @@ Utf8CP ECClass::GetFullName () const
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8StringCR ECClass::GetECSqlName() const
     {
-    if (m_ecsqlName.empty())
-        m_ecsqlName.append("[").append(GetSchema().GetName()).append("].[").append(GetName()).append("]");
-
-    return m_ecsqlName;
+    return m_ecsqlName.Get([&]()
+        {
+        Utf8String name;
+        name.append(1, '[').append(GetSchema().GetName()).append("].[").append(GetName()).append(1, ']');
+        return name;
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -84,7 +82,7 @@ ECObjectsStatus ECClass::SetName (Utf8StringCR name)
     if (!m_validatedName.SetValidName(name.c_str(), m_schema.OriginalECXmlVersionLessThan(ECVersion::V3_1)))
         return ECObjectsStatus::InvalidName;
 
-    m_fullName = GetSchema().GetName() + ":" + GetName();
+    m_fullName.RecomputeName(*this);
     
     return ECObjectsStatus::Success;
     }
@@ -119,14 +117,14 @@ ECObjectsStatus ECClass::SetDisplayLabel (Utf8StringCR displayLabel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneECEnablerP ECClass::GetDefaultStandaloneEnabler() const
     {
-    if (!m_defaultStandaloneEnabler.IsValid())
+    auto enabler = m_defaultStandaloneEnabler.Get([&]()
         {
         ClassLayoutPtr classLayout   = ClassLayout::BuildFromClass (*this);
-        m_defaultStandaloneEnabler = StandaloneECEnabler::CreateEnabler (*this, *classLayout, NULL);
-        }
+        return StandaloneECEnabler::CreateEnabler(*this, *classLayout, nullptr);
+        });
 
-    BeAssert(m_defaultStandaloneEnabler.IsValid());
-    return m_defaultStandaloneEnabler.get();
+    BeAssert(enabler.IsValid());
+    return enabler.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -434,12 +432,11 @@ void ECClass::InvalidateDefaultStandaloneEnabler() const
     {
     // When class structure changes, the ClassLayout stored in this enabler becomes out-of-date
     // nullify it so it will be reconstructed on next call to GetDefaultStandaloneEnabler()
-    m_defaultStandaloneEnabler = NULL;
+    m_defaultStandaloneEnabler.Invalidate();
     for (ECClassP derivedClass : m_derivedClasses)
         derivedClass->InvalidateDefaultStandaloneEnabler();
 
-    m_propertyCountCached = false;
-    m_propertyCount = 0;
+    m_propertyCount.Invalidate();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1413,7 +1410,7 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
             ECValue exceptionsArray;
             if (ECObjectsStatus::Success == notSubClassableCA->GetValue(exceptionsArray, exceptionsIndex))
                 {
-                GetFullName(); // Call to ensure m_fullName is cached.
+                Utf8StringCR fullName = m_fullName.GetName(*this);
                 ArrayInfo arrayInfo = exceptionsArray.GetArrayInfo();
                 for (uint32_t i = 0; i < arrayInfo.GetCount(); ++i)
                     {
@@ -1421,7 +1418,7 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
                     if (ECObjectsStatus::Success != notSubClassableCA->GetValue(exception, exceptionsIndex, i) || exception.IsNull())
                         continue;
 
-                    if (m_fullName.EqualsIAscii(exception.GetUtf8CP()))
+                    if (fullName.EqualsIAscii(exception.GetUtf8CP()))
                         {
                         exceptionFound = true;
                         break;
@@ -2369,15 +2366,12 @@ size_t ECClass::GetPropertyCount (bool includeBaseClasses) const
     if (!includeBaseClasses || !HasBaseClasses())
         return m_propertyList.size();
 
-    if (m_propertyCountCached)
-        return m_propertyCount;
-
-    PropertyList props;
-    GetProperties(true, &props);
-    m_propertyCount = (uint16_t)props.size();
-    m_propertyCountCached = true;
-
-    return m_propertyCount;
+    return m_propertyCount.Get([&]()
+        {
+        PropertyList props;
+        GetProperties(true, &props);
+        return static_cast<uint16_t>(props.size());
+        });
     }
     
 /*---------------------------------------------------------------------------------**//**
