@@ -132,8 +132,10 @@ def callEachStrategy(args, config, verData):
             action = 'taglist -f ' + bdfPath
         elif 'build' == args.action:
             action = 'build'
-            if isFirstStrategy and ('PRG' in os.environ):
+            if isFirstStrategy:
                 action += ' --tmrbuild --noprompt'
+        elif 'localbuild' == args.action:
+            action = 'build'
         elif 'checkunused' == args.action:
             if not version or '99.99.99.99' == version:
                 print('WARNING: No valid version was computed for {0}, so it will NOT be validated.'.format(stratConfig['name']))
