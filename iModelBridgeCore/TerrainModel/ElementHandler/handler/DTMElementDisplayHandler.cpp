@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMElementDisplayHandler.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -534,7 +534,7 @@ ReprojectStatus DTMElementDisplayHandler::_OnGeoCoordinateReprojection (EditElem
         {
         DPoint3d origin;
 
-        ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler).GetTransformOrigin (element, origin);
+        GetTransformOrigin (element, origin);
         
         TransformInfo   transform;
         bool useTransform = false;
@@ -543,7 +543,7 @@ ReprojectStatus DTMElementDisplayHandler::_OnGeoCoordinateReprojection (EditElem
             {
             useTransform = true;
             if (IsValidTransformation(&transform.GetTransformR()))
-                if (ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler).ApplyTransform (element, transform) == SUCCESS)
+                if (ApplyTransform (element, transform) == SUCCESS)
                 return REPROJECT_Success;
             }
 
@@ -1576,7 +1576,7 @@ void DTMElementDisplayHandler::_GetPathDescription (ElementHandleCR element, WSt
                     HitPathLazyDTMDrawingInfoProvider ldip (element, DTMDataRef.get(), *hitPath);
                     WString subString;
 
-                    ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler).GetDescription (element, string, 100);  // start with element's description
+                    GetDescription (element, string, 100);  // start with element's description
                     hand->_GetPathDescription (symbologyEl, iter, ldip, subString, *hitPath, levelStr, modelStr, groupStr, delimiterStr);
                     string.append(delimiterStr).append (subString);
                     if (levelStr && '\0' != levelStr[0]) string.append(delimiterStr).append(levelStr);
@@ -1587,7 +1587,7 @@ void DTMElementDisplayHandler::_GetPathDescription (ElementHandleCR element, WSt
                 }
             }
         }
-    ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler).GetDescription (element, string, 100);  // start with element's description
+    GetDescription (element, string, 100);  // start with element's description
     if (levelStr && '\0' != levelStr[0]) string.append(delimiterStr).append(levelStr);
     if (modelStr && '\0' != modelStr[0]) string.append(delimiterStr).append(modelStr);
     if (groupStr && '\0' != groupStr[0]) string.append(delimiterStr).append(groupStr);
@@ -1791,7 +1791,7 @@ void DTMElementDisplayHandler::_OnConvertTo2d (EditElementHandleR eeh, Transform
 
     // This is to force the lines in drop to be 3d and not 2d.
 //    eeh.SetModelRef (nullptr);
-    if (SUCCESS != ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler).Drop (eeh, out, info) || out.size() == 0)
+    if (SUCCESS != Drop (eeh, out, info) || out.size() == 0)
         return;
 
     //// Need to delete all DTM Data.
