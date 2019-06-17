@@ -14,7 +14,7 @@
 
     <Part Name="QuantityTakeoffsAspectsSchema">
         <SubPart PartName="QuantityTakeoffsAspects" Repository="BisSchemas" PartFile="BisSchemas" />
-        <SubPart PartName="AecUnitsPublicAPI" Repository="DgnDomains-DesignModelingUnits" PartFile="AecUnits" />
+        <SubPart PartName="AecUnitsPublicAPI" Repository="imodel02" PartFile="Domains/AecUnits/AecUnits" />
     </Part>
 
     <Part Name="QuantityTakeoffsAspectsApi" BentleyBuildMakeFile="QuantityTakeoffsAspectsApi.prewire.mke">
@@ -25,7 +25,7 @@
     </Part>
 
     <Part Name="QuantityTakeoffsAspectsElements" BentleyBuildMakeFile="Elements/QuantityTakeoffsAspectsElements.mke" ApiNumber="M02">
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="QuantityTakeoffsAspectsApi"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)QuantityTakeoffsAspectsElements$(libext)</Libs>
@@ -34,7 +34,7 @@
     </Part>
 
     <Part Name="QuantityTakeoffsAspectsHandlers" BentleyBuildMakeFile="Handlers/QuantityTakeoffsAspectsHandlers.mke" ApiNumber="M02">
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="QuantityTakeoffsAspectsElements"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)QuantityTakeoffsAspectsHandlers$(libext)</Libs>
@@ -43,7 +43,7 @@
     </Part>
     
     <Part Name="QuantityTakeoffsAspectsDomain" BentleyBuildMakeFile="Domain/QuantityTakeoffsAspectsDomain.mke" ApiNumber="M02">
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="QuantityTakeoffsAspectsApi"/>
         <SubPart PartName="QuantityTakeoffsAspectsHandlers"/>
         <Bindings>
@@ -61,7 +61,7 @@
         OnlyPlatforms="x86,x64,MacOs*,Linux*"
     >
         <SubProduct ProductName="QuantityTakeoffsAspects-GtestProduct" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/QuantityTakeoffsAspectsTest.log</Files>
         </Bindings>
@@ -103,14 +103,14 @@
     </Part>
 
     <Product Name="QuantityTakeoffsAspects-TestsProduct">
-        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
         <SubPart PartName="QuantityTakeoffsAspects-Tests"/>
-        <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
-        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        <SubPart PartName="DgnPlatformSqlang" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
     <Part Name="QuantityTakeoffsAspects-Tests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
-        <SubPart PartName="BuildSharedTestUtils" PartFile="BuildingShared" Repository="BuildingShared" />
+        <SubPart PartName="BuildSharedTestUtils" PartFile="Domains/BuildingShared/BuildingShared" Repository="imodel02" />
         <SubPart PartName="PrewireForUnitTests"/>
         <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
         <SubPart PartName="QuantityTakeoffsAspects"/>

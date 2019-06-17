@@ -224,7 +224,7 @@
 
     <Part Name="BuildSharedTestUtils" BentleyBuildMakeFile="TestUtils/TestUtils.mke" BentleyBuildMakeOptions="-dTestDir=SharedRepositoryManagerTest">
         <SubPart PartName="DgnDbTestUtils" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
-        <SubPart PartName="BuildingUtils" PartFile="BuildingShared" Repository="BuildingShared" />
+        <SubPart PartName="BuildingUtils" PartFile="Domains/BuildingShared/BuildingShared" Repository="imodel02" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"  ProductSubDirectory="BuildingShared/SharedRepositoryManagerTest" SourceName="Delivery/UnitTests/Objects/SharedRepositoryManagerTest"/>
         </Bindings>
