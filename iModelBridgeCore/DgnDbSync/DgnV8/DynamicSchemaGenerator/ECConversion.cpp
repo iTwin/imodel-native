@@ -8,6 +8,7 @@
 #include "ECDiff.h"
 #include <regex>
 #include <ECObjects/StandardCustomAttributeHelper.h>
+// #include <ECObjects/SchemaComparer.h>
 #include <Units/Units.h>
 #include <Formatting/FormattingApi.h>
 
@@ -350,7 +351,7 @@ ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IE
             ReplaceWithKOQ(schema, prop, "ANGLE", "RAD", getAngleUnitName(m_angle), *context);
             break;
         default:
-            LOG.warningv("Found an ExtendType custom attribute on an ECProperty, '%s.%s', with an unknown standard value %d.  Only values 7-11 are supported.",
+            LOG.infov("Found an ExtendType custom attribute on an ECProperty, '%s.%s', with an unknown standard value %d.  Only values 7-11 are supported.",
                          prop->GetClass().GetFullName(), prop->GetName().c_str());
             prop->RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
             prop->RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
@@ -682,8 +683,9 @@ BentleyStatus V8ECClassInfo::InsertOrUpdate(DynamicSchemaGenerator& converter, D
             }
         else if (existingRule != BisConversionRule::ToDefaultBisBaseClass)
             {
-            Utf8PrintfString info("Ambiguous conversion rules found for ECClass '%s': %s versus %s. Keeping the previous one", v8ClassName.GetClassFullName().c_str(), BisConversionRuleHelper::ToString(existingRule), BisConversionRuleHelper::ToString(rule));
+            Utf8PrintfString info("Ambiguous conversion rules found for ECClass '%s': %s versus %s. Keeping the previous one and creating a secondary Aspect class.", v8ClassName.GetClassFullName().c_str(), BisConversionRuleHelper::ToString(existingRule), BisConversionRuleHelper::ToString(rule));
             converter.ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), info.c_str());
+            Save(converter.GetDgnDb(), v8ClassName, existingRule, true);
             return BSISUCCESS;
             }
         return Save(converter.GetDgnDb(), v8ClassName, rule, hasSecondary);
@@ -885,7 +887,7 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
         {
         auto schemaIter = kvPairs.second.begin();
         BECN::SchemaKey const& schemaKey = schemaIter->first;
-        if (!schemaKey.Matches(key, BECN::SchemaMatchType::Latest))
+        if (!schemaKey.Matches(key, matchType))
             continue;
 
         BECN::ECSchemaPtr leftSchema;
@@ -1011,6 +1013,13 @@ BentleyStatus ECSchemaXmlDeserializer::DeserializeSchemas(BECN::ECSchemaReadCont
                 {
                 Utf8PrintfString warning("Failed to deserialize supplemental v8 schema '%s' - ignoring and continuing.", schemaKey.GetFullSchemaName().c_str());
                 m_converter.ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), warning.c_str());
+                continue;
+                }
+            else if (m_converter.GetConfig().GetOptionValueBool("AllowSkipFailedSchemas", false))
+                {
+                Utf8String msg;
+                msg.Sprintf("Failed to deserialize v8 ECSchema '%s'. Continuing with de-serialization of other schemas", schemaKey.GetFullSchemaName().c_str());
+                m_converter.ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), msg.c_str());
                 continue;
                 }
             Utf8String error;
@@ -1317,10 +1326,10 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 
         targetSchemaNames.insert(schemaName);
         Utf8CP schemaXml = entry.GetSchemaXml();
-        if (isDynamic)
+        //if (isDynamic)
             schemaXmlDeserializer.AddSchemaXml(schemaName.c_str(), key, schemaXml);
-        else
-            schemaXmlDeserializer.AddSchemaXml(key.GetFullSchemaName().c_str(), key, schemaXml);
+        //else
+            //schemaXmlDeserializer.AddSchemaXml(key.GetFullSchemaName().c_str(), key, schemaXml);
 
 #ifdef EXPORT_V8SCHEMA_XML
         WString fileName;
@@ -1658,6 +1667,10 @@ BentleyStatus DynamicSchemaGenerator::CopyFlatCustomAttributes(ECN::IECCustomAtt
         if (instance->GetClass().GetName().Equals("CalculatedECPropertySpecification") && instance->GetClass().GetSchema().GetName().Equals("Bentley_Standard_CustomAttributes"))
             continue;
 
+        // Don't copy customattributes if the customattribute comes from a baseclass still on the target.
+        if (targetContainer.GetCustomAttribute(instance->GetClass()).IsValid())
+            continue;
+
         ECN::ECSchemaPtr flatCustomAttributeSchema = m_flattenedRefs[instance->GetClass().GetSchema().GetName()];
         if (!flatCustomAttributeSchema.IsValid())
             {
@@ -1796,19 +1809,9 @@ BentleyStatus DynamicSchemaGenerator::CopyFlattenedProperty(ECN::ECClassP target
     // Only copy properties either directly on the same class or on a base class that was dropped.  Don't copy properties from base classes that are still set
     if (0 != strcmp(targetClass->GetFullName(), sourceProperty->GetClass().GetFullName()))
         {
-        ECN::ECClassP targetPropertyClass = nullptr;
-        ECN::ECSchemaPtr flatSchema = m_flattenedRefs[sourceProperty->GetClass().GetSchema().GetName()];
-        if (!flatSchema.IsValid())
-            {
-            if (Utf8String(sourceProperty->GetClass().GetSchema().GetName()).StartsWithIAscii("SP3D"))
-                targetPropertyClass = targetClass->GetSchemaR().GetClassP(sourceProperty->GetClass().GetName().c_str());
-            else
-                return BSIERROR;
-            }
-        else
-            targetPropertyClass = flatSchema->GetClassP(sourceProperty->GetClass().GetName().c_str());
-        //if (targetClass->Is(targetPropertyClass))
-        //    return BSISUCCESS;
+        // If the property already exists, then it is coming from a base class and we don't need to copy it.
+        if (nullptr != targetClass->GetPropertyP(sourceProperty->GetName().c_str()))
+            return BSISUCCESS;
         }
 
     ECN::ECPropertyP destProperty = nullptr;
@@ -1989,6 +1992,13 @@ BentleyStatus DynamicSchemaGenerator::CopyFlattenedProperty(ECN::ECClassP target
             targetClass->GetEntityClassP()->CreateNavigationProperty(destNav, sourceProperty->GetName(), *flatBaseSchema->GetClassP(sourceRelClass->GetName().c_str())->GetRelationshipClassP(), sourceNav->GetDirection(), false);
             }
         destProperty = destNav;
+        }
+
+    // We shouldn't ever have a null destProperty, but just to be safe
+    if (nullptr == destProperty)
+        {
+        LOG.warningv("Unable to copy incoming sourceProperty %s from %s", sourceProperty->GetName().c_str(), sourceProperty->GetClass().GetFullName());
+        return BSIERROR;
         }
 
     destProperty->SetDescription(sourceProperty->GetInvariantDescription());
@@ -2528,8 +2538,8 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConvertToBisBasedECSchemas()
             ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(), errorMsg.c_str());
             return BentleyApi::BSIERROR;
             }
-        Bentley::WString schemaName(schema->GetName().c_str());
-        if (DgnV8Api::ItemTypeLibrary::IsItemTypeSchema(schemaName) && !schema->IsDynamicSchema())
+        // Every single schema that we import from v8 needs to be tagged as dynamic.  This allows for looser update and audit rules
+        if (!schema->IsDynamicSchema())
             {
             ECN::IECInstancePtr dynamicInstance = ECN::CoreCustomAttributeHelper::CreateCustomAttributeInstance("DynamicSchema");
             if (!ECN::ECSchema::IsSchemaReferenced(*schema, dynamicInstance->GetClass().GetSchema()))
@@ -2695,6 +2705,37 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         }
     }
 #endif
+    // If we're either updating or mapping a new file, need to see if this schema already exists in the db and if so, increment the minor version
+    for (BECN::ECSchemaCP schema : constSchemas)
+        {
+        BECN::ECSchemaCP existing = GetDgnDb().Schemas().GetSchema(schema->GetName());
+        if (nullptr == existing)
+            continue;
+
+        /*
+        ** Include SchemaComparer causes compiler errors related to the template in the comparer and DPoint3d
+        BECN::SchemaComparer comparer;
+        //We do not require detail if schema is added or deleted. the name and version suffices.
+        ECN::SchemaComparer::Options options = ECN::SchemaComparer::Options(ECN::SchemaComparer::DetailLevel::NoSchemaElements, ECN::SchemaComparer::DetailLevel::NoSchemaElements);
+        bvector<ECN::ECSchemaCP> existingSet = {existing};
+        bvector<ECN::ECSchemaCP> newSet = {schema};
+        ECN::SchemaDiff diff;
+        if (SUCCESS == comparer.Compare(diff, existingSet, newSet, options))
+            {
+            if (diff.Changes().IsChanged())
+                {
+                ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
+                nonConst->SetVersionMinor(nonConst->GetVersionMinor() + 1);
+                }
+            }
+        }
+        */
+        auto diff = ECDiff::Diff(*existing, *schema);
+        if (diff->GetStatus() == DiffStatus::Success && diff->IsEmpty())
+            continue;
+        ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
+        nonConst->SetVersionMinor(existing->GetVersionMinor() + 1);
+        }
 
     auto importStatus = GetDgnDb().ImportV8LegacySchemas(constSchemas);
     if (SchemaStatus::Success != importStatus)
@@ -2798,22 +2839,22 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
         {
         ReportProgress();
 
-        ECObjectsV8::SchemaKey& schemaKey = v8SchemaInfo.GetSchemaKeyR();
-        if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_TRACE))
-            LOG.tracev(L"Schema %ls - File: %ls - Location: %ls - %ls - Provider: %ls", schemaKey.GetFullSchemaName().c_str(),
-                       v8SchemaInfo.GetDgnFile().GetFileName().c_str(),
-                       v8SchemaInfo.GetLocation(),
-                       v8SchemaInfo.IsStoredSchema() ? L"Stored" : L"External",
-                       v8SchemaInfo.GetProviderName());
-
         //TODO: Need to filter out V8/MicroStation specific ECSchemas, not needed in Graphite
 
+        ECObjectsV8::SchemaKey& schemaKey = v8SchemaInfo.GetSchemaKeyR();
         Utf8String fullName(schemaKey.GetFullSchemaName().c_str());
         if (!m_converter.ShouldImportSchema(fullName, v8Model))
             {
             m_skippedSchemas.push_back(Utf8String(schemaKey.GetName().c_str()));
             continue;
             }
+
+        if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_TRACE))
+            LOG.tracev(L"Schema %ls - File: %ls - Location: %ls - %ls - Provider: %ls", schemaKey.GetFullSchemaName().c_str(),
+                       v8SchemaInfo.GetDgnFile().GetFileName().c_str(),
+                       v8SchemaInfo.GetLocation(),
+                       v8SchemaInfo.IsStoredSchema() ? L"Stored" : L"External",
+                       v8SchemaInfo.GetProviderName());
 
         Bentley::Utf8String schemaName(schemaKey.GetName());
 
@@ -3159,7 +3200,8 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
         if (0 == BeStringUtilities::Strnicmp("EWR", v8SchemaName.c_str(), 3))
             bimSchemaName.AssignOrClear("EWR");
 
-        if (!m_converter.GetDgnDb().Schemas().ContainsSchema(bimSchemaName))
+        // Supplemental schemas are not imported so won't find it in the existing imodel
+        if (!m_converter.GetDgnDb().Schemas().ContainsSchema(bimSchemaName) && !bimSchemaName.Contains("_Supplemental"))
             {
             m_needReimportSchemas = true;
             continue;
@@ -3649,10 +3691,11 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
                 failingEndStr = !sourceInstanceKey.IsValid() ? "source ECInstance" : "target ECInstance";
 
             Utf8String errorMsg;
-            errorMsg.Sprintf("Could not find %s for relationship '%s' (Source: %s|%s Target %s|%s).",
+            errorMsg.Sprintf("Could not find %s for relationship '%s' (Source: %s|%s Target %s|%s) from element %" PRIu64 " in file '%s'.",
                              failingEndStr, v8RelFullClassName.c_str(),
                              v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
-                             v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId());
+                             v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                             v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str());
             ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), errorMsg.c_str());
             continue;
             }

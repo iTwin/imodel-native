@@ -123,6 +123,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         bool       m_skipAssignmentCheck = false;
         bool       m_createRepositoryIfNecessary = false;
         bool       m_mergeDefinitions = true;
+        bool       m_allDocsProcessed = false;
         int m_maxWaitForMutex = 60000;
         Utf8String m_revisionComment;
         WString    m_bridgeRegSubKey;
@@ -285,6 +286,7 @@ protected:
     void InitLogging();
 
     bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
+    void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) override;
     BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) override;
     BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid) override;
     BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey, BeSQLite::BeGuidCP guid) override;
@@ -320,6 +322,8 @@ protected:
     int UpdateExistingBimWithExceptionHandling();
     int MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions&);
     int MakeDefinitionChanges(SubjectCPtr& jobsubj, iModelBridgeCallOpenCloseFunctions&);
+    int DoNormalUpdate();
+    int OnAllDocsProcessed();
     void OnUnhandledException(Utf8CP);
     Utf8String GetRevisionComment();
     void SetBridgeParams(iModelBridge::Params&, FwkRepoAdmin*);
@@ -399,7 +403,7 @@ public:
             }
         }
 
-    BeSQLite::BeBriefcaseId GetBriefcaseId();
+    IMODEL_BRIDGE_FWK_EXPORT BeSQLite::BeBriefcaseId GetBriefcaseId();
 };
 
 END_BENTLEY_DGN_NAMESPACE

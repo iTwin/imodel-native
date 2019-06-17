@@ -47,6 +47,24 @@ ChangeDetector::~ChangeDetector()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8ElementExternalSourceAspect ChangeDetector::FindElementAspectByIdentifier(Converter& converter, Utf8StringCR identifier, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter)
+    {
+    SyncInfo::V8ElementExternalSourceAspectIterator it(v8mm.GetDgnModel(), "Identifier=:identifier");
+    auto stmt = it.GetStatement();
+    stmt->BindText(stmt->GetParameterIndex("identifier"), identifier.c_str(), EC::IECSqlBinder::MakeCopy::No);
+
+    auto found = it.begin();
+    if (nullptr != filter)
+        {
+        while ((found != it.end()) && !(*filter)(found, converter))
+            ++found;
+        }
+    return (found != it.end())? *found: SyncInfo::V8ElementExternalSourceAspect();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::V8ElementExternalSourceAspect ChangeDetector::FindElementAspectById(Converter& converter, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter)
     {
     SyncInfo::V8ElementExternalSourceAspectIteratorByV8Id it(v8mm.GetDgnModel(), v8eh);
@@ -78,11 +96,15 @@ SyncInfo::V8ElementExternalSourceAspect ChangeDetector::FindElementAspectByCheck
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, 
-                                       T_SyncInfoElementFilter* filter)
+                                       T_SyncInfoElementFilter* filter, Utf8CP identifier)
     {
     res.m_currentElementProvenance = SyncInfo::ElementProvenance(v8eh, converter.GetSyncInfo(), converter.GetCurrentIdPolicy());
     
-    if (converter.GetCurrentIdPolicy() == StableIdPolicy::ById)
+    if (nullptr != identifier)
+        {
+        res.m_v8ElementAspect = FindElementAspectByIdentifier(converter, identifier, v8mm, filter);
+        }
+    else if (converter.GetCurrentIdPolicy() == StableIdPolicy::ById)
         {
         res.m_v8ElementAspect = FindElementAspectById(converter, v8eh, v8mm, filter);
         }
@@ -374,6 +396,38 @@ void Converter::_DeleteFileAndContents(RepositoryLinkId repositoryLinkId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::DeleteEmbeddedFileAndContents(RepositoryLinkId repositoryLinkId)
+    {
+    auto rlink = GetRepositoryLinkElement(repositoryLinkId);
+    if (!rlink.IsValid())
+        return;
+    
+    SyncInfo::V8ModelExternalSourceAspectIterator modelsInFile(*rlink);
+    for (auto wasModel : modelsInFile)
+        {
+        auto model = GetDgnDb().Models().GetModel(wasModel.GetModelId());
+        if (!model.IsValid())
+            {
+            BeAssert(false && "I found a Model *aspect*, and yet I cannot access the model that it points to. That's impossible.:");
+            continue;
+            }
+
+        SyncInfo::V8ElementExternalSourceAspectIterator elementsInModel(*model);
+
+        for (auto wasElement : elementsInModel)
+            {
+            _DeleteElement(wasElement.GetElementId());
+            }
+
+        _DeleteModel(*model, wasModel);
+        }
+
+    rlink->Delete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::_DetectDeletedDocuments()
     {
     if (!IsUpdating())
@@ -387,7 +441,7 @@ void Converter::_DetectDeletedDocuments()
 
         bool wasSourceFileDeleted;
         if (IsEmbeddedFileName(filename))
-            wasSourceFileDeleted = !WasEmbeddedFileSeen(identifier);
+            wasSourceFileDeleted = false; // NO - we must wait for DetectDeletedEmbeddedFiles callback -- !WasEmbeddedFileSeen(identifier);
         else
             wasSourceFileDeleted = !IsDocumentInRegistry(identifier, filename);
 
@@ -396,6 +450,104 @@ void Converter::_DetectDeletedDocuments()
             _DeleteFileAndContents(file->GetRepositoryLinkId());
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::BentleyStatus RootModelConverter::DetectDeletedEmbeddedFiles()
+    {
+    // This is "garbage collection" for common embedded files. Several package files
+    // may embed a copy of a common reference file. The reference file may be identified
+    // by a PW Doc GUID in its provenance, or we may be running with the 'matchOnEmbeddedFileBasename'
+    // option. In either case, if we find that none of the package files that are assigned
+    // to this bridge embeds a copy of a reference file that we converted in the past, then 
+    // we conclude that the user doesn't want that reference file's content in the iModel any more.
+
+    // 1. Get a list of all of the masterfiles assigned to this bridge.
+    bvector<BeFileName> filenames;
+    _GetParams().QueryAllFilesAssignedToBridge(filenames);
+
+    // 2. Discover all reference files that are currently embedded by package files in files assigned to this bridge.
+    bset<Utf8String> embeddedFileNamesFound;
+    bset<Utf8String> packageFilesAssignedToMe;
+    for (auto const& filename: filenames)
+        {
+        packageFilesAssignedToMe.insert(Utf8String(filename.c_str()).ToLower());
+        
+        DgnV8Api::DgnFileStatus openStatus;    
+        auto v8File = OpenDgnV8File(openStatus, filename);
+        if (!v8File.IsValid())
+            continue;
+
+        auto embeddedFiles = v8File->GetEmbeddedFileList();
+        if (nullptr == embeddedFiles)
+            continue;
+
+        for (auto const& efn : *embeddedFiles)
+            {
+            auto efnname = DgnV8Api::DgnFile::BuildPackagedName(filename.c_str(), efn.GetID(), efn.GetNameOnly().c_str());
+
+            DgnV8Api::DgnFileStatus openStatus;    
+            auto eFile = OpenDgnV8File(openStatus, BeFileName(efnname.c_str()));
+            if (!eFile.IsValid())
+                continue;
+                                                     // vvvvvvvvvvvvvvvvvvvv We want the uniquename, not the filename of the embedded file! The uniquename is used as the XSA Identifier.
+            embeddedFileNamesFound.insert(GetSyncInfo().GetUniqueNameForFile(*eFile));
+            }
+        }
+
+    // 3. Now review the iModel's record of all of the files that were used by bridges to populate it.
+    //    Detect the records that point to files that:
+    //          a) were previously mined for content by this bridge
+    //          b) refer to embedded files and are no longer embedded in any source package file.
+    //    Remove the content that came from such files from the iModel.
+    SyncInfo::RepositoryLinkExternalSourceAspectIterator rlinkAspects(GetDgnDb(), nullptr);
+    bool anyPackageFileAssignedToMe = false;
+    bool somePackageFileNotAssignedToMe = false;
+    for (auto rlinkAspect = rlinkAspects.begin(); rlinkAspect != rlinkAspects.end(); ++rlinkAspect)
+        {
+        auto v8FileName = rlinkAspect->GetFileName();   // full V8 filename of previously converted file
+
+        Bentley::WString v8PackageName;
+        if (SUCCESS != DgnV8Api::DgnFile::ParsePackagedName(&v8PackageName, nullptr, nullptr, WString(v8FileName.c_str(), true).c_str()))
+            continue;
+
+        // The V8 filename is an embedded filename
+
+        // Make sure that this bridge was the one that converted the package that contained this embedded file.
+        if (packageFilesAssignedToMe.find(Utf8String(v8PackageName.c_str()).ToLower()) == packageFilesAssignedToMe.end())
+            {
+            somePackageFileNotAssignedToMe = true;
+            continue;
+            }
+
+        anyPackageFileAssignedToMe = true;
+
+        // Find out if this embedded file is not currently embedded in any V8 package file. 
+        // NB: Match on the Identifier, which is the uniquename of the document. See SyncInfo::ComputeFileInfo/GetUniqueNameForFile
+        auto identifier = rlinkAspect->GetIdentifier();
+        if (embeddedFileNamesFound.find(identifier) == embeddedFileNamesFound.end())
+            {
+            LOG.tracev("Detected deleted embedded file %s (%s). Deleting content based on that file from the iModel...", v8FileName.c_str(), identifier.c_str());
+
+            // No package file assigned to me embeds this file. Therefore, I say that the embedded file was deleted.
+            DeleteEmbeddedFileAndContents(rlinkAspect->GetRepositoryLinkId());
+    
+            iModelBridge::PushChanges(*m_dgndb, _GetParams(), Utf8PrintfString("Deleted reference file %s", identifier.c_str()));
+            }
+        }
+
+    // My inference is valid only if all package files were assigned to this bridge.
+    // I could change the algorithm so that I don't need that assumption, but we prefer
+    // to work with this simplifying assumption. For now, log an error if this assumption is violdated.
+    if (anyPackageFileAssignedToMe && somePackageFileNotAssignedToMe)
+        {
+        LOG.errorv("Some i.dgn files where assigned to bridge %s and some were not. That violates our policy, as it makes it too hard to garbage collect embedded references.", _GetParams().GetBridgeRegSubKey().c_str());
+        BeAssert(false);
+        }
+
+    return BentleyApi::BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

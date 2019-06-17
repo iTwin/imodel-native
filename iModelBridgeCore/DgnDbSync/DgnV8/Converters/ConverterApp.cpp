@@ -640,6 +640,16 @@ BentleyStatus RootModelConverterApp::_DetectDeletedDocuments()
     return m_converter->WasAborted()? BSIERROR: BSISUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RootModelConverterApp::_OnAllDocumentsProcessed()
+    {
+    m_converter->DetectDeletedEmbeddedFiles();
+    m_hadAnyChanges |= m_converter->HadAnyChanges();
+    return m_converter->WasAborted()? BSIERROR: BSISUCCESS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------

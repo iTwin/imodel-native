@@ -1495,3 +1495,105 @@ TEST_F(iModelBridgeTests, LaunchDarklyQa)
     EXPECT_EQ(true, abdTestFlag);
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelBridgeTests, ECEFTransformTest)
+    {
+    auto bridgeRegSubKey = L"iModelBridgeTests_Test1_Bridge";
+
+    auto testDir = getiModelBridgeTestsOutputDir(L"ECEFTransformTest");
+
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
+    
+    // I have to create a file that I represent as the bridge "library", so that the fwk's argument validation logic will see that it exists.
+    // The fwk won't try to load this file, since we will register a fake bridge.
+    BeFileName fakeBridgeName(testDir);
+    fakeBridgeName.AppendToPath(L"iModelBridgeTests-ECEFTransformTest");
+    BeFile fakeBridgeFile;
+    ASSERT_EQ(BeFileStatus::Success, fakeBridgeFile.Create(fakeBridgeName, true));
+    fakeBridgeFile.Close();
+
+    bvector<WString> args;
+    args.push_back(L"iModelBridgeTests.ECEFTransformTest");                       // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir.c_str()));
+    args.push_back(L"--server-environment=Qa");
+    args.push_back(L"--server-repository=iModelBridgeTests_ECEFTransformTest");   // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(L"--server-project-guid=iModelBridgeTests_Project");     // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(L"--fwk-create-repository-if-necessary");        
+    args.push_back(L"--server-user=username=username");                     // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(L"--server-password=\"password><!@\"");                  // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+    args.push_back(WPrintfString(L"--fwk-bridge-regsubkey=%ls", bridgeRegSubKey).c_str());  // must be consistent with testRegistry.m_bridgeRegSubKey
+    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", fakeBridgeName.c_str())); // must refer to a path that exists! 
+    BeFileName platformAssetsDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
+    args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
+
+    // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
+    TestIModelHubFwkClientForBridges testIModelHubClientForBridges(testDir);
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
+
+    // Register the test bridge that fwk should run
+    iModelBridgeTests_Test1_Bridge testBridge(testIModelHubClientForBridges);
+    iModelBridgeFwk::SetBridgeForTesting(testBridge);
+
+    
+    BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(L"ECEFTransformTest.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
+    testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
+    iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
+    
+    testBridge.m_expect.assignmentCheck = true;
+
+    YawPitchRollAngles angles(AngleInDegrees::FromDegrees(30.0), AngleInDegrees::FromDegrees(40.0), AngleInDegrees::FromDegrees(50.0));    
+    EcefLocation location(DPoint3d::From(1000.0, 2000.0, 3000.0), angles);
+
+    Json::Value ecefJson = Json::Value(Json::ValueType::objectValue);
+    ecefJson["ecef"] = location.ToJson();
+    WPrintfString location_Str(L"--fwk-argsJson=\"%s\"", WString(ecefJson.ToString().c_str(), true).c_str());
+    //--fwk-argsJson="{"ecef":{"orientation":{"pitch":40.0,"roll":50.0,"yaw":30.0},"origin":[1000.0,2000.0,3000.0]}}"
+    if (true)
+        {
+        testIModelHubClientForBridges.m_expect.push_back(false);// Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = false;
+        testBridge.m_expect.anyChanges = true;
+        testBridge.m_expect.anyDeleted = false;
+        testBridge.m_expect.jobTransChanged = false;
+        // Ask the framework to run our test bridge to do the initial conversion and create the repo
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        args.push_back(L"--fwk-input=Foo");
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        args.pop_back();
+        testIModelHubClientForBridges.m_expect.clear();
+        }
+    if (true)
+        {
+        // Run an update with a spatial data transform change
+        testIModelHubClientForBridges.m_expect.push_back(false);// Clear this flag at the outset. It is set by the test bridge as it runs.
+        testBridge.m_expect.findJobSubject = true;
+        testBridge.m_expect.anyChanges = false;
+        testBridge.m_expect.anyDeleted = false;
+        testBridge.m_expect.jobTransChanged = false;
+        testBridge.m_changeCount = 0;
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        args.push_back(L"--fwk-input=Foo");
+        args.push_back(location_Str.c_str());
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        args.pop_back();
+        args.pop_back();
+
+        // *** TBD: Check that the elements moved
+        EXPECT_EQ(0, testBridge.m_changeCount);
+        testIModelHubClientForBridges.m_expect.clear();
+        }
+    }

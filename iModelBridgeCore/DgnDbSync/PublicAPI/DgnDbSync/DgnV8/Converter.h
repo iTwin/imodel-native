@@ -443,8 +443,9 @@ struct IChangeDetector
     //! @param[in] v8eh     A V8 Element
     //! @param[in] v8mm     Mapping info for the V8 model that contains this V8 element
     //! @param[in] filter   Optional. Chooses among existing elements in SyncInfo
+    //! @param[in] identifier   Optional. If specified use this instead of v8eh.GetElementId() as the Identifier of the aspect to look up.
     //! @return true if the element is new or has changed.
-    virtual bool _IsElementChanged(SearchResults& prov, Converter&, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter = nullptr) = 0;
+    virtual bool _IsElementChanged(SearchResults& prov, Converter&, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter = nullptr, Utf8CP identifier = nullptr) = 0;
 
     virtual bool _ShouldSkipLevel(DgnCategoryId&, Converter&, DgnV8Api::LevelHandle const&, DgnV8FileR, Utf8StringCR dbCategoryName) = 0;
 
@@ -823,7 +824,7 @@ struct Converter
         L10N_STRING(FailedToImportLinkError)      // =="Failed to import link on element %llu in file '%s' (new ElementId: %llu)"==
         L10N_STRING(InvalidSheetAttachment)      // =="Sheet [%s] - Unsupported sheet attachment: [%s]"==
         L10N_STRING(UnrecognizedDetailingSymbol) // =="[%s] is an unrecognized kind of detailing symbol. Capturing graphics only."==
-        L10N_STRING(UnsupportedPrimaryInstance)   // =="[%s] has an unsupported primary ECInstance. Capturing graphics only."==
+        L10N_STRING(UnsupportedPrimaryInstance)   // =="[%s] has an unsupported primary ECInstance. Creating a secondary instance instead."==
         L10N_STRING(SchemaLockFailed)           // =="Failed to import schemas due to a problem acquiring lock on the schemas"==
         L10N_STRING(CouldNotAcquireLocksOrCodes) // =="Failed to import schemas due to a problem acquiring lock on codes or schemas"==
         L10N_STRING(ImportTargetECSchemas)      // =="Failed to import V8 ECSchemas"==
@@ -1113,7 +1114,7 @@ public:
     static bool IsEmbeddedFileName(Utf8StringCR fullName) {return IsEmbeddedFileName0(WString(fullName.c_str(), true).c_str());}
     static bool IsEmbeddedFileName(WStringCR fullName) {return IsEmbeddedFileName0(fullName.c_str());}
 
-    DGNDBSYNC_EXPORT Utf8String ComputeEffectiveEmbeddedFileName(Utf8StringCR fullName);
+    DGNDBSYNC_EXPORT Utf8String ComputeEffectiveEmbeddedFileName(Utf8StringCR fullName, iModelBridge::Params::FileIdRecipe const* recipe);
 
     //! Open the specified V8File
     DGNDBSYNC_EXPORT static DgnFilePtr OpenDgnV8File(DgnV8Api::DgnFileStatus&, BeFileNameCR, Utf8CP password);
@@ -1127,9 +1128,6 @@ public:
     DGNDBSYNC_EXPORT static void InitializeDllPath(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void GetAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,WCharCP affinityLibraryPathStr, WCharCP sourceFileNameStr);
-    
-    //! Compute the code value and URI that should be used for a RepositoryLink to the specified file
-    void ComputeRepositoryLinkCodeValueAndUri(Utf8StringR Code, Utf8StringR uri, DgnV8FileR file);
     
     DGNDBSYNC_EXPORT static Utf8String GetPwUrnFromFileProvenance(DgnV8FileCR);
 
@@ -2168,7 +2166,7 @@ struct ChangeDetector : IChangeDetector
     DGNDBSYNC_EXPORT void _OnModelInserted(Converter&, ResolvedModelMapping const&);
     DGNDBSYNC_EXPORT void _OnViewSeen(Converter&, DgnViewId id);
     DGNDBSYNC_EXPORT bool _AreContentsOfModelUnChanged(Converter&, ResolvedModelMapping const&) ;
-    DGNDBSYNC_EXPORT bool _IsElementChanged(SearchResults&, Converter&, DgnV8EhCR, ResolvedModelMapping const&, T_SyncInfoElementFilter* filter) override;
+    DGNDBSYNC_EXPORT bool _IsElementChanged(SearchResults&, Converter&, DgnV8EhCR, ResolvedModelMapping const&, T_SyncInfoElementFilter* filter, Utf8CP identifier = nullptr) override;
 
     //! @name  Inferring Deletions - call these methods after processing all models in a conversion unit. Don't forget to call the ...End function when done.
     //! @{
@@ -2185,6 +2183,7 @@ struct ChangeDetector : IChangeDetector
     DGNDBSYNC_EXPORT void _DetectDeletedViewsEnd(Converter&) override { m_viewsSeen.clear(); }
     //! @}
 
+    DGNDBSYNC_EXPORT SyncInfo::V8ElementExternalSourceAspect FindElementAspectByIdentifier(Converter& converter, Utf8StringCR identifier, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter);
     DGNDBSYNC_EXPORT SyncInfo::V8ElementExternalSourceAspect FindElementAspectById(Converter& converter, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter);
     DGNDBSYNC_EXPORT SyncInfo::V8ElementExternalSourceAspect FindElementAspectByChecksum(Converter& converter, SyncInfo::ElementHash const& hash, ResolvedModelMapping const& v8mm, T_SyncInfoElementFilter* filter);
 
@@ -2555,6 +2554,7 @@ protected:
 
     DGNDBSYNC_EXPORT DgnV8FileCP _GetPackageFileOf(DgnV8FileCR) override;
     DGNDBSYNC_EXPORT bool _WasEmbeddedFileSeen(Utf8StringCR uniqueName) const override;
+    void DeleteEmbeddedFileAndContents(RepositoryLinkId);
 
     bool _HaveChangeDetector() override {return m_changeDetector != nullptr;}
     IChangeDetector& _GetChangeDetector() override {return *m_changeDetector;}
@@ -2679,7 +2679,7 @@ public:
 
     DGNDBSYNC_EXPORT BentleyStatus MakeDefinitionChanges();
     DGNDBSYNC_EXPORT BentleyStatus ConvertData();
-
+    DGNDBSYNC_EXPORT BentleyStatus DetectDeletedEmbeddedFiles();
 };
 
 //=======================================================================================

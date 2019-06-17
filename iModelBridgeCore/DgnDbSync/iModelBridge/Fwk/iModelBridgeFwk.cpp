@@ -23,6 +23,7 @@
 #include "../iModelBridgeLdClient.h"
 #include "iModelCrashProcessor.h"
 #include "iModelBridgeErrorHandling.h"
+#include <regex>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -448,6 +449,11 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-no-mergeDefinitions"))
             {
             m_mergeDefinitions = false;
+            continue;
+            }
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-all-docs-processed"))
+            {
+            m_allDocsProcessed = true;
             continue;
             }
 
@@ -988,6 +994,55 @@ static BeFileName findBridgeAssetsDir(BeFileNameCR bridgeLibDir)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void setEmbeddedFileIdRecipe(iModelBridge::Params& params)
+    {
+    auto tempVarCheck = getenv("iModelBridge_MatchOnEmbeddedFileBasename");     // TODO: Replace this with a settings service parameter check
+    if ((nullptr == tempVarCheck) || (*tempVarCheck == '0'))
+        return;
+
+    bool isRegex = false;
+    if (*tempVarCheck != '1')
+        {
+        // assume user has supplied a suffix regex to be used in a recipe.
+        try {
+            // but first make sure it's valid.
+            std::regex rgx(tempVarCheck);
+            // If no exception, then go ahead with it.
+            isRegex = true;
+            }
+        catch (...)
+            {
+            LOG.errorv(L"%s is an invalid regular expression. This was found as the value of the iModelBridge_MatchOnEmbeddedFileBasename environment variable.", tempVarCheck);
+            isRegex = false; // default to old behavior - maybe the user set envvar to Yes or True or something
+            }
+        }
+
+    if (!isRegex)
+        {
+        // Set up the recipe that we had been using
+        iModelBridge::Params::FileIdRecipe recipe;
+        recipe.m_ignorePackage = true;
+        recipe.m_ignoreCase = false;
+        recipe.m_ignoreExtension = false;
+        recipe.m_ignorePwDocId = false;
+        recipe.m_suffixRegex = "";
+        params.SetEmbeddedFileIdRecipe(recipe);
+        return;
+        }
+    
+    // Set up a recipe with the new features, including a suffix recognizer
+    iModelBridge::Params::FileIdRecipe recipe;
+    recipe.m_ignorePackage = true;
+    recipe.m_ignoreCase = true;
+    recipe.m_ignoreExtension = true;
+    recipe.m_ignorePwDocId = true;
+    recipe.m_suffixRegex = tempVarCheck;
+    params.SetEmbeddedFileIdRecipe(recipe);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin* ra)
@@ -1019,9 +1074,9 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
 	if (!m_jobEnvArgs.m_jobSubjectName.empty())
 		params.SetBridgeJobName(m_jobEnvArgs.m_jobSubjectName);
     params.SetMergeDefinitions(m_jobEnvArgs.m_mergeDefinitions);
-    auto tempVarCheck = getenv("iModelBridge_MatchOnEmbeddedFileBasename");     // TODO: Replace this with a settings service parameter check
-    if (tempVarCheck && *tempVarCheck == '1')
-        params.SetMatchOnEmbeddedFileBasename(true);
+
+    setEmbeddedFileIdRecipe(params);
+
     if (m_useIModelHub)
         {
         params.SetUrlEnvironment(m_iModelHubArgs->m_environment);
@@ -1094,6 +1149,11 @@ BentleyStatus iModelBridgeFwk::InitBridge()
         }
 
     SetBridgeParams(m_bridge->_GetParams(), m_repoAdmin);    // make sure that MY definition of these params is used!
+
+	if (BSISUCCESS != m_bridge->TrackUsage())
+		{
+		LOG.error("Bridge Usage tracking failed. Please ignore if OIDC is not initialized.");
+		}
 
     if (BSISUCCESS != m_bridge->_Initialize((int)m_bargptrs.size(), m_bargptrs.data()))
         return BentleyStatus::ERROR;
@@ -1436,14 +1496,14 @@ int iModelBridgeFwk::PullMergeAndPushChange(Utf8StringCR description, bool relea
 Utf8String   iModelBridgeFwk::GetRevisionComment()
     {
     //Revision comment override from command line has the first priority
-    Utf8String trunCastedCommentString;
+    Utf8String truncatedCommentString;
     //if (!m_jobEnvArgs.m_revisionComment.empty())
-        trunCastedCommentString = m_jobEnvArgs.m_revisionComment;
+        truncatedCommentString = m_jobEnvArgs.m_revisionComment;
 
     //See TFS#819945: IMBridgeFwk - must truncate changeset description < 400 chars
-    if (trunCastedCommentString.size() > 399)
-        trunCastedCommentString.erase(399, std::string::npos);
-    return trunCastedCommentString;
+    if (truncatedCommentString.size() > 399)
+        truncatedCommentString.erase(399, std::string::npos);
+    return truncatedCommentString;
     /* Disabled until iModelHub changeset suppports a json blob property for the info below.
     bvector<BeFileName> inputFiles;
     GetRegistry()._QueryAllFilesAssignedToBridge(inputFiles, m_jobEnvArgs.m_bridgeRegSubKey.c_str());
@@ -1716,6 +1776,146 @@ int iModelBridgeFwk::MakeDefinitionChanges(SubjectCPtr& jobsubj, iModelBridgeCal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
+int iModelBridgeFwk::DoNormalUpdate()
+    {
+    // ---------------------------------------------------
+    //  I. Definition Changes => shared channel
+    // ---------------------------------------------------
+
+    if (BSISUCCESS != GetSchemaLock())  // must get schema lock preemptively. This ensures that only one bridge at a time can make schema and definition changes. That then allows me to pull/merge/push between the definition and data steps without closing and reopening
+        {
+        LOG.fatalv("Bridge cannot obtain schema lock.");
+        return RETURN_STATUS_SERVER_ERROR;                               
+        }
+                                                                                             // === SCHEMA LOCK
+    //  Tell the bridge that the briefcase is now open and ask it to open the source file(s).// === SCHEMA LOCK
+    iModelBridgeCallOpenCloseFunctions callCloseOnReturn(*m_bridge, *m_briefcaseDgnDb);      // === SCHEMA LOCK
+    if (!callCloseOnReturn.IsReady())                                                        // === SCHEMA LOCK
+        {                                                                                    // === SCHEMA LOCK
+        LOG.fatalv("Bridge is not ready or could not open source file");                     // === SCHEMA LOCK
+        return BentleyStatus::ERROR;                                                         // === SCHEMA LOCK
+        }                                                                                    // === SCHEMA LOCK
+                                                                                             // === SCHEMA LOCK
+    DbResult dbres = m_briefcaseDgnDb->SaveChanges(); // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
+                                                        // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
+    if (BeSQLite::BE_SQLITE_OK != dbres)                                                     // === SCHEMA LOCK
+        {                                                                                    // === SCHEMA LOCK
+        GetLogger().errorv("Db::SaveChanges failed with status %d", dbres);                  // === SCHEMA LOCK
+        return RETURN_STATUS_LOCAL_ERROR;                                                    // === SCHEMA LOCK
+        }                                                                                    // === SCHEMA LOCK
+    if (iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb)) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
+        {                                                                                    // === SCHEMA LOCK
+        if (BSISUCCESS != Briefcase_PullMergePush("initialization changes"))                 // === SCHEMA LOCK
+            return RETURN_STATUS_SERVER_ERROR;                                               // === SCHEMA LOCK
+        }                                                                                    // === SCHEMA LOCK
+                                                                                             // === SCHEMA LOCK
+    if (BSISUCCESS != MakeSchemaChanges(callCloseOnReturn))                                  // === SCHEMA LOCK
+        {                                                                                    // === SCHEMA LOCK
+        GetLogger().errorv("MakeSchemaChanges failed");                                      // === SCHEMA LOCK
+        return RETURN_STATUS_CONVERTER_ERROR;                                                // === SCHEMA LOCK
+        }                                                                                    // === SCHEMA LOCK
+                                                                                             // === SCHEMA LOCK
+    BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));                                     // === SCHEMA LOCK
+                                                                                             // === SCHEMA LOCK
+    if (SUCCESS != StoreHeaderInformation())                                                 // === SCHEMA LOCK
+        GetLogger().warningv("bridge:%s iModel:%s - Storing iModel Bridge Header Data Failed.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
+                                                                                             // === SCHEMA LOCK
+    SubjectCPtr jobsubj;                                                                     // === SCHEMA LOCK
+    if (SUCCESS != MakeDefinitionChanges(jobsubj, callCloseOnReturn))                        // === SCHEMA LOCK
+        {                                                                                    // === SCHEMA LOCK
+        GetLogger().errorv("Bridge::DoMakeDefinitionChanges failed");                        // === SCHEMA LOCK
+        return RETURN_STATUS_CONVERTER_ERROR;                                                // === SCHEMA LOCK
+        }                                                                                    // === SCHEMA LOCK
+                                                                                             // === SCHEMA LOCK
+    Briefcase_ReleaseAllPublicLocks();
+
+    // ---------------------------------------------------
+    //  I. Normal data changes => bridge's private channel
+    // ---------------------------------------------------
+    BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
+    BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));
+    GetLogger().infov("bridge:%s iModel:%s - Convert Data.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
+
+    if (m_bridge->_ConvertToBimRequiresExclusiveLock())       // TODO: Get rid of this option
+        {                                                     // TODO: Get rid of this option
+        if (BSISUCCESS != GetSchemaLock())                    // TODO: Get rid of this option
+            return RETURN_STATUS_SERVER_ERROR;                // TODO: Get rid of this option
+        }
+
+    BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, *jobsubj, true);
+    if (BSISUCCESS != bridgeCvtStatus)
+        {
+        GetLogger().errorv("Bridge::DoConvertToExistingBim failed with status %d", bridgeCvtStatus);
+        return RETURN_STATUS_CONVERTER_ERROR;
+        }
+
+    //Call save changes before the bridge is closed.
+    dbres = m_briefcaseDgnDb->SaveChanges();
+    
+    callCloseOnReturn.m_status = BSISUCCESS;
+
+    BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
+
+    return RETURN_STATUS_SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+int iModelBridgeFwk::OnAllDocsProcessed()
+    {
+    //  Tell the bridge that the briefcase is now open. (Do NOT ask it to open a source file.)
+    iModelBridgeBriefcaseCallOpenCloseFunctions callCloseOnReturn(*m_bridge, *m_briefcaseDgnDb);
+    if (!callCloseOnReturn.IsReady())                                                  
+        {                                                                              
+        LOG.fatalv("Bridge is not ready or could not open source file");               
+        return RETURN_STATUS_LOCAL_ERROR;
+        }  
+
+    DbResult dbres = m_briefcaseDgnDb->SaveChanges(); // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
+                                                        // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
+    if (BeSQLite::BE_SQLITE_OK != dbres)
+        {
+        GetLogger().errorv("Db::SaveChanges failed with status %d", dbres);
+        return RETURN_STATUS_LOCAL_ERROR;
+        }
+
+    if (iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb))
+        {
+        BeAssert(false);
+        GetLogger().error("OnAllDocsProcessed detected that this briefcase is holding the Schema Lock! That is an error. OnAllDocsProcessed should not be called while holding the schema lock, and there should not have been any pending schema imports or upgrades to process.");
+        return RETURN_STATUS_CONVERTER_ERROR;
+        }
+
+    if (iModelBridge::AnyTxns(*m_briefcaseDgnDb))
+        {
+        BeAssert(false);
+        GetLogger().error("All local changes should have been pushed before calling OnAllDocsProcessed");
+        return RETURN_STATUS_CONVERTER_ERROR;
+        }
+
+    GetLogger().infov("bridge:%s iModel:%s - OnAllDocsProcessed.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
+
+    BentleyStatus bridgeCvtStatus = m_bridge->DoOnAllDocumentsProcessed(*m_briefcaseDgnDb);
+    if (BSISUCCESS != bridgeCvtStatus)
+        {
+        GetLogger().errorv("Bridge::DoOnAllDocumentsProcessed failed with status %d", bridgeCvtStatus);
+        return RETURN_STATUS_CONVERTER_ERROR;
+        }
+
+    //Call save changes before the bridge is closed.
+    dbres = m_briefcaseDgnDb->SaveChanges();
+    
+    callCloseOnReturn.m_status = BSISUCCESS;
+
+    BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
+
+    return RETURN_STATUS_SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeFwk::UpdateExistingBim()
     {
     // PRE-CONDITIONS
@@ -1783,8 +1983,6 @@ int iModelBridgeFwk::UpdateExistingBim()
     if (BSISUCCESS != InitBridge())
         return BentleyStatus::ERROR;
 
-    bool holdsSchemaLock = false;
-    bool madeChanges = false;
     if (true)
         {
         iModelBridgeCallTerminate callTerminate(*m_bridge);
@@ -1805,87 +2003,26 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));
 
-        //Get the schema lock if needed.
-        bool hasChanges = false;
-        
-        if (BSISUCCESS != GetSchemaLock())  // must get schema lock preemptively. This ensures that only one bridge at a time can make schema and definition changes. That then allows me to pull/merge/push between the definition and data steps without closing and reopening
+        int res;
+        if (!m_jobEnvArgs.m_allDocsProcessed)
             {
-            LOG.fatalv("Bridge cannot obtain schema lock.");
-            return RETURN_STATUS_SERVER_ERROR;                               
+            res = DoNormalUpdate();
+            }
+        else
+            {
+            res = OnAllDocsProcessed();
             }
 
-        holdsSchemaLock = true;                                                                  // === SCHEMA LOCK
-                                                                                                 // === SCHEMA LOCK
-        //  Tell the bridge that the briefcase is now open and ask it to open the source file(s).// === SCHEMA LOCK
-        iModelBridgeCallOpenCloseFunctions callCloseOnReturn(*m_bridge, *m_briefcaseDgnDb);      // === SCHEMA LOCK
-        if (!callCloseOnReturn.IsReady())                                                        // === SCHEMA LOCK
-            {                                                                                    // === SCHEMA LOCK
-            LOG.fatalv("Bridge is not ready or could not open source file");                     // === SCHEMA LOCK
-            return BentleyStatus::ERROR;                                                         // === SCHEMA LOCK
-            }                                                                                    // === SCHEMA LOCK
-                                                                                                 // === SCHEMA LOCK
-        DbResult dbres = m_briefcaseDgnDb->SaveChanges(); // If the _OnOpenBim or _OpenSource callbacks did things like attaching syncinfo, we need to commit that before going on.
-                                                          // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
-        if (BeSQLite::BE_SQLITE_OK != dbres)                                                     // === SCHEMA LOCK
-            {                                                                                    // === SCHEMA LOCK
-            GetLogger().errorv("Db::SaveChanges failed with status %d", dbres);                  // === SCHEMA LOCK
-            return RETURN_STATUS_LOCAL_ERROR;                                                    // === SCHEMA LOCK
-            }                                                                                    // === SCHEMA LOCK
-        madeChanges = iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb) || hasChanges;          // === SCHEMA LOCK
-        if (madeChanges) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
-            {                                                                                    // === SCHEMA LOCK
-            if (BSISUCCESS != Briefcase_PullMergePush("initialization changes"))                 // === SCHEMA LOCK
-                return RETURN_STATUS_SERVER_ERROR;                                               // === SCHEMA LOCK
-            }                                                                                    // === SCHEMA LOCK
-                                                                                                 // === SCHEMA LOCK
-        if (BSISUCCESS != MakeSchemaChanges(callCloseOnReturn))                                  // === SCHEMA LOCK
-            {                                                                                    // === SCHEMA LOCK
-            GetLogger().errorv("MakeSchemaChanges failed");                                      // === SCHEMA LOCK
-            return RETURN_STATUS_CONVERTER_ERROR;                                                // === SCHEMA LOCK
-            }                                                                                    // === SCHEMA LOCK
-                                                                                                 // === SCHEMA LOCK
-        BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));                                     // === SCHEMA LOCK
-                                                                                                 // === SCHEMA LOCK
-        if (SUCCESS != StoreHeaderInformation())                                                 // === SCHEMA LOCK
-            GetLogger().warningv("bridge:%s iModel:%s - Storing iModel Bridge Header Data Failed.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
-                                                                                                 // === SCHEMA LOCK
-        SubjectCPtr jobsubj;                                                                     // === SCHEMA LOCK
-        if (SUCCESS != MakeDefinitionChanges(jobsubj, callCloseOnReturn))                        // === SCHEMA LOCK
-            {                                                                                    // === SCHEMA LOCK
-            GetLogger().errorv("Bridge::DoMakeDefinitionChanges failed");                        // === SCHEMA LOCK
-            return RETURN_STATUS_CONVERTER_ERROR;                                                // === SCHEMA LOCK
-            }                                                                                    // === SCHEMA LOCK
-                                                                                                 // === SCHEMA LOCK
-        Briefcase_ReleaseAllPublicLocks();                                                       
-        holdsSchemaLock = false;
+        if (0 != res)
+            return res;
 
-        //  Normal data changes
-        BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));
-        GetLogger().infov("bridge:%s iModel:%s - Convert Data.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
-
-        if (m_bridge->_ConvertToBimRequiresExclusiveLock())
-            {
-            if (BSISUCCESS != GetSchemaLock())
-                return RETURN_STATUS_SERVER_ERROR;
-            holdsSchemaLock = true;
-            }
-
-        BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, *jobsubj, true);
-        if (BSISUCCESS != bridgeCvtStatus)
-            {
-            GetLogger().errorv("Bridge::DoConvertToExistingBim failed with status %d", bridgeCvtStatus);
-            return RETURN_STATUS_CONVERTER_ERROR;
-            }
-
-        //Call save changes before the bridge is closed.
-        dbres = m_briefcaseDgnDb->SaveChanges();
-        callTerminate.m_status = callCloseOnReturn.m_status = BSISUCCESS;
+        callTerminate.m_status = BSISUCCESS;
         }
-    //This allow SQLite to create optimize execution plans when running queries. It should be be included in changeset that bridges post.
-    madeChanges |= iModelBridge::AnyTxns(*m_briefcaseDgnDb);
-    if (madeChanges)
+
+    // Running ANALYZE allows SQLite to create optimize execution plans when running queries. It should be be included in changeset that bridges post.
+    if (iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb))
         m_briefcaseDgnDb->ExecuteSql("ANALYZE");
-    //
+
     dbres = m_briefcaseDgnDb->SaveChanges();
 
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
@@ -1896,13 +2033,11 @@ int iModelBridgeFwk::UpdateExistingBim()
         return RETURN_STATUS_LOCAL_ERROR;
         }
 
-    //  PullMergePush
-    //  Note: We may still be holding shared locks that we need to release. If we detect this, we must try again to release them.
+    //  Done. Make sure that all changes are pushed and all shared locks are released.
     if (!iModelBridge::AnyTxns(*m_briefcaseDgnDb) && (SyncState::Initial == GetSyncState()))
         {
-        if (holdsSchemaLock)
-            Briefcase_ReleaseAllPublicLocks();
-        GetLogger().info("No changes were detected and there are no Txns waiting to be pushed or shared locks to be released.");
+        Briefcase_ReleaseAllPublicLocks();
+        GetLogger().info("No changes were detected and there are no Txns waiting to be pushed.");
         }
     else
         {
@@ -1911,8 +2046,7 @@ int iModelBridgeFwk::UpdateExistingBim()
         GetLogger().infov("bridge:%s iModel:%s - Pushing Data Changeset.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
         if (BSISUCCESS != Briefcase_PullMergePush(GetRevisionComment().c_str()))
-            return RETURN_STATUS_SERVER_ERROR;
-        // (Retain shared locks, so that we can re-try our push later.)
+            return RETURN_STATUS_SERVER_ERROR; // (Retain shared locks, so that we can re-try our push later.)
 
         BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));
 
@@ -1921,9 +2055,6 @@ int iModelBridgeFwk::UpdateExistingBim()
         }
 
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
-
-
-    // If we got here, we completed the update and pushed it.
 
     // POST-CONDITIONS
     BeAssert((!iModelBridge::AnyTxns(*m_briefcaseDgnDb) && (SyncState::Initial == GetSyncState())) && "Local changes should have been pushed");
@@ -2127,6 +2258,14 @@ static DgnRevisionPtr createRevision(DgnDbR db)
 bool iModelBridgeFwk::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey)
     {
     return GetRegistry()._IsFileAssignedToBridge(fn, bridgeRegSubKey);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::_QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) 
+    {
+    return GetRegistry()._QueryAllFilesAssignedToBridge(fns, bridgeRegSubKey);
     }
 
 /*---------------------------------------------------------------------------------**//**
