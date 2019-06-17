@@ -15,6 +15,7 @@
 #include "Mocks/UlasProviderMock.h"
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include "../../../Licensing/ClientImpl.h"
+#include <Licensing/ApplicationInfo.h>
 
 USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS
 
@@ -41,7 +42,7 @@ class ClientTests : public ::testing::Test
         LicensingDbMock&                         GetLicensingDbMock() const { return *m_licensingDbMock; }
         std::shared_ptr<LicensingDbMock>         GetLicensingDbMockPtr() const { return m_licensingDbMock; }
 
-        Licensing::ClientImplPtr                 CreateTestClient(WebServices::ConnectSignInManager::UserInfo userInfo, Utf8StringCR productId = TEST_PRODUCT_ID, WebServices::ClientInfoPtr clientInfo = nullptr) const;
+        Licensing::ClientImplPtr                 CreateTestClient(WebServices::ConnectSignInManager::UserInfo userInfo, Utf8StringCR productId = TEST_PRODUCT_ID, Licensing::ApplicationInfoPtr applicationInfo = nullptr) const;
 
         void TearDown();
     };

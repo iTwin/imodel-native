@@ -39,8 +39,27 @@ public:
         Utf8StringCR featureString,
         IUlasProviderPtr ulasProvider
         );
-    LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId);
-    LICENSING_EXPORT folly::Future<BentleyStatus> MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent);
+
+    LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage
+        (
+        Utf8StringCR accessToken,
+        BeVersionCR version,
+        Utf8StringCR projectId,
+        int productId,
+        Utf8StringCR deviceId,
+        UsageType usageType,
+        Utf8StringCR correlationId
+        );
+
+    LICENSING_EXPORT folly::Future<BentleyStatus> MarkFeature
+        (
+        Utf8StringCR accessToken,
+        FeatureEvent featureEvent,
+        int productId,
+        Utf8StringCR deviceId,
+        UsageType usageType,
+        Utf8StringCR correlationId
+        );
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

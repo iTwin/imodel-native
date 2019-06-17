@@ -14,18 +14,18 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 PolicyProvider::PolicyProvider
     (
     IBuddiProviderPtr buddiProvider,
-    WebServices::ClientInfoPtr clientInfo,
+    ApplicationInfoPtr applicationInfo,
     IHttpHandlerPtr httpHandler,
     AuthType authType,
     std::shared_ptr<IAuthHandlerProvider> authHandlerProvider
     ) :
     m_buddiProvider(buddiProvider),
-    m_clientInfo(clientInfo),
+    m_applicationInfo(applicationInfo),
     m_httpHandler(httpHandler),
     m_authHandlerProvider(authHandlerProvider)
     {
-	m_headerPrefix = GetHeaderPrefix(authType);
-	}
+    m_headerPrefix = GetHeaderPrefix(authType);
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -116,15 +116,15 @@ folly::Future<Utf8String> PolicyProvider::PerformGetPolicyRequest()
 
     auto request = client.CreatePostRequest(url);
     Json::Value requestJson(Json::objectValue);
-    requestJson["MachineName"] = m_clientInfo->GetDeviceId();
+    requestJson["MachineName"] = m_applicationInfo->GetDeviceId();
     requestJson["ClientDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
-    requestJson["Locale"] = m_clientInfo->GetLanguage();
+    requestJson["Locale"] = m_applicationInfo->GetLanguage();
     requestJson["AppliesTo"] = GETPOLICY_RequestData_AppliesTo_Url;
 
     Json::Value requestedSecurable(Json::objectValue);
-    requestedSecurable["ProductId"] = m_clientInfo->GetApplicationProductId();
+    requestedSecurable["ProductId"] = m_applicationInfo->GetProductId();
     requestedSecurable["FeatureString"] = "";
-    requestedSecurable["Version"] = m_clientInfo->GetApplicationVersion().ToString();
+    requestedSecurable["Version"] = m_applicationInfo->GetVersion().ToString();
 
     Json::Value requestedSecurables(Json::arrayValue);
     requestedSecurables[0] = requestedSecurable;
@@ -166,17 +166,17 @@ folly::Future<Utf8String> PolicyProvider::PerformGetPolicyWithKeyRequest(Utf8Str
 
     auto request = client.CreatePostRequest(url);
     Json::Value requestJson(Json::objectValue);
-    requestJson["MachineName"] = m_clientInfo->GetDeviceId();
+    requestJson["MachineName"] = m_applicationInfo->GetDeviceId();
     requestJson["ClientDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
-    requestJson["Locale"] = m_clientInfo->GetLanguage();
+    requestJson["Locale"] = m_applicationInfo->GetLanguage();
     requestJson["AppliesTo"] = GETPOLICY_RequestData_AppliesTo_Url;
-    requestJson["MachineSID"] = gsid.GetMachineSID(m_clientInfo->GetDeviceId()).c_str();
+    requestJson["MachineSID"] = gsid.GetMachineSID(m_applicationInfo->GetDeviceId()).c_str();
     requestJson["AccessKey"] = accessKey;
 
     Json::Value requestedSecurable(Json::objectValue);
-    requestedSecurable["ProductId"] = m_clientInfo->GetApplicationProductId();
+    requestedSecurable["ProductId"] = m_applicationInfo->GetProductId();
     requestedSecurable["FeatureString"] = "";
-    requestedSecurable["Version"] = m_clientInfo->GetApplicationVersion().ToString();
+    requestedSecurable["Version"] = m_applicationInfo->GetVersion().ToString();
 
     Json::Value requestedSecurables(Json::arrayValue);
     requestedSecurables[0] = requestedSecurable;

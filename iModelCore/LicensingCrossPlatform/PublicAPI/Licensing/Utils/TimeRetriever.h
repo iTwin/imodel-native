@@ -19,17 +19,17 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef std::shared_ptr<struct ITimeRetriever> ITimeRetrieverPtr;
 struct ITimeRetriever
-{
+    {
 public:
     virtual int64_t GetCurrentTimeAsUnixMillis() = 0;
-};
+    };
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef std::shared_ptr<struct TimeRetriever> TimeRetrieverPtr;
 struct TimeRetriever : ITimeRetriever
-{
+    {
 public:
     static TimeRetrieverPtr Get()
         {
@@ -43,6 +43,6 @@ public:
         }
 
     virtual ~TimeRetriever() {}
-};
+    };
 
 END_BENTLEY_LICENSING_NAMESPACE

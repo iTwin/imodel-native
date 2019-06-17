@@ -124,18 +124,18 @@ void ClientTests::SetUpTestCase()
     EXPECT_EQ(SUCCESS, L10N::Initialize(BeSQLite::L10N::SqlangFiles(path)));
     }
 
-ClientImplPtr ClientTests::CreateTestClient(ConnectSignInManager::UserInfo userInfo, Utf8StringCR productId, ClientInfoPtr clientInfo) const
+ClientImplPtr ClientTests::CreateTestClient(ConnectSignInManager::UserInfo userInfo, Utf8StringCR productId, ApplicationInfoPtr appInfo) const
     {
-    if (clientInfo == nullptr)
+    if (appInfo == nullptr)
         {
-        clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+        appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", productId);
         }
 
     BeFileName dbPath = GetLicensingDbPath();
 
     return std::make_shared<ClientImpl> (
         userInfo,
-        clientInfo,
+        appInfo,
         dbPath,
         true,
         GetPolicyProviderMockPtr(),
@@ -346,9 +346,9 @@ TEST_F(ClientTests, GetLicenseStatusEvalValid_Test)
     {
     Utf8String userId = "be7b9f4f-5b1e-4af8-bb05-6e060a6a48db";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(12, 0), "TestAppGUID", "TestDeviceId", "TestSystem", "1052");
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(12, 0), "TestDeviceId", "1052");
 
-    auto client = CreateTestClient(userInfo, "1052", clientInfo);
+    auto client = CreateTestClient(userInfo, "1052", appInfo);
 
     BeFileName testJson;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);
@@ -373,9 +373,9 @@ TEST_F(ClientTests, GetLicenseStatusEvalExpired_Test)
     {
     Utf8String userId = "be7b9f4f-5b1e-4af8-bb05-6e060a6a48db";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(12, 0), "TestAppGUID", "TestDeviceId", "TestSystem", "1052");
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(12, 0), "TestDeviceId", "1052");
 
-    auto client = CreateTestClient(userInfo, "1052", clientInfo);
+    auto client = CreateTestClient(userInfo, "1052", appInfo);
 
     BeFileName testJson;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);
@@ -398,9 +398,9 @@ TEST_F(ClientTests, GetLicenseStatusEvalBadVersion_Test)
     {
     Utf8String userId = "be7b9f4f-5b1e-4af8-bb05-6e060a6a48db";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", "1052");
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", "1052");
 
-    auto client = CreateTestClient(userInfo, "1052", clientInfo);
+    auto client = CreateTestClient(userInfo, "1052", appInfo);
 
     BeFileName testJson;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);
@@ -423,9 +423,9 @@ TEST_F(ClientTests, GetLicenseStatusEvalBackupAcl_Test)
     {
     Utf8String userId = "be7b9f4f-5b1e-4af8-bb05-6e060a6a48db";
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
-    auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", "1052");
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", "1052");
 
-    auto client = CreateTestClient(userInfo, "1052", clientInfo);
+    auto client = CreateTestClient(userInfo, "1052", appInfo);
 
     BeFileName testJson;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);

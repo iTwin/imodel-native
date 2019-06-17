@@ -9,6 +9,7 @@
 
 #include <Licensing/Licensing.h>
 #include <Licensing/Utils/FeatureUserDataMap.h>
+#include <Licensing/UsageType.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
@@ -30,7 +31,9 @@ public:
         (
         int productId,
         Utf8StringCR featureString,
-        Utf8StringCR deviceId
+        Utf8StringCR deviceId,
+        UsageType usageType,
+        Utf8StringCR correlationId
         );
     };
 

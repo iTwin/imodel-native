@@ -66,9 +66,9 @@ void AccessKeyClientIntegrationTests::TearDown() {}
 void AccessKeyClientIntegrationTests::SetUpTestCase()
     {
     // This is only an example of how to set logging severity and see info logs. Usually should be set more globally than in TestCase SetUp
-    //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
-    //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_DEBUG);
-    //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_DEBUG);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_TRACE);
 
     BeFileName asssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(asssetsDir);
@@ -120,14 +120,15 @@ AccessKeyClientImplPtr AccessKeyClientIntegrationTests::CreateTestClientImpl(Utf
 
     BeFileName dbPath = GetLicensingDbPathIntegration();
 
+    ApplicationInfoPtr applicationInfo = std::make_shared<ApplicationInfo>(clientInfo->GetApplicationVersion(), clientInfo->GetDeviceId(), clientInfo->GetApplicationProductId());
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
-    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, clientInfo, proxy, AuthType::None);
+    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, applicationInfo, proxy, AuthType::None);
     IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, proxy);
 
     return std::make_shared<AccessKeyClientImpl>
         (
         accessKey,
-        clientInfo,
+        applicationInfo,
         dbPath,
         true,
         policyProvider,
@@ -188,28 +189,28 @@ TEST_F(AccessKeyClientIntegrationTests, GetLicenseStatusValidPolicy_Success)
 
 // The following are tests we use to verify behavior, not meant to be run on a regular basis
 
-//TEST_F(AccessKeyClientIntegrationTests, AccessKeyClientTestPolicyHeartbeat_Test)
-//    {
-//    // I am using this test to manually debug/test the heartbeat to make sure of the following:
-//    // - policy heartbeat does in fact run as expected (heartbeat every 1 second, refresh policy by PolicyInterval)
-//    // - policy heartbeat cleans up as expected (after StopApplication is called, it doens't try to access disposed resources)
-//    // - maybe: policy heartbeat handles going offline well (keeps using old policy and access key until policy expires)
-//    auto client = CreateTestClient();
-//    ASSERT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
-//
-//    // use std::chrono::seconds(2); to wait in tests
-//    // PolicyRefresh: make a custom policy with a fast refresh! -> right now it is set for 60 days!
-//    // Heartbeat: check that function is entered multiple times [GOOD]
-//    // Cleanup: stop application and wait and check if anything is accessed [double check!]
-//
-//    std::this_thread::sleep_for(std::chrono::seconds(10));
-//
-//    EXPECT_SUCCESS(client->StopApplication());
-//
-//    std::this_thread::sleep_for(std::chrono::seconds(10));
-//
-//    EXPECT_EQ(1, 0);
-//    }
+TEST_F(AccessKeyClientIntegrationTests, AccessKeyClientTestPolicyHeartbeat_Test)
+    {
+    // I am using this test to manually debug/test the heartbeat to make sure of the following:
+    // - policy heartbeat does in fact run as expected (heartbeat every 1 second, refresh policy by PolicyInterval)
+    // - policy heartbeat cleans up as expected (after StopApplication is called, it doens't try to access disposed resources)
+    // - maybe: policy heartbeat handles going offline well (keeps using old policy and access key until policy expires)
+    auto client = CreateTestClient();
+    ASSERT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+
+    // use std::chrono::seconds(2); to wait in tests
+    // PolicyRefresh: make a custom policy with a fast refresh! -> right now it is set for 60 days!
+    // Heartbeat: check that function is entered multiple times [GOOD]
+    // Cleanup: stop application and wait and check if anything is accessed [double check!]
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+
+    EXPECT_SUCCESS(client->StopApplication());
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+
+    EXPECT_EQ(1, 0);
+    }
 
 //TEST_F(AccessKeyClientIntegrationTests, OfflinePolicyHeartbeat_Test)
 //    {
