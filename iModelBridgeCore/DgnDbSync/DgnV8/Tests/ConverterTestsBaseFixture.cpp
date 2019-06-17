@@ -317,7 +317,7 @@ void AddExternalDataModels (DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input)
+void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool wantExternalDataModels)
     {
     if (!m_noGcs)
         SetGcsDef();
@@ -347,7 +347,8 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
         ASSERT_EQ(BentleyApi::SUCCESS, creator.MakeDefinitionChanges());
         creator.ConvertData();
         DgnDbR db = creator.GetDgnDb();
-        AddExternalDataModels (db);
+        if (wantExternalDataModels)
+            AddExternalDataModels (db);
         ASSERT_FALSE(creator.WasAborted());
         m_count = creator.GetElementsConverted();
         }

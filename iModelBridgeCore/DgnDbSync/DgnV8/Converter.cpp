@@ -21,6 +21,8 @@
 
 #undef GetClassName
 
+#include <regex>
+
 // Structured Storage open modes (we use "direct" mode).
 //  NB: when opening a root storage for read, you can allow multiple readers.
 enum
@@ -143,51 +145,51 @@ StableIdPolicy Converter::GetIdPolicyFromAppData(DgnV8FileCR file)
     return (nullptr == appdata) ? StableIdPolicy::ById : appdata->m_idPolicy;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      04/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Converter::ComputeEffectiveEmbeddedFileName(Utf8StringCR fullName)
+Utf8String Converter::ComputeEffectiveEmbeddedFileName(Utf8StringCR fullName, iModelBridge::Params::FileIdRecipe const* recipe)
     {
-    if (!_GetParams().GetMatchOnEmbeddedFileBasename())
+    if (nullptr == recipe)
         return fullName;
 
-    //  masterfile.i.dgn<n>referencefile.i.dgn
-    //                    ^
-    auto iSep = fullName.find(">");
-    if (iSep == Utf8String::npos)
-        return fullName;
+    Utf8String id(fullName);
+    if (recipe->m_ignoreCase)
+        id.ToLower();
 
-    return fullName.substr(iSep+1);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::ComputeRepositoryLinkCodeValueAndUri(Utf8StringR code, Utf8StringR uri, DgnV8FileR file)
-    {
-    uri = GetDocumentURNforFile(file);
-    if (iModelBridge::IsPwUrn(uri))
+    if (recipe->m_ignorePackage)
         {
-        code = uri;
-        return;
+        //  masterfile.i.dgn<n>referencefile.i.dgn
+        //                    ^
+        auto iSep = id.find(">");
+        if (iSep != Utf8String::npos)
+            id = id.substr(iSep+1);
         }
 
-    if (uri.StartsWithI("file:"))
-        uri = ComputeEffectiveEmbeddedFileName(uri);
-
-    char let;
-    Utf8String urilwr = uri.ToLower();
-    if (1==sscanf(urilwr.c_str(), "file://%c:", &let))
+    if (recipe->m_ignoreExtension)
         {
-        // V8 code to turn a Windows filename into a URI is incorrect. Fix it.
-        Utf8String path(uri.substr(7));
-        path.ReplaceAll(":", "|");
-        path.ReplaceAll("\\", "/");
-        uri = "file:///";
-        uri.append(path.c_str());
+        auto iDot = id.find(".");
+        if (iDot != Utf8String::npos)
+            id = id.substr(0, iDot);
         }
 
-    code = uri;
+    if (!recipe->m_suffixRegex.empty())
+        {
+        Utf8String expr(recipe->m_suffixRegex);
+        if (recipe->m_ignoreCase)
+            expr.ToLower(); // in case regex contains exact-match literals, lower-case it, so that it will match what we did to the id
+        std::regex rgx(expr.c_str());
+        std::smatch matches;
+        std::string str(id.c_str());
+        if (std::regex_search(str, matches, rgx))
+            {
+            auto suffix = id.substr(matches.prefix().length());     // TODO - somehow set this as a property of the RepositoryLink element
+            id = matches.prefix().str().c_str();
+            }
+        }
+
+    return id;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -203,11 +205,29 @@ RefCountedCPtr<RepositoryLink> Converter::GetRepositoryLinkElement(RepositoryLin
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
     {
-    //  Fall back on whatever is in the Document Moniker, as interpreted by the installed DocumentManager
-    Utf8String codevalue, uri;
-    ComputeRepositoryLinkCodeValueAndUri(codevalue, uri, file);
+    SyncInfo::V8FileInfo finfo = GetSyncInfo().ComputeFileInfo(file);
 
-    auto rlink = iModelBridge::MakeRepositoryLink(GetDgnDb(), _GetParams(), BeFileName(file.GetFileName().c_str()), codevalue.c_str(), uri.c_str());
+    // The RepositoryLink's Code always matches its ExternalSourceAspects's Identifier. This is 
+    // a unique, stable identifer for this V8 file.
+    Utf8String code = finfo.m_uniqueName;
+
+    Utf8String uri = GetDocumentURNforFile(file);
+    if (!iModelBridge::IsNonFileURN(uri) || IsEmbeddedFileName(uri) || BentleyApi::BeFileName::DoesPathExist(BentleyApi::WString(uri.c_str(), true).c_str()))
+        uri.clear();    // Don't store filepaths that refer to someone's computer.
+
+    BeFileName localFileName(file.GetFileName().c_str());
+    if (file.IsEmbeddedFile())
+        {
+        // don't include package name
+        auto endPackage = localFileName.find(L">");
+        if (endPackage != WString::npos)
+            {
+            auto refname = localFileName.substr(endPackage+1);
+            localFileName.assign(refname.c_str());
+            }
+        }
+
+    auto rlink = iModelBridge::MakeRepositoryLink(GetDgnDb(), _GetParams(), localFileName, code.c_str(), uri.c_str());
 
     auto rlinkPersist = GetDgnDb().Elements().Get<RepositoryLink>(rlink->GetElementId());
     if (rlinkPersist.IsValid())
@@ -231,7 +251,6 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
         GetDgnDb().BriefcaseManager().Acquire(req).Result();
         }
 
-    SyncInfo::V8FileInfo finfo = GetSyncInfo().ComputeFileInfo(file);
     auto xsa = SyncInfo::RepositoryLinkExternalSourceAspect::CreateAspect(GetDgnDb(), finfo, _GetIdPolicy(file));
     xsa.AddAspect(*rlink);
 
@@ -239,7 +258,7 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
 
     if (!rlinkPost.IsValid())
         {
-        Utf8PrintfString message("Failed to %s RepositoryLink %s", rlink->GetElementId().IsValid() ? "update" : "insert", codevalue.c_str());
+        Utf8PrintfString message("Failed to %s RepositoryLink %s", rlink->GetElementId().IsValid() ? "update" : "insert", code.c_str());
         OnFatalError(IssueCategory::Briefcase(), Issue::Error(), message.c_str());
         return RepositoryLinkId();
         }
@@ -1665,12 +1684,22 @@ void getOutlierElementInfo (const bvector<BeInt64Id>& elementOutliers, DgnDbCP d
                 v8ElementId = estmt.GetValueInt64 (0);
 
             auto v8ModelInfo = std::get <1> (SyncInfo::V8ModelExternalSourceAspect::GetAspect (*outlierElement->GetModel ()));
-            Utf8String sourceModelName = v8ModelInfo.GetV8ModelName ();
-            RepositoryLinkId id = v8ModelInfo.GetRepositoryLinkId ();
-            auto repositoryLinkElement = converter->GetRepositoryLinkElement (id);
-            auto v8FileInfo = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect (*repositoryLinkElement);
-            Utf8String sourceFileName = v8FileInfo.GetFileName ();
-            message.Sprintf (" Element Id: %lld, Model Name: %s, File Name: %s", v8ElementId, sourceModelName.c_str (), sourceFileName.c_str ());
+            Utf8String sourceModelName;
+            Utf8String sourceFileName;
+            if (v8ModelInfo.IsValid())
+                {
+                sourceModelName = v8ModelInfo.GetV8ModelName();
+                RepositoryLinkId id = v8ModelInfo.GetRepositoryLinkId();
+                auto repositoryLinkElement = converter->GetRepositoryLinkElement(id);
+                auto v8FileInfo = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect(*repositoryLinkElement);
+                sourceFileName = v8FileInfo.GetFileName();
+                }
+            else
+                {
+                sourceModelName = "<unknown>";
+                sourceFileName = "<unknown>";
+                }
+            message.Sprintf(" Element Id: %lld, Model Name: %s, File Name: %s", v8ElementId, sourceModelName.c_str(), sourceFileName.c_str());
         }
     }
 }
@@ -1714,6 +1743,7 @@ void Converter::OnCreateComplete()
 
     timer.Start();
     GenerateRealityModelTilesets();
+    //GenerateWebMercatorModel();
     ConverterLogging::LogPerformance(timer, "Creating reality model tilesets");
 
     }   
@@ -2211,7 +2241,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
     GetECContentOfElement(ecContent, v8eh, v8mm, isNewElement);
 
     bool hasPrimaryInstance = ecContent.m_primaryV8Instance != nullptr;
-    const bool hasSecondaryInstances = !ecContent.m_secondaryV8Instances.empty();
+    bool hasSecondaryInstances = !ecContent.m_secondaryV8Instances.empty();
 
     DgnModelR targetModel = v8mm.GetDgnModel();
 
@@ -2288,7 +2318,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
             }
         if (wouldBe3dMismatch(results, v8mm))
             {
-            ReportIssue(IssueSeverity::Error, IssueCategory::Unsupported(), Issue::UnsupportedPrimaryInstance(), IssueReporter::FmtElement(v8eh).c_str());
+            ReportIssue(IssueSeverity::Info, IssueCategory::Unsupported(), Issue::UnsupportedPrimaryInstance(), IssueReporter::FmtElement(v8eh).c_str());
             elementClassId = ComputeElementClassIgnoringEcContent(v8eh, v8mm);
             auto was = m_skipECContent;
             m_skipECContent= true;
@@ -2297,6 +2327,8 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
             hasPrimaryInstance = false;
             auto res = _CreateElementAndGeom(results, v8mm, elementClassId, hasPrimaryInstance, categoryId, elementCode, v8eh);
             m_skipECContent = was;
+            ecContent.m_secondaryV8Instances.push_back(std::make_pair(ecContent.m_primaryV8Instance, BisConversionRule::ToAspectOnly));
+            hasSecondaryInstances = true;
             if (BentleyApi::SUCCESS != res)
                 {
                 LOG.debugv("Failed to create element and geom after 3d mismatch for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
