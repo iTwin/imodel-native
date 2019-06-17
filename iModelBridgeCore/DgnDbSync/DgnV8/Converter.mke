@@ -1,0 +1,260 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+
+ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors Vancouver's header files; hopefully by the time permissive is Microsoft's default, Vancouver will have patched header files.
+
+%include mdl.mki
+
+# Ensure Parasolid versions match.
+ourVersionCmd = python $(SrcRoot)bsitools/winX86/GetDllVersion.py $(SrcRoot)thirdparty/psolid_31_0_249_x64/lib/pskernel.dll
+ourVersion = $[@readstdout $(ourVersionCmd)]
+ppVersionCmd = python $(SrcRoot)bsitools/winX86/GetDllVersion.py $(BuildContext)SubParts/DgnPlatformV8Sdk/Dlls/PSKernel.dll
+ppVersion = $[@readstdout $(ppVersionCmd)]
+%if $(ourVersion) != $(ppVersion)
+    %error Parasolid version mismatch. Our version = $(ourVersion). PP's version = $(ppVersion).
+%else
+    always:
+        |Parasolid versions match! $(ourVersion)
+%endif
+
+appName             = DgnV8Converter
+baseDir             = $(_MakeFilePath)
+
+ContextDeliveryDir  = $(BuildContext)Delivery/
+
+DgnPlatformV8LibDir = ${BuildContext}/SubParts/VersionedDgnV8Libs/
+
+DgnDbSyncAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/DgnDbSync/
+
+DgnV8APISrc         = $(DgnDbSyncAPISrc)DgnV8/
+
+dgndbsyncSyncDir    = $(baseDir)../
+dynamicSchemaGeneratorDir = $(baseDir)DynamicSchemaGenerator/
+
+DgnDbSyncDepends    = $(DgnDbSyncAPISrc)DgnDbSync.h
+
+# Via RequiredRepository entry in the DgnV8ConverterDLL Part. The way this piece was designed was that is was so small, every library gets and builds as source.
+SrcV8IModelExtraFiles = $(SrcRoot)V8IModelExtraFiles/
+
+DgnV8Depends        = $(DgnV8APISrc)Converter.h \
+                      $(DgnV8APISrc)SyncInfo.h \
+                      $(baseDir)ConverterInternal.h \
+                      $(baseDir)LinkConverter.h \
+                      $(SrcV8IModelExtraFiles)V8IModelExtraFiles.h
+
+dynamicSchemaGeneratorDepends = $(dynamicSchemaGeneratorDir)ECConversion.h \
+                      $(dynamicSchemaGeneratorDir)ECDiff.h
+
+
+o = $(OutputRootDir)Build/DgnDbSync/DgnV8/Converter/
+
+CompileOptionsMki   = $(baseDir)ConverterCompileOptions.mki
+%include $(CompileOptionsMki)
+
+always:
+    ~mkdir $(o)
+
+MultiCompileIntermediatePdbFile =   $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+
+PchCompiland  = $(baseDir)ConverterInternal.cpp
+PchOutputDir   = $(o)
+PchExtraOptions = -Zm250
+%include $(SharedMki)PreCompileHeader.mki
+
+#----------------------------------------------------------------------
+#       Inform user of compile options
+#----------------------------------------------------------------------
+always:
+        |  Compiler options: $(cDefs)$(cDefsPost) $(copt)
+        |  -------- --------
+
+CCPchOpts           = $(UsePrecompiledHeaderOptions)
+CPchOpts            = $(UsePrecompiledHeaderOptions)
+MultiCompileDepends = $(_MakeFileSpec)
+
+%include MultiCppCompileRule.mki
+
+$(o)DgnV8GeoCoord$(oext):  $(baseDir)DgnV8GeoCoord.cpp $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)Thumbnails$(oext):  $(baseDir)Thumbnails.cpp $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)RealityModelTilesets$(oext):  $(baseDir)RealityModelTilesets.cpp $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ImportConfig$(oext):  $(baseDir)ImportConfig/ImportConfig.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)Converter$(oext):  $(baseDir)Converter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)LightWeightConverter$(oext):  $(baseDir)LightWeightConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)SheetConverter$(oext):  $(baseDir)SheetConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)DrawingConverter$(oext):  $(baseDir)DrawingConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)Updater$(oext):  $(baseDir)Updater.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)LineStyleConverter$(oext):  $(baseDir)LineStyleConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)MaterialConverter$(oext):   $(baseDir)MaterialConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)TiledFileConverter$(oext):  $(baseDir)TiledFileConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)RootModelConverter$(oext):  $(baseDir)RootModelConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ECElementConverter$(oext):  $(baseDir)ECElementConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)GeometryConversion$(oext):  $(baseDir)GeometryConversion.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)RasterConversion$(oext):  $(baseDir)RasterConversion.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)PointCloudConversion$(oext):  $(baseDir)PointCloudConversion.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ThreeMxConversion$(oext):  $(baseDir)ThreeMxConversion.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshConversion$(oext):  $(baseDir)ScalableMeshConversion.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)Initialize$(oext):  $(baseDir)Initialize.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)SheetAttachmentViewHelper$(oext):  $(baseDir)SheetAttachmentViewHelper.cpp $(baseDir)SheetAttachmentViewHelper.h $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)SyncInfo$(oext):  $(dgndbsyncSyncDir)SyncInfo.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)DgnV8SyncInfo$(oext):  $(baseDir)DgnV8SyncInfo.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)Issues$(oext):  $(baseDir)Issues.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ConvertView$(oext):  $(baseDir)ConvertView.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ConvertViewAttachments$(oext):  $(baseDir)ConvertViewAttachments.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ConvertProxyGraphics$(oext):  $(baseDir)ConvertProxyGraphics.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)Levels$(oext):  $(baseDir)Levels.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)DgnV8Text$(oext): $(baseDir)DgnV8Text.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)DgnV8Tags$(oext): $(dynamicSchemaGeneratorDir)DgnV8Tags.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ConvertLights$(oext): $(baseDir)ConvertLights.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)LinkConverter$(oext): $(baseDir)LinkConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)DwgDgnV8Host$(oext): $(baseDir)DwgDgnV8Host.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ForeignFileHandlers$(oext): $(baseDir)ForeignFileHandlers.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ECConversion$(oext):  $(dynamicSchemaGeneratorDir)ECConversion.cpp $(dynamicSchemaGeneratorDepends) $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ECDiff$(oext):  $(dynamicSchemaGeneratorDir)ECDiff.cpp $(dynamicSchemaGeneratorDepends) $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)EntityConverter$(oext):  $(dynamicSchemaGeneratorDir)EntityConverter.cpp $(dynamicSchemaGeneratorDepends) $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)RulesetEmbedder$(oext):  $(baseDir)RulesetEmbedder.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+cppObjects =% $(MultiCompileObjectList)
+
+FileTypeControl =
+CCPchOpts =
+CPchOpts =
+
+%include MultiCppCompileRule.mki
+
+# Uses windows.h, so cannot use PCH.
+$(o)DgnV8Font$(oext) : $(baseDir)DgnV8Font.cpp $(DgnV8APISrc)DgnV8Font.h $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+# Shared source from other branches, so cannot use PCH.
+$(o)V8IModelExtraFiles$(oext) : $(SrcV8IModelExtraFiles)V8IModelExtraFiles.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshV8Utilities$(oext):  $(baseDir)ScalableMeshV8Utilities.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+nonPortableObjects =% $(MultiCompileObjectList)
+cppObjects + $(nonPortableObjects)
+
+#----------------------------------------------------------------------
+#   dependencies of the subsystem.
+#----------------------------------------------------------------------
+DLM_NAME                = $(appName)
+DLM_DEST                = $(o)
+DLM_OBJECT_DEST         = $(o)
+DLM_OBJECT_PCH          = $(o)ConverterInternal$(oext) 
+DLM_EXPORT_DEST         = $(o)
+DLM_OBJECT_FILES        = $(cppObjects)
+DLM_NOINITFUNC          = 1
+DLM_NOENTRY             = 1
+LINKER_LIBRARIES        = $(ContextSubpartsLibs)Bentley.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeXml.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeLibXml2.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeSQLite.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeSQLiteEC.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)ECObjects.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)Units.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BentleyGeom.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BentleyGeomSerialization.lib
+
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BaseGeoCoord.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)DgnPlatform.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeJsonCpp.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)ImagePP.lib
+LINKER_LIBRARIES        + $(ContextSubPartsStaticLibs)$(libprefix)BeLibJpegTurbo$(stlibext) 
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeJpeg$(stlibext) 
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)Raster.lib 
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)PointCloud.lib 
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)ThreeMx.lib 
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)iModelBridge.lib 
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMeshSchema.lib 
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMesh.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)RealityPlatform.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)RealityPlatformTools.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)ECPresentation.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
+
+
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)Bentley.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyAllocator.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)ECObjects.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyGeom.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DgnPlatform.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DgnGeoCoord.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)RmgrTools.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BaseGeoCoord.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)PSolidCore.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)PSolidAcisInterop.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)RasterCore.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DgnView.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)VisEdgesLib.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DwgDgnIO.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acpal.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acdb$(RDVSuffix).lib
+
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)TerrainModelElementHandler.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)TerrainModelCore.lib
+
+LINKER_LIBRARIES_DELAYLOADED + msi.lib
+
+%include $(sharedMki)LinkLibrary.mki
+
+$(ContextDeliveryDir)ImportConfig.xsd : $(baseDir)ImportConfig/ImportConfig.xsd
+    $(LinkFirstDepToFirstTarget)
+
+$(ContextDeliveryDir)ImportConfig.xml : $(baseDir)ImportConfig/ImportConfig.xml
+    $(LinkFirstDepToFirstTarget)
+
+    
+SQLANG_CHeader      = $(DgnV8APISrc)Converter.h
+SQLANG_Xliff        = $(o)DgnV8Converter_en.xliff
+
+%include $(sharedMki)CHeaderToXliff.mki
+
+# Deliver the necessary schemas
+always:
+    ~linkdir "$(BuildContext)ECSchemas/Supplemental=$(baseDir)ECSchemas/Supplemental"
+    ~linkdir "$(BuildContext)ECSchemas/V3Conversion=$(baseDir)ECSchemas/V3Conversion"
+    ~linkdir "$(BuildContext)ECSchemas/DgnDbSync=$(baseDir)ECSchemas/DgnDbSync"
+    ~linkdir "$(BuildContext)ECSchemas/Standard=$(baseDir)ECSchemas/Standard"

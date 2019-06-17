@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Electrical_RCM_ProjectProperties_V3Conversion" nameSpacePrefix="elecrcmppv3" version="1.2" description="Bentley Electrical Schema RCM" displayLabel="Bentley Electrical Schema RCM" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECClass typeName="RACEWAY_ITEM" displayLabel="Raceway Item (BRCM)" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
+

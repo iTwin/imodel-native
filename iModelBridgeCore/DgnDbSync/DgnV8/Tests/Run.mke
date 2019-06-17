@@ -1,0 +1,21 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+%if defined (DISABLE_CONVERTER_TESTS)
+    %return
+%endif
+
+always:
+    >$(OutputRootDir)build/DgnDbSync/runtests.bat
+        $(OutputRootDir)Product/DgnV8ConverterTests/DgnV8ConverterTests.exe | python $(SrcRoot)bsicommon/build/Tee.py $(OutputRootDir)DgnDbSync/gtest.log
+        exit
+        <
+    | See $(OutputRootDir)DgnDbSync/gtest.log
+    -START \/WAIT $(OutputRootDir)build/DgnDbSync/runtests.bat
+    $(SrcRoot)BeGTest/gtest/CheckResultsForFailures.py $(OutputRootDir)DgnDbSync/gtest.log
+
+
