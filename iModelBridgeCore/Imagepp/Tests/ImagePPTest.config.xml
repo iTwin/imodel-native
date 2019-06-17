@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<ImagePPTest>
+    <FileFormatTester>
+        <![CDATA[
+        To rebuild tests:        
+            - bb r ImagePP:Gtest ImagePP:UnitTests-*
+            
+        To run from part:
+            - bb r ImagePP:RunGtest        
+        
+        To run from exe: 
+            - Execute: $(YourOutputDir)Product\ImagePP-GTest\ImagePPTests.exe
+            
+        To run in Visual Studio:
+            Command: $(YourOutputDir)Product\ImagePP-GTest\ImagePPTests.exe 
+            Arguments: --gtest_break_on_failure 
+                       or some filter --gtest_filter=FormatTests/ExportAllTester.ToAllFormats/15 --gtest_break_on_failure
+                       
+        Options: 
+        
+            --help -> List all available options.
+        
+            --gtest_output=xml[:DIRECTORY_PATH\|:FILE_PATH] -> create a log file.
+        
+            --gtest_filter=  ->  filter test to run. ex: "--gtest_filter=FormatTests/ExportAllTester.ToAllFormats/15"
+        
+            --gtest_break_on_failure -> break in debugger on failure.
+            
+        IgnoreList:
+            - You can ignore tests by adding them to: ".\Imagepp\Tests\ignore_list.txt"
+        
+         ]]>
+        
+        <!-- Location of input files. If blank or invalid tests won't run.
+             You can get a copy of the files here: \\TEST33393QBC\Dataset\Images_Files\_forATPs\   -->
+        <Source Enable="false" Dir="D:\_forATPs\"/>
+        <!--<Source Enable="true" Dir="D:\Dataset\Images_Files\_forATPsTst\"/>-->
+
+        <!-- If not provided it default to gtest output root which is: $(ProgramPath)run\Output\ -->
+        <OutputOverride Enable="false" Dir="D:\Output\"/>
+
+        <!-- Location of base files for comparaison. A baseline is simply a copy of a previous run.  Copy all the files
+             from the output. 'Dir' must point to one level higher than 'FFT' directory-->
+        <BaseLine Enable="false" Dir="D:\_ATPBaseLine\">            
+            <!-- Validate with checksum -->
+            <!-- *** Not that some file won't binary compare in debug vs release because of double precision error ***
+                Known Issues: 
+                - Binary rasters. Might have one more or less pixel depending on sampling factor.
+                - ErdasImg store palette in doubles so result may differ.            
+            -->
+            <Md5 Enable="true"/>  
+            <!-- Performance:  -->
+            <!-- 'ThresholdMs' : Do not validate duration if the export time is under this threshold -->
+            <!-- 'ToleranceRatio' : Fails when there is more difference than the specified ratio. Use 0.10 for 10% -->
+            <!-- *** May need to be tweaked: old ATP had a relative(20%) and absolute error(25 sec) but that doesn't test a lot of cases.*** -->
+            <Duration Enable="false" ThresholdMs="30000" ToleranceRatio="0.15"/>            
+        </BaseLine>       
+        
+    </FileFormatTester>        
+</ImagePPTest>
+
+  
