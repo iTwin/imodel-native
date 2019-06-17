@@ -24,7 +24,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="QuantityTakeoffsAspectsElements" BentleyBuildMakeFile="Elements/QuantityTakeoffsAspectsElements.mke" ApiNumber="B02">
+    <Part Name="QuantityTakeoffsAspectsElements" BentleyBuildMakeFile="Elements/QuantityTakeoffsAspectsElements.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="QuantityTakeoffsAspectsApi"/>
         <Bindings>
@@ -33,7 +33,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="QuantityTakeoffsAspectsHandlers" BentleyBuildMakeFile="Handlers/QuantityTakeoffsAspectsHandlers.mke" ApiNumber="B02">
+    <Part Name="QuantityTakeoffsAspectsHandlers" BentleyBuildMakeFile="Handlers/QuantityTakeoffsAspectsHandlers.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="QuantityTakeoffsAspectsElements"/>
         <Bindings>
@@ -42,7 +42,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="QuantityTakeoffsAspectsDomain" BentleyBuildMakeFile="Domain/QuantityTakeoffsAspectsDomain.mke" ApiNumber="B02">
+    <Part Name="QuantityTakeoffsAspectsDomain" BentleyBuildMakeFile="Domain/QuantityTakeoffsAspectsDomain.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="QuantityTakeoffsAspectsApi"/>
         <SubPart PartName="QuantityTakeoffsAspectsHandlers"/>

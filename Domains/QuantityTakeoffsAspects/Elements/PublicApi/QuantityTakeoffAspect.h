@@ -11,7 +11,6 @@
 #include <DgnPlatform/DgnElement.h>
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/ViewContext.h>
-#include <DgnPlatform/TileTree.h>
 
 BEGIN_QUANTITYTAKEOFFSASPECTS_NAMESPACE
 
