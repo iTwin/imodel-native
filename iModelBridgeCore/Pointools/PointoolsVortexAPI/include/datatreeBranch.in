@@ -1,0 +1,134 @@
+
+namespace pt
+{
+
+namespace datatree
+{
+	template <class Visitor>
+	void Branch::visitNodes( Visitor &V, bool recursive /*= true*/, bool self /*= true*/ ) const
+	{
+		if (!self || V(this))
+		{
+			NodeMap::const_iterator i = _nodes.begin();
+			while (i != _nodes.end())
+			{
+				V(i->first, i->second);
+				++i;
+			};
+			if (recursive)
+			{
+				Branches::const_iterator b = _branches.begin();
+				while (b != _branches.end())
+				{
+					b->second->visitNodes(V, true);
+					++b;
+				}
+			}
+		}
+	}
+
+	template <class Visitor>
+	void Branch::visitNodes( Visitor &V, bool recursive /*= true*/, bool self /*= true*/ )
+	{
+		if (!self || V(this))
+		{
+			NodeMap::iterator i = _nodes.begin();
+			while (i != _nodes.end())
+			{
+				V(i->first, i->second);
+				++i;
+			};
+			if (recursive)
+			{
+				Branches::iterator b = _branches.begin();
+				while (b != _branches.end())
+				{
+					b->second->visitNodes(V, true);
+					++b;
+				}
+			}
+		}
+	}
+
+	template <class T>
+	bool Branch::getNode( NodeID id, T &v ) const
+	{
+		NodeMap::const_iterator it = _nodes.find(id);
+		if (it != _nodes.end())
+		{
+			if (Variant(v).which() == it->second->_v.which())
+			{
+				v = ttl::var::get<T>(it->second->_v);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	template <class T>
+	bool Branch::addNode( NodeID id, T v )
+	{
+		Node *n = Mem::newNode();
+		n->_v = Variant(v);
+		bool res = (_nodes.insert(NodeMap::value_type(id, n)).second) ? true : false;
+		if (!res) Mem::release(n);
+		return res;
+	}
+
+	template <class T>
+	bool Branch::setNode( const NodeID &nid, T &v )
+	{
+		if (!addNode(nid, v))
+		{
+			NodeMap::iterator it = _nodes.find(nid);
+			if (it != _nodes.end()
+				&& it->second->_v.which() == Variant(v).which()) 
+			{
+				it->second->_v = Variant(v);
+				return true;
+			}
+		}
+		return false;
+	}
+	template <class Visitor>
+	void Branch::visitBranches(Visitor &V)
+	{
+		Branches::iterator b = _branches.begin();
+		while (b != _branches.end())
+		{
+			V(b->second);
+			++b;
+		}			
+	}
+	template <class Visitor>
+	void Branch::visitBranches(Visitor &V) const
+	{
+		Branches::const_iterator b = _branches.begin();
+		while (b != _branches.end())
+		{
+			V(b->second);
+			++b;
+		}			
+	}
+	template <class Visitor>
+	void Branch::visitBlobs(Visitor &V)
+	{
+		Blobs::iterator b = _blobs.begin();
+		while (b != _blobs.end())
+		{
+			V(b->first, b->second);
+			++b;
+		}			
+	}
+	template <class Visitor>
+	void Branch::visitBlobs(Visitor &V) const
+	{
+		Blobs::const_iterator b = _blobs.begin();
+		while (b != _blobs.end())
+		{
+			V(b->first, b->second);
+			++b;
+		}			
+	}
+}
+}
