@@ -1,0 +1,14 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+
+%include mdl.mki
+
+#---------------------------------------------------------------------------------------+
+#   Link Schemas
+#---------------------------------------------------------------------------------------+
+
+$(BuildContext)Delivery/ECSchemas/WSClient/Cache : $(_MakeFilePath)Cache/Persistence/ECSchemas
+    $(LinkFirstDepToFirstTargetAsDirectory)
