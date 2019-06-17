@@ -150,9 +150,8 @@ AxisAlignedBox3d ScalableMeshModel::_QueryModelRange() const
     if (m_smPtr.IsValid()) 
         { 
         m_smPtr->GetRange(const_cast<AxisAlignedBox3d&>(range));
-        Transform transform(m_smPtr->GetReprojectionTransform());
 
-        transform.Multiply(range, range);
+        m_smToModelUorTransform.Multiply(range, range);
         }    
     
     return range;
