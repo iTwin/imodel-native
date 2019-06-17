@@ -98,7 +98,7 @@ Utf8String ApplicationInfo::GetDeviceId() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jason.Wichert    6/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientInfo::CacheAndroidDeviceId(Utf8String deviceId)
+void ApplicationInfo::CacheAndroidDeviceId(Utf8String deviceId)
     {
     BeSystemInfo::CacheAndroidDeviceId(deviceId);
     }
