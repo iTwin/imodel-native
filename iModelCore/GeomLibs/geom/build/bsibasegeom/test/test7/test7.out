@@ -1,0 +1,29 @@
+ geomlibs test environment -- command line arguments:
+ Tail of argv[0] = bsigeomtest7.exe
+<OK name="(DPlane3d.origin)DPlane3d.initFromOriginAndNormal"><DPoint3d>1,2,3</DPoint3d></OK>
+<OK name="(DPlane3d.normal)DPlane3d.initFromOriginAndNormal"<DVec3d>0.2,0.3,0.4</DVec3d>/>
+<OK name="DPlane3d.origin.identical::DPlane3d.initFromOriginAndNormal"><DPoint3d>1,2,3</DPoint3d></OK>
+<OK name="DPlane3d.normal.identical::DPlane3d.initFromOriginAndNormal"<DVec3d>0.2,0.3,0.4</DVec3d>/>
+<OK name="DPlane3d.origin.identical::DPlane3d.normalize"><DPoint3d>1,2,3</DPoint3d></OK>
+<OK name="DPlane3d.angleBetweenNormals::DPlane3d.normalize"><double>5.76244e-017</double></OK>
+<OK name="DPlane3d.normalize"><double>1</double></OK>
+<OK name="DPlane3d.originB.onPlaneA::DPlane3d HPlane RT"><double>0</double></OK>
+<OK name="DPlane3d.originA.onPlaneB::DPlane3d HPlane RT"><double>0</double></OK>
+<OK name="DPlane3d.angleBetweenUnorientedNormals::DPlane3d HPlane RT"><double>5.76244e-017</double></OK>
+<OK name="DPlane3d.originB.onPlaneA::DPlane3d Coffs RT"><double>0</double></OK>
+<OK name="DPlane3d.originA.onPlaneB::DPlane3d Coffs RT"><double>0</double></OK>
+<OK name="DPlane3d.angleBetweenUnorientedNormals::DPlane3d Coffs RT"><double>5.76244e-017</double></OK>
+<OK name="DPlane3d.isZero"><bool::false/></OK>
+<OK name="DPlane3d.isZero"><bool::true/></OK>
+<OK name="DPlane3d.originB.onPlaneA::DPlane3d 3pts, array"><double>0</double></OK>
+<OK name="DPlane3d.originA.onPlaneB::DPlane3d 3pts, array"><double>0</double></OK>
+<OK name="DPlane3d.angleBetweenUnorientedNormals::DPlane3d 3pts, array"><double>0</double></OK>
+<OK name="DPlane3d evaluate (E)"><double>0</double></OK>
+<OK name="DPlane3d evaluate (F)"><double>0</double></OK>
+<OK name="DPlane3d evaluate (E)"><double>0</double></OK>
+<OK name="DPlane3d evaluate (F)"><double>0</double></OK>
+<OK name="DPlane3d evaluate (E)"><double>0</double></OK>
+<OK name="DPlane3d evaluate (F)"><double>0</double></OK>
+<OK name="DPlane3d.evaluate"><double>975.134</double></OK>
+<OK name="DPlane3d.projectPoint"><DPoint3d>-2,5,3</DPoint3d></OK>
+Exit with 0 errors, 26 OK
