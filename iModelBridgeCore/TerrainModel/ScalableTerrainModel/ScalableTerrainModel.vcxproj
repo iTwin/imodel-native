@@ -1,0 +1,399 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug Local LKG|Win32">
+      <Configuration>Debug Local LKG</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{2444C46D-5427-45FC-8B2F-2EC4D30C83DD}</ProjectGuid>
+    <RootNamespace>
+    </RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <CLRSupport>true</CLRSupport>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <CLRSupport>true</CLRSupport>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <CLRSupport>true</CLRSupport>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\ScalableTerrainModel\ScalableTerrainModel\ScalableTerrainModel.dll</NMakeOutput>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64 -c
+python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64 -c
+</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>$(ProjectDir)stdafx.h</NMakeForcedIncludes>
+    <NMakeForcedUsingAssemblies>
+    </NMakeForcedUsingAssemblies>
+    <AdditionalOptions>/clr</AdditionalOptions>
+    <NMakeAssemblySearchPath>$(OutRoot)Winx64\BuildContexts\TerrainModel\SubParts\Assemblies</NMakeAssemblySearchPath>
+    <SourcePath>$(SourcePath)</SourcePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'">
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64
+xcopy /S /Y /r $(SrcRoot)TerrainModel\ScalableTerrainModel\PublicAPI\*.*  $(Root)\out\LKG\Winx64\TerrainModel\PublicAPI\
+xcopy /Y /r $(OutRoot)Winx64\Build\ScalableTerrainModel\ScalableTerrainModel\ScalableTerrainModel.lib $(Root)\out\LKG\Winx64\TerrainModel\Delivery\
+xcopy /Y /r $(OutRoot)Winx64\Build\ScalableTerrainModel\ScalableTerrainModel\ScalableTerrainModel.dll $(Root)\out\LKG\Winx64\TerrainModel\Delivery\
+</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\ScalableTerrainModel\ScalableTerrainModel\ScalableTerrainModel.dll</NMakeOutput>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64 -c
+python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -x64 -c
+</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>$(ProjectDir)stdafx.h</NMakeForcedIncludes>
+    <NMakeForcedUsingAssemblies />
+    <AdditionalOptions>/clr</AdditionalOptions>
+    <NMakeAssemblySearchPath>$(OutRoot)Winx64\BuildContexts\TerrainModel\SubParts\Assemblies</NMakeAssemblySearchPath>
+    <SourcePath>$(SourcePath)</SourcePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel</NMakeBuildCommandLine>
+    <NMakeOutput>
+    </NMakeOutput>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py-p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib">
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </Reference>
+    <Reference Include="System">
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </Reference>
+    <Reference Include="System.Data">
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </Reference>
+    <Reference Include="System.Drawing">
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </Reference>
+    <Reference Include="System.Windows.Forms">
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </Reference>
+    <Reference Include="System.Xml">
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GeoCoords\GCSWktParsing.h" />
+    <ClInclude Include="GeoCoords\StdCpp.h" />
+    <ClInclude Include="GeoCoords\TransfoModelAffine.hpp" />
+    <ClInclude Include="GeoCoords\TransfoModelBase.h" />
+    <ClInclude Include="GeoCoords\TransfoModelCombined.hpp" />
+    <ClInclude Include="GeoCoords\TransfoModelIdentity.hpp" />
+    <ClInclude Include="GeoCoords\TransfoModelMixinBase.h" />
+    <ClInclude Include="GeoCoords\TransfoModelScaling.hpp" />
+    <ClInclude Include="GeoCoords\TransfoModelScalingTranslating.hpp" />
+    <ClInclude Include="GeoCoords\TransfoModelTranslating.hpp" />
+    <ClInclude Include="GeoCoords\TransfoModelUniformScaling.hpp" />
+    <ClInclude Include="GeoCoords\TransformationInternal.h" />
+    <ClInclude Include="GeoCoords\TransformationUtils.h" />
+    <ClInclude Include="GeoCoords\WKTUtils.h" />
+    <ClInclude Include="Import\ContentConfigComponentMixinBaseImpl.h" />
+    <ClInclude Include="Import\DimensionIterator.h" />
+    <ClInclude Include="Import\ImportCommandMixinBaseImpl.h" />
+    <ClInclude Include="Import\ImportConfigComponentMixinBaseImpl.h" />
+    <ClInclude Include="Import\ImporterCommandVisitor.h" />
+    <ClInclude Include="Import\ImporterImpl.h" />
+    <ClInclude Include="Import\InputExtractor.h" />
+    <ClInclude Include="Import\InternalContentDescriptor.h" />
+    <ClInclude Include="Import\InternalImporterConfig.h" />
+    <ClInclude Include="Import\InternalSourceHandler.h" />
+    <ClInclude Include="Import\PluginRegistryHelper.h" />
+    <ClInclude Include="Import\PluginRegistryHelper.hpp" />
+    <ClInclude Include="Import\ReprojectionFilterFactory.h" />
+    <ClInclude Include="Import\Sink.h" />
+    <ClInclude Include="Import\SourcePlugin.h" />
+    <ClInclude Include="Import\StdCpp.h" />
+    <ClInclude Include="Import\TypeConversionFilterFactory.h" />
+    <ClInclude Include="PrivateAPI\STMInternal\Foundations\FoundationsPrivateTools.h" />
+    <ClInclude Include="PrivateAPI\STMInternal\Foundations\PrivateStringTools.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Algorithm.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Algorithm.hpp" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Definitions.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Error.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Exception.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Iterator.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Log.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Message.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Traits.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Warning.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\GeoCoords\Definitions.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\GeoCoords\GCS.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\GeoCoords\LocalTransform.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\GeoCoords\Reprojection.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\GeoCoords\Transformation.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\GeoCoords\Transformation.hpp" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\All.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\Base.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportAll.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportAllToLayer.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportAllToLayerType.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportAllToType.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportLayer.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportLayerToLayer.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportLayerToLayerType.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportLayerToType.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportLayerType.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportLayerTypeToLayer.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportLayerTypeToLayerType.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportLayerTypeToType.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportType.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportTypeToLayer.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportTypeToLayerType.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportTypeToType.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\All.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Attachments.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Base.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Content\All.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Content\Base.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Content\GCS.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Content\Layer.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Content\Type.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\DefaultSourceGCS.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\DefaultTargetGCS.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\DefaultTargetLayer.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\DefaultTargetType.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Extraction.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Filtering.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\SourceFilters.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\TargetFilters.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Error\Source.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\CustomFilterFactoryV0.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\DataTypeFamilyV0.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\DataTypeRegistry.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\DataTypeV0.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\ExtractorRegistry.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\FilterV0.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\InputExtractorV0.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\PacketBinderV0.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\RegistryTools.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\ReprojectionFilterRegistry.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\ReprojectionFilterV0.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\SourceReferenceV0.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\SourceRegistry.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\SourceV0.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\TypeConversionFilterRegistry.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\TypeConversionFilterV0.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTM.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMClipContainer.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMCreator.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMDocumentEnv.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMFeature.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMMoniker.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMPolicy.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMQuery.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMSourceCollection.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMSourceCollection.hpp" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMSourceDescription.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMSourceImportConfig.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMSources.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMSourceVisitor.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMStream.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMStream.hpp" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMTime.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMURL.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Memory\Allocation.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Memory\Definitions.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Memory\Exceptions.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Memory\Packet.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Memory\PacketAccess.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Memory\PacketAccess.hpp" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\MrDTMDefs.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\MrDTMUtilityFunctions.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Plugin\IMrDTMCivilDTMSource.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Plugin\IMrDTMFileUtilities.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Plugin\IMrDTMFileUtilities.hpp" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Plugin\IMrDTMPolicy.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Plugin\IMrDTMSTMSource.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Type\IMrDTMLinear.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Type\IMrDTMMesh.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Type\IMrDTMPoint.h" />
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Type\IMrDTMTIN.h" />
+    <ClInclude Include="STM\HGF3DFilterCoord.h" />
+    <ClInclude Include="STM\HGF3DFilterCoord.hpp" />
+    <ClInclude Include="STM\ImportPlugins\CivilDTMHelpers.h" />
+    <ClInclude Include="STM\InternalUtilityFunctions.h" />
+    <ClInclude Include="STM\MrDTM.h" />
+    <ClInclude Include="STM\MrDTMClipContainer.h" />
+    <ClInclude Include="STM\MrDTMContentConfigPersistance.h" />
+    <ClInclude Include="STM\MrDTMCoreDefs.h" />
+    <ClInclude Include="STM\MrDTMCoreFns.h" />
+    <ClInclude Include="STM\MrDTMCreator.h" />
+    <ClInclude Include="STM\MrDTMEditListener.h" />
+    <ClInclude Include="STM\MrDTMFilteringOptions.h" />
+    <ClInclude Include="STM\MrDTMImportSequencePersistance.h" />
+    <ClInclude Include="STM\MrDTMMoniker.h" />
+    <ClInclude Include="STM\MrDTMQuadTreeBCLIBFilters.h" />
+    <ClInclude Include="STM\MrDTMQuadTreeBCLIBFilters.hpp" />
+    <ClInclude Include="STM\MrDTMQuadTreeQueries.h" />
+    <ClInclude Include="STM\MrDTMQuadTreeQueries.hpp" />
+    <ClInclude Include="STM\MrDTMQuery.h" />
+    <ClInclude Include="STM\MrDTMQuery.hpp" />
+    <ClInclude Include="STM\MrDTMRasterDraping.h" />
+    <ClInclude Include="STM\MrDTMRelevanceDistribution.h" />
+    <ClInclude Include="STM\MrDTMSourcePersistance.h" />
+    <ClInclude Include="STM\MrDTMSources.h" />
+    <ClInclude Include="STM\MrDTMSourcesImport.h" />
+    <ClInclude Include="STM\MrDTMSourcesPersistance.h" />
+    <ClInclude Include="STM\MrDTMStorage.h" />
+    <ClInclude Include="STM\MrDTMTilingOptions.h" />
+    <ClInclude Include="STM\MrDTMTime.h" />
+    <ClInclude Include="STM\Plugins\MrDTMClipMaskFilterFactory.h" />
+    <ClInclude Include="STM\Plugins\MrDTMDimensionTypeConversionFilter.h" />
+    <ClInclude Include="STM\Plugins\MrDTMIDTMFileTraits.h" />
+    <ClInclude Include="STM\ScalableTerrainModelPCH.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="transkit\transkit.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Foundations\Errors.cpp" />
+    <ClCompile Include="Foundations\PrivateStringTools.cpp" />
+    <ClCompile Include="GeoCoords\GCS.cpp" />
+    <ClCompile Include="GeoCoords\GCSWktParsing.cpp" />
+    <ClCompile Include="GeoCoords\LocalTransform.cpp" />
+    <ClCompile Include="GeoCoords\Reprojection.cpp" />
+    <ClCompile Include="GeoCoords\StdCpp.cpp" />
+    <ClCompile Include="GeoCoords\Transformation.cpp" />
+    <ClCompile Include="GeoCoords\WKTUtils.cpp" />
+    <ClCompile Include="Import\Attachment.cpp" />
+    <ClCompile Include="Import\ContentConfig.cpp" />
+    <ClCompile Include="Import\ContentConfigs.cpp" />
+    <ClCompile Include="Import\ContentDescriptor.cpp" />
+    <ClCompile Include="Import\CustomFilterFactory.cpp" />
+    <ClCompile Include="Import\DataType.cpp" />
+    <ClCompile Include="Import\DataTypeFamily.cpp" />
+    <ClCompile Include="Import\DimensionDescription.cpp" />
+    <ClCompile Include="Import\ExtractionConfig.cpp" />
+    <ClCompile Include="Import\Filter.cpp" />
+    <ClCompile Include="Import\FilterFactory.cpp" />
+    <ClCompile Include="Import\FilteringConfig.cpp" />
+    <ClCompile Include="Import\ImportCommands.cpp" />
+    <ClCompile Include="Import\ImportConfig.cpp" />
+    <ClCompile Include="Import\ImportConfigs.cpp" />
+    <ClCompile Include="Import\Importer.cpp" />
+    <ClCompile Include="Import\ImporterCommandVisitor.cpp" />
+    <ClCompile Include="Import\ImportPolicy.cpp" />
+    <ClCompile Include="Import\ImportSequence.cpp" />
+    <ClCompile Include="Import\InputExtractor.cpp" />
+    <ClCompile Include="Import\InternalContentDescriptor.cpp" />
+    <ClCompile Include="Import\InternalImporterConfig.cpp" />
+    <ClCompile Include="Import\Metadata.cpp" />
+    <ClCompile Include="Import\ReprojectionFilterFactory.cpp" />
+    <ClCompile Include="Import\Sink.cpp" />
+    <ClCompile Include="Import\Source.cpp" />
+    <ClCompile Include="Import\SourcePlugin.cpp" />
+    <ClCompile Include="Import\SourceReference.cpp" />
+    <ClCompile Include="Import\SourceTypeConfig.cpp" />
+    <ClCompile Include="Import\StdCpp.cpp" />
+    <ClCompile Include="Import\TypeConversionFilterFactory.cpp" />
+    <ClCompile Include="Memory\MemoryAllocation.cpp" />
+    <ClCompile Include="Memory\Packet.cpp" />
+    <ClCompile Include="Memory\PacketAccess.cpp" />
+    <ClCompile Include="STM\ImportPlugins\CivilDTMFileImporter.cpp" />
+    <ClCompile Include="STM\ImportPlugins\CivilDTMHelpers.cpp" />
+    <ClCompile Include="STM\ImportPlugins\IDTMFileImporter.cpp" />
+    <ClCompile Include="STM\ImportPlugins\LandXMLFileImporter.cpp" />
+    <ClCompile Include="STM\ImportPlugins\XYZAsciiFileImporter.cpp" />
+    <ClCompile Include="STM\ImportPlugins\XYZFileImporter.cpp" />
+    <ClCompile Include="STM\InternalUtilityFunctions.cpp" />
+    <ClCompile Include="STM\MrDTM.cpp" />
+    <ClCompile Include="STM\MrDTMClipContainer.cpp" />
+    <ClCompile Include="STM\MrDTMContentConfigPersistance.cpp" />
+    <ClCompile Include="STM\MrDTMCoreFns.cpp" />
+    <ClCompile Include="STM\MrDTMCreator.cpp" />
+    <ClCompile Include="STM\MrDTMFeature.cpp" />
+    <ClCompile Include="STM\MrDTMFilteringOptions.cpp" />
+    <ClCompile Include="STM\MrDTMImportSequencePersistance.cpp" />
+    <ClCompile Include="STM\MrDTMInitialization.cpp" />
+    <ClCompile Include="STM\MrDTMMoniker.cpp" />
+    <ClCompile Include="STM\MrDTMPolicy.cpp" />
+    <ClCompile Include="STM\MrDTMQuadTreeBCLIBFilters.cpp" />
+    <ClCompile Include="STM\MrDTMQuery.cpp" />
+    <ClCompile Include="STM\MrDTMRasterDraping.cpp" />
+    <ClCompile Include="STM\MrDTMRelevanceDistribution.cpp" />
+    <ClCompile Include="STM\MrDTMSourceCollection.cpp" />
+    <ClCompile Include="STM\MrDTMSourceDescription.cpp" />
+    <ClCompile Include="STM\MrDTMSourceImportConfig.cpp" />
+    <ClCompile Include="STM\MrDTMSourcePersistance.cpp" />
+    <ClCompile Include="STM\MrDTMSources.cpp" />
+    <ClCompile Include="STM\MrDTMSourcesImport.cpp" />
+    <ClCompile Include="STM\MrDTMSourcesPersistance.cpp" />
+    <ClCompile Include="STM\MrDTMStream.cpp" />
+    <ClCompile Include="STM\MrDTMTilingOptions.cpp" />
+    <ClCompile Include="STM\MrDTMTime.cpp" />
+    <ClCompile Include="STM\MrDTMURL.cpp" />
+    <ClCompile Include="STM\MrDTMUtilityFunctions.cpp" />
+    <ClCompile Include="STM\Plugins\MrDTMClipMaskFilterFactory.cpp" />
+    <ClCompile Include="STM\Plugins\MrDTMLinearTypes.cpp" />
+    <ClCompile Include="STM\Plugins\MrDTMMeshTypes.cpp" />
+    <ClCompile Include="STM\Plugins\MrDTMPointTypes.cpp" />
+    <ClCompile Include="STM\Plugins\MrDTMReprojectionFilterPlugins.cpp" />
+    <ClCompile Include="STM\Plugins\MrDTMTINTypes.cpp" />
+    <ClCompile Include="STM\Plugins\MrDTMTypeConversionFilterPlugins.cpp" />
+    <ClCompile Include="STM\ScalableTerrainModelPCH.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ScalableTerrainModel.mke" />
+    <None Include="ScalableTerrainModel.mki" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
