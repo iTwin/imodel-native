@@ -132,7 +132,7 @@ def callEachStrategy(args, config, verData):
             action = 'taglist -f ' + bdfPath
         elif 'build' == args.action:
             action = 'build'
-            if isFirstStrategy:
+            if isFirstStrategy and ('PRG' in os.environ):
                 action += ' --tmrbuild --noprompt'
         elif 'checkunused' == args.action:
             if not version or '99.99.99.99' == version:

@@ -93,3 +93,6 @@ ConnectSignInManagerTests.GetAuthenticationHandler_UrlProviderDev_DoesNotSetSetV
 
 UrlProviderTests.*
     # Random failures across bim0200 + imodel02 and x64 + linuxx64 (optimized)
+
+WSRepositoryClientTests.*
+    # Random failures on imodel02 linuxx64 (optimized)
