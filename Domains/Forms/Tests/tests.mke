@@ -1,0 +1,80 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+programName = FormsDomainTests
+baseDir =   $(_MakeFilePath)
+
+BEGTEST_INPUT=$(baseDir)
+
+%include mdl.mki
+
+# We don't want to run the test from the build location because the dependencies are not there.
+GUNITTEST_NOEXEC = 1
+
+# This macro is used by gtestobj.mki
+GUnitTestDir = $(BuildContext)SubParts/google_gtest/
+
+BEGTEST_NAME=$(programName)
+BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
+%include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
+
+TestsHeaders = $(baseDir)FormsDomainTests.h
+
+# Let all stand-alone tests share the same gtestmain and TestFixture objects.
+o = $(OutputRootDir)build/FormsDomainTests/$(programName)/
+
+always:
+    !~@mkdir $(o)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)FormsDomainTestFixture.obj     : $(BEGTEST_INPUT)FormsDomainTestFixture.cpp $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)FormsDomainTestsMain.obj   : $(BEGTEST_INPUT)FormsDomainTestsMain.cpp   $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)FormsDomainTests.obj       : $(BEGTEST_INPUT)FormsDomainTests.cpp       $(TestsHeaders) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+%undef CPchOpts
+%undef CCPchOpts
+
+GUNITTEST_OUT    = $(o)
+GUNITTEST_NAME   = $(programName)
+GUNITTEST_DEST   = $(o)
+GUNITTEST_NTLIBS = advapi32.lib ole32.lib ws2_32.lib
+GUNITTEST_PATH   = $(o)
+GUNITTEST_SYMB   = $(o)
+GTEST_MAIN_IS_SUPPLIED = 1
+
+%include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
+
+LOCAL_GUNITTEST_OBJS + $(MultiCompileObjectList)
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)delivery/*.lib]
+#LOCAL_GUNITTEST_OBJS + $(BuildContext)../DgnPlatform/Delivery/UnitTests/Objects/DgnDbTestUtils/DgnDbTestUtils.obj
+
+#LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/DgnPlatform.lib
+
+%include $(SharedMki)gunittest.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/$(programName).exe=$(o)$(programName).exe"
+
+$(BuildContext)Delivery/$(programName).logging.config.xml : $(baseDir)logging.config.xml
+    $(LinkFirstDepToFirstTarget)
+
+#$(BuildContext)Delivery/$(programName).exe.is_google_test : $(baseDir)logging.config.xml
+#    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+
+# Create the sqlang database
+SQLANG_OutputDb     = $(o)FormsDomainTests_en-US.sqlang.db3
+SQLANG_DeliveryDir  = $(BuildContext)Delivery/
+SQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff
+%include $(SrcRoot)bsicommon\sqlang\mki\XliffsToDb.mke
