@@ -1,0 +1,189 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/ecschema",
+  "name": "ExampleSchema",
+  "version": "03.01.00",
+  "alias": "ex",
+  "label": "Example Schema",
+  "description": "The quick brown fox jumps over the lazy dog.",
+  "references": [
+    {
+      "name" : "CoreCustomAttributes",
+      "version" : "01.00.02"
+    },
+    {
+      "name" : "Formats",
+      "version" : "01.00.00"
+    },
+    {
+      "name" : "Units",
+      "version" : "01.00.01"
+    },
+    {
+      "name": "refSchemaA",
+      "version": "03.01.00"
+    },
+    {
+      "name": "refSchemaB",
+      "version": "03.01.00"
+    }
+  ],
+  "customAttributes": [
+    {
+    "className": "refSchemaA.SomeCustomAttributeClass"
+    },
+    {
+    "className": "refSchemaB.AnotherCustomAttributeClass"
+    }
+  ],
+  "items": {
+    "ExampleBaseEntity": {
+      "schemaItemType": "EntityClass"
+    },
+    "ExampleEntity": {
+      "schemaItemType": "EntityClass",
+      "modifier": "Sealed",
+      "label": "ExampleEntity",
+      "description": "An example entity class.",
+      "baseClass": "ExampleSchema.ExampleBaseEntity",
+      "mixins": [
+        "ExampleSchema.ExampleMixinA",
+        "ExampleSchema.ExampleMixinB"
+      ]
+    },
+    "ExampleMixinA": {
+      "schemaItemType": "Mixin",
+      "appliesTo": "ExampleSchema.ExampleEntity"
+    },
+    "ExampleMixinB": {
+      "schemaItemType": "Mixin",
+      "appliesTo": "ExampleSchema.ExampleEntity"
+    },
+    "ExampleStruct": {
+      "schemaItemType": "StructClass",
+      "modifier": "Sealed",
+      "properties": [
+        {
+          "type": "PrimitiveArrayProperty",
+          "name": "ExamplePrimitiveArray",
+          "label": "ExPrimitiveArray",
+          "typeName": "int",
+          "extendedTypeName": "FooBar",
+          "minValue": 7,
+          "maxValue": 20,
+          "minOccurs": 10,
+          "maxOccurs": 25
+        }
+      ]
+    },
+    "ExampleSource": {
+      "schemaItemType": "EntityClass"
+    },
+    "ExampleTarget": {
+      "schemaItemType": "EntityClass"
+    },
+    "ExampleRelationship": {
+      "schemaItemType": "RelationshipClass",
+      "modifier": "Sealed",
+      "strength": "Embedding",
+      "strengthDirection": "Forward",
+      "source": {
+        "multiplicity": "(0..1)",
+        "roleLabel": "source roleLabel",
+        "polymorphic": true,
+        "constraintClasses": [
+          "ExampleSchema.ExampleSource"
+        ]
+      },
+      "target": {
+        "multiplicity": "(0..1)",
+        "roleLabel": "target roleLabel",
+        "polymorphic": true,
+        "constraintClasses": [
+          "ExampleSchema.ExampleTarget"
+        ]
+      }
+    },
+    "ExampleCustomAttribute": {
+        "schemaItemType": "CustomAttributeClass",
+        "modifier": "Sealed",
+        "appliesTo": "Schema, AnyProperty"
+    },
+    "ExampleKoQ": {
+      "schemaItemType": "KindOfQuantity",
+      "persistenceUnit": "ExampleSchema.ExampleUnit",
+      "relativeError": 3.0,
+      "presentationUnits": [
+        "Formats.DefaultRealU[ExampleSchema.ExampleUnit|example]"
+      ]
+    },
+    "ExamplePhenomenon" : {
+      "schemaItemType" : "Phenomenon",
+      "label" : "ExamplePhenomenonLabel",
+      "description" : "ExamplePhenomenonDescription",
+      "definition" : "LENGTH"
+    },
+    "ExampleUnitSystem" : {
+      "schemaItemType" : "UnitSystem",
+      "label" : "ExampleUnitSystemLabel",
+      "description" : "ExampleUnitSystemDescription"
+    },
+    "ExampleUnit" : {
+      "schemaItemType" : "Unit",
+      "label" : "ExampleUnitLabel",
+      "description" : "ExampleUnitDescription",
+      "definition" : "[MILLI]M",
+      "denominator" : 1.0,
+      "numerator" : 10.0,
+      "offset" : 1.0,
+      "phenomenon" : "ExampleSchema.ExamplePhenomenon",
+      "unitSystem" : "ExampleSchema.ExampleUnitSystem"
+    },
+    "ExampleConstant" : {
+      "schemaItemType" : "Constant",
+      "label" : "ExampleConstantLabel",
+      "description" : "ExampleConstantDescription",
+      "definition" : "ONE",
+      "numerator" : 10.0,
+      "phenomenon" : "ExampleSchema.ExamplePhenomenon"
+    },
+    "ExampleInvertedUnit" : {
+      "schemaItemType" : "InvertedUnit",
+      "label" : "ExampleInvertedUnitLabel",
+      "description" : "ExampleInvertedUnitDescription",
+      "invertsUnit": "ExampleSchema.ExampleUnit",
+      "unitSystem" : "ExampleSchema.ExampleUnitSystem"
+    },
+    "ExampleFormat" : {
+      "schemaItemType" : "Format",
+      "label" : "ExampleFormatLabel",
+      "description" : "ExampleFormatDescription",
+      "type": "Decimal"
+    },
+    "ExampleEnumeration": {
+      "schemaItemType": "Enumeration",
+      "type": "int",
+      "isStrict": true,
+      "enumerators": [
+        {
+          "value": 1,
+          "name": "EnumeratorA",
+          "label": "None"
+        },
+        {
+           "value": 2,
+           "name": "EnumeratorB",
+           "label": "SomeVal"
+        },
+        {
+          "value": 3,
+          "name": "EnumeratorC",
+          "label": "AnotherVal"
+        }
+      ]
+    },
+    "ExamplePropertyCategory": {
+      "schemaItemType": "PropertyCategory",
+      "priority": 5
+    }
+  }
+}
