@@ -1326,6 +1326,7 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
     
     putenv("iModelBridge_MatchOnEmbeddedFileBasename=1");     // TODO: Replace this with a settings service parameter check
     putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=0"); // must disable pw caching, as we copy new files on top of old ones too quickly
+    static const uint32_t s_v8PasswordCacheLifetime = 2*1000; // the timeout is 1 second. Wait for 2 to be safe.
 
     BentleyApi::BeFileName inputStagingDir = GetOutputDir();
 
@@ -1412,6 +1413,9 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
         ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_1_v2.c_str(), master1.c_str()));
         ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_2_v2.c_str(), master2.c_str()));
 
+        // NEEDS WORK temporary work-around for V8 password cache entry lifetime
+        BentleyApi::BeThreadUtilities::BeSleep(s_v8PasswordCacheLifetime);
+
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
         RunTheBridge(args);
         
@@ -1437,6 +1441,9 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
         ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_1_v3.c_str(), master1.c_str()));
         ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_2_v3.c_str(), master2.c_str()));
 
+        // NEEDS WORK temporary work-around for V8 password cache entry lifetime
+        BentleyApi::BeThreadUtilities::BeSleep(s_v8PasswordCacheLifetime);
+
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
         RunTheBridge(args);
         
@@ -1448,6 +1455,131 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
         RunTheBridge(args);
         
         ASSERT_EQ(modelCount - 1, DbFileInfo(m_briefcaseName).GetPhysicalModelCount()) << "commonRef should have been deleted";
+        }
+
+    putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=1"); // restore default
+    putenv("iModelBridge_MatchOnEmbeddedFileBasename="); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, DetectCommonReferencesUsingRecipes)
+    {
+    if (nullptr != GetIModelBankServerJs())
+        {
+        // ??! Including this test in a full run causes all tests that follow to fail to start the IMB server. ??!
+        return;
+        }
+
+    auto testDir = CreateTestDir();
+    
+    putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=0"); // must disable pw caching, as we copy new files on top of old ones too quickly
+    static const uint32_t s_v8PasswordCacheLifetime = 2*1000; // the timeout is 1 second. Wait for 2 to be safe.
+
+    BentleyApi::BeFileName inputStagingDir = GetOutputDir();
+
+    putenv("iModelBridge_MatchOnEmbeddedFileBasename=-v[0-9]$");    // The recipe specifies that any -vn suffix should be stripped when forming internal file identifiers.
+    // The recipe also says that file extensions should be stripped, PW URNs should be ignored, and filename case should be ignored. That is the default, when a regex is supplied.
+
+    // In this test:
+    // In v0, master embeds commonref.dgn.i.dgn
+    // In v1, master embeds commonref-v1.i.dgn. According to the recipe, that should be recognized as referring to the same file as the original commonRef.dgn.i.dgn
+    // So, the recipe that we supply above should enable the bridge to recognize that both versions are based on the same reference file, just different versions of it.
+
+    auto masterFileName = GetOutputFileName(L"master.i.dgn");      // The name of the staged input file
+    BeFileName commonRef(L"commonref");                            // Because of the recipe, all versions of the reference file will be mapped to this name.
+
+    // This is the full pseudo-filename of the first (embedded) file where the bridge will encounter "commonref".
+    BeFileName commonRefEmbeddedFileName_firstOccurence(masterFileName);
+    commonRefEmbeddedFileName_firstOccurence.append(L"<1>commonref.dgn.i.dgn");
+
+    SetupClient();
+    CreateRepository();
+    auto runningServer = StartServer();
+
+    BentleyApi::BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(DEFAULT_IMODEL_NAME L".fwk-registry.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
+
+    BentleyApi::BeSQLite::BeGuid guidMaster, guidRef;
+    guidMaster.Create();
+    guidRef.Create();
+
+    iModelBridgeDocumentProperties docPropsMaster(guidMaster.ToString().c_str(), "wurnMaster", "durnMaster", "otherMaster", "");
+    iModelBridgeDocumentProperties docPropsRef(guidRef.ToString().c_str(), "wurnRef", "durnRef", "otherRef", "");
+    testRegistry.SetDocumentProperties(docPropsMaster, masterFileName);
+    testRegistry.SetDocumentProperties(docPropsRef, commonRef);           // <--------- the reference file will have a doc id. (The recipe will tell the bridge to ignore it.)
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer,
+        const size_t bufferSize,
+        iModelBridgeAffinityLevel& affinityLevel,
+        BentleyApi::WCharCP affinityLibraryPath,
+            BentleyApi::WCharCP sourceFileName)
+        {
+        wcscpy(buffer, MSTN_BRIDGE_REG_SUB_KEY);
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        };
+
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, lambda);
+    BentleyApi::WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, masterFileName, L"");
+    ASSERT_TRUE(bridgeName.Equals(MSTN_BRIDGE_REG_SUB_KEY));
+    testRegistry.Save();
+    TerminateHost();
+
+    int modelCount = 0;
+    if (true)
+        {
+        // In v0, master embeds commonref.dgn.i.dgn
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+        
+        auto master_v0 = GetTestDataFileName(L"master_common.i.dgn");
+
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_v0.c_str(), masterFileName.c_str()));
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterFileName.c_str()));
+        RunTheBridge(args);
+        
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+
+        DbFileInfo bcInfo(m_briefcaseName);
+        modelCount = bcInfo.GetPhysicalModelCount();
+        ASSERT_EQ(2, modelCount);
+        RepositoryLinkId rid;
+        bcInfo.MustFindFileByName(rid, masterFileName, 1);
+        bcInfo.MustFindFileByName(rid, commonRefEmbeddedFileName_firstOccurence, 1);
+        }
+
+    if (true)
+        {
+        // In v1, master embeds commonRef-v1.i.dgn. According to the recipe, that should be recognized as referring to the same file as the original commonRef.dgn.i.dgn
+        bvector<WString> args;
+        SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY, DEFAULT_IMODEL_NAME);
+
+        auto master_v1 = GetTestDataFileName(L"master_common-v1.i.dgn");
+
+        ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(master_v1.c_str(), masterFileName.c_str()));
+
+        // NEEDS WORK temporary work-around for V8 password cache entry lifetime
+        BentleyApi::BeThreadUtilities::BeSleep(s_v8PasswordCacheLifetime);
+
+        args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterFileName.c_str()));
+        RunTheBridge(args);
+        
+        args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
+        RunTheBridge(args);
+
+        // No change in model count is expected, as we still have the same two files in v1 as we did in v0
+        DbFileInfo bcInfo(m_briefcaseName);
+        modelCount = bcInfo.GetPhysicalModelCount();
+        ASSERT_EQ(2, modelCount);
+        RepositoryLinkId rid;
+        bcInfo.MustFindFileByName(rid, masterFileName, 1);
+        bcInfo.MustFindFileByName(rid, commonRefEmbeddedFileName_firstOccurence, 1); // The RepositoryLink still refers to the first occurrence.
         }
 
     putenv("MS_PROTECTION_PASSWORD_CACHE_LIFETIME=1"); // restore default
