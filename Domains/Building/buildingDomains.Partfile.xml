@@ -107,7 +107,7 @@
         <ProductDirectory Name="FormsDomainIncludes" Deliver="false"/>
         <ProductDirectory Name="BuildingDomainIncludes" Deliver="false"/>
         <ProductDirectory Name="ClassificationSystemsIncludes" Deliver="false"/>
-
+        <ProductDirectory Name="QuantityTakeoffsAspectsIncludes" Deliver="false"/>
     </ProductDirectoryList>
 
     <Product Name="BuildingDomainTests" OnlyPlatforms="x64">
