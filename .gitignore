@@ -10,3 +10,5 @@ iModelJsApp.xcconfig
 .gradle/
 gradle.properties
 local.properties
+*.vcxproj
+*.sln

@@ -1402,6 +1402,17 @@ public:
         return Napi::Number::New(Env(), (int)status);
         }
 
+    void ApplyChangeSetsAsync(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_FUNCTION(0, responseCallback, );
+        REQUIRE_ARGUMENT_STRING(1, dbname, );
+        REQUIRE_ARGUMENT_STRING(2, dbGuid, );
+        REQUIRE_ARGUMENT_STRING(3, changeSetTokens, );
+        REQUIRE_ARGUMENT_INTEGER(4, applyOption, );
+
+        JsInterop::ApplyChangeSetsAsync(responseCallback, dbname, dbGuid, changeSetTokens, (RevisionProcessOption) applyOption);
+        }
+
     static TxnManager::TxnId TxnIdFromString(Utf8StringCR str) {return TxnManager::TxnId(BeInt64Id::FromString(str.c_str()).GetValue());}
     static Utf8String TxnIdToString(TxnManager::TxnId txnId) {return BeInt64Id(txnId.GetValue()).ToHexStr();}
 
@@ -2298,6 +2309,7 @@ public:
             InstanceMethod("addPendingChangeSet", &NativeDgnDb::AddPendingChangeSet),
             InstanceMethod("appendBriefcaseManagerResourcesRequest", &NativeDgnDb::AppendBriefcaseManagerResourcesRequest),
             InstanceMethod("applyChangeSets", &NativeDgnDb::ApplyChangeSets),
+            InstanceMethod("applyChangeSetsAsync", &NativeDgnDb::ApplyChangeSetsAsync),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
             InstanceMethod("beginMultiTxnOperation", &NativeDgnDb::BeginMultiTxnOperation),
             InstanceMethod("briefcaseManagerEndBulkOperation", &NativeDgnDb::BriefcaseManagerEndBulkOperation),
@@ -4152,6 +4164,68 @@ struct NativeSqliteStatement : BeObjectWrap<NativeSqliteStatement>
             return Napi::Number::New(Env(), (int) status);
             }
     };
+
+
+//=======================================================================================
+// @bsistruct                                            Ramanujam.Raman   06/19
+//=======================================================================================
+struct ApplyChangeSetsAsyncWorker : Napi::AsyncWorker
+{
+private:
+    BeFileName m_dbname;
+    Json::Value m_changeSetTokens;
+    Utf8String m_dbGuid;
+    RevisionStatus m_status;
+    RevisionProcessOption m_applyOption;
+    JsInterop::ObjectReferenceClaimCheck m_requestContext;
+
+    void Execute() override
+        {
+        JsInterop::SetCurrentClientRequestContextForWorkerThread(m_requestContext);
+        NativeLogging::LoggingManager::GetLogger("DgnCore")->info("ApplyChangeSetsAsyncWorker: In worker thread");
+               
+        bvector<DgnRevisionPtr> revisionPtrs;
+        bool containsSchemaChanges;
+        m_status = JsInterop::ReadChangeSets(revisionPtrs, containsSchemaChanges, m_dbGuid, m_changeSetTokens);
+        if (RevisionStatus::Success != m_status)
+            return;
+
+        bvector<DgnRevisionCP> revisions;
+        for (uint32_t ii = 0; ii < revisionPtrs.size(); ii++)
+            revisions.push_back(revisionPtrs[ii].get());
+
+        m_status = JsInterop::ApplySchemaChangeSets(m_dbname, revisions, m_applyOption);
+        }
+
+    void OnOK() override
+        {
+        // Warning! If you want to log in a specific ClientRequestContext, then you can't use NativeLogging directly. You must call this helper function:
+        JsInterop::LogMessageInContext("DgnCore", NativeLogging::LOG_INFO, "ApplyChangeSetsAsyncWorker: Back on main thread", m_requestContext);
+        m_requestContext.Dispose();
+
+        auto retval = Napi::Number::New(Env(), (int)m_status);
+        Callback().MakeCallback(Receiver().Value(), {retval});
+        }
+
+public:
+    ApplyChangeSetsAsyncWorker (Napi::Function& callback, Utf8StringCR dbname, Utf8StringCR dbGuid, Utf8StringCR changeSetTokens, RevisionProcessOption applyOption)
+        : Napi::AsyncWorker(callback), m_dbGuid(dbGuid), m_changeSetTokens(changeSetTokens), m_applyOption(applyOption)
+        {
+        m_dbname = BeFileName(dbname.c_str(), true);
+        m_changeSetTokens = Json::Value::From(changeSetTokens);
+        m_requestContext = JsInterop::GetCurrentClientRequestContextForMainThread();
+        NativeLogging::LoggingManager::GetLogger("DgnCore")->info("ApplyChangeSetsAsyncWorker: Start on main thread");
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                Ramanujam.Raman   06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::ApplyChangeSetsAsync(Napi::Function& callback, Utf8StringCR dbname, Utf8StringCR dbGuid, Utf8StringCR changeSetTokens, RevisionProcessOption applyOption)
+    {
+    ApplyChangeSetsAsyncWorker *worker = new ApplyChangeSetsAsyncWorker(callback, dbname, dbGuid, changeSetTokens, applyOption);
+    worker->Queue();
+    }
 
 //=======================================================================================
 // @bsistruct                                                   Affan.Khan   01/19
