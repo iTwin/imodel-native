@@ -212,6 +212,7 @@ DwgDbEntityCP   GetSourceEntity () const { return m_sourceEntity; }
 DwgDbDatabaseP  GetDatabase () { return m_dwgdb.get(); }
 DwgImporter&    GetDwgImporter () { return  m_dwgImporter; }
 bool            IsDisplayed () { return m_isDisplayed; }
+void            SetLinetypeContinuous () { m_linetypeId = m_dwgdb->GetLinetypeContinuousId(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
@@ -1212,6 +1213,7 @@ virtual void    _Pline (DwgDbPolylineCR pline, size_t fromIndex = 0, size_t numS
             {
             curveVector = shape;
             m_drawParams._SetFillType (DwgGiFillType::Always);
+            m_drawParams.SetLinetypeContinuous ();
             }
 
         if (m_isTargetModel2d)
@@ -1223,9 +1225,14 @@ virtual void    _Pline (DwgDbPolylineCR pline, size_t fromIndex = 0, size_t numS
         // extrude the polyline if it has a thickness
         GeometricPrimitivePtr   extruded = plineFactory.ApplyThicknessTo (curveVector);
         if (extruded.IsValid())
+            {
             this->AppendGeometry (*extruded.get());
+            m_drawParams.SetLinetypeContinuous ();
+            }
         else
+            {
             this->AppendGeometry (*curveVector.get());
+            }
         }
     }
 
