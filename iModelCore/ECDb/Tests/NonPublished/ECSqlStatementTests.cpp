@@ -97,6 +97,91 @@ TEST_F(ECSqlStatementTestFixture, PopulateECSql_TestDbWithTestData)
     ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Affan.Khan                 06/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, SelectBitwiseOperators)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("bitwise.ecdb"));
+    auto testOp = [&] (Utf8CP test)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT %s FROM meta.ECClassDef LIMIT 1", test)));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        return stmt.GetValueInt64(0);
+        };
+
+    ASSERT_EQ(testOp("1 | 1"), 1);
+    ASSERT_EQ(testOp("1 | 2"), 3);
+    ASSERT_EQ(testOp("0x00ff | 0xace"), 0x0aff);
+    ASSERT_EQ(testOp("0x1 | 0x2 | 0x4 | 0x8 "), 0xf);
+    ASSERT_EQ(testOp("0x1 & 0x1 | 0x8"), 0x9);
+    ASSERT_EQ(testOp("0x1 & 0x2"), 0x0);
+    ASSERT_EQ(testOp("0x2 & 0x2"), 0x2);
+    ASSERT_EQ(testOp("1 << 1"), 0x2);
+    ASSERT_EQ(testOp("1 << 2"), 0x4);
+    ASSERT_EQ(testOp("1 << 3"), 0x8);
+    ASSERT_EQ(testOp("1 << 4"), 0x10);
+    ASSERT_EQ(testOp("1 >> 1"), 0x0);
+    ASSERT_EQ(testOp("2 >> 1"), 0x1);
+    ASSERT_EQ(testOp("4 >> 1"), 0x2);
+    ASSERT_EQ(testOp("8 >> 1"), 0x4);
+    ASSERT_EQ(testOp("~1"), -2);
+    ASSERT_EQ(testOp("~2"), -3);
+    ASSERT_EQ(testOp("~0xff"), -256);
+    }
+TEST_F(ECSqlStatementTestFixture, WhereBitwiseOperators)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("bitwise.ecdb"));
+    auto testOp = [&] (Utf8CP test)
+        {
+        ECSqlStatement stmt;
+        return stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM meta.ECClassDef WHERE %s LIMIT 1", test));
+        };
+
+    EXPECT_EQ(ECSqlStatus::Success, testOp("1"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("~1"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("1&1"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("1|1&1"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("1+1"));
+    
+    EXPECT_EQ(ECSqlStatus::Success, testOp("invirtualset(?,1)"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("invirtualset(?,~1)"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("invirtualset(?,1&1)"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("invirtualset(?,1|1&1)"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("invirtualset(?,1+1)"));
+
+    EXPECT_EQ(ECSqlStatus::Success, testOp("ECInstanceId IN (?,1)"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("ECInstanceId IN (?,~1)"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("ECInstanceId IN (?,1&1)"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("ECInstanceId IN (?,1|1&1)"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("ECInstanceId IN (?,1+1)"));
+
+    EXPECT_EQ(ECSqlStatus::Success, testOp("1>1"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("1>~1"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("1>1&1"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("1>1|1&1"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("1>1+1"));
+
+    // issue with grammer where left side recursion cause boolean exp and value exp to hit '(' as prefix. 
+    // the only way around it to compbine boolean/value exp into one.
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, testOp("(1)=1"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, testOp("(1)=(1)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, testOp("((1)=(1))"));
+
+    EXPECT_EQ(ECSqlStatus::Success, testOp("(1+1)=1+1"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("(1+1)=(1+1)"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("((1+1)=(1+1))"));
+
+    EXPECT_EQ(ECSqlStatus::Success, testOp("(~1)=~1"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("(~1)=(~1)"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("((~1)=(~1))"));
+
+    EXPECT_EQ(ECSqlStatus::Success, testOp("(~1)=~1 and (~1)=~1"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("(~1)=(~1) and (~1)=(~1)"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("((~1)=(~1)) and ((~1)=(~1))"));
+    EXPECT_EQ(ECSqlStatus::Success, testOp("(~1=1) and (~1=1)"));
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                 11/18
@@ -8811,6 +8896,7 @@ TEST_F(ECSqlStatementTestFixture, ORedEnumerators)
                     <ECProperty propertyName="Domain" typeName="Domain" />
                 </ECEntityClass>
               </ECSchema>)xml")));
+    m_ecdb.SaveChanges();
     ECInstanceKey unoredKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(unoredKey, "INSERT INTO ts.Foo(Status, Domain) VALUES (ts.Status.[On], ts.Domain.Com)"));
     ECInstanceKey oredKey;
@@ -8823,7 +8909,7 @@ TEST_F(ECSqlStatementTestFixture, ORedEnumerators)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Foo WHERE Status & ts.Status.[On] <> 0")) << "Bitwise AND not supported yet";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Foo WHERE Status & ts.Status.[On] <> 0")) << "Bitwise AND not supported yet";
     }
 
 //---------------------------------------------------------------------------------------

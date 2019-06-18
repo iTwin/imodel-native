@@ -921,7 +921,43 @@ BentleyStatus ECSqlParser::ParseValueExpPrimary(std::unique_ptr<ValueExp>& exp, 
 
     return SUCCESS;
     }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECSqlParser::ParseTermAddSub(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode) const
+    {
+    if (!SQL_ISRULE(parseNode, term_add_sub))
+        {
+        BeAssert(false && "Wrong grammar");
+        return ERROR;
+        }
 
+    OSQLParseNode const* operand_left = parseNode->getChild(0);
+    OSQLParseNode const* opNode = parseNode->getChild(1);
+    OSQLParseNode const* operand_right = parseNode->getChild(2);
+
+    std::unique_ptr<ValueExp> operand_left_expr = nullptr;
+    if (SUCCESS != ParseValueExp(operand_left_expr, operand_left))
+        return ERROR;
+
+    std::unique_ptr<ValueExp> operand_right_expr = nullptr;
+    if (SUCCESS != ParseValueExp(operand_right_expr, operand_right))
+        return ERROR;
+
+    BinarySqlOperator op;
+    if (opNode->getTokenValue() == "+")
+        op = BinarySqlOperator::Plus;
+    else if (opNode->getTokenValue() == "-")
+        op = BinarySqlOperator::Minus;
+    else
+        {
+        BeAssert(false && "Wrong grammar");
+        return ERROR;
+        }
+
+    exp = std::make_unique<BinaryValueExp>(std::move(operand_left_expr), op, std::move(operand_right_expr));
+    return SUCCESS;
+    }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -946,10 +982,14 @@ BentleyStatus ECSqlParser::ParseNumValueExp(std::unique_ptr<ValueExp>& exp, OSQL
         return ERROR;
 
     BinarySqlOperator op;
-    if (opNode->getTokenValue() == "+")
-        op = BinarySqlOperator::Plus;
-    else if (opNode->getTokenValue() == "-")
-        op = BinarySqlOperator::Minus;
+    if (opNode->getTokenValue() == "<<")
+        op = BinarySqlOperator::ShiftLeft;
+    else if (opNode->getTokenValue() == ">>")
+        op = BinarySqlOperator::ShiftRight;
+    else if (opNode->getTokenValue() == "|")
+        op = BinarySqlOperator::BitwiseOr;
+    else if (opNode->getTokenValue() == "&")
+        op = BinarySqlOperator::BitwiseAnd;
     else
         {
         BeAssert(false && "Wrong grammar");
@@ -984,6 +1024,8 @@ BentleyStatus ECSqlParser::ParseFactor(std::unique_ptr<ValueExp>& exp, OSQLParse
         op = UnaryValueExp::Operator::Plus;
     else if (opStr.Equals("-"))
         op = UnaryValueExp::Operator::Minus;
+    else if (opStr.Equals("~"))
+        op = UnaryValueExp::Operator::BitwiseNot;
     else
         {
         BeAssert(false && "Wrong grammar");
@@ -1674,7 +1716,7 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
     const OSQLParseNode::Rule rule = parseNode->getKnownRuleID();
     switch (rule)
         {
-            case OSQLParseNode::search_condition:
+        case OSQLParseNode::search_condition:
             {
             std::unique_ptr<BooleanExp> op1 = nullptr;
             if (SUCCESS != ParseSearchCondition(op1, parseNode->getChild(0/*search_condition*/)))
@@ -1688,7 +1730,7 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
             exp = std::make_unique<BinaryBooleanExp>(std::move(op1), BooleanSqlOperator::Or, std::move(op2));
             return SUCCESS;
             }
-            case OSQLParseNode::boolean_term:
+        case OSQLParseNode::boolean_term:
             {
             std::unique_ptr<BooleanExp> op1 = nullptr;
             if (SUCCESS != ParseSearchCondition(op1, parseNode->getChild(0/*search_condition*/)))
@@ -1701,8 +1743,7 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
             exp = std::make_unique<BinaryBooleanExp>(std::move(op1), BooleanSqlOperator::And, std::move(op2));
             return SUCCESS;
             }
-
-            case OSQLParseNode::boolean_factor:
+        case OSQLParseNode::boolean_factor:
             {
             std::unique_ptr<BooleanExp> operandValueExp = nullptr;
             if (SUCCESS != ParseSearchCondition(operandValueExp, parseNode->getChild(1/*boolean_test*/)))
@@ -1711,8 +1752,7 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
             exp = std::make_unique<BooleanFactorExp>(std::move(operandValueExp), true);
             return SUCCESS;
             }
-
-            case OSQLParseNode::boolean_test:
+        case OSQLParseNode::boolean_test:
             {
             std::unique_ptr<BooleanExp> op1 = nullptr;
             if (SUCCESS != ParseSearchCondition(op1, parseNode->getChild(0/*boolean_primary*/)))
@@ -1730,8 +1770,7 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
             exp = std::make_unique<BinaryBooleanExp>(std::move(op1), isNot ? BooleanSqlOperator::IsNot : BooleanSqlOperator::Is, std::move(truthValueExp));
             return SUCCESS;
             }
-
-            case OSQLParseNode::boolean_primary:
+        case OSQLParseNode::boolean_primary:
             {
             BeAssert(parseNode->count() == 3);
             if (SUCCESS != ParseSearchCondition(exp, parseNode->getChild(1/*search_condition*/)))
@@ -1740,11 +1779,7 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
             exp->SetHasParentheses();
             return SUCCESS;
             }
-
-            case OSQLParseNode::unary_predicate:
-                return ParseUnaryPredicate(exp, parseNode);
-
-            case OSQLParseNode::comparison_predicate:
+        case OSQLParseNode::comparison_predicate:
             {
             if (parseNode->count() == 3 /*row_value_constructor comparison row_value_constructor*/)
                 {
@@ -1766,8 +1801,7 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
 
             break;
             }
-
-            case OSQLParseNode::between_predicate:
+        case OSQLParseNode::between_predicate:
             {
             std::unique_ptr<ValueExp> lhsOperand = nullptr;
             if (SUCCESS != ParseRowValueConstructor(lhsOperand, parseNode->getChild(0/*row_value_constructor*/)))
@@ -1791,8 +1825,7 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
             exp = std::make_unique<BinaryBooleanExp>(std::move(lhsOperand), op, std::make_unique<BetweenRangeValueExp>(std::move(lowerBound), std::move(upperBound)));
             return SUCCESS;
             }
-
-            case OSQLParseNode::all_or_any_predicate:
+        case OSQLParseNode::all_or_any_predicate:
             {
             std::unique_ptr<ValueExp> op1 = nullptr;
             if (SUCCESS != ParseRowValueConstructor(op1, parseNode->getChild(0/*comparison*/)))
@@ -1815,8 +1848,7 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
             exp = std::make_unique<AllOrAnyExp>(std::move(op1), comparison, any_all_some, std::move(subquery));
             return SUCCESS;
             }
-
-            case OSQLParseNode::existence_test:
+        case OSQLParseNode::existence_test:
             {
             std::unique_ptr<SubqueryExp> subquery = nullptr;
             if (SUCCESS != ParseSubquery(subquery, parseNode->getChild(1/*subquery*/)))
@@ -1825,8 +1857,7 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
             exp = std::make_unique<SubqueryTestExp>(SubqueryTestOperator::Exists, std::move(subquery));
             return SUCCESS;
             }
-
-            case OSQLParseNode::unique_test:
+        case OSQLParseNode::unique_test:
             {
             std::unique_ptr<SubqueryExp> subquery = nullptr;
             if (SUCCESS != ParseSubquery(subquery, parseNode->getChild(1/*subquery*/)))
@@ -1836,7 +1867,7 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
             return SUCCESS;
             }
 
-            case OSQLParseNode::test_for_null:
+        case OSQLParseNode::test_for_null:
             {
             std::unique_ptr<ValueExp> row_value_constructor = nullptr;
             if (SUCCESS != ParseRowValueConstructor(row_value_constructor, parseNode->getChild(0/*row_value_constructor*/)))
@@ -1852,22 +1883,25 @@ BentleyStatus ECSqlParser::ParseSearchCondition(std::unique_ptr<BooleanExp>& exp
                 return ERROR;
 
             exp = std::make_unique<BinaryBooleanExp>(std::move(row_value_constructor), isNot ? BooleanSqlOperator::IsNot : BooleanSqlOperator::Is,
-                                                                   std::move(nullExp));
+                                                                    std::move(nullExp));
             return SUCCESS;
             }
+        case OSQLParseNode::in_predicate:
+            return ParseInPredicate(exp, parseNode);
 
-            case OSQLParseNode::in_predicate:
-                return ParseInPredicate(exp, parseNode);
+        case OSQLParseNode::like_predicate:
+            return ParseLikePredicate(exp, parseNode);
 
-            case OSQLParseNode::like_predicate:
-                return ParseLikePredicate(exp, parseNode);
-
-            case OSQLParseNode::rtreematch_predicate:
-                return ParseRTreeMatchPredicate(exp, parseNode);
+        case OSQLParseNode::rtreematch_predicate:
+            return ParseRTreeMatchPredicate(exp, parseNode);
         }
 
-    BeAssert(false && "Invalid grammar");
-    return ERROR;
+    std::unique_ptr<ValueExp> valueExp = nullptr;
+    if (SUCCESS != ParseValueExp(valueExp, parseNode))
+        return ERROR;
+
+    exp = std::make_unique<UnaryPredicateExp>(std::move(valueExp));
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -2577,6 +2611,8 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
                     return ParseColumnRef(valueExp, parseNode, false);
                 case OSQLParseNode::num_value_exp:
                     return ParseNumValueExp(valueExp, parseNode);
+                case OSQLParseNode::term_add_sub:
+                    return ParseTermAddSub(valueExp, parseNode);
                 case OSQLParseNode::concatenation:
                     return ParseConcatenation(valueExp, parseNode);
                 case OSQLParseNode::datetime_value_exp:

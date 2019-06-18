@@ -236,6 +236,11 @@ WHERE               {SQL_NEW_KEYWORD(SQL_TOKEN_WHERE);  }
 "!="                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_NOTEQUAL);return SQL_NOTEQUAL;}
 "||"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_CONCAT);return SQL_CONCAT;}
 
+"~"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_BITWISE_NOT);return SQL_BITWISE_NOT;}
+"|"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_BITWISE_OR);return SQL_BITWISE_OR;}
+"&"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_BITWISE_AND);return SQL_BITWISE_AND;}
+"<<"                { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_BITWISE_SHIFT_LEFT);return SQL_BITWISE_SHIFT_LEFT;}
+">>"                { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_BITWISE_SHIFT_RIGHT);return SQL_BITWISE_SHIFT_RIGHT;}
 
 [-+*/%:(),.;?{}&|~]    { return yytext[0]; }
 

@@ -122,12 +122,14 @@ Exp::FinalizeParseStatus BinaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx
                     }
 
                 ECSqlTypeInfo const& expectedType = GetTypeInfo();
+                /*
                 if (expectedType.IsExactNumeric() && !typeInfo.IsExactNumeric())
                     {
                     ctx.Issues().ReportV("Expecting an integral value expression as operand. '%s'", ToECSql().c_str());
                     return FinalizeParseStatus::Error;
                     }
-                else if (expectedType.IsNumeric() && !typeInfo.IsNumeric())
+                else */
+                if (expectedType.IsNumeric() && !typeInfo.IsNumeric())
                     {
                     ctx.Issues().ReportV("Expecting a numeric value expression as operand. '%s'", ToECSql().c_str());
                     return FinalizeParseStatus::Error;

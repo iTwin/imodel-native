@@ -116,6 +116,7 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_UNIQUE SQL_TOKEN_UNKNOWN SQL_TOKEN_UPDATE SQL_TOKEN_USING SQL_TOKEN_VALUE SQL_TOKEN_VALUES
 %token <pParseNode> SQL_TOKEN_WHERE 
 
+%token <pParseNode> SQL_BITWISE_NOT
 
 /* time and date functions */
 %token <pParseNode> SQL_TOKEN_CURRENT_DATE SQL_TOKEN_CURRENT_TIME SQL_TOKEN_CURRENT_TIMESTAMP
@@ -142,14 +143,16 @@ using namespace connectivity;
 %left <pParseNode> SQL_TOKEN_OR
 %left <pParseNode> SQL_TOKEN_AND
 
-%left <pParseNode> '|'
-%left <pParseNode> '&'
+%left <pParseNode> SQL_BITWISE_OR
+%left <pParseNode> SQL_BITWISE_AND
 
+%left <pParseNode> SQL_BITWISE_SHIFT_LEFT SQL_BITWISE_SHIFT_RIGHT
 %left <pParseNode> SQL_LESSEQ SQL_GREATEQ SQL_NOTEQUAL SQL_LESS SQL_GREAT SQL_EQUAL
 %left <pParseNode> '+' '-' SQL_CONCAT
 %left <pParseNode> '*' '/' '%'
+
 %left SQL_TOKEN_NATURAL SQL_TOKEN_CROSS SQL_TOKEN_FULL SQL_TOKEN_LEFT SQL_TOKEN_RIGHT
-%right '~'
+%right SQL_BITWISE_NOT
 %left ')'
 %right '='
 %right '.'
@@ -177,12 +180,12 @@ using namespace connectivity;
 %type <pParseNode> scalar_exp_commalist parameter_ref literal
 %type <pParseNode> column_ref column parameter range_variable
 /* neue Regeln bei OJ */
-%type <pParseNode> derived_column as_clause num_primary term num_value_exp
+%type <pParseNode> derived_column as_clause num_primary term num_value_exp term_add_sub
 %type <pParseNode> value_exp_primary unsigned_value_spec cast_spec fct_spec scalar_subquery
 %type <pParseNode> general_value_spec
 %type <pParseNode> general_set_fct set_fct_type joined_table ecrelationship_join op_relationship_direction
 %type <pParseNode> row_value_constructor_commalist row_value_constructor row_value_constructor_elem
-%type <pParseNode> qualified_join value_exp join_type outer_join_type join_condition boolean_term unary_predicate
+%type <pParseNode> qualified_join value_exp join_type outer_join_type join_condition boolean_term
 %type <pParseNode> boolean_factor truth_value boolean_test boolean_primary named_columns_join join_spec
 %type <pParseNode> cast_operand cast_target cast_target_primitive_type cast_target_scalar cast_target_array factor datetime_value_exp datetime_term datetime_factor
 %type <pParseNode> datetime_primary datetime_value_fct
@@ -645,9 +648,13 @@ truth_value:
       ;
 boolean_primary:
         predicate
-    |   unary_predicate
-    |   '(' search_condition ')'
-        { // boolean_primary: rule 2
+      | unsigned_value_spec
+      | fct_spec 
+	  | column_ref
+      | scalar_subquery
+      | value_exp
+      | '(' search_condition ')'
+        {
             $$ = SQL_NEW_RULE;
             $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($2);
@@ -655,22 +662,9 @@ boolean_primary:
         }
     ;
 
-// cannot be in the predicate rule as it would conflict with other predicates
-//starting with a value_exp
-unary_predicate:
-    // in order to support predicates made of unary boolean expressions.
-    // validation that the value is of bool type
-    // has to be done in the post-processing steps
-    value_exp
-    {
-        $$ = SQL_NEW_RULE;
-        $$->append($1);
-    }
-    ;
-
 boolean_test:
         boolean_primary
-    |    boolean_primary SQL_TOKEN_IS sql_not truth_value
+    |   boolean_primary SQL_TOKEN_IS sql_not truth_value
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1418,6 +1412,12 @@ factor:
             $$->append($1 = CREATE_NODE("+", SQL_NODE_PUNCTUATION));
             $$->append($2);
         }
+    |    SQL_BITWISE_NOT num_primary    %prec SQL_TOKEN_UMINUS
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1 = CREATE_NODE("~", SQL_NODE_PUNCTUATION));
+            $$->append($2);
+        }
     ;
 
 term:
@@ -1445,16 +1445,16 @@ term:
         }
       ;
 
-num_value_exp:
+term_add_sub:
         term
-      | num_value_exp '+' term
+      | term_add_sub '+' term
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2 = CREATE_NODE("+", SQL_NODE_PUNCTUATION));
             $$->append($3);
         }
-      | num_value_exp '-' term
+      | term_add_sub '-' term
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1462,6 +1462,39 @@ num_value_exp:
             $$->append($3);
         }
       ;
+
+num_value_exp:
+        term_add_sub
+      | num_value_exp SQL_BITWISE_SHIFT_LEFT term_add_sub
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE("<<", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+        }
+      | num_value_exp SQL_BITWISE_SHIFT_RIGHT term_add_sub
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE(">>", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+        }
+      | num_value_exp SQL_BITWISE_OR term_add_sub
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE("|", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+        }
+      | num_value_exp SQL_BITWISE_AND term_add_sub
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE("&", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+        }
+      ;
+
 datetime_primary:
      datetime_value_fct
         {
@@ -1559,9 +1592,10 @@ value_exp:
       | string_value_exp
       | datetime_value_exp
     ;
+
 string_value_exp:
         char_value_exp
-;
+    ;
 
 char_value_exp:
         char_factor

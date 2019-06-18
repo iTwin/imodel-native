@@ -194,7 +194,8 @@ private:
     BentleyStatus ParseNamedColumnsJoin(std::unique_ptr<NamedPropertiesJoinExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseNotToken(bool& isNot, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseNumValueExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-
+    BentleyStatus ParseTermAddSub(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    
     BentleyStatus ParseOptColumnRefCommalist(std::unique_ptr<PropertyNameListExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseOptECSqlOptionsClause(std::unique_ptr<OptionsExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseOrderByClause(std::unique_ptr<OrderByExp>&, connectivity::OSQLParseNode const*) const;

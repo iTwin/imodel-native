@@ -361,8 +361,8 @@ TEST_F(ECSqlSelectPrepareTests, Arrays)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S FROM ecsql.PSA WHERE CARDINALITY(Dt_Array) > 0")) << "not yet supported";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S, PStruct_Array FROM ecsql.PSA"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S FROM ecsql.PSA WHERE PStruct_Array = ?")) << "Struct arrays are not supported yet in where clause.";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S FROM ecsql.PSA WHERE PStruct_Array IS NULL")) << "Struct arrays are not supported yet in where clause.";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S FROM ecsql.PSA WHERE PStruct_Array IS NOT NULL")) << "Struct arrays are not supported yet in where clause.";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE PStruct_Array IS NULL")) << "Struct arrays are not supported yet in where clause.";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE PStruct_Array IS NOT NULL")) << "Struct arrays are not supported yet in where clause.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S FROM ecsql.PSA WHERE CARDINALITY(PStruct_Array) > 0")) << "not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT Dt_Array[1], B FROM ecsql.PSA")) << "not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT Dt_Array[100000], B FROM ecsql.PSA")) << "not yet supported";
@@ -1381,12 +1381,12 @@ TEST_F(ECSqlSelectPrepareTests, Structs)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE PStructProp IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE PStructProp.i IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE PStructProp.i IS NOT NULL"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT ECInstanceId FROM ecsql.SA WHERE SAStructProp IS NULL")) << "Structs that contain struct arrays are not supported in where clause.";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT ECInstanceId FROM ecsql.SA WHERE SAStructProp IS NOT NULL")) << "Structs that contain struct arrays are not supported in where clause.";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM ecsql.SA WHERE SAStructProp IS NULL")) << "Structs that contain struct arrays are not supported in where clause.";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM ecsql.SA WHERE SAStructProp IS NOT NULL")) << "Structs that contain struct arrays are not supported in where clause.";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM ecsql.SA WHERE SAStructProp.PStructProp IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM ecsql.SA WHERE SAStructProp.PStructProp IS NOT NULL"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT ECInstanceId FROM ecsql.SA WHERE PStruct_Array IS NULL")) << "Struct arrays are not supported in where clause.";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT ECInstanceId FROM ecsql.SA WHERE PStruct_Array IS NOT NULL")) << "Struct arrays are not supported in where clause.";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM ecsql.SA WHERE PStruct_Array IS NULL")) << "Struct arrays are not supported in where clause.";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM ecsql.SA WHERE PStruct_Array IS NOT NULL")) << "Struct arrays are not supported in where clause.";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE PStructProp.i IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE PStructProp.i IN (10, 123, 200)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE PStructProp.i BETWEEN 10 AND 200"));
@@ -1401,9 +1401,9 @@ TEST_F(ECSqlSelectPrepareTests, Structs)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.SA WHERE SAStructProp.PStructProp IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.SA WHERE SAStructProp.PStructProp = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.SA WHERE SAStructProp.PStructProp.i = 123 AND SAStructProp.PStructProp.dt <> DATE '2010-10-10'"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.SA WHERE SAStructProp IS NULL")) << "Structs with struct array props are not supported in the where clause";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.SA WHERE SAStructProp IS NULL")) << "Structs with struct array props are not supported in the where clause";
 
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.SA WHERE SAStructProp IS NOT NULL")) << "Structs with struct array props are not supported in the where clause";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.SA WHERE SAStructProp IS NOT NULL")) << "Structs with struct array props are not supported in the where clause";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.SA WHERE SAStructProp=?")) << "Structs with struct array props are not supported in the where clause";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.SA WHERE SAStructProp<>?")) << "Structs with struct array props are not supported in the where clause";
     }
@@ -1466,18 +1466,20 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B = NULL OR b = NULL"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE i>=:myParam"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE I IS 123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE I IS 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B IS TRUE"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE L < 3.14"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (L < 3.14 AND I > 3) OR B = True AND D > 0.0"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE 8 % 3 = 2"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE 8 % 2 = 0"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE (I&1)=1 AND ~(I|2=I)")) << "not yet supported";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE 5 + (4&1) = 5")) << "not yet supported";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE 5 + 4 & 1 = 1")) << "not yet supported";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE 5 + 4 | 1 = 9")) << "not yet supported";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE 4|1&1 = 5")) << "not yet supported";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE (4|1)&1 = 1")) << "not yet supported";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE (I&1)=1 AND ~(I|2=I)")) << "not yet supported ~() is not supported";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE (I&1)=1 AND -(I|2=I)")) << "not yet supported ~() is not supported";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (I&1)=1 AND (I|2=I)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE 5 + (4&1) = 5"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE 5 + 4 & 1 = 1"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE 5 + 4 | 1 = 9"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE 4|1&1 = 5"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (4|1)&1 = 1"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE 4^1 = 0")) << "not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE 5^4 = 4")) << "not yet supported";
 
@@ -1498,12 +1500,12 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NOT Length(S)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (I IS NOT NULL) AND L"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (I IS NOT NULL) AND NOT L"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE 3.14"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE 'hello'"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE D"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE S"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE P2D"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE P3D"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE 3.14"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE 'hello'"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE D"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE S"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE P2D"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE P3D"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE P2D.X >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE P2D.Y >= -11.111"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE P2D.Z >= -11.111"));
@@ -1512,11 +1514,11 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE P3D.Z >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE P2D.X >= P3D.X AND P2D.Y >= P3D.Y"));
     //with parentheses around
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (P2D.X >= P3D.X) AND (P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (P2D.X >= P3D.X AND P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE ?"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE Hex(Bi)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE Hex(Bi)"));
     //unary operator
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE -I = -123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE I == 10"));
@@ -1526,8 +1528,8 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL = NULL")); // NULL = NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL <> NULL")); // NULL <> NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL IS NOT NULL"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL IS 123"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL IS NOT 123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE NULL IS 123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE NULL IS NOT 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL <> 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B = NULL")); // = NULL always returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B <> NULL"));  // <> NULL always returns NULL
@@ -1539,8 +1541,8 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE S IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE B IS NOT NULL"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE I IS ?"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE I IS NOT ?"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE I IS ?"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE I IS NOT ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE ? = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE NULL = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE ? <> NULL"));
@@ -2191,9 +2193,9 @@ TEST_F(ECSqlUpdatePrepareTests, Structs)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp.PStructProp IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp.PStructProp = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp.PStructProp.i = 123 AND SAStructProp.PStructProp.dt <> DATE '2010-10-10'"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp IS NULL")) << "Structs with struct array props are not supported in the where clause";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp IS NULL")) << "Structs with struct array props are not supported in the where clause";
 
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp IS NOT NULL")) << "Structs with struct array props are not supported in the where clause";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp IS NOT NULL")) << "Structs with struct array props are not supported in the where clause";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp=?")) << "Structs with struct array props are not supported in the where clause";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp<>?")) << "Structs with struct array props are not supported in the where clause";
     }
@@ -2336,18 +2338,18 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics)
     //case insensitive tests
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B = NULL OR b = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE i>=:myParam"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE I IS 123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE I IS 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B IS TRUE"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE L < 3.14"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE (L < 3.14 AND I > 3) OR B = True AND D > 0.0"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE 8 % 3 = 2"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE 8 % 2 = 0"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE (I&1)=1 AND ~(I|2=I)")) << "not yet supported";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE 5 + (4&1) = 5")) << "not yet supported";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE 5 + 4 & 1 = 1")) << "not yet supported";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE 5 + 4 | 1 = 9")) << "not yet supported";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE 4|1&1 = 5")) << "not yet supported";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE (4|1)&1 = 1")) << "not yet supported";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE 5 + (4&1) = 5")) << "not yet supported";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE 5 + 4 & 1 = 1")) << "not yet supported";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE 5 + 4 | 1 = 9")) << "not yet supported";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE 4|1&1 = 5")) << "not yet supported";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE (4|1)&1 = 1")) << "not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE 4^1 = 0")) << "not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE 5^4 = 4")) << "not yet supported";
 
@@ -2368,12 +2370,12 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NOT Length(S)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE (I IS NOT NULL) AND L"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE (I IS NOT NULL) AND NOT L"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE 3.14"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE 'hello'"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE D"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE S"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE P2D"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE P3D"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE 3.14"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE 'hello'"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE D"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE S"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE P2D"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE P3D"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE P2D.X >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE P2D.Y >= -11.111"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE P2D.Z >= -11.111"));
@@ -2382,11 +2384,11 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE P3D.Z >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE P2D.X >= P3D.X AND P2D.Y >= P3D.Y"));
     //with parentheses around
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE (P2D.X >= P3D.X) AND (P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE (P2D.X >= P3D.X AND P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE ?"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE Hex(Bi)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE Hex(Bi)"));
     //unary operator
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE -I = -123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE I == 10"));
@@ -2396,8 +2398,8 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL = NULL")); // NULL = NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL <> NULL")); // NULL <> NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL IS NOT NULL"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL IS 123"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL IS NOT 123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL IS 123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL IS NOT 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL <> 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B = NULL")); // = NULL always returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B <> NULL"));  // <> NULL always returns NULL
@@ -2409,8 +2411,8 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE S IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE B IS NOT NULL"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE I IS ?"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE I IS NOT ?"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE I IS ?"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE I IS NOT ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE ? = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE NULL = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE ? <> NULL"));
@@ -2680,9 +2682,9 @@ TEST_F(ECSqlDeletePrepareTests, Structs)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.SA WHERE SAStructProp.PStructProp IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.SA WHERE SAStructProp.PStructProp = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.SA WHERE SAStructProp.PStructProp.i = 123 AND SAStructProp.PStructProp.dt <> DATE '2010-10-10'"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.SA WHERE SAStructProp IS NULL")) << "Structs with struct array props are not supported in the where clause";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.SA WHERE SAStructProp IS NULL")) << "Structs with struct array props are not supported in the where clause";
 
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.SA WHERE SAStructProp IS NOT NULL")) << "Structs with struct array props are not supported in the where clause";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.SA WHERE SAStructProp IS NOT NULL")) << "Structs with struct array props are not supported in the where clause";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.SA WHERE SAStructProp=?")) << "Structs with struct array props are not supported in the where clause";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.SA WHERE SAStructProp<>?")) << "Structs with struct array props are not supported in the where clause";
     }
@@ -2695,18 +2697,18 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics)
     //case insensitive tests
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B = NULL OR b = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE i>=:myParam"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE I IS 123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE I IS 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B IS TRUE"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE L < 3.14"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE (L < 3.14 AND I > 3) OR B = True AND D > 0.0"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE 8 % 3 = 2"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE 8 % 2 = 0"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE (I&1)=1 AND ~(I|2=I)")) << "not yet supported";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE 5 + (4&1) = 5")) << "not yet supported";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE 5 + 4 & 1 = 1")) << "not yet supported";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE 5 + 4 | 1 = 9")) << "not yet supported";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE 4|1&1 = 5")) << "not yet supported";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE (4|1)&1 = 1")) << "not yet supported";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE 5 + (4&1) = 5")) << "not yet supported";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE 5 + 4 & 1 = 1")) << "not yet supported";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE 5 + 4 | 1 = 9")) << "not yet supported";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE 4|1&1 = 5")) << "not yet supported";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE (4|1)&1 = 1")) << "not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE 4^1 = 0")) << "not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE 5^4 = 4")) << "not yet supported";
 
@@ -2727,12 +2729,12 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NOT Length(S)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE (I IS NOT NULL) AND L"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE (I IS NOT NULL) AND NOT L"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE 3.14"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE 'hello'"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE D"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE S"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE P2D"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE P3D"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE 3.14"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE 'hello'"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE D"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE S"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE P2D"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE P3D"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE P2D.X >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE P2D.Y >= -11.111"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE P2D.Z >= -11.111"));
@@ -2740,12 +2742,12 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE P3D.Y >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE P3D.Z >= -11.111"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE P2D.X >= P3D.X AND P2D.Y >= P3D.Y"));
-    //with parentheses around
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
+    //with parentheses around. grammer issue
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE (P2D.X >= P3D.X) AND (P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE (P2D.X >= P3D.X AND P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE ?"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE Hex(Bi)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE Hex(Bi)"));
     //unary operator
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE -I = -123"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE I == 10"));
@@ -2755,8 +2757,8 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL = NULL")); // NULL = NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL <> NULL")); // NULL <> NULL returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL IS NOT NULL"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL IS 123"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL IS NOT 123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE NULL IS 123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE NULL IS NOT 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL <> 123"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B = NULL")); // = NULL always returns NULL
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B <> NULL"));  // <> NULL always returns NULL
@@ -2768,8 +2770,8 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE S IS NOT NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B IS NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE B IS NOT NULL"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE I IS ?"));
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE I IS NOT ?"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE I IS ?"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE I IS NOT ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE ? = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE NULL = ?"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE ? <> NULL"));

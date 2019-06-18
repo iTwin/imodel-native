@@ -108,7 +108,6 @@ struct ECSqlTypeInfo final
         bool IsStruct() const { return m_kind == Kind::Struct; }
         bool IsArray() const { return m_kind == Kind::PrimitiveArray || m_kind == Kind::StructArray; }
         bool IsNavigation() const { return m_kind == Kind::Navigation; }
-
         bool IsId() const { return IsExactNumeric() && m_extendedTypeName.EqualsIAscii(EXTENDEDTYPENAME_Id); }
 
         bool DateTimeInfoMatches(DateTime::Info const& rhs) const;

@@ -656,7 +656,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nat
     ECSqlTypeInfo const& typeInfo = exp.GetTypeInfo();
     if (typeInfo.IsNull())
         {
-        BeAssert(false && "NULL exp should never be called indirectly but always in context of its RHS exp");
+        // BeAssert(false && "NULL exp should never be called indirectly but always in context of its RHS exp");
         return PrepareNullExp(nativeSqlSnippets, ctx, exp, 1);
         }
 

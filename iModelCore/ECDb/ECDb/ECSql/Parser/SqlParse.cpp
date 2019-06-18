@@ -210,6 +210,7 @@ namespace connectivity
                             {OSQLParseNode::value_exp_commalist, "value_exp_commalist"},
                             {OSQLParseNode::value_exp_primary, "value_exp_primary"},
                             {OSQLParseNode::values_or_query_spec, "values_or_query_spec"},
+                            {OSQLParseNode::term_add_sub, "term_add_sub"},
                             {OSQLParseNode::where_clause, "where_clause"},
                     };
                 size_t nRuleMapCount = sizeof(aRuleDescriptions) / sizeof(aRuleDescriptions[0]);

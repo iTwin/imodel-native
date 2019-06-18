@@ -657,6 +657,11 @@ namespace connectivity
                     case SQL_NODE_LESSEQ:
                     case SQL_NODE_GREATEQ:
                     case SQL_NODE_NOTEQUAL:
+                    case SQL_NODE_BITWISE_NOT:
+                    case SQL_NODE_BITWISE_OR:
+                    case SQL_NODE_BITWISE_AND:
+                    case SQL_NODE_BITWISE_SHIFT_LEFT:
+                    case SQL_NODE_BITWISE_SHIFT_RIGHT:
                         _inout_rBuffer.append(m_aNodeValue);
                         _inout_rBuffer.append("\n");
                         break;

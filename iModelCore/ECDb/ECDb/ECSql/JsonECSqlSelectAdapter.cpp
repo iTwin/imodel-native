@@ -658,10 +658,30 @@ BentleyStatus AdapterHelper::PrimitiveToJson(JsonRef& jsonValue, IECSqlValue con
     BeAssert(!ecsqlValue.IsNull());
     switch (primType)
         {
-            case PRIMITIVETYPE_Binary:
+        case PRIMITIVETYPE_Binary:
             {
             int size = 0;
             Byte const* data = (Byte const*) ecsqlValue.GetBlob(&size);
+            if (formatOptions.GetRowFormat() == JsonECSqlSelectAdapter::RowFormat::IModelJs && ecsqlValue.GetColumnInfo().GetProperty())
+                {
+                const auto prop = ecsqlValue.GetColumnInfo().GetProperty()->GetAsPrimitiveProperty();
+                const bool isGuid = !prop->GetExtendedTypeName().empty() && prop->GetExtendedTypeName().EqualsIAscii("BeGuid");
+                if (isGuid)
+                    {
+                    if (size != sizeof(BeGuid))
+                        return SUCCESS;
+
+                    BeGuid guid;
+                    memcpy(&guid, data, sizeof(guid));
+                    if (jsonValue.IsRapidJson())
+                        jsonValue.RapidJson().SetString(guid.ToString().c_str(), jsonValue.Allocator()); // copy the string into the json as the original string gets released after the next Step().
+                    else
+                        jsonValue.JsonCpp() = guid.ToString().c_str();
+                    }
+                return BentleyStatus::SUCCESS;
+                }
+
+            // not a guid
             if (jsonValue.IsRapidJson())
                 {
                 if (formatOptions.GetBlobMode() == JsonECSqlSelectAdapter::BlobMode::Base64String)

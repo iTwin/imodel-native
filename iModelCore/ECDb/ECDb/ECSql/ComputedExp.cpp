@@ -295,12 +295,12 @@ Exp::FinalizeParseStatus UnaryPredicateExp::_FinalizeParsing(ECSqlParseContext& 
         return FinalizeParseStatus::NotCompleted;
 
     ValueExp const* valueExp = GetValueExp();
-    ECSqlTypeInfo const& valueExpTypeInfo = valueExp->GetTypeInfo();
-    if (valueExp->IsParameterExp() || (!valueExpTypeInfo.IsBoolean() && !valueExpTypeInfo.IsExactNumeric()))
+    if (valueExp->IsParameterExp())
         {
-        ctx.Issues().ReportV("Type mismatch in expression '%s'. Unary predicates can only have expressions of boolean or integral type and cannot be parametrized.", ToECSql().c_str());
+        ctx.Issues().ReportV("Type mismatch in expression '%s'. Unary predicates cannot be parametrized.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
+
 
     return FinalizeParseStatus::Completed;
     }

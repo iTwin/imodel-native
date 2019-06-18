@@ -40,14 +40,15 @@ namespace connectivity
     class IParseContext;
 
     typedef ::std::vector< OSQLParseNode* > OSQLParseNodes;
-
+    
     enum SQLNodeType
         {
         SQL_NODE_RULE, SQL_NODE_LISTRULE, SQL_NODE_COMMALISTRULE,
         SQL_NODE_KEYWORD, SQL_NODE_COMPARISON, SQL_NODE_NAME, SQL_NODE_ARRAY_INDEX, SQL_NODE_DOTLISTRULE,
         SQL_NODE_STRING, SQL_NODE_INTNUM, SQL_NODE_APPROXNUM,
         SQL_NODE_EQUAL, SQL_NODE_LESS, SQL_NODE_GREAT, SQL_NODE_LESSEQ, SQL_NODE_GREATEQ, SQL_NODE_NOTEQUAL,
-        SQL_NODE_PUNCTUATION, SQL_NODE_AMMSC, SQL_NODE_ACCESS_DATE, SQL_NODE_DATE, SQL_NODE_CONCAT
+        SQL_NODE_PUNCTUATION, SQL_NODE_AMMSC, SQL_NODE_ACCESS_DATE, SQL_NODE_DATE, SQL_NODE_BITWISE_NOT,
+        SQL_NODE_BITWISE_OR, SQL_NODE_BITWISE_AND, SQL_NODE_BITWISE_SHIFT_LEFT, SQL_NODE_BITWISE_SHIFT_RIGHT, SQL_NODE_CONCAT
         };
 
     typedef ::std::set< Utf8String >   QueryNameSet;
@@ -216,7 +217,7 @@ namespace connectivity
                 value_exp_primary,
                 values_or_query_spec,
                 where_clause,
-
+                term_add_sub,
                 rule_count,             // letzter_wert
                 UNKNOWN_RULE            // ID indicating that a node is no rule with a matching Rule-enum value (see getKnownRuleID)
                 };
